@@ -32,7 +32,7 @@ import {
 
 import {LexicalCommandLog} from './useLexicalCommandsLog';
 
-export type CustomPrintNode = (
+export type CustomPrintNodeFn = (
   node: LexicalNode,
   obfuscateText?: boolean,
 ) => string;
@@ -94,7 +94,7 @@ export function generateContent(
   editor: LexicalEditor,
   commandsLog: LexicalCommandLog,
   exportDOM: boolean,
-  customPrintNode?: CustomPrintNode,
+  customPrintNode?: CustomPrintNodeFn,
   obfuscateText: boolean = false,
 ): string {
   const editorState = editor.getEditorState();
@@ -252,7 +252,7 @@ function normalize(text: string, obfuscateText: boolean = false) {
 
 function printNode(
   node: LexicalNode,
-  customPrintNode?: CustomPrintNode,
+  customPrintNode?: CustomPrintNodeFn,
   obfuscateText: boolean = false,
 ) {
   const customPrint: string | undefined = customPrintNode

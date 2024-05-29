@@ -20,13 +20,13 @@ import type {
 export type LexicalCommandLog = $ReadOnlyArray<
   {index: number} | LexicalCommand<mixed> | {payload: mixed}
  >;
-export type CustomPrintNode = (node: LexicalNode, obfuscateText?: boolean) => string;
+export type CustomPrintNodeFn = (node: LexicalNode, obfuscateText?: boolean) => string;
 
 declare export function generateContent(
   editor: LexicalEditor,
   commandsLog: $ReadOnlyArray<LexicalCommandLog>,
   exportDOM: boolean,
-  customPrintNode?: CustomPrintNode,
+  customPrintNode?: CustomPrintNodeFn,
   obfuscateText?: boolean,
 ): string;
 

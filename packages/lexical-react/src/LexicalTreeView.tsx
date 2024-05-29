@@ -9,7 +9,7 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {
-  CustomPrintNode,
+  CustomPrintNodeFn,
   generateContent,
   TreeView as TreeViewCore,
   useLexicalCommandsLog,
@@ -35,7 +35,7 @@ export function TreeView({
   timeTravelPanelClassName: string;
   timeTravelPanelSliderClassName: string;
   viewClassName: string;
-  customPrintNode?: CustomPrintNode;
+  customPrintNode?: CustomPrintNodeFn;
 }): JSX.Element {
   const treeElementRef = React.createRef<HTMLPreElement>();
   const [editorCurrentState, setEditorCurrentState] = useState<EditorState>(

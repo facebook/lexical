@@ -115,10 +115,6 @@ export class ListItemNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      input: (node: Node) => ({
-        conversion: $convertCheckboxInput,
-        priority: 0,
-      }),
       li: (node: Node) => ({
         conversion: $convertListItemElement,
         priority: 0,
@@ -507,10 +503,7 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
   return {node: $createListItemNode(checked)};
 }
 
-function $convertCheckboxInput(domNode: Node): DOMConversionOutput {
-  if (!isHTMLElement(domNode)) {
-    return {node: null};
-  }
+function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
   const isCheckboxInput = domNode.getAttribute('type') === 'checkbox';
   if (!isCheckboxInput) {
     return {node: null};

@@ -310,8 +310,8 @@ function isDomChecklist(domNode: Node) {
     return true;
   }
   // if children are checklist items, the node is a checklist ul. Applicable for googledoc checklist pasting.
-  for (const n of domNode.childNodes) {
-    if (isHTMLElement(n) && n.hasAttribute('aria-checked')) {
+  for (const child of domNode.childNodes) {
+    if (isHTMLElement(child) && child.hasAttribute('aria-checked')) {
       return true;
     }
   }

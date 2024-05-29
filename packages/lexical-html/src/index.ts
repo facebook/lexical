@@ -166,7 +166,7 @@ function $appendNodesToHTML(
   return shouldInclude;
 }
 
-export function getConversionFunction(
+function getConversionFunction(
   domNode: Node,
   editor: LexicalEditor,
 ): DOMConversionFn | null {

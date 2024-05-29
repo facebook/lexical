@@ -16,6 +16,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      - uses: actions/checkout@v4
       - name: Add label for extended tests
         env:
           GH_TOKEN: ${{ secrets.LEXICAL_BOT_TOKEN }}

@@ -51,17 +51,16 @@ function incrementArgs() {
 }
 
 async function incrementVersion() {
-  await spawn(
+  const commandArr = [
     'npm',
-    [
-      'version',
-      '--no-git-tag-version',
-      '--include-workspace-root',
-      'true',
-      ...incrementArgs(),
-    ],
-    {stdio: 'inherit'},
-  );
+    'version',
+    '--no-git-tag-version',
+    '--include-workspace-root',
+    'true',
+    ...incrementArgs(),
+  ];
+  console.log(commandArr.join(' '));
+  await spawn(commandArr[0], commandArr.slice(1), {stdio: 'inherit'});
 }
 
 incrementVersion();

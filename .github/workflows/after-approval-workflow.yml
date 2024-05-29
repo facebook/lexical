@@ -2,7 +2,7 @@ name: After Approval Workflow
 
 on:
   workflow_run:
-    workflows: ['After Approval']
+    workflows: [After Approval]
     types:
       - completed
 

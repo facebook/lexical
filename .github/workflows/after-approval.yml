@@ -19,4 +19,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/labeler@v5
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          repo-token: "${{ secrets.LEXICAL_BOT_TOKEN }}"

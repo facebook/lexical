@@ -1,0 +1,5 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+
+extended-tests:
+  - changed-files:
+    - any-glob-to-any-file: '**'

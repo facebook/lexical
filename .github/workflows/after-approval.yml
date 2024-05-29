@@ -17,11 +17,6 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: Add label for extended tests
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "Adding label 'extended-tests' to PR $NUMBER"
-          gh pr edit "$NUMBER" --add-label "extended-tests" || (echo "Failed to add label" && exit 1)
+      - uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"

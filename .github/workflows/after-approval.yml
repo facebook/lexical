@@ -1,4 +1,4 @@
-name: After Approval
+name: AFTER_APPROVAL
 
 on:
   pull_request_review:

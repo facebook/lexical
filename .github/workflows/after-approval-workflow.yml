@@ -1,8 +1,9 @@
-name: After Approval Workflow
+name: After Approval Add Label Workflow
 
 on:
   workflow_run:
-    workflows: [After Approval]
+    workflows:
+      - AFTER_APPROVAL
     types:
       - completed
 

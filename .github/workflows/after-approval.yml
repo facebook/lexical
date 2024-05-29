@@ -9,18 +9,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  label-pr:
-    if: github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
+  upload-pr-number:
+    if: github.event.review.state == 'commented' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
-      - name: Add label for extended tests
+      - name: Save PR number
         env:
-          GH_TOKEN: ${{ secrets.LEXICAL_BOT_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "Adding label 'extended-tests' to PR $NUMBER"
-          gh pr edit "$NUMBER" --add-label "extended-tests" || (echo "Failed to add label" && exit 1)
+          mkdir -p ./pr
+          echo $PR_NUMBER > ./pr/pr_number
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr_number
+          path: pr/

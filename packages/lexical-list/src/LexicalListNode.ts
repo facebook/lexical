@@ -305,7 +305,8 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
 function isDomChecklist(domNode: Node) {
   if (
     isHTMLElement(domNode) &&
-    domNode.getAttribute('__lexicallisttype') === 'check'
+    (domNode.getAttribute('__lexicallisttype') === 'check' ||
+      domNode.classList.contains('contains-task-list'))
   ) {
     return true;
   }

@@ -183,7 +183,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           let height = tableRow.getHeight();
-          if (!height) {
+          if (height === undefined) {
             const rowCells = tableRow.getChildren<TableCellNode>();
             height = Math.min(
               ...rowCells.map(
@@ -206,12 +206,12 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     activeEditor: LexicalEditor,
   ): number | undefined => {
     const width = cell.getWidth();
-    if (width) {
+    if (width !== undefined) {
       return width;
     }
 
     const domCellNode = activeEditor.getElementByKey(cell.getKey());
-    if (!domCellNode) {
+    if (domCellNode == null) {
       return undefined;
     }
     const computedStyle = getComputedStyle(domCellNode);
@@ -275,7 +275,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
                   tableMap[row][columnIndex + 1].cell)
             ) {
               const width = getCellNodeWidth(cell.cell, editor);
-              if (!width) {
+              if (width === undefined) {
                 continue;
               }
               const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);

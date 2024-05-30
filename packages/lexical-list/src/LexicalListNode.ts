@@ -302,6 +302,22 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   return normalizedListItems;
 }
 
+function isDomChecklist(domNode: Node) {
+  if (
+    isHTMLElement(domNode) &&
+    domNode.getAttribute('__lexicallisttype') === 'check'
+  ) {
+    return true;
+  }
+  // if children are checklist items, the node is a checklist ul. Applicable for googledoc checklist pasting.
+  for (const child of domNode.childNodes) {
+    if (isHTMLElement(child) && child.hasAttribute('aria-checked')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function $convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
@@ -310,10 +326,7 @@ function $convertListNode(domNode: Node): DOMConversionOutput {
     const start = domNode.start;
     node = $createListNode('number', start);
   } else if (nodeName === 'ul') {
-    if (
-      isHTMLElement(domNode) &&
-      domNode.getAttribute('__lexicallisttype') === 'check'
-    ) {
+    if (isDomChecklist(domNode)) {
       node = $createListNode('check');
     } else {
       node = $createListNode('bullet');

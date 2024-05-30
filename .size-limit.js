@@ -49,6 +49,7 @@ function sizeLimitConfig(pkg) {
   return {
     path: alias[pkg],
     modifyWebpackConfig,
+    running: false,
   };
 }
 

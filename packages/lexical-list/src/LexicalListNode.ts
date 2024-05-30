@@ -307,7 +307,6 @@ function isDomChecklist(domNode: HTMLElement) {
     domNode.getAttribute('__lexicallisttype') === 'check' ||
     // is github checklist
     domNode.classList.contains('contains-task-list')
-
   ) {
     return true;
   }

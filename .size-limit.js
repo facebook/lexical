@@ -55,6 +55,7 @@ function sizeLimitConfig(pkg) {
             .map((k) => alias[k]),
     modifyWebpackConfig,
     running: false,
+    name: pkg,
   };
 }
 

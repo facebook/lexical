@@ -47,9 +47,15 @@ const modifyWebpackConfig = (config) => Object.assign(config, extendConfig);
 
 function sizeLimitConfig(pkg) {
   return {
-    path: alias[pkg],
+    path:
+      alias[pkg] != null
+        ? alias[pkg]
+        : Object.keys(alias)
+            .filter((k) => k.startsWith(pkg))
+            .map((k) => alias[k]),
     modifyWebpackConfig,
     running: false,
+    name: pkg,
   };
 }
 
@@ -64,6 +70,9 @@ function sizeLimitConfig(pkg) {
  * package.json to run build-release instead of build-prod so both
  * dev and prod artifacts would be available.
  */
-module.exports = ['lexical', '@lexical/rich-text', '@lexical/plain-text'].map(
-  sizeLimitConfig,
-);
+module.exports = [
+  'lexical',
+  '@lexical/rich-text',
+  '@lexical/plain-text',
+  '@lexical/react',
+].map(sizeLimitConfig);

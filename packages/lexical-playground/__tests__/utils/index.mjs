@@ -15,7 +15,7 @@ import {URLSearchParams} from 'url';
 import {selectAll} from '../keyboardShortcuts/index.mjs';
 
 function findAsset(pattern) {
-  const prefix = './packages/lexical-playground/build';
+  const prefix = 'packages/lexical-playground/build';
   const resolvedPattern = `${prefix}/assets/${pattern}`;
   for (const fn of glob.sync(resolvedPattern)) {
     return fn.slice(prefix.length);

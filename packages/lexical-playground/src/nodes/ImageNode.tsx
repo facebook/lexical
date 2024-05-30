@@ -42,7 +42,7 @@ function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
     img.parentElement != null &&
     img.parentElement.tagName === 'LI' &&
     img.previousSibling === null &&
-    img.src.startsWith('data:image/png;base64,iVBOR')
+    img.getAttribute('aria-roledescription') === 'checkbox'
   );
 }
 

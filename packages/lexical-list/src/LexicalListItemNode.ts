@@ -33,6 +33,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   ElementNode,
+  isHTMLElement,
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -502,10 +503,12 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
     }
   }
 
+  const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
-    domNode.getAttribute('aria-checked') === 'true'
+    ariaCheckedAttr === 'true'
       ? true
-      : domNode.getAttribute('aria-checked') === 'false'
+      : ariaCheckedAttr === 'false'
+
       ? false
       : undefined;
   return {node: $createListItemNode(checked)};

@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {CustomPrintNodeFn} from '@lexical/devtools-core';
 import type {LexicalEditor} from 'lexical';
 
 declare export function TreeView(props: {
@@ -16,4 +17,5 @@ declare export function TreeView(props: {
   timeTravelButtonClassName: string,
   viewClassName: string,
   editor: LexicalEditor,
+  customPrintNode?: CustomPrintNodeFn,
 }): React$Node;

@@ -48,7 +48,7 @@ const modifyWebpackConfig = (config) => Object.assign(config, extendConfig);
 function sizeLimitConfig(pkg) {
   return {
     path:
-      alias[pkg] != undefined
+      alias[pkg] != null
         ? alias[pkg]
         : Object.keys(alias)
             .filter((k) => k.startsWith(pkg))

@@ -63,6 +63,9 @@ function sizeLimitConfig(pkg) {
  * package.json to run build-release instead of build-prod so both
  * dev and prod artifacts would be available.
  */
-module.exports = ['lexical', '@lexical/rich-text', '@lexical/plain-text'].map(
-  sizeLimitConfig,
-);
+module.exports = [
+  'lexical',
+  '@lexical/rich-text',
+  '@lexical/plain-text',
+  '@lexical/react',
+].map(sizeLimitConfig);

@@ -9,7 +9,7 @@ import Cocoa
 import SafariServices
 import WebKit
 
-let extensionBundleIdentifier = "dev.lexical.Lexical-Developer-Tools.Extension"
+let extensionBundleIdentifier = "com.epam.lexical.developerTools.safariExt"
 
 class ViewController: NSViewController, WKNavigationDelegate, WKScriptMessageHandler {
 

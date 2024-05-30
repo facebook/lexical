@@ -33,6 +33,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   ElementNode,
+  isHTMLElement,
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -492,7 +493,20 @@ function updateListItemChecked(
   }
 }
 
-function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
+function $convertListItemElement(domNode: Node): DOMConversionOutput {
+  if (!isHTMLElement(domNode)) {
+    return {node: null};
+  }
+
+  const isGitHubCheckList = domNode.classList.contains('task-list-item');
+  if (isGitHubCheckList) {
+    for (const child of domNode.children) {
+      if (child.tagName === 'INPUT') {
+        return $convertCheckboxInput(child);
+      }
+    }
+  }
+
   const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
     ariaCheckedAttr === 'true'

@@ -1,4 +1,4 @@
-name: Create New Release Branch
+name: Increment Version
 on:
   workflow_call:
     inputs:

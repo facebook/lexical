@@ -1,8 +1,7 @@
 name: 'Bundles'
 on:
-  pull_request_target:
-    branches:
-      - main
+  pull_request:
+
 jobs:
   size-limit:
     runs-on: ubuntu-latest

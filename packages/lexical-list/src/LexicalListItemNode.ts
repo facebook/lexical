@@ -33,7 +33,6 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   ElementNode,
-  isHTMLElement,
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';

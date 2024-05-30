@@ -4,6 +4,8 @@ sidebar_label: "Developer Tools"
 
 # Lexical Developer Tools
 
+## Extension
+
 The easiest way to debug websites built with Lexical is to install the Lexical Developer Tools browser extension. It is available for several popular browsers:
 
 
@@ -21,3 +23,12 @@ The easiest way to debug websites built with Lexical is to install the Lexical D
 Now, if you visit a website built with Lexical (such as [https://playground.lexical.dev/](https://playground.lexical.dev/)), you will see the _Lexical_ panel in your browser Inspector window.
 
 <img src="/img/docs/devtools-demo.png" width="460" alt="Lexical Developer Tools Demo screenshot">
+
+## Extension Support
+
+Feel free to reach out to us for support, or just to chat, at <a href="mailto:EPAM-lexical-support@epam.com">EPAM-lexical-support@epam.com</a> or via our [community channels](/community).
+
+Legal information:
+
+- <a href="https://opensource.facebook.com/legal/privacy/" rel="noreferrer noopener" target="_blank">Meta Open Source - Privacy Policy</a>
+- <a href="https://opensource.facebook.com/legal/terms/" rel="noreferrer noopener" target="_blank">Meta Open Source - Terms of Use</a>

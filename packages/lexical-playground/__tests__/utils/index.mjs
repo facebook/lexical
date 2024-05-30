@@ -7,7 +7,7 @@
  */
 
 import {expect, test as base} from '@playwright/test';
-import glob from 'glob';
+import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';

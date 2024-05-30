@@ -1088,9 +1088,9 @@ export class TextNode extends LexicalNode {
   }
 }
 
-function convertSpanElement(domNode: Node): DOMConversionOutput {
+function convertSpanElement(domNode: HTMLSpanElement): DOMConversionOutput {
   // domNode is a <span> since we matched it by nodeName
-  const span = domNode as HTMLSpanElement;
+  const span = domNode;
   const style = span.style;
 
   return {
@@ -1099,9 +1099,11 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
+function convertBringAttentionToElement(
+  domNode: HTMLElement,
+): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
-  const b = domNode as HTMLElement;
+  const b = domNode;
   // Google Docs wraps all copied HTML in a <b> with font-weight normal
   const hasNormalFontWeight = b.style.fontWeight === 'normal';
 
@@ -1271,13 +1273,13 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   u: 'underline',
 };
 
-function convertTextFormatElement(domNode: Node): DOMConversionOutput {
+function convertTextFormatElement(domNode: HTMLElement): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
   if (format === undefined) {
     return {node: null};
   }
   return {
-    forChild: applyTextFormatFromStyle((domNode as HTMLElement).style, format),
+    forChild: applyTextFormatFromStyle(domNode.style, format),
     node: null,
   };
 }

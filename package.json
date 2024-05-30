@@ -107,7 +107,7 @@
     "postversion": "git checkout -b ${npm_package_version}__release && npm run update-version && npm install && npm run update-packages && npm run extract-codes && npm run update-changelog && git add -A && git commit -m v${npm_package_version} && git tag -a v${npm_package_version} -m v${npm_package_version}",
     "publish-extension": "npm run zip -w @lexical/devtools && npm run publish -w @lexical/devtools",
     "release": "npm run prepare-release && node ./scripts/npm/release.js",
-    "size": "npm run build-release && size-limit"
+    "size": "npm run build-prod && size-limit"
   },
   "devDependencies": {
     "@ampproject/rollup-plugin-closure-compiler": "^0.27.0",

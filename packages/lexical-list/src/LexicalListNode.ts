@@ -135,11 +135,11 @@ export class ListNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      ol: (node: Node) => ({
+      ol: () => ({
         conversion: $convertListNode,
         priority: 0,
       }),
-      ul: (node: Node) => ({
+      ul: () => ({
         conversion: $convertListNode,
         priority: 0,
       }),
@@ -302,12 +302,11 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   return normalizedListItems;
 }
 
-function isDomChecklist(domNode: Node) {
+function isDomChecklist(domNode: HTMLElement) {
   if (
-    isHTMLElement(domNode) &&
-    (domNode.getAttribute('__lexicallisttype') === 'check' ||
-      // is github checklist
-      domNode.classList.contains('contains-task-list'))
+    domNode.getAttribute('__lexicallisttype') === 'check' ||
+    // is github checklist
+    domNode.classList.contains('contains-task-list')
   ) {
     return true;
   }
@@ -320,7 +319,7 @@ function isDomChecklist(domNode: Node) {
   return false;
 }
 
-function $convertListNode(domNode: Node): DOMConversionOutput {
+function $convertListNode(domNode: HTMLElement): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
   if (nodeName === 'ol') {

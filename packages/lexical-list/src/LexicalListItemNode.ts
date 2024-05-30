@@ -33,7 +33,6 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   ElementNode,
-  isHTMLElement,
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -116,7 +115,7 @@ export class ListItemNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      li: (node: Node) => ({
+      li: () => ({
         conversion: $convertListItemElement,
         priority: 0,
       }),
@@ -493,11 +492,7 @@ function updateListItemChecked(
   }
 }
 
-function $convertListItemElement(domNode: Node): DOMConversionOutput {
-  if (!isHTMLElement(domNode)) {
-    return {node: null};
-  }
-
+function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
   const isGitHubCheckList = domNode.classList.contains('task-list-item');
   if (isGitHubCheckList) {
     for (const child of domNode.children) {

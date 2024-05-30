@@ -1,4 +1,4 @@
-name: Publish to NPM
+name: (call) Publish to NPM
 on:
   workflow_call:
     inputs:

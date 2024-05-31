@@ -32,6 +32,7 @@ const sidebars = {
         'getting-started/theming',
         'getting-started/supported-browsers',
         'getting-started/creating-plugin',
+        'getting-started/devtools',
       ],
       label: 'Getting Started',
       type: 'category',

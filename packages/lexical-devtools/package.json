@@ -21,7 +21,7 @@
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "cp ./SOURCE_CODE_REVIEW.md ../.. && wxt zip -b firefox",
     "zip:edge": "wxt zip -b edge",
-    "publish": "wxt submit --edge-zip .output/*-edge.zip --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip",
+    "publish": "wxt submit --chrome-zip .output/*-chrome.zip --edge-zip .output/*-edge.zip --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip",
     "bundle-analyzer:open": "wxt build --analyze --analyze-open",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare"

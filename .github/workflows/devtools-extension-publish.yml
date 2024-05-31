@@ -35,4 +35,13 @@ jobs:
           FIREFOX_EXTENSION_ID: ${{ secrets.EXTENSION_FIREFOX_EXTENSION_ID }}
           FIREFOX_JWT_ISSUER: ${{ secrets.EXTENSION_FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.EXTENSION_FIREFOX_JWT_SECRET }}
+          # FBK-SWAT project within EPAM GCP
+          # https://console.cloud.google.com/apis/credentials?project=hl2-fbk-swat-t1iylu&supportedpurview=project
+          # OAuth 2.0 Client that is authorized to access "Chrome Web Store API" for "vladlen_fedosov@epam.con"
+          # https://console.cloud.google.com/apis/credentials/oauthclient/720442356639-lb8144papds2t60uh2iu3vhvit4gb2fe.apps.googleusercontent.com?project=hl2-fbk-swat-t1iylu&supportedpurview=project
+          CHROME_EXTENSION_ID: ${{ secrets.EXTENSION_CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.EXTENSION_CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.EXTENSION_CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.EXTENSION_CHROME_REFRESH_TOKEN }}
+          CHROME_PUBLISH_TARGET: ${{ secrets.EXTENSION_CHROME_PUBLISH_TARGET }}
           BUILD_VERSION: ${{ inputs.build_version }}

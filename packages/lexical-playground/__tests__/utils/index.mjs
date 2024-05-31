@@ -18,7 +18,7 @@ function findAsset(pattern) {
   const prefix = 'packages/lexical-playground/build';
   const resolvedPattern = `${prefix}/assets/${pattern}`;
   for (const fn of glob.sync(resolvedPattern, {windowsPathsNoEscape: true})) {
-    return fn.slice(prefix.length);
+    return fn.replace('\\', '/').slice(prefix.length);
   }
   throw new Error(`Missing asset at ${resolvedPattern}`);
 }

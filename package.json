@@ -161,7 +161,7 @@
     "eslint-plugin-sort-keys-fix": "^1.1.2",
     "flow-bin": "^0.226.0",
     "fs-extra": "^10.0.0",
-    "glob": "^7.2.0",
+    "glob": "^10.4.1",
     "google-closure-compiler": "^20220202.0.0",
     "gzip-size": "^6.0.0",
     "hermes-parser": "^0.20.1",

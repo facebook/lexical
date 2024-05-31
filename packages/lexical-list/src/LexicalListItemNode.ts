@@ -24,7 +24,6 @@ import type {
 
 import {
   addClassNamesToElement,
-  isHTMLElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
@@ -116,7 +115,7 @@ export class ListItemNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      li: (node: Node) => ({
+      li: () => ({
         conversion: $convertListItemElement,
         priority: 0,
       }),
@@ -493,9 +492,32 @@ function updateListItemChecked(
   }
 }
 
-function $convertListItemElement(domNode: Node): DOMConversionOutput {
+function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
+  const isGitHubCheckList = domNode.classList.contains('task-list-item');
+  if (isGitHubCheckList) {
+    for (const child of domNode.children) {
+      if (child.tagName === 'INPUT') {
+        return $convertCheckboxInput(child);
+      }
+    }
+  }
+
+  const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
-    isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
+    ariaCheckedAttr === 'true'
+      ? true
+      : ariaCheckedAttr === 'false'
+      ? false
+      : undefined;
+  return {node: $createListItemNode(checked)};
+}
+
+function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
+  const isCheckboxInput = domNode.getAttribute('type') === 'checkbox';
+  if (!isCheckboxInput) {
+    return {node: null};
+  }
+  const checked = domNode.hasAttribute('checked');
   return {node: $createListItemNode(checked)};
 }
 

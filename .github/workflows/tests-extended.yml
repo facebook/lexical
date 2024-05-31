@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - 'packages/lexical-website/**'
       - 'packages/*/README.md'
+      - '.size-limit.js'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

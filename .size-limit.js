@@ -37,10 +37,11 @@ const getAliasType = (type) =>
     packagesManager.getPublicPackages().flatMap((pkg) =>
       pkg.getNormalizedNpmModuleExportEntries().map(([k, v]) => {
         switch (type) {
-          case 'development':
-            return [k, pkg.resolve('dist', v.require.development)];
-          case 'production':
-            return [k, pkg.resolve('dist', v.require.production)];
+          case 'esm':
+            return [
+              k,
+              pkg.resolve('dist', v.require.default.replace('.js', '.mjs')),
+            ];
           default:
             return [k, pkg.resolve('dist', v.require.default)];
         }
@@ -52,7 +53,7 @@ const modifyWebpackConfigForType = (config, alias) =>
   Object.assign(config, {resolve: {alias}});
 
 function sizeLimitConfig(pkg) {
-  return ['development', 'production'].map((type) => {
+  return ['cjs', 'esm'].map((type) => {
     const aliasType = getAliasType(type);
     return {
       path:
@@ -72,9 +73,9 @@ function sizeLimitConfig(pkg) {
 /**
  * These are the packages that were measured previously in #3600
  * We could consider adding more packages and/or also measuring
- * other build combinations such as esbuild/webpack, mjs/cjs etc.
+ * other build combinations such as esbuild/webpack.
  *
- * The current configuration measures only: webpack + cjs + dev/prod.
+ * The current configuration measures only: webpack + esm/cjs.
  *
  */
 module.exports = [

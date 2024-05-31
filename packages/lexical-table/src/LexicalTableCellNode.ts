@@ -152,8 +152,6 @@ export class TableCellNode extends ElementNode {
 
     if (element) {
       const element_ = element as HTMLTableCellElement;
-      const maxWidth = 700;
-      const colCount = this.getParentOrThrow().getChildrenSize();
       element_.style.border = '1px solid black';
       if (this.__colSpan > 1) {
         element_.colSpan = this.__colSpan;
@@ -161,9 +159,9 @@ export class TableCellNode extends ElementNode {
       if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
-      element_.style.width = `${
-        this.getWidth() || Math.max(90, maxWidth / colCount)
-      }px`;
+      if (this.getWidth() !== undefined) {
+        element_.style.width = `${this.getWidth()}px`;
+      }
 
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';

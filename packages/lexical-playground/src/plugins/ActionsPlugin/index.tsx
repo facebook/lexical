@@ -189,7 +189,6 @@ export default function ActionsPlugin({
             $createCodeNode('markdown').append($createTextNode(markdown)),
           );
       }
-      root.selectEnd();
     });
   }, [editor, shouldPreserveNewLinesInMarkdown]);
 

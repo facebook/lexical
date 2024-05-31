@@ -95,7 +95,7 @@ export function createMarkdownImport(
     }
 
     if ($getSelection() !== null) {
-      root.selectEnd();
+      root.selectStart();
     }
   };
 }

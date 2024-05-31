@@ -193,10 +193,16 @@ const docusaurusPluginTypedocConfig = {
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
 
+// Vercel does not set owner and slug correctly for forks so we can't trust the ref
+const GIT_COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA || 'main';
 const GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF || 'main';
 const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || 'facebook';
 const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || 'lexical';
-const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${GIT_COMMIT_REF}/`;
+const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${
+  GIT_COMMIT_REF === 'main' || GIT_COMMIT_REF.endsWith('__release')
+    ? GIT_COMMIT_REF
+    : GIT_COMMIT_SHA
+}/`;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {

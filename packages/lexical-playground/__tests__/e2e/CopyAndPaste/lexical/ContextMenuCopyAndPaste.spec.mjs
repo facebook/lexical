@@ -23,7 +23,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
     initialize({isCollab, page, shouldUseLexicalContextMenu}),
   );
 
-  test('Basic copy-paste', async ({page, isPlainText}) => {
+  test('Basic copy-paste #6231', async ({page, isPlainText}) => {
     test.skip(isPlainText);
     await focusEditor(page);
 

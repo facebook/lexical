@@ -69,7 +69,7 @@ const TRANSFORMERS: Array<Transformer> = [
 ];
 
 /**
- * Renders markdown from a string. The selection is moved the start after the operation.
+ * Renders markdown from a string. The selection is moved to the start after the operation.
  */
 function $convertFromMarkdownString(
   markdown: string,

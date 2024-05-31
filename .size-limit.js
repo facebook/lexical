@@ -34,26 +34,20 @@ const path = require('node:path');
 const {packagesManager} = require('./scripts/shared/packagesManager');
 const getAliasType = (type) =>
   Object.fromEntries(
-    packagesManager.getPublicPackages().flatMap((pkg) =>
-      pkg.getNormalizedNpmModuleExportEntries().map(([k, v]) => {
-        switch (type) {
-          case 'esm':
-            return [
-              k,
-              pkg.resolve('dist', v.require.default.replace('.js', '.mjs')),
-            ];
-          default:
-            return [k, pkg.resolve('dist', v.require.default)];
-        }
-      }),
-    ),
+    packagesManager
+      .getPublicPackages()
+      .flatMap((pkg) =>
+        pkg
+          .getNormalizedNpmModuleExportEntries()
+          .map(([k, v]) => [k, pkg.resolve('dist', v[type].default)]),
+      ),
   );
 
 const modifyWebpackConfigForType = (config, alias) =>
   Object.assign(config, {resolve: {alias}});
 
 function sizeLimitConfig(pkg) {
-  return ['cjs', 'esm'].map((type) => {
+  return ['require', 'import'].map((type) => {
     const aliasType = getAliasType(type);
     return {
       path:
@@ -65,17 +59,16 @@ function sizeLimitConfig(pkg) {
       modifyWebpackConfig: (config) =>
         modifyWebpackConfigForType(config, aliasType),
       running: false,
-      name: pkg + ' - ' + type,
+      name: pkg + ' - ' + (type === 'require' ? 'cjs' : 'esm'),
     };
   });
 }
 
 /**
- * These are the packages that were measured previously in #3600
  * We could consider adding more packages and/or also measuring
  * other build combinations such as esbuild/webpack.
  *
- * The current configuration measures only: webpack + esm/cjs.
+ * The current configuration measures only: webpack + esm/cjs + prod.
  *
  */
 module.exports = [

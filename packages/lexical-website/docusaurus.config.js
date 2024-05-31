@@ -193,13 +193,32 @@ const docusaurusPluginTypedocConfig = {
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
 
+const GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF || 'main';
+const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || 'facebook';
+const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || 'lexical';
+const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${GIT_COMMIT_REF}/`;
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   baseUrl: '/',
 
+  customFields: {
+    GIT_COMMIT_REF,
+    GIT_REPO_OWNER,
+    GIT_REPO_SLUG,
+    STACKBLITZ_PREFIX,
+  },
+
   favicon: 'img/favicon.ico',
 
-  markdown: {format: 'md'},
+  markdown: {
+    format: 'md',
+    preprocessor: ({fileContent}) =>
+      fileContent.replaceAll(
+        'https://stackblitz.com/github/facebook/lexical/tree/main/',
+        STACKBLITZ_PREFIX,
+      ),
+  },
 
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
@@ -235,6 +254,7 @@ const config = {
       };
     },
   ],
+
   presets: [
     [
       'classic',
@@ -387,7 +407,6 @@ const config = {
     }),
 
   title: TITLE,
-
   url: 'https://lexical.dev',
 };
 

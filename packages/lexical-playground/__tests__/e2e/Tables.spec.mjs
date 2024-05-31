@@ -1622,7 +1622,7 @@ test.describe('Tables', () => {
       false,
     );
     await mergeTableCells(page);
-    await page.locator('th').first().click();
+    await click(page, 'th');
     const resizerBoundingBox = await selectorBoundingBox(
       page,
       '.TableCellResizer__resizer:first-child',
@@ -1695,7 +1695,7 @@ test.describe('Tables', () => {
       false,
     );
     await mergeTableCells(page);
-    await page.locator('th').first().click();
+    await click(page, 'th');
     const resizerBoundingBox = await selectorBoundingBox(
       page,
       '.TableCellResizer__resizer:nth-child(2)',

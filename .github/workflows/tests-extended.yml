@@ -6,7 +6,8 @@ on:
     paths-ignore:
       - 'packages/lexical-website/**'
       - 'packages/*/README.md'
-  pull_request_review:
+      - '.size-limit.js'
+pull_request_review:
     types: [submitted]
 
 concurrency:

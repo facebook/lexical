@@ -603,3 +603,10 @@ export function calculateZoomLevel(element: Element | null): number {
   }
   return zoom;
 }
+
+/**
+ * Checks if the editor is a nested editor created by LexicalNestedComposer
+ */
+export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
+  return editor._parentEditor !== null;
+}

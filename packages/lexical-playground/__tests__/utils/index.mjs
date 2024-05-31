@@ -7,7 +7,7 @@
  */
 
 import {expect, test as base} from '@playwright/test';
-import glob from 'glob';
+import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
@@ -15,7 +15,7 @@ import {URLSearchParams} from 'url';
 import {selectAll} from '../keyboardShortcuts/index.mjs';
 
 function findAsset(pattern) {
-  const prefix = './packages/lexical-playground/build';
+  const prefix = 'packages/lexical-playground/build';
   const resolvedPattern = `${prefix}/assets/${pattern}`;
   for (const fn of glob.sync(resolvedPattern)) {
     return fn.slice(prefix.length);

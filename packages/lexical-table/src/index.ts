@@ -34,8 +34,6 @@ export {
   TableRowNode,
 } from './LexicalTableRowNode';
 export type {
-  TableMapType,
-  TableMapValueType,
   TableSelection,
   TableSelectionShape,
 } from './LexicalTableSelection';

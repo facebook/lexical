@@ -5,12 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  TableCellNode,
-  TableDOMCell,
-  TableMapType,
-  TableMapValueType,
-} from '@lexical/table';
+import type {TableDOMCell} from '@lexical/table';
 import type {LexicalEditor} from 'lexical';
 
 import './index.css';
@@ -18,12 +13,13 @@ import './index.css';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
-  $computeTableMapSkipCellCheck,
+  $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $isTableCellNode,
   $isTableRowNode,
   getDOMCellFromTarget,
+  TableCellNode,
 } from '@lexical/table';
 import {calculateZoomLevel} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode} from 'lexical';
@@ -153,7 +149,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   };
 
   const updateRowHeight = useCallback(
-    (heightChange: number) => {
+    (newHeight: number) => {
       if (!activeCell) {
         throw new Error('TableCellResizer: Expected active cell.');
       }
@@ -182,17 +178,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
-          let height = tableRow.getHeight();
-          if (height === undefined) {
-            const rowCells = tableRow.getChildren<TableCellNode>();
-            height = Math.min(
-              ...rowCells.map(
-                (cell) => getCellNodeHeight(cell, editor) ?? Infinity,
-              ),
-            );
-          }
-
-          const newHeight = Math.max(height + heightChange, MIN_ROW_HEIGHT);
           tableRow.setHeight(newHeight);
         },
         {tag: 'skip-scroll-into-view'},
@@ -201,50 +186,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     [activeCell, editor],
   );
 
-  const getCellNodeWidth = (
-    cell: TableCellNode,
-    activeEditor: LexicalEditor,
-  ): number | undefined => {
-    const width = cell.getWidth();
-    if (width !== undefined) {
-      return width;
-    }
-
-    const domCellNode = activeEditor.getElementByKey(cell.getKey());
-    if (domCellNode == null) {
-      return undefined;
-    }
-    const computedStyle = getComputedStyle(domCellNode);
-    return (
-      domCellNode.clientWidth -
-      parseFloat(computedStyle.paddingLeft) -
-      parseFloat(computedStyle.paddingRight)
-    );
-  };
-
-  const getCellNodeHeight = (
-    cell: TableCellNode,
-    activeEditor: LexicalEditor,
-  ): number | undefined => {
-    const domCellNode = activeEditor.getElementByKey(cell.getKey());
-    return domCellNode?.clientHeight;
-  };
-
-  const getCellColumnIndex = (
-    tableCellNode: TableCellNode,
-    tableMap: TableMapType,
-  ) => {
-    for (let row = 0; row < tableMap.length; row++) {
-      for (let column = 0; column < tableMap[row].length; column++) {
-        if (tableMap[row][column].cell === tableCellNode) {
-          return column;
-        }
-      }
-    }
-  };
-
   const updateColumnWidth = useCallback(
-    (widthChange: number) => {
+    (newWidth: number) => {
       if (!activeCell) {
         throw new Error('TableCellResizer: Expected active cell.');
       }
@@ -256,31 +199,48 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-          const [tableMap] = $computeTableMapSkipCellCheck(
-            tableNode,
-            null,
-            null,
-          );
-          const columnIndex = getCellColumnIndex(tableCellNode, tableMap);
-          if (columnIndex === undefined) {
-            throw new Error('TableCellResizer: Table column not found.');
-          }
 
-          for (let row = 0; row < tableMap.length; row++) {
-            const cell: TableMapValueType = tableMap[row][columnIndex];
-            if (
-              cell.startRow === row &&
-              (columnIndex === tableMap[row].length - 1 ||
-                tableMap[row][columnIndex].cell !==
-                  tableMap[row][columnIndex + 1].cell)
-            ) {
-              const width = getCellNodeWidth(cell.cell, editor);
-              if (width === undefined) {
-                continue;
-              }
-              const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);
-              cell.cell.setWidth(newWidth);
+          const tableColumnIndex =
+            $getTableColumnIndexFromTableCellNode(tableCellNode);
+
+          const tableRows = tableNode.getChildren();
+
+          for (let r = 0; r < tableRows.length; r++) {
+            const tableRow = tableRows[r];
+
+            if (!$isTableRowNode(tableRow)) {
+              throw new Error('Expected table row');
             }
+
+            const rowCells = tableRow.getChildren<TableCellNode>();
+            const rowCellsSpan = rowCells.map((cell) => cell.getColSpan());
+
+            const aggregatedRowSpans = rowCellsSpan.reduce(
+              (rowSpans: number[], cellSpan) => {
+                const previousCell = rowSpans[rowSpans.length - 1] ?? 0;
+                rowSpans.push(previousCell + cellSpan);
+                return rowSpans;
+              },
+              [],
+            );
+            const rowColumnIndexWithSpan = aggregatedRowSpans.findIndex(
+              (cellSpan: number) => cellSpan > tableColumnIndex,
+            );
+
+            if (
+              rowColumnIndexWithSpan >= rowCells.length ||
+              rowColumnIndexWithSpan < 0
+            ) {
+              throw new Error('Expected table cell to be inside of table row.');
+            }
+
+            const tableCell = rowCells[rowColumnIndexWithSpan];
+
+            if (!$isTableCellNode(tableCell)) {
+              throw new Error('Expected table cell');
+            }
+
+            tableCell.setWidth(newWidth);
           }
         },
         {tag: 'skip-scroll-into-view'},
@@ -308,11 +268,33 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           const zoom = calculateZoomLevel(event.target as Element);
 
           if (isHeightChanging(direction)) {
-            const heightChange = (event.clientY - y) / zoom;
-            updateRowHeight(heightChange);
+            const height = activeCell.elem.getBoundingClientRect().height;
+            const heightChange = Math.abs(event.clientY - y) / zoom;
+
+            const isShrinking = direction === 'bottom' && y > event.clientY;
+
+            updateRowHeight(
+              Math.max(
+                isShrinking ? height - heightChange : heightChange + height,
+                MIN_ROW_HEIGHT,
+              ),
+            );
           } else {
-            const widthChange = (event.clientX - x) / zoom;
-            updateColumnWidth(widthChange);
+            const computedStyle = getComputedStyle(activeCell.elem);
+            let width = activeCell.elem.clientWidth; // width with padding
+            width -=
+              parseFloat(computedStyle.paddingLeft) +
+              parseFloat(computedStyle.paddingRight);
+            const widthChange = Math.abs(event.clientX - x) / zoom;
+
+            const isShrinking = direction === 'right' && x > event.clientX;
+
+            updateColumnWidth(
+              Math.max(
+                isShrinking ? width - widthChange : widthChange + width,
+                MIN_COLUMN_WIDTH,
+              ),
+            );
           }
 
           resetState();

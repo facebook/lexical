@@ -1250,7 +1250,8 @@ export function addRootElementEvents(
                     editor,
                     CUT_COMMAND,
                     event as ClipboardEvent,
-                ));
+                  )
+                );
 
               case 'copy':
                 return dispatchCommand(

@@ -1244,11 +1244,13 @@ export function addRootElementEvents(
             const isEditable = editor.isEditable();
             switch (eventName) {
               case 'cut':
-                return dispatchCommand(
-                  editor,
-                  CUT_COMMAND,
-                  event as ClipboardEvent,
-                );
+                return (
+                  isEditable &&
+                  dispatchCommand(
+                    editor,
+                    CUT_COMMAND,
+                    event as ClipboardEvent,
+                ));
 
               case 'copy':
                 return dispatchCommand(

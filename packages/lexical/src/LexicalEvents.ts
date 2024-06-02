@@ -1246,11 +1246,7 @@ export function addRootElementEvents(
               case 'cut':
                 return (
                   isEditable &&
-                  dispatchCommand(
-                    editor,
-                    CUT_COMMAND,
-                    event as ClipboardEvent,
-                  )
+                  dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent)
                 );
 
               case 'copy':

@@ -61,6 +61,7 @@ export async function initialize({
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
+  shouldUseLexicalContextMenu,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -90,6 +91,7 @@ export async function initialize({
   if (tableCellBackgroundColor !== undefined) {
     appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
+  appSettings.shouldUseLexicalContextMenu = !!shouldUseLexicalContextMenu;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -145,6 +147,7 @@ export const test = base.extend({
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,
+  shouldUseLexicalContextMenu: false,
 });
 
 export {expect} from '@playwright/test';
@@ -407,7 +410,10 @@ export async function copyToClipboard(page) {
   return await copyToClipboardPageOrFrame(getPageOrFrame(page));
 }
 
-async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
+async function pasteWithClipboardDataFromPageOrFrame(
+  pageOrFrame,
+  clipboardData,
+) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
     async ({
@@ -478,7 +484,16 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
  * @param {import('@playwright/test').Page} page
  */
 export async function pasteFromClipboard(page, clipboardData) {
-  await pasteFromClipboardPageOrFrame(getPageOrFrame(page), clipboardData);
+  if (clipboardData === undefined) {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('v');
+    await keyUpCtrlOrMeta(page);
+    return;
+  }
+  await pasteWithClipboardDataFromPageOrFrame(
+    getPageOrFrame(page),
+    clipboardData,
+  );
 }
 
 export async function sleep(delay) {
@@ -523,6 +538,12 @@ export async function click(page, selector, options) {
   const frame = getPageOrFrame(page);
   await frame.waitForSelector(selector, options);
   await frame.click(selector, options);
+}
+
+export async function doubleClick(page, selector, options) {
+  const frame = getPageOrFrame(page);
+  await frame.waitForSelector(selector, options);
+  await frame.dblclick(selector, options);
 }
 
 export async function focus(page, selector, options) {

@@ -28,7 +28,7 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {PIXEL_VALUE_REG_EXP} from './constants';
+import {COLUMN_WIDTH,PIXEL_VALUE_REG_EXP} from './constants';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -159,9 +159,7 @@ export class TableCellNode extends ElementNode {
       if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
-      if (this.getWidth() !== undefined) {
-        element_.style.width = `${this.getWidth()}px`;
-      }
+      element_.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';

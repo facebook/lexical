@@ -50,6 +50,7 @@ function sizeLimitConfig(pkg) {
   return ['require', 'import'].map((type) => {
     const aliasType = getAliasType(type);
     return {
+      import: '*',
       path:
         aliasType[pkg] != null
           ? aliasType[pkg]

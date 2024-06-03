@@ -27,5 +27,7 @@ describe('prepare-release tests', () => {
   }
 });
 ['examples', 'scripts/__tests__/integration/fixtures']
-  .flatMap((packagesDir) => glob.sync(`${packagesDir}/*/package.json`))
+  .flatMap((packagesDir) =>
+    glob.sync(`${packagesDir}/*/package.json`, {windowsPathsNoEscape: true}),
+  )
   .forEach((exampleJsonPath) => describeExample(exampleJsonPath));

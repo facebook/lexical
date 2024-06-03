@@ -215,7 +215,6 @@ export async function assertHTML(
   {ignoreClasses = false, ignoreInlineStyles = false} = {},
   actualHtmlModificationsCallback,
 ) {
-  // test
   if (IS_COLLAB) {
     await Promise.all([
       assertHTMLOnPageOrFrame(
@@ -242,6 +241,7 @@ export async function assertHTML(
       ignoreClasses,
       ignoreInlineStyles,
       'page',
+      actualHtmlModificationsCallback,
     );
   }
 }

@@ -22,7 +22,9 @@ const transformFlowFileContents = require('./transformFlowFileContents');
 // for each package so they can easily be copied to www.
 async function rewriteImports() {
   for (const pkg of packagesManager.getPackages()) {
-    for (const flowFile of glob.sync(pkg.resolve('flow', '*.flow'))) {
+    for (const flowFile of glob.sync(pkg.resolve('flow', '*.flow'), {
+      windowsPathsNoEscape: true,
+    })) {
       const data = fs.readFileSync(flowFile, 'utf8');
       const result = await transformFlowFileContents(data);
       fs.writeFileSync(

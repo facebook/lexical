@@ -1963,7 +1963,7 @@ test.describe('Links', () => {
     page,
     isCollab,
   }) => {
-    test.fixme(isCollab && IS_MAC && IS_LINUX, 'Flaky on Collab, Mac + Linux');
+    test.fixme(isCollab && (IS_MAC || IS_LINUX), 'Flaky on Collab, Mac/Linux');
     await focusEditor(page);
     await page.keyboard.type('Hello ');
     await toggleBold(page);

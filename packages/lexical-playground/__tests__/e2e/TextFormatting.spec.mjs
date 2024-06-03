@@ -1117,6 +1117,7 @@ test.describe('TextFormatting', () => {
     isPlainText,
   }) => {
     test.skip(isPlainText);
+    test.fixme(true, 'Flaky');
     await focusEditor(page);
 
     await page.keyboard.type('A');

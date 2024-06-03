@@ -180,7 +180,7 @@ async function assertHTMLOnPageOrFrame(
   ignoreClasses,
   ignoreInlineStyles,
   frameName,
-  actualHtmlModificationsCallback?: (string) => string,
+  actualHtmlModificationsCallback = (actualHtml) => actualHtml,
 ) {
   const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
@@ -191,13 +191,13 @@ async function assertHTMLOnPageOrFrame(
       .locator('div[contenteditable="true"]')
       .first()
       .innerHTML();
-    const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
+    let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
     });
-    // if (actualHtmlModificationsCallback !== undefined) {
-    //   actual = actualHtmlModificationsCallback(actual);
-    // }
+
+    actual = actualHtmlModificationsCallback(actual);
+
     expect(
       actual,
       `innerHTML of contenteditable in ${frameName} did not match`,
@@ -213,7 +213,7 @@ export async function assertHTML(
   expectedHtml,
   expectedHtmlFrameRight = expectedHtml,
   {ignoreClasses = false, ignoreInlineStyles = false} = {},
-  actualHtmlModificationsCallback?: (string) => string,
+  actualHtmlModificationsCallback,
 ) {
   if (IS_COLLAB) {
     await Promise.all([

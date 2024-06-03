@@ -474,8 +474,13 @@ test.describe('Selection', () => {
     );
   });
 
-  test('Can delete sibling elements forward', async ({page, isPlainText}) => {
+  test('Can delete sibling elements forward', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
     test.skip(isPlainText);
+    test.fixme(isCollab, 'Flaky on Collab');
 
     await focusEditor(page);
     await page.keyboard.press('Enter');

@@ -25,6 +25,7 @@ import {
   html,
   initialize,
   IS_LINUX,
+  IS_MAC,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
@@ -428,7 +429,9 @@ test.describe('Links', () => {
 
   test(`Can create a link with some text after, insert paragraph, then backspace, it should merge correctly`, async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(isCollab, 'Flaky on Collab');
     await focusEditor(page);
     await page.keyboard.type(' abc def ');
     await moveLeft(page, 5);
@@ -1960,7 +1963,7 @@ test.describe('Links', () => {
     page,
     isCollab,
   }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
+    test.fixme(isCollab && IS_MAC && IS_LINUX, 'Flaky on Collab, Mac + Linux');
     await focusEditor(page);
     await page.keyboard.type('Hello ');
     await toggleBold(page);

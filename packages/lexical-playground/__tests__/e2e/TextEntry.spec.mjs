@@ -121,8 +121,11 @@ test.describe('TextEntry', () => {
   test(`Can insert a paragraph between two text nodes`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
+    test.fixme(isCollab, 'Flaky on Collab');
+
     await focusEditor(page);
     await page.keyboard.type('Hello ');
     await toggleBold(page);

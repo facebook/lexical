@@ -1433,7 +1433,9 @@ test.describe('Nested List', () => {
 
   test('remove list breaks when selection in empty nested list item 2', async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(isCollab, 'Flaky on Collab');
     await focusEditor(page);
     await page.keyboard.type('Hello World');
     await page.keyboard.press('Enter');

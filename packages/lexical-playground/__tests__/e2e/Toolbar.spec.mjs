@@ -100,11 +100,23 @@ test.describe('Toolbar', () => {
         ignoreInlineStyles: true,
       },
       (actualHtml) =>
+        // flaky fix: remove the extra <p><br /></p> that appears occasionally in CI runs
         actualHtml.replace(
           html`
+            <p dir="ltr">
+              <span data-lexical-text="true">
+                Yellow flower in tilt shift lens
+              </span>
+            </p>
             <p><br /></p>
           `,
-          '',
+          html`
+            <p dir="ltr">
+              <span data-lexical-text="true">
+                Yellow flower in tilt shift lens
+              </span>
+            </p>
+          `,
         ),
     );
 

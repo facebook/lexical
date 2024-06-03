@@ -99,6 +99,12 @@ test.describe('Toolbar', () => {
         ignoreClasses: true,
         ignoreInlineStyles: true,
       },
+      // (actualHtml: string) => {
+      //   actualHtml.replace(
+      //     html`<p><br /></p>`,
+      //     '',
+      //   );
+      // },
     );
 
     // Delete image

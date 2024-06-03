@@ -1753,8 +1753,8 @@ test.describe.parallel('Tables', () => {
       (actualHtml) =>
         // flaky fix: +- 1px for the height assertion
         actualHtml.replace(
-          '<tr style="height: 87px">',
           '<tr style="height: 88px">',
+          '<tr style="height: 87px">',
         ),
     );
   });

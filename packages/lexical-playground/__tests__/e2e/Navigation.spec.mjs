@@ -41,7 +41,7 @@ async function typeParagraphs(page) {
   );
 }
 
-test.describe.parallel('Keyboard Navigation', () => {
+test.describe('Keyboard Navigation', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('can type several paragraphs', async ({isRichText, page}) => {

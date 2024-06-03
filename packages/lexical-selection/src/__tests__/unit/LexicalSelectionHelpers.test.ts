@@ -27,6 +27,7 @@ import {
   $setSelection,
   ElementNode,
   LexicalEditor,
+  LexicalNode,
   ParagraphNode,
   RangeSelection,
   TextNode,
@@ -3073,6 +3074,53 @@ describe('$patchStyleText', () => {
         '',
       );
       expect(color).toEqual('');
+    });
+  });
+
+  test('preserve backward selection when changing style of 2 different text nodes', async () => {
+    const editor = createTestEditor();
+
+    const element = document.createElement('div');
+
+    editor.setRootElement(element);
+
+    editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const firstText = $createTextNode('first ').setFormat('bold');
+      paragraph.append(firstText);
+
+      const secondText = $createTextNode('second').setFormat('italic');
+      paragraph.append(secondText);
+
+      $setAnchorPoint({
+        key: secondText.getKey(),
+        offset: 'sec'.length,
+        type: 'text',
+      });
+
+      $setFocusPoint({
+        key: firstText.getKey(),
+        offset: 'fir'.length,
+        type: 'text',
+      });
+
+      const selection = $getSelection();
+
+      $patchStyleText(selection!, {'font-size': '11px'});
+
+      const [newAnchor, newFocus] = selection!.getStartEndPoints()!;
+
+      const newAnchorNode: LexicalNode = newAnchor.getNode();
+      expect(newAnchorNode.getTextContent()).toBe('sec');
+      expect(newAnchor.offset).toBe('sec'.length);
+
+      const newFocusNode: LexicalNode = newFocus.getNode();
+      expect(newFocusNode.getTextContent()).toBe('st ');
+      expect(newFocus.offset).toBe(0);
     });
   });
 });

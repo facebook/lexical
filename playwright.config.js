@@ -48,6 +48,6 @@ const config = {
         timeout: 120 * 1000,
       }
     : undefined,
-  workers: 4,
+  workers: 6,
 };
 module.exports = config;

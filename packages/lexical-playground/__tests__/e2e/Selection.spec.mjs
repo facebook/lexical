@@ -46,7 +46,7 @@ import {
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
-test.describe('Selection', () => {
+test.describe.parallel('Selection', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('does not focus the editor on load', async ({page}) => {
     const editorHasFocus = async () =>

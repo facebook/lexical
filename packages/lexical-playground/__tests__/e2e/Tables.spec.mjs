@@ -1713,7 +1713,7 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
-          <tr style="height: 88px">
+          <tr style="height: 87px">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="2"

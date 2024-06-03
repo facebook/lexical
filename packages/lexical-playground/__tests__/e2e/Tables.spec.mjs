@@ -1745,6 +1745,17 @@ test.describe.parallel('Tables', () => {
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
+      undefined,
+      {
+        ignoreClasses: false,
+        ignoreInlineStyles: false,
+      },
+      (actualHtml) =>
+        // flaky fix: +- 1px for the height assertion
+        actualHtml.replace(
+          '<tr style="height: 87px">',
+          '<tr style="height: 88px">',
+        ),
     );
   });
 

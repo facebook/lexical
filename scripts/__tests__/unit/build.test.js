@@ -38,7 +38,11 @@ describe('public package.json audits (`npm run update-packages` to fix most issu
         });
       }
       it('has *.flow types', () => {
-        expect(glob.sync(pkg.resolve('flow', '*.flow'))).not.toEqual([]);
+        expect(
+          glob.sync(pkg.resolve('flow', '*.flow'), {
+            windowsPathsNoEscape: true,
+          }),
+        ).not.toEqual([]);
       });
       it('uses the expected directory/npm naming convention', () => {
         expect(npmName.replace(/^@/, '').replace('/', '-')).toBe(
@@ -118,7 +122,11 @@ describe('www public package audits (`npm run update-packages` to fix most issue
     const wwwEntrypoint = `${npmToWwwName(npmName)}.js`;
     describe(npmName, () => {
       it('has *.flow types', () => {
-        expect(glob.sync(pkg.resolve('flow', '*.flow'))).not.toEqual([]);
+        expect(
+          glob.sync(pkg.resolve('flow', '*.flow'), {
+            windowsPathsNoEscape: true,
+          }),
+        ).not.toEqual([]);
       });
       // Only worry about the entrypoint stub if it has a single module export
       if (pkg.getExportedNpmModuleNames().every((name) => name === npmName)) {

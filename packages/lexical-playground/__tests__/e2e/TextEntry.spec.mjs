@@ -24,7 +24,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe('TextEntry', () => {
+test.describe.parallel('TextEntry', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can type 'Hello Lexical' in the editor`, async ({page}) => {
     const targetText = 'Hello Lexical';

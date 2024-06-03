@@ -455,8 +455,8 @@ function testSuite(charset) {
   });
 }
 
-test.describe('CharacterLimit', () => {
-  test.describe('UTF-16', () => {
+test.describe.parallel('CharacterLimit', () => {
+  test.describe.parallel('UTF-16', () => {
     test.use({isCharLimit: true});
     test.beforeEach(({isCollab, page, isCharLimit, isCharLimitUtf8}) =>
       initialize({isCharLimit, isCharLimitUtf8, isCollab, page}),
@@ -464,7 +464,7 @@ test.describe('CharacterLimit', () => {
     testSuite('UTF-16');
   });
 
-  test.describe('UTF-8', () => {
+  test.describe.parallel('UTF-8', () => {
     test.use({isCharLimitUtf8: true});
     test.beforeEach(({isCollab, page, isCharLimit, isCharLimitUtf8}) =>
       initialize({isCharLimit, isCharLimitUtf8, isCollab, page}),

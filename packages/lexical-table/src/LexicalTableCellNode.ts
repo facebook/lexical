@@ -28,7 +28,7 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {COLUMN_WIDTH,PIXEL_VALUE_REG_EXP} from './constants';
+import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 
 export const TableCellHeaderStates = {
   BOTH: 3,

@@ -60,6 +60,7 @@ async function updateTsconfig({
       testPaths.push([`${pkg.getNpmName()}/src`, [resolveRelative('src')]]);
       for (const fn of glob.sync(
         pkg.resolve('src', '__tests__', 'utils', '*.{ts,tsx,mjs,jsx}'),
+        {windowsPathsNoEscape: true},
       )) {
         testPaths.push([
           `${pkg.getNpmName()}/src/__tests__/utils`,

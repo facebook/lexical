@@ -32,37 +32,49 @@ const path = require('node:path');
  * as that is what was measured previously in #3600.
  */
 const {packagesManager} = require('./scripts/shared/packagesManager');
-const alias = Object.fromEntries(
-  packagesManager
-    .getPublicPackages()
-    .flatMap((pkg) =>
-      pkg
-        .getNormalizedNpmModuleExportEntries()
-        .map(([k, v]) => [k, pkg.resolve('dist', v.require.default)]),
-    ),
-);
+const getAliasType = (type) =>
+  Object.fromEntries(
+    packagesManager
+      .getPublicPackages()
+      .flatMap((pkg) =>
+        pkg
+          .getNormalizedNpmModuleExportEntries()
+          .map(([k, v]) => [k, pkg.resolve('dist', v[type].default)]),
+      ),
+  );
 
-const extendConfig = {resolve: {alias}};
-const modifyWebpackConfig = (config) => Object.assign(config, extendConfig);
+const modifyWebpackConfigForType = (config, alias) =>
+  Object.assign(config, {resolve: {alias}});
 
 function sizeLimitConfig(pkg) {
-  return {
-    path: alias[pkg],
-    modifyWebpackConfig,
-  };
+  return ['require', 'import'].map((type) => {
+    const aliasType = getAliasType(type);
+    return {
+      import: '*',
+      path:
+        aliasType[pkg] != null
+          ? aliasType[pkg]
+          : Object.keys(aliasType)
+              .filter((k) => k.startsWith(pkg))
+              .map((k) => aliasType[k]),
+      modifyWebpackConfig: (config) =>
+        modifyWebpackConfigForType(config, aliasType),
+      running: false,
+      name: pkg + ' - ' + (type === 'require' ? 'cjs' : 'esm'),
+    };
+  });
 }
 
 /**
- * These are the packages that were measured previously in #3600
  * We could consider adding more packages and/or also measuring
- * other build combinations such as esbuild/webpack, mjs/cjs, dev/prod, etc.
+ * other build combinations such as esbuild/webpack.
  *
- * The current configuration measures only: webpack + cjs + prod.
+ * The current configuration measures only: webpack + esm/cjs + prod.
  *
- * In order to also measure dev, we would want to change the size script in
- * package.json to run build-release instead of build-prod so both
- * dev and prod artifacts would be available.
  */
-module.exports = ['lexical', '@lexical/rich-text', '@lexical/plain-text'].map(
-  sizeLimitConfig,
-);
+module.exports = [
+  'lexical',
+  '@lexical/rich-text',
+  '@lexical/plain-text',
+  '@lexical/react',
+].flatMap(sizeLimitConfig);

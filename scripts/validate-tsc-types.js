@@ -29,7 +29,7 @@ const diagnosticsHost = {
  */
 function validateTscTypes() {
   const dtsFilesPattern = './.ts-temp/packages/{lexical,lexical-*}/**/*.d.ts';
-  const dtsFiles = glob.sync(dtsFilesPattern);
+  const dtsFiles = glob.sync(dtsFilesPattern, {windowsPathsNoEscape: true});
   if (dtsFiles.length === 0) {
     console.error(
       `Missing ${dtsFilesPattern}, \`npm run build-prod\` or \`npm run build-release\` first`,

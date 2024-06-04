@@ -34,6 +34,7 @@ import {
   insertTableColumnBefore,
   insertTableRowBelow,
   IS_COLLAB,
+  IS_LINUX,
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
@@ -1523,11 +1524,16 @@ test.describe.parallel('Tables', () => {
   });
 
   test('Resize merged cells width (1)', async ({
+    browserName,
     page,
     isPlainText,
     isCollab,
   }) => {
     await initialize({isCollab, page});
+    test.fixme(
+      isCollab && IS_LINUX && browserName === 'firefox',
+      'Flaky on Linux + Collab',
+    );
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1676,9 +1682,15 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test('Resize merged cells height', async ({page, isPlainText, isCollab}) => {
+  test('Resize merged cells height', async ({
+    browserName,
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
+    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});

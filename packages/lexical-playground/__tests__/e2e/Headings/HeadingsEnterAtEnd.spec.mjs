@@ -46,7 +46,7 @@ test(`Headings - stays as a heading when you press enter in the middle of a head
 
   await moveToEditorBeginning(page);
 
-  await moveRight(page, 5);
+  await moveRight(page, 5, 500);
 
   await page.keyboard.press('Enter');
 

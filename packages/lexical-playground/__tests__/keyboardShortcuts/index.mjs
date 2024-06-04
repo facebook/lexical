@@ -18,6 +18,8 @@ import {
   sleep,
 } from '../utils/index.mjs';
 
+export const STANDARD_KEYPRESS_DELAY_MS = 100;
+
 export async function moveToLineBeginning(page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);

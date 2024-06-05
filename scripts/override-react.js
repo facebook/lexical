@@ -19,7 +19,10 @@ async function main() {
     throw new Error('USAGE: node ./scripts/override-react --version=beta');
   }
   const packages = ['react', 'react-dom'];
-  ['package.json', ...glob.sync('./packages/*/package.json')].forEach((fn) => {
+  [
+    'package.json',
+    ...glob.sync('./packages/*/package.json', {windowsPathsNoEscape: true}),
+  ].forEach((fn) => {
     const json = fs.readJsonSync(fn);
     const isRoot = fn === 'package.json';
     let didUpdate = isRoot;

@@ -14,6 +14,7 @@ import {
   moveToLineEnd,
   selectAll,
   selectCharacters,
+  STANDARD_KEYPRESS_DELAY_MS,
   toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -35,7 +36,7 @@ test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);
 });
 
-test.describe('Links', () => {
+test.describe.parallel('Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can convert a text node into a link`, async ({page}) => {
     await focusEditor(page);
@@ -2042,7 +2043,7 @@ test.describe('Links', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type(' world');
 
-    await moveLeft(page, 6, 100);
+    await moveLeft(page, 6, STANDARD_KEYPRESS_DELAY_MS);
 
     await page.keyboard.press('Enter');
 

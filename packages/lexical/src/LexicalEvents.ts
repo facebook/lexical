@@ -1241,72 +1241,67 @@ export function addRootElementEvents(
               return;
             }
             stopLexicalPropagation(event);
-            if (editor.isEditable()) {
-              switch (eventName) {
-                case 'cut':
-                  return dispatchCommand(
-                    editor,
-                    CUT_COMMAND,
-                    event as ClipboardEvent,
-                  );
+            const isEditable = editor.isEditable();
+            switch (eventName) {
+              case 'cut':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent)
+                );
 
-                case 'copy':
-                  return dispatchCommand(
-                    editor,
-                    COPY_COMMAND,
-                    event as ClipboardEvent,
-                  );
+              case 'copy':
+                return dispatchCommand(
+                  editor,
+                  COPY_COMMAND,
+                  event as ClipboardEvent,
+                );
 
-                case 'paste':
-                  return dispatchCommand(
+              case 'paste':
+                return (
+                  isEditable &&
+                  dispatchCommand(
                     editor,
                     PASTE_COMMAND,
                     event as ClipboardEvent,
-                  );
+                  )
+                );
 
-                case 'dragstart':
-                  return dispatchCommand(
-                    editor,
-                    DRAGSTART_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragstart':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent)
+                );
 
-                case 'dragover':
-                  return dispatchCommand(
-                    editor,
-                    DRAGOVER_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragover':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGOVER_COMMAND, event as DragEvent)
+                );
 
-                case 'dragend':
-                  return dispatchCommand(
-                    editor,
-                    DRAGEND_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragend':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGEND_COMMAND, event as DragEvent)
+                );
 
-                case 'focus':
-                  return dispatchCommand(
-                    editor,
-                    FOCUS_COMMAND,
-                    event as FocusEvent,
-                  );
+              case 'focus':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, FOCUS_COMMAND, event as FocusEvent)
+                );
 
-                case 'blur': {
-                  return dispatchCommand(
-                    editor,
-                    BLUR_COMMAND,
-                    event as FocusEvent,
-                  );
-                }
-
-                case 'drop':
-                  return dispatchCommand(
-                    editor,
-                    DROP_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'blur': {
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)
+                );
               }
+
+              case 'drop':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DROP_COMMAND, event as DragEvent)
+                );
             }
           };
     rootElement.addEventListener(eventName, eventHandler);

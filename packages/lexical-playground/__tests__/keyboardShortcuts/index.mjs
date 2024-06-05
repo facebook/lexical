@@ -18,6 +18,11 @@ import {
   sleep,
 } from '../utils/index.mjs';
 
+/**
+ * A delay value that is short enough yet not too short such that keypresses override each other.
+ */
+export const STANDARD_KEYPRESS_DELAY_MS = 100;
+
 export async function moveToLineBeginning(page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);

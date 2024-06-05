@@ -44,7 +44,7 @@ type TextFormatTransformersIndex = Readonly<{
 }>;
 
 /**
- * Renders markdown from a string. The selection is moved to the end after the operation.
+ * Renders markdown from a string. The selection is moved to the start after the operation.
  */
 export function createMarkdownImport(
   transformers: Array<Transformer>,
@@ -98,7 +98,7 @@ export function createMarkdownImport(
     }
 
     if ($getSelection() !== null) {
-      root.selectEnd();
+      root.selectStart();
     }
   };
 }

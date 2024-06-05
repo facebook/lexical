@@ -1,0 +1,143 @@
+name: Lexical e2e tests
+
+on:
+  workflow_call:
+
+jobs:
+  mac:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox', 'webkit']
+        editor-mode: ['rich-text', 'plain-text']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  linux:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox']
+        editor-mode: ['rich-text', 'plain-text']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'ubuntu-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  windows:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox']
+        editor-mode: ['rich-text', 'plain-text']
+        events-mode: ['legacy-events', 'modern-events']
+        exclude:
+          - events-mode: 'legacy-events'
+            browser: 'firefox'
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'windows-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  collab-mac:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox', 'webkit']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: 'rich-text-with-collab'
+      events-mode: 'modern-events'
+
+  collab-linux:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'ubuntu-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: 'rich-text-with-collab'
+      events-mode: 'modern-events'
+
+  collab-windows:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'windows-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: 'rich-text-with-collab'
+      events-mode: 'modern-events'
+
+  prod:
+    strategy:
+      matrix:
+        os: ['macos-latest']
+        node-version: [18.18.0]
+        browser: ['chromium']
+        editor-mode: ['rich-text']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      prod: true
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  collab-prod:
+    strategy:
+      matrix:
+        os: ['macos-latest']
+        node-version: [18.18.0]
+        browser: ['chromium']
+        editor-mode: ['rich-text-with-collab']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      prod: true
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  react-beta:
+    strategy:
+      matrix:
+        # Currently using a single combination for every-patch e2e tests of
+        # react beta to reduce cost impact
+        editor-mode: ['rich-text']
+        prod: [false]
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      browser: 'chromium'
+      node-version: 18.18.0
+      events-mode: 'modern-events'
+      editor-mode: ${{ matrix.editor-mode }}
+      prod: ${{ matrix.prod }}
+      override-react-version: beta

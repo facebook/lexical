@@ -1,0 +1,21 @@
+name: Lexical e2e canary test
+
+on:
+  workflow_call:
+
+jobs:
+  canary:
+    strategy:
+      matrix:
+        os: ['macos-latest']
+        node-version: [18.18.0]
+        browser: ['chromium']
+        editor-mode: ['rich-text']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}

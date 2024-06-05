@@ -322,7 +322,8 @@ test.describe('HTML Tables CopyAndPaste', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: start">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
@@ -468,6 +469,106 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Copy + paste nested block and inline html in a table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+      123
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <span>456<span>
+            </td>
+            <td>
+              789
+              <div>
+                000
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              ABC
+              <div>
+                000
+                <div>
+                  000
+                </div>
+              </div>
+            </td>
+            <td>
+              DEF
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">123</span>
+        </p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">456</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">789</span>
+              </p>
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">000</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">ABC</span>
+              </p>
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">000</span>
+              </p>
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">000</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">DEF</span>
+              </p>
+            </td>
+          </tr>
+        </table>
       `,
     );
   });

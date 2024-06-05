@@ -27,7 +27,7 @@ export type SerializedLayoutContainerNode = Spread<
   SerializedElementNode
 >;
 
-function convertLayoutContainerElement(
+function $convertLayoutContainerElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const styleAttributes = window.getComputedStyle(domNode);
@@ -87,7 +87,7 @@ export class LayoutContainerNode extends ElementNode {
           return null;
         }
         return {
-          conversion: convertLayoutContainerElement,
+          conversion: $convertLayoutContainerElement,
           priority: 2,
         };
       },

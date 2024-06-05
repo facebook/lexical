@@ -46,7 +46,7 @@ import {
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
-test.describe('Selection', () => {
+test.describe.parallel('Selection', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('does not focus the editor on load', async ({page}) => {
     const editorHasFocus = async () =>
@@ -208,6 +208,52 @@ test.describe('Selection', () => {
     await assertHTML(page, lines.slice(0, 2).join(''));
     await deleteLine();
     await assertHTML(page, lines.slice(0, 1).join(''));
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('can delete line which ends with element with CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    // sample image
+    await pasteFromClipboard(page, {
+      'text/html': `
+          <span class="editor-image" data-lexical-decorator="true" contenteditable="false">
+            <div draggable="false">
+              <img src="/assets/yellow-flower-vav9Hsve.jpg" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
+            </div>
+          </span>
+        `,
+    });
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+      `,
+    );
     await deleteLine();
     await assertHTML(
       page,
@@ -550,7 +596,7 @@ test.describe('Selection', () => {
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
-          class="selected"
+          class="PlaygroundEditorTheme__hr selected"
           contenteditable="false"
           data-lexical-decorator="true" />
         <h1

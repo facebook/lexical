@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/test.yml"/>
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/>
   <a href="https://www.npmjs.com/package/lexical">
     <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"/>
   </a>
@@ -62,7 +62,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
@@ -334,18 +334,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Contributing to Lexical
 
-1. Clone this repository
-
-2. Install dependencies
-
-   - `npm install`
-
-3. Start local server and run tests
-   - `npm run start`
-   - `npm run test-e2e-chromium` to run only chromium e2e tests
-     - The server needs to be running for the e2e tests
-
-`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
+Please read the [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md).
 
 ### Optional but recommended, use VSCode for development
 

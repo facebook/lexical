@@ -52,11 +52,11 @@ const $createSelectionByPath = ({
   const root = $getRoot();
 
   const anchorNode = anchorPath.reduce(
-    (node, index) => node.getChildAtIndex(index),
+    (node, index) => node.getChildAtIndex(index)!,
     root,
   );
   const focusNode = focusPath.reduce(
-    (node, index) => node.getChildAtIndex(index),
+    (node, index) => node.getChildAtIndex(index)!,
     root,
   );
 
@@ -95,11 +95,11 @@ const $replaceTextByPath = ({
     focusOffset,
     focusPath,
   });
-  selection.insertText(text);
+  selection.insertText(text!);
 };
 
 describe('CollaborationWithCollisions', () => {
-  let container = null;
+  let container: HTMLDivElement | null = null;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -107,7 +107,7 @@ describe('CollaborationWithCollisions', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    document.body.removeChild(container!);
     container = null;
   });
 
@@ -131,7 +131,7 @@ describe('CollaborationWithCollisions', () => {
         },
         () => {
           // Second client deletes first paragraph
-          $getRoot().getFirstChild().remove();
+          $getRoot().getFirstChild()!.remove();
         },
       ],
       expectedHTML: null,
@@ -152,7 +152,7 @@ describe('CollaborationWithCollisions', () => {
         },
         () => {
           // Second client deletes first paragraph
-          $getRoot().getFirstChild().remove();
+          $getRoot().getFirstChild()!.remove();
         },
       ],
       expectedHTML: null,
@@ -199,7 +199,7 @@ describe('CollaborationWithCollisions', () => {
       const connection = createTestConnection();
       const clients = createAndStartClients(
         connection,
-        container,
+        container!,
         testCase.clients.length,
       );
 

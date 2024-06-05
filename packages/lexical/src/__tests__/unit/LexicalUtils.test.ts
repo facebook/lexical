@@ -46,20 +46,22 @@ describe('LexicalUtils tests', () => {
 
     test('scheduleMicroTask(): promise', async () => {
       jest.resetModules();
-      // @ts-ignore
-      window.queueMicrotask = undefined;
+      const nativeQueueMicrotask = window.queueMicrotask;
+      const fn = jest.fn();
+      try {
+        // @ts-ignore
+        window.queueMicrotask = undefined;
+        scheduleMicroTask(fn);
+      } finally {
+        // Reset it before yielding control
+        window.queueMicrotask = nativeQueueMicrotask;
+      }
 
-      let flag = false;
-
-      scheduleMicroTask(() => {
-        flag = true;
-      });
-
-      expect(flag).toBe(false);
+      expect(fn).toHaveBeenCalledTimes(0);
 
       await null;
 
-      expect(flag).toBe(true);
+      expect(fn).toHaveBeenCalledTimes(1);
     });
 
     test('emptyFunction()', () => {

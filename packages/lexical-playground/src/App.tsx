@@ -14,6 +14,7 @@ import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';
+import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {SharedAutocompleteContext} from './context/SharedAutocompleteContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
@@ -32,7 +33,7 @@ console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
 );
 
-function prepopulatedRichText() {
+function $prepopulatedRichText() {
   const root = $getRoot();
   if (root.getFirstChild() === null) {
     const heading = $createHeadingNode('h1');
@@ -122,7 +123,7 @@ function App(): JSX.Element {
       ? null
       : emptyEditor
       ? undefined
-      : prepopulatedRichText,
+      : $prepopulatedRichText,
     namespace: 'Playground',
     nodes: [...PlaygroundNodes],
     onError: (error: Error) => {
@@ -160,7 +161,9 @@ function App(): JSX.Element {
 export default function PlaygroundApp(): JSX.Element {
   return (
     <SettingsContext>
-      <App />
+      <FlashMessageContext>
+        <App />
+      </FlashMessageContext>
       <a
         href="https://github.com/facebook/lexical/tree/main/packages/lexical-playground"
         className="github-corner"

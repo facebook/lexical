@@ -139,17 +139,17 @@ export class CodeNode extends ElementNode {
 
         return isMultiLine
           ? {
-              conversion: convertPreElement,
+              conversion: $convertPreElement,
               priority: 1,
             }
           : null;
       },
-      div: (node: Node) => ({
-        conversion: convertDivElement,
+      div: () => ({
+        conversion: $convertDivElement,
         priority: 1,
       }),
-      pre: (node: Node) => ({
-        conversion: convertPreElement,
+      pre: () => ({
+        conversion: $convertPreElement,
         priority: 0,
       }),
       table: (node: Node) => {
@@ -157,7 +157,7 @@ export class CodeNode extends ElementNode {
         // domNode is a <table> since we matched it by nodeName
         if (isGitHubCodeTable(table as HTMLTableElement)) {
           return {
-            conversion: convertTableElement,
+            conversion: $convertTableElement,
             priority: 3,
           };
         }
@@ -168,13 +168,7 @@ export class CodeNode extends ElementNode {
         const td = node as HTMLTableCellElement;
         const table: HTMLTableElement | null = td.closest('table');
 
-        if (isGitHubCodeCell(td)) {
-          return {
-            conversion: convertTableCellElement,
-            priority: 3,
-          };
-        }
-        if (table && isGitHubCodeTable(table)) {
+        if (isGitHubCodeCell(td) || (table && isGitHubCodeTable(table))) {
           // Return a no-op if it's a table cell in a code table, but not a code line.
           // Otherwise it'll fall back to the T
           return {
@@ -330,15 +324,12 @@ export function $isCodeNode(
   return node instanceof CodeNode;
 }
 
-function convertPreElement(domNode: Node): DOMConversionOutput {
-  let language;
-  if (isHTMLElement(domNode)) {
-    language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
-  }
+function $convertPreElement(domNode: HTMLElement): DOMConversionOutput {
+  const language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
   return {node: $createCodeNode(language)};
 }
 
-function convertDivElement(domNode: Node): DOMConversionOutput {
+function $convertDivElement(domNode: Node): DOMConversionOutput {
   // domNode is a <div> since we matched it by nodeName
   const div = domNode as HTMLDivElement;
   const isCode = isCodeElement(div);
@@ -348,39 +339,16 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
     };
   }
   return {
-    after: (childLexicalNodes) => {
-      const domParent = domNode.parentNode;
-      if (domParent != null && domNode !== domParent.lastChild) {
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
     node: isCode ? $createCodeNode() : null,
   };
 }
 
-function convertTableElement(): DOMConversionOutput {
+function $convertTableElement(): DOMConversionOutput {
   return {node: $createCodeNode()};
 }
 
 function convertCodeNoop(): DOMConversionOutput {
   return {node: null};
-}
-
-function convertTableCellElement(domNode: Node): DOMConversionOutput {
-  // domNode is a <td> since we matched it by nodeName
-  const cell = domNode as HTMLTableCellElement;
-
-  return {
-    after: (childLexicalNodes) => {
-      if (cell.parentNode && cell.parentNode.nextSibling) {
-        // Append newline between code lines
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
-    node: null,
-  };
 }
 
 function isCodeElement(div: HTMLElement): boolean {

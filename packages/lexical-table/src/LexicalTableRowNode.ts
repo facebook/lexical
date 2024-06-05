@@ -45,7 +45,7 @@ export class TableRowNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       tr: (node: Node) => ({
-        conversion: convertTableRowElement,
+        conversion: $convertTableRowElement,
         priority: 0,
       }),
     };
@@ -108,7 +108,7 @@ export class TableRowNode extends ElementNode {
   }
 }
 
-export function convertTableRowElement(domNode: Node): DOMConversionOutput {
+export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
   let height: number | undefined = undefined;
 

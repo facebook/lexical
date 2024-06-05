@@ -25,7 +25,7 @@ import {$insertNodeToNearestRoot} from '../..';
 describe('LexicalUtils#insertNodeToNearestRoot', () => {
   let editor: LexicalEditor;
 
-  const update = async (updateFn) => {
+  const update = async (updateFn: () => void) => {
     editor.update(updateFn);
     await Promise.resolve();
   };
@@ -155,7 +155,7 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
               'Expected node to be element (to traverse the tree)',
             );
           }
-          selectionNode = selectionNode.getChildAtIndex(index);
+          selectionNode = selectionNode.getChildAtIndex(index)!;
         }
 
         // Calling selectionNode.select() would "normalize" selection and move it

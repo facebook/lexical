@@ -86,18 +86,21 @@ export class InjectedPegasusService
   }
 
   toggleEditorPicker(): void {
-    if (this.pickerActive != null) {
-      this.pickerActive?.stop();
-      this.pickerActive = null;
-
-      return;
+    if (this.pickerActive !== null) {
+      this.deactivatePicker();
+    } else {
+      this.activatePicker();
     }
+  }
+
+  private activatePicker(): void {
+    this.extensionStore.getState().setIsSelecting(this.tabID, true);
 
     this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
     this.pickerActive.start({
       elementFilter: (el) => {
         let parent: HTMLElement | null = el;
-        while (parent != null && parent.tagName !== 'BODY') {
+        while (parent !== null && parent.tagName !== 'BODY') {
           if ('__lexicalEditor' in parent) {
             return parent;
           }
@@ -108,8 +111,7 @@ export class InjectedPegasusService
       },
 
       onClick: (el) => {
-        this.pickerActive?.stop();
-        this.pickerActive = null;
+        this.deactivatePicker();
         if (isLexicalNode(el)) {
           this.extensionStore
             .getState()
@@ -119,5 +121,11 @@ export class InjectedPegasusService
         }
       },
     });
+  }
+
+  private deactivatePicker(): void {
+    this.pickerActive?.stop();
+    this.pickerActive = null;
+    this.extensionStore.getState().setIsSelecting(this.tabID, false);
   }
 }

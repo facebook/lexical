@@ -9,4 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-declare export default function useLexicalEditable(): boolean;
+declare export function useLexicalEditable(): boolean;
+
+/** @deprecated use the named export {@link useLexicalEditable} */
+declare export default typeof useLexicalEditable;

@@ -12,7 +12,7 @@ import './InlineImageNode.css';
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -34,14 +34,14 @@ import {
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 
-import useModal from '../hooks/useModal';
-import LinkPlugin from '../plugins/LinkPlugin';
-import Button from '../ui/Button';
-import ContentEditable from '../ui/ContentEditable';
-import {DialogActions} from '../ui/Dialog';
-import Placeholder from '../ui/Placeholder';
-import Select from '../ui/Select';
-import TextInput from '../ui/TextInput';
+import useModal from '../../hooks/useModal';
+import LinkPlugin from '../../plugins/LinkPlugin';
+import Button from '../../ui/Button';
+import ContentEditable from '../../ui/ContentEditable';
+import {DialogActions} from '../../ui/Dialog';
+import Placeholder from '../../ui/Placeholder';
+import Select from '../../ui/Select';
+import TextInput from '../../ui/TextInput';
 import {$isInlineImageNode, InlineImageNode} from './InlineImageNode';
 
 const imageCache = new Set();
@@ -202,7 +202,7 @@ export default function InlineImageComponent({
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
@@ -218,7 +218,7 @@ export default function InlineImageComponent({
     [isSelected, nodeKey],
   );
 
-  const onEnter = useCallback(
+  const $onEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
       const buttonElem = buttonRef.current;
@@ -247,7 +247,7 @@ export default function InlineImageComponent({
     [caption, isSelected, showCaption],
   );
 
-  const onEscape = useCallback(
+  const $onEscape = useCallback(
     (event: KeyboardEvent) => {
       if (
         activeEditorRef.current === caption ||
@@ -317,18 +317,18 @@ export default function InlineImageComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_ENTER_COMMAND, onEnter, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
-        onEscape,
+        $onEscape,
         COMMAND_PRIORITY_LOW,
       ),
     );
@@ -341,9 +341,9 @@ export default function InlineImageComponent({
     editor,
     isSelected,
     nodeKey,
-    onDelete,
-    onEnter,
-    onEscape,
+    $onDelete,
+    $onEnter,
+    $onEscape,
     setSelected,
   ]);
 
@@ -352,7 +352,7 @@ export default function InlineImageComponent({
   return (
     <Suspense fallback={null}>
       <>
-        <div draggable={draggable}>
+        <span draggable={draggable}>
           <button
             className="image-edit-button"
             ref={buttonRef}
@@ -380,9 +380,9 @@ export default function InlineImageComponent({
             height={height}
             position={position}
           />
-        </div>
+        </span>
         {showCaption && (
-          <div className="image-caption-container">
+          <span className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
               <AutoFocusPlugin />
               <LinkPlugin />
@@ -398,7 +398,7 @@ export default function InlineImageComponent({
                 ErrorBoundary={LexicalErrorBoundary}
               />
             </LexicalNestedComposer>
-          </div>
+          </span>
         )}
       </>
       {modal}

@@ -21,6 +21,9 @@
         "./packages/lexical-devtools-core/src/index.ts"
       ],
       "@lexical/dragon": ["./packages/lexical-dragon/src/index.ts"],
+      "@lexical/eslint-plugin": [
+        "./packages/lexical-eslint-plugin/src/index.ts"
+      ],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],
@@ -129,6 +132,9 @@
       "@lexical/react/LexicalTableOfContents": [
         "./packages/lexical-react/src/LexicalTableOfContents.tsx"
       ],
+      "@lexical/react/LexicalTableOfContentsPlugin": [
+        "./packages/lexical-react/src/LexicalTableOfContentsPlugin.tsx"
+      ],
       "@lexical/react/LexicalTablePlugin": [
         "./packages/lexical-react/src/LexicalTablePlugin.ts"
       ],
@@ -166,6 +172,7 @@
       "shared/normalizeClassNames": [
         "./packages/shared/src/normalizeClassNames.ts"
       ],
+      "shared/react-test-utils": ["./packages/shared/src/react-test-utils.ts"],
       "shared/simpleDiffWithCursor": [
         "./packages/shared/src/simpleDiffWithCursor.ts"
       ],
@@ -179,6 +186,7 @@
       "@lexical/code/src": ["./packages/lexical-code/src"],
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
       "@lexical/dragon/src": ["./packages/lexical-dragon/src"],
+      "@lexical/eslint-plugin/src": ["./packages/lexical-eslint-plugin/src"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],
@@ -207,7 +215,6 @@
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",
-    "**/lexical-*/src/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

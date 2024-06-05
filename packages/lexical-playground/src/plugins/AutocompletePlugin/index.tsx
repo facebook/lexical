@@ -135,7 +135,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
       );
     }
 
-    function handleAutocompleteNodeTransform(node: AutocompleteNode) {
+    function $handleAutocompleteNodeTransform(node: AutocompleteNode) {
       const key = node.getKey();
       if (node.__uuid === uuid && key !== autocompleteNodeKey) {
         // Max one Autocomplete node per session
@@ -206,7 +206,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
     return mergeRegister(
       editor.registerNodeTransform(
         AutocompleteNode,
-        handleAutocompleteNodeTransform,
+        $handleAutocompleteNodeTransform,
       ),
       editor.registerUpdateListener(handleUpdate),
       editor.registerCommand(

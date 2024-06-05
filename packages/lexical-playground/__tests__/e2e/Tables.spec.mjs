@@ -34,6 +34,7 @@ import {
   insertTableColumnBefore,
   insertTableRowBelow,
   IS_COLLAB,
+  IS_LINUX,
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
@@ -41,6 +42,7 @@ import {
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
   selectFromAlignDropdown,
+  selectorBoundingBox,
   setBackgroundColor,
   test,
   toggleColumnHeader,
@@ -69,7 +71,7 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-test.describe('Tables', () => {
+test.describe.parallel('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({
     page,
     isPlainText,
@@ -152,7 +154,8 @@ test.describe('Tables', () => {
     );
   });
 
-  test.describe(`Can exit tables with the horizontal arrow keys`, () => {
+  test.describe
+    .parallel(`Can exit tables with the horizontal arrow keys`, () => {
     test(`Can exit the first cell of a non-nested table`, async ({
       page,
       isPlainText,
@@ -488,7 +491,7 @@ test.describe('Tables', () => {
     });
   });
 
-  test.describe(`Can navigate table with keyboard`, () => {
+  test.describe.parallel(`Can navigate table with keyboard`, () => {
     test(`Can navigate cells horizontally`, async ({
       page,
       isPlainText,
@@ -1427,6 +1430,7 @@ test.describe('Tables', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
@@ -1443,6 +1447,13 @@ test.describe('Tables', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
 
+    const collapsibleOpeningTag =
+      browserName === 'chromium'
+        ? '<div class="Collapsible__container" open="">'
+        : '<details class="Collapsible__container" open="">';
+    const collapsibleClosingTag =
+      browserName === 'chromium' ? '</div>' : '</details>';
+
     await assertHTML(
       page,
       html`
@@ -1452,21 +1463,21 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-              <details class="Collapsible__container" open="">
-                <summary class="Collapsible__title">
-                  <p class="PlaygroundEditorTheme__paragraph">
-                    <span data-lexical-text="true">123</span>
-                  </p>
-                </summary>
-                <div class="Collapsible__content">
-                  <p class="PlaygroundEditorTheme__paragraph">
-                    <span data-lexical-text="true">123</span>
-                  </p>
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                </div>
-              </details>
+              ${collapsibleOpeningTag}
+              <summary class="Collapsible__title">
+                <p class="PlaygroundEditorTheme__paragraph">
+                  <span data-lexical-text="true">123</span>
+                </p>
+              </summary>
+              <div class="Collapsible__content">
+                <p class="PlaygroundEditorTheme__paragraph">
+                  <span data-lexical-text="true">123</span>
+                </p>
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </div>
+              ${collapsibleClosingTag}
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
@@ -1489,16 +1500,16 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-              <details class="Collapsible__container" open="">
-                <summary class="Collapsible__title">
-                  <p class="PlaygroundEditorTheme__paragraph">
-                    <span data-lexical-text="true">123</span>
-                  </p>
-                </summary>
-                <div class="Collapsible__content">
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                </div>
-              </details>
+              ${collapsibleOpeningTag}
+              <summary class="Collapsible__title">
+                <p class="PlaygroundEditorTheme__paragraph">
+                  <span data-lexical-text="true">123</span>
+                </p>
+              </summary>
+              <div class="Collapsible__content">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </div>
+              ${collapsibleClosingTag}
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
@@ -1509,6 +1520,254 @@ test.describe('Tables', () => {
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
+    );
+  });
+
+  test('Resize merged cells width (1)', async ({
+    browserName,
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.fixme(
+      isCollab && IS_LINUX && browserName === 'firefox',
+      'Flaky on Linux + Collab',
+    );
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 3, 3);
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+    await click(page, 'td:nth-child(3) > .PlaygroundEditorTheme__paragraph');
+    const resizerBoundingBox = await selectorBoundingBox(
+      page,
+      '.TableCellResizer__resizer:first-child',
+    );
+    const x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+    const y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 50, y);
+    await page.mouse.up();
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              colspan="2"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="width: 125px">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 125px">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 125px">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Resize merged cells width (2)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 3, 3);
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+    await click(page, 'th');
+    const resizerBoundingBox = await selectorBoundingBox(
+      page,
+      '.TableCellResizer__resizer:first-child',
+    );
+    const x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+    const y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 50, y);
+    await page.mouse.up();
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              colspan="2"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="width: 125px">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Resize merged cells height', async ({
+    browserName,
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 3, 3);
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+    await click(page, 'th');
+    const resizerBoundingBox = await selectorBoundingBox(
+      page,
+      '.TableCellResizer__resizer:nth-child(2)',
+    );
+    const x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+    const y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 50);
+    await page.mouse.up();
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr style="height: 87px">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              colspan="2"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+      undefined,
+      {
+        ignoreClasses: false,
+        ignoreInlineStyles: false,
+      },
+      (actualHtml) =>
+        // flaky fix: +- 1px for the height assertion
+        actualHtml.replace(
+          '<tr style="height: 88px">',
+          '<tr style="height: 87px">',
+        ),
     );
   });
 

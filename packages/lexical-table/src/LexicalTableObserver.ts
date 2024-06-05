@@ -29,9 +29,9 @@ import invariant from 'shared/invariant';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {
-  type TableSelection,
   $createTableSelection,
   $isTableSelection,
+  type TableSelection,
 } from './LexicalTableSelection';
 import {
   $findTableNode,
@@ -118,7 +118,12 @@ export class TableObserver {
           const target = record.target;
           const nodeName = target.nodeName;
 
-          if (nodeName === 'TABLE' || nodeName === 'TR') {
+          if (
+            nodeName === 'TABLE' ||
+            nodeName === 'TBODY' ||
+            nodeName === 'THEAD' ||
+            nodeName === 'TR'
+          ) {
             gridNeedsRedraw = true;
             break;
           }

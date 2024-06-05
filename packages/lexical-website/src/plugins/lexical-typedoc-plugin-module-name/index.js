@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @ts-check
 const typedoc = require('typedoc');
 
-exports.load = function (/** @type typedoc.Application */ app) {
+exports.load = function (/** @type {import('typedoc').Application} */ app) {
   app.converter.on(
     typedoc.Converter.EVENT_RESOLVE_BEGIN,
-    (/** @type typedoc.Context */ context) => {
+    (/** @type {import('typedoc').Context} */ context) => {
       context.project
         .getReflectionsByKind(typedoc.ReflectionKind.Module)
         .forEach((reflection) => {

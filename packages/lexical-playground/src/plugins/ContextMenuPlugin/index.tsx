@@ -13,12 +13,12 @@ import {
   MenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
 import {
-  type LexicalNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isRangeSelection,
   COPY_COMMAND,
   CUT_COMMAND,
+  type LexicalNode,
   PASTE_COMMAND,
 } from 'lexical';
 import {useCallback, useMemo} from 'react';

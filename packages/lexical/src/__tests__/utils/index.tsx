@@ -43,7 +43,7 @@ import {format} from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
@@ -201,13 +201,11 @@ export class TestTextNode extends TextNode {
   }
 
   static clone(node: TestTextNode): TestTextNode {
-    // @ts-ignore
     return new TestTextNode(node.__text, node.__key);
   }
 
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    // @ts-ignore
-    return new TestTextNode(serializedNode.__text);
+    return new TestTextNode(serializedNode.text);
   }
 
   exportJSON(): SerializedTestTextNode {
@@ -526,7 +524,6 @@ export function createTestEditor(
       throw e;
     },
     ...config,
-    // @ts-ignore
     nodes: DEFAULT_NODES.concat(customNodes),
   });
   return editor;

@@ -72,6 +72,8 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOMComet',
+  // The react entrypoint in fb includes the jsx runtime
+  'react/jsx-runtime': 'react',
 };
 
 /**
@@ -192,7 +194,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
-          ['@babel/preset-react', {runtime: isWWW ? 'classic' : 'automatic'}],
+          ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
       {
@@ -237,9 +239,14 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
     // This ensures PrismJS imports get included in the bundle
     treeshake: name !== 'Lexical Code' ? 'smallest' : false,
   };
+  /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
     esModule: false,
-    exports: 'named',
+    exports:
+      // Special case for lexical-eslint-plugin which is written in cjs and
+      // requires a default export. Default exports in all other modules are
+      // deprecated.
+      name === 'Lexical Eslint Plugin' ? 'auto' : 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules

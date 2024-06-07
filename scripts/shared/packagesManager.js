@@ -129,5 +129,6 @@ exports.packagesManager = new PackagesManager(
       path.dirname(path.dirname(__dirname)),
       'packages/*/package.json',
     ),
+    {windowsPathsNoEscape: true},
   ),
 );

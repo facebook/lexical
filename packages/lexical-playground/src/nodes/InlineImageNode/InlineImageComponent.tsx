@@ -34,14 +34,14 @@ import {
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 
-import useModal from '../hooks/useModal';
-import LinkPlugin from '../plugins/LinkPlugin';
-import Button from '../ui/Button';
-import ContentEditable from '../ui/ContentEditable';
-import {DialogActions} from '../ui/Dialog';
-import Placeholder from '../ui/Placeholder';
-import Select from '../ui/Select';
-import TextInput from '../ui/TextInput';
+import useModal from '../../hooks/useModal';
+import LinkPlugin from '../../plugins/LinkPlugin';
+import Button from '../../ui/Button';
+import ContentEditable from '../../ui/ContentEditable';
+import {DialogActions} from '../../ui/Dialog';
+import Placeholder from '../../ui/Placeholder';
+import Select from '../../ui/Select';
+import TextInput from '../../ui/TextInput';
 import {$isInlineImageNode, InlineImageNode} from './InlineImageNode';
 
 const imageCache = new Set();
@@ -352,7 +352,7 @@ export default function InlineImageComponent({
   return (
     <Suspense fallback={null}>
       <>
-        <div draggable={draggable}>
+        <span draggable={draggable}>
           <button
             className="image-edit-button"
             ref={buttonRef}
@@ -380,9 +380,9 @@ export default function InlineImageComponent({
             height={height}
             position={position}
           />
-        </div>
+        </span>
         {showCaption && (
-          <div className="image-caption-container">
+          <span className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
               <AutoFocusPlugin />
               <LinkPlugin />
@@ -398,7 +398,7 @@ export default function InlineImageComponent({
                 ErrorBoundary={LexicalErrorBoundary}
               />
             </LexicalNestedComposer>
-          </div>
+          </span>
         )}
       </>
       {modal}

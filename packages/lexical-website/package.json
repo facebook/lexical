@@ -1,6 +1,6 @@
 {
   "name": "@lexical/website",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -26,6 +26,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typedoc-plugin-markdown": "^3.17.1",
+    "typedoc-plugin-rename-defaults": "^0.7.0",
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {

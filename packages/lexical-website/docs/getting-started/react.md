@@ -41,7 +41,7 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
-  ...
+  //...
 }
 
 // Catch any errors that occur during Lexical updates and log them

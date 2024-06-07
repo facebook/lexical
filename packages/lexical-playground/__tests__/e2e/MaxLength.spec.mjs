@@ -7,6 +7,10 @@
  */
 
 import {
+  pressBackspace,
+  STANDARD_KEYPRESS_DELAY_MS,
+} from '../keyboardShortcuts/index.mjs';
+import {
   assertHTML,
   assertSelection,
   clearEditor,
@@ -75,7 +79,7 @@ test.describe('MaxLength', () => {
     await pasteFromClipboard(page, {
       'text/plain': 'lorem ipsum dolor sit amet, consectetur adipiscing elit',
     });
-    await page.keyboard.press('Backspace');
+    await pressBackspace(page);
 
     await assertHTML(
       page,
@@ -88,7 +92,7 @@ test.describe('MaxLength', () => {
       `,
     );
 
-    await page.keyboard.type('💏');
+    await page.keyboard.type('💏', {delay: STANDARD_KEYPRESS_DELAY_MS});
 
     await assertHTML(
       page,
@@ -101,7 +105,7 @@ test.describe('MaxLength', () => {
       `,
     );
 
-    await page.keyboard.press('Backspace');
+    await pressBackspace(page);
     await page.keyboard.type('💏');
 
     await assertHTML(

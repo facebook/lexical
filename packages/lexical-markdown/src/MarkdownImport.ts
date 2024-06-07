@@ -43,6 +43,9 @@ type TextFormatTransformersIndex = Readonly<{
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
+/**
+ * Renders markdown from a string. The selection is moved to the start after the operation.
+ */
 export function createMarkdownImport(
   transformers: Array<Transformer>,
   shouldPreserveNewLines = false,
@@ -95,7 +98,7 @@ export function createMarkdownImport(
     }
 
     if ($getSelection() !== null) {
-      root.selectEnd();
+      root.selectStart();
     }
   };
 }

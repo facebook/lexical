@@ -33,8 +33,10 @@ import {
   createCommand,
   EditorState,
   ElementNode,
+  type Klass,
   type LexicalEditor,
   type LexicalNode,
+  type LexicalNodeReplacement,
   ParagraphNode,
   RootNode,
   TextNode,
@@ -50,7 +52,7 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   $createTestDecoratorNode,
@@ -60,10 +62,6 @@ import {
   TestComposer,
   TestTextNode,
 } from '../utils';
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-// @ts-ignore
-global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
@@ -86,11 +84,12 @@ describe('LexicalEditor tests', () => {
   function useLexicalEditor(
     rootElementRef: React.RefObject<HTMLDivElement>,
     onError?: (error: Error) => void,
+    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
   ) {
     const editor = useMemo(
       () =>
         createTestEditor({
-          nodes: [],
+          nodes: nodes ?? [],
           onError: onError || jest.fn(),
           theme: {
             text: {
@@ -100,7 +99,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [onError],
+      [onError, nodes],
     );
 
     useEffect(() => {
@@ -913,6 +912,14 @@ describe('LexicalEditor tests', () => {
       return decoratedPortals;
     }
 
+    afterEach(async () => {
+      // Clean up so we are not calling setState outside of act
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(null);
+        await Promise.resolve().then();
+      });
+    });
+
     it('Should correctly render React component into Lexical node #1', async () => {
       const listener = jest.fn();
 
@@ -987,20 +994,21 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      ReactTestUtils.act(() => {
+      await ReactTestUtils.act(async () => {
         reactRoot.render(<Test divKey={0} />);
+        // Wait for update to complete
+        await Promise.resolve().then();
       });
-
-      // Wait for update to complete
-      await Promise.resolve().then();
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
 
-      ReactTestUtils.act(() => {
+      await ReactTestUtils.act(async () => {
         reactRoot.render(<Test divKey={1} />);
+        // Wait for update to complete
+        await Promise.resolve().then();
       });
 
       expect(listener).toHaveBeenCalledTimes(3);
@@ -1700,6 +1708,119 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation4[0].get(textNodeKeys[2])).toBe('destroyed');
   });
 
+  it('mutation listener set for original node should work with the replaced node', async () => {
+    const ref = createRef<HTMLDivElement>();
+
+    function TestBase() {
+      editor = useLexicalEditor(ref, undefined, [
+        TestTextNode,
+        {
+          replace: TextNode,
+          with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+          withKlass: TestTextNode,
+        },
+      ]);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase />);
+    });
+
+    const textNodeMutations = jest.fn();
+    editor.registerMutationListener(TextNode, textNodeMutations);
+    const textNodeKeys: string[] = [];
+
+    // No await intentional (batch with next)
+    editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('foo');
+      root.append(paragraph);
+      paragraph.append(textNode);
+      textNodeKeys.push(textNode.getKey());
+    });
+
+    await editor.update(() => {
+      const textNode = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode2 = $createTextNode('bar').toggleFormat('bold');
+      const textNode3 = $createTextNode('xyz').toggleFormat('italic');
+      textNode.insertAfter(textNode2);
+      textNode2.insertAfter(textNode3);
+      textNodeKeys.push(textNode2.getKey());
+      textNodeKeys.push(textNode3.getKey());
+    });
+
+    await editor.update(() => {
+      $getRoot().clear();
+    });
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+
+      // Created and deleted in the same update (not attached to node)
+      textNodeKeys.push($createTextNode('zzz').getKey());
+      root.append(paragraph);
+    });
+
+    expect(textNodeMutations.mock.calls.length).toBe(2);
+
+    const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
+
+    expect(textNodeMutation1[0].size).toBe(3);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+    expect(textNodeMutation1[0].get(textNodeKeys[1])).toBe('created');
+    expect(textNodeMutation1[0].get(textNodeKeys[2])).toBe('created');
+    expect(textNodeMutation2[0].size).toBe(3);
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('destroyed');
+    expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
+  });
+
+  it('mutation listener should work with the replaced node', async () => {
+    const ref = createRef<HTMLDivElement>();
+
+    function TestBase() {
+      editor = useLexicalEditor(ref, undefined, [
+        TestTextNode,
+        {
+          replace: TextNode,
+          with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+          withKlass: TestTextNode,
+        },
+      ]);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase />);
+    });
+
+    const textNodeMutations = jest.fn();
+    editor.registerMutationListener(TestTextNode, textNodeMutations);
+    const textNodeKeys: string[] = [];
+
+    // No await intentional (batch with next)
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('foo');
+      root.append(paragraph);
+      paragraph.append(textNode);
+      textNodeKeys.push(textNode.getKey());
+    });
+
+    expect(textNodeMutations.mock.calls.length).toBe(1);
+
+    const [textNodeMutation1] = textNodeMutations.mock.calls;
+
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
@@ -2024,7 +2145,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
           },
         ],
@@ -2061,7 +2181,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) =>
               new TestTextNode(node.getTextContent(), node.getKey()),
           },
@@ -2099,7 +2218,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
           },
         ],
@@ -2147,9 +2265,7 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
-
             withKlass: TestTextNode,
           },
         ],

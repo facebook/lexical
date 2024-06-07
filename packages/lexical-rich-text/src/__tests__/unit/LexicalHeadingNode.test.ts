@@ -44,8 +44,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(headingNode.getTag()).toBe('h1');
         expect(headingNode.getTextContent()).toBe('');
       });
-      // @ts-ignore
-      expect(() => new HeadingNode()).toThrow();
+      expect(() => new HeadingNode('h1')).toThrow();
     });
 
     test('HeadingNode.createDOM()', async () => {

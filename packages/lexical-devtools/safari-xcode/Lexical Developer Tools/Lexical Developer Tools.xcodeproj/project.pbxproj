@@ -1,0 +1,672 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		007BDAD82BFD546B0004BCBF /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 007BDAD72BFD546B0004BCBF /* Config.xcconfig */; };
+		007BDAD92BFD546B0004BCBF /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 007BDAD72BFD546B0004BCBF /* Config.xcconfig */; };
+		007BDADB2BFD58110004BCBF /* VersioningConfig.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 007BDADA2BFD58110004BCBF /* VersioningConfig.xcconfig */; };
+		007BDADC2BFD58110004BCBF /* VersioningConfig.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 007BDADA2BFD58110004BCBF /* VersioningConfig.xcconfig */; };
+		B93AA6A02BF4162C00E27710 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93AA69F2BF4162C00E27710 /* AppDelegate.swift */; };
+		B93AA6A42BF4162C00E27710 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6A32BF4162C00E27710 /* Base */; };
+		B93AA6A62BF4162C00E27710 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6A52BF4162C00E27710 /* Icon.png */; };
+		B93AA6A82BF4162C00E27710 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6A72BF4162C00E27710 /* Style.css */; };
+		B93AA6AA2BF4162C00E27710 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6A92BF4162C00E27710 /* Script.js */; };
+		B93AA6AC2BF4162C00E27710 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93AA6AB2BF4162C00E27710 /* ViewController.swift */; };
+		B93AA6AF2BF4162C00E27710 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6AE2BF4162C00E27710 /* Base */; };
+		B93AA6B12BF4162F00E27710 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6B02BF4162F00E27710 /* Assets.xcassets */; };
+		B93AA6BA2BF4162F00E27710 /* Lexical Developer Tools Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B93AA6B92BF4162F00E27710 /* Lexical Developer Tools Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B93AA6BF2BF4163000E27710 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93AA6BE2BF4163000E27710 /* SafariWebExtensionHandler.swift */; };
+		B93AA6D92BF4163000E27710 /* inspect.svg in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6CC2BF4163000E27710 /* inspect.svg */; };
+		B93AA6DA2BF4163000E27710 /* lexical.svg in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6CD2BF4163000E27710 /* lexical.svg */; };
+		B93AA6DB2BF4163000E27710 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6CE2BF4163000E27710 /* background.js */; };
+		B93AA6DC2BF4163000E27710 /* devtools.html in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6CF2BF4163000E27710 /* devtools.html */; };
+		B93AA6DD2BF4163000E27710 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D02BF4163000E27710 /* popup.html */; };
+		B93AA6DF2BF4163000E27710 /* chunks in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D22BF4163000E27710 /* chunks */; };
+		B93AA6E02BF4163000E27710 /* content-scripts in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D32BF4163000E27710 /* content-scripts */; };
+		B93AA6E12BF4163000E27710 /* injected.js in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D42BF4163000E27710 /* injected.js */; };
+		B93AA6E22BF4163000E27710 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D52BF4163000E27710 /* manifest.json */; };
+		B93AA6E32BF4163000E27710 /* icon in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D62BF4163000E27710 /* icon */; };
+		B93AA6E42BF4163000E27710 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D72BF4163000E27710 /* assets */; };
+		B93AA6E52BF4163000E27710 /* devtools-panel.html in Resources */ = {isa = PBXBuildFile; fileRef = B93AA6D82BF4163000E27710 /* devtools-panel.html */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B93AA6BB2BF4162F00E27710 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B93AA6942BF4162B00E27710 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B93AA6B82BF4162F00E27710;
+			remoteInfo = "Lexical Developer Tools Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B93AA6C72BF4163000E27710 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B93AA6BA2BF4162F00E27710 /* Lexical Developer Tools Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		007BDAD72BFD546B0004BCBF /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		007BDADA2BFD58110004BCBF /* VersioningConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = VersioningConfig.xcconfig; sourceTree = "<group>"; };
+		B93AA69C2BF4162C00E27710 /* Lexical Developer Tools.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Lexical Developer Tools.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B93AA69F2BF4162C00E27710 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B93AA6A32BF4162C00E27710 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = ../Base.lproj/Main.html; sourceTree = "<group>"; };
+		B93AA6A52BF4162C00E27710 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		B93AA6A72BF4162C00E27710 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		B93AA6A92BF4162C00E27710 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		B93AA6AB2BF4162C00E27710 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		B93AA6AE2BF4162C00E27710 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		B93AA6B02BF4162F00E27710 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B93AA6B22BF4162F00E27710 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B93AA6B32BF4162F00E27710 /* Lexical_Developer_Tools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lexical_Developer_Tools.entitlements; sourceTree = "<group>"; };
+		B93AA6B42BF4162F00E27710 /* Lexical Developer Tools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Lexical Developer Tools.entitlements"; sourceTree = "<group>"; };
+		B93AA6B92BF4162F00E27710 /* Lexical Developer Tools Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Lexical Developer Tools Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B93AA6BE2BF4163000E27710 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		B93AA6C02BF4163000E27710 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B93AA6C12BF4163000E27710 /* Lexical_Developer_Tools_Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lexical_Developer_Tools_Extension.entitlements; sourceTree = "<group>"; };
+		B93AA6CC2BF4163000E27710 /* inspect.svg */ = {isa = PBXFileReference; lastKnownFileType = text; name = inspect.svg; path = "../../../.output/safari-mv2/inspect.svg"; sourceTree = "<group>"; };
+		B93AA6CD2BF4163000E27710 /* lexical.svg */ = {isa = PBXFileReference; lastKnownFileType = text; name = lexical.svg; path = "../../../.output/safari-mv2/lexical.svg"; sourceTree = "<group>"; };
+		B93AA6CE2BF4163000E27710 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = "../../../.output/safari-mv2/background.js"; sourceTree = "<group>"; };
+		B93AA6CF2BF4163000E27710 /* devtools.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = devtools.html; path = "../../../.output/safari-mv2/devtools.html"; sourceTree = "<group>"; };
+		B93AA6D02BF4163000E27710 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = "../../../.output/safari-mv2/popup.html"; sourceTree = "<group>"; };
+		B93AA6D22BF4163000E27710 /* chunks */ = {isa = PBXFileReference; lastKnownFileType = folder; name = chunks; path = "../../../.output/safari-mv2/chunks"; sourceTree = "<group>"; };
+		B93AA6D32BF4163000E27710 /* content-scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "content-scripts"; path = "../../../.output/safari-mv2/content-scripts"; sourceTree = "<group>"; };
+		B93AA6D42BF4163000E27710 /* injected.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = injected.js; path = "../../../.output/safari-mv2/injected.js"; sourceTree = "<group>"; };
+		B93AA6D52BF4163000E27710 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = "../../../.output/safari-mv2/manifest.json"; sourceTree = "<group>"; };
+		B93AA6D62BF4163000E27710 /* icon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icon; path = "../../../.output/safari-mv2/icon"; sourceTree = "<group>"; };
+		B93AA6D72BF4163000E27710 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = "../../../.output/safari-mv2/assets"; sourceTree = "<group>"; };
+		B93AA6D82BF4163000E27710 /* devtools-panel.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = "devtools-panel.html"; path = "../../../.output/safari-mv2/devtools-panel.html"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B93AA6992BF4162B00E27710 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B93AA6B62BF4162F00E27710 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B93AA6932BF4162B00E27710 = {
+			isa = PBXGroup;
+			children = (
+				007BDADA2BFD58110004BCBF /* VersioningConfig.xcconfig */,
+				007BDAD72BFD546B0004BCBF /* Config.xcconfig */,
+				B93AA69E2BF4162C00E27710 /* Lexical Developer Tools */,
+				B93AA6BD2BF4162F00E27710 /* Lexical Developer Tools Extension */,
+				B93AA69D2BF4162C00E27710 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B93AA69D2BF4162C00E27710 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B93AA69C2BF4162C00E27710 /* Lexical Developer Tools.app */,
+				B93AA6B92BF4162F00E27710 /* Lexical Developer Tools Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B93AA69E2BF4162C00E27710 /* Lexical Developer Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B93AA69F2BF4162C00E27710 /* AppDelegate.swift */,
+				B93AA6AB2BF4162C00E27710 /* ViewController.swift */,
+				B93AA6AD2BF4162C00E27710 /* Main.storyboard */,
+				B93AA6B02BF4162F00E27710 /* Assets.xcassets */,
+				B93AA6B22BF4162F00E27710 /* Info.plist */,
+				B93AA6B32BF4162F00E27710 /* Lexical_Developer_Tools.entitlements */,
+				B93AA6B42BF4162F00E27710 /* Lexical Developer Tools.entitlements */,
+				B93AA6A12BF4162C00E27710 /* Resources */,
+			);
+			path = "Lexical Developer Tools";
+			sourceTree = "<group>";
+		};
+		B93AA6A12BF4162C00E27710 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B93AA6A22BF4162C00E27710 /* Main.html */,
+				B93AA6A52BF4162C00E27710 /* Icon.png */,
+				B93AA6A72BF4162C00E27710 /* Style.css */,
+				B93AA6A92BF4162C00E27710 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		B93AA6BD2BF4162F00E27710 /* Lexical Developer Tools Extension */ = {
+			isa = PBXGroup;
+			children = (
+				B93AA6CB2BF4163000E27710 /* Resources */,
+				B93AA6BE2BF4163000E27710 /* SafariWebExtensionHandler.swift */,
+				B93AA6C02BF4163000E27710 /* Info.plist */,
+				B93AA6C12BF4163000E27710 /* Lexical_Developer_Tools_Extension.entitlements */,
+			);
+			path = "Lexical Developer Tools Extension";
+			sourceTree = "<group>";
+		};
+		B93AA6CB2BF4163000E27710 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B93AA6CC2BF4163000E27710 /* inspect.svg */,
+				B93AA6CD2BF4163000E27710 /* lexical.svg */,
+				B93AA6CE2BF4163000E27710 /* background.js */,
+				B93AA6CF2BF4163000E27710 /* devtools.html */,
+				B93AA6D02BF4163000E27710 /* popup.html */,
+				B93AA6D22BF4163000E27710 /* chunks */,
+				B93AA6D32BF4163000E27710 /* content-scripts */,
+				B93AA6D42BF4163000E27710 /* injected.js */,
+				B93AA6D52BF4163000E27710 /* manifest.json */,
+				B93AA6D62BF4163000E27710 /* icon */,
+				B93AA6D72BF4163000E27710 /* assets */,
+				B93AA6D82BF4163000E27710 /* devtools-panel.html */,
+			);
+			name = Resources;
+			path = "Lexical Developer Tools Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B93AA69B2BF4162B00E27710 /* Lexical Developer Tools */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B93AA6C82BF4163000E27710 /* Build configuration list for PBXNativeTarget "Lexical Developer Tools" */;
+			buildPhases = (
+				B93AA6982BF4162B00E27710 /* Sources */,
+				B93AA6992BF4162B00E27710 /* Frameworks */,
+				B93AA69A2BF4162B00E27710 /* Resources */,
+				B93AA6C72BF4163000E27710 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B93AA6BC2BF4162F00E27710 /* PBXTargetDependency */,
+			);
+			name = "Lexical Developer Tools";
+			productName = "Lexical Developer Tools";
+			productReference = B93AA69C2BF4162C00E27710 /* Lexical Developer Tools.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B93AA6B82BF4162F00E27710 /* Lexical Developer Tools Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B93AA6C42BF4163000E27710 /* Build configuration list for PBXNativeTarget "Lexical Developer Tools Extension" */;
+			buildPhases = (
+				B93AA6B52BF4162F00E27710 /* Sources */,
+				B93AA6B62BF4162F00E27710 /* Frameworks */,
+				B93AA6B72BF4162F00E27710 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Lexical Developer Tools Extension";
+			productName = "Lexical Developer Tools Extension";
+			productReference = B93AA6B92BF4162F00E27710 /* Lexical Developer Tools Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B93AA6942BF4162B00E27710 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1530;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					B93AA69B2BF4162B00E27710 = {
+						CreatedOnToolsVersion = 15.3;
+					};
+					B93AA6B82BF4162F00E27710 = {
+						CreatedOnToolsVersion = 15.3;
+					};
+				};
+			};
+			buildConfigurationList = B93AA6972BF4162B00E27710 /* Build configuration list for PBXProject "Lexical Developer Tools" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B93AA6932BF4162B00E27710;
+			productRefGroup = B93AA69D2BF4162C00E27710 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B93AA69B2BF4162B00E27710 /* Lexical Developer Tools */,
+				B93AA6B82BF4162F00E27710 /* Lexical Developer Tools Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B93AA69A2BF4162B00E27710 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B93AA6A62BF4162C00E27710 /* Icon.png in Resources */,
+				B93AA6AA2BF4162C00E27710 /* Script.js in Resources */,
+				007BDADB2BFD58110004BCBF /* VersioningConfig.xcconfig in Resources */,
+				B93AA6A42BF4162C00E27710 /* Base in Resources */,
+				B93AA6A82BF4162C00E27710 /* Style.css in Resources */,
+				B93AA6B12BF4162F00E27710 /* Assets.xcassets in Resources */,
+				007BDAD82BFD546B0004BCBF /* Config.xcconfig in Resources */,
+				B93AA6AF2BF4162C00E27710 /* Base in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B93AA6B72BF4162F00E27710 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B93AA6DC2BF4163000E27710 /* devtools.html in Resources */,
+				B93AA6E12BF4163000E27710 /* injected.js in Resources */,
+				B93AA6E22BF4163000E27710 /* manifest.json in Resources */,
+				B93AA6DD2BF4163000E27710 /* popup.html in Resources */,
+				B93AA6E32BF4163000E27710 /* icon in Resources */,
+				007BDAD92BFD546B0004BCBF /* Config.xcconfig in Resources */,
+				B93AA6D92BF4163000E27710 /* inspect.svg in Resources */,
+				B93AA6E52BF4163000E27710 /* devtools-panel.html in Resources */,
+				B93AA6DF2BF4163000E27710 /* chunks in Resources */,
+				B93AA6DB2BF4163000E27710 /* background.js in Resources */,
+				007BDADC2BFD58110004BCBF /* VersioningConfig.xcconfig in Resources */,
+				B93AA6E42BF4163000E27710 /* assets in Resources */,
+				B93AA6DA2BF4163000E27710 /* lexical.svg in Resources */,
+				B93AA6E02BF4163000E27710 /* content-scripts in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B93AA6982BF4162B00E27710 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B93AA6AC2BF4162C00E27710 /* ViewController.swift in Sources */,
+				B93AA6A02BF4162C00E27710 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B93AA6B52BF4162F00E27710 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B93AA6BF2BF4163000E27710 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B93AA6BC2BF4162F00E27710 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B93AA6B82BF4162F00E27710 /* Lexical Developer Tools Extension */;
+			targetProxy = B93AA6BB2BF4162F00E27710 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		B93AA6A22BF4162C00E27710 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B93AA6A32BF4162C00E27710 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		B93AA6AD2BF4162C00E27710 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B93AA6AE2BF4162C00E27710 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		B93AA6C22BF4163000E27710 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 007BDAD72BFD546B0004BCBF /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.epam.lexical.developerTools;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B93AA6C32BF4163000E27710 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 007BDAD72BFD546B0004BCBF /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.epam.lexical.developerTools;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		B93AA6C52BF4163000E27710 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Lexical Developer Tools Extension/Lexical_Developer_Tools_Extension.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(VERSION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Lexical Developer Tools Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Lexical Developer Tools Extension";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = "$(VERSION)";
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.epam.lexical.developerTools.safariExt;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B93AA6C62BF4163000E27710 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Lexical Developer Tools Extension/Lexical_Developer_Tools_Extension.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "3rd Party Mac Developer Application";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(VERSION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = K36CA7QL4T;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Lexical Developer Tools Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Lexical Developer Tools Extension";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = "$(VERSION)";
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.epam.lexical.developerTools.safariExt;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Lexical Developer Safari Extension";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B93AA6C92BF4163000E27710 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Lexical Developer Tools/Lexical Developer Tools.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "$(VERSION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Lexical Developer Tools/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Lexical Developer Tools";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = "$(VERSION)";
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.epam.lexical.developerTools;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B93AA6CA2BF4163000E27710 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Lexical Developer Tools/Lexical Developer Tools.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "3rd Party Mac Developer Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "$(VERSION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = K36CA7QL4T;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Lexical Developer Tools/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Lexical Developer Tools";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = "$(VERSION)";
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.epam.lexical.developerTools;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "EPAM Lexical Mac App Store Distribution";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B93AA6972BF4162B00E27710 /* Build configuration list for PBXProject "Lexical Developer Tools" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B93AA6C22BF4163000E27710 /* Debug */,
+				B93AA6C32BF4163000E27710 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B93AA6C42BF4163000E27710 /* Build configuration list for PBXNativeTarget "Lexical Developer Tools Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B93AA6C52BF4163000E27710 /* Debug */,
+				B93AA6C62BF4163000E27710 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B93AA6C82BF4163000E27710 /* Build configuration list for PBXNativeTarget "Lexical Developer Tools" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B93AA6C92BF4163000E27710 /* Debug */,
+				B93AA6CA2BF4163000E27710 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B93AA6942BF4162B00E27710 /* Project object */;
+}

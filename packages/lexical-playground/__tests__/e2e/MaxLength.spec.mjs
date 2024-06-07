@@ -79,7 +79,7 @@ test.describe('MaxLength', () => {
     await pasteFromClipboard(page, {
       'text/plain': 'lorem ipsum dolor sit amet, consectetur adipiscing elit',
     });
-    await pressBackspace(page, 1, STANDARD_KEYPRESS_DELAY_MS);
+    await pressBackspace(page, 1);
 
     await assertHTML(
       page,
@@ -105,7 +105,7 @@ test.describe('MaxLength', () => {
       `,
     );
 
-    await pressBackspace(page, 1, STANDARD_KEYPRESS_DELAY_MS);
+    await pressBackspace(page, 1);
     await page.keyboard.type('💏');
 
     await assertHTML(

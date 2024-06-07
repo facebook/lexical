@@ -8,10 +8,19 @@
 
 import type {Doc} from 'yjs';
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {
+  type CollaborationContextType,
+  useCollaborationContext,
+} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {ExcludedProperties, Provider} from '@lexical/yjs';
-import {useEffect, useMemo} from 'react';
+import {
+  Binding,
+  createBinding,
+  ExcludedProperties,
+  Provider,
+} from '@lexical/yjs';
+import {LexicalEditor} from 'lexical';
+import {useEffect, useState} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
@@ -67,12 +76,90 @@ export function CollaborationPlugin({
     };
   }, [collabContext, editor]);
 
-  const provider = useMemo(
-    () => providerFactory(id, yjsDocMap),
-    [id, providerFactory, yjsDocMap],
-  );
+  const [provider, setProvider] = useState<Provider>();
+  useEffect(() => {
+    const newProvider = providerFactory(id, yjsDocMap);
+    setProvider(newProvider);
 
-  const [cursors, binding] = useYjsCollaboration(
+    return () => {
+      newProvider.disconnect();
+    };
+  }, [id, providerFactory, yjsDocMap]);
+
+  const [doc, setDoc] = useState(yjsDocMap.get(id));
+  const [binding, setBinding] = useState<Binding>();
+  useEffect(() => {
+    if (!provider) {
+      return;
+    }
+    const newBinding = createBinding(
+      editor,
+      provider,
+      id,
+      doc ?? yjsDocMap.get(id),
+      yjsDocMap,
+      excludedProperties,
+    );
+    setBinding(newBinding);
+
+    return () => {
+      newBinding.root.destroy(newBinding);
+    };
+  }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);
+
+  if (!provider || !binding) {
+    return <></>;
+  }
+
+  return (
+    <WrapWithProvider
+      awarenessData={awarenessData}
+      binding={binding}
+      collabContext={collabContext}
+      color={color}
+      cursorsContainerRef={cursorsContainerRef}
+      editor={editor}
+      id={id}
+      initialEditorState={initialEditorState}
+      name={name}
+      provider={provider}
+      setDoc={setDoc}
+      shouldBootstrap={shouldBootstrap}
+      yjsDocMap={yjsDocMap}
+    />
+  );
+}
+
+function WrapWithProvider({
+  editor,
+  id,
+  provider,
+  yjsDocMap,
+  name,
+  color,
+  shouldBootstrap,
+  cursorsContainerRef,
+  initialEditorState,
+  awarenessData,
+  collabContext,
+  binding,
+  setDoc,
+}: {
+  editor: LexicalEditor;
+  id: string;
+  provider: Provider;
+  yjsDocMap: Map<string, Doc>;
+  name: string;
+  color: string;
+  shouldBootstrap: boolean;
+  binding: Binding;
+  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>;
+  cursorsContainerRef?: CursorsContainerRef | undefined;
+  initialEditorState?: InitialEditorStateType | undefined;
+  awarenessData?: object;
+  collabContext: CollaborationContextType;
+}) {
+  const [cursors] = useYjsCollaboration(
     editor,
     id,
     provider,
@@ -80,9 +167,10 @@ export function CollaborationPlugin({
     name,
     color,
     shouldBootstrap,
+    binding,
+    setDoc,
     cursorsContainerRef,
     initialEditorState,
-    excludedProperties,
     awarenessData,
   );
 

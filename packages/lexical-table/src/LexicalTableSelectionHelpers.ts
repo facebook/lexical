@@ -716,9 +716,16 @@ export function applyTableHandlers(
           if (isPartialyWithinTable) {
             const newSelection = selection.clone();
             if (isFocusInside) {
+              const [tableMap] = $computeTableMap(
+                tableNode,
+                focusCellNode,
+                focusCellNode,
+              );
+              const firstCellNode = tableMap[0][0].cell;
+              const lastCellNode = tableMap[tableMap.length - 1].at(-1)!.cell;
               newSelection.focus.set(
-                tableNode.getParentOrThrow().getKey(),
-                tableNode.getIndexWithinParent(),
+                (isBackward ? firstCellNode : lastCellNode).getKey(),
+                isBackward ? 0 : lastCellNode.getChildrenSize(),
                 'element',
               );
             } else {

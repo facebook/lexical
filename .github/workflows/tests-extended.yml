@@ -10,15 +10,24 @@ on:
   pull_request_review:
     types: [submitted]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
+  pre_job:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: 'always'
+          skip_after_successful_duplicate: 'true'
+          do_not_skip: '["pull_request", "merge_group"]'
   e2e-tests:
+    needs: pre_job
     if: (github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests') && github.event.review.state != 'approved') || (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     uses: ./.github/workflows/call-e2e-all-tests.yml
 
   integration-tests:
+    needs: pre_job
     if: (github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests') && github.event.review.state != 'approved') || (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     uses: ./.github/workflows/call-integration-tests.yml

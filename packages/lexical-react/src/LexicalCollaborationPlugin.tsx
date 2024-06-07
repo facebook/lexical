@@ -96,7 +96,7 @@ export function CollaborationPlugin({
       editor,
       provider,
       id,
-      doc ?? yjsDocMap.get(id),
+      doc || yjsDocMap.get(id),
       yjsDocMap,
       excludedProperties,
     );

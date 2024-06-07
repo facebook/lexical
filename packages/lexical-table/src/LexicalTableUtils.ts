@@ -628,7 +628,10 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
     }
   }
   const focusRowMap = gridMap[focusStartRow];
-  const nextColumn = focusRowMap[focusStartColumn + focusCell.__colSpan];
+  const nextColumn =
+    anchorStartColumn > focusStartColumn
+      ? focusRowMap[anchorStartColumn + anchorCell.__colSpan]
+      : focusRowMap[focusStartColumn + focusCell.__colSpan];
   if (nextColumn !== undefined) {
     const {cell} = nextColumn;
     $moveSelectionToCell(cell);

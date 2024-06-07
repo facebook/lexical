@@ -112,7 +112,7 @@ export function CollaborationPlugin({
   }
 
   return (
-    <WrapWithProvider
+    <YjsCollaborationCursors
       awarenessData={awarenessData}
       binding={binding}
       collabContext={collabContext}
@@ -130,7 +130,7 @@ export function CollaborationPlugin({
   );
 }
 
-function WrapWithProvider({
+function YjsCollaborationCursors({
   editor,
   id,
   provider,
@@ -159,7 +159,7 @@ function WrapWithProvider({
   awarenessData?: object;
   collabContext: CollaborationContextType;
 }) {
-  const [cursors] = useYjsCollaboration(
+  const cursors = useYjsCollaboration(
     editor,
     id,
     provider,

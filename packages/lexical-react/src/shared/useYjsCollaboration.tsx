@@ -54,7 +54,7 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
-): [JSX.Element, Binding] {
+): JSX.Element {
   const isReloadingDoc = useRef(false);
 
   const connect = useCallback(() => {
@@ -217,7 +217,7 @@ export function useYjsCollaboration(
     );
   }, [connect, disconnect, editor]);
 
-  return [cursorsContainer, binding];
+  return cursorsContainer;
 }
 
 export function useYjsFocusTracking(

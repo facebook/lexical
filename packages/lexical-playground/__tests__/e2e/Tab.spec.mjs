@@ -98,6 +98,7 @@ test.describe('Tab', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
+          data-language="javascript"
           data-highlight-language="javascript">
           <span data-lexical-text="true"></span>
           <span

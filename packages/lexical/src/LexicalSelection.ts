@@ -770,6 +770,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
+        nextSibling.setStyle(style);
         if (!firstNodeParent.canInsertTextAfter()) {
           firstNodeParent.insertAfter(nextSibling);
         } else {

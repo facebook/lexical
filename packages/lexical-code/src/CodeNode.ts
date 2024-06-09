@@ -51,8 +51,12 @@ export type SerializedCodeNode = Spread<
 const isLanguageSupportedByPrism = (
   language: string | null | undefined,
 ): boolean => {
-  // eslint-disable-next-line no-prototype-builtins
-  return language ? window.Prism.languages.hasOwnProperty(language) : false;
+  try {
+    // eslint-disable-next-line no-prototype-builtins
+    return language ? window.Prism.languages.hasOwnProperty(language) : false;
+  } catch {
+    return false;
+  }
 };
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {

@@ -105,7 +105,7 @@ describe('HTML', () => {
       html = $generateHtmlFromNodes(editor, selection);
     });
 
-    expect(html).toBe('<span>World</span>');
+    expect(html).toBe('<span style="white-space: pre-wrap;">World</span>');
   });
 
   test(`[Lexical -> HTML]: Default selection (undefined) should serialize entire editor state`, () => {
@@ -148,6 +148,8 @@ describe('HTML', () => {
       html = $generateHtmlFromNodes(editor);
     });
 
-    expect(html).toBe('<p><span>Hello</span></p><p><span>World</span></p>');
+    expect(html).toBe(
+      '<p><span style="white-space: pre-wrap;">Hello</span></p><p><span style="white-space: pre-wrap;">World</span></p>',
+    );
   });
 });

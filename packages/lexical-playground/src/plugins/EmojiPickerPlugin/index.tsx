@@ -94,8 +94,7 @@ export default function EmojiPickerPlugin() {
   const [emojis, setEmojis] = useState<Array<Emoji>>([]);
 
   useEffect(() => {
-    // @ts-ignore
-    import('../../utils/emoji-list.ts').then((file) => setEmojis(file.default));
+    import('../../utils/emoji-list').then((file) => setEmojis(file.default));
   }, []);
 
   const emojiOptions = useMemo(
@@ -174,20 +173,19 @@ export default function EmojiPickerPlugin() {
               <div className="typeahead-popover emoji-menu">
                 <ul>
                   {options.map((option: EmojiOption, index) => (
-                    <div key={option.key}>
-                      <EmojiMenuItem
-                        index={index}
-                        isSelected={selectedIndex === index}
-                        onClick={() => {
-                          setHighlightedIndex(index);
-                          selectOptionAndCleanUp(option);
-                        }}
-                        onMouseEnter={() => {
-                          setHighlightedIndex(index);
-                        }}
-                        option={option}
-                      />
-                    </div>
+                    <EmojiMenuItem
+                      key={option.key}
+                      index={index}
+                      isSelected={selectedIndex === index}
+                      onClick={() => {
+                        setHighlightedIndex(index);
+                        selectOptionAndCleanUp(option);
+                      }}
+                      onMouseEnter={() => {
+                        setHighlightedIndex(index);
+                      }}
+                      option={option}
+                    />
                   ))}
                 </ul>
               </div>,

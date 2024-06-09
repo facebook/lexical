@@ -9,7 +9,7 @@
 import {
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isRangeSelection,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -56,8 +56,8 @@ LexicalNode.getType = function () {
 describe('LexicalNode tests', () => {
   initializeUnitTest(
     (testEnv) => {
-      let paragraphNode;
-      let textNode;
+      let paragraphNode: ParagraphNode;
+      let textNode: TextNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -87,13 +87,26 @@ describe('LexicalNode tests', () => {
         });
       });
 
+      test('LexicalNode.constructor: type change detected', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const validNode = new TextNode(textNode.__text, textNode.__key);
+          expect(textNode.getLatest()).toBe(textNode);
+          expect(validNode.getLatest()).toBe(textNode);
+          expect(() => new TestNode(textNode.__key)).toThrowError(
+            /TestNode.*re-use key.*TextNode/,
+          );
+        });
+      });
+
       test('LexicalNode.clone()', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
           const node = new LexicalNode('__custom_key__');
 
-          expect(() => node.clone()).toThrow();
+          expect(() => LexicalNode.clone(node)).toThrow();
         });
       });
 
@@ -108,7 +121,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isAttached()', async () => {
         const {editor} = testEnv;
-        let node;
+        let node: LexicalNode;
 
         await editor.update(() => {
           node = new LexicalNode('__custom_key__');
@@ -125,7 +138,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSelected()', async () => {
         const {editor} = testEnv;
-        let node;
+        let node: LexicalNode;
 
         await editor.update(() => {
           node = new LexicalNode('__custom_key__');
@@ -168,8 +181,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSelected(): selected block node range', async () => {
         const {editor} = testEnv;
-        let newParagraphNode;
-        let newTextNode;
+        let newParagraphNode: ParagraphNode;
+        let newTextNode: TextNode;
 
         await editor.update(() => {
           expect(paragraphNode.isSelected()).toBe(false);
@@ -188,7 +201,7 @@ describe('LexicalNode tests', () => {
 
           expect(selection).not.toBe(null);
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -205,7 +218,7 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -220,8 +233,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSelected(): with custom range selection', async () => {
         const {editor} = testEnv;
-        let newParagraphNode;
-        let newTextNode;
+        let newParagraphNode: ParagraphNode;
+        let newTextNode: TextNode;
 
         await editor.update(() => {
           expect(paragraphNode.isSelected()).toBe(false);
@@ -341,7 +354,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getPreviousSibling()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
+        let barTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -365,8 +378,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getPreviousSiblings()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -404,7 +417,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getNextSibling()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
+        let barTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -425,8 +438,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getNextSiblings()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -453,11 +466,11 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getCommonAncestor()', async () => {
         const {editor} = testEnv;
-        let quxTextNode;
-        let barParagraphNode;
-        let barTextNode;
-        let bazParagraphNode;
-        let bazTextNode;
+        let quxTextNode: TextNode;
+        let barParagraphNode: ParagraphNode;
+        let barTextNode: TextNode;
+        let bazParagraphNode: ParagraphNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           const rootNode = $getRoot();
@@ -499,8 +512,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isBefore()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -542,10 +555,10 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getNodesBetween()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
-        let newParagraphNode;
-        let quxTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
+        let newParagraphNode: ParagraphNode;
+        let quxTextNode: TextNode;
 
         await editor.update(() => {
           const rootNode = $getRoot();
@@ -590,7 +603,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isToken()', async () => {
         const {editor} = testEnv;
-        let tokenTextNode;
+        let tokenTextNode: TextNode;
 
         await editor.update(() => {
           tokenTextNode = new TextNode('token').setMode('token');
@@ -602,7 +615,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(textNode.isToken(textNode)).toBe(false);
+          expect(textNode.isToken()).toBe(false);
           expect(tokenTextNode.isToken()).toBe(true);
         });
         expect(() => textNode.isToken()).toThrow();
@@ -610,7 +623,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSegmented()', async () => {
         const {editor} = testEnv;
-        let segmentedTextNode;
+        let segmentedTextNode: TextNode;
 
         await editor.update(() => {
           segmentedTextNode = new TextNode('segmented').setMode('segmented');
@@ -622,7 +635,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(textNode.isSegmented(textNode)).toBe(false);
+          expect(textNode.isSegmented()).toBe(false);
           expect(segmentedTextNode.isSegmented()).toBe(true);
         });
         expect(() => textNode.isSegmented()).toThrow();
@@ -630,7 +643,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isDirectionless()', async () => {
         const {editor} = testEnv;
-        let directionlessTextNode;
+        let directionlessTextNode: TextNode;
 
         await editor.update(() => {
           directionlessTextNode = new TextNode(
@@ -662,9 +675,9 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getLatest(): garbage collected node', async () => {
         const {editor} = testEnv;
-        let node;
-        let text;
-        let block;
+        let node: LexicalNode;
+        let text: TextNode;
+        let block: TestElementNode;
 
         await editor.update(() => {
           node = new LexicalNode();
@@ -762,6 +775,7 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
+          // @ts-expect-error
           expect(() => textNode.replace()).toThrow();
         });
         expect(() => textNode.remove()).toThrow();
@@ -773,7 +787,7 @@ describe('LexicalNode tests', () => {
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span></p></div>',
         );
-        let barTextNode;
+        let barTextNode: TextNode;
 
         await editor.update(() => {
           const rootNode = $getRoot();
@@ -895,8 +909,10 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
+          // @ts-expect-error
           expect(() => textNode.insertAfter()).toThrow();
         });
+        // @ts-expect-error
         expect(() => textNode.insertAfter()).toThrow();
       });
 
@@ -971,7 +987,12 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.insertAfter() move blocks around', async () => {
         const {editor} = testEnv;
-        let block1, block2, block3, text1, text2, text3;
+        let block1: ParagraphNode,
+          block2: ParagraphNode,
+          block3: ParagraphNode,
+          text1: TextNode,
+          text2: TextNode,
+          text3: TextNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -1003,7 +1024,12 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.insertAfter() move blocks around #2', async () => {
         const {editor} = testEnv;
-        let block1, block2, block3, text1, text2, text3;
+        let block1: ParagraphNode,
+          block2: ParagraphNode,
+          block3: ParagraphNode,
+          text1: TextNode,
+          text2: TextNode,
+          text3: TextNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -1043,8 +1069,10 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
+          // @ts-expect-error
           expect(() => textNode.insertBefore()).toThrow();
         });
+        // @ts-expect-error
         expect(() => textNode.insertBefore()).toThrow();
       });
 

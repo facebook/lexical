@@ -41,7 +41,7 @@
   transform: translateY(-50%);
 }
 
-.Collapsible__container[open] .Collapsible__title:before {
+.Collapsible__container[open] > .Collapsible__title:before {
   border-color: transparent;
   border-width: 6px 4px 0 4px;
   border-top-color: #000;

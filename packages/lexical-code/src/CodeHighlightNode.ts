@@ -17,20 +17,7 @@ import type {
   TabNode,
 } from 'lexical';
 
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-markup';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-c';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-objectivec';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-rust';
-import 'prismjs/components/prism-swift';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-cpp';
+import './CodeHighlighterPrism';
 
 import {
   addClassNamesToElement,
@@ -42,7 +29,6 @@ import {
   ElementNode,
   TextNode,
 } from 'lexical';
-import * as Prism from 'prismjs';
 
 import {$createCodeNode} from './CodeNode';
 
@@ -66,6 +52,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   markdown: 'Markdown',
   objc: 'Objective-C',
   plain: 'Plain Text',
+  powershell: 'PowerShell',
   py: 'Python',
   rust: 'Rust',
   sql: 'SQL',
@@ -97,11 +84,11 @@ export function getLanguageFriendlyName(lang: string) {
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 export const getCodeLanguages = (): Array<string> =>
-  Object.keys(Prism.languages)
+  Object.keys(window.Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
       // so filtering them out here to get langs list
-      (language) => typeof Prism.languages[language] !== 'function',
+      (language) => typeof window.Prism.languages[language] !== 'function',
     )
     .sort();
 
@@ -134,6 +121,10 @@ export class CodeHighlightNode extends TextNode {
   getHighlightType(): string | null | undefined {
     const self = this.getLatest();
     return self.__highlightType;
+  }
+
+  canHaveFormat(): boolean {
+    return false;
   }
 
   createDOM(config: EditorConfig): HTMLElement {

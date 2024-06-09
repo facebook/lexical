@@ -5,27 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
+import {
+  $createTextNode,
+  $getCharacterOffsets,
+  $getNodeByKey,
+  $getPreviousSelection,
+  $isElementNode,
+  $isParagraphNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  BaseSelection,
   ElementNode,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
+  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
 } from 'lexical';
-
-import {
-  $createTextNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  DEPRECATED_$isGridSelection,
-} from 'lexical';
+import invariant from 'shared/invariant';
 
 import {CSS_TO_STYLES} from './constants';
 import {
@@ -58,28 +57,38 @@ function $updateTextNodeProperties<T extends TextNode>(
   return target;
 }
 
+function $updateParagraphNodeProperties<T extends ParagraphNode>(
+  target: T,
+  source: ParagraphNode,
+): T {
+  target.__textFormat = source.__textFormat;
+  return target;
+}
+
 /**
  * Returns a copy of a node, but generates a new key for the copy.
  * @param node - The node to be cloned.
  * @returns The clone of the node.
  */
 export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const latest = node.getLatest();
-  const constructor = latest.constructor;
+  const constructor = node.constructor;
   // @ts-expect-error
-  const clone: T = constructor.clone(latest);
-  clone.__parent = latest.__parent;
-  clone.__next = latest.__next;
-  clone.__prev = latest.__prev;
+  const clone: T = constructor.clone(node);
+  clone.__parent = node.__parent;
+  clone.__next = node.__next;
+  clone.__prev = node.__prev;
 
-  if ($isElementNode(latest) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, latest);
+  if ($isElementNode(node) && $isElementNode(clone)) {
+    return $updateElementNodeProperties(clone, node);
   }
 
-  if ($isTextNode(latest) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, latest);
+  if ($isTextNode(node) && $isTextNode(clone)) {
+    return $updateTextNodeProperties(clone, node);
   }
 
+  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
+    return $updateParagraphNodeProperties(clone, node);
+  }
   return clone;
 }
 
@@ -91,23 +100,25 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
  * @returns The updated TextNode.
  */
 export function $sliceSelectedTextNodeContent(
-  selection: RangeSelection | GridSelection | NodeSelection,
+  selection: BaseSelection,
   textNode: TextNode,
 ): LexicalNode {
+  const anchorAndFocus = selection.getStartEndPoints();
   if (
-    textNode.isSelected() &&
+    textNode.isSelected(selection) &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
+    anchorAndFocus !== null
   ) {
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const [anchor, focus] = anchorAndFocus;
+    const isBackward = selection.isBackward();
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
     const isAnchor = textNode.is(anchorNode);
     const isFocus = textNode.is(focusNode);
 
     if (isAnchor || isFocus) {
-      const isBackward = selection.isBackward();
-      const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
+      const [anchorOffset, focusOffset] = $getCharacterOffsets(selection);
       const isSame = anchorNode.is(focusNode);
       const isFirst = textNode.is(isBackward ? focusNode : anchorNode);
       const isLast = textNode.is(isBackward ? anchorNode : focusNode);
@@ -143,8 +154,13 @@ export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
     return point.offset === point.getNode().getTextContentSize();
   }
+  const node = point.getNode();
+  invariant(
+    $isElementNode(node),
+    'isAtNodeEnd: node must be a TextNode or ElementNode',
+  );
 
-  return point.offset === point.getNode().getChildrenSize();
+  return point.offset === node.getChildrenSize();
 }
 
 /**
@@ -155,7 +171,7 @@ export function $isAtNodeEnd(point: Point): boolean {
  * @param anchor - The anchor of the current selection, where the selection should be pointing.
  * @param delCount - The amount of characters to delete. Useful as a dynamic variable eg. textContentSize - maxLength;
  */
-export function trimTextContentFromAnchor(
+export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,
@@ -172,6 +188,13 @@ export function trimTextContentFromAnchor(
   }
 
   while (remaining > 0 && currentNode !== null) {
+    if ($isElementNode(currentNode)) {
+      const lastDescendant: null | LexicalNode =
+        currentNode.getLastDescendant<LexicalNode>();
+      if (lastDescendant !== null) {
+        currentNode = lastDescendant;
+      }
+    }
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
@@ -188,11 +211,7 @@ export function trimTextContentFromAnchor(
       }
       if (parent !== null) {
         additionalElementWhitespace = parent.isInline() ? 0 : 2;
-        if ($isElementNode(parentSibling)) {
-          nextNode = parentSibling.getLastDescendant();
-        } else {
-          nextNode = parentSibling;
-        }
+        nextNode = parentSibling;
       }
     }
     let text = currentNode.getTextContent();
@@ -202,7 +221,7 @@ export function trimTextContentFromAnchor(
       // TODO: should this be handled in core?
       text = '\n\n';
     }
-    const currentNodeSize = currentNode.getTextContentSize();
+    const currentNodeSize = text.length;
 
     if (!$isTextNode(currentNode) || remaining >= currentNodeSize) {
       const parent = currentNode.getParent();
@@ -283,14 +302,19 @@ export function $addNodeStyle(node: TextNode): void {
 
 function $patchStyle(
   target: TextNode | RangeSelection,
-  patch: Record<string, string | null>,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const prevStyles = getStyleObjectFromCSS(
     'getStyle' in target ? target.getStyle() : target.style,
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
-      if (value === null) {
+      if (value instanceof Function) {
+        styles[key] = value(prevStyles[key]);
+      } else if (value === null) {
         delete styles[key];
       } else {
         styles[key] = value;
@@ -309,25 +333,32 @@ function $patchStyle(
  * Will update partially selected TextNodes by splitting the TextNode and applying
  * the styles to the appropriate one.
  * @param selection - The selected node(s) to update.
- * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
+ * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }. Can also accept a function that returns the new property value.
  */
 export function $patchStyleText(
-  selection: RangeSelection,
-  patch: Record<string, string | null>,
+  selection: BaseSelection,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
+    return;
+  }
+  const [anchor, focus] = anchorAndFocus;
+
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
 
-  if (selection.isCollapsed()) {
+  if (selection.isCollapsed() && $isRangeSelection(selection)) {
     $patchStyle(selection, patch);
     return;
   }
 
-  const anchor = selection.anchor;
-  const focus = selection.focus;
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const focusOffset = focus.offset;
@@ -354,7 +385,7 @@ export function $patchStyleText(
 
   // This is the case where we only selected a single node
   if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode)) {
+    if ($isTextNode(firstNode) && firstNode.canHaveFormat()) {
       startOffset =
         startType === 'element'
           ? 0
@@ -389,18 +420,24 @@ export function $patchStyleText(
   } else {
     if (
       $isTextNode(firstNode) &&
-      startOffset < firstNode.getTextContentSize()
+      startOffset < firstNode.getTextContentSize() &&
+      firstNode.canHaveFormat()
     ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
         firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
+        if (isBefore) {
+          anchor.set(firstNode.getKey(), startOffset, 'text');
+        } else {
+          focus.set(firstNode.getKey(), startOffset, 'text');
+        }
       }
 
       $patchStyle(firstNode as TextNode, patch);
     }
 
-    if ($isTextNode(lastNode)) {
+    if ($isTextNode(lastNode) && lastNode.canHaveFormat()) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
 
@@ -417,7 +454,7 @@ export function $patchStyleText(
         [lastNode] = lastNode.splitText(endOffset);
       }
 
-      if (endOffset !== 0) {
+      if (endOffset !== 0 || endType === 'element') {
         $patchStyle(lastNode as TextNode, patch);
       }
     }
@@ -429,6 +466,7 @@ export function $patchStyleText(
 
       if (
         $isTextNode(selectedNode) &&
+        selectedNode.canHaveFormat() &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()

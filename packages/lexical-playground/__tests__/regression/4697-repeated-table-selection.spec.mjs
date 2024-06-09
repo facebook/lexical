@@ -7,7 +7,7 @@
  */
 
 import {
-  assertGridSelectionCoordinates,
+  assertTableSelectionCoordinates,
   click,
   focusEditor,
   initialize,
@@ -18,7 +18,7 @@ import {
 
 test.describe('Regression test #4697', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test('repeated table selection results in grid selection', async ({
+  test('repeated table selection results in table selection', async ({
     page,
     isPlainText,
     isCollab,
@@ -46,7 +46,7 @@ test.describe('Regression test #4697', () => {
       false,
     );
 
-    await assertGridSelectionCoordinates(page, {
+    await assertTableSelectionCoordinates(page, {
       anchor: {x: 2, y: 1},
       focus: {x: 2, y: 2},
     });

@@ -29,10 +29,6 @@ const DocumentMentionsRegex = {
   PUNCTUATION,
 };
 
-const CapitalizedNameMentionsRegex = new RegExp(
-  '(^|[^#])((?:' + DocumentMentionsRegex.NAME + '{' + 1 + ',})$)',
-);
-
 const PUNC = DocumentMentionsRegex.PUNCTUATION;
 
 const TRIGGERS = ['@'].join('');
@@ -534,28 +530,6 @@ function useMentionLookupService(mentionString: string | null) {
   return results;
 }
 
-function checkForCapitalizedNameMentions(
-  text: string,
-  minMatchLength: number,
-): MenuTextMatch | null {
-  const match = CapitalizedNameMentionsRegex.exec(text);
-  if (match !== null) {
-    // The strategy ignores leading whitespace but we need to know it's
-    // length to add it to the leadOffset
-    const maybeLeadingWhitespace = match[1];
-
-    const matchingString = match[2];
-    if (matchingString != null && matchingString.length >= minMatchLength) {
-      return {
-        leadOffset: match.index + maybeLeadingWhitespace.length,
-        matchingString,
-        replaceableString: matchingString,
-      };
-    }
-  }
-  return null;
-}
-
 function checkForAtSignMentions(
   text: string,
   minMatchLength: number,
@@ -583,8 +557,7 @@ function checkForAtSignMentions(
 }
 
 function getPossibleQueryMatch(text: string): MenuTextMatch | null {
-  const match = checkForAtSignMentions(text, 1);
-  return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
+  return checkForAtSignMentions(text, 1);
 }
 
 class MentionTypeaheadOption extends MenuOption {

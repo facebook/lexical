@@ -27,6 +27,6 @@ declare export class OverflowNode extends ElementNode {
 declare export function $createOverflowNode(): OverflowNode;
 declare export function $isOverflowNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof OverflowNode);
+): node is OverflowNode;
 
 export type SerializedOverflowNode = SerializedElementNode;

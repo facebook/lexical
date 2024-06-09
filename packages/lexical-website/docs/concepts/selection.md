@@ -101,7 +101,7 @@ editor.update(() => {
   someNode.selectPrevious();
   someNode.selectNext();
 
-  // On element nodes, you can use these.
+  // You can use this on any node.
   someNode.selectStart();
   someNode.selectEnd();
 

@@ -65,7 +65,7 @@ declare export function $createCodeHighlightNode(
 
 declare export function $isCodeHighlightNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof CodeHighlightNode);
+): node is CodeHighlightNode;
 
 declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};
 declare export var CODE_LANGUAGE_MAP: {[string]: string};
@@ -117,7 +117,7 @@ declare export function $createCodeNode(language: ?string): CodeNode;
 
 declare export function $isCodeNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof CodeNode);
+): node is CodeNode;
 
 declare export class CodeNode extends ElementNode {
   __language: string | null | void;

@@ -11,12 +11,14 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $isElementNode,
   LexicalEditor,
   NodeKey,
 } from 'lexical';
 import {
   $createTestElementNode,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 
 import {$dfs} from '../..';
@@ -125,7 +127,7 @@ describe('LexicalNodeHelpers tests', () => {
       editor.getEditorState().read(() => {
         const expectedNodes = expectedKeys.map(({depth, node: nodeKey}) => ({
           depth,
-          node: $getNodeByKey(nodeKey).getLatest(),
+          node: $getNodeByKey(nodeKey)!.getLatest(),
         }));
 
         const first = expectedNodes[0];
@@ -145,10 +147,10 @@ describe('LexicalNodeHelpers tests', () => {
     test('DFS triggers getLatest()', async () => {
       const editor: LexicalEditor = testEnv.editor;
 
-      let rootKey;
-      let paragraphKey;
-      let block1Key;
-      let block2Key;
+      let rootKey: string;
+      let paragraphKey: string;
+      let block1Key: string;
+      let block2Key: string;
 
       await editor.update(() => {
         const root = $getRoot();
@@ -173,17 +175,18 @@ describe('LexicalNodeHelpers tests', () => {
         const block2 = $getNodeByKey(block2Key);
 
         const block3 = $createTestElementNode();
+        invariant($isElementNode(block1));
 
         block1.append(block3);
 
-        expect($dfs(root)).toEqual([
+        expect($dfs(root!)).toEqual([
           {
             depth: 0,
-            node: root.getLatest(),
+            node: root!.getLatest(),
           },
           {
             depth: 1,
-            node: paragraph.getLatest(),
+            node: paragraph!.getLatest(),
           },
           {
             depth: 2,
@@ -195,7 +198,36 @@ describe('LexicalNodeHelpers tests', () => {
           },
           {
             depth: 2,
-            node: block2.getLatest(),
+            node: block2!.getLatest(),
+          },
+        ]);
+      });
+    });
+
+    test('DFS of empty ParagraphNode returns only itself', async () => {
+      const editor: LexicalEditor = testEnv.editor;
+
+      let paragraphKey: string;
+
+      await editor.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        const text = $createTextNode('test');
+
+        paragraphKey = paragraph.getKey();
+
+        paragraph2.append(text);
+        root.append(paragraph, paragraph2);
+      });
+      await editor.update(() => {
+        const paragraph = $getNodeByKey(paragraphKey)!;
+
+        expect($dfs(paragraph ?? undefined)).toEqual([
+          {
+            depth: 1,
+            node: paragraph?.getLatest(),
           },
         ]);
       });

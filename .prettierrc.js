@@ -8,4 +8,5 @@ module.exports = {
   trailingComma: 'all',
   htmlWhitespaceSensitivity: 'ignore',
   attributeGroups: ['$DEFAULT', '^data-'],
+  plugins: ['prettier-plugin-tailwindcss'],
 };

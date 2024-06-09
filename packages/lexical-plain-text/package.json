@@ -7,17 +7,37 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.11.2",
+  "version": "0.16.0",
   "main": "LexicalPlainText.js",
-  "peerDependencies": {
-    "lexical": "0.11.2",
-    "@lexical/utils": "0.11.2",
-    "@lexical/selection": "0.11.2",
-    "@lexical/clipboard": "0.11.2"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-plain-text"
+  },
+  "module": "LexicalPlainText.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalPlainText.dev.mjs",
+        "production": "./LexicalPlainText.prod.mjs",
+        "node": "./LexicalPlainText.node.mjs",
+        "default": "./LexicalPlainText.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalPlainText.dev.js",
+        "production": "./LexicalPlainText.prod.js",
+        "default": "./LexicalPlainText.js"
+      }
+    }
+  },
+  "dependencies": {
+    "@lexical/clipboard": "0.16.0",
+    "@lexical/selection": "0.16.0",
+    "@lexical/utils": "0.16.0",
+    "lexical": "0.16.0"
   }
 }

@@ -30,4 +30,4 @@ declare export class HashtagNode extends TextNode {
 declare export function $createHashtagNode(text?: string): HashtagNode;
 declare export function $isHashtagNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof HashtagNode);
+): node is HashtagNode;

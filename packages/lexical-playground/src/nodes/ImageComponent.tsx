@@ -7,11 +7,10 @@
  */
 
 import type {
-  GridSelection,
+  BaseSelection,
+  LexicalCommand,
   LexicalEditor,
   NodeKey,
-  NodeSelection,
-  RangeSelection,
 } from 'lexical';
 
 import './ImageNode.css';
@@ -20,7 +19,7 @@ import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
@@ -31,9 +30,11 @@ import {
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  createCommand,
   DRAGSTART_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
@@ -47,6 +48,7 @@ import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import {createWebsocketProvider} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import brokenImage from '../images/image-broken.svg';
 import EmojisPlugin from '../plugins/EmojisPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import LinkPlugin from '../plugins/LinkPlugin';
@@ -59,6 +61,9 @@ import {$isImageNode} from './ImageNode';
 
 const imageCache = new Set();
 
+export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
+  createCommand('RIGHT_CLICK_IMAGE_COMMAND');
+
 function useSuspenseImage(src: string) {
   if (!imageCache.has(src)) {
     throw new Promise((resolve) => {
@@ -67,6 +72,9 @@ function useSuspenseImage(src: string) {
       img.onload = () => {
         imageCache.add(src);
         resolve(null);
+      };
+      img.onerror = () => {
+        imageCache.add(src);
       };
     });
   }
@@ -80,6 +88,7 @@ function LazyImage({
   width,
   height,
   maxWidth,
+  onError,
 }: {
   altText: string;
   className: string | null;
@@ -88,6 +97,7 @@ function LazyImage({
   maxWidth: number;
   src: string;
   width: 'inherit' | number;
+  onError: () => void;
 }): JSX.Element {
   useSuspenseImage(src);
   return (
@@ -100,6 +110,21 @@ function LazyImage({
         height,
         maxWidth,
         width,
+      }}
+      onError={onError}
+      draggable="false"
+    />
+  );
+}
+
+function BrokenImage(): JSX.Element {
+  return (
+    <img
+      src={brokenImage}
+      style={{
+        height: 200,
+        opacity: 0.2,
+        width: 200,
       }}
       draggable="false"
     />
@@ -136,12 +161,11 @@ export default function ImageComponent({
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const {isCollabActive} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
-  const [selection, setSelection] = useState<
-    RangeSelection | NodeSelection | GridSelection | null
-  >(null);
+  const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
+  const [isLoadError, setIsLoadError] = useState<boolean>(false);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
@@ -149,6 +173,7 @@ export default function ImageComponent({
         const node = $getNodeByKey(nodeKey);
         if ($isImageNode(node)) {
           node.remove();
+          return true;
         }
       }
       return false;
@@ -156,7 +181,7 @@ export default function ImageComponent({
     [isSelected, nodeKey],
   );
 
-  const onEnter = useCallback(
+  const $onEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
       const buttonElem = buttonRef.current;
@@ -185,7 +210,7 @@ export default function ImageComponent({
     [caption, isSelected, showCaption],
   );
 
-  const onEscape = useCallback(
+  const $onEscape = useCallback(
     (event: KeyboardEvent) => {
       if (
         activeEditorRef.current === caption ||
@@ -206,8 +231,51 @@ export default function ImageComponent({
     [caption, editor, setSelected],
   );
 
+  const onClick = useCallback(
+    (payload: MouseEvent) => {
+      const event = payload;
+
+      if (isResizing) {
+        return true;
+      }
+      if (event.target === imageRef.current) {
+        if (event.shiftKey) {
+          setSelected(!isSelected);
+        } else {
+          clearSelection();
+          setSelected(true);
+        }
+        return true;
+      }
+
+      return false;
+    },
+    [isResizing, isSelected, setSelected, clearSelection],
+  );
+
+  const onRightClick = useCallback(
+    (event: MouseEvent): void => {
+      editor.getEditorState().read(() => {
+        const latestSelection = $getSelection();
+        const domElement = event.target as HTMLElement;
+        if (
+          domElement.tagName === 'IMG' &&
+          $isRangeSelection(latestSelection) &&
+          latestSelection.getNodes().length === 1
+        ) {
+          editor.dispatchCommand(
+            RIGHT_CLICK_IMAGE_COMMAND,
+            event as MouseEvent,
+          );
+        }
+      });
+    },
+    [editor],
+  );
+
   useEffect(() => {
     let isMounted = true;
+    const rootElement = editor.getRootElement();
     const unregister = mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         if (isMounted) {
@@ -224,24 +292,12 @@ export default function ImageComponent({
       ),
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
-        (payload) => {
-          const event = payload;
-
-          if (isResizing) {
-            return true;
-          }
-          if (event.target === imageRef.current) {
-            if (event.shiftKey) {
-              setSelected(!isSelected);
-            } else {
-              clearSelection();
-              setSelected(true);
-            }
-            return true;
-          }
-
-          return false;
-        },
+        onClick,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand<MouseEvent>(
+        RIGHT_CLICK_IMAGE_COMMAND,
+        onClick,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
@@ -259,24 +315,28 @@ export default function ImageComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_ENTER_COMMAND, onEnter, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
-        onEscape,
+        $onEscape,
         COMMAND_PRIORITY_LOW,
       ),
     );
+
+    rootElement?.addEventListener('contextmenu', onRightClick);
+
     return () => {
       isMounted = false;
       unregister();
+      rootElement?.removeEventListener('contextmenu', onRightClick);
     };
   }, [
     clearSelection,
@@ -284,9 +344,11 @@ export default function ImageComponent({
     isResizing,
     isSelected,
     nodeKey,
-    onDelete,
-    onEnter,
-    onEscape,
+    $onDelete,
+    $onEnter,
+    $onEscape,
+    onClick,
+    onRightClick,
     setSelected,
   ]);
 
@@ -331,20 +393,26 @@ export default function ImageComponent({
     <Suspense fallback={null}>
       <>
         <div draggable={draggable}>
-          <LazyImage
-            className={
-              isFocused
-                ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
-                : null
-            }
-            src={src}
-            altText={altText}
-            imageRef={imageRef}
-            width={width}
-            height={height}
-            maxWidth={maxWidth}
-          />
+          {isLoadError ? (
+            <BrokenImage />
+          ) : (
+            <LazyImage
+              className={
+                isFocused
+                  ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                  : null
+              }
+              src={src}
+              altText={altText}
+              imageRef={imageRef}
+              width={width}
+              height={height}
+              maxWidth={maxWidth}
+              onError={() => setIsLoadError(true)}
+            />
+          )}
         </div>
+
         {showCaption && (
           <div className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
@@ -388,7 +456,7 @@ export default function ImageComponent({
             maxWidth={maxWidth}
             onResizeStart={onResizeStart}
             onResizeEnd={onResizeEnd}
-            captionsEnabled={captionsEnabled}
+            captionsEnabled={!isLoadError && captionsEnabled}
           />
         )}
       </>

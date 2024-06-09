@@ -6,9 +6,9 @@
  *
  */
 
-import {LinkNode, TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
+import {$toggleLink, LinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -34,17 +34,17 @@ export function LinkPlugin({validateUrl}: Props): null {
         TOGGLE_LINK_COMMAND,
         (payload) => {
           if (payload === null) {
-            toggleLink(payload);
+            $toggleLink(payload);
             return true;
           } else if (typeof payload === 'string') {
             if (validateUrl === undefined || validateUrl(payload)) {
-              toggleLink(payload);
+              $toggleLink(payload);
               return true;
             }
             return false;
           } else {
             const {url, target, rel, title} = payload;
-            toggleLink(url, {rel, target, title});
+            $toggleLink(url, {rel, target, title});
             return true;
           }
         },
@@ -58,12 +58,16 @@ export function LinkPlugin({validateUrl}: Props): null {
               if (
                 !$isRangeSelection(selection) ||
                 selection.isCollapsed() ||
-                !(event instanceof ClipboardEvent) ||
-                event.clipboardData == null
+                !objectKlassEquals(event, ClipboardEvent)
               ) {
                 return false;
               }
-              const clipboardText = event.clipboardData.getData('text');
+              const clipboardEvent = event as ClipboardEvent;
+              if (clipboardEvent.clipboardData === null) {
+                return false;
+              }
+              const clipboardText =
+                clipboardEvent.clipboardData.getData('text');
               if (!validateUrl(clipboardText)) {
                 return false;
               }

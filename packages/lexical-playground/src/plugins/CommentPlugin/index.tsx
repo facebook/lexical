@@ -31,7 +31,8 @@ import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {EditorRefPlugin} from '@lexical/react/LexicalEditorRefPlugin';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
@@ -117,23 +118,6 @@ function AddCommentBox({
       </button>
     </div>
   );
-}
-
-function EditorRefPlugin({
-  editorRef,
-}: {
-  editorRef: {current: null | LexicalEditor};
-}): null {
-  const [editor] = useLexicalComposerContext();
-
-  useLayoutEffect(() => {
-    editorRef.current = editor;
-    return () => {
-      editorRef.current = null;
-    };
-  }, [editor, editorRef]);
-
-  return null;
 }
 
 function EscapeHandlerPlugin({
@@ -266,7 +250,11 @@ function CommentInputBox({
             correctedLeft = 10;
           }
           boxElem.style.left = `${correctedLeft}px`;
-          boxElem.style.top = `${bottom + 20}px`;
+          boxElem.style.top = `${
+            bottom +
+            20 +
+            (window.pageYOffset || document.documentElement.scrollTop)
+          }px`;
           const selectionRectsLength = selectionRects.length;
           const {container} = selectionState;
           const elements: Array<HTMLSpanElement> = selectionState.elements;
@@ -281,7 +269,14 @@ function CommentInputBox({
               container.appendChild(elem);
             }
             const color = '255, 212, 0';
-            const style = `position:absolute;top:${selectionRect.top}px;left:${selectionRect.left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
+            const style = `position:absolute;top:${
+              selectionRect.top +
+              (window.pageYOffset || document.documentElement.scrollTop)
+            }px;left:${selectionRect.left}px;height:${
+              selectionRect.height
+            }px;width:${
+              selectionRect.width
+            }px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
             elem.style.cssText = style;
           }
           for (let i = elementsLength - 1; i >= selectionRectsLength; i--) {
@@ -748,7 +743,9 @@ export default function CommentPlugin({
           comment,
           thread,
         );
-        if (!deletionInfo) return;
+        if (!deletionInfo) {
+          return;
+        }
         const {markedComment, index} = deletionInfo;
         commentStore.addComment(markedComment, thread, index);
       } else {

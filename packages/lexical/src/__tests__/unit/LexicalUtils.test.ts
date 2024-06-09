@@ -46,19 +46,22 @@ describe('LexicalUtils tests', () => {
 
     test('scheduleMicroTask(): promise', async () => {
       jest.resetModules();
-      window.queueMicrotask = undefined;
+      const nativeQueueMicrotask = window.queueMicrotask;
+      const fn = jest.fn();
+      try {
+        // @ts-ignore
+        window.queueMicrotask = undefined;
+        scheduleMicroTask(fn);
+      } finally {
+        // Reset it before yielding control
+        window.queueMicrotask = nativeQueueMicrotask;
+      }
 
-      let flag = false;
-
-      scheduleMicroTask(() => {
-        flag = true;
-      });
-
-      expect(flag).toBe(false);
+      expect(fn).toHaveBeenCalledTimes(0);
 
       await null;
 
-      expect(flag).toBe(true);
+      expect(fn).toHaveBeenCalledTimes(1);
     });
 
     test('emptyFunction()', () => {
@@ -96,7 +99,7 @@ describe('LexicalUtils tests', () => {
 
     test('isSelectionWithinEditor()', async () => {
       const {editor} = testEnv;
-      let textNode;
+      let textNode: TextNode;
 
       await editor.update(() => {
         const root = $getRoot();
@@ -107,7 +110,7 @@ describe('LexicalUtils tests', () => {
       });
 
       await editor.update(() => {
-        const domSelection = window.getSelection();
+        const domSelection = window.getSelection()!;
 
         expect(
           isSelectionWithinEditor(
@@ -121,7 +124,7 @@ describe('LexicalUtils tests', () => {
       });
 
       await editor.update(() => {
-        const domSelection = window.getSelection();
+        const domSelection = window.getSelection()!;
 
         expect(
           isSelectionWithinEditor(
@@ -183,8 +186,8 @@ describe('LexicalUtils tests', () => {
 
     test('$getNodeByKey', async () => {
       const {editor} = testEnv;
-      let paragraphNode;
-      let textNode;
+      let paragraphNode: ParagraphNode;
+      let textNode: TextNode;
 
       await editor.update(() => {
         const rootNode = $getRoot();
@@ -206,7 +209,7 @@ describe('LexicalUtils tests', () => {
 
     test('$nodesOfType', async () => {
       const {editor} = testEnv;
-      const paragraphKeys = [];
+      const paragraphKeys: string[] = [];
 
       const $paragraphKeys = () =>
         $nodesOfType(ParagraphNode).map((node) => node.getKey());

@@ -230,7 +230,7 @@ export class CommentStore {
   _withRemoteTransaction(fn: () => void): void {
     const provider = this._collabProvider;
     if (provider !== null) {
-      // @ts-ignore doc does exist
+      // @ts-expect-error doc does exist
       const doc = provider.doc;
       doc.transact(fn, this);
     }
@@ -250,7 +250,7 @@ export class CommentStore {
   _getCollabComments(): null | YArray<any> {
     const provider = this._collabProvider;
     if (provider !== null) {
-      // @ts-ignore doc does exist
+      // @ts-expect-error doc does exist
       const doc = provider.doc;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return doc.get('comments', YArray) as YArray<any>;

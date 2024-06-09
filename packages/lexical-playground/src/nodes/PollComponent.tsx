@@ -18,14 +18,12 @@ import {
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
+  BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  GridSelection,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   NodeKey,
-  NodeSelection,
-  RangeSelection,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -143,12 +141,10 @@ export default function PollComponent({
   const totalVotes = useMemo(() => getTotalVotes(options), [options]);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
-  const [selection, setSelection] = useState<
-    RangeSelection | NodeSelection | GridSelection | null
-  >(null);
+  const [selection, setSelection] = useState<BaseSelection | null>(null);
   const ref = useRef(null);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
@@ -156,6 +152,7 @@ export default function PollComponent({
         const node = $getNodeByKey(nodeKey);
         if ($isPollNode(node)) {
           node.remove();
+          return true;
         }
       }
       return false;
@@ -187,16 +184,16 @@ export default function PollComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
 
   const withPollNode = (
     cb: (node: PollNode) => void,

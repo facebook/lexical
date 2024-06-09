@@ -7,11 +7,10 @@
  */
 
 import type {
+  BaseSelection,
   EditorConfig,
-  GridSelection,
   LexicalNode,
   NodeKey,
-  NodeSelection,
   RangeSelection,
   SerializedElementNode,
   Spread,
@@ -21,12 +20,7 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {
-  $applyNodeReplacement,
-  $isElementNode,
-  $isRangeSelection,
-  ElementNode,
-} from 'lexical';
+import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
@@ -128,7 +122,9 @@ export class MarkNode extends ElementNode {
       self.__ids = ids;
       for (let i = 0; i < ids.length; i++) {
         // If we already have it, don't add again
-        if (id === ids[i]) return;
+        if (id === ids[i]) {
+          return;
+        }
       }
       ids.push(id);
     }
@@ -152,16 +148,9 @@ export class MarkNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection = true,
   ): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(
-      selection,
-      restoreSelection,
-    );
-    if ($isElementNode(element)) {
-      const markNode = $createMarkNode(this.__ids);
-      element.append(markNode);
-      return markNode;
-    }
-    return null;
+    const markNode = $createMarkNode(this.__ids);
+    this.insertAfter(markNode, restoreSelection);
+    return markNode;
   }
 
   canInsertTextBefore(): false {
@@ -182,7 +171,7 @@ export class MarkNode extends ElementNode {
 
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: BaseSelection,
     destination: 'clone' | 'html',
   ): boolean {
     if (!$isRangeSelection(selection) || destination === 'html') {

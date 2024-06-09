@@ -262,13 +262,13 @@ test.describe('Lists CopyAndPaste', () => {
             value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">three</span>
+            <span data-lexical-text="true">two</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">two</span>
+            <span data-lexical-text="true">three</span>
           </li>
         </ul>
         <p
@@ -504,40 +504,44 @@ test.describe('Lists CopyAndPaste', () => {
             <span data-lexical-text="true">five</span>
           </li>
         </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">12one</span>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
           <li
             value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">two</span>
+            <span data-lexical-text="true">one</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">three</span>
+            <span data-lexical-text="true">two</span>
           </li>
           <li
             value="3"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">four</span>
+            <span data-lexical-text="true">three</span>
           </li>
           <li
             value="4"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
             <span data-lexical-text="true">five</span>
           </li>
-          <li value="5" class="PlaygroundEditorTheme__listItem">
-            <span data-lexical-text="true">45</span>
-          </li>
         </ul>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">45</span>
+        </p>
       `,
     );
   });
@@ -600,13 +604,13 @@ test.describe('Lists CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">fourthree</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="6" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="5"><span data-lexical-text="true">three</span></li><li value="6" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="7" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
     );
     await assertSelection(page, {
       anchorOffset: 4,
-      anchorPath: [0, 4, 0, 0],
+      anchorPath: [0, 5, 0, 0],
       focusOffset: 4,
-      focusPath: [0, 4, 0, 0],
+      focusPath: [0, 5, 0, 0],
     });
   });
 

@@ -8,17 +8,35 @@
     "hashtag"
   ],
   "license": "MIT",
-  "version": "0.11.2",
+  "version": "0.16.0",
   "main": "LexicalHashtag.js",
-  "peerDependencies": {
-    "lexical": "0.11.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.11.2"
+    "@lexical/utils": "0.16.0",
+    "lexical": "0.16.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-hashtag"
+  },
+  "module": "LexicalHashtag.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHashtag.dev.mjs",
+        "production": "./LexicalHashtag.prod.mjs",
+        "node": "./LexicalHashtag.node.mjs",
+        "default": "./LexicalHashtag.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHashtag.dev.js",
+        "production": "./LexicalHashtag.prod.js",
+        "default": "./LexicalHashtag.js"
+      }
+    }
   }
 }

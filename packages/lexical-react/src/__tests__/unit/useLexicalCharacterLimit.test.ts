@@ -18,13 +18,14 @@ import {
   $getRoot,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   LexicalEditor,
   NodeKey,
   ParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {mergePrevious} from '../../shared/useCharacterLimit';
+import {$mergePrevious} from '../../shared/useCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(
@@ -53,7 +54,7 @@ describe('LexicalNodeHelpers tests', () => {
             paragraph.append(overflowRight);
           });
 
-          return [overflowLeftKey, overflowRightKey];
+          return [overflowLeftKey!, overflowRightKey!];
         }
 
         it('merges an empty overflow node (left overflow selected)', async () => {
@@ -62,8 +63,9 @@ describe('LexicalNodeHelpers tests', () => {
             await initializeEditorWithLeftRightOverflowNodes();
 
           await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -76,17 +78,18 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>();
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
-            mergePrevious(overflowRight);
+            $mergePrevious(overflowRight);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
 
             const selection = $getSelection();
 
-            if (selection === null) {
+            if (!$isRangeSelection(selection)) {
               throw new Error('Lost selection');
             }
 
@@ -109,8 +112,9 @@ describe('LexicalNodeHelpers tests', () => {
           let text1Key: NodeKey;
 
           await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -132,18 +136,19 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>();
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
 
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
-            mergePrevious(overflowRight);
+            $mergePrevious(overflowRight);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
 
             const selection = $getSelection();
 
-            if (selection === null) {
+            if (!$isRangeSelection(selection)) {
               throw new Error('Lost selection');
             }
 
@@ -167,8 +172,9 @@ describe('LexicalNodeHelpers tests', () => {
           let text3Key: NodeKey;
 
           await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -193,7 +199,7 @@ describe('LexicalNodeHelpers tests', () => {
 
             const selection = $getSelection();
 
-            if ($isNodeSelection(selection)) {
+            if (!$isRangeSelection(selection)) {
               return;
             }
 
@@ -201,17 +207,18 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>();
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
-            mergePrevious(overflowRight);
+            $mergePrevious(overflowRight);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
 
             const selection = $getSelection();
 
-            if (selection === null) {
+            if (!$isRangeSelection(selection)) {
               throw new Error('Lost selection');
             }
 

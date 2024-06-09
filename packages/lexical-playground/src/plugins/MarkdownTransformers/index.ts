@@ -264,7 +264,7 @@ export const TABLE: ElementTransformer = {
       table.append(tableRow);
 
       for (let i = 0; i < maxCells; i++) {
-        tableRow.append(i < cells.length ? cells[i] : createTableCell(''));
+        tableRow.append(i < cells.length ? cells[i] : $createTableCell(''));
       }
     }
 
@@ -289,7 +289,7 @@ function getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
-const createTableCell = (textContent: string): TableCellNode => {
+const $createTableCell = (textContent: string): TableCellNode => {
   textContent = textContent.replace(/\\n/g, '\n');
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
@@ -301,7 +301,7 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
   if (!match || !match[1]) {
     return null;
   }
-  return match[1].split('|').map((text) => createTableCell(text));
+  return match[1].split('|').map((text) => $createTableCell(text));
 };
 
 export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [

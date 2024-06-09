@@ -101,7 +101,6 @@ function findOffset(
   maxCharacters: number,
   strlen: (input: string) => number,
 ): number {
-  // @ts-ignore This is due to be added in a later version of TS
   const Segmenter = Intl.Segmenter;
   let offsetUtf16 = 0;
   let offset = 0;
@@ -216,7 +215,7 @@ function $wrapOverflowedNodes(offset: number): void {
           $setSelection(previousSelection);
         }
 
-        mergePrevious(overflowNode);
+        $mergePrevious(overflowNode);
       }
     }
   }
@@ -224,7 +223,7 @@ function $wrapOverflowedNodes(offset: number): void {
 
 function $wrapNode(node: LexicalNode): OverflowNode {
   const overflowNode = $createOverflowNode();
-  node.insertBefore(overflowNode);
+  node.replace(overflowNode);
   overflowNode.append(node);
   return overflowNode;
 }
@@ -241,7 +240,7 @@ function $unwrapNode(node: OverflowNode): LexicalNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode): void {
+export function $mergePrevious(overflowNode: OverflowNode): void {
   const previousNode = overflowNode.getPreviousSibling();
 
   if (!$isOverflowNode(previousNode)) {

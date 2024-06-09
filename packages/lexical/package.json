@@ -9,11 +9,31 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.11.2",
+  "version": "0.16.0",
   "main": "Lexical.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical"
+  },
+  "module": "Lexical.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./Lexical.dev.mjs",
+        "production": "./Lexical.prod.mjs",
+        "node": "./Lexical.node.mjs",
+        "default": "./Lexical.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./Lexical.dev.js",
+        "production": "./Lexical.prod.js",
+        "default": "./Lexical.js"
+      }
+    }
   }
 }

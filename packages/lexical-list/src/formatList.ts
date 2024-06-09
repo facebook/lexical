@@ -15,7 +15,6 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
-  DEPRECATED_$isGridSelection,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -53,33 +52,6 @@ function $isSelectingEmptyListItem(
   );
 }
 
-function $getListItemValue(listItem: ListItemNode): number {
-  const list = listItem.getParent();
-
-  let value = 1;
-
-  if (list != null) {
-    if (!$isListNode(list)) {
-      invariant(
-        false,
-        '$getListItemValue: list node is not parent of list item node',
-      );
-    } else {
-      value = list.getStart();
-    }
-  }
-
-  const siblings = listItem.getPreviousSiblings();
-  for (let i = 0; i < siblings.length; i++) {
-    const sibling = siblings[i];
-
-    if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
-      value++;
-    }
-  }
-  return value;
-}
-
 /**
  * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
@@ -94,76 +66,77 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
 
-    if (
-      $isRangeSelection(selection) ||
-      DEPRECATED_$isGridSelection(selection)
-    ) {
+    if (selection !== null) {
       const nodes = selection.getNodes();
-      const anchor = selection.anchor;
-      const anchorNode = anchor.getNode();
-      const anchorNodeParent = anchorNode.getParent();
+      if ($isRangeSelection(selection)) {
+        const anchorAndFocus = selection.getStartEndPoints();
+        invariant(
+          anchorAndFocus !== null,
+          'insertList: anchor should be defined',
+        );
+        const [anchor] = anchorAndFocus;
+        const anchorNode = anchor.getNode();
+        const anchorNodeParent = anchorNode.getParent();
 
-      if ($isSelectingEmptyListItem(anchorNode, nodes)) {
-        const list = $createListNode(listType);
+        if ($isSelectingEmptyListItem(anchorNode, nodes)) {
+          const list = $createListNode(listType);
 
-        if ($isRootOrShadowRoot(anchorNodeParent)) {
-          anchorNode.replace(list);
-          const listItem = $createListItemNode();
-          if ($isElementNode(anchorNode)) {
-            listItem.setFormat(anchorNode.getFormatType());
-            listItem.setIndent(anchorNode.getIndent());
+          if ($isRootOrShadowRoot(anchorNodeParent)) {
+            anchorNode.replace(list);
+            const listItem = $createListItemNode();
+            if ($isElementNode(anchorNode)) {
+              listItem.setFormat(anchorNode.getFormatType());
+              listItem.setIndent(anchorNode.getIndent());
+            }
+            list.append(listItem);
+          } else if ($isListItemNode(anchorNode)) {
+            const parent = anchorNode.getParentOrThrow();
+            append(list, parent.getChildren());
+            parent.replace(list);
           }
-          list.append(listItem);
-        } else if ($isListItemNode(anchorNode)) {
-          const parent = anchorNode.getParentOrThrow();
-          append(list, parent.getChildren());
-          parent.replace(list);
+
+          return;
+        }
+      }
+
+      const handled = new Set();
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+
+        if (
+          $isElementNode(node) &&
+          node.isEmpty() &&
+          !$isListItemNode(node) &&
+          !handled.has(node.getKey())
+        ) {
+          $createListOrMerge(node, listType);
+          continue;
         }
 
-        return;
-      } else {
-        const handled = new Set();
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
+        if ($isLeafNode(node)) {
+          let parent = node.getParent();
+          while (parent != null) {
+            const parentKey = parent.getKey();
 
-          if (
-            $isElementNode(node) &&
-            node.isEmpty() &&
-            !handled.has(node.getKey())
-          ) {
-            createListOrMerge(node, listType);
-            continue;
-          }
-
-          if ($isLeafNode(node)) {
-            let parent = node.getParent();
-            while (parent != null) {
-              const parentKey = parent.getKey();
-
-              if ($isListNode(parent)) {
-                if (!handled.has(parentKey)) {
-                  const newListNode = $createListNode(listType);
-                  append(newListNode, parent.getChildren());
-                  parent.replace(newListNode);
-                  updateChildrenListItemValue(newListNode);
-                  handled.add(parentKey);
-                }
-
-                break;
-              } else {
-                const nextParent = parent.getParent();
-
-                if (
-                  $isRootOrShadowRoot(nextParent) &&
-                  !handled.has(parentKey)
-                ) {
-                  handled.add(parentKey);
-                  createListOrMerge(parent, listType);
-                  break;
-                }
-
-                parent = nextParent;
+            if ($isListNode(parent)) {
+              if (!handled.has(parentKey)) {
+                const newListNode = $createListNode(listType);
+                append(newListNode, parent.getChildren());
+                parent.replace(newListNode);
+                handled.add(parentKey);
               }
+
+              break;
+            } else {
+              const nextParent = parent.getParent();
+
+              if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
+                handled.add(parentKey);
+                $createListOrMerge(parent, listType);
+                break;
+              }
+
+              parent = nextParent;
             }
           }
         }
@@ -176,7 +149,7 @@ function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
   node.splice(node.getChildrenSize(), 0, nodesToAppend);
 }
 
-function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
+function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
   }
@@ -212,7 +185,6 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     const list = $createListNode(listType);
     list.append(listItem);
     node.replace(list);
-    updateChildrenListItemValue(list);
     return list;
   }
 }
@@ -240,7 +212,6 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
   const toMerge = list2.getChildren();
   if (toMerge.length > 0) {
     list1.append(...toMerge);
-    updateChildrenListItemValue(list1);
   }
 
   list2.remove();
@@ -314,28 +285,40 @@ export function removeList(editor: LexicalEditor): void {
 
 /**
  * Takes the value of a child ListItemNode and makes it the value the ListItemNode
- * should be if it isn't already. If only certain children should be updated, they
- * can be passed optionally in an array.
+ * should be if it isn't already. Also ensures that checked is undefined if the
+ * parent does not have a list type of 'check'.
  * @param list - The list whose children are updated.
- * @param children - An array of the children to be updated.
  */
-export function updateChildrenListItemValue(
-  list: ListNode,
-  children?: Array<LexicalNode>,
-): void {
-  const childrenOrExisting = children || list.getChildren();
-  if (childrenOrExisting !== undefined) {
-    for (let i = 0; i < childrenOrExisting.length; i++) {
-      const child = childrenOrExisting[i];
-      if ($isListItemNode(child)) {
-        const prevValue = child.getValue();
-        const nextValue = $getListItemValue(child);
-
-        if (prevValue !== nextValue) {
-          child.setValue(nextValue);
-        }
+export function updateChildrenListItemValue(list: ListNode): void {
+  const isNotChecklist = list.getListType() !== 'check';
+  let value = list.getStart();
+  for (const child of list.getChildren()) {
+    if ($isListItemNode(child)) {
+      if (child.getValue() !== value) {
+        child.setValue(value);
+      }
+      if (isNotChecklist && child.getChecked() != null) {
+        child.setChecked(undefined);
+      }
+      if (!$isListNode(child.getFirstChild())) {
+        value++;
       }
     }
+  }
+}
+
+/**
+ * Merge the next sibling list if same type.
+ * <ul> will merge with <ul>, but NOT <ul> with <ol>.
+ * @param list - The list whose next sibling should be potentially merged
+ */
+export function mergeNextSiblingListIfSameType(list: ListNode): void {
+  const nextSibling = list.getNextSibling();
+  if (
+    $isListNode(nextSibling) &&
+    list.getListType() === nextSibling.getListType()
+  ) {
+    mergeLists(list, nextSibling);
   }
 }
 
@@ -375,7 +358,6 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         nextSibling.remove();
         removed.add(nextSibling.getKey());
       }
-      updateChildrenListItemValue(innerList);
     }
   } else if (isNestedListNode(nextSibling)) {
     // if the ListItemNode is next to a nested ListNode, merge them
@@ -387,14 +369,12 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       if (firstChild !== null) {
         firstChild.insertBefore(listItemNode);
       }
-      updateChildrenListItemValue(innerList);
     }
   } else if (isNestedListNode(previousSibling)) {
     const innerList = previousSibling.getFirstChild();
 
     if ($isListNode(innerList)) {
       innerList.append(listItemNode);
-      updateChildrenListItemValue(innerList);
     }
   } else {
     // otherwise, we need to create a new nested ListNode
@@ -412,12 +392,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       } else {
         parent.append(newListItem);
       }
-      updateChildrenListItemValue(newList);
     }
-  }
-
-  if ($isListNode(parent)) {
-    updateChildrenListItemValue(parent);
   }
 }
 
@@ -483,8 +458,6 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       // replace the grandparent list item (now between the siblings) with the outdented list item.
       grandparentListItem.replace(listItemNode);
     }
-    updateChildrenListItemValue(parentList);
-    updateChildrenListItemValue(greatGrandparentList);
   }
 }
 
@@ -506,7 +479,7 @@ export function $handleListInsertParagraph(): boolean {
   // Only run this code on empty list items
   const anchor = selection.anchor.getNode();
 
-  if (!$isListItemNode(anchor) || anchor.getTextContent() !== '') {
+  if (!$isListItemNode(anchor) || anchor.getChildrenSize() !== 0) {
     return false;
   }
   const topListNode = $getTopListNode(anchor);

@@ -26,6 +26,8 @@ import {
   $getRoot,
   $getSelection,
   BLUR_COMMAND,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
   REDO_COMMAND,
@@ -292,6 +294,29 @@ export function useYjsHistory(
   const clearHistory = useCallback(() => {
     undoManager.clear();
   }, [undoManager]);
+
+  // Exposing undo and redo states
+  React.useEffect(() => {
+    const updateUndoRedoStates = () => {
+      editor.dispatchCommand(
+        CAN_UNDO_COMMAND,
+        undoManager.undoStack.length > 0,
+      );
+      editor.dispatchCommand(
+        CAN_REDO_COMMAND,
+        undoManager.redoStack.length > 0,
+      );
+    };
+    undoManager.on('stack-item-added', updateUndoRedoStates);
+    undoManager.on('stack-item-popped', updateUndoRedoStates);
+    undoManager.on('stack-cleared', updateUndoRedoStates);
+    return () => {
+      undoManager.off('stack-item-added', updateUndoRedoStates);
+      undoManager.off('stack-item-popped', updateUndoRedoStates);
+      undoManager.off('stack-cleared', updateUndoRedoStates);
+    };
+  }, [editor, undoManager]);
+
   return clearHistory;
 }
 

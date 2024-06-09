@@ -14,6 +14,7 @@ import {
   moveToLineEnd,
   selectAll,
   selectCharacters,
+  STANDARD_KEYPRESS_DELAY_MS,
   toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -35,7 +36,7 @@ test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);
 });
 
-test.describe('Links', () => {
+test.describe.parallel('Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can convert a text node into a link`, async ({page}) => {
     await focusEditor(page);
@@ -55,6 +56,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -191,6 +193,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -311,6 +314,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -378,6 +382,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await moveLeft(page, 1);
 
@@ -432,6 +437,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -522,6 +528,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -565,6 +572,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await selectCharacters(page, 'left', 1);
     await page.keyboard.type('a');
@@ -592,6 +600,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await selectCharacters(page, 'right', 1);
     await page.keyboard.type('a');
@@ -654,6 +663,7 @@ test.describe('Links', () => {
           await moveLeft(page, 'b'.length);
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
+          await click(page, '.link-confirm');
 
           // Insert a character directly before the link
           await moveLeft(page, 1);
@@ -730,6 +740,7 @@ test.describe('Links', () => {
           await moveLeft(page, 1);
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
+          await click(page, '.link-confirm');
 
           // Insert a character directly before the link
           await moveLeft(page, 1);
@@ -803,6 +814,7 @@ test.describe('Links', () => {
           // Turn 'b' into a link
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
+          await click(page, '.link-confirm');
 
           // Insert a character directly before the link
           await moveLeft(page, 1);
@@ -880,6 +892,7 @@ test.describe('Links', () => {
           await moveLeft(page, 'b'.length);
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
+          await click(page, '.link-confirm');
 
           // Insert a character directly after the link
           await moveRight(page, 1);
@@ -955,6 +968,7 @@ test.describe('Links', () => {
           await moveLeft(page, 1);
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
+          await click(page, '.link-confirm');
 
           // Insert a character directly after the link
           await moveRight(page, 1);
@@ -1030,6 +1044,7 @@ test.describe('Links', () => {
           // Turn 'b' into a link
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
+          await click(page, '.link-confirm');
 
           // Insert a character directly after the link
           await moveRight(page, 1);
@@ -1157,6 +1172,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -1237,6 +1253,7 @@ test.describe('Links', () => {
 
     // Make it a link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -1330,6 +1347,7 @@ test.describe('Links', () => {
 
     // Make it a link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -1420,6 +1438,8 @@ test.describe('Links', () => {
     await selectAll(page);
 
     await click(page, '.link');
+    await click(page, '.link-confirm');
+
     await assertHTML(
       page,
       `<p
@@ -1470,6 +1490,8 @@ test.describe('Links', () => {
     );
 
     await click(page, '.link');
+    await click(page, '.link-confirm');
+
     await assertHTML(
       page,
       html`
@@ -1534,6 +1556,8 @@ test.describe('Links', () => {
 
     await selectCharacters(page, 'left', 'Awesome Website'.length);
     await click(page, '.link');
+    await click(page, '.link-confirm');
+
     await assertHTML(
       page,
       `
@@ -1602,6 +1626,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -1620,21 +1645,12 @@ test.describe('Links', () => {
         </p>
       `,
     );
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 6,
-        anchorPath: [0, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1],
+      focusOffset: 5,
+      focusPath: [0, 1, 0, 0],
+    });
 
     await setURL(page, 'facebook.com');
 
@@ -1666,7 +1682,7 @@ test.describe('Links', () => {
     } else {
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [0, 1],
+        anchorPath: [0, 1, 0, 0],
         focusOffset: 5,
         focusPath: [0, 1, 0, 0],
       });
@@ -1716,6 +1732,7 @@ test.describe('Links', () => {
 
     // link
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -1735,19 +1752,19 @@ test.describe('Links', () => {
       `,
     );
 
-    if (browserName === 'webkit') {
+    if (browserName === 'chromium') {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [0, 1, 0, 0],
+        focusPath: [0, 1],
       });
     } else {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
-        focusOffset: 6,
-        focusPath: [0, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1],
       });
     }
 
@@ -1778,12 +1795,19 @@ test.describe('Links', () => {
         focusOffset: 0,
         focusPath: [0, 1, 0, 0],
       });
+    } else if (browserName === 'chromium') {
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1, 0, 0],
+      });
     } else {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 1, 0, 0],
       });
     }
 
@@ -1819,6 +1843,7 @@ test.describe('Links', () => {
     await selectCharacters(page, 'left', 5);
 
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -1903,6 +1928,7 @@ test.describe('Links', () => {
     await page.keyboard.type('Hello awesome');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type('world');
 
@@ -1944,6 +1970,7 @@ test.describe('Links', () => {
     await page.keyboard.type('some');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type(' world');
 
@@ -1980,6 +2007,7 @@ test.describe('Links', () => {
     await page.keyboard.type('Hello awesome');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type(' world');
 
@@ -2011,10 +2039,11 @@ test.describe('Links', () => {
     await page.keyboard.type('Hello awesome');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type(' world');
 
-    await moveLeft(page, 6, 100);
+    await moveLeft(page, 6, STANDARD_KEYPRESS_DELAY_MS);
 
     await page.keyboard.press('Enter');
 

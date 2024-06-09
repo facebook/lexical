@@ -13,6 +13,7 @@ import {
   AppState,
   BinaryFiles,
   ExcalidrawImperativeAPI,
+  ExcalidrawInitialDataState,
 } from '@excalidraw/excalidraw/types/types';
 import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -21,16 +22,14 @@ import {createPortal} from 'react-dom';
 import Button from '../../ui/Button';
 import Modal from '../../ui/Modal';
 
-export type ExcalidrawElementFragment = {
-  isDeleted?: boolean;
-};
+export type ExcalidrawInitialElements = ExcalidrawInitialDataState['elements'];
 
 type Props = {
   closeOnClickOutside?: boolean;
   /**
    * The initial set of elements to draw into the scene
    */
-  initialElements: ReadonlyArray<ExcalidrawElementFragment>;
+  initialElements: ExcalidrawInitialElements;
   /**
    * The initial set of elements to draw into the scene
    */
@@ -55,10 +54,20 @@ type Props = {
    * Callback when the save button is clicked
    */
   onSave: (
-    elements: ReadonlyArray<ExcalidrawElementFragment>,
+    elements: ExcalidrawInitialElements,
     appState: Partial<AppState>,
     files: BinaryFiles,
   ) => void;
+};
+
+export const useCallbackRefState = () => {
+  const [refValue, setRefValue] =
+    React.useState<ExcalidrawImperativeAPI | null>(null);
+  const refCallback = React.useCallback(
+    (value: ExcalidrawImperativeAPI | null) => setRefValue(value),
+    [],
+  );
+  return [refValue, refCallback] as const;
 };
 
 /**
@@ -77,10 +86,10 @@ export default function ExcalidrawModal({
   onClose,
 }: Props): ReactPortal | null {
   const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
-  const excaliDrawSceneRef = useRef<ExcalidrawImperativeAPI>(null);
+  const [excalidrawAPI, excalidrawAPIRefCallback] = useCallbackRefState();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
-    useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
+    useState<ExcalidrawInitialElements>(initialElements);
   const [files, setFiles] = useState<BinaryFiles>(initialFiles);
 
   useEffect(() => {
@@ -138,21 +147,21 @@ export default function ExcalidrawModal({
   }, [elements, files, onDelete]);
 
   const save = () => {
-    if (elements.filter((el) => !el.isDeleted).length > 0) {
-      const appState = excaliDrawSceneRef?.current?.getAppState();
+    if (elements && elements.filter((el) => !el.isDeleted).length > 0) {
+      const appState = excalidrawAPI?.getAppState();
       // We only need a subset of the state
       const partialState: Partial<AppState> = {
-        exportBackground: appState.exportBackground,
-        exportScale: appState.exportScale,
-        exportWithDarkMode: appState.theme === 'dark',
-        isBindingEnabled: appState.isBindingEnabled,
-        isLoading: appState.isLoading,
-        name: appState.name,
-        theme: appState.theme,
-        viewBackgroundColor: appState.viewBackgroundColor,
-        viewModeEnabled: appState.viewModeEnabled,
-        zenModeEnabled: appState.zenModeEnabled,
-        zoom: appState.zoom,
+        exportBackground: appState?.exportBackground,
+        exportScale: appState?.exportScale,
+        exportWithDarkMode: appState?.theme === 'dark',
+        isBindingEnabled: appState?.isBindingEnabled,
+        isLoading: appState?.isLoading,
+        name: appState?.name,
+        theme: appState?.theme,
+        viewBackgroundColor: appState?.viewBackgroundColor,
+        viewModeEnabled: appState?.viewModeEnabled,
+        zenModeEnabled: appState?.zenModeEnabled,
+        zoom: appState?.zoom,
       };
       onSave(elements, partialState, files);
     } else {
@@ -162,7 +171,7 @@ export default function ExcalidrawModal({
   };
 
   const discard = () => {
-    if (elements.filter((el) => !el.isDeleted).length === 0) {
+    if (elements && elements.filter((el) => !el.isDeleted).length === 0) {
       // delete node if the scene is clear
       onDelete();
     } else {
@@ -204,19 +213,13 @@ export default function ExcalidrawModal({
   }
 
   const onChange = (
-    els: ReadonlyArray<ExcalidrawElementFragment>,
+    els: ExcalidrawInitialElements,
     _: AppState,
     fls: BinaryFiles,
   ) => {
     setElements(els);
     setFiles(fls);
   };
-
-  // This is a hacky work-around for Excalidraw + Vite.
-  // In DEV, Vite pulls this in fine, in prod it doesn't. It seems
-  // like a module resolution issue with ESM vs CJS?
-  const _Excalidraw =
-    Excalidraw.$$typeof != null ? Excalidraw : Excalidraw.default;
 
   return createPortal(
     <div className="ExcalidrawModal__overlay" role="dialog">
@@ -226,9 +229,9 @@ export default function ExcalidrawModal({
         tabIndex={-1}>
         <div className="ExcalidrawModal__row">
           {discardModalOpen && <ShowDiscardDialog />}
-          <_Excalidraw
+          <Excalidraw
             onChange={onChange}
-            ref={excaliDrawSceneRef}
+            excalidrawAPI={excalidrawAPIRefCallback}
             initialData={{
               appState: initialAppState || {isLoading: false},
               elements: initialElements,

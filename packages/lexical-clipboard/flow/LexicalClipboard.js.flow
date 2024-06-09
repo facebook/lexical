@@ -8,9 +8,8 @@
  */
 
 import type {
-  GridSelection,
+  BaseSelection,
   LexicalEditor,
-  NodeSelection,
   RangeSelection,
   LexicalNode,
 } from 'lexical';
@@ -21,7 +20,7 @@ import type {
 
 declare export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   editor: LexicalEditor,
 ): void;
 
@@ -33,7 +32,7 @@ declare export function $getLexicalContent(
 declare export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): void;
 /*
  * Plain Text
@@ -58,7 +57,7 @@ declare export function $generateJSONFromSelectedNodes<
   SerializedNode: BaseSerializedNode,
 >(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection | null,
+  selection: BaseSelection | null,
 ): {
   namespace: string,
   nodes: Array<SerializedNode>,

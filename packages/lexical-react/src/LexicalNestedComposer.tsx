@@ -7,16 +7,32 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
+import type {KlassConstructor, Transform} from 'lexical';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import {EditorThemeClasses, Klass, LexicalEditor, LexicalNode} from 'lexical';
+import {
+  EditorThemeClasses,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+  LexicalNodeReplacement,
+} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
+
+function getTransformSetFromKlass(
+  klass: KlassConstructor<typeof LexicalNode>,
+): Set<Transform<LexicalNode>> {
+  const transform = klass.transform();
+  return transform !== null
+    ? new Set<Transform<LexicalNode>>([transform])
+    : new Set<Transform<LexicalNode>>();
+}
 
 export function LexicalNestedComposer({
   initialEditor,
@@ -28,7 +44,7 @@ export function LexicalNestedComposer({
   children: ReactNode;
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
-  initialNodes?: ReadonlyArray<Klass<LexicalNode>>;
+  initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   skipCollabChecks?: true;
 }): JSX.Element {
   const wasCollabPreviouslyReadyRef = useRef(false);
@@ -62,20 +78,32 @@ export function LexicalNestedComposer({
         ));
         for (const [type, entry] of parentNodes) {
           initialEditor._nodes.set(type, {
+            exportDOM: entry.exportDOM,
             klass: entry.klass,
             replace: entry.replace,
             replaceWithKlass: entry.replaceWithKlass,
-            transforms: new Set(),
+            transforms: getTransformSetFromKlass(entry.klass),
           });
         }
       } else {
-        for (const klass of initialNodes) {
-          const type = klass.getType();
-          initialEditor._nodes.set(type, {
+        for (let klass of initialNodes) {
+          let replace = null;
+          let replaceWithKlass = null;
+
+          if (typeof klass !== 'function') {
+            const options = klass;
+            klass = options.replace;
+            replace = options.with;
+            replaceWithKlass = options.withKlass || null;
+          }
+          const registeredKlass = initialEditor._nodes.get(klass.getType());
+
+          initialEditor._nodes.set(klass.getType(), {
+            exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
-            replace: null,
-            replaceWithKlass: null,
-            transforms: new Set(),
+            replace,
+            replaceWithKlass,
+            transforms: getTransformSetFromKlass(klass),
           });
         }
       }

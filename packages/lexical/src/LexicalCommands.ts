@@ -6,7 +6,13 @@
  *
  */
 
-import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
+import type {
+  BaseSelection,
+  ElementFormatType,
+  LexicalCommand,
+  LexicalNode,
+  TextFormatType,
+} from 'lexical';
 
 export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
 
@@ -17,6 +23,10 @@ export function createCommand<T>(type?: string): LexicalCommand<T> {
 export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> = createCommand(
   'SELECTION_CHANGE_COMMAND',
 );
+export const SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
+  nodes: Array<LexicalNode>;
+  selection: BaseSelection;
+}> = createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('CLICK_COMMAND');
 export const DELETE_CHARACTER_COMMAND: LexicalCommand<boolean> = createCommand(
@@ -95,6 +105,8 @@ export const COPY_COMMAND: LexicalCommand<
 export const CUT_COMMAND: LexicalCommand<
   ClipboardEvent | KeyboardEvent | null
 > = createCommand('CUT_COMMAND');
+export const SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent> =
+  createCommand('SELECT_ALL_COMMAND');
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_EDITOR_COMMAND',
 );

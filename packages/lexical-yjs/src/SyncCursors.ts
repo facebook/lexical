@@ -7,14 +7,7 @@
  */
 
 import type {Binding} from './Bindings';
-import type {
-  GridSelection,
-  NodeKey,
-  NodeMap,
-  NodeSelection,
-  Point,
-  RangeSelection,
-} from 'lexical';
+import type {BaseSelection, NodeKey, NodeMap, Point} from 'lexical';
 import type {AbsolutePosition, RelativePosition} from 'yjs';
 
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
@@ -26,6 +19,7 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
@@ -87,6 +81,7 @@ function createRelativePosition(
     point.type === 'element'
   ) {
     const parent = point.getNode();
+    invariant($isElementNode(parent), 'Element point must be an element node');
     let accumulatedOffset = 0;
     let i = 0;
     let node = parent.getFirstChild();
@@ -300,7 +295,7 @@ function updateCursor(
   }
 }
 
-export function syncLocalCursorPosition(
+export function $syncLocalCursorPosition(
   binding: Binding,
   provider: Provider,
 ): void {
@@ -340,14 +335,14 @@ export function syncLocalCursorPosition(
         const anchor = selection.anchor;
         const focus = selection.focus;
 
-        setPoint(anchor, anchorKey, anchorOffset);
-        setPoint(focus, focusKey, focusOffset);
+        $setPoint(anchor, anchorKey, anchorOffset);
+        $setPoint(focus, focusKey, focusOffset);
       }
     }
   }
 }
 
-function setPoint(point: Point, key: NodeKey, offset: number): void {
+function $setPoint(point: Point, key: NodeKey, offset: number): void {
   if (point.key !== key || point.offset !== offset) {
     let anchorNode = $getNodeByKey(key);
     if (
@@ -490,8 +485,8 @@ export function syncCursorPositions(
 export function syncLexicalSelectionToYjs(
   binding: Binding,
   provider: Provider,
-  prevSelection: null | RangeSelection | NodeSelection | GridSelection,
-  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
+  prevSelection: null | BaseSelection,
+  nextSelection: null | BaseSelection,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();

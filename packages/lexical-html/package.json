@@ -8,17 +8,36 @@
     "html"
   ],
   "license": "MIT",
-  "version": "0.11.2",
+  "version": "0.16.0",
   "main": "LexicalHtml.js",
-  "peerDependencies": {
-    "lexical": "0.11.2"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-html"
   },
   "dependencies": {
-    "@lexical/selection": "0.11.2"
+    "@lexical/selection": "0.16.0",
+    "@lexical/utils": "0.16.0",
+    "lexical": "0.16.0"
+  },
+  "module": "LexicalHtml.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHtml.dev.mjs",
+        "production": "./LexicalHtml.prod.mjs",
+        "node": "./LexicalHtml.node.mjs",
+        "default": "./LexicalHtml.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHtml.dev.js",
+        "production": "./LexicalHtml.prod.js",
+        "default": "./LexicalHtml.js"
+      }
+    }
   }
 }

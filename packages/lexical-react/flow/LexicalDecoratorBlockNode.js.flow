@@ -25,4 +25,4 @@ declare export class DecoratorBlockNode<T> extends DecoratorNode<T> {
 
 declare export function $isDecoratorBlockNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof DecoratorBlockNode);
+): node is DecoratorBlockNode<{...}>;

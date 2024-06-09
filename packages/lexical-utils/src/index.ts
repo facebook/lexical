@@ -1,4 +1,3 @@
-/** @module @lexical/utils */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -14,22 +13,55 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   $splitNode,
-  DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
+// This underscore postfixing is used as a hotfix so we do not
+// export shared types from this module #5918
+import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
+import {
+  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
+  IS_ANDROID as IS_ANDROID_,
+  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
+  IS_APPLE as IS_APPLE_,
+  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
+  IS_CHROME as IS_CHROME_,
+  IS_FIREFOX as IS_FIREFOX_,
+  IS_IOS as IS_IOS_,
+  IS_SAFARI as IS_SAFARI_,
+} from 'shared/environment';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
-export {$splitNode};
+export {default as markSelection} from './markSelection';
+export {default as mergeRegister} from './mergeRegister';
+export {default as positionNodeOnRange} from './positionNodeOnRange';
+export {
+  $splitNode,
+  isBlockDomNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
+  isInlineDomNode,
+} from 'lexical';
+// Hotfix to export these with inlined types #5918
+export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
+export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
+export const IS_ANDROID: boolean = IS_ANDROID_;
+export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
+export const IS_APPLE: boolean = IS_APPLE_;
+export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
+export const IS_CHROME: boolean = IS_CHROME_;
+export const IS_FIREFOX: boolean = IS_FIREFOX_;
+export const IS_IOS: boolean = IS_IOS_;
+export const IS_SAFARI: boolean = IS_SAFARI_;
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -48,12 +80,10 @@ export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
-  classNames.forEach((className) => {
-    if (typeof className === 'string') {
-      const classesToAdd = className.split(' ').filter((n) => n !== '');
-      element.classList.add(...classesToAdd);
-    }
-  });
+  const classesToAdd = normalizeClassNames(...classNames);
+  if (classesToAdd.length > 0) {
+    element.classList.add(...classesToAdd);
+  }
 }
 
 /**
@@ -68,11 +98,10 @@ export function removeClassNamesFromElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
-  classNames.forEach((className) => {
-    if (typeof className === 'string') {
-      element.classList.remove(...className.split(' '));
-    }
-  });
+  const classesToRemove = normalizeClassNames(...classNames);
+  if (classesToRemove.length > 0) {
+    element.classList.remove(...classesToRemove);
+  }
 }
 
 /**
@@ -154,7 +183,8 @@ export function $dfs(
   const nodes = [];
   const start = (startingNode || $getRoot()).getLatest();
   const end =
-    endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
+    endingNode ||
+    ($isElementNode(start) ? start.getLastDescendant() || start : start);
   let node: LexicalNode | null = start;
   let depth = $getDepth(node);
 
@@ -197,6 +227,37 @@ function $getDepth(node: LexicalNode): number {
   }
 
   return depth;
+}
+
+/**
+ * Performs a right-to-left preorder tree traversal.
+ * From the starting node it goes to the rightmost child, than backtracks to paret and finds new rightmost path.
+ * It will return the next node in traversal sequence after the startingNode.
+ * The traversal is similar to $dfs functions above, but the nodes are visited right-to-left, not left-to-right.
+ * @param startingNode - The node to start the search.
+ * @returns The next node in pre-order right to left traversal sequence or `null`, if the node does not exist
+ */
+export function $getNextRightPreorderNode(
+  startingNode: LexicalNode,
+): LexicalNode | null {
+  let node: LexicalNode | null = startingNode;
+
+  if ($isElementNode(node) && node.getChildrenSize() > 0) {
+    node = node.getLastChild();
+  } else {
+    let sibling = null;
+
+    while (sibling === null && node !== null) {
+      sibling = node.getPreviousSibling();
+
+      if (sibling === null) {
+        node = node.getParent();
+      } else {
+        node = sibling;
+      }
+    }
+  }
+  return node;
 }
 
 /**
@@ -260,10 +321,19 @@ export type DOMNodeToLexicalConversionMap = Record<
  * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
  * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
  */
-export function $findMatchingParent(
+export const $findMatchingParent: {
+  <T extends LexicalNode>(
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => node is T,
+  ): T | null;
+  (
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => boolean,
+  ): LexicalNode | null;
+} = (
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null {
+): LexicalNode | null => {
   let curr: ElementNode | LexicalNode | null = startingNode;
 
   while (curr !== $getRoot() && curr != null) {
@@ -275,37 +345,7 @@ export function $findMatchingParent(
   }
 
   return null;
-}
-
-type Func = () => void;
-
-/**
- * Returns a function that will execute all functions passed when called. It is generally used
- * to register multiple lexical listeners and then tear them down with a single function call, such
- * as React's useEffect hook.
- * @example
- * ```ts
- * useEffect(() => {
- *   return mergeRegister(
- *     editor.registerCommand(...registerCommand1 logic),
- *     editor.registerCommand(...registerCommand2 logic),
- *     editor.registerCommand(...registerCommand3 logic)
- *   )
- * }, [editor])
- * ```
- * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
- * function to be executed after either the useEffect runs again (due to one of its dependencies
- * updating) or the compenent it resides in unmounts.
- * Note the functions don't neccesarily need to be in an array as all arguements
- * are considered to be the func argument and spread from there.
- * @param func - An array of functions meant to be executed by the returned function.
- * @returns the function which executes all the passed register command functions.
- */
-export function mergeRegister(...func: Array<Func>): () => void {
-  return () => {
-    func.forEach((f) => f());
-  };
-}
+};
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
@@ -354,7 +394,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     return null;
   };
 
-  const elementNodeTransform = (node: N) => {
+  const $elementNodeTransform = (node: N) => {
     const match = $findMatch(node);
 
     if (match !== null) {
@@ -388,7 +428,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     }
   };
 
-  return editor.registerNodeTransform(targetNode, elementNodeTransform);
+  return editor.registerNodeTransform(targetNode, $elementNodeTransform);
 }
 
 /**
@@ -408,6 +448,7 @@ export function $restoreEditorState(
   for (const [key, node] of editorState._nodeMap) {
     const clone = $cloneWithProperties(node);
     if ($isTextNode(clone)) {
+      invariant($isTextNode(node), 'Expected node be a TextNode');
       clone.__text = node.__text;
     }
     nodeMap.set(key, clone);
@@ -465,7 +506,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       rightTree.selectStart();
     }
   } else {
-    if ($isNodeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
+    if (selection != null) {
       const nodes = selection.getNodes();
       nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
     } else {
@@ -482,8 +523,8 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
 /**
  * Wraps the node into another node created from a createElementNode function, eg. $createParagraphNode
  * @param node - Node to be wrapped.
- * @param createElementNode - Creates a new lexcial element to wrap the to-be-wrapped node and returns it.
- * @returns A new lexcial element with the previous node appended within (as a child, including its children).
+ * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
+ * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
 export function $wrapNodeInElement(
   node: LexicalNode,
@@ -493,23 +534,6 @@ export function $wrapNodeInElement(
   node.replace(elementNode);
   elementNode.append(node);
   return elementNode;
-}
-
-/**
- * @param x - The element being tested
- * @returns Returns true if x is an HTML anchor tag, false otherwise
- */
-export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
-  return isHTMLElement(x) && x.tagName === 'A';
-}
-
-/**
- * @param x - The element being testing
- * @returns Returns true if x is an HTML element, false otherwise.
- */
-export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -527,4 +551,55 @@ export function objectKlassEquals<T>(
   return object !== null
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;
+}
+
+/**
+ * Filter the nodes
+ * @param nodes Array of nodes that needs to be filtered
+ * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
+ * @returns Array of filtered nodes
+ */
+
+export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T> {
+  const result: T[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = filterFn(nodes[i]);
+    if (node !== null) {
+      result.push(node);
+    }
+  }
+  return result;
+}
+/**
+ * Appends the node before the first child of the parent node
+ * @param parent A parent node
+ * @param node Node that needs to be appended
+ */
+export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
+}
+
+/**
+ * Calculates the zoom level of an element as a result of using
+ * css zoom property.
+ * @param element
+ */
+export function calculateZoomLevel(element: Element | null): number {
+  if (IS_FIREFOX) {
+    return 1;
+  }
+  let zoom = 1;
+  while (element) {
+    zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
+    element = element.parentElement;
+  }
+  return zoom;
 }

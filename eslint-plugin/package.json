@@ -4,6 +4,6 @@
   "description": "ESLint plugin for lexical",
   "main": "src/index.js",
   "peerDependencies": {
-    "eslint": ">=4.19.1"
+    "eslint": "^7.31.0 || ^8.0.0"
   }
 }

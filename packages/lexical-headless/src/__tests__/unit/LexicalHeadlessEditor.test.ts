@@ -16,8 +16,10 @@
  *
  */
 
-import type {RangeSelection} from 'lexical';
+import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
 
+import {$generateHtmlFromNodes} from '@lexical/html';
+import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -31,14 +33,17 @@ import {
 import {createHeadlessEditor} from '../..';
 
 describe('LexicalHeadlessEditor', () => {
-  let editor;
+  let editor: LexicalEditor;
 
-  async function update(updateFn) {
+  async function update(updateFn: () => void) {
     editor.update(updateFn);
     await Promise.resolve();
   }
 
-  function assertEditorState(editorState, nodes) {
+  function assertEditorState(
+    editorState: EditorState,
+    nodes: Record<string, unknown>[],
+  ) {
     const nodesFromState = Array.from(editorState._nodeMap.values());
     expect(nodesFromState).toEqual(
       nodes.map((node) => expect.objectContaining(node)),
@@ -166,5 +171,42 @@ describe('LexicalHeadlessEditor', () => {
         expect.objectContaining({offset: 2, type: 'text'}),
       );
     });
+  });
+
+  function setupDom() {
+    const jsdom = new JSDOM();
+
+    const _window = global.window;
+    const _document = global.document;
+
+    // @ts-expect-error
+    global.window = jsdom.window;
+    global.document = jsdom.window.document;
+
+    return () => {
+      global.window = _window;
+      global.document = _document;
+    };
+  }
+
+  it('can generate html from the nodes when dom is set', async () => {
+    editor.setEditorState(
+      // "hello world"
+      editor.parseEditorState(
+        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      ),
+    );
+
+    const cleanup = setupDom();
+
+    const html = editor
+      .getEditorState()
+      .read(() => $generateHtmlFromNodes(editor, null));
+
+    cleanup();
+
+    expect(html).toBe(
+      '<p dir="ltr"><span style="white-space: pre-wrap;">hello world</span></p>',
+    );
   });
 });

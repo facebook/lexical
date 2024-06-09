@@ -1,4 +1,3 @@
-/** @module @lexical/yjs */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

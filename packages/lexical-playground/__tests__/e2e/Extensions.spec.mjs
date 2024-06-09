@@ -7,6 +7,10 @@
  */
 
 import {
+  moveToEditorBeginning,
+  moveToEditorEnd,
+} from '../keyboardShortcuts/index.mjs';
+import {
   assertHTML,
   assertSelection,
   evaluate,
@@ -253,6 +257,92 @@ test.describe('Extensions', () => {
       anchorPath: [1, 0, 0],
       focusOffset: 3,
       focusPath: [1, 0, 0],
+    });
+  });
+
+  test('document.execCommand("insertText") with all text backward selection', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Paragraph 1');
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await moveToEditorBeginning(page);
+    await page.keyboard.up('Shift');
+
+    await assertSelection(page, {
+      anchorOffset: 11,
+      anchorPath: [0, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
+
+    await evaluate(
+      page,
+      () => {
+        document.execCommand('insertText', false, 'New text');
+      },
+      [],
+    );
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">New text</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 8,
+      anchorPath: [0, 0, 0],
+      focusOffset: 8,
+      focusPath: [0, 0, 0],
+    });
+  });
+
+  test('document.execCommand("insertText") with all text forward selection', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Paragraph 1');
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await moveToEditorEnd(page);
+    await page.keyboard.up('Shift');
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 11,
+      focusPath: [0, 0, 0],
+    });
+
+    await evaluate(
+      page,
+      () => {
+        document.execCommand('insertText', false, 'New text');
+      },
+      [],
+    );
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">New text</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 8,
+      anchorPath: [0, 0, 0],
+      focusOffset: 8,
+      focusPath: [0, 0, 0],
     });
   });
 });

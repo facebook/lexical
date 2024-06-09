@@ -8,17 +8,35 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.11.2",
+  "version": "0.16.0",
   "main": "LexicalTable.js",
-  "peerDependencies": {
-    "lexical": "0.11.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.11.2"
+    "@lexical/utils": "0.16.0",
+    "lexical": "0.16.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-table"
+  },
+  "module": "LexicalTable.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalTable.dev.mjs",
+        "production": "./LexicalTable.prod.mjs",
+        "node": "./LexicalTable.node.mjs",
+        "default": "./LexicalTable.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalTable.dev.js",
+        "production": "./LexicalTable.prod.js",
+        "default": "./LexicalTable.js"
+      }
+    }
   }
 }

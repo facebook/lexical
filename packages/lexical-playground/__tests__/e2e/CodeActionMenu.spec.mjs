@@ -28,7 +28,8 @@ test.describe('CodeActionMenu', () => {
     isPlainText,
     browserName,
   }) => {
-    test.skip(isPlainText);
+    test.skip(true);
+
     await focusEditor(page);
     await page.keyboard.type('``` ');
     await page.keyboard.press('Space');

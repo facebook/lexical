@@ -7,10 +7,6 @@
  */
 
 import Translate from '@docusaurus/Translate';
-import clsx from 'clsx';
-import React from 'react';
-
-import styles from './styles.module.css';
 
 const FeatureList = [
   {
@@ -52,15 +48,26 @@ const FeatureList = [
     ),
     title: 'Fast',
   },
+  {
+    Svg: require('@site/static/img/feature-cross-platform.svg').default,
+    description: (
+      <Translate
+        id="page.home.features.crossplatform"
+        description="short description of why Lexical is cross platform (web/iOS)">
+        Lexical is available as a JavaScript framework for use in web browsers,
+        as well as a Swift framework for native iOS development.
+      </Translate>
+    ),
+    title: 'Cross Platform',
+  },
 ];
 
 function Feature({Svg, title, description}) {
   return (
-    <div>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} alt={title} />
-      </div>
-      <div className="text--center padding-horiz--md">
+    <div className="text-center">
+      <Svg className="h-[200px] w-[200px]" alt={title} />
+
+      <div>
         <h3>{title}</h3>
         <p>{description}</p>
       </div>
@@ -70,16 +77,12 @@ function Feature({Svg, title, description}) {
 
 export default function HomepageFeatures() {
   return (
-    <section className={styles.features}>
-      <div className="container">
-        <div className="row">
-          {FeatureList.map((props, idx) => (
-            <div className={clsx('col col--4')} key={idx}>
-              <Feature {...props} />
-            </div>
-          ))}
+    <section className="mx-auto grid gap-10 py-8 lg:grid-cols-3">
+      {FeatureList.map((props, idx) => (
+        <div key={idx}>
+          <Feature {...props} />
         </div>
-      </div>
+      ))}
     </section>
   );
 }

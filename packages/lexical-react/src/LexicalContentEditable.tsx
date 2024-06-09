@@ -52,7 +52,15 @@ export function ContentEditable({
 
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
-      editor.setRootElement(rootElement);
+      // defaultView is required for a root element.
+      // In multi-window setups, the defaultView may not exist at certain points.
+      if (
+        rootElement &&
+        rootElement.ownerDocument &&
+        rootElement.ownerDocument.defaultView
+      ) {
+        editor.setRootElement(rootElement);
+      }
     },
     [editor],
   );

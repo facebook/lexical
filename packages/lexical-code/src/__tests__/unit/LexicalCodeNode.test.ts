@@ -21,9 +21,11 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTabNode,
+  $isTextNode,
   $setSelection,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -176,7 +178,7 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertText('function');
+        $getSelection()!.insertText('function');
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
@@ -185,12 +187,12 @@ describe('LexicalCodeNode tests', () => {
 
       // CodeNode should only render diffs, make sure that the TabNode is not cloned when
       // appending more text
-      let tabKey;
+      let tabKey: string;
       await editor.update(() => {
         tabKey = $dfs()
-          .find(({node}) => $isTabNode(node))
+          .find(({node}) => $isTabNode(node))!
           .node.getKey();
-        $getSelection().insertText('foo');
+        $getSelection()!.insertText('foo');
       });
       expect(
         editor.getEditorState().read(() => {
@@ -212,11 +214,12 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertText('function');
+        $getSelection()!.insertText('function');
       });
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(1, 'function'.length);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
@@ -235,11 +238,12 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertText('function');
+        $getSelection()!.insertText('function');
       });
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(0, 'function'.length);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
@@ -249,8 +253,8 @@ describe('LexicalCodeNode tests', () => {
 
       await editor.update(() => {
         const root = $getRoot();
-        const codeTab = root.getFirstDescendant();
-        const codeText = root.getLastDescendant();
+        const codeTab = root.getFirstDescendant()!;
+        const codeText = root.getLastDescendant()!;
         const selection = $createRangeSelection();
         selection.anchor.set(codeTab.getKey(), 0, 'text');
         selection.focus.set(codeText.getKey(), 'function'.length, 'text');
@@ -271,11 +275,12 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertText('function');
+        $getSelection()!.insertText('function');
       });
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(0, 0);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
@@ -285,8 +290,8 @@ describe('LexicalCodeNode tests', () => {
 
       await editor.update(() => {
         const root = $getRoot();
-        const codeTab = root.getFirstDescendant();
-        const codeText = root.getLastDescendant();
+        const codeTab = root.getFirstDescendant()!;
+        const codeText = root.getLastDescendant()!;
         const selection = $createRangeSelection();
         selection.anchor.set(codeTab.getKey(), 0, 'text');
         selection.focus.set(codeText.getKey(), 0, 'text');
@@ -308,12 +313,12 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertRawText('hello\tworld\nhello\tworld');
+        $getSelection()!.insertRawText('hello\tworld\nhello\tworld');
       });
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
-        const firstCodeText = $getRoot().getFirstDescendant();
-        const lastCodeText = $getRoot().getLastDescendant();
+        const firstCodeText = $getRoot().getFirstDescendant()!;
+        const lastCodeText = $getRoot().getLastDescendant()!;
         const selection = $createRangeSelection();
         selection.anchor.set(firstCodeText.getKey(), 1, 'text');
         selection.focus.set(lastCodeText.getKey(), 1, 'text');
@@ -342,7 +347,7 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertRawText('hello\n');
+        $getSelection()!.insertRawText('hello\n');
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML)
@@ -360,11 +365,12 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertRawText('\thello');
+        $getSelection()!.insertRawText('\thello');
       });
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getLastDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(1, 1);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
@@ -383,7 +389,7 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertRawText('abc\tdef\nghi\tjkl');
+        $getSelection()!.insertRawText('abc\tdef\nghi\tjkl');
       });
       const keyEvent = new KeyboardEventMock();
       keyEvent.altKey = true;
@@ -403,16 +409,16 @@ describe('LexicalCodeNode tests', () => {
         const code = $createCodeNode();
         root.append(code);
         code.selectStart();
-        $getSelection().insertRawText('abc\tdef\nghi\tjkl\nmno\tpqr');
+        $getSelection()!.insertRawText('abc\tdef\nghi\tjkl\nmno\tpqr');
       });
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
-        const firstCodeText = $getRoot().getFirstDescendant();
+        const firstCodeText = $getRoot().getFirstDescendant()!;
         const secondCodeText = firstCodeText
-          .getNextSibling() // tab
-          .getNextSibling() // def
-          .getNextSibling() // linebreak
-          .getNextSibling(); // ghi;
+          .getNextSibling()! // tab
+          .getNextSibling()! // def
+          .getNextSibling()! // linebreak
+          .getNextSibling()!; // ghi;
         const selection = $createRangeSelection();
         selection.anchor.set(firstCodeText.getKey(), 1, 'text');
         selection.focus.set(secondCodeText.getKey(), 1, 'text');
@@ -449,7 +455,7 @@ describe('LexicalCodeNode tests', () => {
                 const code = $createCodeNode();
                 root.append(code);
                 code.selectStart();
-                const selection = $getSelection();
+                const selection = $getSelection()!;
                 if (tabOrSpaces === 'tab') {
                   selection.insertRawText('\t\tfunction foo\n\t\tfunction bar');
                 } else {
@@ -482,6 +488,7 @@ describe('LexicalCodeNode tests', () => {
             'caret at start of line (first line)',
             () => {
               const code = $getRoot().getFirstChild();
+              invariant($isElementNode(code));
               code.selectStart();
             },
             () => {
@@ -559,11 +566,13 @@ describe('LexicalCodeNode tests', () => {
             'caret immediately before code (first line)',
             () => {
               const code = $getRoot().getFirstChild();
+              invariant($isElementNode(code));
+              const firstChild = code.getFirstChild();
+              invariant($isTextNode(firstChild));
               if (tabOrSpaces === 'tab') {
-                const firstTab = code.getFirstChild();
-                firstTab.getNextSibling().selectNext(0, 0);
+                firstChild.getNextSibling()!.selectNext(0, 0);
               } else {
-                code.getFirstChild().select(4, 4);
+                firstChild.select(4, 4);
               }
             },
             () => {
@@ -575,6 +584,7 @@ describe('LexicalCodeNode tests', () => {
               expect(selection.isCollapsed()).toBe(true);
               if (moveTo === 'start') {
                 const code = $getRoot().getFirstChild();
+                invariant($isElementNode(code));
                 const firstChild = code.getFirstChild();
                 expect(selection.anchor.getNode().is(firstChild)).toBe(true);
                 expect(selection.anchor.offset).toBe(0);
@@ -595,7 +605,7 @@ describe('LexicalCodeNode tests', () => {
                 $isLineBreakNode(dfsNode.node),
               )[0].node;
               if (tabOrSpaces === 'tab') {
-                const firstTab = linebreak.getNextSibling();
+                const firstTab = linebreak.getNextSibling()!;
                 firstTab.selectNext();
               } else {
                 linebreak.selectNext(4, 4);
@@ -629,11 +639,13 @@ describe('LexicalCodeNode tests', () => {
             'caret in between space (first line)',
             () => {
               const code = $getRoot().getFirstChild();
+              invariant($isElementNode(code));
+              const firstChild = code.getFirstChild();
+              invariant($isTextNode(firstChild));
               if (tabOrSpaces === 'tab') {
-                const firstTab = code.getFirstChild();
-                firstTab.selectNext(0, 0);
+                firstChild.selectNext(0, 0);
               } else {
-                code.getFirstChild().select(2, 2);
+                firstChild.select(2, 2);
               }
             },
             () => {
@@ -675,7 +687,7 @@ describe('LexicalCodeNode tests', () => {
                 $isLineBreakNode(dfsNode.node),
               )[0].node;
               if (tabOrSpaces === 'tab') {
-                const firstTab = linebreak.getNextSibling();
+                const firstTab = linebreak.getNextSibling()!;
                 firstTab.selectNext(0, 0);
               } else {
                 linebreak.selectNext(2, 2);
@@ -720,6 +732,7 @@ describe('LexicalCodeNode tests', () => {
                 $isCodeHighlightNode(dfsNode.node),
               )[tabOrSpaces === 'tab' ? 0 : 1].node;
               const index = codeHighlight.getTextContent().indexOf('tion');
+              invariant($isTextNode(codeHighlight));
               codeHighlight.select(index, index);
             },
             () => {
@@ -761,6 +774,7 @@ describe('LexicalCodeNode tests', () => {
                 $isCodeHighlightNode(dfsNode.node),
               )[tabOrSpaces === 'tab' ? 1 : 2].node;
               const index = codeHighlight.getTextContent().indexOf('oo');
+              invariant($isTextNode(codeHighlight));
               codeHighlight.select(index, index);
             },
             () => {

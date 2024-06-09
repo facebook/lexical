@@ -84,6 +84,12 @@ editor.update(() => {
 });
 ```
 
+:::tip
+
+Remember that state updates are asynchronous, so executing `editor.getEditorState()` immediately afterwards might not return the expected content. To avoid it, [pass `discrete: true` in the `editor.update` method](https://dio.la/article/lexical-state-updates#discrete-updates).
+
+:::
+
 #### `LexicalNode.importDOM()`
 You can control how an `HTMLElement` is represented in `Lexical` by adding an `importDOM()` method to your `LexicalNode`.
 
@@ -92,31 +98,29 @@ static importDOM(): DOMConversionMap | null;
 ```
 The return value of `importDOM` is a map of the lower case (DOM) [Node.nodeName](https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeName) property to an object that specifies a conversion function and a priority for that conversion. This allows `LexicalNodes` to specify which type of DOM nodes they can convert and what the relative priority of their conversion should be. This is useful in cases where a DOM Node with specific attributes should be interpreted as one type of `LexicalNode`, and otherwise it should be represented as another type of `LexicalNode`.
 
-```js
-export type DOMConversionMap = {
-  [NodeName]: <T: HTMLElement>(node: T) => DOMConversion | null,
+```ts
+type DOMConversionMap = Record<
+  string,
+  (node: HTMLElement) => DOMConversion | null
+>;
+
+type DOMConversion = {
+  conversion: DOMConversionFn;
+  priority: 0 | 1 | 2 | 3 | 4;
 };
 
-export type DOMConversion = {
-  conversion: DOMConversionFn,
-  priority: 0 | 1 | 2 | 3 | 4,
+type DOMConversionFn = (element: HTMLElement) => DOMConversionOutput | null;
+
+type DOMConversionOutput = {
+  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
+  forChild?: DOMChildConversion;
+  node: null | LexicalNode | Array<LexicalNode>;
 };
 
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-  preformatted?: boolean,
-) => DOMConversionOutput;
-
-export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
-
-export type DOMChildConversion = (
+type DOMChildConversion = (
   lexicalNode: LexicalNode,
-) => LexicalNode | null | void;
+  parentLexicalNode: LexicalNode | null | undefined,
+) => LexicalNode | null | undefined;
 ```
 
 @lexical/code provides a good example of the usefulness of this design. GitHub uses HTML ```<table>``` elements to represent the structure of copied code in HTML. If we interpreted all HTML ```<table>``` elements as literal tables, then code pasted from GitHub would appear in Lexical as a Lexical TableNode. Instead, CodeNode specifies that it can handle ```<table>``` elements too:
@@ -145,27 +149,7 @@ static importDOM(): DOMConversionMap | null {
 
 If the imported ```<table>``` doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
 
-Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. Finally, `preformatted` flag indicates that nested text content is preformatted (similar to `<pre>` tag) and all newlines and spaces should be preserved as is.
-
-```js
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-  preformatted?: boolean,
-) => DOMConversionOutput;
-
-export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
-
-export type DOMChildConversion = (
-  lexicalNode: LexicalNode,
-  parentLexicalNode: LexicalNode | null | undefined,
-) => LexicalNode | null;
-```
-
+Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. 
 
 ## JSON
 
@@ -311,9 +295,9 @@ const initialConfig: InitialConfigType = {
     onError: (error: any) => console.log(error),
     nodes: [
       ExtendedTextNode,
-      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text, node.__key) },
+      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text) },
       ListNode,
-      ListItemNode,   
+      ListItemNode,
     ]
   };
 ```
@@ -328,7 +312,8 @@ import {
   DOMConversionOutput,
   NodeKey,
   TextNode,
-  SerializedTextNode
+  SerializedTextNode,
+  LexicalNode
 } from 'lexical';
 
 export class ExtendedTextNode extends TextNode {
@@ -378,6 +363,29 @@ export class ExtendedTextNode extends TextNode {
   static importJSON(serializedNode: SerializedTextNode): TextNode {
     return TextNode.importJSON(serializedNode);
   }
+
+  isSimpleText() {
+    return (
+      (this.__type === 'text' || this.__type === 'extended-text') &&
+      this.__mode === 0
+    );
+  }
+
+  exportJSON(): SerializedTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'extended-text',
+      version: 1,
+    }
+  }
+}
+
+export function $createExtendedTextNode(text: string): ExtendedTextNode {
+	return new ExtendedTextNode(text);
+}
+
+export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {
+	return node instanceof ExtendedTextNode;
 }
 
 function patchStyleConversion(
@@ -385,7 +393,7 @@ function patchStyleConversion(
 ): (node: HTMLElement) => DOMConversionOutput | null {
   return (node) => {
     const original = originalDOMConverter?.(node);
-    if (!original) {    
+    if (!original) {
       return null;
     }
     const originalOutput = original.conversion(node);

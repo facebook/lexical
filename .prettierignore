@@ -1,15 +1,25 @@
 # NOTE: In general this should be kept in sync with .eslintignore
 
-packages/**/dist/*.js
-packages/**/build/*.js
-packages/**/npm/**/*
-packages/**/config/*.js
+**/dist/**
+**/build/**
+**/npm/**
+!scripts/npm/**
+**/.output/**
+**/.browser-profiles/**
+!scripts/npm/**
+**/__tests__/integration/fixtures/**
+packages/**/.wxt/**
 packages/playwright
 packages/playwright-core
 packages/**/vite.config.js
 packages/**/vite.prod.config.js
+packages/lexical-website/docs/api
 **/*.md
+**/*.js.flow
 **/node_modules
+.ts-temp
 flow-typed
 .github/CODEOWNERS
 .prettierignore
+**/.docusaurus
+/playwright-report

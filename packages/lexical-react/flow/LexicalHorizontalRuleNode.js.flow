@@ -23,6 +23,6 @@ declare export class HorizontalRuleNode extends DecoratorNode<React$Node> {
 declare export function $createHorizontalRuleNode(): HorizontalRuleNode;
 declare export function $isHorizontalRuleNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof HorizontalRuleNode);
+): node is HorizontalRuleNode;
 
 declare export var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void>;

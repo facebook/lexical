@@ -12,6 +12,7 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
   createCommand,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -75,7 +76,9 @@ export type MenuRenderFn<TOption extends MenuOption> = (
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   const typeaheadContainerNode = document.getElementById('typeahead-menu');
-  if (!typeaheadContainerNode) return;
+  if (!typeaheadContainerNode) {
+    return;
+  }
 
   const typeaheadRect = typeaheadContainerNode.getBoundingClientRect();
 
@@ -240,7 +243,7 @@ export function useDynamicPositioning(
       return () => {
         resizeObserver.unobserve(targetElement);
         window.removeEventListener('resize', onReposition);
-        document.removeEventListener('scroll', handleScroll);
+        document.removeEventListener('scroll', handleScroll, true);
       };
     }
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
@@ -260,6 +263,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   menuRenderFn,
   onSelectOption,
   shouldSplitNodeWithQuery = false,
+  commandPriority = COMMAND_PRIORITY_LOW,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -274,6 +278,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     closeMenu: () => void,
     matchingString: string,
   ) => void;
+  commandPriority?: CommandListenerPriority;
 }): JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
 
@@ -345,10 +350,10 @@ export function LexicalMenu<TOption extends MenuOption>({
 
           return false;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
     );
-  }, [editor, updateSelectedIndex]);
+  }, [editor, updateSelectedIndex, commandPriority]);
 
   useEffect(() => {
     return mergeRegister(
@@ -375,7 +380,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
@@ -394,7 +399,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
@@ -405,7 +410,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           close();
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
@@ -423,7 +428,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
@@ -442,7 +447,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
     );
   }, [
@@ -452,6 +457,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     options,
     selectedIndex,
     updateSelectedIndex,
+    commandPriority,
   ]);
 
   const listItemProps = useMemo(
@@ -475,21 +481,27 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
+  parent: HTMLElement = document.body,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
   const positionMenu = useCallback(() => {
+    anchorElementRef.current.style.top = anchorElementRef.current.style.bottom;
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
 
-    const menuEle = containerDiv.firstChild as Element;
+    const menuEle = containerDiv.firstChild as HTMLElement;
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
-      containerDiv.style.top = `${top + window.pageYOffset}px`;
+      const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
+      containerDiv.style.top = `${
+        top + window.pageYOffset + anchorHeight + 3
+      }px`;
       containerDiv.style.left = `${left + window.pageXOffset}px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;
       if (menuEle !== null) {
+        menuEle.style.top = `${top}`;
         const menuRect = menuEle.getBoundingClientRect();
         const menuHeight = menuRect.height;
         const menuWidth = menuRect.width;
@@ -501,14 +513,13 @@ export function useMenuAnchorRef(
             rootElementRect.right - menuWidth + window.pageXOffset
           }px`;
         }
-        const margin = 10;
         if (
           (top + menuHeight > window.innerHeight ||
             top + menuHeight > rootElementRect.bottom) &&
-          top - rootElementRect.top > menuHeight
+          top - rootElementRect.top > menuHeight + height
         ) {
           containerDiv.style.top = `${
-            top - menuHeight + window.pageYOffset - (height + margin)
+            top - menuHeight + window.pageYOffset - height
           }px`;
         }
       }
@@ -522,12 +533,12 @@ export function useMenuAnchorRef(
         containerDiv.setAttribute('role', 'listbox');
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
-        document.body.append(containerDiv);
+        parent.append(containerDiv);
       }
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
-  }, [editor, resolution, className]);
+  }, [editor, resolution, className, parent]);
 
   useEffect(() => {
     const rootElement = editor.getRootElement();

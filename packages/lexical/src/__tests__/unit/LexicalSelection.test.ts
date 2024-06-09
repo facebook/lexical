@@ -6,17 +6,18 @@
  *
  */
 
-import {$createLinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
   LexicalEditor,
   RangeSelection,
 } from 'lexical';
 
-import {$createTestDecoratorNode, initializeUnitTest} from '../utils';
+import {initializeUnitTest, invariant} from '../utils';
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -70,7 +71,7 @@ describe('LexicalSelection tests', () => {
         return {container, editor};
       };
 
-      const insertTextOrNodes = (
+      const $insertTextOrNodes = (
         selection: RangeSelection,
         method: 'insertText' | 'insertNodes',
       ) => {
@@ -100,13 +101,15 @@ describe('LexicalSelection tests', () => {
           }) => {
             await editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph));
               const linkNode = paragraph.getFirstChildOrThrow();
+              invariant($isLinkNode(linkNode));
 
               // Place the cursor at the start of the link node
               // For review: is there a way to select "outside" of the link
               // node?
               const selection = linkNode.select(0, 0);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -140,12 +143,14 @@ describe('LexicalSelection tests', () => {
           }) => {
             await editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getFirstChildOrThrow();
+              invariant($isTextNode(textNode));
 
               // Place the cursor between the link and the first text node by
               // selecting the end of the text node
               const selection = textNode.select(1, 1);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -178,12 +183,14 @@ describe('LexicalSelection tests', () => {
           }) => {
             await editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getFirstChildOrThrow();
+              invariant($isTextNode(textNode));
 
               // Place the cursor before the link element by selecting the end
               // of the text node
               const selection = textNode.select(1, 1);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -218,12 +225,14 @@ describe('LexicalSelection tests', () => {
           }) => {
             await editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getLastChildOrThrow();
+              invariant($isTextNode(textNode));
 
               // Place the cursor between the link and the last text node by
               // selecting the start of the text node
               const selection = textNode.select(0, 0);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -257,12 +266,14 @@ describe('LexicalSelection tests', () => {
           }) => {
             await editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getLastChildOrThrow();
+              invariant($isTextNode(textNode));
 
               // Place the cursor between the link and the last text node by
               // selecting the start of the text node
               const selection = textNode.select(0, 0);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -296,13 +307,15 @@ describe('LexicalSelection tests', () => {
           }) => {
             await editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph));
               const linkNode = paragraph.getLastChildOrThrow();
+              invariant($isLinkNode(linkNode));
 
               // Place the cursor at the end of the link element
               // For review: not sure if there's a better way to select
               // "outside" of the link element.
               const selection = linkNode.select(1, 1);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -322,51 +335,6 @@ describe('LexicalSelection tests', () => {
 
           //   await insertText({container, editor, method: 'insertNodes'});
           // });
-        });
-
-        describe('transferStartingElementPointToTextPoint', () => {
-          test('transferStartingElementPointToTextPoint', async () => {
-            const {container, editor} = testEnv;
-
-            if (!container) {
-              throw new Error('Expected container to be truthy');
-            }
-
-            await editor.update(() => {
-              const root = $getRoot();
-              if (root.getFirstChild() !== null) {
-                throw new Error('Expected root to be childless');
-              }
-
-              const paragraph = $createParagraphNode();
-              const text = $createTextNode('Text');
-              const image = $createTestDecoratorNode();
-              paragraph.append(text, image);
-
-              root.append(paragraph);
-
-              expect(root.getTextContent()).toEqual('TextHello world');
-
-              const decoratorIndexInParent = image.getIndexWithinParent();
-              const paragraphKey = paragraph.getKey();
-
-              const selection = $createRangeSelection();
-              selection.anchor.set(
-                paragraphKey,
-                decoratorIndexInParent,
-                'element',
-              );
-              selection.focus.set(
-                paragraphKey,
-                decoratorIndexInParent + 1,
-                'element',
-              );
-
-              selection.insertText('A');
-
-              expect(root.getTextContent()).toEqual('TextA');
-            });
-          });
         });
       });
     });

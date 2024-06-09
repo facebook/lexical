@@ -16,6 +16,7 @@ import type {
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import {IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
@@ -47,6 +48,13 @@ import {
 } from './LexicalUtils';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
+
+declare global {
+  interface Node {
+    __lexicalLineBreak?: HTMLBRElement | null;
+    __lexicalLineBreakImg?: HTMLImageElement | null;
+  }
+}
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
@@ -234,8 +242,8 @@ function $createNode(
     if (insertDOM != null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
-      // @ts-expect-error: internal field
-      const possibleLineBreak = parentDOM.__lexicalLineBreak;
+      const possibleLineBreak =
+        parentDOM.__lexicalLineBreakImg ?? parentDOM.__lexicalLineBreak;
 
       if (possibleLineBreak != null) {
         parentDOM.insertBefore(dom, possibleLineBreak);
@@ -330,22 +338,45 @@ function reconcileElementTerminatingLineBreak(
 
   if (prevLineBreak) {
     if (!nextLineBreak) {
-      // @ts-expect-error: internal field
-      const element = dom.__lexicalLineBreak;
-
-      if (element != null) {
-        dom.removeChild(element);
-      }
-
-      // @ts-expect-error: internal field
-      dom.__lexicalLineBreak = null;
+      const removeElement = (
+        fieldName: '__lexicalLineBreak' | '__lexicalLineBreakImg',
+      ) => {
+        const element = dom[fieldName];
+        if (element != null) {
+          dom.removeChild(element);
+          dom[fieldName] = null;
+        }
+      };
+      removeElement('__lexicalLineBreak');
+      removeElement('__lexicalLineBreakImg');
     }
   } else if (nextLineBreak) {
     const element = document.createElement('br');
-    // @ts-expect-error: internal field
+    // Workaround for a bug in Safari where the cursor cannot be placed at the
+    // end of a line.
+    if (IS_SAFARI) {
+      insertCursorFixElement(dom, element);
+    }
     dom.__lexicalLineBreak = element;
     dom.appendChild(element);
   }
+}
+
+function insertCursorFixElement(
+  dom: HTMLElement,
+  lineBreakElement: HTMLBRElement,
+): void {
+  const element = document.createElement('img');
+  element.alt = '';
+
+  // prevent conflict with other css rules
+  const styles = element.style;
+  styles.setProperty('display', 'inline', 'important');
+  styles.setProperty('border', 'none', 'important');
+  styles.setProperty('margin', '0', 'important');
+
+  dom.appendChild(element);
+  dom.__lexicalLineBreakImg = element;
 }
 
 function reconcileParagraphFormat(element: ElementNode): void {
@@ -505,7 +536,6 @@ function $reconcileChildren(
       }
     } else if (nextChildrenSize === 0) {
       if (prevChildrenSize !== 0) {
-        // @ts-expect-error: internal field
         const lexicalLineBreak = dom.__lexicalLineBreak;
         const canUseFastPath = lexicalLineBreak == null;
         destroyChildren(

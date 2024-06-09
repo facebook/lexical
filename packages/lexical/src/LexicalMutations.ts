@@ -57,7 +57,6 @@ function isManagedLineBreak(
   editor: LexicalEditor,
 ): boolean {
   return (
-    // @ts-expect-error: internal field
     target.__lexicalLineBreak === dom ||
     // @ts-ignore We intentionally add this to the Node.
     dom[`__lexicalKey_${editor._key}`] !== undefined

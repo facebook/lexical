@@ -636,7 +636,10 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
     const {cell} = nextColumn;
     $moveSelectionToCell(cell);
   } else {
-    const previousRow = focusRowMap[focusStartColumn - 1];
+    const previousRow =
+      focusStartColumn < anchorStartColumn
+        ? focusRowMap[focusStartColumn - 1]
+        : focusRowMap[anchorStartColumn - 1];
     const {cell} = previousRow;
     $moveSelectionToCell(cell);
   }

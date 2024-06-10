@@ -26,7 +26,7 @@
     "@lexical/selection": "0.16.0",
     "@lexical/table": "0.16.0",
     "@lexical/utils": "0.16.0",
-    "katex": "^0.15.2",
+    "katex": "^0.16.10",
     "lexical": "0.16.0",
     "lodash-es": "^4.17.21",
     "prettier": "^2.3.2",

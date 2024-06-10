@@ -243,7 +243,7 @@ function $createNode(
       parentDOM.insertBefore(dom, insertDOM);
     } else {
       const possibleLineBreak =
-        parentDOM.__lexicalLineBreakImg ?? parentDOM.__lexicalLineBreak;
+        parentDOM.__lexicalLineBreakImg || parentDOM.__lexicalLineBreak;
 
       if (possibleLineBreak != null) {
         parentDOM.insertBefore(dom, possibleLineBreak);

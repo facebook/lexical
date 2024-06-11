@@ -49,3 +49,9 @@ jobs:
           node ./scripts/override-react.js --version=${{ matrix.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
       - run: npm run test-unit
+
+  on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - run: echo 'https://github.com/facebook/lexical/discussions/6289'

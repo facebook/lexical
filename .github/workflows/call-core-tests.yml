@@ -54,4 +54,9 @@ jobs:
     runs-on: ubuntu-latest
     ##if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - run: echo '${{ github.event.workflow_run.name }}'
+      - run: echo '${{ name }}'
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Hello world ! :wave:

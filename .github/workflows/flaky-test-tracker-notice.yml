@@ -1,3 +1,5 @@
+name: Flaky Test Tracker Notice
+
 on:
   workflow_run:
     workflows: [Lexical Core Tests]
@@ -14,4 +16,6 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            Hello world ! :wave:
+            E2E tests has a failure. Please check if the failure is due to a flaky test. 
+            Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, 
+            and record the failed test run there if its a flaky failure.

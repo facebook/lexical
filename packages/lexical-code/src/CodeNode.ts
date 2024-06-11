@@ -48,13 +48,15 @@ export type SerializedCodeNode = Spread<
   SerializedElementNode
 >;
 
-const mapToPrismLanguage = (
+const isLanguageSupportedByPrism = (
   language: string | null | undefined,
-): string | null | undefined => {
-  // eslint-disable-next-line no-prototype-builtins
-  return language != null && window.Prism.languages.hasOwnProperty(language)
-    ? language
-    : undefined;
+): boolean => {
+  try {
+    // eslint-disable-next-line no-prototype-builtins
+    return language ? window.Prism.languages.hasOwnProperty(language) : false;
+  } catch {
+    return false;
+  }
 };
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {
@@ -67,12 +69,15 @@ function hasChildDOMNodeTag(node: Node, tagName: string) {
   return false;
 }
 
-const LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
+const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
+const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 
 /** @noInheritDoc */
 export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
+  /** @internal */
+  __isSyntaxHighlightSupported: boolean;
 
   static getType(): string {
     return 'code';
@@ -84,7 +89,8 @@ export class CodeNode extends ElementNode {
 
   constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
-    this.__language = mapToPrismLanguage(language);
+    this.__language = language;
+    this.__isSyntaxHighlightSupported = isLanguageSupportedByPrism(language);
   }
 
   // View
@@ -95,6 +101,10 @@ export class CodeNode extends ElementNode {
     const language = this.getLanguage();
     if (language) {
       element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+
+      if (this.getIsSyntaxHighlightSupported()) {
+        element.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+      }
     }
     return element;
   }
@@ -109,9 +119,17 @@ export class CodeNode extends ElementNode {
     if (language) {
       if (language !== prevLanguage) {
         dom.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+
+        if (this.__isSyntaxHighlightSupported) {
+          dom.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+        }
       }
     } else if (prevLanguage) {
       dom.removeAttribute(LANGUAGE_DATA_ATTRIBUTE);
+
+      if (prevNode.__isSyntaxHighlightSupported) {
+        dom.removeAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE);
+      }
     }
     return false;
   }
@@ -123,6 +141,10 @@ export class CodeNode extends ElementNode {
     const language = this.getLanguage();
     if (language) {
       element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+
+      if (this.getIsSyntaxHighlightSupported()) {
+        element.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+      }
     }
     return {element};
   }
@@ -304,11 +326,17 @@ export class CodeNode extends ElementNode {
 
   setLanguage(language: string): void {
     const writable = this.getWritable();
-    writable.__language = mapToPrismLanguage(language);
+    writable.__language = language;
+    writable.__isSyntaxHighlightSupported =
+      isLanguageSupportedByPrism(language);
   }
 
   getLanguage(): string | null | undefined {
     return this.getLatest().__language;
+  }
+
+  getIsSyntaxHighlightSupported(): boolean {
+    return this.getLatest().__isSyntaxHighlightSupported;
   }
 }
 

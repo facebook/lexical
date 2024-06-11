@@ -54,4 +54,4 @@ jobs:
     runs-on: ubuntu-latest
     ##if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - run: echo '${{ github.event.workflow_run.conclusion}}'
+      - run: echo '${{ github.event.workflow_run.name }}'

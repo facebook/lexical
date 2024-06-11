@@ -626,7 +626,6 @@ test.describe.parallel('Selection', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

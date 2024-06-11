@@ -317,7 +317,27 @@ export function applyTableHandlers(
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
-      return false;
+      const nodes = selection ? selection.getNodes() : null;
+      if (nodes) {
+        const table = nodes.find(
+          (node) =>
+            $isTableNode(node) && node.getKey() === tableObserver.tableNodeKey,
+        );
+        if ($isTableNode(table)) {
+          const parentNode = table.getParent();
+          if (!parentNode) {
+            return false;
+          }
+          const nextNode = table.getNextSibling() || table.getPreviousSibling();
+          table.remove();
+          if (nextNode) {
+            nextNode.selectStart();
+          } else {
+            parentNode.selectStart();
+          }
+        }
+      }
+      return true;
     }
 
     if ($isTableSelection(selection)) {

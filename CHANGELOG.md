@@ -1,3 +1,87 @@
+## v0.16.0 (2024-06-04)
+
+- lexical-table Bug Fix Change exported table column width (#6243) Alex Reznik
+- lexical-table CI Remerge PR 6200 Resizing table with merged cells (#6235) Sherry
+- lexical-react Bug Fix checklist cannot be toggled in sub-editors (#6216) Alessio Gravili
+- lexical-selection Bug Fix Selection is removed when changing style of 2 different nodes (#6223) Zigopis Nikolaos
+- refactor refactored InlineImageNode - spans for correct HTML (#6214) Anthony Bouch
+- lexical-playground CI fix flaky collab test (#6240) Sherry
+- LexicalCI Fix approval workflow to ignore e2e tests run on labelled PRs again (#6239) Sahejkm
+- LexicalCI Add more ism in e2e tests to decrease overall run time (#6237) Sahejkm
+-  Fix size-limit report for esm modules (#6234) Bob Ippolito
+- Lexical  run tests on approval if there is no extended-tests label manually added (#6198) Sahejkm
+- Fix programmatic clipboard copy on non-editable (#6232) Gerard Rovira
+- Revert PR 1st causing some new added tests fail in collab mode and webkit mode (#6224) Sahejkm
+-  Fix Resolve Windows regression caused by upgrading glob (#6227) Bob Ippolito
+- LexicalSize-Checks Measure both cjsesm builds for regression checks (#6219) Sahejkm
+- Refactor import paths in LexicalEditorState (#6178) vuki365
+- lexical-website Documentation Update Validate stackblitz URLs in documentation (#6215) Bob Ippolito
+- lexical-playgroundlexical-table Bug Fix Resizing table with merged cells (#6200) Alex Reznik
+- lexical-devtools Documentation Update Added link to the Mac App Store (#6218) Vlad Fedosov
+- lexical-devtools Chore Safari App Store review fixes (#6213) Vlad Fedosov
+- LexicalCI Add more packages for size limit regressions check (#6209) Sahejkm
+- lexical-list Refactor remove unnecessary type casting (#6203) Sherry
+- lexical-reactlexical-dev-tools-core Feature Allow TreeView custom print output (#6180) Ira Hopkinson
+- lexical-list Bug fix support pasting github checklist  (#6195) Sherry
+- lexical-code Refactor remove unnecessary type casting (#6202) Sherry
+- Remove noisy running time signal mentioned in #6137 (#6208) Sahejkm
+- lexical-listlexical-playground Bug fix support pasting google doc checklist (#6191) Sherry
+- LexicalTextNode Refactor remove unnecessary type casting (#6201) Sherry
+- lexical-devtools Feature Improved usage and maintenance documentation (#6186) Vlad Fedosov
+- lexical Bug Fix mutation listener set for original node should work with the replaced node (#6189) Vlad Fedosov
+- Collapsible as div (#6179) Gerard Rovira
+- Update CODEOWNERS (#6192) Sahejkm
+- lexical-playground Chore add test for pasting over mentions (#6024) Sherry
+- Remove emojis from emoticons plugins (#6188) Gerard Rovira
+- Revert lexical-plaintext Feature add escape key handler (#6185) Vlad Fedosov
+- lexical Bug Fix delete line for selections ending with elements (#6160) Vitali Kozlov
+- lexical-dev-tools-core Feature Index tree view cmds (#6182) Sherry
+- Lexical use lexical bot for adding label (#6183) Sahejkm
+- Lexical Move more tests related to Copy Paste from e2e to unit (#6181) Sahejkm
+- Fixed Uncommented Code in Getting Started with React Docs (#6172) Sangram Bahadur
+- docs explain installing browsers for e2e tests (#6163) Georgii Dolzhykov
+- CI fix status badge (#6170) Sherry
+- lexicaldevtools Feature Added full Safari support (#6105) Vlad Fedosov
+- lexical-react Bug Fix Use automatic jsx runtime with reactjsx-runtime - react alias in www (#6143) Bob Ippolito
+- Lexical Feature Merging PR closes auto-linked issue (#6124) wnhlee
+- Lexical Attempt to fix after approval workflow (#6153) Sahejkm
+- lexical-markdown Bug Fix add missing shouldPreserveNewLines to markdown flow (#6165) Sherry
+- lexical-selection Bug Fix    Fixes text formatting with segmented and token nodes #6059 (#6062) David Lacroix
+- lexical-react Feature React 19 unit tests (#6048) Bob Ippolito
+- Add tbody and thead tags to TableObserver (#6139) Piechota
+- Bug Fix Insert paragraph at tables edge inside a collapsible (#6159) Serey Roth
+- Deprecate unused methods on ElementNode (#5782) Georgii Dolzhykov
+- Lexical add null check for key undefined before calling toLowerCase function (#6154) Sahejkm
+- lexical-playgroundimage-node Bug Fix Load image error UI (#6111) Maksym Plavinskyi
+- Lexical Fix meta sync build failing due to recent changes in LexicalErrorBoundary.tsx (#6140) Sahejkm
+- Remove legacy-events from mac  linux e2e matrix (#6135) Nicolas Gallagher
+- Bug Fix Add check for DecoratorNode for horizontal table navigation. (#6129) Serey Roth
+- Fix the label-on-approval workflow (#6136) Nicolas Gallagher
+- Lexical Use classic mode for jsx runtime for meta build (#6134) Sahejkm
+- Lexical Fix size limit workflow git hub action bot not able to create comment for PRs from fork (#6130) Sahejkm
+- fix(lexical) #6132 react build size regression from #6088 (#6133) Vlad Fedosov
+- Lexical Add flow for eslint (#6127) Sahejkm
+- Lexical Replace code with key to check KeyboardEvents (#6110) Sahejkm
+- lexical-markdownlexical-playground Feature Option to include blanklines in markdown render (#6020) Sherry
+- lexical-playgroundlexical-reactlexical Feature Theme class added to horizontal rule node (#6090) Dalton
+- lexical-react Breaking change Deprecate public default exports (#6088) Bob Ippolito
+- Fix Bug - 6000 Changing the font size when inputting does not take  (#6102) pixelbyaj
+- Lexical Add label to run e2e tests on approve (#6120) Sahejkm
+- lexical-devtools Feature Reflect picker state on inspector button ui (#6077) wnhlee
+- Lexical Move some codeblock tests from e2e to unit (#6094) Sahejkm
+- Lexical #6097 run extended tests on mergegroup event (#6100) Sahejkm
+- fix(lexicaldevtools) Reduce requested permissions as we dont use them atm (#6099) Vlad Fedosov
+- fix(lexicalplayground) Emoji menu item not getting targeted styles (#6055) Dalton
+- Only run CI e2e tests on approved PRs (#6080) Nicolas Gallagher
+- LexicalTable Formatting Copy Paste Move test from e2e to unit as followup on #5855  (#6093) Sahejkm
+- lexicalTextNode Feature Add test for #6087 (#6091) wnhlee
+- lexical-playground Feature Center TableCellReizer drag zones over the edge of the cell (#6071) apella
+- lexical Feature error checking for node key re-use with type mismatch in DEV (#6014) Bob Ippolito
+- lexical-playgroundfile Feature Playground link sharing (#6028) Bob Ippolito
+- lexicalTextNode Feature improve supporting multiple format on importDOM of TextNode (#6087) wnhlee
+- v0.15.0 (#6084) Ivaylo Pavlov
+- v0.15.0 Lexical GitHub Actions Bot
+
 ## v0.15.0 (2024-05-11)
 
 - feat(examplesreact-rich-collab) Added collaboration focused example (#6043) Vlad Fedosov

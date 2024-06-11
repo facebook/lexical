@@ -68,6 +68,9 @@ const TRANSFORMERS: Array<Transformer> = [
   ...TEXT_MATCH_TRANSFORMERS,
 ];
 
+/**
+ * Renders markdown from a string. The selection is moved to the start after the operation.
+ */
 function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
@@ -81,6 +84,9 @@ function $convertFromMarkdownString(
   return importMarkdown(markdown, node);
 }
 
+/**
+ * Renders string from markdown. The selection is moved to the start after the operation.
+ */
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,

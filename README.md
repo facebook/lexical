@@ -22,8 +22,8 @@ For documentation and more information about Lexical, be sure to [visit the Lexi
 Here are some examples of what you can do with Lexical:
 
 - [Lexical Playground](https://playground.lexical.dev)
-- [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
-- [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
+- [Plain text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+- [Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
 
 
 ---
@@ -50,7 +50,7 @@ Install `lexical` and `@lexical/react`:
 npm install --save lexical @lexical/react
 ```
 
-Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
+Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)).
 
 ```jsx
 import {$getRoot, $getSelection} from 'lexical';

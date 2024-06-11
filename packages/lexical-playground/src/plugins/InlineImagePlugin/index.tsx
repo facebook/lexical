@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Position} from '../../nodes/InlineImageNode';
+import type {Position} from '../../nodes/InlineImageNode/InlineImageNode';
 
-import '../../nodes/InlineImageNode.css';
+import '../../nodes/InlineImageNode/InlineImageNode.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement, mergeRegister} from '@lexical/utils';
@@ -38,7 +38,7 @@ import {
   $isInlineImageNode,
   InlineImageNode,
   InlineImagePayload,
-} from '../../nodes/InlineImageNode';
+} from '../../nodes/InlineImageNode/InlineImageNode';
 import Button from '../../ui/Button';
 import {DialogActions} from '../../ui/Dialog';
 import FileInput from '../../ui/FileInput';

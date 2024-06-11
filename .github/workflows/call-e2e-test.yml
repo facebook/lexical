@@ -58,7 +58,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ env.test_script }}
+        run: exit 1
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -71,4 +71,4 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            E2E tests feailure detected. Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.
+            E2E tests failed on [this run](https://github.com/facebook/lexical/actions/runs/${{ github.run_id }}). Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.

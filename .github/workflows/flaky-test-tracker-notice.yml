@@ -3,7 +3,8 @@ name: Flaky Test Tracker Notice
 on:
   workflow_run:
     workflows: [Lexical Core Tests]
-    types: [completed]
+    types:
+      - completed
 
 jobs:
   # on-failure:

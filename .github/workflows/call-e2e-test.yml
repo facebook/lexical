@@ -66,7 +66,7 @@ jobs:
           name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.events-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.override-react-version }}
           path: ${{ env.test_results_path }}
           retention-days: 7
-      - name: Flaky test PR comment
+      - name: Flaky test notice PR comment
         if: failure()
         uses: thollander/actions-comment-pull-request@v2
         with:

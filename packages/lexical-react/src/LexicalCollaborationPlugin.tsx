@@ -20,7 +20,7 @@ import {
   Provider,
 } from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
@@ -58,6 +58,9 @@ export function CollaborationPlugin({
   excludedProperties,
   awarenessData,
 }: Props): JSX.Element {
+  const isBindingInitialized = useRef(false);
+  const isProviderInitialized = useRef(false);
+
   const collabContext = useCollaborationContext(username, cursorColor);
 
   const {yjsDocMap, name, color} = collabContext;
@@ -77,7 +80,14 @@ export function CollaborationPlugin({
   }, [collabContext, editor]);
 
   const [provider, setProvider] = useState<Provider>();
+
   useEffect(() => {
+    if (isProviderInitialized.current) {
+      return;
+    }
+
+    isProviderInitialized.current = true;
+
     const newProvider = providerFactory(id, yjsDocMap);
     setProvider(newProvider);
 
@@ -88,10 +98,18 @@ export function CollaborationPlugin({
 
   const [doc, setDoc] = useState(yjsDocMap.get(id));
   const [binding, setBinding] = useState<Binding>();
+
   useEffect(() => {
     if (!provider) {
       return;
     }
+
+    if (isBindingInitialized.current) {
+      return;
+    }
+
+    isBindingInitialized.current = true;
+
     const newBinding = createBinding(
       editor,
       provider,

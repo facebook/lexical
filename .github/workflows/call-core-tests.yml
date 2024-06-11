@@ -49,14 +49,9 @@ jobs:
           node ./scripts/override-react.js --version=${{ matrix.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
       - run: npm run test-unit
-
-  flaky-test-notice:
-    runs-on: ubuntu-latest
-    # if: failure()
-    steps:
-      - run: echo '${{ github.job }}'
-      - name: Comment PR
+      - name: Flaky test notice
+        if: failure()
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            E2E tests have failed. Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.
+            E2E tests feailure detected. Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.

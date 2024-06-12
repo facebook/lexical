@@ -32,6 +32,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
@@ -77,6 +78,10 @@ export const getDOMSelection = (
 ): Selection | null =>
   CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
+const isMouseDownOnEvent = (event: MouseEvent) => {
+  return (event.buttons & 1) === 1;
+};
+
 export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLTableElementWithWithTableSelectionState,
@@ -104,6 +109,12 @@ export function applyTableHandlers(
     const onMouseMove = (moveEvent: MouseEvent) => {
       // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
       setTimeout(() => {
+        if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+          tableObserver.isSelecting = false;
+          editorWindow.removeEventListener('mouseup', onMouseUp);
+          editorWindow.removeEventListener('mousemove', onMouseMove);
+          return;
+        }
         const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
         if (
           focusCell !== null &&
@@ -302,7 +313,7 @@ export function applyTableHandlers(
     },
   );
 
-  const deleteCellHandler = (event: KeyboardEvent): boolean => {
+  const $deleteCellHandler = (event: KeyboardEvent): boolean => {
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
@@ -332,7 +343,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
-      deleteCellHandler,
+      $deleteCellHandler,
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
@@ -340,7 +351,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
-      deleteCellHandler,
+      $deleteCellHandler,
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
@@ -1349,6 +1360,11 @@ function $handleArrowKey(
         return false;
       }
 
+      const selectedNodes = selection.getNodes();
+      if (selectedNodes.length === 1 && $isDecoratorNode(selectedNodes[0])) {
+        return false;
+      }
+
       if (
         isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
       ) {
@@ -1507,7 +1523,7 @@ function isExitingTableAnchor(
 ) {
   return (
     isExitingTableElementAnchor(type, anchorNode, direction) ||
-    isExitingTableTextAnchor(type, offset, anchorNode, direction)
+    $isExitingTableTextAnchor(type, offset, anchorNode, direction)
   );
 }
 
@@ -1524,7 +1540,7 @@ function isExitingTableElementAnchor(
   );
 }
 
-function isExitingTableTextAnchor(
+function $isExitingTableTextAnchor(
   type: string,
   offset: number,
   anchorNode: LexicalNode,
@@ -1569,7 +1585,7 @@ function $handleTableExit(
     return false;
   }
 
-  const toNode = getExitingToNode(anchorNode, direction, tableNode);
+  const toNode = $getExitingToNode(anchorNode, direction, tableNode);
   if (!toNode || $isTableNode(toNode)) {
     return false;
   }
@@ -1596,7 +1612,7 @@ function isExitingCell(
     : startColumn === lastCell.startColumn && startRow === lastCell.startRow;
 }
 
-function getExitingToNode(
+function $getExitingToNode(
   anchorNode: LexicalNode,
   direction: 'backward' | 'forward',
   tableNode: TableNode,
@@ -1639,9 +1655,19 @@ function $getTableEdgeCursorPosition(
   selection: RangeSelection,
   tableNode: TableNode,
 ) {
+  const tableNodeParent = tableNode.getParent();
+  if (!tableNodeParent) {
+    return undefined;
+  }
+
+  const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
+  if (!tableNodeParentDOM) {
+    return undefined;
+  }
+
   // TODO: Add support for nested tables
   const domSelection = window.getSelection();
-  if (!domSelection || domSelection.anchorNode !== editor.getRootElement()) {
+  if (!domSelection || domSelection.anchorNode !== tableNodeParentDOM) {
     return undefined;
   }
 

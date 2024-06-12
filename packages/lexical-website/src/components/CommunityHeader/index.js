@@ -8,7 +8,6 @@
 
 import Translate from '@docusaurus/Translate';
 import CommunityHeaderSvg from '@site/static/img/community-header.svg';
-import React from 'react';
 
 export default function CommunityHeader() {
   return (

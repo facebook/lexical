@@ -10,6 +10,7 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  EditorConfig,
   LexicalCommand,
   LexicalNode,
   NodeKey,
@@ -18,7 +19,11 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
+import {
+  addClassNamesToElement,
+  mergeRegister,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getNodeByKey,
@@ -44,7 +49,7 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (event: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         event.preventDefault();
@@ -80,21 +85,27 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
 
   useEffect(() => {
     const hrElem = editor.getElementByKey(nodeKey);
+    const isSelectedClassName = 'selected';
+
     if (hrElem !== null) {
-      hrElem.className = isSelected ? 'selected' : '';
+      if (isSelected) {
+        addClassNamesToElement(hrElem, isSelectedClassName);
+      } else {
+        removeClassNamesFromElement(hrElem, isSelectedClassName);
+      }
     }
   }, [editor, isSelected, nodeKey]);
 
@@ -119,7 +130,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       hr: () => ({
-        conversion: convertHorizontalRuleElement,
+        conversion: $convertHorizontalRuleElement,
         priority: 0,
       }),
     };
@@ -136,8 +147,10 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return {element: document.createElement('hr')};
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('hr');
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = document.createElement('hr');
+    addClassNamesToElement(element, config.theme.hr);
+    return element;
   }
 
   getTextContent(): string {
@@ -157,7 +170,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-function convertHorizontalRuleElement(): DOMConversionOutput {
+function $convertHorizontalRuleElement(): DOMConversionOutput {
   return {node: $createHorizontalRuleNode()};
 }
 

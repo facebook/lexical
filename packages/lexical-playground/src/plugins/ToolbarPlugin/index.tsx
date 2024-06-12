@@ -620,9 +620,6 @@ export default function ToolbarPlugin({
         }
       }
       // Handle buttons
-      setFontSize(
-        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
-      );
       setFontColor(
         $getSelectionStyleValueForProperty(selection, 'color', '#000'),
       );
@@ -652,6 +649,11 @@ export default function ToolbarPlugin({
           : $isElementNode(node)
           ? node.getFormatType()
           : parent?.getFormatType() || 'left',
+      );
+    }
+    if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      setFontSize(
+        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
       );
     }
   }, [activeEditor]);
@@ -744,6 +746,7 @@ export default function ToolbarPlugin({
         const anchor = selection.anchor;
         const focus = selection.focus;
         const nodes = selection.getNodes();
+        const extractedNodes = selection.extract();
 
         if (anchor.key === focus.key && anchor.offset === focus.offset) {
           return;
@@ -769,7 +772,7 @@ export default function ToolbarPlugin({
              * The cleared text is based on the length of the selected text.
              */
             // We need this in case the selected text only has one format
-            const extractedTextNode = selection.extract()[0];
+            const extractedTextNode = extractedNodes[0];
             if (nodes.length === 1 && $isTextNode(extractedTextNode)) {
               textNode = extractedTextNode;
             }

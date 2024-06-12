@@ -1,6 +1,6 @@
 {
   "name": "@lexical/website",
-  "version": "0.0.0",
+  "version": "0.16.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -14,9 +14,9 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.2.1",
-    "@docusaurus/preset-classic": "^3.2.1",
-    "@docusaurus/theme-search-algolia": "^3.2.1",
+    "@docusaurus/core": "^3.3.2",
+    "@docusaurus/preset-classic": "^3.3.2",
+    "@docusaurus/theme-search-algolia": "^3.3.2",
     "@mdx-js/react": "^3.0.1",
     "@radix-ui/react-tabs": "^1.0.4",
     "@vercel/analytics": "^1.0.1",
@@ -25,15 +25,18 @@
     "prism-react-renderer": "^2.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "remark-import-partial": "^0.0.2",
     "typedoc-plugin-markdown": "^3.17.1",
-    "unist-util-visit": "^5.0.0"
+    "typedoc-plugin-rename-defaults": "^0.7.0",
+    "unist-util-visit": "^5.0.0",
+    "docusaurus-plugin-internaldocs-fb": "1.9.1"
   },
   "devDependencies": {
     "buffer": "^6.0.3",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "tailwindcss": "^3.3.3",
-    "webpack": "^5.76.0"
+    "webpack": "^5.76.0",
+    "typedoc": "^0.25.12",
+    "typescript": "^5.4.5"
   },
   "browserslist": {
     "production": [

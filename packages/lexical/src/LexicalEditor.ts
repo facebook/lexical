@@ -20,10 +20,10 @@ import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
-  commitPendingUpdates,
+  $commitPendingUpdates,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -37,6 +37,7 @@ import {
   getDOMSelection,
   markAllNodesAsDirty,
 } from './LexicalUtils';
+import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
@@ -103,6 +104,7 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName;
     h6?: EditorThemeClassName;
   };
+  hr?: EditorThemeClassName;
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;
   list?: {
@@ -421,6 +423,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     LineBreakNode,
     TabNode,
     ParagraphNode,
+    ArtificialNode__DO_NOT_USE,
     ...(config.nodes || []),
   ];
   const {onError, html} = config;
@@ -442,10 +445,28 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
-      // Ensure custom nodes implement required methods.
+      // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
+        // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
+        const nodeType =
+          Object.prototype.hasOwnProperty.call(klass, 'getType') &&
+          klass.getType();
         const name = klass.name;
-        if (name !== 'RootNode') {
+
+        if (replaceWithKlass) {
+          invariant(
+            replaceWithKlass.prototype instanceof klass,
+            "%s doesn't extend the %s",
+            replaceWithKlass.name,
+            name,
+          );
+        }
+
+        if (
+          name !== 'RootNode' &&
+          nodeType !== 'root' &&
+          nodeType !== 'artificial'
+        ) {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins
@@ -812,7 +833,7 @@ export class LexicalEditor {
     klass: Klass<LexicalNode>,
     listener: MutationListener,
   ): () => void {
-    const registeredNode = this._nodes.get(klass.getType());
+    let registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
       invariant(
@@ -822,8 +843,26 @@ export class LexicalEditor {
       );
     }
 
+    let klassToMutate = klass;
+
+    let replaceKlass: Klass<LexicalNode> | null = null;
+    while ((replaceKlass = registeredNode.replaceWithKlass)) {
+      klassToMutate = replaceKlass;
+
+      registeredNode = this._nodes.get(replaceKlass.getType());
+
+      if (registeredNode === undefined) {
+        invariant(
+          false,
+          'Node %s has not been registered. Ensure node has been passed to createEditor.',
+          replaceKlass.name,
+        );
+      }
+    }
+
     const mutations = this._listeners.mutation;
-    mutations.set(listener, klass);
+    mutations.set(listener, klassToMutate);
+
     return () => {
       mutations.delete(listener);
     };
@@ -979,7 +1018,7 @@ export class LexicalEditor {
 
         this._updateTags.add('history-merge');
 
-        commitPendingUpdates(this);
+        $commitPendingUpdates(this);
 
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
@@ -1030,7 +1069,7 @@ export class LexicalEditor {
       );
     }
 
-    flushRootMutations(this);
+    $flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
@@ -1040,7 +1079,7 @@ export class LexicalEditor {
         tags.add(tag);
       }
 
-      commitPendingUpdates(this);
+      $commitPendingUpdates(this);
     }
 
     this._pendingEditorState = editorState;
@@ -1052,7 +1091,7 @@ export class LexicalEditor {
       tags.add(tag);
     }
 
-    commitPendingUpdates(this);
+    $commitPendingUpdates(this);
   }
 
   /**

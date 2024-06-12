@@ -21,7 +21,7 @@ import {
 import {TreeView} from '@lexical/devtools-core';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useExtensionStore} from '../../../store';
 import {SerializedRawEditorState} from '../../../types';
@@ -32,6 +32,7 @@ interface Props {
 }
 
 export function EditorsList({tabID, setErrorMessage}: Props) {
+  const tabRefs = useRef(new Map<number, HTMLDivElement | null>());
   const [expandedItems, setExpandedItems] = useState<number[] | number>([0]);
   const {lexicalState, selectedEditorKey} = useExtensionStore();
   const states = lexicalState[tabID] ?? {};
@@ -42,6 +43,14 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
   useEffect(() => {
     if (selectedEditorIdx !== -1) {
       setExpandedItems([selectedEditorIdx]);
+      setTimeout(
+        () =>
+          tabRefs.current
+            .get(selectedEditorIdx)
+            ?.scrollIntoView({behavior: 'smooth', block: 'start'}),
+        // Delay scrolling to let accordion finish it's animation first
+        100,
+      );
     }
   }, [selectedEditorIdx]);
 
@@ -61,8 +70,8 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
       onChange={setExpandedItems}
       allowMultiple={true}
       allowToggle={true}>
-      {Object.entries(states).map(([key, state]) => (
-        <AccordionItem key={key}>
+      {Object.entries(states).map(([key, state], idx) => (
+        <AccordionItem key={key} ref={(el) => tabRefs.current.set(idx, el)}>
           <h2>
             <AccordionButton>
               <Box as="span" flex="1" textAlign="left">

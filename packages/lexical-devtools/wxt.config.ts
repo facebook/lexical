@@ -5,8 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {Alias} from 'vite';
+
 import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
 
@@ -19,6 +22,24 @@ export default defineConfig({
     const browserName =
       configEnv.browser.charAt(0).toUpperCase() + configEnv.browser.slice(1);
 
+    let buildVersion = 0; // For dev purposes
+    if (process.env.BUILD_VERSION) {
+      buildVersion = parseInt(process.env.BUILD_VERSION, 10);
+    }
+    if (isNaN(buildVersion)) {
+      throw new Error('BUILD_VERSION must be a number');
+    }
+
+    let version = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, 'package.json')).toString(),
+    ).version;
+
+    if (configEnv.browser === 'safari') {
+      const [v1, v2, v3] = version.split('.');
+      // App Store requires a version number in the format of X.X.X and we need to fit a build number there as well
+      version = `${v1}${v2}`.replace(/^0+/, '') + `.${v3}`;
+    }
+
     const manifestConf: UserManifest = {
       author: 'Lexical',
       description: `Adds Lexical debugging tools to the ${browserName} Developer Tools.`,
@@ -30,7 +51,8 @@ export default defineConfig({
         48: '/icon/48.png',
       },
       name: 'Lexical Developer Tools',
-      permissions: ['scripting', 'storage'],
+      permissions: ['tabs', 'storage'],
+      version: version + `.${buildVersion}`,
       web_accessible_resources: [
         {
           extension_ids: [],
@@ -99,7 +121,7 @@ export default defineConfig({
             },
           ],
         ],
-        presets: ['@babel/preset-react'],
+        presets: [['@babel/preset-react', {runtime: 'automatic'}]],
       }),
       react(),
     ],
@@ -114,7 +136,7 @@ export default defineConfig({
           find: 'lexicalOriginal',
           replacement: path.resolve('../lexical/src/index.ts'),
         },
-        ...moduleResolution,
+        ...(moduleResolution('source') as Alias[]),
       ],
     },
   }),

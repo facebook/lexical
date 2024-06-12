@@ -28,7 +28,7 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {PIXEL_VALUE_REG_EXP} from './constants';
+import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -83,11 +83,11 @@ export class TableCellNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
       th: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
     };
@@ -152,8 +152,6 @@ export class TableCellNode extends ElementNode {
 
     if (element) {
       const element_ = element as HTMLTableCellElement;
-      const maxWidth = 700;
-      const colCount = this.getParentOrThrow().getChildrenSize();
       element_.style.border = '1px solid black';
       if (this.__colSpan > 1) {
         element_.colSpan = this.__colSpan;
@@ -161,9 +159,7 @@ export class TableCellNode extends ElementNode {
       if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
-      element_.style.width = `${
-        this.getWidth() || Math.max(90, maxWidth / colCount)
-      }px`;
+      element_.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
@@ -290,7 +286,7 @@ export class TableCellNode extends ElementNode {
   }
 }
 
-export function convertTableCellNodeElement(
+export function $convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
@@ -323,7 +319,6 @@ export function convertTableCellNodeElement(
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   const hasItalicFontStyle = style.fontStyle === 'italic';
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
-
   return {
     after: (childLexicalNodes) => {
       if (childLexicalNodes.length === 0) {

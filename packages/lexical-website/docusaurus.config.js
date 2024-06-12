@@ -10,11 +10,13 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const fs = require('fs-extra');
 const {github: lightCodeTheme, dracula: darkCodeTheme} =
   require('prism-react-renderer').themes;
-const importPlugin = require('remark-import-partial');
 const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
+const {packagesManager} = process.env.FB_INTERNAL
+  ? {}
+  : require('../../scripts/shared/packagesManager');
+const path = require('node:path');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
@@ -27,25 +29,6 @@ function sourceLinkOptions() {
     gitRevision: 'main',
     sourceLinkTemplate,
   };
-}
-
-function lexicalReactEntryPoints() {
-  return Object.keys(
-    fs.readJsonSync('../lexical-react/package.json').exports,
-  ).flatMap((k) => {
-    const m = /\.\/([^.]+)$/.exec(k);
-    if (!m) {
-      return [];
-    }
-    const prefix = `../lexical-react/src/${m[1]}`;
-    for (const ext of ['.tsx', '.ts']) {
-      const fn = `${prefix}${ext}`;
-      if (fs.existsSync(fn)) {
-        return [fn];
-      }
-    }
-    throw Error(`No entry point found for ${prefix}`);
-  });
 }
 
 /**
@@ -189,52 +172,67 @@ const sidebarItemsGenerator = async ({
 /** @type {Partial<import('docusaurus-plugin-typedoc/dist/types').PluginOptions>} */
 const docusaurusPluginTypedocConfig = {
   ...sourceLinkOptions(),
-  entryPoints: [
-    '../lexical/src/index.ts',
-    '../lexical-clipboard/src/index.ts',
-    '../lexical-code/src/index.ts',
-    '../lexical-devtools-core/src/index.ts',
-    '../lexical-dragon/src/index.ts',
-    '../lexical-file/src/index.ts',
-    '../lexical-hashtag/src/index.ts',
-    '../lexical-headless/src/index.ts',
-    '../lexical-history/src/index.ts',
-    '../lexical-html/src/index.ts',
-    '../lexical-link/src/index.ts',
-    '../lexical-list/src/index.ts',
-    '../lexical-mark/src/index.ts',
-    '../lexical-markdown/src/index.ts',
-    '../lexical-offset/src/index.ts',
-    '../lexical-overflow/src/index.ts',
-    '../lexical-plain-text/src/index.ts',
-    ...lexicalReactEntryPoints(),
-    '../lexical-rich-text/src/index.ts',
-    '../lexical-selection/src/index.ts',
-    '../lexical-table/src/index.ts',
-    '../lexical-text/src/index.ts',
-    '../lexical-utils/src/index.ts',
-    '../lexical-yjs/src/index.ts',
-  ],
+  entryPoints: process.env.FB_INTERNAL
+    ? []
+    : packagesManager
+        .getPublicPackages()
+        .flatMap((pkg) =>
+          pkg
+            .getExportedNpmModuleEntries()
+            .map((entry) => [
+              path.relative(
+                __dirname,
+                pkg.resolve('src', entry.sourceFileName),
+              ),
+            ]),
+        ),
   excludeInternal: true,
   plugin: [
     './src/plugins/lexical-typedoc-plugin-no-inherit',
     './src/plugins/lexical-typedoc-plugin-module-name',
+    'typedoc-plugin-rename-defaults',
   ],
   sidebar: {
     autoConfiguration: false,
     position: 5,
   },
-  tsconfig: '../../tsconfig.json',
+  tsconfig: '../../tsconfig.build.json',
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
+
+const GIT_COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA || 'main';
+const GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF || 'main';
+const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || 'facebook';
+const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || 'lexical';
+const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${
+  // Vercel does not set owner and slug correctly for fork PRs so we can't trust the ref by default
+  (GIT_COMMIT_REF === 'main' && !process.env.VERCEL_GIT_PULL_REQUEST_ID) ||
+  GIT_COMMIT_REF.endsWith('__release')
+    ? GIT_COMMIT_REF
+    : GIT_COMMIT_SHA
+}/`;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   baseUrl: '/',
 
+  customFields: {
+    GIT_COMMIT_REF,
+    GIT_REPO_OWNER,
+    GIT_REPO_SLUG,
+    STACKBLITZ_PREFIX,
+  },
+
   favicon: 'img/favicon.ico',
 
-  markdown: {format: 'md'},
+  markdown: {
+    format: 'md',
+    preprocessor: ({fileContent}) =>
+      fileContent.replaceAll(
+        'https://stackblitz.com/github/facebook/lexical/tree/main/',
+        STACKBLITZ_PREFIX,
+      ),
+  },
 
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
@@ -242,6 +240,23 @@ const config = {
   onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
+    process.env.FB_INTERNAL
+      ? null
+      : [
+          './plugins/package-docs',
+          /** @type {import('./plugins/package-docs').PackageDocsPluginOptions} */
+          {
+            baseDir: path.resolve(__dirname, '..'),
+            editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,
+            packageFrontMatter: {
+              lexical: [
+                'sidebar_position: 1',
+                'sidebar_label: lexical (core)',
+              ].join('\n'),
+            },
+            targetDir: path.resolve(__dirname, 'docs/packages'),
+          },
+        ],
     './plugins/webpack-buffer',
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
@@ -254,7 +269,8 @@ const config = {
         name: 'docusaurus-tailwindcss',
       };
     },
-  ],
+  ].filter((plugin) => plugin != null),
+
   presets: [
     [
       'classic',
@@ -265,8 +281,9 @@ const config = {
           showReadingTime: true, // TODO: Update when directory finalized
         },
         docs: {
-          beforeDefaultRemarkPlugins: [importPlugin, slugifyPlugin],
+          beforeDefaultRemarkPlugins: [slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
+          exclude: process.env.FB_INTERNAL ? ['docs/error/**'] : [],
           path: 'docs',
           sidebarItemsGenerator,
           sidebarPath: require.resolve('./sidebars.js'),
@@ -370,12 +387,18 @@ const config = {
             sidebarId: 'docs',
             type: 'docSidebar',
           },
-          {
-            label: 'API',
-            position: 'left',
-            sidebarId: 'api',
-            type: 'docSidebar',
-          },
+          process.env.FB_INTERNAL
+            ? {
+                href: 'https://lexical.dev/docs/api/',
+                label: 'API',
+                position: 'left',
+              }
+            : {
+                label: 'API',
+                position: 'left',
+                sidebarId: 'api',
+                type: 'docSidebar',
+              },
 
           {label: 'Community', position: 'left', to: '/community'},
           {
@@ -407,7 +430,6 @@ const config = {
     }),
 
   title: TITLE,
-
   url: 'https://lexical.dev',
 };
 

@@ -13,11 +13,17 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {ElementNode, LexicalNode, TextFormatType} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
+import {
+  $isParagraphNode,
+  $isTextNode,
+  type ElementNode,
+  type LexicalNode,
+  type TextFormatType,
+} from 'lexical';
 
 type MarkdownFormatKind =
   | 'noTransformation'
@@ -429,3 +435,19 @@ export function transformersByType(transformers: Array<Transformer>): Readonly<{
 }
 
 export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+
+const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
+
+export function isEmptyParagraph(node: LexicalNode): boolean {
+  if (!$isParagraphNode(node)) {
+    return false;
+  }
+
+  const firstChild = node.getFirstChild();
+  return (
+    firstChild == null ||
+    (node.getChildrenSize() === 1 &&
+      $isTextNode(firstChild) &&
+      MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
+  );
+}

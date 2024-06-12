@@ -87,17 +87,19 @@ const onSubmit = () => {
 }
 ```
 
-For React it could be something following:
+For React it could be something like the following:
 
 ```jsx
 const initialEditorState = await loadContent();
-const editorStateRef = useRef();
+const editorStateRef = useRef(undefined);
 
 <LexicalComposer initialConfig={{
   editorState: initialEditorState
 }}>
   <LexicalRichTextPlugin />
-  <LexicalOnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
+  <LexicalOnChangePlugin onChange={(editorState) => {
+    editorStateRef.current = editorState;
+  }} />
   <Button label="Save" onPress={() => {
     if (editorStateRef.current) {
       saveContent(JSON.stringify(editorStateRef.current))

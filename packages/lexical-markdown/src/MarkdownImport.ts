@@ -13,7 +13,7 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {LexicalNode, TextNode} from 'lexical';
+import type {TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
@@ -26,14 +26,16 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
-  $isTextNode,
   ElementNode,
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
+import {
+  isEmptyParagraph,
+  PUNCTUATION_OR_SPACE,
+  transformersByType,
+} from './utils';
 
-const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
@@ -41,8 +43,12 @@ type TextFormatTransformersIndex = Readonly<{
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
+/**
+ * Renders markdown from a string. The selection is moved to the start after the operation.
+ */
 export function createMarkdownImport(
   transformers: Array<Transformer>,
+  shouldPreserveNewLines = false,
 ): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
@@ -61,14 +67,14 @@ export function createMarkdownImport(
       // is ignored for further processing
       // TODO:
       // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = importCodeBlock(lines, i, root);
+      const [codeBlockNode, shiftedIndex] = $importCodeBlock(lines, i, root);
 
       if (codeBlockNode != null) {
         i = shiftedIndex;
         continue;
       }
 
-      importBlocks(
+      $importBlocks(
         lineText,
         root,
         byType.element,
@@ -77,36 +83,27 @@ export function createMarkdownImport(
       );
     }
 
-    // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as delimiter
+    // By default, removing empty paragraphs as md does not really
+    // allow empty lines and uses them as delimiter.
+    // If you need empty lines set shouldPreserveNewLines = true.
     const children = root.getChildren();
     for (const child of children) {
-      if (isEmptyParagraph(child) && root.getChildrenSize() > 1) {
+      if (
+        !shouldPreserveNewLines &&
+        isEmptyParagraph(child) &&
+        root.getChildrenSize() > 1
+      ) {
         child.remove();
       }
     }
 
     if ($getSelection() !== null) {
-      root.selectEnd();
+      root.selectStart();
     }
   };
 }
 
-function isEmptyParagraph(node: LexicalNode): boolean {
-  if (!$isParagraphNode(node)) {
-    return false;
-  }
-
-  const firstChild = node.getFirstChild();
-  return (
-    firstChild == null ||
-    (node.getChildrenSize() === 1 &&
-      $isTextNode(firstChild) &&
-      MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
-  );
-}
-
-function importBlocks(
+function $importBlocks(
   lineText: string,
   rootNode: ElementNode,
   elementTransformers: Array<ElementTransformer>,
@@ -167,7 +164,7 @@ function importBlocks(
   }
 }
 
-function importCodeBlock(
+function $importCodeBlock(
   lines: Array<string>,
   startLineIndex: number,
   rootNode: ElementNode,

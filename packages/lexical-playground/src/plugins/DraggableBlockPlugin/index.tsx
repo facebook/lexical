@@ -332,7 +332,7 @@ function useDraggableBlockMenu(
       return true;
     }
 
-    function onDrop(event: DragEvent): boolean {
+    function $onDrop(event: DragEvent): boolean {
       if (!isDraggingBlockRef.current) {
         return false;
       }
@@ -382,7 +382,7 @@ function useDraggableBlockMenu(
       editor.registerCommand(
         DROP_COMMAND,
         (event) => {
-          return onDrop(event);
+          return $onDrop(event);
         },
         COMMAND_PRIORITY_HIGH,
       ),

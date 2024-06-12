@@ -55,7 +55,7 @@ export type SerializedLexicalNode = {
   version: number;
 };
 
-export function removeNode(
+export function $removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
   preserveEmptyParent?: boolean,
@@ -114,7 +114,7 @@ export function removeNode(
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
-    removeNode(parent, restoreSelection);
+    $removeNode(parent, restoreSelection);
   }
   if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
@@ -872,7 +872,7 @@ export class LexicalNode {
    * other node heuristics such as {@link ElementNode#canBeEmpty}
    * */
   remove(preserveEmptyParent?: boolean): void {
-    removeNode(this, true, preserveEmptyParent);
+    $removeNode(this, true, preserveEmptyParent);
   }
 
   /**
@@ -901,7 +901,7 @@ export class LexicalNode {
     const prevKey = self.__prev;
     const nextKey = self.__next;
     const parentKey = self.__parent;
-    removeNode(self, false, true);
+    $removeNode(self, false, true);
 
     if (prevSibling === null) {
       writableParent.__first = key;

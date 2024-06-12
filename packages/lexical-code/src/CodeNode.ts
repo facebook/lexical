@@ -48,13 +48,15 @@ export type SerializedCodeNode = Spread<
   SerializedElementNode
 >;
 
-const mapToPrismLanguage = (
+const isLanguageSupportedByPrism = (
   language: string | null | undefined,
-): string | null | undefined => {
-  // eslint-disable-next-line no-prototype-builtins
-  return language != null && window.Prism.languages.hasOwnProperty(language)
-    ? language
-    : undefined;
+): boolean => {
+  try {
+    // eslint-disable-next-line no-prototype-builtins
+    return language ? window.Prism.languages.hasOwnProperty(language) : false;
+  } catch {
+    return false;
+  }
 };
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {
@@ -67,12 +69,15 @@ function hasChildDOMNodeTag(node: Node, tagName: string) {
   return false;
 }
 
-const LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
+const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
+const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 
 /** @noInheritDoc */
 export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
+  /** @internal */
+  __isSyntaxHighlightSupported: boolean;
 
   static getType(): string {
     return 'code';
@@ -84,7 +89,8 @@ export class CodeNode extends ElementNode {
 
   constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
-    this.__language = mapToPrismLanguage(language);
+    this.__language = language;
+    this.__isSyntaxHighlightSupported = isLanguageSupportedByPrism(language);
   }
 
   // View
@@ -95,6 +101,10 @@ export class CodeNode extends ElementNode {
     const language = this.getLanguage();
     if (language) {
       element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+
+      if (this.getIsSyntaxHighlightSupported()) {
+        element.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+      }
     }
     return element;
   }
@@ -109,9 +119,17 @@ export class CodeNode extends ElementNode {
     if (language) {
       if (language !== prevLanguage) {
         dom.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+
+        if (this.__isSyntaxHighlightSupported) {
+          dom.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+        }
       }
     } else if (prevLanguage) {
       dom.removeAttribute(LANGUAGE_DATA_ATTRIBUTE);
+
+      if (prevNode.__isSyntaxHighlightSupported) {
+        dom.removeAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE);
+      }
     }
     return false;
   }
@@ -123,6 +141,10 @@ export class CodeNode extends ElementNode {
     const language = this.getLanguage();
     if (language) {
       element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+
+      if (this.getIsSyntaxHighlightSupported()) {
+        element.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+      }
     }
     return {element};
   }
@@ -139,17 +161,17 @@ export class CodeNode extends ElementNode {
 
         return isMultiLine
           ? {
-              conversion: convertPreElement,
+              conversion: $convertPreElement,
               priority: 1,
             }
           : null;
       },
-      div: (node: Node) => ({
-        conversion: convertDivElement,
+      div: () => ({
+        conversion: $convertDivElement,
         priority: 1,
       }),
-      pre: (node: Node) => ({
-        conversion: convertPreElement,
+      pre: () => ({
+        conversion: $convertPreElement,
         priority: 0,
       }),
       table: (node: Node) => {
@@ -157,7 +179,7 @@ export class CodeNode extends ElementNode {
         // domNode is a <table> since we matched it by nodeName
         if (isGitHubCodeTable(table as HTMLTableElement)) {
           return {
-            conversion: convertTableElement,
+            conversion: $convertTableElement,
             priority: 3,
           };
         }
@@ -168,13 +190,7 @@ export class CodeNode extends ElementNode {
         const td = node as HTMLTableCellElement;
         const table: HTMLTableElement | null = td.closest('table');
 
-        if (isGitHubCodeCell(td)) {
-          return {
-            conversion: convertTableCellElement,
-            priority: 3,
-          };
-        }
-        if (table && isGitHubCodeTable(table)) {
+        if (isGitHubCodeCell(td) || (table && isGitHubCodeTable(table))) {
           // Return a no-op if it's a table cell in a code table, but not a code line.
           // Otherwise it'll fall back to the T
           return {
@@ -310,11 +326,17 @@ export class CodeNode extends ElementNode {
 
   setLanguage(language: string): void {
     const writable = this.getWritable();
-    writable.__language = mapToPrismLanguage(language);
+    writable.__language = language;
+    writable.__isSyntaxHighlightSupported =
+      isLanguageSupportedByPrism(language);
   }
 
   getLanguage(): string | null | undefined {
     return this.getLatest().__language;
+  }
+
+  getIsSyntaxHighlightSupported(): boolean {
+    return this.getLatest().__isSyntaxHighlightSupported;
   }
 }
 
@@ -330,15 +352,12 @@ export function $isCodeNode(
   return node instanceof CodeNode;
 }
 
-function convertPreElement(domNode: Node): DOMConversionOutput {
-  let language;
-  if (isHTMLElement(domNode)) {
-    language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
-  }
+function $convertPreElement(domNode: HTMLElement): DOMConversionOutput {
+  const language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
   return {node: $createCodeNode(language)};
 }
 
-function convertDivElement(domNode: Node): DOMConversionOutput {
+function $convertDivElement(domNode: Node): DOMConversionOutput {
   // domNode is a <div> since we matched it by nodeName
   const div = domNode as HTMLDivElement;
   const isCode = isCodeElement(div);
@@ -348,39 +367,16 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
     };
   }
   return {
-    after: (childLexicalNodes) => {
-      const domParent = domNode.parentNode;
-      if (domParent != null && domNode !== domParent.lastChild) {
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
     node: isCode ? $createCodeNode() : null,
   };
 }
 
-function convertTableElement(): DOMConversionOutput {
+function $convertTableElement(): DOMConversionOutput {
   return {node: $createCodeNode()};
 }
 
 function convertCodeNoop(): DOMConversionOutput {
   return {node: null};
-}
-
-function convertTableCellElement(domNode: Node): DOMConversionOutput {
-  // domNode is a <td> since we matched it by nodeName
-  const cell = domNode as HTMLTableCellElement;
-
-  return {
-    after: (childLexicalNodes) => {
-      if (cell.parentNode && cell.parentNode.nextSibling) {
-        // Append newline between code lines
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
-    node: null,
-  };
 }
 
 function isCodeElement(div: HTMLElement): boolean {

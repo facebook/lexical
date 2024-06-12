@@ -7,11 +7,21 @@
  */
 
 import {expect, test as base} from '@playwright/test';
+import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
+
+function findAsset(pattern) {
+  const prefix = 'packages/lexical-playground/build';
+  const resolvedPattern = `${prefix}/assets/${pattern}`;
+  for (const fn of glob.sync(resolvedPattern, {windowsPathsNoEscape: true})) {
+    return fn.replaceAll('\\', '/').slice(prefix.length);
+  }
+  throw new Error(`Missing asset at ${resolvedPattern}`);
+}
 
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
@@ -26,11 +36,9 @@ export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
-    : '/assets/yellow-flower.a2a7c7a2.jpg';
+    : findAsset('yellow-flower*.jpg');
 export const SAMPLE_LANDSCAPE_IMAGE_URL =
-  E2E_PORT === 3000
-    ? '/src/images/landscape.jpg'
-    : '/assets/landscape.21352c66.jpg';
+  E2E_PORT === 3000 ? '/src/images/landscape.jpg' : findAsset('landscape*.jpg');
 export const LEXICAL_IMAGE_BASE64 =
   'data:image/png;base64,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';
 export const YOUTUBE_SAMPLE_URL =
@@ -53,6 +61,7 @@ export async function initialize({
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
+  shouldUseLexicalContextMenu,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -82,6 +91,7 @@ export async function initialize({
   if (tableCellBackgroundColor !== undefined) {
     appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
+  appSettings.shouldUseLexicalContextMenu = !!shouldUseLexicalContextMenu;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -112,6 +122,13 @@ async function exposeLexicalEditor(page) {
         ).toBeVisible();
       }),
     );
+    // Ensure that they started up with the correct empty state
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
   }
   const leftFrame = getPageOrFrame(page);
   await leftFrame.waitForSelector('.tree-view-output pre');
@@ -130,6 +147,7 @@ export const test = base.extend({
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,
+  shouldUseLexicalContextMenu: false,
 });
 
 export {expect} from '@playwright/test';
@@ -162,6 +180,7 @@ async function assertHTMLOnPageOrFrame(
   ignoreClasses,
   ignoreInlineStyles,
   frameName,
+  actualHtmlModificationsCallback = (actualHtml) => actualHtml,
 ) {
   const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
@@ -172,10 +191,13 @@ async function assertHTMLOnPageOrFrame(
       .locator('div[contenteditable="true"]')
       .first()
       .innerHTML();
-    const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
+    let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
     });
+
+    actual = actualHtmlModificationsCallback(actual);
+
     expect(
       actual,
       `innerHTML of contenteditable in ${frameName} did not match`,
@@ -191,6 +213,7 @@ export async function assertHTML(
   expectedHtml,
   expectedHtmlFrameRight = expectedHtml,
   {ignoreClasses = false, ignoreInlineStyles = false} = {},
+  actualHtmlModificationsCallback,
 ) {
   if (IS_COLLAB) {
     await Promise.all([
@@ -200,6 +223,7 @@ export async function assertHTML(
         ignoreClasses,
         ignoreInlineStyles,
         'left frame',
+        actualHtmlModificationsCallback,
       ),
       assertHTMLOnPageOrFrame(
         page.frame('right'),
@@ -207,6 +231,7 @@ export async function assertHTML(
         ignoreClasses,
         ignoreInlineStyles,
         'right frame',
+        actualHtmlModificationsCallback,
       ),
     ]);
   } else {
@@ -216,6 +241,7 @@ export async function assertHTML(
       ignoreClasses,
       ignoreInlineStyles,
       'page',
+      actualHtmlModificationsCallback,
     );
   }
 }
@@ -392,7 +418,10 @@ export async function copyToClipboard(page) {
   return await copyToClipboardPageOrFrame(getPageOrFrame(page));
 }
 
-async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
+async function pasteWithClipboardDataFromPageOrFrame(
+  pageOrFrame,
+  clipboardData,
+) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
     async ({
@@ -463,7 +492,16 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
  * @param {import('@playwright/test').Page} page
  */
 export async function pasteFromClipboard(page, clipboardData) {
-  await pasteFromClipboardPageOrFrame(getPageOrFrame(page), clipboardData);
+  if (clipboardData === undefined) {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('v');
+    await keyUpCtrlOrMeta(page);
+    return;
+  }
+  await pasteWithClipboardDataFromPageOrFrame(
+    getPageOrFrame(page),
+    clipboardData,
+  );
 }
 
 export async function sleep(delay) {
@@ -508,6 +546,12 @@ export async function click(page, selector, options) {
   const frame = getPageOrFrame(page);
   await frame.waitForSelector(selector, options);
   await frame.click(selector, options);
+}
+
+export async function doubleClick(page, selector, options) {
+  const frame = getPageOrFrame(page);
+  await frame.waitForSelector(selector, options);
+  await frame.dblclick(selector, options);
 }
 
 export async function focus(page, selector, options) {
@@ -612,6 +656,7 @@ export async function dragMouse(
   positionStart = 'middle',
   positionEnd = 'middle',
   mouseUp = true,
+  slow = false,
 ) {
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -633,6 +678,11 @@ export async function dragMouse(
   } else if (positionEnd === 'end') {
     toX += toBoundingBox.width;
     toY += toBoundingBox.height;
+  }
+
+  if (slow) {
+    //simulate more than 1 mouse move event to replicate human slow dragging
+    await page.mouse.move((fromX + toX) / 2, (fromY + toY) / 2);
   }
 
   await page.mouse.move(toX, toY);
@@ -793,6 +843,10 @@ export async function selectCellsFromTableCords(
     page,
     await firstRowFirstColumnCell.boundingBox(),
     await secondRowSecondCell.boundingBox(),
+    'middle',
+    'middle',
+    true,
+    true,
   );
 }
 

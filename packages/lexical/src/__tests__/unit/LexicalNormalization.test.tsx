@@ -125,7 +125,7 @@ describe('LexicalNormalization tests', () => {
 
             const selection = paragraph.select();
             getAnchor(selection).set(text1.__key, 0, 'text');
-            getFocus(selection).set(text2.__key, 2, 'text');
+            getFocus(selection).set(text2.__key, 1, 'text');
 
             const normalizedSelection = $normalizeSelection(selection);
             expect(getAnchor(normalizedSelection).type).toBe('text');
@@ -137,7 +137,7 @@ describe('LexicalNormalization tests', () => {
             expect(getFocus(normalizedSelection).getNode().__key).toBe(
               text2.__key,
             );
-            expect(getFocus(normalizedSelection).offset).toBe(2);
+            expect(getFocus(normalizedSelection).offset).toBe(1);
           });
         });
 
@@ -155,7 +155,7 @@ describe('LexicalNormalization tests', () => {
 
             const selection = paragraph.select();
             getAnchor(selection).set(text1.__key, 0, 'text');
-            getFocus(selection).set(text2.__key, 2, 'text');
+            getFocus(selection).set(text2.__key, 1, 'text');
 
             const normalizedSelection = $normalizeSelection(selection);
             expect(getAnchor(normalizedSelection).type).toBe('text');
@@ -167,7 +167,7 @@ describe('LexicalNormalization tests', () => {
             expect(getFocus(normalizedSelection).getNode().__key).toBe(
               text2.__key,
             );
-            expect(getFocus(normalizedSelection).offset).toBe(2);
+            expect(getFocus(normalizedSelection).offset).toBe(1);
           });
         });
       }

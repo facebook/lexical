@@ -67,7 +67,7 @@ export default function CollapsiblePlugin(): null {
       );
     }
 
-    const onEscapeUp = () => {
+    const $onEscapeUp = () => {
       const selection = $getSelection();
       if (
         $isRangeSelection(selection) &&
@@ -95,7 +95,7 @@ export default function CollapsiblePlugin(): null {
       return false;
     };
 
-    const onEscapeDown = () => {
+    const $onEscapeDown = () => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) && selection.isCollapsed()) {
         const container = $findMatchingParent(
@@ -208,13 +208,13 @@ export default function CollapsiblePlugin(): null {
       // new content even if trailing paragraph is accidentally deleted
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
-        onEscapeDown,
+        $onEscapeDown,
         COMMAND_PRIORITY_LOW,
       ),
 
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        onEscapeDown,
+        $onEscapeDown,
         COMMAND_PRIORITY_LOW,
       ),
 
@@ -224,13 +224,13 @@ export default function CollapsiblePlugin(): null {
       // new content even if leading paragraph is accidentally deleted
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
-        onEscapeUp,
+        $onEscapeUp,
         COMMAND_PRIORITY_LOW,
       ),
 
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
-        onEscapeUp,
+        $onEscapeUp,
         COMMAND_PRIORITY_LOW,
       ),
 

@@ -8,11 +8,19 @@ possible.
 We actively welcome your pull requests.
 
 1. Fork the repo and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. If you haven't already, complete the Contributor License Agreement ("CLA").
+2. Run `npm install` to install dependencies.
+3. If you've added code that should be tested, add tests.
+4. If you've changed APIs, update the documentation.
+5. Ensure the test suite passes.
+6. Make sure your code lints.
+7. If you haven't already, complete the Contributor License Agreement ("CLA").
+
+Note that the local server needs to be running in order to run the e2e tests.
+
+- `npm run start`
+- `npm run test-e2e-chromium` (to run only chromium e2e tests)
+
+`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
 
 ## Contributor License Agreement ("CLA")
 

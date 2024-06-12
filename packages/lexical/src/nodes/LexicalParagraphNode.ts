@@ -98,7 +98,7 @@ export class ParagraphNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       p: (node: Node) => ({
-        conversion: convertParagraphElement,
+        conversion: $convertParagraphElement,
         priority: 0,
       }),
     };
@@ -190,7 +190,7 @@ export class ParagraphNode extends ElementNode {
   }
 }
 
-function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
+function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);

@@ -25,8 +25,8 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
-  internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
@@ -316,7 +316,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,
@@ -525,9 +525,11 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
   }
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return true;
   }
@@ -550,6 +552,7 @@ export class ElementNode extends LexicalNode {
   isShadowRoot(): boolean {
     return false;
   }
+  /** @deprecated @internal */
   canMergeWith(node: ElementNode): boolean {
     return false;
   }

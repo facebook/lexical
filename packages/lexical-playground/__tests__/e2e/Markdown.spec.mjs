@@ -49,7 +49,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   await assertHTML(page, forwardHTML);
 }
 
-test.describe('Markdown', () => {
+test.describe.parallel('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
@@ -102,7 +102,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -150,7 +150,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -159,7 +159,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -374,7 +374,7 @@ async function assertMarkdownImportExport(
   await assertHTML(page, expectedHTML);
 }
 
-test.describe('Markdown', () => {
+test.describe.parallel('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
     return initialize({isCollab, page});
@@ -493,14 +493,20 @@ test.describe('Markdown', () => {
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '--- ',
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '*** ',
@@ -905,6 +911,7 @@ test.describe('Markdown', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-language="markdown"
           data-highlight-language="markdown"
           data-gutter="12">
           <span data-lexical-text="true">Hello</span>
@@ -1171,7 +1178,10 @@ const TYPED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Quote</span>
   </blockquote>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <ul class="PlaygroundEditorTheme__ul">
     <li
       value="1"
@@ -1196,6 +1206,7 @@ const TYPED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
+    data-language="sql"
     data-highlight-language="sql"
     data-gutter="1">
     <span data-lexical-text="true">Code block</span>
@@ -1385,7 +1396,10 @@ const IMPORTED_MARKDOWN_HTML = html`
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Horizontal Rules</span>
   </h3>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Blockquotes</span>
   </h3>
@@ -1517,6 +1531,7 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
+    data-language="javascript"
     data-highlight-language="javascript"
     data-gutter="123">
     <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">

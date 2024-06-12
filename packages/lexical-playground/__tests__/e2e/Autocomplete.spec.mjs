@@ -31,7 +31,9 @@ test.describe('Autocomplete', () => {
           dir="ltr">
           <span data-lexical-text="true">Sort by alpha</span>
           <span contenteditable="false" data-lexical-decorator="true">
-            <span spellcheck="false" style="color: rgb(204, 204, 204)">
+            <span
+              class="PlaygroundEditorTheme__autocomplete"
+              spellcheck="false">
               betical (TAB)
             </span>
           </span>

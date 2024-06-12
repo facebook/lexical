@@ -516,7 +516,7 @@ export function useMenuAnchorRef(
         if (
           (top + menuHeight > window.innerHeight ||
             top + menuHeight > rootElementRect.bottom) &&
-          top - rootElementRect.top > menuHeight
+          top - rootElementRect.top > menuHeight + height
         ) {
           containerDiv.style.top = `${
             top - menuHeight + window.pageYOffset - height

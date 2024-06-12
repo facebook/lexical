@@ -6,13 +6,21 @@
  *
  */
 
-import './setupEnv';
+// setupEnv must load before App because lexical computes CAN_USE_BEFORE_INPUT
+// at import time (disableBeforeInput is used to test legacy events)
+// eslint-disable-next-line simple-import-sort/imports
+import setupEnv from './setupEnv';
 import './index.css';
 
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 
 import App from './App';
+
+if (setupEnv.disableBeforeInput) {
+  // vite is really aggressive about tree-shaking, this
+  // ensures that the side-effects of importing setupEnv happens
+}
 
 // Handle runtime errors
 const showErrorOverlay = (err: Event) => {

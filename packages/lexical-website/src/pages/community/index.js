@@ -12,7 +12,6 @@ import CommunityHeader from '@site/src/components/CommunityHeader';
 import CommunityHowToContribute from '@site/src/components/CommunityHowToContribute';
 import CommunityLinks from '@site/src/components/CommunityLinks';
 import Layout from '@theme/Layout';
-import React from 'react';
 
 export default function Community() {
   const {siteConfig} = useDocusaurusContext();

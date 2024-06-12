@@ -7,7 +7,7 @@
  */
 import './App.css';
 
-import {Box, Flex} from '@chakra-ui/react';
+import {Box, Flex, Text} from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
 
@@ -29,31 +29,33 @@ function App({tabID}: Props) {
     <Flex direction="column">
       {errorMessage !== '' ? (
         <Box className="error" mb={2} color="red">
-          {errorMessage}
+          <Text fontSize="xs">{errorMessage}</Text>
         </Box>
       ) : null}
       <Box>
         {states === null ? (
-          <span>
+          <Text fontSize="xs">
             This is a restricted browser page. Lexical DevTools cannot access
             this page.
-          </span>
+          </Text>
         ) : states === undefined ? (
-          <span>Loading...</span>
+          <Text fontSize="xs">Loading...</Text>
         ) : (
           <>
             <Box>
-              Found <b>{lexicalCount}</b> editor
-              {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page
-              {lexicalCount > 0 ? (
-                <>
-                  {' '}
-                  &#x2705;
-                  <br />
-                  Open the developer tools, and "Lexical" tab will appear to the
-                  right.
-                </>
-              ) : null}
+              <Text fontSize="xs">
+                Found <b>{lexicalCount}</b> editor
+                {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page
+                {lexicalCount > 0 ? (
+                  <>
+                    {' '}
+                    &#x2705;
+                    <br />
+                    Open the developer tools, and "Lexical" tab will appear to
+                    the right.
+                  </>
+                ) : null}
+              </Text>
             </Box>
 
             <Box mt={1}>

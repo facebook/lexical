@@ -15,7 +15,7 @@ import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
 import {initializeUnitTest} from '../utils';
 
-function createEditorContent() {
+function $createEditorContent() {
   const root = $getRoot();
   if (root.getFirstChild() === null) {
     const heading = $createHeadingNode('h1');
@@ -106,7 +106,7 @@ describe('LexicalSerialization tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        createEditorContent();
+        $createEditorContent();
       });
 
       const stringifiedEditorState = JSON.stringify(editor.getEditorState());

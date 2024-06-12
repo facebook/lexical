@@ -36,7 +36,7 @@ function getElementNodesInSelection(
   );
 }
 
-function shouldPreventIndent(maxDepth: number): boolean {
+function $shouldPreventIndent(maxDepth: number): boolean {
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection)) {
@@ -77,7 +77,7 @@ export default function ListMaxIndentLevelPlugin({
   useEffect(() => {
     return editor.registerCommand(
       INDENT_CONTENT_COMMAND,
-      () => shouldPreventIndent(maxDepth),
+      () => $shouldPreventIndent(maxDepth),
       COMMAND_PRIORITY_CRITICAL,
     );
   }, [editor, maxDepth]);

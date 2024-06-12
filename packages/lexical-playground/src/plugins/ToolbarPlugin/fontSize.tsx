@@ -32,6 +32,7 @@ export default function FontSize({
   editor: LexicalEditor;
 }) {
   const [inputValue, setInputValue] = React.useState<string>(selectionFontSize);
+  const [inputChangeFlag, setInputChangeFlag] = React.useState<boolean>(false);
 
   /**
    * Calculates the new font size based on the update type.
@@ -140,18 +141,18 @@ export default function FontSize({
       setInputValue('');
       return;
     }
-
-    if (e.key === 'Enter') {
+    setInputChangeFlag(true);
+    if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape') {
       e.preventDefault();
 
-      let updatedFontSize = inputValueNumber;
-      if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) {
-        updatedFontSize = MAX_ALLOWED_FONT_SIZE;
-      } else if (inputValueNumber < MIN_ALLOWED_FONT_SIZE) {
-        updatedFontSize = MIN_ALLOWED_FONT_SIZE;
-      }
-      setInputValue(String(updatedFontSize));
-      updateFontSizeInSelection(String(updatedFontSize) + 'px', null);
+      updateFontSizeByInputValue(inputValueNumber);
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (inputValue !== '' && inputChangeFlag) {
+      const inputValueNumber = Number(inputValue);
+      updateFontSizeByInputValue(inputValueNumber);
     }
   };
 
@@ -165,6 +166,19 @@ export default function FontSize({
     } else {
       updateFontSizeInSelection(null, updateType);
     }
+  };
+
+  const updateFontSizeByInputValue = (inputValueNumber: number) => {
+    let updatedFontSize = inputValueNumber;
+    if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) {
+      updatedFontSize = MAX_ALLOWED_FONT_SIZE;
+    } else if (inputValueNumber < MIN_ALLOWED_FONT_SIZE) {
+      updatedFontSize = MIN_ALLOWED_FONT_SIZE;
+    }
+
+    setInputValue(String(updatedFontSize));
+    updateFontSizeInSelection(String(updatedFontSize) + 'px', null);
+    setInputChangeFlag(false);
   };
 
   React.useEffect(() => {
@@ -194,6 +208,7 @@ export default function FontSize({
         max={MAX_ALLOWED_FONT_SIZE}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyPress}
+        onBlur={handleInputBlur}
       />
 
       <button

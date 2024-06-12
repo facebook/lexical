@@ -24,42 +24,41 @@ jobs:
       test_results_path: ${{ inputs.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
       test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
     steps:
-      # - uses: actions/checkout@v4
-      # - name: Use Node.js ${{ inputs.node-version }}
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: ${{ inputs.node-version }}
-      #     cache: npm
-      # - name: Install required ubuntu-latest packages
-      #   if: inputs.os == 'ubuntu-latest'
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install xvfb
-      # - name: Install dependencies
-      #   run: npm ci
-      # - name: Install React ${{ inputs.override-react-version }}
-      #   if: inputs.override-react-version != ''
-      #   # This should be safe since we are caching ~/.npm and not node_modules
-      #   run: |
-      #     node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
-      #     grep version node_modules/{react,react-dom}/package.json
-      # - name: Restore playwright from cache
-      #   uses: actions/cache/restore@v4
-      #   id: playwright-cache
-      #   with:
-      #     path: ${{ env.cache_playwright_path }}
-      #     key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      # - name: Install playwright
-      #   run: npx playwright install
-      # - name: Save playwright to cache
-      #   uses: actions/cache/save@v4
-      #   if: steps.playwright-cache.outputs.cache-hit != 'true'
-      #   with:
-      #     path: ${{ env.cache_playwright_path }}
-      #     key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - name: Install required ubuntu-latest packages
+        if: inputs.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install xvfb
+      - name: Install dependencies
+        run: npm ci
+      - name: Install React ${{ inputs.override-react-version }}
+        if: inputs.override-react-version != ''
+        # This should be safe since we are caching ~/.npm and not node_modules
+        run: |
+          node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
+          grep version node_modules/{react,react-dom}/package.json
+      - name: Restore playwright from cache
+        uses: actions/cache/restore@v4
+        id: playwright-cache
+        with:
+          path: ${{ env.cache_playwright_path }}
+          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - name: Install playwright
+        run: npx playwright install
+      - name: Save playwright to cache
+        uses: actions/cache/save@v4
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.cache_playwright_path }}
+          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        # run: npm run ${{ env.test_script }}
-        run: exit 1
+        run: npm run ${{ env.test_script }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

@@ -283,7 +283,7 @@ const config = {
         docs: {
           beforeDefaultRemarkPlugins: [slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
-          exclude: ['/error'],
+          exclude: process.env.FB_INTERNAL ? ['docs/error/**'] : [],
           path: 'docs',
           sidebarItemsGenerator,
           sidebarPath: require.resolve('./sidebars.js'),

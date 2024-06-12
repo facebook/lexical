@@ -20,7 +20,7 @@ jobs:
   flaky-test-notice:
     needs: e2e-tests
     runs-on: ubuntu-latest
-    if: always()
+    if: needs.e2e-tests.result == 'failure' || needs.e2e-tests.result == 'cancelled'
     steps:
       - name: Flaky test notice PR comment
         if: needs.e2e-tests.result == 'failure' || needs.e2e-tests.result == 'cancelled'

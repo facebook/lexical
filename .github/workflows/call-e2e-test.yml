@@ -69,7 +69,7 @@ jobs:
           path: ${{ env.test_results_path }}
           retention-days: 7
       - name: Flaky test notice PR comment
-        if: failure() && ${{ !env.has_commented_flaky_test_notice }}
+        if: failure() && ${{ env.has_commented_flaky_test_notice == 'false' }}
         uses: thollander/actions-comment-pull-request@v2
         env:
           has_commented_flaky_test_notice: true

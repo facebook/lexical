@@ -19,6 +19,12 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
 
+  boop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pass
+        run: exit 0
+
   # linux:
   #   strategy:
   #     matrix:

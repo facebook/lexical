@@ -89,6 +89,10 @@ function startsWithSeparator(textContent: string): boolean {
   return isSeparator(textContent[0]);
 }
 
+function startsWithFullStop(textContent: string): boolean {
+  return /^\.[a-zA-Z0-9]{1,}/.test(textContent);
+}
+
 function isPreviousNodeValid(node: LexicalNode): boolean {
   let previousNode = node.getPreviousSibling();
   if ($isElementNode(previousNode)) {
@@ -376,7 +380,10 @@ function handleBadNeighbors(
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
 
-  if ($isAutoLinkNode(previousSibling) && !startsWithSeparator(text)) {
+  if (
+    $isAutoLinkNode(previousSibling) &&
+    (!startsWithSeparator(text) || startsWithFullStop(text))
+  ) {
     previousSibling.append(textNode);
     handleLinkEdit(previousSibling, matchers, onChange);
     onChange(null, previousSibling.getURL());

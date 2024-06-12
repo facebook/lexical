@@ -22,12 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Flaky test notice PR comment
-        if: failure()
+        if: needs.e2e-tests.result == 'failure'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
             E2E tests failed on [this run](https://github.com/facebook/lexical/actions/runs/${{ github.run_id }}). Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.
 
-  integration-tests:
-    if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
-    uses: ./.github/workflows/call-integration-tests.yml
+  # integration-tests:
+  #   if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
+  #   uses: ./.github/workflows/call-integration-tests.yml

@@ -15,6 +15,8 @@ import type {
 
 import './ImageNode.css';
 
+import {HashtagNode} from '@lexical/hashtag';
+import {LinkNode} from '@lexical/link';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
@@ -40,7 +42,11 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  LineBreakNode,
+  ParagraphNode,
+  RootNode,
   SELECTION_CHANGE_COMMAND,
+  TextNode,
 } from 'lexical';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
@@ -57,7 +63,9 @@ import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import Placeholder from '../ui/Placeholder';
+import {EmojiNode} from './EmojiNode';
 import {$isImageNode} from './ImageNode';
+import {KeywordNode} from './KeywordNode';
 
 const imageCache = new Set();
 
@@ -415,7 +423,18 @@ export default function ImageComponent({
 
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer initialEditor={caption}>
+            <LexicalNestedComposer
+              initialEditor={caption}
+              initialNodes={[
+                RootNode,
+                TextNode,
+                LineBreakNode,
+                ParagraphNode,
+                LinkNode,
+                EmojiNode,
+                HashtagNode,
+                KeywordNode,
+              ]}>
               <AutoFocusPlugin />
               <MentionsPlugin />
               <LinkPlugin />

@@ -23,7 +23,6 @@ jobs:
     steps:
       - run: echo "$ {{ needs.e2e-tests.result }}"
       - name: Flaky test notice PR comment
-        # if: needs.e2e-tests.result == 'failure'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |

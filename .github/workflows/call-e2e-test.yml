@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab' || inputs.events-mode != 'legacy-events')
     env:
-      commented_flaky_test_notice_count: 0
+      has_commented_flaky_test_notice: false
       CI: true
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}
       E2E_EVENTS_MODE: ${{ inputs.events-mode }}
@@ -69,10 +69,10 @@ jobs:
           path: ${{ env.test_results_path }}
           retention-days: 7
       - name: Flaky test notice PR comment
-        if: failure() && env.commented_flaky_test_notice_count == 0
+        if: failure() && ${{ !has_commented_flaky_test_notice }}
         uses: thollander/actions-comment-pull-request@v2
         env:
-          commented_flaky_test_notice_count: ${{ env.commented_flaky_test_notice_count + 1 }}
+          has_commented_flaky_test_notice: true
         with:
           message: |
             E2E tests failed on [this run](https://github.com/facebook/lexical/actions/runs/${{ github.run_id }}). Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.

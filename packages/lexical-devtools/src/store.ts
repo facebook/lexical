@@ -76,6 +76,8 @@ export const useExtensionStore = create<ExtensionState>()(
 const STORE_NAME = 'ExtensionStore';
 
 export const initExtensionStoreBackend = () =>
-  initPegasusZustandStoreBackend(STORE_NAME, useExtensionStore);
+  initPegasusZustandStoreBackend(STORE_NAME, useExtensionStore, {
+    storageStrategy: 'session',
+  });
 export const extensionStoreReady = () =>
   pegasusZustandStoreReady(STORE_NAME, useExtensionStore);

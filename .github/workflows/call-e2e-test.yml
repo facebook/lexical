@@ -69,10 +69,11 @@ jobs:
           path: ${{ env.test_results_path }}
           retention-days: 7
       - name: Flaky test notice PR comment
-        if: failure() && env.has_commented_flaky_test_notice == 'false'
+        if: failure()
         uses: thollander/actions-comment-pull-request@v2
-        env:
-          has_commented_flaky_test_notice: true
+        # env:
+        #   has_commented_flaky_test_notice: true
         with:
+          skip_after_successful_duplicate: 'true'
           message: |
             E2E tests failed on [this run](https://github.com/facebook/lexical/actions/runs/${{ github.run_id }}). Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.

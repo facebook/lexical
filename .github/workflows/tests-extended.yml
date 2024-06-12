@@ -21,7 +21,6 @@ jobs:
     needs: e2e-tests
     runs-on: ubuntu-latest
     steps:
-      - run: echo "$ {{ needs.e2e-tests.result }}"
       - name: Flaky test notice PR comment
         uses: thollander/actions-comment-pull-request@v2
         with:

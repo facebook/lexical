@@ -28,7 +28,7 @@
     "typedoc-plugin-markdown": "^3.17.1",
     "typedoc-plugin-rename-defaults": "^0.7.0",
     "unist-util-visit": "^5.0.0",
-    "docusaurus-plugin-internaldocs-fb": "1.9.1"
+    "docusaurus-plugin-internaldocs-fb": "1.18.2"
   },
   "devDependencies": {
     "buffer": "^6.0.3",

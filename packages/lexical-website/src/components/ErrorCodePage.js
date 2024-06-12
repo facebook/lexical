@@ -7,38 +7,29 @@
  */
 
 import BrowserOnly from '@docusaurus/BrowserOnly';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Layout from '@theme/Layout';
-import {isInternal} from 'docusaurus-plugin-internaldocs-fb/internal';
 import {useMemo} from 'react';
 
-const codes = isInternal()
-  ? []
-  : require('../../../../../../scripts/error-codes/codes.json');
+const codes = require('../../../../scripts/error-codes/codes.json');
 
 export default function ErrorCodePage() {
-  const {siteConfig} = useDocusaurusContext();
   return (
-    <Layout description={siteConfig.tagline}>
-      <div className="flex flex-col pb-8 pt-4">
-        <h1>Error Code</h1>
-        <p>
-          In the minified production build of Lexical, we avoid sending down
-          full error messages in order to reduce the number of bytes sent over
-          the wire.
-        </p>
+    <div className="flex flex-col pb-8 pt-4">
+      <p>
+        In the minified production build of Lexical, we avoid sending down full
+        error messages in order to reduce the number of bytes sent over the
+        wire.
+      </p>
 
-        <p>
-          We highly recommend using the development build locally when debugging
-          your app since it tracks additional debug info and provides helpful
-          warnings about potential problems in your apps, but if you encounter
-          an exception while using the production build, this page will
-          reassemble the original text of the error.
-        </p>
+      <p>
+        We highly recommend using the development build locally when debugging
+        your app since it tracks additional debug info and provides helpful
+        warnings about potential problems in your apps, but if you encounter an
+        exception while using the production build, this page will reassemble
+        the original text of the error.
+      </p>
 
-        <BrowserOnly>{() => <ErrorFinder />}</BrowserOnly>
-      </div>
-    </Layout>
+      <BrowserOnly>{() => <ErrorFinder />}</BrowserOnly>
+    </div>
   );
 }
 

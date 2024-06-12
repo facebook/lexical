@@ -225,15 +225,6 @@ const config = {
 
   favicon: 'img/favicon.ico',
 
-  markdown: {
-    format: 'md',
-    preprocessor: ({fileContent}) =>
-      fileContent.replaceAll(
-        'https://stackblitz.com/github/facebook/lexical/tree/main/',
-        STACKBLITZ_PREFIX,
-      ),
-  },
-
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
@@ -273,9 +264,8 @@ const config = {
 
   presets: [
     [
-      'classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
+      {
         blog: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/blog/`,
           showReadingTime: true, // TODO: Update when directory finalized
@@ -291,10 +281,11 @@ const config = {
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },
+        staticDocsProject: 'lexical',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-      }),
+      },
     ],
   ],
 

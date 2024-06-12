@@ -20,6 +20,7 @@ jobs:
   flaky-test-notice:
     needs: e2e-tests
     runs-on: ubuntu-latest
+    if: always()
     steps:
       - name: Flaky test notice PR comment
         uses: thollander/actions-comment-pull-request@v2

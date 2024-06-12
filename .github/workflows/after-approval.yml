@@ -18,19 +18,16 @@ jobs:
           do_not_skip: '["pull_request", "merge_group"]'
           paths-ignore: '["packages/lexical-website/**", "packages/*/README.md", ".size-limit.js"]'
   e2e-tests:
-    runs-on: ubuntu-latest
     needs: pre_job
-    steps:
-      - name: Run E2E tests
-        if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
-        uses: ./.github/workflows/call-e2e-all-tests.yml
-
-      - name: Flaky test notice PR comment
-        if: failure()
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            E2E tests failed on [this run](https://github.com/facebook/lexical/actions/runs/${{ github.run_id }}). Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.
+    if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
+    uses: ./.github/workflows/call-e2e-all-tests.yml
+    # steps:
+    #   - name: Flaky test notice PR comment
+    #     if: failure()
+    #     uses: thollander/actions-comment-pull-request@v2
+    #     with:
+    #       message: |
+    #         E2E tests failed on [this run](https://github.com/facebook/lexical/actions/runs/${{ github.run_id }}). Please check if the failure is due to a flaky test. Visit the [Flaky Test Tracker](https://github.com/facebook/lexical/discussions/6289) for known flaky tests, and record the failed test run there if its a flaky failure.
 
   integration-tests:
     needs: pre_job

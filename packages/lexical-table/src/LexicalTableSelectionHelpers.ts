@@ -35,6 +35,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -734,7 +735,6 @@ export function applyTableHandlers(
           const isBackward = selection.isBackward();
 
           if (isPartialyWithinTable) {
-            const newSelection = selection.clone();
             if (isFocusInside) {
               const [tableMap] = $computeTableMap(
                 tableNode,
@@ -743,12 +743,25 @@ export function applyTableHandlers(
               );
               const firstCellNode = tableMap[0][0].cell;
               const lastCellNode = tableMap[tableMap.length - 1].at(-1)!.cell;
-              newSelection.focus.set(
-                (isBackward ? firstCellNode : lastCellNode).getKey(),
-                isBackward ? 0 : lastCellNode.getChildrenSize(),
-                'element',
-              );
+              if ($isRootNode(anchorNode)) {
+                const tableSelection = $createTableSelection();
+                tableSelection.set(
+                  tableNode.getKey(),
+                  firstCellNode.getKey(),
+                  lastCellNode.getKey(),
+                );
+                $setSelection(tableSelection);
+              } else {
+                const newSelection = selection.clone();
+                newSelection.focus.set(
+                  (isBackward ? firstCellNode : lastCellNode).getKey(),
+                  isBackward ? 0 : lastCellNode.getChildrenSize(),
+                  'element',
+                );
+                $setSelection(newSelection);
+              }
             } else {
+              const newSelection = selection.clone();
               newSelection.anchor.set(
                 tableNode.getParentOrThrow().getKey(),
                 isBackward
@@ -756,8 +769,8 @@ export function applyTableHandlers(
                   : tableNode.getIndexWithinParent(),
                 'element',
               );
+              $setSelection(newSelection);
             }
-            $setSelection(newSelection);
             $addHighlightStyleToTable(editor, tableObserver);
           } else if (isWithinTable) {
             // Handle case when selection spans across multiple cells but still

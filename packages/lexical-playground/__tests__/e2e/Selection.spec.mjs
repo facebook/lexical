@@ -21,6 +21,7 @@ import {
 import {
   assertHTML,
   assertSelection,
+  assertTableSelectionCoordinates,
   click,
   evaluate,
   expect,
@@ -778,6 +779,26 @@ test.describe.parallel('Selection', () => {
       anchorPath: [0],
       focusOffset: 1,
       focusPath: [1, 1, 1],
+    });
+  });
+
+  test('shift+arrowdown into a table, when the table is the first node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await page.keyboard.down('ArrowUp');
+    await deleteBackward(page);
+    await page.keyboard.down('ArrowUp');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 1, y: 1},
     });
   });
 });

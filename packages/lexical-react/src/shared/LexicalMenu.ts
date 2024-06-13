@@ -191,7 +191,9 @@ function isTriggerVisibleInNearestScrollContainer(
 ): boolean {
   const tRect = targetElement.getBoundingClientRect();
   const cRect = containerElement.getBoundingClientRect();
-  return tRect.top > cRect.top && tRect.top < cRect.bottom;
+  return (tRect.top >= cRect.top && tRect.top < cRect.bottom) ||
+                              (tRect.bottom > cRect.top && tRect.bottom <= cRect.bottom) ||
+                              (tRect.top < cRect.top && tRect.bottom > cRect.bottom);
 }
 
 // Reposition the menu on scroll, window resize, and element resize.

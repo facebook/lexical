@@ -7,9 +7,7 @@
  */
 
 import BrowserOnly from '@docusaurus/BrowserOnly';
-import {useMemo} from 'react';
-
-const codes = require('../../../../scripts/error-codes/codes.json');
+import {useEffect, useMemo, useState} from 'react';
 
 export default function ErrorCodePage() {
   return (
@@ -34,10 +32,25 @@ export default function ErrorCodePage() {
 }
 
 function ErrorFinder() {
+  const [codes, setCodes] = useState(null);
+
+  useEffect(() => {
+    try {
+      if (!process.env.FB_INTERNAL) {
+        import('../../../../scripts/error-codes/codes.json').then(setCodes);
+      }
+    } catch (e) {
+      throw e;
+    }
+  }, []);
+
   const error = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code === null) {
+      return null;
+    }
+    if (codes == null) {
       return null;
     }
     let description = codes[code];
@@ -48,7 +61,7 @@ function ErrorFinder() {
       description = description.replace('%s', value);
     }
     return {code, description};
-  }, []);
+  }, [codes]);
 
   if (error !== null) {
     return (

@@ -225,6 +225,14 @@ const config = {
 
   favicon: 'img/favicon.ico',
 
+  markdown: {
+    preprocessor: ({fileContent}) =>
+      fileContent.replaceAll(
+        'https://stackblitz.com/github/facebook/lexical/tree/main/',
+        STACKBLITZ_PREFIX,
+      ),
+  },
+
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',

@@ -29,7 +29,7 @@ jobs:
     if: always()
     steps:
       - name: Flaky test notice PR comment
-        if: (${{ github.event.pull_request.head.repo.full_name == 'facebook/lexical' }} && (needs.e2e-tests.result == 'failure' || needs.e2e-tests.result == 'cancelled'))
+        if: (needs.e2e-tests.result == 'failure' && ${{ github.event.pull_request.head.repo.full_name == 'facebook/lexical' }}) || (needs.e2e-tests.result == 'cancelled' && ${{ github.event.pull_request.head.repo.full_name == 'facebook/lexical' }})
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |

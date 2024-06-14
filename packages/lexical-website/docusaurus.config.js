@@ -405,6 +405,13 @@ const config = {
             label: 'iOS',
             position: 'left',
           },
+          process.env.FB_INTERNAL
+            ? {
+                label: 'Gallery',
+                position: 'left',
+                to: '/gallery',
+              }
+            : null,
           {
             href: GITHUB_REPO_URL,
             label: 'GitHub',
@@ -415,7 +422,7 @@ const config = {
             label: 'iOS GitHub',
             position: 'right',
           },
-        ],
+        ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
           src: 'img/logo.svg',

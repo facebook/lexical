@@ -18,7 +18,7 @@ jobs:
     uses: ./.github/workflows/call-e2e-all-tests.yml
 
   is_pr_from_facebook:
-    if: ${{ github.event.pull_request.head.repo.full_name == 'facebook/lexical' }}
+    if: ${{ github.event.pull_request.head.repo.full_name != 'facebook/lexical' }}
     runs-on: ubuntu-latest
     steps:
       - name: Echo PR from facebook branch

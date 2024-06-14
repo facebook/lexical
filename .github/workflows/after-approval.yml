@@ -25,10 +25,10 @@ jobs:
 
   flaky-test-notice:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.head.repo.full_name != 'facebook/lexical' }} && always()
+    if: always()
     steps:
       - name: Flaky test notice PR comment
-        # if: needs.e2e-tests.result == 'failure' || needs.e2e-tests.result == 'cancelled'
+        if: ${{ github.event.pull_request.head.repo.full_name != 'facebook/lexical' }}
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |

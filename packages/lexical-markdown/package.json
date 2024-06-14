@@ -8,22 +8,40 @@
     "markdown"
   ],
   "license": "MIT",
-  "version": "0.12.6",
+  "version": "0.16.0",
   "main": "LexicalMarkdown.js",
-  "peerDependencies": {
-    "lexical": "0.12.6"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.12.6",
-    "@lexical/code": "0.12.6",
-    "@lexical/text": "0.12.6",
-    "@lexical/rich-text": "0.12.6",
-    "@lexical/list": "0.12.6",
-    "@lexical/link": "0.12.6"
+    "@lexical/code": "0.16.0",
+    "@lexical/link": "0.16.0",
+    "@lexical/list": "0.16.0",
+    "@lexical/rich-text": "0.16.0",
+    "@lexical/text": "0.16.0",
+    "@lexical/utils": "0.16.0",
+    "lexical": "0.16.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-markdown"
+  },
+  "module": "LexicalMarkdown.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalMarkdown.dev.mjs",
+        "production": "./LexicalMarkdown.prod.mjs",
+        "node": "./LexicalMarkdown.node.mjs",
+        "default": "./LexicalMarkdown.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalMarkdown.dev.js",
+        "production": "./LexicalMarkdown.prod.js",
+        "default": "./LexicalMarkdown.js"
+      }
+    }
   }
 }

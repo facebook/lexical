@@ -1,4 +1,3 @@
-/** @module @lexical/rich-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -52,7 +51,6 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
-  $INTERNAL_isPointSelection,
   $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
@@ -144,7 +142,7 @@ export class QuoteNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       blockquote: (node: Node) => ({
-        conversion: convertBlockquoteElement,
+        conversion: $convertBlockquoteElement,
         priority: 0,
       }),
     };
@@ -154,7 +152,9 @@ export class QuoteNode extends ElementNode {
     const {element} = super.exportDOM(editor);
 
     if (element && isHTMLElement(element)) {
-      if (this.isEmpty()) element.append(document.createElement('br'));
+      if (this.isEmpty()) {
+        element.append(document.createElement('br'));
+      }
 
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
@@ -259,27 +259,27 @@ export class HeadingNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       h1: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h2: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h3: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h4: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h5: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h6: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       p: (node: Node) => {
@@ -314,7 +314,9 @@ export class HeadingNode extends ElementNode {
     const {element} = super.exportDOM(editor);
 
     if (element && isHTMLElement(element)) {
-      if (this.isEmpty()) element.append(document.createElement('br'));
+      if (this.isEmpty()) {
+        element.append(document.createElement('br'));
+      }
 
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
@@ -390,7 +392,7 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
+function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
@@ -409,7 +411,7 @@ function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   return {node};
 }
 
-function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
+function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
@@ -436,10 +438,11 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent || event instanceof KeyboardEvent
+        objectKlassEquals(event, InputEvent) ||
+        objectKlassEquals(event, KeyboardEvent)
           ? null
-          : event.clipboardData;
-      if (clipboardData != null && $INTERNAL_isPointSelection(selection)) {
+          : (event as ClipboardEvent).clipboardData;
+      if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -474,10 +477,10 @@ export function eventFiles(
   event: DragEvent | PasteCommandType,
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
-  if (event instanceof DragEvent) {
-    dataTransfer = event.dataTransfer;
-  } else if (event instanceof ClipboardEvent) {
-    dataTransfer = event.clipboardData;
+  if (objectKlassEquals(event, DragEvent)) {
+    dataTransfer = (event as DragEvent).dataTransfer;
+  } else if (objectKlassEquals(event, ClipboardEvent)) {
+    dataTransfer = (event as ClipboardEvent).clipboardData;
   }
 
   if (dataTransfer === null) {
@@ -491,7 +494,7 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-function handleIndentAndOutdent(
+function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
   const selection = $getSelection();
@@ -506,7 +509,14 @@ function handleIndentAndOutdent(
     if (alreadyHandled.has(key)) {
       continue;
     }
-    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    const parentBlock = $findMatchingParent(
+      node,
+      (parentNode): parentNode is ElementNode =>
+        $isElementNode(parentNode) && !parentNode.isInline(),
+    );
+    if (parentBlock === null) {
+      continue;
+    }
     const parentKey = parentBlock.getKey();
     if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
       alreadyHandled.add(parentKey);
@@ -582,11 +592,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
-          if ($INTERNAL_isPointSelection(selection)) {
+          if (selection !== null) {
             selection.insertText(eventOrText);
           }
         } else {
-          if (!$INTERNAL_isPointSelection(selection)) {
+          if (selection === null) {
             return false;
           }
 
@@ -686,7 +696,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           block.setIndent(indent + 1);
         });
@@ -696,7 +706,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           if (indent > 0) {
             block.setIndent(indent - 1);
@@ -1033,7 +1043,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        if ($INTERNAL_isPointSelection(selection)) {
+        if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
         }

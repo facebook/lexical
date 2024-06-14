@@ -425,27 +425,6 @@ export interface BaseSelection {
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
-declare export class INTERNAL_PointSelection implements BaseSelection {
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  constructor(anchor: PointType, focus: PointType): void;
-  clone(): INTERNAL_PointSelection;
-  extract(): Array<LexicalNode>;
-  getNodes(): Array<LexicalNode>;
-  getTextContent(): string;
-  insertRawText(text: string): void;
-  is(selection: null | BaseSelection): boolean;
-  insertText(text: string): void;
-  insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
-}
-
-declare export function $INTERNAL_isPointSelection(
-  x: ?mixed,
-): x is INTERNAL_PointSelection;
-
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
@@ -470,7 +449,7 @@ declare export function $isNodeSelection(
   x: ?mixed,
 ): x is NodeSelection;
 
-declare export class RangeSelection extends INTERNAL_PointSelection {
+declare export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
@@ -500,7 +479,6 @@ declare export class RangeSelection extends INTERNAL_PointSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
-  getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   modify(
     alter: 'move' | 'extend',
@@ -556,20 +534,10 @@ declare export function $isRangeSelection(
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: Array<LexicalNode>): void;
-export type GridMapValueType = {
-  cell: deprecated_GridCellNode,
-  startRow: number,
-  startColumn: number,
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
-declare export function DEPRECATED_$computeGridMap(
-  grid: deprecated_GridNode,
-  cellA: deprecated_GridCellNode,
-  cellB: deprecated_GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType];
-declare export function DEPRECATED_$getNodeTriplet(
-  source: PointType | LexicalNode | deprecated_GridCellNode,
-): [deprecated_GridCellNode, deprecated_GridRowNode, deprecated_GridNode];
+declare export function $getCharacterOffsets(
+  selection: BaseSelection,
+): [number, number];
+
 
 /**
  * LexicalTextNode
@@ -766,7 +734,6 @@ declare export class ElementNode extends LexicalNode {
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;
-  canExtractContents(): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canInsertAfter(node: LexicalNode): boolean;
   extractWithChild(
@@ -815,7 +782,10 @@ declare export class ParagraphNode extends ElementNode {
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
-  insertNewAfter(): ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode;
   collapseAtStart(): boolean;
   static importJSON(
     serializedParagraphNode: SerializedParagraphNode,
@@ -826,33 +796,6 @@ declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
   node: ?LexicalNode,
 ): node is ParagraphNode;
-
-declare export class deprecated_GridNode extends ElementNode {}
-
-declare export function DEPRECATED_$isGridNode(
-  node: ?LexicalNode,
-): node is deprecated_GridNode;
-
-declare export class deprecated_GridRowNode extends ElementNode {}
-
-declare export function DEPRECATED_$isGridRowNode(
-  node: ?LexicalNode,
-): node is deprecated_GridRowNode;
-
-declare export class deprecated_GridCellNode extends ElementNode {
-  __colSpan: number;
-  __rowSpan: number;
-
-  constructor(colSpan: number, key?: NodeKey): void;
-  getColSpan(): number;
-  setColSpan(colSpan: number): this;
-  getRowSpan(): number;
-  setRowSpan(rowSpan: number): this;
-}
-
-declare export function DEPRECATED_$isGridCellNode(
-  node: ?LexicalNode,
-): node is deprecated_GridCellNode;
 
 /**
  * LexicalUtils
@@ -895,6 +838,7 @@ declare export function $copyNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode, ElementNode];
+declare export function $getEditor(): LexicalEditor;
 
 /**
  * LexicalNormalization

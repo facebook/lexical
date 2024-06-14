@@ -8,6 +8,7 @@
 .docusaurus
 .cache-loader
 /docs/api
+/docs/packages
 
 # Misc
 .DS_Store

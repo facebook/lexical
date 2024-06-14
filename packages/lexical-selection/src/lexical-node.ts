@@ -6,23 +6,20 @@
  *
  */
 import {
-  $createRangeSelection,
   $createTextNode,
+  $getCharacterOffsets,
   $getNodeByKey,
   $getPreviousSelection,
-  $INTERNAL_isPointSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
-  $normalizeSelection__EXPERIMENTAL,
-  $setSelection,
   BaseSelection,
-  DEPRECATED_$isGridCellNode,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
+  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
@@ -60,6 +57,14 @@ function $updateTextNodeProperties<T extends TextNode>(
   return target;
 }
 
+function $updateParagraphNodeProperties<T extends ParagraphNode>(
+  target: T,
+  source: ParagraphNode,
+): T {
+  target.__textFormat = source.__textFormat;
+  return target;
+}
+
 /**
  * Returns a copy of a node, but generates a new key for the copy.
  * @param node - The node to be cloned.
@@ -81,6 +86,9 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
     return $updateTextNodeProperties(clone, node);
   }
 
+  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
+    return $updateParagraphNodeProperties(clone, node);
+  }
   return clone;
 }
 
@@ -95,20 +103,22 @@ export function $sliceSelectedTextNodeContent(
   selection: BaseSelection,
   textNode: TextNode,
 ): LexicalNode {
+  const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    $INTERNAL_isPointSelection(selection)
+    anchorAndFocus !== null
   ) {
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const [anchor, focus] = anchorAndFocus;
+    const isBackward = selection.isBackward();
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
     const isAnchor = textNode.is(anchorNode);
     const isFocus = textNode.is(focusNode);
 
     if (isAnchor || isFocus) {
-      const isBackward = selection.isBackward();
-      const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
+      const [anchorOffset, focusOffset] = $getCharacterOffsets(selection);
       const isSame = anchorNode.is(focusNode);
       const isFirst = textNode.is(isBackward ? focusNode : anchorNode);
       const isLast = textNode.is(isBackward ? anchorNode : focusNode);
@@ -161,7 +171,7 @@ export function $isAtNodeEnd(point: Point): boolean {
  * @param anchor - The anchor of the current selection, where the selection should be pointing.
  * @param delCount - The amount of characters to delete. Useful as a dynamic variable eg. textContentSize - maxLength;
  */
-export function trimTextContentFromAnchor(
+export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,
@@ -292,14 +302,19 @@ export function $addNodeStyle(node: TextNode): void {
 
 function $patchStyle(
   target: TextNode | RangeSelection,
-  patch: Record<string, string | null>,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const prevStyles = getStyleObjectFromCSS(
     'getStyle' in target ? target.getStyle() : target.style,
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
-      if (value === null) {
+      if (value instanceof Function) {
+        styles[key] = value(prevStyles[key]);
+      } else if (value === null) {
         delete styles[key];
       } else {
         styles[key] = value;
@@ -318,37 +333,22 @@ function $patchStyle(
  * Will update partially selected TextNodes by splitting the TextNode and applying
  * the styles to the appropriate one.
  * @param selection - The selected node(s) to update.
- * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
+ * @param patch - The patch to apply, which can include multiple styles. \\{CSSProperty: value\\} . Can also accept a function that returns the new property value.
  */
 export function $patchStyleText(
-  selection: INTERNAL_PointSelection,
-  patch: Record<string, string | null>,
+  selection: BaseSelection,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-
-  if (!$isRangeSelection(selection)) {
-    const cellSelection = $createRangeSelection();
-    const cellSelectionAnchor = cellSelection.anchor;
-    const cellSelectionFocus = cellSelection.focus;
-    for (let i = 0; i < selectedNodesLength; i++) {
-      const node = selectedNodes[i];
-      if (DEPRECATED_$isGridCellNode(node)) {
-        cellSelectionAnchor.set(node.getKey(), 0, 'element');
-        cellSelectionFocus.set(
-          node.getKey(),
-          node.getChildrenSize(),
-          'element',
-        );
-        $patchStyleText(
-          $normalizeSelection__EXPERIMENTAL(cellSelection),
-          patch,
-        );
-      }
-    }
-    $setSelection(selection);
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
     return;
   }
+  const [anchor, focus] = anchorAndFocus;
 
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
@@ -359,8 +359,6 @@ export function $patchStyleText(
     return;
   }
 
-  const anchor = selection.anchor;
-  const focus = selection.focus;
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const focusOffset = focus.offset;
@@ -387,7 +385,7 @@ export function $patchStyleText(
 
   // This is the case where we only selected a single node
   if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode)) {
+    if ($isTextNode(firstNode) && firstNode.canHaveFormat()) {
       startOffset =
         startType === 'element'
           ? 0
@@ -422,19 +420,24 @@ export function $patchStyleText(
   } else {
     if (
       $isTextNode(firstNode) &&
-      startOffset < firstNode.getTextContentSize()
+      startOffset < firstNode.getTextContentSize() &&
+      firstNode.canHaveFormat()
     ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
         firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
-        anchor.set(firstNode.getKey(), startOffset, 'text');
+        if (isBefore) {
+          anchor.set(firstNode.getKey(), startOffset, 'text');
+        } else {
+          focus.set(firstNode.getKey(), startOffset, 'text');
+        }
       }
 
       $patchStyle(firstNode as TextNode, patch);
     }
 
-    if ($isTextNode(lastNode)) {
+    if ($isTextNode(lastNode) && lastNode.canHaveFormat()) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
 
@@ -451,7 +454,7 @@ export function $patchStyleText(
         [lastNode] = lastNode.splitText(endOffset);
       }
 
-      if (endOffset !== 0) {
+      if (endOffset !== 0 || endType === 'element') {
         $patchStyle(lastNode as TextNode, patch);
       }
     }
@@ -463,6 +466,7 @@ export function $patchStyleText(
 
       if (
         $isTextNode(selectedNode) &&
+        selectedNode.canHaveFormat() &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()

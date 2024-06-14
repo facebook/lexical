@@ -21,10 +21,11 @@ import {
   assertSelection,
   click,
   copyToClipboard,
-  focus,
+  expect,
   focusEditor,
   html,
   initialize,
+  locate,
   pasteFromClipboard,
   test,
 } from '../../../utils/index.mjs';
@@ -42,7 +43,6 @@ test.describe('HTML Links CopyAndPaste', () => {
     };
 
     await pasteFromClipboard(page, clipboard);
-
     await assertHTML(
       page,
       html`
@@ -66,6 +66,7 @@ test.describe('HTML Links CopyAndPaste', () => {
 
     await selectAll(page);
 
+    // unlink
     await click(page, '.link');
 
     await assertHTML(
@@ -78,10 +79,9 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
 
     await click(page, '.link');
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
+    await expect(locate(page, '.link-input')).toBeFocused();
     await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -194,13 +194,15 @@ test.describe('HTML Links CopyAndPaste', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          style="text-align: left">
           <span data-lexical-text="true">Line 0</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
+            style="text-align: left"
             value="1">
             <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 1Â&nbsp;</span>
             <a
@@ -216,6 +218,7 @@ test.describe('HTML Links CopyAndPaste', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
+            style="text-align: left"
             value="2">
             <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 2.</span>
           </li>
@@ -268,6 +271,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 
@@ -308,6 +312,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 
@@ -353,6 +358,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 
@@ -399,6 +405,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 

@@ -49,6 +49,7 @@ test.describe('Regression test #5251', () => {
     await moveToPrevWord(page);
     await selectCharacters(page, 'right', 'World'.length);
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     // Copy "Hello bold"
     await moveToLineBeginning(page);

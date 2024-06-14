@@ -8,14 +8,34 @@
     "overflow"
   ],
   "license": "MIT",
-  "version": "0.12.6",
+  "version": "0.16.0",
   "main": "LexicalOverflow.js",
-  "peerDependencies": {
-    "lexical": "0.12.6"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-overflow"
+  },
+  "module": "LexicalOverflow.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalOverflow.dev.mjs",
+        "production": "./LexicalOverflow.prod.mjs",
+        "node": "./LexicalOverflow.node.mjs",
+        "default": "./LexicalOverflow.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalOverflow.dev.js",
+        "production": "./LexicalOverflow.prod.js",
+        "default": "./LexicalOverflow.js"
+      }
+    }
+  },
+  "dependencies": {
+    "lexical": "0.16.0"
   }
 }

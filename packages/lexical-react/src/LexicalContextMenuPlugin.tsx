@@ -8,6 +8,7 @@
 import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
@@ -46,22 +47,26 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   ) => void;
   options: Array<TOption>;
   onClose?: () => void;
+  onWillOpen?: (event: MouseEvent) => void;
   onOpen?: (resolution: MenuResolution) => void;
   menuRenderFn: ContextMenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
+  parent?: HTMLElement;
 };
 
 const PRE_PORTAL_DIV_SIZE = 1;
 
 export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   options,
+  onWillOpen,
   onClose,
   onOpen,
   onSelectOption,
   menuRenderFn: contextMenuRenderFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
+  parent,
 }: LexicalContextMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -71,6 +76,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
     resolution,
     setResolution,
     anchorClassName,
+    parent,
   );
 
   const closeNodeMenu = useCallback(() => {
@@ -93,17 +99,21 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   const handleContextMenu = useCallback(
     (event: MouseEvent) => {
       event.preventDefault();
+      if (onWillOpen != null) {
+        onWillOpen(event);
+      }
+      const zoom = calculateZoomLevel(event.target as Element);
       openNodeMenu({
         getRect: () =>
           new DOMRect(
-            event.clientX,
-            event.clientY,
+            event.clientX / zoom,
+            event.clientY / zoom,
             PRE_PORTAL_DIV_SIZE,
             PRE_PORTAL_DIV_SIZE,
           ),
       });
     },
-    [openNodeMenu],
+    [openNodeMenu, onWillOpen],
   );
 
   const handleClick = useCallback(

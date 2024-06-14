@@ -76,7 +76,9 @@ export type MenuRenderFn<TOption extends MenuOption> = (
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   const typeaheadContainerNode = document.getElementById('typeahead-menu');
-  if (!typeaheadContainerNode) return;
+  if (!typeaheadContainerNode) {
+    return;
+  }
 
   const typeaheadRect = typeaheadContainerNode.getBoundingClientRect();
 
@@ -479,6 +481,7 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
+  parent: HTMLElement = document.body,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
@@ -513,7 +516,7 @@ export function useMenuAnchorRef(
         if (
           (top + menuHeight > window.innerHeight ||
             top + menuHeight > rootElementRect.bottom) &&
-          top - rootElementRect.top > menuHeight
+          top - rootElementRect.top > menuHeight + height
         ) {
           containerDiv.style.top = `${
             top - menuHeight + window.pageYOffset - height
@@ -530,12 +533,12 @@ export function useMenuAnchorRef(
         containerDiv.setAttribute('role', 'listbox');
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
-        document.body.append(containerDiv);
+        parent.append(containerDiv);
       }
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
-  }, [editor, resolution, className]);
+  }, [editor, resolution, className, parent]);
 
   useEffect(() => {
     const rootElement = editor.getRootElement();

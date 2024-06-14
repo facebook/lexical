@@ -59,6 +59,10 @@ declare module 'prismjs/components/prism-sql' {
   declare module.exports: {};
 }
 
+declare module 'prismjs/components/prism-powershell' {
+  declare module.exports: {};
+}
+
 declare module 'prismjs/components/prism-python' {
   declare module.exports: {};
 }

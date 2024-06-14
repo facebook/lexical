@@ -68,7 +68,7 @@ test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);
 });
 
-test.describe('Nested List', () => {
+test.describe.parallel('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test(`Can create a list and partially copy some content out of it`, async ({
@@ -415,28 +415,33 @@ test.describe('Nested List', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="padding-inline-start: calc(120px)">
           <span data-lexical-text="true">Hello</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="padding-inline-start: calc(120px)">
           <span data-lexical-text="true">from</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="padding-inline-start: calc(120px)">
           <span data-lexical-text="true">the</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="padding-inline-start: calc(120px)">
           <span data-lexical-text="true">other</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="padding-inline-start: calc(120px)">
           <span data-lexical-text="true">side</span>
         </p>
       `,
@@ -1180,7 +1185,7 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
             aria-checked="true"
             role="checkbox"
@@ -1202,7 +1207,8 @@ test.describe('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
             value="3">
-            <ul class="PlaygroundEditorTheme__ul">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
                 aria-checked="false"
                 role="checkbox"
@@ -1238,7 +1244,8 @@ test.describe('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
             value="3">
-            <ul class="PlaygroundEditorTheme__ul">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
                 aria-checked="false"
                 role="checkbox"
@@ -1257,7 +1264,7 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
             aria-checked="false"
             role="checkbox"
@@ -1279,7 +1286,8 @@ test.describe('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
             value="3">
-            <ul class="PlaygroundEditorTheme__ul">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
                 aria-checked="false"
                 role="checkbox"
@@ -1407,7 +1415,11 @@ test.describe('Nested List', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello World</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+          style="padding-inline-start: calc(40px)">
+          <br />
+        </p>
       `,
     );
     await page.pause();
@@ -1442,25 +1454,35 @@ test.describe('Nested List', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello World</span>
         </p>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">a</span>
+          </li>
+        </ul>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">a</span>
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+          style="padding-inline-start: calc(40px)">
+          <br />
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">b</span>
-        </p>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">b</span>
+          </li>
+        </ul>
       `,
     );
     await page.pause();
     await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [2],
-      focusOffset: 0,
-      focusPath: [2],
+      anchorOffset: 1,
+      anchorPath: [1, 0],
+      focusOffset: 1,
+      focusPath: [1, 0],
     });
   });
 });

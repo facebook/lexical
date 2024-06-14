@@ -48,7 +48,9 @@ export function createLinkMatcherWithRegExp(
 ) {
   return (text: string) => {
     const match = regExp.exec(text);
-    if (match === null) return null;
+    if (match === null) {
+      return null;
+    }
     return {
       index: match.index,
       length: match[0].length,
@@ -85,6 +87,10 @@ function endsWithSeparator(textContent: string): boolean {
 
 function startsWithSeparator(textContent: string): boolean {
   return isSeparator(textContent[0]);
+}
+
+function startsWithFullStop(textContent: string): boolean {
+  return /^\.[a-zA-Z0-9]{1,}/.test(textContent);
 }
 
 function isPreviousNodeValid(node: LexicalNode): boolean {
@@ -177,7 +183,7 @@ function extractMatchingNodes(
   ];
 }
 
-function createAutoLinkNode(
+function $createAutoLinkNode_(
   nodes: TextNode[],
   startIndex: number,
   endIndex: number,
@@ -198,6 +204,7 @@ function createAutoLinkNode(
     const textNode = $createTextNode(match.text);
     textNode.setFormat(linkTextNode.getFormat());
     textNode.setDetail(linkTextNode.getDetail());
+    textNode.setStyle(linkTextNode.getStyle());
     linkNode.append(textNode);
     linkTextNode.replace(linkNode);
     return remainingTextNode;
@@ -238,6 +245,7 @@ function createAutoLinkNode(
     const textNode = $createTextNode(firstLinkTextNode.getTextContent());
     textNode.setFormat(firstLinkTextNode.getFormat());
     textNode.setDetail(firstLinkTextNode.getDetail());
+    textNode.setStyle(firstLinkTextNode.getStyle());
     linkNode.append(textNode, ...linkNodes);
     // it does not preserve caret position if caret was at the first text node
     // so we need to restore caret position
@@ -254,13 +262,16 @@ function createAutoLinkNode(
   return undefined;
 }
 
-function handleLinkCreation(
+function $handleLinkCreation(
   nodes: TextNode[],
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
   let currentNodes = [...nodes];
-  let text = currentNodes.map((node) => node.getTextContent()).join('');
+  const initialText = currentNodes
+    .map((node) => node.getTextContent())
+    .join('');
+  let text = initialText;
   let match;
   let invalidMatchEnd = 0;
 
@@ -271,7 +282,7 @@ function handleLinkCreation(
     const isValid = isContentAroundIsValid(
       invalidMatchEnd + matchStart,
       invalidMatchEnd + matchEnd,
-      text,
+      initialText,
       currentNodes,
     );
 
@@ -285,7 +296,7 @@ function handleLinkCreation(
 
       const actualMatchStart = invalidMatchEnd + matchStart - matchingOffset;
       const actualMatchEnd = invalidMatchEnd + matchEnd - matchingOffset;
-      const remainingTextNode = createAutoLinkNode(
+      const remainingTextNode = $createAutoLinkNode_(
         matchingNodes,
         actualMatchStart,
         actualMatchEnd,
@@ -369,7 +380,10 @@ function handleBadNeighbors(
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
 
-  if ($isAutoLinkNode(previousSibling) && !startsWithSeparator(text)) {
+  if (
+    $isAutoLinkNode(previousSibling) &&
+    (!startsWithSeparator(text) || startsWithFullStop(text))
+  ) {
     previousSibling.append(textNode);
     handleLinkEdit(previousSibling, matchers, onChange);
     onChange(null, previousSibling.getURL());
@@ -444,7 +458,7 @@ function useAutoLink(
               !$isAutoLinkNode(previous))
           ) {
             const textNodesToMatch = getTextNodesToMatch(textNode);
-            handleLinkCreation(textNodesToMatch, matchers, onChangeWrapped);
+            $handleLinkCreation(textNodesToMatch, matchers, onChangeWrapped);
           }
 
           handleBadNeighbors(textNode, matchers, onChangeWrapped);

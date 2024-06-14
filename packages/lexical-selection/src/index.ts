@@ -1,4 +1,3 @@
-/** @module @lexical/selection */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -13,7 +12,7 @@ import {
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
-  trimTextContentFromAnchor,
+  $trimTextContentFromAnchor,
 } from './lexical-node';
 import {
   $getSelectionStyleValueForProperty,
@@ -37,8 +36,10 @@ export {
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
-  trimTextContentFromAnchor,
+  $trimTextContentFromAnchor,
 };
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
+export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 
 export {
   $getSelectionStyleValueForProperty,

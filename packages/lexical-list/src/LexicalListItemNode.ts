@@ -24,7 +24,6 @@ import type {
 
 import {
   addClassNamesToElement,
-  isHTMLElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
@@ -37,14 +36,10 @@ import {
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
-import {
-  $handleIndent,
-  $handleOutdent,
-  mergeLists,
-  updateChildrenListItemValue,
-} from './formatList';
+import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
@@ -105,10 +100,12 @@ export class ListItemNode extends ElementNode {
 
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
+      invariant($isListItemNode(node), 'node is not a ListItemNode');
+      if (node.__checked == null) {
+        return;
+      }
       const parent = node.getParent();
       if ($isListNode(parent)) {
-        updateChildrenListItemValue(parent);
-        invariant($isListItemNode(node), 'node is not a ListItemNode');
         if (parent.getListType() !== 'check' && node.getChecked() != null) {
           node.setChecked(undefined);
         }
@@ -118,8 +115,8 @@ export class ListItemNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      li: (node: Node) => ({
-        conversion: convertListItemElement,
+      li: () => ({
+        conversion: $convertListItemElement,
         priority: 0,
       }),
     };
@@ -177,7 +174,9 @@ export class ListItemNode extends ElementNode {
     }
     this.setIndent(0);
     const list = this.getParentOrThrow();
-    if (!$isListNode(list)) return replaceWithNode;
+    if (!$isListNode(list)) {
+      return replaceWithNode;
+    }
     if (list.__first === this.getKey()) {
       list.insertBefore(replaceWithNode);
     } else if (list.__last === this.getKey()) {
@@ -220,35 +219,12 @@ export class ListItemNode extends ElementNode {
       );
     }
 
+    if ($isListItemNode(node)) {
+      return super.insertAfter(node, restoreSelection);
+    }
+
     const siblings = this.getNextSiblings();
 
-    if ($isListItemNode(node)) {
-      const after = super.insertAfter(node, restoreSelection);
-      const afterListNode = node.getParentOrThrow();
-
-      if ($isListNode(afterListNode)) {
-        updateChildrenListItemValue(afterListNode);
-      }
-
-      return after;
-    }
-
-    // Attempt to merge if the list is of the same type.
-
-    if ($isListNode(node)) {
-      let child = node;
-      const children = node.getChildren<ListNode>();
-
-      for (let i = children.length - 1; i >= 0; i--) {
-        child = children[i];
-
-        this.insertAfter(child, restoreSelection);
-      }
-
-      return child;
-    }
-
-    // Otherwise, split the list
     // Split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 
@@ -276,12 +252,6 @@ export class ListItemNode extends ElementNode {
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
-    } else if (nextSibling) {
-      const parent = nextSibling.getParent();
-
-      if ($isListNode(parent)) {
-        updateChildrenListItemValue(parent);
-      }
     }
   }
 
@@ -398,23 +368,12 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
-  insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    if ($isListItemNode(nodeToInsert)) {
-      const parent = this.getParentOrThrow();
-
-      if ($isListNode(parent)) {
-        const siblings = this.getNextSiblings();
-        updateChildrenListItemValue(parent, siblings);
-      }
-    }
-
-    return super.insertBefore(nodeToInsert);
-  }
-
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return $isListItemNode(node);
   }
 
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return $isListItemNode(replacement);
   }
@@ -463,8 +422,7 @@ function $setListItemThemeClassNames(
   }
 
   if (listItemClassName !== undefined) {
-    const listItemClasses = listItemClassName.split(' ');
-    classesToAdd.push(...listItemClasses);
+    classesToAdd.push(...normalizeClassNames(listItemClassName));
   }
 
   if (listTheme) {
@@ -489,7 +447,7 @@ function $setListItemThemeClassNames(
   }
 
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = nestedListItemClassName.split(' ');
+    const nestedListItemClasses = normalizeClassNames(nestedListItemClassName);
 
     if (node.getChildren().some((child) => $isListNode(child))) {
       classesToAdd.push(...nestedListItemClasses);
@@ -534,9 +492,32 @@ function updateListItemChecked(
   }
 }
 
-function convertListItemElement(domNode: Node): DOMConversionOutput {
+function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
+  const isGitHubCheckList = domNode.classList.contains('task-list-item');
+  if (isGitHubCheckList) {
+    for (const child of domNode.children) {
+      if (child.tagName === 'INPUT') {
+        return $convertCheckboxInput(child);
+      }
+    }
+  }
+
+  const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
-    isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
+    ariaCheckedAttr === 'true'
+      ? true
+      : ariaCheckedAttr === 'false'
+      ? false
+      : undefined;
+  return {node: $createListItemNode(checked)};
+}
+
+function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
+  const isCheckboxInput = domNode.getAttribute('type') === 'checkbox';
+  if (!isCheckboxInput) {
+    return {node: null};
+  }
+  const checked = domNode.hasAttribute('checked');
   return {node: $createListItemNode(checked)};
 }
 

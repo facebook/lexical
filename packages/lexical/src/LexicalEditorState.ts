@@ -9,13 +9,14 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeMap, SerializedLexicalNode} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
+import type {SerializedElementNode} from './nodes/LexicalElementNode';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, SerializedElementNode} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
+import {$isElementNode} from './nodes/LexicalElementNode';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
 export interface SerializedEditorState<

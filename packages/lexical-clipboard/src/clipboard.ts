@@ -166,13 +166,16 @@ export function $insertDataTransferForRichText(
         parts.pop();
       }
       for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (part === '\n' || part === '\r\n') {
-          selection.insertParagraph();
-        } else if (part === '\t') {
-          selection.insertNodes([$createTabNode()]);
-        } else {
-          selection.insertText(part);
+        const currentSelection = $getSelection();
+        if ($isRangeSelection(currentSelection)) {
+          const part = parts[i];
+          if (part === '\n' || part === '\r\n') {
+            currentSelection.insertParagraph();
+          } else if (part === '\t') {
+            currentSelection.insertNodes([$createTabNode()]);
+          } else {
+            currentSelection.insertText(part);
+          }
         }
       }
     } else {
@@ -247,7 +250,7 @@ function $appendNodesToJSON(
   targetArray: Array<BaseSerializedNode> = [],
 ): boolean {
   let shouldInclude =
-    selection != null ? currentNode.isSelected(selection) : true;
+    selection !== null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
@@ -255,7 +258,7 @@ function $appendNodesToJSON(
   if (selection !== null) {
     let clone = $cloneWithProperties<LexicalNode>(currentNode);
     clone =
-      $isTextNode(clone) && selection != null
+      $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
         : clone;
     target = clone;

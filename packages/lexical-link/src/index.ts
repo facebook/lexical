@@ -1,4 +1,3 @@
-/** @module @lexical/link */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -141,7 +140,7 @@ export class LinkNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       a: (node: Node) => ({
-        conversion: convertAnchorElement,
+        conversion: $convertAnchorElement,
         priority: 1,
       }),
     };
@@ -271,7 +270,7 @@ export class LinkNode extends ElementNode {
   }
 }
 
-function convertAnchorElement(domNode: Node): DOMConversionOutput {
+function $convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
   if (isHTMLAnchorElement(domNode)) {
     const content = domNode.textContent;
@@ -289,7 +288,7 @@ function convertAnchorElement(domNode: Node): DOMConversionOutput {
 /**
  * Takes a URL and creates a LinkNode.
  * @param url - The URL the LinkNode should direct to.
- * @param attributes - Optional HTML a tag attributes { target, rel, title }
+ * @param attributes - Optional HTML a tag attributes \\{ target, rel, title \\}
  * @returns The LinkNode.
  */
 export function $createLinkNode(
@@ -377,7 +376,7 @@ export class AutoLinkNode extends LinkNode {
  * Takes a URL and creates an AutoLinkNode. AutoLinkNodes are generally automatically generated
  * during typing, which is especially useful when a button to generate a LinkNode is not practical.
  * @param url - The URL the LinkNode should direct to.
- * @param attributes - Optional HTML a tag attributes. { target, rel, title }
+ * @param attributes - Optional HTML a tag attributes. \\{ target, rel, title \\}
  * @returns The LinkNode.
  */
 export function $createAutoLinkNode(
@@ -406,9 +405,9 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
  * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
  * but saves any children and brings them up to the parent node.
  * @param url - The URL the link directs to.
- * @param attributes - Optional HTML a tag attributes. { target, rel, title }
+ * @param attributes - Optional HTML a tag attributes. \\{ target, rel, title \\}
  */
-export function toggleLink(
+export function $toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},
 ): void {
@@ -524,6 +523,8 @@ export function toggleLink(
     });
   }
 }
+/** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
+export const toggleLink = $toggleLink;
 
 function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,

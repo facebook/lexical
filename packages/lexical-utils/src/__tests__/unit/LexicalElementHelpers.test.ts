@@ -26,7 +26,16 @@ describe('LexicalElementHelpers tests', () => {
 
     test('empty', async () => {
       const element = document.createElement('div');
-      addClassNamesToElement(element, null, undefined, false, true, '');
+      addClassNamesToElement(
+        element,
+        null,
+        undefined,
+        false,
+        true,
+        '',
+        ' ',
+        '  \t\n',
+      );
 
       expect(element.className).toEqual('');
     });
@@ -52,5 +61,17 @@ describe('LexicalElementHelpers tests', () => {
 
       expect(element.className).toEqual('');
     });
+  });
+
+  test('multiple spaces', async () => {
+    const classNames = ' a  b   c \t\n  ';
+    const element = document.createElement('div');
+    addClassNamesToElement(element, classNames);
+
+    expect(element.className).toEqual('a b c');
+
+    removeClassNamesFromElement(element, classNames);
+
+    expect(element.className).toEqual('');
   });
 });

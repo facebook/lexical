@@ -19,7 +19,6 @@ import {
   assertSelection,
   clearEditor,
   click,
-  E2E_BROWSER,
   focusEditor,
   getHTML,
   html,
@@ -50,7 +49,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   await assertHTML(page, forwardHTML);
 }
 
-test.describe('Markdown', () => {
+test.describe.parallel('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
@@ -103,7 +102,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -151,7 +150,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -160,7 +159,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -375,10 +374,10 @@ async function assertMarkdownImportExport(
   await assertHTML(page, expectedHTML);
 }
 
-test.describe('Markdown', () => {
+test.describe.parallel('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
-    initialize({isCollab, page});
+    return initialize({isCollab, page});
   });
 
   const BASE_BLOCK_SHORTCUTS = [
@@ -494,14 +493,20 @@ test.describe('Markdown', () => {
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '--- ',
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '*** ',
@@ -906,6 +911,7 @@ test.describe('Markdown', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-language="markdown"
           data-highlight-language="markdown"
           data-gutter="12">
           <span data-lexical-text="true">Hello</span>
@@ -1047,25 +1053,12 @@ test.describe('Markdown', () => {
     );
     // Selection starts after newly created link element
 
-    if (E2E_BROWSER === 'webkit') {
-      // TODO: safari keeps dom selection on newly inserted link although Lexical's selection
-      // is correctly adjusted to start on [ world] text node. #updateDomSelection calls
-      // selection.setBaseAndExtent correctly, but safari does not seem to sync dom selection
-      // to newly passed values of anchor/focus/offset
-      await assertSelection(page, {
-        anchorOffset: 4,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 4,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 2, 0],
-        focusOffset: 0,
-        focusPath: [0, 2, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 2, 0],
+      focusOffset: 0,
+      focusPath: [0, 2, 0],
+    });
   });
 });
 
@@ -1185,7 +1178,10 @@ const TYPED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Quote</span>
   </blockquote>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <ul class="PlaygroundEditorTheme__ul">
     <li
       value="1"
@@ -1210,6 +1206,7 @@ const TYPED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
+    data-language="sql"
     data-highlight-language="sql"
     data-gutter="1">
     <span data-lexical-text="true">Code block</span>
@@ -1258,6 +1255,7 @@ line after
     1. And can be nested
     and multiline as well
 
+.
 31. Have any starting number
 ### Inline code
 Inline \`code\` format which also \`preserves **_~~any markdown-like~~_** text\` within
@@ -1398,7 +1396,10 @@ const IMPORTED_MARKDOWN_HTML = html`
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Horizontal Rules</span>
   </h3>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Blockquotes</span>
   </h3>
@@ -1494,6 +1495,9 @@ const IMPORTED_MARKDOWN_HTML = html`
       </ol>
     </li>
   </ol>
+  <p class="PlaygroundEditorTheme__paragraph">
+    <span data-lexical-text="true">.</span>
+  </p>
   <ol start="31" class="PlaygroundEditorTheme__ol1">
     <li
       value="31"
@@ -1527,6 +1531,7 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
+    data-language="javascript"
     data-highlight-language="javascript"
     data-gutter="123">
     <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">

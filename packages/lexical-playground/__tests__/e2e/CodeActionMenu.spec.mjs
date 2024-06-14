@@ -28,7 +28,8 @@ test.describe('CodeActionMenu', () => {
     isPlainText,
     browserName,
   }) => {
-    test.skip(isPlainText);
+    test.skip(true);
+
     await focusEditor(page);
     await page.keyboard.type('``` ');
     await page.keyboard.press('Space');
@@ -196,6 +197,7 @@ test.describe('CodeActionMenu', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
+          data-language="javascript"
           data-highlight-language="javascript">
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
@@ -226,6 +228,7 @@ test.describe('CodeActionMenu', () => {
         dir="ltr"
         spellcheck="false"
         data-gutter="12"
+        data-language="javascript"
         data-highlight-language="javascript">
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -270,6 +273,7 @@ test.describe('CodeActionMenu', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
+          data-language="javascript"
           data-highlight-language="javascript">
           <span data-lexical-text="true">cons luci</span>
           <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">

@@ -295,7 +295,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
             role="checkbox"
             tabindex="-1"
@@ -331,7 +331,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
             role="checkbox"
             tabindex="-1"
@@ -391,7 +391,10 @@ test.describe('HTML Lists CopyAndPaste', () => {
             <span data-lexical-text="true">one</span>
           </li>
         </ul>
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <ul class="PlaygroundEditorTheme__ul">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
@@ -415,5 +418,62 @@ test.describe('HTML Lists CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
+  });
+
+  test('Copy + paste a nested divs in a list', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <ol>
+          <li>
+            1
+            <div>2</div>
+            3
+          </li>
+          <li>
+            A
+            <div>B</div>
+            C
+          </li>
+        </ol>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li value="1" class="PlaygroundEditorTheme__listItem">
+            <span data-lexical-text="true">1</span>
+            <br />
+            <span data-lexical-text="true">2</span>
+            <br />
+            <span data-lexical-text="true">3</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">A</span>
+            <br />
+            <span data-lexical-text="true">B</span>
+            <br />
+            <span data-lexical-text="true">C</span>
+          </li>
+        </ol>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 1, 4, 0],
+      focusOffset: 1,
+      focusPath: [0, 1, 4, 0],
+    });
   });
 });

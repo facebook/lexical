@@ -6,7 +6,12 @@
  *
  */
 
-import {$createParagraphNode, $getRoot, TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createRangeSelection,
+  $getRoot,
+  TextNode,
+} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
@@ -147,10 +152,10 @@ describe('LexicalListItemNode tests', () => {
     });
 
     describe('ListItemNode.replace()', () => {
-      let listNode;
-      let listItemNode1;
-      let listItemNode2;
-      let listItemNode3;
+      let listNode: ListNode;
+      let listItemNode1: ListItemNode;
+      let listItemNode2: ListItemNode;
+      let listItemNode3: ListItemNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -391,7 +396,7 @@ describe('LexicalListItemNode tests', () => {
       // - B
       test('siblings are not nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -459,7 +464,7 @@ describe('LexicalListItemNode tests', () => {
       // - B
       test('the previous sibling is nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -539,7 +544,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B
       test('the next sibling is nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -619,7 +624,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B
       test('both siblings are nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -708,7 +713,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B
       test('the previous sibling is nested deeper than the next sibling', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -818,7 +823,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B2
       test('the next sibling is nested deeper than the previous sibling', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -929,7 +934,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B2
       test('both siblings are deeply nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -1052,10 +1057,10 @@ describe('LexicalListItemNode tests', () => {
     });
 
     describe('ListItemNode.insertNewAfter(): non-empty list items', () => {
-      let listNode;
-      let listItemNode1;
-      let listItemNode2;
-      let listItemNode3;
+      let listNode: ListNode;
+      let listItemNode1: ListItemNode;
+      let listItemNode2: ListItemNode;
+      let listItemNode3: ListItemNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -1103,7 +1108,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode1.insertNewAfter();
+          listItemNode1.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1134,7 +1139,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode3.insertNewAfter();
+          listItemNode3.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1165,7 +1170,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode3.insertNewAfter();
+          listItemNode3.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1217,7 +1222,7 @@ describe('LexicalListItemNode tests', () => {
         );
 
         await editor.update(() => {
-          listItemNode1.insertNewAfter();
+          listItemNode1.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1264,9 +1269,9 @@ describe('LexicalListItemNode tests', () => {
     });
 
     describe('ListItemNode.setIndent()', () => {
-      let listNode;
-      let listItemNode1;
-      let listItemNode2;
+      let listNode: ListNode;
+      let listItemNode1: ListItemNode;
+      let listItemNode2: ListItemNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -1296,7 +1301,7 @@ describe('LexicalListItemNode tests', () => {
         });
 
         expectHtmlToBeEqual(
-          editor.getRootElement().innerHTML,
+          editor.getRootElement()!.innerHTML,
           html`
             <ul>
               <li value="1">
@@ -1330,7 +1335,7 @@ describe('LexicalListItemNode tests', () => {
         });
 
         expectHtmlToBeEqual(
-          editor.getRootElement().innerHTML,
+          editor.getRootElement()!.innerHTML,
           html`
             <ul>
               <li value="1" dir="ltr">

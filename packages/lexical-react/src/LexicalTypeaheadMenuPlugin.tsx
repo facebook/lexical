@@ -203,6 +203,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   onClose?: () => void;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
+  parent?: HTMLElement;
 };
 
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
@@ -215,6 +216,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   triggerFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
+  parent,
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -222,6 +224,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     resolution,
     setResolution,
     anchorClassName,
+    parent,
   );
 
   const closeTypeahead = useCallback(() => {

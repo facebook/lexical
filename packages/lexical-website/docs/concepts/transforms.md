@@ -28,11 +28,11 @@ Transforms are executed sequentially before changes are propagated to the DOM an
 
 ![Transforms lifecycle](/img/docs/transforms-lifecycle.svg)
 
-**Beware!**
+:::caution Beware!
 
-In most cases, it is possible to achieve the same or very similar result through an [update listener](/docs/concepts/listeners#registerupdatelistener) followed by an update. This is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
+While it is possible to achieve the same or very similar result through an [update listener](/docs/concepts/listeners#registerupdatelistener) followed by an update, this is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
 
-Additionally, each cycle creates a brand new EditorState object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
+Additionally, each cycle creates a brand new `EditorState` object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
 
 ```js
 editor.registerUpdateListener(() => {
@@ -41,6 +41,17 @@ editor.registerUpdateListener(() => {
   });
 });
 ```
+
+:::
+
+### Transform heuristic
+
+1. We transform leaves first. If transforms generate additional dirty nodes we repeat `step 1`. The reasoning behind this is that marking a leaf as dirty marks all its parent elements as dirty too.
+2. We transform elements.
+    - If element transforms generate additional dirty nodes we repeat `step 1`.
+    - If element transforms only generate additional dirty elements we only repeat `step 2`.
+
+Node will be marked as dirty on any (or most) modifications done to it, it's children or siblings in certain cases.
 
 ## Preconditions
 

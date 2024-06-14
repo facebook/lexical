@@ -52,13 +52,14 @@ export function BlockWithAlignableContents({
     useLexicalNodeSelection(nodeKey);
   const ref = useRef(null);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (event: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         event.preventDefault();
         const node = $getNodeByKey(nodeKey);
         if ($isDecoratorNode(node)) {
           node.remove();
+          return true;
         }
       }
 
@@ -120,16 +121,16 @@ export function BlockWithAlignableContents({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
 
   return (
     <div

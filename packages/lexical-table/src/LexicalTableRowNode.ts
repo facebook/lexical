@@ -11,10 +11,10 @@ import type {Spread} from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  DEPRECATED_GridRowNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  ElementNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
@@ -24,13 +24,13 @@ import {PIXEL_VALUE_REG_EXP} from './constants';
 
 export type SerializedTableRowNode = Spread<
   {
-    height: number;
+    height?: number;
   },
   SerializedElementNode
 >;
 
 /** @noInheritDoc */
-export class TableRowNode extends DEPRECATED_GridRowNode {
+export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
 
@@ -45,7 +45,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
   static importDOM(): DOMConversionMap | null {
     return {
       tr: (node: Node) => ({
-        conversion: convertTableRowElement,
+        conversion: $convertTableRowElement,
         priority: 0,
       }),
     };
@@ -60,9 +60,10 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     this.__height = height;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedTableRowNode {
     return {
       ...super.exportJSON(),
+      ...(this.getHeight() && {height: this.getHeight()}),
       type: 'tablerow',
       version: 1,
     };
@@ -90,7 +91,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     return this.__height;
   }
 
-  getHeight(): number | null | undefined {
+  getHeight(): number | undefined {
     return this.getLatest().__height;
   }
 
@@ -107,7 +108,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
   }
 }
 
-export function convertTableRowElement(domNode: Node): DOMConversionOutput {
+export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
   let height: number | undefined = undefined;
 

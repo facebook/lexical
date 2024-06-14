@@ -7,9 +7,8 @@
  */
 
 import type {
-  DecoratorNode,
+  BaseSelection,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalNode,
   NodeKey,
   Point,
@@ -17,6 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {TableSelection} from '@lexical/table';
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -42,10 +42,16 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement - The function that creates the node. eg. $createParagraphNode.
  */
 export function $setBlocksType(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void {
-  if (selection.anchor.key === 'root') {
+  if (selection === null) {
+    return;
+  }
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
+
+  if (anchor !== null && anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
@@ -60,10 +66,8 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  const firstSelectedBlock = $getAncestor(
-    selection.anchor.getNode(),
-    INTERNAL_$isBlock,
-  );
+  const firstSelectedBlock =
+    anchor !== null ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock) : false;
   if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
     nodes.push(firstSelectedBlock);
   }
@@ -110,19 +114,21 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @param wrappingElement - An element to append the wrapped selection and its children to.
  */
 export function $wrapNodes(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
-  const anchor = selection.anchor;
 
   if (
-    nodesLength === 0 ||
-    (nodesLength === 1 &&
-      anchor.type === 'element' &&
-      anchor.getNode().getChildrenSize() === 0)
+    anchor !== null &&
+    (nodesLength === 0 ||
+      (nodesLength === 1 &&
+        anchor.type === 'element' &&
+        anchor.getNode().getChildrenSize() === 0))
   ) {
     const target =
       anchor.type === 'text'
@@ -196,7 +202,7 @@ export function $wrapNodes(
  * @returns
  */
 export function $wrapNodesImpl(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,
@@ -512,7 +518,7 @@ function $getNodeStyleValueForProperty(
  * @returns The value of the property for the selected TextNodes.
  */
 export function $getSelectionStyleValueForProperty(
-  selection: RangeSelection,
+  selection: RangeSelection | TableSelection,
   styleProperty: string,
   defaultValue = '',
 ): string {
@@ -524,7 +530,11 @@ export function $getSelectionStyleValueForProperty(
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
 
-  if (selection.isCollapsed() && selection.style !== '') {
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.style !== ''
+  ) {
     const css = selection.style;
     const styleObject = getStyleObjectFromCSS(css);
 
@@ -568,11 +578,9 @@ export function $getSelectionStyleValueForProperty(
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
-export function INTERNAL_$isBlock(
-  node: LexicalNode,
-): node is ElementNode | DecoratorNode<unknown> {
-  if ($isDecoratorNode(node) && !node.isInline()) {
-    return true;
+export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
+  if ($isDecoratorNode(node)) {
+    return false;
   }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
     return false;

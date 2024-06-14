@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/test.yml"/>
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/>
   <a href="https://www.npmjs.com/package/lexical">
     <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"/>
   </a>
@@ -22,8 +22,8 @@ For documentation and more information about Lexical, be sure to [visit the Lexi
 Here are some examples of what you can do with Lexical:
 
 - [Lexical Playground](https://playground.lexical.dev)
-- [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
-- [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
+- [Plain text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+- [Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
 
 
 ---
@@ -50,7 +50,7 @@ Install `lexical` and `@lexical/react`:
 npm install --save lexical @lexical/react
 ```
 
-Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
+Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)).
 
 ```jsx
 import {$getRoot, $getSelection} from 'lexical';
@@ -62,7 +62,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
@@ -150,13 +150,41 @@ workflow to prevent cascading/waterfalling of updates. You can retrieve the curr
 
 Editor States are also fully serializable to JSON and can easily be serialized back into the editor using `editor.parseEditorState()`.
 
-### Editor Updates
+### Reading and Updating Editor State
 
-When you want to change something in an Editor State, you must do it via an update, `editor.update(() => {...})`. The closure passed
-to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
-access to the underlying Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
-where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
-For those familiar with React Hooks, you can think of these as having a similar functionality (except `$` functions can be used in any order).
+When you want to read and/or update the Lexical node tree, you must do it via `editor.update(() => {...})`. You may also do
+read-only operations with the editor state via `editor.getEditorState().read(() => {...})`. The closure passed to the update or read
+call is important, and must be synchronous. It's the only place where you have full "lexical" context of the active editor state,
+and providing you with access to the Editor State's node tree. We promote using the convention of using `$` prefixed functions
+(such as `$getRoot()`) to convey that these functions must be called in this context. Attempting to use them outside of a read
+or update will trigger a runtime error.
+
+For those familiar with React Hooks, you can think of these $functions as having similar functionality:
+| *Feature* | React Hooks | Lexical $functions |
+| -- | -- | -- |
+| Naming Convention | `useFunction` | `$function` |
+| Context Required | Can only be called while rendering | Can only be called while in an update or read |
+| Can be composed | Hooks can call other hooks | $functions can call other $functions |
+| Must be synchronous | ✅ | ✅ |
+| Other rules | ❌ Must be called unconditionally in the same order | ✅ None |
+
+Node Transforms and Command Listeners are called with an implicit `editor.update(() => {...})` context.
+
+It is permitted to do nested updates within reads and updates, but an update may not be nested in a read.
+For example, `editor.update(() => editor.update(() => {...}))` is allowed.
+
+All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods
+and access properties of a Lexical Node while in a read or update call (just like `$` functions). Methods
+on Lexical Nodes will first attempt to locate the latest (and possibly a writable) version of the node from the
+active editor state using the node's unique key. All versions of a logical node have the same key. These keys
+are managed by the Editor, are only present at runtime (not serialized), and should be considered to be random and
+opaque (do not write tests that assume hard-coded values for keys).
+
+This is done because the editor state's node tree is recursively frozen after reconciliation to
+support efficient time travel (undo/redo and similar use cases). Methods that update nodes
+first call `node.getWritable()`, which will create a writable clone of a frozen node. This would normally
+mean that any existing references (such as local variables) would refer to a stale version of the node, but
+having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
 
 ### DOM Reconciler
 
@@ -253,11 +281,11 @@ used as the starting point. From a technical perspective, this means that Lexica
 called double-buffering during updates. There's an editor state to represent what is current on
 the screen, and another work-in-progress editor state that represents future changes.
 
-Creating an update is typically an async process that allows Lexical to batch multiple updates together in
-a single update – improving performance. When Lexical is ready to commit the update to
-the DOM, the underlying mutations and changes in the update will form a new immutable
-editor state. Calling `editor.getEditorState()` will then return the latest editor state
-based on the changes from the update.
+Reconciling an update is typically an async process that allows Lexical to batch multiple synchronous
+updates of the editor state together in a single update to the DOM – improving performance. When
+Lexical is ready to commit the update to the DOM, the underlying mutations and changes in the update
+batch will form a new immutable editor state. Calling `editor.getEditorState()` will then return the
+latest editor state based on the changes from the update.
 
 Here's an example of how you can update an editor instance:
 
@@ -306,18 +334,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Contributing to Lexical
 
-1. Clone this repository
-
-2. Install dependencies
-
-   - `npm install`
-
-3. Start local server and run tests
-   - `npm run start`
-   - `npm run test-e2e-chromium` to run only chromium e2e tests
-     - The server needs to be running for the e2e tests
-
-`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
+Please read the [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md).
 
 ### Optional but recommended, use VSCode for development
 
@@ -335,8 +352,11 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Documentation
 
-- [How Lexical was designed](/docs/design.md)
-- [Testing](/docs/testing.md)
+- [Getting started](https://lexical.dev/docs/intro)
+- [Concepts](https://lexical.dev/docs/concepts/editor-state)
+- [How Lexical was designed](https://lexical.dev/docs/design)
+- [Testing](https://lexical.dev/docs/testing)
+- [Maintainers' Guide](https://lexical.dev/docs/maintainers-guide)
 
 ## Browser Support
 

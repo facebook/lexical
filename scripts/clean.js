@@ -9,12 +9,13 @@
 'use strict';
 
 const fs = require('fs-extra');
-const path = require('path');
-const {LEXICAL_PKG, DEFAULT_PKGS, SHARED_PKG} = require('./npm/packages');
+const path = require('node:path');
+const {packagesManager} = require('./shared/packagesManager');
 
-const packages = [LEXICAL_PKG, ...DEFAULT_PKGS, SHARED_PKG];
-packages.forEach((pkg) => {
-  fs.removeSync(path.resolve(`./.ts-temp`));
-  fs.removeSync(path.resolve(`./packages/${pkg}/dist`));
-  fs.removeSync(path.resolve(`./packages/${pkg}/npm`));
-});
+fs.removeSync(path.resolve(`./npm`));
+fs.removeSync(path.resolve(`./.ts-temp`));
+packagesManager
+  .getPublicPackages()
+  .forEach((pkg) =>
+    ['dist', 'npm'].forEach((subdir) => fs.removeSync(pkg.resolve(subdir))),
+  );

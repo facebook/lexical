@@ -36,7 +36,7 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (event: KeyboardEvent) => {
       event.preventDefault();
       if (isSelected && $isNodeSelection($getSelection())) {
@@ -72,16 +72,16 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
 
   useEffect(() => {
     const pbElem = editor.getElementByKey(nodeKey);
@@ -110,10 +110,12 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
     return {
       figure: (domNode: HTMLElement) => {
         const tp = domNode.getAttribute('type');
-        if (tp !== this.getType()) return null;
+        if (tp !== this.getType()) {
+          return null;
+        }
 
         return {
-          conversion: convertPageBreakElement,
+          conversion: $convertPageBreakElement,
           priority: COMMAND_PRIORITY_HIGH,
         };
       },
@@ -151,7 +153,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-function convertPageBreakElement(): DOMConversionOutput {
+function $convertPageBreakElement(): DOMConversionOutput {
   return {node: $createPageBreakNode()};
 }
 

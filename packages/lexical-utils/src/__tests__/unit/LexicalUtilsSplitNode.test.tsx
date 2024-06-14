@@ -17,7 +17,7 @@ import {$splitNode} from '../../index';
 describe('LexicalUtils#splitNode', () => {
   let editor: LexicalEditor;
 
-  const update = async (updateFn) => {
+  const update = async (updateFn: () => void) => {
     editor.update(updateFn);
     await Promise.resolve();
   };
@@ -115,7 +115,7 @@ describe('LexicalUtils#splitNode', () => {
 
         let nodeToSplit: ElementNode = $getRoot();
         for (const index of testCase.splitPath) {
-          nodeToSplit = nodeToSplit.getChildAtIndex(index);
+          nodeToSplit = nodeToSplit.getChildAtIndex(index)!;
           if (!$isElementNode(nodeToSplit)) {
             throw new Error('Expected node to be element');
           }

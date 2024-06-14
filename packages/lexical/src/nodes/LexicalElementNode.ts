@@ -16,7 +16,7 @@ import type {KlassConstructor, Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isTextNode, TextNode} from '../';
+import {$isTextNode, TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
@@ -25,8 +25,8 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
-  internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
@@ -147,29 +147,23 @@ export class ElementNode extends LexicalNode {
   }
   getFirstDescendant<T extends LexicalNode>(): null | T {
     let node = this.getFirstChild<T>();
-    while (node !== null) {
-      if ($isElementNode(node)) {
-        const child = node.getFirstChild<T>();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
+    while ($isElementNode(node)) {
+      const child = node.getFirstChild<T>();
+      if (child === null) {
+        break;
       }
-      break;
+      node = child;
     }
     return node;
   }
   getLastDescendant<T extends LexicalNode>(): null | T {
     let node = this.getLastChild<T>();
-    while (node !== null) {
-      if ($isElementNode(node)) {
-        const child = node.getLastChild<T>();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
+    while ($isElementNode(node)) {
+      const child = node.getLastChild<T>();
+      if (child === null) {
+        break;
       }
-      break;
+      node = child;
     }
     return node;
   }
@@ -322,7 +316,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,
@@ -531,13 +525,11 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
-  // TODO 0.10 deprecate
-  canExtractContents(): boolean {
-    return true;
-  }
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
   }
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return true;
   }
@@ -560,6 +552,7 @@ export class ElementNode extends LexicalNode {
   isShadowRoot(): boolean {
     return false;
   }
+  /** @deprecated @internal */
   canMergeWith(node: ElementNode): boolean {
     return false;
   }

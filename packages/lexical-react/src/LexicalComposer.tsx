@@ -49,10 +49,9 @@ export type InitialConfigType = Readonly<{
   html?: HTMLConfig;
 }>;
 
-type Props = {
-  children: JSX.Element | string | (JSX.Element | string)[];
+type Props = React.PropsWithChildren<{
   initialConfig: InitialConfigType;
-};
+}>;
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(

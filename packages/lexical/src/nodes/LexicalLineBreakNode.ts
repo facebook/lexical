@@ -54,7 +54,7 @@ export class LineBreakNode extends LexicalNode {
           return null;
         }
         return {
-          conversion: convertLineBreakElement,
+          conversion: $convertLineBreakElement,
           priority: 0,
         };
       },
@@ -75,7 +75,7 @@ export class LineBreakNode extends LexicalNode {
   }
 }
 
-function convertLineBreakElement(node: Node): DOMConversionOutput {
+function $convertLineBreakElement(node: Node): DOMConversionOutput {
   return {node: $createLineBreakNode()};
 }
 

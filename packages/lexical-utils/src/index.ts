@@ -1,4 +1,3 @@
-/** @module @lexical/utils */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -25,12 +24,44 @@ import {
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
+// This underscore postfixing is used as a hotfix so we do not
+// export shared types from this module #5918
+import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
+import {
+  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
+  IS_ANDROID as IS_ANDROID_,
+  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
+  IS_APPLE as IS_APPLE_,
+  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
+  IS_CHROME as IS_CHROME_,
+  IS_FIREFOX as IS_FIREFOX_,
+  IS_IOS as IS_IOS_,
+  IS_SAFARI as IS_SAFARI_,
+} from 'shared/environment';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
-export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
+export {
+  $splitNode,
+  isBlockDomNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
+  isInlineDomNode,
+} from 'lexical';
+// Hotfix to export these with inlined types #5918
+export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
+export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
+export const IS_ANDROID: boolean = IS_ANDROID_;
+export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
+export const IS_APPLE: boolean = IS_APPLE_;
+export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
+export const IS_CHROME: boolean = IS_CHROME_;
+export const IS_FIREFOX: boolean = IS_FIREFOX_;
+export const IS_IOS: boolean = IS_IOS_;
+export const IS_SAFARI: boolean = IS_SAFARI_;
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -49,12 +80,10 @@ export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
-  classNames.forEach((className) => {
-    if (typeof className === 'string') {
-      const classesToAdd = className.split(' ').filter((n) => n !== '');
-      element.classList.add(...classesToAdd);
-    }
-  });
+  const classesToAdd = normalizeClassNames(...classNames);
+  if (classesToAdd.length > 0) {
+    element.classList.add(...classesToAdd);
+  }
 }
 
 /**
@@ -69,11 +98,10 @@ export function removeClassNamesFromElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
-  classNames.forEach((className) => {
-    if (typeof className === 'string') {
-      element.classList.remove(...className.split(' '));
-    }
-  });
+  const classesToRemove = normalizeClassNames(...classNames);
+  if (classesToRemove.length > 0) {
+    element.classList.remove(...classesToRemove);
+  }
 }
 
 /**
@@ -103,9 +131,9 @@ export function isMimeType(
  *  3. Order aware (respects the order when multiple Files are passed)
  *
  * const filesResult = await mediaFileReader(files, ['image/']);
- * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', {
+ * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', \\{
  *   src: file.result,
- * }));
+ * \\}));
  */
 export function mediaFileReader(
   files: Array<File>,
@@ -146,7 +174,7 @@ export function mediaFileReader(
  * @param startingNode - The node to start the search, if ommitted, it will start at the root node.
  * @param endingNode - The node to end the search, if ommitted, it will find all descendants of the startingNode.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
- * {depth: number, node: LexicalNode} It will always return at least 1 node (the ending node) so long as it exists
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the ending node) so long as it exists
  */
 export function $dfs(
   startingNode?: LexicalNode,
@@ -155,7 +183,8 @@ export function $dfs(
   const nodes = [];
   const start = (startingNode || $getRoot()).getLatest();
   const end =
-    endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
+    endingNode ||
+    ($isElementNode(start) ? start.getLastDescendant() || start : start);
   let node: LexicalNode | null = start;
   let depth = $getDepth(node);
 
@@ -198,6 +227,37 @@ function $getDepth(node: LexicalNode): number {
   }
 
   return depth;
+}
+
+/**
+ * Performs a right-to-left preorder tree traversal.
+ * From the starting node it goes to the rightmost child, than backtracks to paret and finds new rightmost path.
+ * It will return the next node in traversal sequence after the startingNode.
+ * The traversal is similar to $dfs functions above, but the nodes are visited right-to-left, not left-to-right.
+ * @param startingNode - The node to start the search.
+ * @returns The next node in pre-order right to left traversal sequence or `null`, if the node does not exist
+ */
+export function $getNextRightPreorderNode(
+  startingNode: LexicalNode,
+): LexicalNode | null {
+  let node: LexicalNode | null = startingNode;
+
+  if ($isElementNode(node) && node.getChildrenSize() > 0) {
+    node = node.getLastChild();
+  } else {
+    let sibling = null;
+
+    while (sibling === null && node !== null) {
+      sibling = node.getPreviousSibling();
+
+      if (sibling === null) {
+        node = node.getParent();
+      } else {
+        node = sibling;
+      }
+    }
+  }
+  return node;
 }
 
 /**
@@ -334,7 +394,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     return null;
   };
 
-  const elementNodeTransform = (node: N) => {
+  const $elementNodeTransform = (node: N) => {
     const match = $findMatch(node);
 
     if (match !== null) {
@@ -368,7 +428,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     }
   };
 
-  return editor.registerNodeTransform(targetNode, elementNodeTransform);
+  return editor.registerNodeTransform(targetNode, $elementNodeTransform);
 }
 
 /**
@@ -525,4 +585,28 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   } else {
     parent.append(node);
   }
+}
+
+/**
+ * Calculates the zoom level of an element as a result of using
+ * css zoom property.
+ * @param element
+ */
+export function calculateZoomLevel(element: Element | null): number {
+  if (IS_FIREFOX) {
+    return 1;
+  }
+  let zoom = 1;
+  while (element) {
+    zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
+    element = element.parentElement;
+  }
+  return zoom;
+}
+
+/**
+ * Checks if the editor is a nested editor created by LexicalNestedComposer
+ */
+export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
+  return editor._parentEditor !== null;
 }

@@ -525,10 +525,10 @@ export class LexicalNode {
       return false;
     }
     if (targetNode.isParentOf(this)) {
-      return true;
+      return false;
     }
     if (this.isParentOf(targetNode)) {
-      return false;
+      return true;
     }
     const commonAncestor = this.getCommonAncestor(targetNode);
     let indexA = 0;

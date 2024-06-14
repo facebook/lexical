@@ -44,6 +44,34 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
+    editor.update(() => {
+      const text = editor.getEditorState().read($rootTextContent);
+      const textLength = strlen(text);
+      const textLengthAboveThreshold = textLength > maxCharacters;
+      const diff = maxCharacters - textLength;
+      remainingCharacters(diff);
+
+      if (textLengthAboveThreshold) {
+        const offset = findOffset(text, maxCharacters, strlen);
+        $wrapOverflowedNodes(offset);
+      }
+    });
+
+    return () => {
+      editor.update(() => {
+        const dfsNodes = $dfs();
+
+        for (const element of dfsNodes) {
+          const {node} = element;
+          if ($isOverflowNode(node)) {
+            $unwrapNode(node);
+          }
+        }
+      });
+    };
+  }, []);
+
+  useEffect(() => {
     if (!editor.hasNodes([OverflowNode])) {
       invariant(
         false,

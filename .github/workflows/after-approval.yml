@@ -34,7 +34,7 @@ jobs:
   flaky-test-notice:
     needs: [e2e-tests, is_pr_from_facebook]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ github.event.pull_request.head.repo.full_name != 'facebook/lexical' }} && always()
     steps:
       - name: Flaky test notice PR comment
         if: needs.e2e-tests.result == 'failure' || needs.e2e-tests.result == 'cancelled'

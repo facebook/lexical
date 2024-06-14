@@ -25,7 +25,7 @@ jobs:
 
   flaky-test-notice:
     runs-on: ubuntu-latest
-    if: github.event.review.state == 'commented' && ${{ github.event.pull_request.head.repo.full_name != 'facebook/lexical' }} && always()
+    if: github.event.review.state == 'commented' && ${{ github.event.pull_request.head.repo.full_name != 'facebook/lexical' }}
     steps:
       - name: Flaky test notice PR comment
         run: |

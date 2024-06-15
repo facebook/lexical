@@ -112,18 +112,16 @@ export class Point {
   isBefore(b: PointType): boolean {
     let aNode = this.getNode();
     let bNode = b.getNode();
-    let aOffset = this.offset;
-    let bOffset = b.offset;
+    const aOffset = this.offset;
+    const bOffset = b.offset;
 
     if ($isElementNode(aNode)) {
       const aNodeDescendant = aNode.getDescendantByIndex<ElementNode>(aOffset);
       aNode = aNodeDescendant != null ? aNodeDescendant : aNode;
-      aOffset = 0;
     }
     if ($isElementNode(bNode)) {
       const bNodeDescendant = bNode.getDescendantByIndex<ElementNode>(bOffset);
       bNode = bNodeDescendant != null ? bNodeDescendant : bNode;
-      bOffset = 0;
     }
     if (aNode === bNode) {
       return aOffset < bOffset;

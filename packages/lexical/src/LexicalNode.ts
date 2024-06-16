@@ -476,9 +476,7 @@ export class LexicalNode {
    *
    * @param node - the other node to find the common ancestor of.
    */
-  getCommonAncestor<T extends ElementNode = ElementNode>(
-    node: LexicalNode,
-  ): T | null {
+  getCommonAncestor(node: LexicalNode): ElementNode | null {
     const a = this.getParents();
     const b = node.getParents();
     if ($isElementNode(this)) {
@@ -487,19 +485,18 @@ export class LexicalNode {
     if ($isElementNode(node)) {
       b.unshift(node);
     }
-    const aLength = a.length;
-    const bLength = b.length;
-    if (aLength === 0 || bLength === 0 || a[aLength - 1] !== b[bLength - 1]) {
-      return null;
-    }
-    const bSet = new Set(b);
-    for (let i = 0; i < aLength; i++) {
-      const ancestor = a[i] as T;
-      if (bSet.has(ancestor)) {
+
+    let ancestor: ElementNode | null = null;
+    const itrCount = Math.min(a.length, b.length);
+    for (let i = 1; i <= itrCount; ++i) {
+      if (a[a.length - i] !== b[b.length - i]) {
         return ancestor;
       }
+
+      ancestor = a[a.length - i];
     }
-    return null;
+
+    return ancestor;
   }
 
   /**
@@ -530,28 +527,56 @@ export class LexicalNode {
     if (this.isParentOf(targetNode)) {
       return true;
     }
-    const commonAncestor = this.getCommonAncestor(targetNode);
-    let indexA = 0;
-    let indexB = 0;
-    let node: this | ElementNode | LexicalNode = this;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexA = node.getIndexWithinParent();
+
+    const thisParents: LexicalNode[] = this.getParents();
+    const targetParents: LexicalNode[] = targetNode.getParents();
+    thisParents.unshift(this);
+    targetParents.unshift(targetNode);
+
+    let commonAncestor: LexicalNode | null = null;
+    const itrCount = Math.min(thisParents.length, targetParents.length);
+    let i = 1;
+    for (; i <= itrCount; ++i) {
+      if (
+        thisParents[thisParents.length - i] !==
+        targetParents[targetParents.length - i]
+      ) {
         break;
       }
-      node = parent;
+
+      commonAncestor = thisParents[thisParents.length - i];
     }
-    node = targetNode;
+
+    if (targetNode.is(commonAncestor)) {
+      return false;
+    }
+    if (this.is(commonAncestor)) {
+      return true;
+    }
+
+    const thisAncestor: LexicalNode = thisParents[thisParents.length - i];
+    const targetAncestor: LexicalNode = targetParents[targetParents.length - i];
+
+    let thisPrevSibling: LexicalNode | null = thisAncestor.getPreviousSibling();
+    let targetPrevSibling: LexicalNode | null =
+      targetAncestor.getPreviousSibling();
     while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexB = node.getIndexWithinParent();
-        break;
+      if (thisPrevSibling === null) {
+        return true;
       }
-      node = parent;
+      if (targetPrevSibling === null) {
+        return false;
+      }
+      if (thisAncestor.is(targetPrevSibling)) {
+        return true;
+      }
+      if (targetAncestor.is(thisPrevSibling)) {
+        return false;
+      }
+
+      thisPrevSibling = thisPrevSibling.getPreviousSibling();
+      targetPrevSibling = targetPrevSibling.getPreviousSibling();
     }
-    return indexA < indexB;
   }
 
   /**
@@ -582,68 +607,43 @@ export class LexicalNode {
    * @param targetNode - the node that marks the other end of the range of nodes to be returned.
    */
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
+    if (this === targetNode) {
+      return [this];
+    }
+
     const isBefore = this.isBefore(targetNode);
-    const nodes = [];
-    const visited = new Set();
-    let node: LexicalNode | this | null = this;
-    while (true) {
-      if (node === null) {
-        break;
+    const firstNode = isBefore ? this : targetNode;
+    const lastNode = isBefore ? targetNode : this;
+
+    const nodes = new Array<LexicalNode>();
+
+    let currentNode: LexicalNode = firstNode;
+    while (!currentNode.is(lastNode)) {
+      nodes.push(currentNode);
+
+      let nextNode: LexicalNode | null = currentNode;
+      if ($isElementNode(nextNode)) {
+        const child = nextNode.getFirstChild();
+        nextNode = child === null ? nextNode.getNextSibling() : child;
+      } else {
+        nextNode = nextNode.getNextSibling();
       }
-      const key = node.__key;
-      if (!visited.has(key)) {
-        visited.add(key);
-        nodes.push(node);
-      }
-      if (node === targetNode) {
-        break;
-      }
-      const child: LexicalNode | null = $isElementNode(node)
-        ? isBefore
-          ? node.getFirstChild()
-          : node.getLastChild()
-        : null;
-      if (child !== null) {
-        node = child;
-        continue;
-      }
-      const nextSibling: LexicalNode | null = isBefore
-        ? node.getNextSibling()
-        : node.getPreviousSibling();
-      if (nextSibling !== null) {
-        node = nextSibling;
-        continue;
-      }
-      const parent: LexicalNode | null = node.getParentOrThrow();
-      if (!visited.has(parent.__key)) {
-        nodes.push(parent);
-      }
-      if (parent === targetNode) {
-        break;
-      }
-      let parentSibling = null;
-      let ancestor: LexicalNode | null = parent;
-      do {
-        if (ancestor === null) {
-          invariant(false, 'getNodesBetween: ancestor is null');
+
+      if (nextNode === null) {
+        nextNode = currentNode.getParentOrThrow();
+        let parentSiblingNode = nextNode.getNextSibling();
+        while (parentSiblingNode === null) {
+          nextNode = nextNode.getParentOrThrow();
+          parentSiblingNode = nextNode.getNextSibling();
         }
-        parentSibling = isBefore
-          ? ancestor.getNextSibling()
-          : ancestor.getPreviousSibling();
-        ancestor = ancestor.getParent();
-        if (ancestor !== null) {
-          if (parentSibling === null && !visited.has(ancestor.__key)) {
-            nodes.push(ancestor);
-          }
-        } else {
-          break;
-        }
-      } while (parentSibling === null);
-      node = parentSibling;
+
+        nextNode = parentSiblingNode;
+      }
+
+      currentNode = nextNode as LexicalNode;
     }
-    if (!isBefore) {
-      nodes.reverse();
-    }
+
+    nodes.push(lastNode);
     return nodes;
   }
 

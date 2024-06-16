@@ -512,19 +512,22 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isBefore()', async () => {
         const {editor} = testEnv;
+        let newParagraphNode: ParagraphNode;
         let barTextNode: TextNode;
         let bazTextNode: TextNode;
 
         await editor.update(() => {
+          newParagraphNode = new ParagraphNode();
           barTextNode = new TextNode('bar');
           barTextNode.toggleUnmergeable();
           bazTextNode = new TextNode('baz');
           bazTextNode.toggleUnmergeable();
-          paragraphNode.append(barTextNode, bazTextNode);
+          newParagraphNode.append(barTextNode, bazTextNode);
+          paragraphNode.append(newParagraphNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><p dir="ltr"><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></p></div>',
         );
 
         await editor.getEditorState().read(() => {
@@ -535,6 +538,7 @@ describe('LexicalNode tests', () => {
           expect(bazTextNode.isBefore(barTextNode)).toBe(false);
           expect(bazTextNode.isBefore(textNode)).toBe(false);
           expect(paragraphNode.isBefore(textNode)).toBe(true);
+          expect(paragraphNode.isBefore(barTextNode)).toBe(true);
         });
         expect(() => textNode.isBefore(barTextNode)).toThrow();
       });

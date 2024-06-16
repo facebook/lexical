@@ -601,12 +601,15 @@ describe('LexicalNode tests', () => {
             textNode,
             barTextNode,
             bazTextNode,
+            paragraphNode.getLatest(),
             newParagraphNode0,
             newParagraphNode1,
             quxTextNode,
           ]);
-          expect(paragraphNode.getNodesBetween(newParagraphNode1)).toEqual([
-            paragraphNode,
+          expect(
+            paragraphNode.getLatest().getNodesBetween(newParagraphNode1),
+          ).toEqual([
+            paragraphNode.getLatest(),
             textNode.getLatest(),
             barTextNode,
             bazTextNode,

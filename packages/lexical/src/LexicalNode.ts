@@ -7,7 +7,6 @@
  */
 
 /* eslint-disable no-constant-condition */
-import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
 import type {Klass, KlassConstructor} from 'lexical';
 
@@ -21,6 +20,7 @@ import {
   $isTextNode,
   ElementNode,
 } from '.';
+import {EditorConfig, LexicalEditor} from './LexicalEditor';
 import {
   $getSelection,
   $isNodeSelection,
@@ -615,11 +615,15 @@ export class LexicalNode {
     const firstNode = isBefore ? this : targetNode;
     const lastNode = isBefore ? targetNode : this;
 
+    const addedNodes = new Set<LexicalNode>();
     const nodes = new Array<LexicalNode>();
 
     let currentNode: LexicalNode = firstNode;
     while (!currentNode.is(lastNode)) {
-      nodes.push(currentNode);
+      if (!addedNodes.has(currentNode)) {
+        addedNodes.add(currentNode);
+        nodes.push(currentNode);
+      }
 
       let nextNode: LexicalNode | null = currentNode;
       if ($isElementNode(nextNode)) {
@@ -631,9 +635,19 @@ export class LexicalNode {
 
       if (nextNode === null) {
         nextNode = currentNode.getParentOrThrow();
+        if (!addedNodes.has(nextNode)) {
+          addedNodes.add(nextNode);
+          nodes.push(nextNode);
+        }
+
         let parentSiblingNode = nextNode.getNextSibling();
         while (parentSiblingNode === null) {
           nextNode = nextNode.getParentOrThrow();
+          if (!addedNodes.has(nextNode)) {
+            addedNodes.add(nextNode);
+            nodes.push(nextNode);
+          }
+
           parentSiblingNode = nextNode.getNextSibling();
         }
 

@@ -16,7 +16,7 @@ import type {
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import {IS_SAFARI} from 'shared/environment';
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
@@ -348,7 +348,7 @@ function reconcileElementTerminatingLineBreak(
     const element = document.createElement('br');
     // Workaround for a bug in Safari where the cursor cannot be placed at the
     // end of a line.
-    if (IS_SAFARI) {
+    if (IS_SAFARI || IS_IOS) {
       insertCursorFixElement(dom, element);
     }
     // @ts-expect-error: internal field

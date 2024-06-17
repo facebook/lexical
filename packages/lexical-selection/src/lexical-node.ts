@@ -333,7 +333,7 @@ function $patchStyle(
  * Will update partially selected TextNodes by splitting the TextNode and applying
  * the styles to the appropriate one.
  * @param selection - The selected node(s) to update.
- * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }. Can also accept a function that returns the new property value.
+ * @param patch - The patch to apply, which can include multiple styles. \\{CSSProperty: value\\} . Can also accept a function that returns the new property value.
  */
 export function $patchStyleText(
   selection: BaseSelection,

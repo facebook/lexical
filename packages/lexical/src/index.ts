@@ -145,6 +145,7 @@ export {
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,

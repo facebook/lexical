@@ -88,7 +88,11 @@ async function buildExample({packageJson, exampleDir}) {
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
-    await exec(`npm install ${installDeps.map((fn) => `'${fn}'`).join(' ')}`);
+    await exec(
+      `npm install --no-save --no-package-lock ${installDeps
+        .map((fn) => `'${fn}'`)
+        .join(' ')}`,
+    );
     await exec('npm run build');
     if (hasPlaywright) {
       await exec('npx playwright install');

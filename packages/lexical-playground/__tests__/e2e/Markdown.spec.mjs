@@ -102,7 +102,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -911,6 +911,7 @@ test.describe.parallel('Markdown', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-language="markdown"
           data-highlight-language="markdown"
           data-gutter="12">
           <span data-lexical-text="true">Hello</span>
@@ -1205,6 +1206,7 @@ const TYPED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
+    data-language="sql"
     data-highlight-language="sql"
     data-gutter="1">
     <span data-lexical-text="true">Code block</span>
@@ -1529,6 +1531,7 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
+    data-language="javascript"
     data-highlight-language="javascript"
     data-gutter="123">
     <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">

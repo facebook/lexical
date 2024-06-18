@@ -6,6 +6,7 @@ on:
 
 jobs:
   pre_job:
+    if: (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -13,10 +14,10 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
         with:
-          concurrent_skipping: 'always'
+          concurrent_skipping: 'same_content_newer'
           skip_after_successful_duplicate: 'true'
           do_not_skip: '["pull_request", "merge_group"]'
-          paths-ignore: '["packages/lexical-website/**", "packages/*/README.md", ".size-limit.js"]'
+          paths_ignore: '["packages/lexical-website/**", "packages/*/README.md", ".size-limit.js"]'
   e2e-tests:
     needs: pre_job
     if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))

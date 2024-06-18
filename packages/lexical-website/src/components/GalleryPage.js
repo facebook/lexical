@@ -19,7 +19,7 @@ function GalleryImpl() {
   useEffect(() => {
     try {
       if (process.env.FB_INTERNAL) {
-        import('../../InternGalleryPage').then(setInternGallery);
+        import('../../../InternGalleryPage').then(setInternGallery);
       }
     } catch (e) {
       throw e;

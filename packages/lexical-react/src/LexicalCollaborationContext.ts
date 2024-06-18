@@ -10,7 +10,7 @@ import type {Doc} from 'yjs';
 
 import {createContext, useContext} from 'react';
 
-type CollaborationContextType = {
+export type CollaborationContextType = {
   clientID: number;
   color: string;
   isCollabActive: boolean;

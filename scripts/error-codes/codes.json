@@ -183,5 +183,8 @@
   "181": "Expected text node to be first child of span",
   "182": "Unexpected null rootDOMNode",
   "183": "Unexpected null parentDOMNode",
-  "184": "Element point must be an element node"
+  "184": "Element point must be an element node",
+  "185": "%s doesn't extend the %s",
+  "186": "Lexical node with constructor %s attempted to re-use key from node in active editor state with constructor %s. Keys must not be re-used when the type is changed.",
+  "187": "Lexical node with constructor %s attempted to re-use key from node in active editor state with different constructor with the same name (possibly due to invalid Hot Module Replacement). Keys must not be re-used when the type is changed."
 }

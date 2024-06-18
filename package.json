@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -104,7 +104,7 @@
     "update-flowconfig": "node ./scripts/update-flowconfig",
     "create-www-stubs": "node ./scripts/create-www-stubs",
     "update-packages": "npm run update-version && npm run update-tsconfig && npm run update-flowconfig && npm run create-docs && npm run create-www-stubs",
-    "postversion": "git checkout -b ${npm_package_version}__release && npm run update-version && npm install && npm run update-packages && npm run extract-codes && npm run update-changelog && git add -A && git commit -m v${npm_package_version} && git tag -a v${npm_package_version} -m v${npm_package_version}",
+    "postversion": "node ./scripts/npm/postversion",
     "publish-extension": "npm run zip -w @lexical/devtools && npm run publish -w @lexical/devtools",
     "release": "npm run prepare-release && node ./scripts/npm/release.js",
     "size": "npm run build-prod && size-limit"

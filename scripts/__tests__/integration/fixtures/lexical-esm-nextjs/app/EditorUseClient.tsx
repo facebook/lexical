@@ -28,10 +28,6 @@ import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getRoot } from "lexical";
 
-function Placeholder() {
-  return <div className="editor-placeholder">Enter some rich text...</div>;
-}
-
 const editorConfig = {
   namespace: "React.js Demo",
   nodes: [CodeNode, CodeHighlightNode],
@@ -64,8 +60,10 @@ export default function App() {
         <ToolbarPlugin />
         <div className="editor-inner">
           <RichTextPlugin
-            contentEditable={<ContentEditable className="editor-input" />}
-            placeholder={<Placeholder />}
+            contentEditable={<ContentEditable 
+            className="editor-input" 
+            placeholder="Enter some rich text..." 
+            placeholderClassName="editor-placeholder" />}
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />

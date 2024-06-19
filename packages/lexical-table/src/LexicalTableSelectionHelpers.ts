@@ -35,7 +35,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -70,7 +70,7 @@ import {
   $createTableSelection,
   $isTableSelection,
 } from './LexicalTableSelection';
-import {$computeTableMap} from './LexicalTableUtils';
+import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -735,33 +735,23 @@ export function applyTableHandlers(
           const isBackward = selection.isBackward();
 
           if (isPartialyWithinTable) {
+            const newSelection = selection.clone();
             if (isFocusInside) {
               const [tableMap] = $computeTableMap(
                 tableNode,
                 focusCellNode,
                 focusCellNode,
               );
-              const firstCellNode = tableMap[0][0].cell;
-              const lastCellNode = tableMap[tableMap.length - 1].at(-1)!.cell;
-              if ($isRootNode(anchorNode)) {
-                const tableSelection = $createTableSelection();
-                tableSelection.set(
-                  tableNode.getKey(),
-                  firstCellNode.getKey(),
-                  lastCellNode.getKey(),
-                );
-                $setSelection(tableSelection);
-              } else {
-                const newSelection = selection.clone();
-                newSelection.focus.set(
-                  (isBackward ? firstCellNode : lastCellNode).getKey(),
-                  isBackward ? 0 : lastCellNode.getChildrenSize(),
-                  'element',
-                );
-                $setSelection(newSelection);
-              }
+              const firstCell = tableMap[0][0].cell;
+              const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+              newSelection.focus.set(
+                isBackward ? firstCell.getKey() : lastCell.getKey(),
+                isBackward
+                  ? firstCell.getChildrenSize()
+                  : lastCell.getChildrenSize(),
+                'element',
+              );
             } else {
-              const newSelection = selection.clone();
               newSelection.anchor.set(
                 tableNode.getParentOrThrow().getKey(),
                 isBackward
@@ -769,8 +759,8 @@ export function applyTableHandlers(
                   : tableNode.getIndexWithinParent(),
                 'element',
               );
-              $setSelection(newSelection);
             }
+            $setSelection(newSelection);
             $addHighlightStyleToTable(editor, tableObserver);
           } else if (isWithinTable) {
             // Handle case when selection spans across multiple cells but still
@@ -1324,37 +1314,112 @@ function $handleArrowKey(
   const selection = $getSelection();
 
   if (!$isSelectionInTable(selection, tableNode)) {
-    if (
-      direction === 'backward' &&
-      $isRangeSelection(selection) &&
-      selection.isCollapsed()
-    ) {
-      const anchorType = selection.anchor.type;
-      const anchorOffset = selection.anchor.offset;
-      if (
-        anchorType !== 'element' &&
-        !(anchorType === 'text' && anchorOffset === 0)
+    if ($isRangeSelection(selection)) {
+      if (selection.isCollapsed() && direction === 'backward') {
+        const anchorType = selection.anchor.type;
+        const anchorOffset = selection.anchor.offset;
+        if (
+          anchorType !== 'element' &&
+          !(anchorType === 'text' && anchorOffset === 0)
+        ) {
+          return false;
+        }
+        const anchorNode = selection.anchor.getNode();
+        if (!anchorNode) {
+          return false;
+        }
+        const parentNode = $findMatchingParent(
+          anchorNode,
+          (n) => $isElementNode(n) && !n.isInline(),
+        );
+        if (!parentNode) {
+          return false;
+        }
+        const siblingNode = parentNode.getPreviousSibling();
+        if (!siblingNode || !$isTableNode(siblingNode)) {
+          return false;
+        }
+        stopEvent(event);
+        siblingNode.selectEnd();
+        return true;
+      } else if (
+        event.shiftKey &&
+        (direction === 'up' || direction === 'down')
       ) {
-        return false;
+        const anchorNode = selection.anchor.getNode();
+        if ($isRootOrShadowRoot(anchorNode)) {
+          const selectedNode = selection.getNodes()[0];
+          if (selectedNode) {
+            const tableCellNode = $findMatchingParent(
+              selectedNode,
+              $isTableCellNode,
+            );
+            if (tableCellNode && tableNode.isParentOf(tableCellNode)) {
+              const firstDescendant = tableNode.getFirstDescendant();
+              const lastDescendant = tableNode.getLastDescendant();
+              if (!firstDescendant || !lastDescendant) {
+                return false;
+              }
+              const [firstCellNode] = $getNodeTriplet(firstDescendant);
+              const [lastCellNode] = $getNodeTriplet(lastDescendant);
+              const firstCellCoords = tableNode.getCordsFromCellNode(
+                firstCellNode,
+                tableObserver.table,
+              );
+              const lastCellCoords = tableNode.getCordsFromCellNode(
+                lastCellNode,
+                tableObserver.table,
+              );
+              const firstCellDOM = tableNode.getDOMCellFromCordsOrThrow(
+                firstCellCoords.x,
+                firstCellCoords.y,
+                tableObserver.table,
+              );
+              const lastCellDOM = tableNode.getDOMCellFromCordsOrThrow(
+                lastCellCoords.x,
+                lastCellCoords.y,
+                tableObserver.table,
+              );
+              tableObserver.setAnchorCellForSelection(firstCellDOM);
+              tableObserver.setFocusCellForSelection(lastCellDOM, true);
+              return true;
+            }
+          }
+          return false;
+        } else {
+          const anchorParentNode = $findMatchingParent(
+            anchorNode,
+            (n) => $isElementNode(n) && !n.isInline(),
+          );
+          if (!anchorParentNode) {
+            return false;
+          }
+          const sibling =
+            direction === 'down'
+              ? anchorParentNode.getNextSibling()
+              : anchorParentNode.getPreviousSibling();
+          if (
+            $isTableNode(sibling) &&
+            tableObserver.tableNodeKey === sibling.getKey()
+          ) {
+            const firstDescendant = sibling.getFirstDescendant();
+            const lastDescendant = sibling.getLastDescendant();
+            if (!firstDescendant || !lastDescendant) {
+              return false;
+            }
+            const [firstCellNode] = $getNodeTriplet(firstDescendant);
+            const [lastCellNode] = $getNodeTriplet(lastDescendant);
+            const newSelection = selection.clone();
+            newSelection.focus.set(
+              (direction === 'up' ? firstCellNode : lastCellNode).getKey(),
+              direction === 'up' ? 0 : lastCellNode.getChildrenSize(),
+              'element',
+            );
+            $setSelection(newSelection);
+            return true;
+          }
+        }
       }
-      const anchorNode = selection.anchor.getNode();
-      if (!anchorNode) {
-        return false;
-      }
-      const parentNode = $findMatchingParent(
-        anchorNode,
-        (n) => $isElementNode(n) && !n.isInline(),
-      );
-      if (!parentNode) {
-        return false;
-      }
-      const siblingNode = parentNode.getPreviousSibling();
-      if (!siblingNode || !$isTableNode(siblingNode)) {
-        return false;
-      }
-      stopEvent(event);
-      siblingNode.selectEnd();
-      return true;
     }
     return false;
   }

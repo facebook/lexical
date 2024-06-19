@@ -9,11 +9,14 @@
 import {
   deleteBackward,
   deleteForward,
+  moveDown,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
+  moveToEditorEnd,
   moveToLineBeginning,
   moveToPrevWord,
+  moveUp,
   pressShiftEnter,
   selectAll,
   selectPrevWord,
@@ -766,10 +769,54 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
     await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: browserName === 'firefox' ? 1 : 0,
+      focusPath: browserName === 'firefox' ? [1, 1, 1] : [2],
+    });
+  });
+
+  test('shift+arrowup into a table selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: browserName === 'firefox' ? 1 : 0,
+      anchorPath: browserName === 'firefox' ? [1, 1, 1] : [2],
+      focusOffset: 0,
+      focusPath: [0],
+    });
+  });
+
+  test('shift+arrowdown into a table, when the table is the last node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
     await moveToEditorBeginning(page);
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowDown');
@@ -782,7 +829,7 @@ test.describe.parallel('Selection', () => {
     });
   });
 
-  test('shift+arrowdown into a table, when the table is the first node, selects the whole table', async ({
+  test('shift+arrowup into a table, when the table is the first node, selects the whole table', async ({
     page,
     isPlainText,
     isCollab,
@@ -790,11 +837,70 @@ test.describe.parallel('Selection', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await insertTable(page, 2, 2);
-    await page.keyboard.down('ArrowUp');
+    await moveToEditorBeginning(page);
     await deleteBackward(page);
-    await page.keyboard.down('ArrowUp');
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1],
+      focusOffset: 1,
+      focusPath: [0, 0, 0],
+    });
+  });
+
+  test('shift+arrowdown into a table, when the table is the only node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveToEditorBeginning(page);
+    await moveUp(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [],
+      focusOffset: 0,
+      focusPath: [],
+    });
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 1, y: 1},
+    });
+  });
+
+  test('shift+arrowup into a table, when the table is the only node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveDown(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [],
+      focusOffset: 1,
+      focusPath: [],
+    });
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
     await page.keyboard.up('Shift');
     await assertTableSelectionCoordinates(page, {
       anchor: {x: 0, y: 0},

@@ -781,8 +781,8 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
-      focusOffset: browserName === 'firefox' ? 1 : 0,
-      focusPath: browserName === 'firefox' ? [1, 1, 1] : [2],
+      focusOffset: 0,
+      focusPath: [2],
     });
   });
 
@@ -800,8 +800,8 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.up('Shift');
     await assertSelection(page, {
-      anchorOffset: browserName === 'firefox' ? 1 : 0,
-      anchorPath: browserName === 'firefox' ? [1, 1, 1] : [2],
+      anchorOffset: 0,
+      anchorPath: [2],
       focusOffset: 0,
       focusPath: [0],
     });

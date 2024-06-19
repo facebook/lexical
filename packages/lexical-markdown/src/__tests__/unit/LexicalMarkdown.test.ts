@@ -187,6 +187,15 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
+      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
+      md: '```javascript\nCode\n```',
+    },
+    {
+      // Should always preserve language in md but keep data-highlight-language only for supported languages
+      html: '<pre spellcheck="false" data-language="unknown"><span style="white-space: pre-wrap;">Code</span></pre>',
+      md: '```unknown\nCode\n```',
+    },
+    {
       // Import only: prefix tabs will be removed for export
       html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '\t```\nCode\n```',

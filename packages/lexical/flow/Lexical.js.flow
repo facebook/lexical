@@ -62,6 +62,21 @@ declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**
+ * LexicalConstnats
+ */
+
+declare export var IS_ALL_FORMATTING: number;
+declare export var IS_BOLD: number;
+declare export var IS_CODE: number;
+declare export var IS_HIGHLIGHT: number;
+declare export var IS_ITALIC: number;
+declare export var IS_STRIKETHROUGH: number;
+declare export var IS_SUBSCRIPT: number;
+declare export var IS_SUPERSCRIPT: number;
+declare export var IS_UNDERLIN: number;
+declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
+
+/**
  * LexicalEditor
  */
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -807,6 +822,7 @@ declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
 declare export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null;
+declare export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N;
 declare export function $getRoot(): RootNode;
 declare export function $isLeafNode<T = mixed>(
   node: ?LexicalNode,
@@ -820,6 +836,7 @@ declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
+declare export function resetRandomKey(): void;
 declare export function generateRandomKey(): string;
 declare export function $isInlineElementOrDecoratorNode<T = mixed>(
   node: LexicalNode,

@@ -352,7 +352,8 @@ function reconcileParagraphFormat(element: ElementNode): void {
   if (
     $isParagraphNode(element) &&
     subTreeTextFormat != null &&
-    subTreeTextFormat !== element.__textFormat
+    subTreeTextFormat !== element.__textFormat &&
+    !activeEditorStateReadOnly
   ) {
     element.setTextFormat(subTreeTextFormat);
   }

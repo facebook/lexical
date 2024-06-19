@@ -22,6 +22,7 @@ import {
   html,
   initialize,
   pasteFromClipboard,
+  pressInsertLinkButton,
   test,
 } from '../utils/index.mjs';
 
@@ -376,6 +377,199 @@ test.describe('Auto Links', () => {
           <span style="font-size: 19px;" data-lexical-text="true">
             and more
           </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert URLs into links', async ({page, isPlainText}) => {
+    const testUrls = [
+      // Basic URLs
+      'http://example.com', // Standard HTTP URL
+      'https://example.com', // Standard HTTPS URL
+      'http://www.example.com', // HTTP URL with www
+      'https://www.example.com', // HTTPS URL with www
+      'www.example.com', // Missing HTTPS Protocol
+
+      // With Different TLDs
+      'http://example.org', // URL with .org TLD
+      'https://example.net', // URL with .net TLD
+      'http://example.co.uk', // URL with country code TLD
+      'https://example.xyz', // URL with generic TLD
+
+      // With Paths
+      'http://example.com/path/to/resource', // URL with path
+      'https://www.example.com/path/to/resource', // URL with www and path
+
+      // With Query Parameters
+      'http://example.com/path?name=value', // URL with query parameters
+      'https://www.example.com/path?name=value&another=value2', // URL with multiple query parameters
+
+      // With Fragments
+      'http://example.com/path#section', // URL with fragment
+      'https://www.example.com/path/to/resource#fragment', // URL with path and fragment
+
+      // With Port Numbers
+      'http://example.com:8080', // URL with port number
+      'https://www.example.com:443/path', // URL with port number and path
+
+      // IP Addresses
+      'http://192.168.0.1', // URL with IPv4 address
+      'https://127.0.0.1', // URL with localhost IPv4 address
+
+      // With Special Characters in Path and Query
+      'http://example.com/path/to/res+ource', // URL with plus in path
+      'https://example.com/path/to/res%20ource', // URL with encoded space in path
+      'http://example.com/path?name=va@lue', // URL with special character in query
+      'https://example.com/path?name=value&another=val%20ue', // URL with encoded space in query
+
+      // Subdomains and Uncommon TLDs
+      'http://subdomain.example.com', // URL with subdomain
+      'https://sub.subdomain.example.com', // URL with multiple subdomains
+      'http://example.museum', // URL with uncommon TLD
+      'https://example.travel', // URL with uncommon TLD
+
+      // Edge Cases
+      'http://foo.bar', // Minimal URL with uncommon TLD
+      'https://foo.bar', // HTTPS minimal URL with uncommon TLD
+    ];
+
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(testUrls.join(' ') + ' ');
+
+    let expectedHTML = '';
+    for (let url of testUrls) {
+      url = url.replaceAll(/&/g, '&amp;');
+      const rawUrl = url;
+
+      if (!url.startsWith('http')) {
+        url = `https://${url}`;
+      }
+
+      expectedHTML += `
+          <a href="${url}" dir="ltr">
+            <span data-lexical-text="true">${rawUrl}</span>
+          </a>
+          <span data-lexical-text="true"></span>
+      `;
+    }
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">${expectedHTML}</p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Can not convert bad URLs into links`, async ({page, isPlainText}) => {
+    const testUrls = [
+      // Missing Protocol
+      'example.com', // Missing HTTPS and www
+
+      // Invalid Protocol
+      'htp://example.com', // Typo in protocol
+      'htps://example.com', // Typo in protocol
+
+      // Invalid TLDs
+      'http://example.abcdefg', // TLD too long
+
+      // Spaces and Invalid Characters
+      'http://exa mple.com', // Space in domain
+      'https://example .com', // Space in domain
+      'http://example!.com', // Invalid character in domain
+
+      // Missing Domain
+      'http://.com', // Missing domain name
+      'https://.org', // Missing domain name
+
+      // Incomplete URLs
+      'http://', // Incomplete URL
+      'https://', // Incomplete URL
+
+      // Just Text
+      'not_a_url', // Plain text
+      'this is not a url', // Sentence
+      'example', // Single word
+      'ftp://example.com', // Unsupported protocol (assuming only HTTP/HTTPS is supported)
+    ];
+
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(testUrls.join(' '));
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">${testUrls.join(' ')}</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can unlink the autolink and then make it link again', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello http://www.example.com test');
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a href="http://www.example.com" dir="ltr">
+            <span data-lexical-text="true">http://www.example.com</span>
+          </a>
+          <span data-lexical-text="true">test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://www.example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <span class="PlaygroundEditorTheme__ltr" dir="ltr">
+            <span data-lexical-text="true">http://www.example.com</span>
+          </span>
+          <span data-lexical-text="true">test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await click(page, 'span:has-text("http://www.example.com")');
+
+    pressInsertLinkButton(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a href="http://www.example.com" dir="ltr">
+            <span data-lexical-text="true">http://www.example.com</span>
+          </a>
+          <span data-lexical-text="true">test</span>
         </p>
       `,
       undefined,

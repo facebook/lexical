@@ -1257,7 +1257,7 @@ function $removeHighlightFromDOM(
   element.style.removeProperty('caret-color');
 }
 
-function $findCellNode(node: LexicalNode): null | TableCellNode {
+export function $findCellNode(node: LexicalNode): null | TableCellNode {
   const cellNode = $findMatchingParent(node, $isTableCellNode);
   return $isTableCellNode(cellNode) ? cellNode : null;
 }

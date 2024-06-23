@@ -17,6 +17,7 @@ export type {
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
+  EditorUpdateOptions,
   HTMLConfig,
   Klass,
   KlassConstructor,

@@ -35,12 +35,18 @@ export type LinkAttributes = {
   title?: null | string;
 };
 
+export type AutoLinkAttributes = Partial<
+  Spread<LinkAttributes, {isUnlinked?: boolean}>
+>;
+
 export type SerializedLinkNode = Spread<
   {
     url: string;
   },
   Spread<LinkAttributes, SerializedElementNode>
 >;
+
+type LinkHTMLElementType = HTMLAnchorElement | HTMLSpanElement;
 
 const SUPPORTED_URL_PROTOCOLS = new Set([
   'http:',
@@ -82,7 +88,7 @@ export class LinkNode extends ElementNode {
     this.__title = title;
   }
 
-  createDOM(config: EditorConfig): HTMLAnchorElement {
+  createDOM(config: EditorConfig): LinkHTMLElementType {
     const element = document.createElement('a');
     element.href = this.sanitizeUrl(this.__url);
     if (this.__target !== null) {
@@ -100,38 +106,40 @@ export class LinkNode extends ElementNode {
 
   updateDOM(
     prevNode: LinkNode,
-    anchor: HTMLAnchorElement,
+    anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
-    const url = this.__url;
-    const target = this.__target;
-    const rel = this.__rel;
-    const title = this.__title;
-    if (url !== prevNode.__url) {
-      anchor.href = url;
-    }
-
-    if (target !== prevNode.__target) {
-      if (target) {
-        anchor.target = target;
-      } else {
-        anchor.removeAttribute('target');
+    if (anchor instanceof HTMLAnchorElement) {
+      const url = this.__url;
+      const target = this.__target;
+      const rel = this.__rel;
+      const title = this.__title;
+      if (url !== prevNode.__url) {
+        anchor.href = url;
       }
-    }
 
-    if (rel !== prevNode.__rel) {
-      if (rel) {
-        anchor.rel = rel;
-      } else {
-        anchor.removeAttribute('rel');
+      if (target !== prevNode.__target) {
+        if (target) {
+          anchor.target = target;
+        } else {
+          anchor.removeAttribute('target');
+        }
       }
-    }
 
-    if (title !== prevNode.__title) {
-      if (title) {
-        anchor.title = title;
-      } else {
-        anchor.removeAttribute('title');
+      if (rel !== prevNode.__rel) {
+        if (rel) {
+          anchor.rel = rel;
+        } else {
+          anchor.removeAttribute('rel');
+        }
+      }
+
+      if (title !== prevNode.__title) {
+        if (title) {
+          anchor.title = title;
+        } else {
+          anchor.removeAttribute('title');
+        }
       }
     }
     return false;
@@ -309,11 +317,28 @@ export function $isLinkNode(
   return node instanceof LinkNode;
 }
 
-export type SerializedAutoLinkNode = SerializedLinkNode;
+export type SerializedAutoLinkNode = Spread<
+  {
+    isUnlinked: boolean;
+  },
+  SerializedLinkNode
+>;
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
 export class AutoLinkNode extends LinkNode {
+  /** @internal */
+  /** Indicates whether the autolink was ever unlinked. **/
+  __isUnlinked: boolean;
+
+  constructor(url: string, attributes: AutoLinkAttributes = {}, key?: NodeKey) {
+    super(url, attributes, key);
+    this.__isUnlinked =
+      attributes.isUnlinked !== undefined && attributes.isUnlinked !== null
+        ? attributes.isUnlinked
+        : false;
+  }
+
   static getType(): string {
     return 'autolink';
   }
@@ -321,13 +346,48 @@ export class AutoLinkNode extends LinkNode {
   static clone(node: AutoLinkNode): AutoLinkNode {
     return new AutoLinkNode(
       node.__url,
-      {rel: node.__rel, target: node.__target, title: node.__title},
+      {
+        isUnlinked: node.__isUnlinked,
+        rel: node.__rel,
+        target: node.__target,
+        title: node.__title,
+      },
       node.__key,
+    );
+  }
+
+  getIsUnlinked(): boolean {
+    return this.__isUnlinked;
+  }
+
+  setIsUnlinked(value: boolean) {
+    const self = this.getWritable();
+    self.__isUnlinked = value;
+    return self;
+  }
+
+  createDOM(config: EditorConfig): LinkHTMLElementType {
+    if (this.__isUnlinked) {
+      return document.createElement('span');
+    } else {
+      return super.createDOM(config);
+    }
+  }
+
+  updateDOM(
+    prevNode: AutoLinkNode,
+    anchor: LinkHTMLElementType,
+    config: EditorConfig,
+  ): boolean {
+    return (
+      super.updateDOM(prevNode, anchor, config) ||
+      prevNode.__isUnlinked !== this.__isUnlinked
     );
   }
 
   static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
     const node = $createAutoLinkNode(serializedNode.url, {
+      isUnlinked: serializedNode.isUnlinked,
       rel: serializedNode.rel,
       target: serializedNode.target,
       title: serializedNode.title,
@@ -346,6 +406,7 @@ export class AutoLinkNode extends LinkNode {
   exportJSON(): SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
+      isUnlinked: this.__isUnlinked,
       type: 'autolink',
       version: 1,
     };
@@ -361,6 +422,7 @@ export class AutoLinkNode extends LinkNode {
     );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
+        isUnlinked: this.__isUnlinked,
         rel: this.__rel,
         target: this.__target,
         title: this.__title,
@@ -381,7 +443,7 @@ export class AutoLinkNode extends LinkNode {
  */
 export function $createAutoLinkNode(
   url: string,
-  attributes?: LinkAttributes,
+  attributes?: AutoLinkAttributes,
 ): AutoLinkNode {
   return $applyNodeReplacement(new AutoLinkNode(url, attributes));
 }
@@ -425,7 +487,7 @@ export function $toggleLink(
     nodes.forEach((node) => {
       const parent = node.getParent();
 
-      if ($isLinkNode(parent)) {
+      if (!$isAutoLinkNode(parent) && $isLinkNode(parent)) {
         const children = parent.getChildren();
 
         for (let i = 0; i < children.length; i++) {

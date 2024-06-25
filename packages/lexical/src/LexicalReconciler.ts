@@ -333,11 +333,9 @@ function reconcileElementTerminatingLineBreak(
   if (prevLineBreak) {
     if (!nextLineBreak) {
       const removeElement = (fieldName: string) => {
-        // @ts-expect-error: internal field
         const element = dom[fieldName];
         if (element != null) {
           dom.removeChild(element);
-          // @ts-expect-error: internal field
           dom[fieldName] = null;
         }
       };

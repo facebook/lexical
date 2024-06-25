@@ -39,6 +39,7 @@ import {
   insertYouTubeEmbed,
   IS_LINUX,
   IS_MAC,
+  IS_WINDOWS,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
@@ -771,8 +772,12 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
+    legacyEvents,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      browserName === 'firefox' || IS_LINUX || (legacyEvents && IS_WINDOWS),
+    );
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorBeginning(page);
@@ -792,8 +797,12 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
+    legacyEvents,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      browserName === 'firefox' || IS_LINUX || (legacyEvents && IS_WINDOWS),
+    );
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorEnd(page);

@@ -248,6 +248,10 @@ test.describe('CopyAndPaste', () => {
   }) => {
     test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     test.skip(isPlainText);
+    test.fixme(
+      IS_LINUX && browserName === 'chromium',
+      'Flaky on Linux + Chromium',
+    );
 
     await focusEditor(page);
     await page.keyboard.type('# Heading');

@@ -10,7 +10,7 @@
     "export"
   ],
   "license": "MIT",
-  "version": "0.16.0",
+  "version": "0.16.1-nightly.20240626.0",
   "main": "LexicalFile.js",
   "types": "index.d.ts",
   "repository": {
@@ -38,6 +38,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.16.0"
+    "lexical": "0.16.1-nightly.20240626.0"
   }
 }

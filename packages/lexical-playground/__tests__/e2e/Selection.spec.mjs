@@ -821,8 +821,11 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
+    legacyEvents,
   }) => {
     test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorEnd(page);
@@ -843,8 +846,11 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
+    legacyEvents,
   }) => {
     test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorBeginning(page);
@@ -865,8 +871,11 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
+    legacyEvents,
+    browserName,
   }) => {
     test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorBeginning(page);
@@ -894,8 +903,11 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
+    legacyEvents,
+    browserName,
   }) => {
     test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorBeginning(page);

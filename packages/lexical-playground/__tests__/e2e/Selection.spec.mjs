@@ -618,8 +618,14 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
+    legacyEvents,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      legacyEvents && browserName === 'chromium' && IS_WINDOWS,
+      'Flaky on Windows + Chromium + legacy events',
+    );
 
     await focusEditor(page);
     await insertTable(page, 1, 2);

@@ -321,7 +321,9 @@ function wrapContinuousInlines(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if ($isBlockElementNode(node)) {
-      node.setFormat(textAlign);
+      if (textAlign) {
+        node.setFormat(textAlign);
+      }
       out.push(node);
     } else {
       continuousInlines.push(node);

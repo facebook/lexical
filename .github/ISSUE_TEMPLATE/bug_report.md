@@ -37,3 +37,10 @@ Link to code example:
 ## The current behavior
 
 ## The expected behavior
+
+## Impact of fix
+<!--
+    - How severe is this bug? How often does it happen? Is it causing an outage somewhere?
+    - Who would benefit from this fix? Any specific users, groups or companies?
+    - If possible include metrics. Approximately how many users would this fix benefit? 
+-->

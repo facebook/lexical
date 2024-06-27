@@ -397,6 +397,7 @@ export function parseEditorState(
 // function here
 
 export function readEditorState<V>(
+  editor: LexicalEditor | null,
   editorState: EditorState,
   callbackFn: () => V,
 ): V {
@@ -406,7 +407,7 @@ export function readEditorState<V>(
 
   activeEditorState = editorState;
   isReadOnlyMode = true;
-  activeEditor = null;
+  activeEditor = editor;
 
   try {
     return callbackFn();

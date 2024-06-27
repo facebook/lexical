@@ -82,6 +82,10 @@ export type EditorUpdateOptions = {
   discrete?: true;
 };
 
+export interface EditorReadOptions {
+  pending?: boolean;
+}
+
 export type EditorSetOptions = {
   tag?: string;
 };
@@ -1097,7 +1101,7 @@ export class LexicalEditor {
   /**
    * Parses a SerializedEditorState (usually produced by {@link EditorState.toJSON}) and returns
    * and EditorState object that can be, for example, passed to {@link LexicalEditor.setEditorState}. Typically,
-   * deserliazation from JSON stored in a database uses this method.
+   * deserialization from JSON stored in a database uses this method.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
@@ -1111,6 +1115,24 @@ export class LexicalEditor {
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
     return parseEditorState(serializedEditorState, this, updateFn);
+  }
+
+  /**
+   * Executes a read of the editor's state, with the
+   * editor context available (useful for exporting and read-only DOM
+   * operations). Much like update, but prevents any mutation of the
+   * editor's state.
+   * @param callbackFn - A function that has access to read-only editor state.
+   * @param options - A bag of options to control the behavior of the read.
+   * @param options.pending - Use the pending editorState. Use this only when
+   * it is necessary to read the state that has not yet been reconciled (this
+   * is the state that you would be working with from editor.update).
+   */
+  read<T>(callbackFn: () => T, options?: EditorReadOptions): T {
+    const editorState =
+      (options && options.pending && this._pendingEditorState) ||
+      this.getEditorState();
+    return editorState.read(callbackFn, {editor: this});
   }
 
   /**

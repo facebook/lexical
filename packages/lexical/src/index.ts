@@ -14,6 +14,7 @@ export type {
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
+  EditorReadOptions,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
@@ -30,7 +31,11 @@ export type {
   Spread,
   Transform,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {
+  EditorState,
+  EditorStateReadOptions,
+  SerializedEditorState,
+} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,

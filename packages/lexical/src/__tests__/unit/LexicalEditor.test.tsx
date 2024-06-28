@@ -22,6 +22,7 @@ import {
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getNodeByKey,
   $getRoot,
   $isTextNode,
@@ -132,6 +133,39 @@ describe('LexicalEditor tests', () => {
 
     return Promise.resolve().then();
   }
+
+  describe('read()', () => {
+    it('Can read the editor state', async () => {
+      init();
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
+      expect(editor.read(() => $getEditor())).toBe(editor);
+      editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('This works!');
+        root.append(paragraph);
+        paragraph.append(text);
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
+      expect(editor.read(() => $getRoot().getTextContent(), {})).toEqual('');
+      expect(
+        editor.read(() => $getRoot().getTextContent(), {pending: false}),
+      ).toEqual('');
+      expect(
+        editor.read(() => $getRoot().getTextContent(), {pending: true}),
+      ).toEqual('This works!');
+      await Promise.resolve().then();
+      editor.read(() => {
+        $getRoot();
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'This works!',
+      );
+      expect(
+        editor.read(() => $getRoot().getTextContent(), {pending: true}),
+      ).toEqual('This works!');
+    });
+  });
 
   it('Should create an editor with an initial editor state', async () => {
     const rootElement = document.createElement('div');

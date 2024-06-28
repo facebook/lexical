@@ -95,13 +95,16 @@ first call `node.getWritable()`, which will create a writable clone of a frozen 
 mean that any existing references (such as local variables) would refer to a stale version of the node, but
 having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
 
-> [!NOTE]
-> `editor.getEditorState().read()` and `editor.read()` will use the latest
-> reconciled `EditorState` (after any node transforms, DOM reconciliation,
-> etc. have already run). Any pending `editor.update` calls that were not
-> scheduled with `discrete: true` will not yet be visible unless you call
-> `editor.read(() => { /* callback */ }, { pending: true })`. When you are
-> in an `editor.update`, you will always see the pending state.
+:::tip
+
+`editor.getEditorState().read()` and `editor.read()` will use the latest
+reconciled `EditorState` (after any node transforms, DOM reconciliation,
+etc. have already run). Any pending `editor.update` calls that were not
+scheduled with `discrete: true` will not yet be visible unless you call
+`editor.read(() => { /* callback */ }, { pending: true })`. When you are
+in an `editor.update`, you will always see the pending state.
+
+:::
 
 ### DOM Reconciler
 

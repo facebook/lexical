@@ -62,11 +62,11 @@ Editor States are also fully serializable to JSON and can easily be serialized b
 ### Reading and Updating Editor State
 
 When you want to read and/or update the Lexical node tree, you must do it via `editor.update(() => {...})`. You may also do
-read-only operations with the editor state via `editor.getEditorState().read(() => {...})`. The closure passed to the update or read
-call is important, and must be synchronous. It's the only place where you have full "lexical" context of the active editor state,
-and providing you with access to the Editor State's node tree. We promote using the convention of using `$` prefixed functions
-(such as `$getRoot()`) to convey that these functions must be called in this context. Attempting to use them outside of a read
-or update will trigger a runtime error.
+read-only operations with the editor state via `editor.getEditorState().read(() => {...})` or `editor.read(() => {...})`.
+The closure passed to the update or read call is important, and must be synchronous. It's the only place where you have full
+"lexical" context of the active editor state, and providing you with access to the Editor State's node tree. We promote using
+the convention of using `$` prefixed functions (such as `$getRoot()`) to convey that these functions must be called in this
+context. Attempting to use them outside of a read or update will trigger a runtime error.
 
 For those familiar with React Hooks, you can think of these $functions as having similar functionality:
 | *Feature* | React Hooks | Lexical $functions |
@@ -79,7 +79,7 @@ For those familiar with React Hooks, you can think of these $functions as having
 
 Node Transforms and Command Listeners are called with an implicit `editor.update(() => {...})` context.
 
-It is permitted to do nest updates within reads and updates, but an update may not be nested in a read.
+It is permitted to do nested reads and updates, but an update should not be nested in a read.
 For example, `editor.update(() => editor.update(() => {...}))` is allowed.
 
 All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods
@@ -94,6 +94,14 @@ support efficient time travel (undo/redo and similar use cases). Methods that up
 first call `node.getWritable()`, which will create a writable clone of a frozen node. This would normally
 mean that any existing references (such as local variables) would refer to a stale version of the node, but
 having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
+
+> [!NOTE]
+> `editor.getEditorState().read()` and `editor.read()` will use the latest
+> reconciled `EditorState` (after any node transforms, DOM reconciliation,
+> etc. have already run). Any pending `editor.update` calls that were not
+> scheduled with `discrete: true` will not yet be visible unless you call
+> `editor.read(() => { /* callback */ }, { pending: true })`. When you are
+> in an `editor.update`, you will always see the pending state.
 
 ### DOM Reconciler
 

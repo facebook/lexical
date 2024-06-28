@@ -165,6 +165,45 @@ describe('LexicalEditor tests', () => {
         editor.read(() => $getRoot().getTextContent(), {pending: true}),
       ).toEqual('This works!');
     });
+
+    it('Can be nested in an update or read', async () => {
+      init();
+      editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('This works!');
+        root.append(paragraph);
+        paragraph.append(text);
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('');
+        });
+        editor.read(
+          () => {
+            expect($getRoot().getTextContent()).toBe('This works!');
+          },
+          {pending: true},
+        );
+        // This works, although it is discouraged in the documentation.
+        editor.read(() => {
+          editor.update(() => {
+            expect($getRoot().getTextContent()).toBe('This works!');
+          });
+          expect($getRoot().getTextContent()).toBe('');
+          editor.read(
+            () => {
+              expect($getRoot().getTextContent()).toBe('This works!');
+            },
+            {pending: true},
+          );
+        });
+      });
+      await Promise.resolve().then();
+      editor.read(() => {
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('This works!');
+        });
+      });
+    });
   });
 
   it('Should create an editor with an initial editor state', async () => {

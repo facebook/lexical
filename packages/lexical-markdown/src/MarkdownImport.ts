@@ -16,7 +16,9 @@ import type {
 import type {TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
+import {$createLinkNode} from '@lexical/link';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
+import {LINK} from '@lexical/markdown';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -126,7 +128,7 @@ function $importBlocks(
     }
   }
 
-  importTextFormatTransformers(
+  $importTextFormatTransformers(
     textNode,
     textFormatTransformersIndex,
     textMatchTransformers,
@@ -200,12 +202,46 @@ function $importCodeBlock(
 // E.g. for "*Hello **world**!*" string it will create text node with
 // "Hello **world**!" content and italic format and run recursively over
 // its content to transform "**world**" part
-function importTextFormatTransformers(
+function $importTextFormatTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
   const textContent = textNode.getTextContent();
+
+  // Look for links first.
+  const linkMatch = LINK.importRegExp.exec(textContent);
+  if (linkMatch) {
+    // If the link is the whole text node, then replace it and return.
+    // Else, split the match from previous and subsequent text nodes
+    // (if any) and recurse.
+    if (linkMatch.index === 0 && linkMatch[0].length === textContent.length) {
+      const [, linkText, linkUrl, linkTitle] = linkMatch;
+      const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
+      const linkTextNode = $createTextNode(linkText);
+      linkNode.append(linkTextNode);
+      textNode.replace(linkNode);
+      $importTextFormatTransformers(
+        linkTextNode,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+      );
+    } else {
+      const nodes = textNode.splitText(
+        linkMatch.index,
+        linkMatch.index + linkMatch[0].length,
+      );
+      for (const node of nodes) {
+        $importTextFormatTransformers(
+          node,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+        );
+      }
+    }
+    return;
+  }
+
   const match = findOutermostMatch(textContent, textFormatTransformersIndex);
 
   if (!match) {
@@ -249,7 +285,7 @@ function importTextFormatTransformers(
 
   // Recursively run over inner text if it's not inline code
   if (!currentNode.hasFormat('code')) {
-    importTextFormatTransformers(
+    $importTextFormatTransformers(
       currentNode,
       textFormatTransformersIndex,
       textMatchTransformers,
@@ -258,7 +294,7 @@ function importTextFormatTransformers(
 
   // Run over leading/remaining text if any
   if (leadingNode) {
-    importTextFormatTransformers(
+    $importTextFormatTransformers(
       leadingNode,
       textFormatTransformersIndex,
       textMatchTransformers,
@@ -266,7 +302,7 @@ function importTextFormatTransformers(
   }
 
   if (remainderNode) {
-    importTextFormatTransformers(
+    $importTextFormatTransformers(
       remainderNode,
       textFormatTransformersIndex,
       textMatchTransformers,

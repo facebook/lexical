@@ -102,7 +102,7 @@ function TableHoverActionsContainer({
           right: tableElemRight,
           bottom: tableElemBottom,
           height: tableElemHeight,
-        } = tableDOMElement.getBoundingClientRect();
+        } = (tableDOMElement as HTMLTableElement).getBoundingClientRect();
 
         const {y: editorElemY} = anchorElem.getBoundingClientRect();
 
@@ -167,16 +167,18 @@ function TableHoverActionsContainer({
 
   const insertAction = (insertRow: boolean) => {
     editor.update(() => {
-      const maybeTableCell = $getNearestNodeFromDOMNode(
-        tableDOMNodeRef.current,
-      );
-      maybeTableCell?.selectEnd();
-      if (insertRow) {
-        $insertTableRow__EXPERIMENTAL();
-        setShownRow(false);
-      } else {
-        $insertTableColumn__EXPERIMENTAL();
-        setShownColumn(false);
+      if (tableDOMNodeRef.current) {
+        const maybeTableNode = $getNearestNodeFromDOMNode(
+          tableDOMNodeRef.current,
+        );
+        maybeTableNode?.selectEnd();
+        if (insertRow) {
+          $insertTableRow__EXPERIMENTAL();
+          setShownRow(false);
+        } else {
+          $insertTableColumn__EXPERIMENTAL();
+          setShownColumn(false);
+        }
       }
     });
   };

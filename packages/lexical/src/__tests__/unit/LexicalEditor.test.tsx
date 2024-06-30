@@ -23,8 +23,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getEditor,
+  $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
+  $isParagraphNode,
   $isTextNode,
   $parseSerializedNode,
   $setCompositionKey,
@@ -154,9 +156,38 @@ describe('LexicalEditor tests', () => {
       expect(
         editor.read(() => $getRoot().getTextContent(), {pending: true}),
       ).toEqual('This works!');
+      editor.read(() => {
+        const rootElement = editor.getRootElement();
+        expect(rootElement).toBeDefined();
+        const paragraphDom = rootElement!.querySelector('p');
+        // Not reconciled yet
+        expect(paragraphDom).toBeNull();
+        // The root never works for this call (is that a bug?)
+        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
+      });
       await Promise.resolve().then();
       editor.read(() => {
-        $getRoot();
+        const rootElement = editor.getRootElement();
+        expect(rootElement).toBeDefined();
+        // The root never works for this call
+        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
+        const paragraphDom = rootElement!.querySelector('p');
+        expect(paragraphDom).toBeDefined();
+        expect(
+          $isParagraphNode($getNearestNodeFromDOMNode(paragraphDom!)),
+        ).toBe(true);
+        expect(
+          $getNearestNodeFromDOMNode(paragraphDom!)!.getTextContent(),
+        ).toBe('This works!');
+        const textDom = paragraphDom!.querySelector('span');
+        expect(textDom).toBeDefined();
+        expect($isTextNode($getNearestNodeFromDOMNode(textDom!))).toBe(true);
+        expect($getNearestNodeFromDOMNode(textDom!)!.getTextContent()).toBe(
+          'This works!',
+        );
+        expect(
+          $getNearestNodeFromDOMNode(textDom!.firstChild!)!.getTextContent(),
+        ).toBe('This works!');
       });
       expect(editor.read(() => $getRoot().getTextContent())).toEqual(
         'This works!',
@@ -183,12 +214,14 @@ describe('LexicalEditor tests', () => {
           },
           {pending: true},
         );
-        // This works, although it is discouraged in the documentation.
         editor.read(() => {
+          // Nesting update in read works, although it is discouraged in the documentation.
           editor.update(() => {
             expect($getRoot().getTextContent()).toBe('This works!');
           });
+          // The state still has not yet been reconciled
           expect($getRoot().getTextContent()).toBe('');
+          // The pending state can be read
           editor.read(
             () => {
               expect($getRoot().getTextContent()).toBe('This works!');

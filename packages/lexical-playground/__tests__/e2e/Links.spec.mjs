@@ -1435,7 +1435,8 @@ test.describe.parallel('Links', () => {
   test('Can edit link with collapsed selection', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('A link');
-    await selectAll(page);
+    await moveToLineBeginning(page);
+    await selectCharacters(page, 'right', 6);
 
     await click(page, '.link');
     await click(page, '.link-confirm');
@@ -1454,8 +1455,6 @@ test.describe.parallel('Links', () => {
     </a>
   </p>`,
     );
-
-    await moveToLineBeginning(page);
     await setURL(page, 'facebook.com');
 
     await assertHTML(

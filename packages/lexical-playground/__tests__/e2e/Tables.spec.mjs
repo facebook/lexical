@@ -35,6 +35,7 @@ import {
   insertTableRowBelow,
   IS_COLLAB,
   IS_LINUX,
+  IS_WINDOWS,
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
@@ -308,11 +309,16 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
     browserName,
+    legacyEvents,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
     // Table edge cursor doesn't show up in Firefox.
     test.fixme(browserName === 'firefox');
+    test.fixme(
+      legacyEvents && browserName === 'chromium' && IS_WINDOWS,
+      'Flaky on Windows + Chromium + legacy events',
+    );
 
     await focusEditor(page);
     await insertTable(page, 2, 2);

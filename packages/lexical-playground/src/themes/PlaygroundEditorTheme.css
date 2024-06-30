@@ -183,11 +183,8 @@
 }
 .PlaygroundEditorTheme__tableAddColumns {
   position: absolute;
-  top: 0;
-  width: 20px;
   background-color: #eee;
   height: 100%;
-  right: -25px;
   animation: table-controls 0.2s ease;
   border: 0;
   cursor: pointer;
@@ -212,11 +209,8 @@
 }
 .PlaygroundEditorTheme__tableAddRows {
   position: absolute;
-  bottom: -25px;
   width: calc(100% - 25px);
   background-color: #eee;
-  height: 20px;
-  left: 0;
   animation: table-controls 0.2s ease;
   border: 0;
   cursor: pointer;

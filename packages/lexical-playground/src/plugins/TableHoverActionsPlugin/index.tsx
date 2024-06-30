@@ -14,6 +14,7 @@ import {
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableNode,
+  TableCellNode,
   TableNode,
   TableRowNode,
 } from '@lexical/table';
@@ -25,7 +26,6 @@ import {createPortal} from 'react-dom';
 
 import {useDebounce} from '../CodeActionMenuPlugin/utils';
 
-const BUTTON_SPACE_PX = 25;
 const BUTTON_WIDTH_PX = 20;
 
 function TableHoverActionsContainer({
@@ -44,7 +44,13 @@ function TableHoverActionsContainer({
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
-      const {tableDOMNode} = getMouseInfo(event);
+      const {isOutside, tableDOMNode} = getMouseInfo(event);
+
+      if (isOutside) {
+        setShownRow(false);
+        setShownColumn(false);
+        return;
+      }
 
       if (!tableDOMNode) {
         return;
@@ -52,9 +58,10 @@ function TableHoverActionsContainer({
 
       tableDOMNodeRef.current = tableDOMNode;
 
-      let hoveredRowNode: TableNode | null = null;
-      let hoveredColumnNode: TableNode | null = null;
-      let tableDOMElement;
+      let hoveredRowNode: TableCellNode | null = null;
+      let hoveredColumnNode: TableCellNode | null = null;
+      let tableDOMElement: HTMLElement | null = null;
+
       editor.update(() => {
         const maybeTableCell = $getNearestNodeFromDOMNode(tableDOMNode);
 
@@ -63,11 +70,9 @@ function TableHoverActionsContainer({
             $isTableNode(node),
           );
           if (!table) {
-            setShownRow(false);
-            setShownColumn(false);
-            hoveredRowNode = null;
             return;
           }
+
           tableDOMElement = editor.getElementByKey(table?.getKey());
 
           if (tableDOMElement) {
@@ -80,63 +85,44 @@ function TableHoverActionsContainer({
             const colIndex =
               $getTableColumnIndexFromTableCellNode(maybeTableCell);
 
-            const {clientX} = event;
-            let isOverAddColumnButton = false;
-            const {width: editorElemWidth, x: editorElemX} =
-              tableDOMElement.getBoundingClientRect();
-            isOverAddColumnButton =
-              clientX >= editorElemX + editorElemWidth - BUTTON_SPACE_PX &&
-              clientX <= editorElemX + editorElemWidth + BUTTON_SPACE_PX;
-            //
             if (rowIndex === rowCount - 1) {
               hoveredRowNode = maybeTableCell;
             } else if (colIndex === colCount - 1) {
               hoveredColumnNode = maybeTableCell;
-            } else if (isOverAddColumnButton) {
-              hoveredColumnNode = maybeTableCell;
-            } else {
-              setShownRow(false);
-              setShownColumn(false);
-              hoveredRowNode = null;
             }
-          } else {
-            setShownRow(false);
-            setShownColumn(false);
-            hoveredRowNode = null;
           }
-        } else {
-          setShownRow(false);
-          setShownColumn(false);
-          hoveredRowNode = null;
         }
       });
-      const {
-        width: tableElemWidth,
-        y: tableElemY,
-        x: tableElemX,
-        right: tableElemRight,
-        bottom: tableElemBottom,
-        height: tableElemHeight,
-      } = tableDOMElement.getBoundingClientRect();
 
-      const {y: editorElemY} = anchorElem.getBoundingClientRect();
-
-      if (hoveredRowNode) {
-        setShownRow(true);
-        setPosition({
-          height: BUTTON_WIDTH_PX,
-          left: tableElemX,
-          top: tableElemBottom - editorElemY + 5,
+      if (tableDOMElement) {
+        const {
           width: tableElemWidth,
-        });
-      } else if (hoveredColumnNode) {
-        setShownColumn(true);
-        setPosition({
+          y: tableElemY,
+          x: tableElemX,
+          right: tableElemRight,
+          bottom: tableElemBottom,
           height: tableElemHeight,
-          left: tableElemRight + 5,
-          top: tableElemY - editorElemY,
-          width: BUTTON_WIDTH_PX,
-        });
+        } = tableDOMElement.getBoundingClientRect();
+
+        const {y: editorElemY} = anchorElem.getBoundingClientRect();
+
+        if (hoveredRowNode) {
+          setShownRow(true);
+          setPosition({
+            height: BUTTON_WIDTH_PX,
+            left: tableElemX,
+            top: tableElemBottom - editorElemY + 5,
+            width: tableElemWidth,
+          });
+        } else if (hoveredColumnNode) {
+          setShownColumn(true);
+          setPosition({
+            height: tableElemHeight,
+            left: tableElemRight + 5,
+            top: tableElemY - editorElemY,
+            width: BUTTON_WIDTH_PX,
+          });
+        }
       }
     },
     50,
@@ -217,6 +203,7 @@ function TableHoverActionsContainer({
 
 function getMouseInfo(event: MouseEvent): {
   tableDOMNode: HTMLElement | null;
+  isOutside: boolean;
 } {
   const target = event.target;
 
@@ -224,9 +211,21 @@ function getMouseInfo(event: MouseEvent): {
     const tableDOMNode = target.closest<HTMLElement>(
       'td.PlaygroundEditorTheme__tableCell, th.PlaygroundEditorTheme__tableCell',
     );
-    return {tableDOMNode};
+
+    const isOutside = !(
+      tableDOMNode ||
+      target.closest<HTMLElement>(
+        'button.PlaygroundEditorTheme__tableAddRows',
+      ) ||
+      target.closest<HTMLElement>(
+        'button.PlaygroundEditorTheme__tableAddColumns',
+      ) ||
+      target.closest<HTMLElement>('div.TableCellResizer__resizer')
+    );
+
+    return {isOutside, tableDOMNode};
   } else {
-    return {tableDOMNode: null};
+    return {isOutside: true, tableDOMNode: null};
   }
 }
 

@@ -13,8 +13,10 @@ import {
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
-$isTableNode, TableNode,
-  TableRowNode} from '@lexical/table';
+  $isTableNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -23,105 +25,119 @@ import {createPortal} from 'react-dom';
 
 import {useDebounce} from '../CodeActionMenuPlugin/utils';
 
+const BUTTON_SPACE_PX = 25;
+const BUTTON_WIDTH_PX = 20;
+
 function TableHoverActionsContainer({
   anchorElem,
 }: {
   anchorElem: HTMLElement;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-
   const [isShownRow, setShownRow] = useState<boolean>(false);
   const [isShownColumn, setShownColumn] = useState<boolean>(false);
   const [shouldListenMouseMove, setShouldListenMouseMove] =
     useState<boolean>(false);
   const [position, setPosition] = useState({});
   const codeSetRef = useRef<Set<string>>(new Set());
-  const codeDOMNodeRef = useRef<HTMLElement | null>(null);
+  const tableDOMNodeRef = useRef<HTMLElement | null>(null);
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
-      const {codeDOMNode, isOutside} = getMouseInfo(event);
-      if (isOutside) {
-        setShownRow(false);
-        setShownColumn(false);
+      const {tableDOMNode} = getMouseInfo(event);
+
+      if (!tableDOMNode) {
         return;
       }
 
-      if (!codeDOMNode) {
-        return;
-      }
-
-      codeDOMNodeRef.current = codeDOMNode;
+      tableDOMNodeRef.current = tableDOMNode;
 
       let hoveredRowNode: TableNode | null = null;
       let hoveredColumnNode: TableNode | null = null;
       let tableDOMElement;
       editor.update(() => {
-        const maybeTableCell = $getNearestNodeFromDOMNode(codeDOMNode);
+        const maybeTableCell = $getNearestNodeFromDOMNode(tableDOMNode);
 
         if ($isTableCellNode(maybeTableCell)) {
           const table = $findMatchingParent(maybeTableCell, (node) =>
             $isTableNode(node),
           );
           if (!table) {
+            setShownRow(false);
+            setShownColumn(false);
+            hoveredRowNode = null;
             return;
           }
           tableDOMElement = editor.getElementByKey(table?.getKey());
 
-          const rowCount = (table as TableNode).getChildrenSize();
-          const colCount = (
-            (table as TableNode).getChildAtIndex(0) as TableRowNode
-          )?.getChildrenSize();
+          if (tableDOMElement) {
+            const rowCount = (table as TableNode).getChildrenSize();
+            const colCount = (
+              (table as TableNode).getChildAtIndex(0) as TableRowNode
+            )?.getChildrenSize();
 
-          const rowIndex = $getTableRowIndexFromTableCellNode(maybeTableCell);
-          const colIndex =
-            $getTableColumnIndexFromTableCellNode(maybeTableCell);
+            const rowIndex = $getTableRowIndexFromTableCellNode(maybeTableCell);
+            const colIndex =
+              $getTableColumnIndexFromTableCellNode(maybeTableCell);
 
-          if (rowIndex === rowCount - 1) {
-            hoveredRowNode = maybeTableCell;
-          } else if (colIndex === colCount - 1) {
-            hoveredColumnNode = maybeTableCell;
+            const {clientX} = event;
+            let isOverAddColumnButton = false;
+            const {width: editorElemWidth, x: editorElemX} =
+              tableDOMElement.getBoundingClientRect();
+            isOverAddColumnButton =
+              clientX >= editorElemX + editorElemWidth - BUTTON_SPACE_PX &&
+              clientX <= editorElemX + editorElemWidth + BUTTON_SPACE_PX;
+            //
+            if (rowIndex === rowCount - 1) {
+              hoveredRowNode = maybeTableCell;
+            } else if (colIndex === colCount - 1) {
+              hoveredColumnNode = maybeTableCell;
+            } else if (isOverAddColumnButton) {
+              hoveredColumnNode = maybeTableCell;
+            } else {
+              setShownRow(false);
+              setShownColumn(false);
+              hoveredRowNode = null;
+            }
           } else {
             setShownRow(false);
             setShownColumn(false);
             hoveredRowNode = null;
           }
+        } else {
+          setShownRow(false);
+          setShownColumn(false);
+          hoveredRowNode = null;
         }
       });
-
       const {
-        width: editorElemWidth,
-        y: editorElemY,
-        x: editorElemX,
-        right: editorElemRight,
-        bottom: editorElemBottom,
-        height: editorElemHeight,
+        width: tableElemWidth,
+        y: tableElemY,
+        x: tableElemX,
+        right: tableElemRight,
+        bottom: tableElemBottom,
+        height: tableElemHeight,
       } = tableDOMElement.getBoundingClientRect();
+
+      const {y: editorElemY} = anchorElem.getBoundingClientRect();
+
       if (hoveredRowNode) {
         setShownRow(true);
         setPosition({
-          left: editorElemX,
-          top: editorElemBottom + 5,
-          width: editorElemWidth,
+          height: BUTTON_WIDTH_PX,
+          left: tableElemX,
+          top: tableElemBottom - editorElemY + 5,
+          width: tableElemWidth,
         });
       } else if (hoveredColumnNode) {
         setShownColumn(true);
         setPosition({
-          height: editorElemHeight,
-          left: editorElemRight + 5,
-          top: editorElemY,
+          height: tableElemHeight,
+          left: tableElemRight + 5,
+          top: tableElemY - editorElemY,
+          width: BUTTON_WIDTH_PX,
         });
       }
-
-      // const {clientX, clientY} = event;
-      // const isOverAddColumnButton =
-      //   clientX > editorElemX + editorElemWidth &&
-      //   clientX < editorElemX + editorElemWidth + 25;
-      // const isOverAddRowButton =
-      //   clientY > editorElemY + editorElemHeight &&
-      //   clientY < editorElemY + editorElemHeight + 25;
-      // setShownColumn(isOverAddColumnButton);
-      // setShownRow(isOverAddRowButton);
     },
     50,
     250,
@@ -163,51 +179,54 @@ function TableHoverActionsContainer({
     });
   });
 
-  const insertActionRowOrColumn = (insertRow: boolean) => {
+  const insertAction = (insertRow: boolean) => {
     editor.update(() => {
+      const maybeTableCell = $getNearestNodeFromDOMNode(
+        tableDOMNodeRef.current,
+      );
+      maybeTableCell?.selectEnd();
       if (insertRow) {
         $insertTableRow__EXPERIMENTAL();
+        setShownRow(false);
       } else {
         $insertTableColumn__EXPERIMENTAL();
+        setShownColumn(false);
       }
     });
   };
 
   return (
     <>
-      {isShownRow || isShownColumn ? (
+      {isShownRow && (
         <button
-          className={
-            isShownRow
-              ? 'PlaygroundEditorTheme__tableAddRows'
-              : 'PlaygroundEditorTheme__tableAddColumns'
-          }
+          className={'PlaygroundEditorTheme__tableAddRows'}
           style={{...position}}
-          onClick={() => insertActionRowOrColumn(isShownRow)}
+          onClick={() => insertAction(true)}
         />
-      ) : null}
+      )}
+      {isShownColumn && (
+        <button
+          className={'PlaygroundEditorTheme__tableAddColumns'}
+          style={{...position}}
+          onClick={() => insertAction(false)}
+        />
+      )}
     </>
   );
 }
 
 function getMouseInfo(event: MouseEvent): {
-  codeDOMNode: HTMLElement | null;
-  isOutside: boolean;
+  tableDOMNode: HTMLElement | null;
 } {
   const target = event.target;
 
   if (target && target instanceof HTMLElement) {
-    const codeDOMNode = target.closest<HTMLElement>(
+    const tableDOMNode = target.closest<HTMLElement>(
       'td.PlaygroundEditorTheme__tableCell, th.PlaygroundEditorTheme__tableCell',
     );
-    const isOutside = !(
-      codeDOMNode ||
-      target.closest<HTMLElement>('div.code-action-menu-container')
-    );
-
-    return {codeDOMNode, isOutside};
+    return {tableDOMNode};
   } else {
-    return {codeDOMNode: null, isOutside: true};
+    return {tableDOMNode: null};
   }
 }
 

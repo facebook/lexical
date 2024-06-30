@@ -81,10 +81,14 @@ Get notified when a specific type of Lexical node has been mutated. There are th
 Mutation listeners are great for tracking the lifecycle of specific types of node. They can be used to
 handle external UI state and UI features relating to specific types of node.
 
+If any existing nodes are in the DOM, the listener will be called immediately with
+an updateTag of 'registerMutationListener' where all nodes have the 'created' NodeMutation.
+This behavior can be disabled with the skipInitialization option.
+
 ```js
 const removeMutationListener = editor.registerMutationListener(
   MyCustomNode,
-  (mutatedNodes) => {
+  (mutatedNodes, { updateTags, dirtyLeaves, prevEditorState }) => {
     // mutatedNodes is a Map where each key is the NodeKey, and the value is the state of mutation.
     for (let [nodeKey, mutation] of mutatedNodes) {
       console.log(nodeKey, mutation)

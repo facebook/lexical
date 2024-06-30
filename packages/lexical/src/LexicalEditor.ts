@@ -211,6 +211,14 @@ export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 
+export interface MutationListenerOptions {
+  /**
+   * Skip the initial call of the listener with pre-existing DOM nodes.
+   * Default is false.
+   */
+  skipInitialization?: boolean;
+}
+
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   dirtyLeaves: Set<NodeKey>;
@@ -825,13 +833,19 @@ export class LexicalEditor {
    * One common use case for this is to attach DOM event listeners to the underlying DOM nodes as Lexical nodes are created.
    * {@link LexicalEditor.getElementByKey} can be used for this.
    *
+   * If any existing nodes are in the DOM, the listener will be called immediately with
+   * an updateTag of 'registerMutationListener' where all nodes have the 'created' NodeMutation.
+   * This behavior can be disabled with the skipInitialization option.
+   *
    * @param klass - The class of the node that you want to listen to mutations on.
    * @param listener - The logic you want to run when the node is mutated.
+   * @param options - see {@link MutationListenerOptions}
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerMutationListener(
     klass: Klass<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void {
     let registeredNode = this._nodes.get(klass.getType());
 
@@ -862,10 +876,35 @@ export class LexicalEditor {
 
     const mutations = this._listeners.mutation;
     mutations.set(listener, klassToMutate);
+    if (!(options && options.skipInitialization)) {
+      this.initializeMutationListener(listener, klassToMutate);
+    }
 
     return () => {
       mutations.delete(listener);
     };
+  }
+
+  /** @internal */
+  private initializeMutationListener(
+    listener: MutationListener,
+    klass: Klass<LexicalNode>,
+  ): void {
+    const prevEditorState = this._editorState;
+    const nodeMutationMap = new Map<string, NodeMutation>();
+    const klassType = klass.getType();
+    for (const [key, node] of prevEditorState._nodeMap) {
+      if (node.__type === klassType) {
+        nodeMutationMap.set(key, 'created');
+      }
+    }
+    if (nodeMutationMap.size > 0) {
+      listener(nodeMutationMap, {
+        dirtyLeaves: new Set(),
+        prevEditorState,
+        updateTags: new Set(['registerMutationListener']),
+      });
+    }
   }
 
   /** @internal */

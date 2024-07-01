@@ -18,7 +18,7 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$findMatchingParent} from '@lexical/utils';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
@@ -69,14 +69,14 @@ function TableHoverActionsContainer({
           const table = $findMatchingParent(maybeTableCell, (node) =>
             $isTableNode(node),
           );
-          if (!table) {
+          if (!$isTableNode(table)) {
             return;
           }
 
           tableDOMElement = editor.getElementByKey(table?.getKey());
 
           if (tableDOMElement) {
-            const rowCount = (table as TableNode).getChildrenSize();
+            const rowCount = table.getChildrenSize();
             const colCount = (
               (table as TableNode).getChildAtIndex(0) as TableRowNode
             )?.getChildrenSize();
@@ -144,26 +144,30 @@ function TableHoverActionsContainer({
     };
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
-  editor.registerMutationListener(TableNode, (mutations) => {
-    editor.getEditorState().read(() => {
-      for (const [key, type] of mutations) {
-        switch (type) {
-          case 'created':
-            codeSetRef.current.add(key);
-            setShouldListenMouseMove(codeSetRef.current.size > 0);
-            break;
+  useEffect(() => {
+    return mergeRegister(
+      editor.registerMutationListener(TableNode, (mutations) => {
+        editor.getEditorState().read(() => {
+          for (const [key, type] of mutations) {
+            switch (type) {
+              case 'created':
+                codeSetRef.current.add(key);
+                setShouldListenMouseMove(codeSetRef.current.size > 0);
+                break;
 
-          case 'destroyed':
-            codeSetRef.current.delete(key);
-            setShouldListenMouseMove(codeSetRef.current.size > 0);
-            break;
+              case 'destroyed':
+                codeSetRef.current.delete(key);
+                setShouldListenMouseMove(codeSetRef.current.size > 0);
+                break;
 
-          default:
-            break;
-        }
-      }
-    });
-  });
+              default:
+                break;
+            }
+          }
+        });
+      }),
+    );
+  }, []);
 
   const insertAction = (insertRow: boolean) => {
     editor.update(() => {

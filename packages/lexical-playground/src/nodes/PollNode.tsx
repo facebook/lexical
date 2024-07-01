@@ -91,7 +91,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
       serializedNode.question,
       serializedNode.options,
     );
-    serializedNode.options.forEach((option) => node.addOption(option));
+    serializedNode.options.forEach(node.addOption);
     return node;
   }
 

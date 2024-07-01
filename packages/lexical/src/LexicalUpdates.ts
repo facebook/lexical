@@ -96,7 +96,7 @@ export function getActiveEditorState(): EditorState {
       'Unable to find an active editor state. ' +
         'State helpers or node methods can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editorState.read().',
+        'editor.update(), editor.read(), or editorState.read().',
     );
   }
 
@@ -110,7 +110,7 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update().',
+        'editor.update() or editor.read().',
     );
   }
 

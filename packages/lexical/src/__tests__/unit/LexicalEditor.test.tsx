@@ -116,7 +116,7 @@ describe('LexicalEditor tests', () => {
 
   let editor: LexicalEditor;
 
-  function init(onError?: () => void) {
+  function init(onError?: (error: Error) => void) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
@@ -138,34 +138,31 @@ describe('LexicalEditor tests', () => {
 
   describe('read()', () => {
     it('Can read the editor state', async () => {
-      init();
+      init(function onError(err) {
+        throw err;
+      });
       expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
       expect(editor.read(() => $getEditor())).toBe(editor);
-      editor.update(() => {
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
-        const text = $createTextNode('This works!');
-        root.append(paragraph);
-        paragraph.append(text);
-      });
-      expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
-      expect(editor.read(() => $getRoot().getTextContent(), {})).toEqual('');
-      expect(
-        editor.read(() => $getRoot().getTextContent(), {pending: false}),
-      ).toEqual('');
-      expect(
-        editor.read(() => $getRoot().getTextContent(), {pending: true}),
-      ).toEqual('This works!');
-      editor.read(() => {
-        const rootElement = editor.getRootElement();
-        expect(rootElement).toBeDefined();
-        const paragraphDom = rootElement!.querySelector('p');
-        // Not reconciled yet
-        expect(paragraphDom).toBeNull();
-        // The root never works for this call (is that a bug?)
-        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
-      });
+      const onUpdate = jest.fn();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        },
+        {onUpdate},
+      );
+      expect(onUpdate).toHaveBeenCalledTimes(0);
+      // This read will flush pending updates
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'This works!',
+      );
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      // Check to make sure there is not an unexpected reconciliation
       await Promise.resolve().then();
+      expect(onUpdate).toHaveBeenCalledTimes(1);
       editor.read(() => {
         const rootElement = editor.getRootElement();
         expect(rootElement).toBeDefined();
@@ -189,16 +186,48 @@ describe('LexicalEditor tests', () => {
           $getNearestNodeFromDOMNode(textDom!.firstChild!)!.getTextContent(),
         ).toBe('This works!');
       });
-      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
-        'This works!',
-      );
-      expect(
-        editor.read(() => $getRoot().getTextContent(), {pending: true}),
-      ).toEqual('This works!');
+      expect(onUpdate).toHaveBeenCalledTimes(1);
     });
-
-    it('Can be nested in an update or read', async () => {
-      init();
+    it('runs transforms the editor state', async () => {
+      init(function onError(err) {
+        throw err;
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
+      expect(editor.read(() => $getEditor())).toBe(editor);
+      editor.registerNodeTransform(TextNode, (node) => {
+        if (node.getTextContent() === 'This works!') {
+          node.replace($createTextNode('Transforms work!'));
+        }
+      });
+      const onUpdate = jest.fn();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        },
+        {onUpdate},
+      );
+      expect(onUpdate).toHaveBeenCalledTimes(0);
+      // This read will flush pending updates
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'Transforms work!',
+      );
+      expect(editor.getRootElement()!.textContent).toEqual('Transforms work!');
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      // Check to make sure there is not an unexpected reconciliation
+      await Promise.resolve().then();
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'Transforms work!',
+      );
+    });
+    it('can be nested in an update or read', async () => {
+      init(function onError(err) {
+        throw err;
+      });
       editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
@@ -206,31 +235,23 @@ describe('LexicalEditor tests', () => {
         root.append(paragraph);
         paragraph.append(text);
         editor.read(() => {
-          expect($getRoot().getTextContent()).toBe('');
+          expect($getRoot().getTextContent()).toBe('This works!');
         });
-        editor.read(
-          () => {
-            expect($getRoot().getTextContent()).toBe('This works!');
-          },
-          {pending: true},
-        );
         editor.read(() => {
           // Nesting update in read works, although it is discouraged in the documentation.
           editor.update(() => {
             expect($getRoot().getTextContent()).toBe('This works!');
           });
-          // The state still has not yet been reconciled
-          expect($getRoot().getTextContent()).toBe('');
-          // The pending state can be read
-          editor.read(
-            () => {
-              expect($getRoot().getTextContent()).toBe('This works!');
-            },
-            {pending: true},
-          );
         });
+        // Updating after a nested read will fail as it has already been committed
+        expect(() => {
+          root.append(
+            $createParagraphNode().append(
+              $createTextNode('update-read-update'),
+            ),
+          );
+        }).toThrow();
       });
-      await Promise.resolve().then();
       editor.read(() => {
         editor.read(() => {
           expect($getRoot().getTextContent()).toBe('This works!');

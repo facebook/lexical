@@ -14,7 +14,6 @@ export type {
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
-  EditorReadOptions,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,

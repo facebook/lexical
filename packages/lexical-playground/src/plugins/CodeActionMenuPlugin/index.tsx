@@ -109,26 +109,28 @@ function CodeActionMenuContainer({
     };
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
-  editor.registerMutationListener(CodeNode, (mutations) => {
-    editor.getEditorState().read(() => {
-      for (const [key, type] of mutations) {
-        switch (type) {
-          case 'created':
-            codeSetRef.current.add(key);
-            setShouldListenMouseMove(codeSetRef.current.size > 0);
-            break;
+  useEffect(() => {
+    return editor.registerMutationListener(CodeNode, (mutations) => {
+      editor.getEditorState().read(() => {
+        for (const [key, type] of mutations) {
+          switch (type) {
+            case 'created':
+              codeSetRef.current.add(key);
+              break;
 
-          case 'destroyed':
-            codeSetRef.current.delete(key);
-            setShouldListenMouseMove(codeSetRef.current.size > 0);
-            break;
+            case 'destroyed':
+              codeSetRef.current.delete(key);
+              break;
 
-          default:
-            break;
+            default:
+              break;
+          }
         }
-      }
+      });
+      setShouldListenMouseMove(codeSetRef.current.size > 0);
     });
-  });
+  }, [editor]);
+
   const normalizedLang = normalizeCodeLang(lang);
   const codeFriendlyName = getLanguageFriendlyName(lang);
 

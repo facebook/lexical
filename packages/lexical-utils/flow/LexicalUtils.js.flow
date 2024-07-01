@@ -11,6 +11,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   ElementNode,
+  NodeKey,
 } from 'lexical';
 export type DFSNode = $ReadOnly<{
   depth: number,
@@ -83,3 +84,10 @@ declare export function $splitNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode | null, ElementNode];
+
+declare export function registerNodesOfTypeListener(
+  editor: LexicalEditor,
+  klass: Class<LexicalNode>,
+  listener: (nodes: Set<NodeKey>) => void,
+  fireImmediately: ?boolean,
+): () => void;

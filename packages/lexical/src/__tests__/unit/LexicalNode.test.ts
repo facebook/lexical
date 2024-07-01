@@ -512,19 +512,22 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isBefore()', async () => {
         const {editor} = testEnv;
+        let newParagraphNode: ParagraphNode;
         let barTextNode: TextNode;
         let bazTextNode: TextNode;
 
         await editor.update(() => {
+          newParagraphNode = new ParagraphNode();
           barTextNode = new TextNode('bar');
           barTextNode.toggleUnmergeable();
           bazTextNode = new TextNode('baz');
           bazTextNode.toggleUnmergeable();
-          paragraphNode.append(barTextNode, bazTextNode);
+          newParagraphNode.append(barTextNode, bazTextNode);
+          paragraphNode.append(newParagraphNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><p dir="ltr"><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></p></div>',
         );
 
         await editor.getEditorState().read(() => {
@@ -534,6 +537,8 @@ describe('LexicalNode tests', () => {
           expect(barTextNode.isBefore(bazTextNode)).toBe(true);
           expect(bazTextNode.isBefore(barTextNode)).toBe(false);
           expect(bazTextNode.isBefore(textNode)).toBe(false);
+          expect(paragraphNode.isBefore(textNode)).toBe(true);
+          expect(paragraphNode.isBefore(barTextNode)).toBe(true);
         });
         expect(() => textNode.isBefore(barTextNode)).toThrow();
       });
@@ -557,7 +562,8 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
         let barTextNode: TextNode;
         let bazTextNode: TextNode;
-        let newParagraphNode: ParagraphNode;
+        let newParagraphNode0: ParagraphNode;
+        let newParagraphNode1: ParagraphNode;
         let quxTextNode: TextNode;
 
         await editor.update(() => {
@@ -566,16 +572,18 @@ describe('LexicalNode tests', () => {
           barTextNode.toggleUnmergeable();
           bazTextNode = new TextNode('baz');
           bazTextNode.toggleUnmergeable();
-          newParagraphNode = new ParagraphNode();
+          newParagraphNode0 = new ParagraphNode();
+          newParagraphNode1 = new ParagraphNode();
           quxTextNode = new TextNode('qux');
           quxTextNode.toggleUnmergeable();
-          rootNode.append(newParagraphNode);
+          rootNode.append(newParagraphNode0);
+          rootNode.append(newParagraphNode1);
           paragraphNode.append(barTextNode, bazTextNode);
-          newParagraphNode.append(quxTextNode);
+          newParagraphNode1.append(quxTextNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p><p dir="ltr"><span data-lexical-text="true">qux</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p><p><br></p><p dir="ltr"><span data-lexical-text="true">qux</span></p></div>',
         );
 
         await editor.getEditorState().read(() => {
@@ -594,9 +602,26 @@ describe('LexicalNode tests', () => {
             barTextNode,
             bazTextNode,
             paragraphNode.getLatest(),
-            newParagraphNode,
+            newParagraphNode0,
+            newParagraphNode1,
             quxTextNode,
           ]);
+          expect(
+            paragraphNode.getLatest().getNodesBetween(newParagraphNode1),
+          ).toEqual([
+            paragraphNode.getLatest(),
+            textNode.getLatest(),
+            barTextNode,
+            bazTextNode,
+            newParagraphNode0,
+            newParagraphNode1,
+          ]);
+          expect(paragraphNode.getNodesBetween(quxTextNode)).toEqual(
+            quxTextNode.getNodesBetween(paragraphNode),
+          );
+          expect(paragraphNode.getNodesBetween(newParagraphNode1)).toEqual(
+            newParagraphNode1.getNodesBetween(paragraphNode),
+          );
         });
         expect(() => textNode.getNodesBetween(bazTextNode)).toThrow();
       });

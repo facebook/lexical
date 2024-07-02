@@ -215,10 +215,14 @@ export type NodeMutation = 'created' | 'updated' | 'destroyed';
 export interface MutationListenerOptions {
   /**
    * Skip the initial call of the listener with pre-existing DOM nodes.
-   * Default is false.
+   *
+   * The default is currently true for backwards compatibility with <= 0.16.1
+   * but this default is expected to change to false in 0.17.0.
    */
   skipInitialization?: boolean;
 }
+
+const DEFAULT_SKIP_INITIALIZATION = true;
 
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -834,9 +838,10 @@ export class LexicalEditor {
    * One common use case for this is to attach DOM event listeners to the underlying DOM nodes as Lexical nodes are created.
    * {@link LexicalEditor.getElementByKey} can be used for this.
    *
-   * If any existing nodes are in the DOM, the listener will be called immediately with
-   * an updateTag of 'registerMutationListener' where all nodes have the 'created' NodeMutation.
-   * This behavior can be disabled with the skipInitialization option.
+   * If any existing nodes are in the DOM, and skipInitialization is not true, the listener
+   * will be called immediately with an updateTag of 'registerMutationListener' where all
+   * nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
+   * (default is currently true for backwards compatibility in 0.16.x but will change to false in 0.17.0).
    *
    * @param klass - The class of the node that you want to listen to mutations on.
    * @param listener - The logic you want to run when the node is mutated.
@@ -853,7 +858,12 @@ export class LexicalEditor {
     ).klass;
     const mutations = this._listeners.mutation;
     mutations.set(listener, klassToMutate);
-    if (!(options && options.skipInitialization)) {
+    const skipInitialization = options && options.skipInitialization;
+    if (
+      !(skipInitialization === undefined
+        ? DEFAULT_SKIP_INITIALIZATION
+        : skipInitialization)
+    ) {
       this.initializeMutationListener(listener, klassToMutate);
     }
 

@@ -1586,8 +1586,12 @@ describe('LexicalEditor tests', () => {
 
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const paragraphKeys: string[] = [];
     const textNodeKeys: string[] = [];
 
@@ -1659,7 +1663,9 @@ describe('LexicalEditor tests', () => {
 
     const initialEditorState = editor.getEditorState();
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
@@ -1730,7 +1736,9 @@ describe('LexicalEditor tests', () => {
 
     const textNodeMutations = jest.fn();
     const textNodeMutationsB = jest.fn();
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     // No await intentional (batch with next)
@@ -1753,7 +1761,9 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push(textNode3.getKey());
     });
 
-    editor.registerMutationListener(TextNode, textNodeMutationsB);
+    editor.registerMutationListener(TextNode, textNodeMutationsB, {
+      skipInitialization: false,
+    });
 
     await editor.update(() => {
       $getRoot().clear();
@@ -1823,7 +1833,9 @@ describe('LexicalEditor tests', () => {
 
     const textNodeMutations = jest.fn();
     const textNodeMutationsB = jest.fn();
-    editor.registerMutationListener(TestTextNode, textNodeMutations);
+    editor.registerMutationListener(TestTextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
@@ -1835,7 +1847,9 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push(textNode.getKey());
     });
 
-    editor.registerMutationListener(TestTextNode, textNodeMutationsB);
+    editor.registerMutationListener(TestTextNode, textNodeMutationsB, {
+      skipInitialization: false,
+    });
 
     expect(textNodeMutations.mock.calls.length).toBe(1);
 
@@ -1859,8 +1873,12 @@ describe('LexicalEditor tests', () => {
 
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
 
     await editor.update(() => {
       $getRoot().append($createParagraphNode());
@@ -1874,7 +1892,9 @@ describe('LexicalEditor tests', () => {
     init();
 
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
@@ -1920,8 +1940,12 @@ describe('LexicalEditor tests', () => {
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
 
-    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
 
     const paragraphNodeKeys: string[] = [];
     const textNodeKeys: string[] = [];
@@ -1980,8 +2004,12 @@ describe('LexicalEditor tests', () => {
     const tableCellMutations = jest.fn();
     const tableRowMutations = jest.fn();
 
-    editor.registerMutationListener(TableCellNode, tableCellMutations);
-    editor.registerMutationListener(TableRowNode, tableRowMutations);
+    editor.registerMutationListener(TableCellNode, tableCellMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TableRowNode, tableRowMutations, {
+      skipInitialization: false,
+    });
     // Create Table
 
     await editor.update(() => {
@@ -2060,16 +2088,20 @@ describe('LexicalEditor tests', () => {
       });
     });
 
-    editor.registerMutationListener(TextNode, (map) => {
-      mutationListener();
-      editor.registerMutationListener(
-        TextNode,
-        () => {
-          mutationListener();
-        },
-        {skipInitialization: true},
-      );
-    });
+    editor.registerMutationListener(
+      TextNode,
+      (map) => {
+        mutationListener();
+        editor.registerMutationListener(
+          TextNode,
+          () => {
+            mutationListener();
+          },
+          {skipInitialization: true},
+        );
+      },
+      {skipInitialization: false},
+    );
 
     editor.registerNodeTransform(ParagraphNode, () => {
       nodeTransformListener();
@@ -2131,7 +2163,9 @@ describe('LexicalEditor tests', () => {
     const mutationListenerC = jest.fn();
     init();
 
-    editor.registerMutationListener(TextNode, mutationListenerA);
+    editor.registerMutationListener(TextNode, mutationListenerA, {
+      skipInitialization: false,
+    });
     expect(mutationListenerA).toHaveBeenCalledTimes(0);
 
     await update(() => {
@@ -2153,7 +2187,9 @@ describe('LexicalEditor tests', () => {
         ),
       }),
     );
-    editor.registerMutationListener(TextNode, mutationListenerB);
+    editor.registerMutationListener(TextNode, mutationListenerB, {
+      skipInitialization: false,
+    });
     editor.registerMutationListener(TextNode, mutationListenerC, {
       skipInitialization: true,
     });

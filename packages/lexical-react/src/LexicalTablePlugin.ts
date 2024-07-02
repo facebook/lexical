@@ -149,6 +149,7 @@ export function TablePlugin({
           }
         }
       },
+      {skipInitialization: false},
     );
 
     return () => {

@@ -66,7 +66,7 @@ export function serializeEditorState(
     typeof selection.anchor === 'object' &&
     selection.anchor != null
   ) {
-    // remove _selection.anchor._selection property if present in RangeSelection or GridSelection
+    // remove _selection.anchor._selection property if present in RangeSelection or TableSelection
     // otherwise, the recursive structure makes the selection object unserializable
     selection.anchor = serializePoint(selection.anchor);
   }
@@ -76,7 +76,7 @@ export function serializeEditorState(
     typeof selection.focus === 'object' &&
     selection.focus != null
   ) {
-    // remove _selection.anchor._selection property if present in RangeSelection or GridSelection
+    // remove _selection.anchor._selection property if present in RangeSelection or TableSelection
     // otherwise, the recursive structure makes the selection object unserializable
     selection.focus = serializePoint(selection.focus);
   }

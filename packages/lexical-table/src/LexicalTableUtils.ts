@@ -249,7 +249,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const focus = selection.focus.getNode();
   const [focusCell, , grid] = $getNodeTriplet(focus);
@@ -377,7 +377,7 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -500,7 +500,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -576,7 +576,7 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -667,7 +667,7 @@ export function $unmergeCell(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const [cell, row, grid] = $getNodeTriplet(anchor);

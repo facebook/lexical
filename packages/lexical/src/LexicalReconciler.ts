@@ -355,7 +355,10 @@ function reconcileParagraphFormat(element: ElementNode): void {
     subTreeTextFormat !== element.__textFormat &&
     !activeEditorStateReadOnly
   ) {
-    element.setTextFormat(subTreeTextFormat);
+    if (!activeEditorStateReadOnly) {
+      const writableNode = element.getWritable();
+      writableNode.__textFormat = subTreeTextFormat;
+    }
   }
 }
 
@@ -438,13 +441,14 @@ function $reconcileChildrenWithDirection(
   dom: HTMLElement,
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
+  const previousSubTreeTextFormat = subTreeTextFormat;
   subTreeDirectionedTextContent = '';
   subTreeTextFormat = null;
   $reconcileChildren(prevElement, nextElement, dom);
   reconcileBlockDirection(nextElement, dom);
   reconcileParagraphFormat(nextElement);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
-  subTreeTextFormat = null;
+  subTreeTextFormat = previousSubTreeTextFormat;
 }
 
 function createChildrenArray(

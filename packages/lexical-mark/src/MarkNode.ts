@@ -54,9 +54,15 @@ export class MarkNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedMarkNode {
+  exportJSON(): SerializedMarkNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       ids: this.getIDs(),
       type: 'mark',
       version: 1,

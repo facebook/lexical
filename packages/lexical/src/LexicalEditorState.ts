@@ -130,7 +130,7 @@ export class EditorState {
   }
   toJSON(): SerializedEditorState {
     return readEditorState(this, () => ({
-      root: exportNodeToJSON($getRoot()),
+      root: exportNodeToJSON($getRoot())!,
     }));
   }
 }

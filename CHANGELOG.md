@@ -1,3 +1,49 @@
+## v0.16.1 (2024-07-01)
+
+- lexical-playgroundlexical-poll Bug Fix Fixes undefined context inside Poll add option (#6361) Roman Lyubimov
+- (docs) Add existing history page to navigation (#6359) Oliver Lassen
+- Lexical Fix broken sync due to deprecation of ReactDOMComet to ReactDOM (#6358) Sahejkm
+- lexical-html Bug Fix Preserve text alignment of nested block elements, when converting HTML to Lexical Nodes (#6340) Zigopis Nikolaos
+- Replace await with async in lexical-headlessREADME.md (#6343) Kibaek Kim
+- Bug Fix Fix selection when hitting shiftarrowdown into a table. (#6274) Serey Roth
+- Update feature request template (#6316) Sherry
+- Add impact description to bug report issue template (#6317) Sherry
+- lexical-reactlexical-dev-tools-core Bug Fix TreeView selection indicator (#6336) Ira Hopkinson
+- lexical Bug Fix Export type EditorUpdateOptions (#6332) Bob Ippolito
+- lexical-link Fix bug when cant remove link formatting from autolink (#6306) Maksym Plavinskyi
+- lexical Bug Fix Make reconcileParagraphFormat respect editor readonly state (#6295) Aleksandr Lapukin
+- LexicalGallery add option to add gallery content in Meta Intern only (#6321) Sahejkm
+- Few missing exports that are useful (#6318) Piechota
+- LexicalCI Fix issues in afterapproval workflow (#6307) Sahejkm
+- LexicalMeta Add meta intern static docs config (#6302) Sahejkm
+- lexical-playground Fix bug Insert an image inside another images caption (#6109) (#6230) Maksym Plavinskyi
+- CI Only send flaky test notice once (#6298) Sherry
+- LexicalUI Gallery Fix meta lexical website intern build errors (#6300) Sahejkm
+- CI Comment to look up Flaky test tracker on e2e test failure (#6292) Sherry
+- fix yjs collaboration plugin in react strict mode (#6271) Meron Ogbai
+- lexicaldevtools Bug Fix Fixed issue when extension devtools panel gets out of sync with background script in Chrome  Edge (#6297) Vlad Fedosov
+- lexicalauto-link Fix auto link node escapes on second . (#6146) Maksym Plavinskyi
+- lexical-markdown Add test to keep code language (#6259) Vladimir Ivakin
+- lexical-playgroundlexical-devtools Fix Add missing explicit devDependencies for vite config (#6291) Bob Ippolito
+- LexicalMeta Add dependencies needed to setup lexical-website in m (#6293) Sahejkm
+- Upgrade vite version to address vulnerabilities detected by the Open  (#6284) Sahejkm
+- LexicalTables Follow up on #6267 handle multi column delete crash on forward selection at end of the table (#6279) Sahejkm
+-  Feature Automated nightly releases (#6204) Bob Ippolito
+- lexical-selection Fix lost autolink styling (#6275) Maksym Plavinskyi
+- Lexical Fix #6221  delete multiple column table crash  (#6267) Sahejkm
+- lexical-markdown Bug Fix standardise selection to move to start after markdown toggle  (#6220) Sherry
+- lexical-playground CI fix flaky MaxLength emoji e2e test (#6257) Sherry
+- LexicalCI Skip extended tests workflow run on multiple approvals (#6265) Sahejkm
+- Revert lexical-react Bug Fix checklist cannot be toggled in sub-e (#6264) Gerard Rovira
+- lexical-utils Fix mergeRegister should call cleanup functions in reverse order (#6260) Bob Ippolito
+- Lexical Fix missing meta copyright headers in files  (#6258) Sahejkm
+- docsexamples Update plain text and rich text examples (#6187) Maksym Plavinskyi
+- lexical-eslint-plugin Fix Use cjs compatible export from built version (#6252) Bob Ippolito
+- Lexical Skip newly added flaky Resize merged cells heightwidth tests for linuxcollabfirefox mode (#6250) Sahejkm
+- lexical-playground CI standardise key press delay (#6246) Sherry
+- v0.16.0 (#6248) Ivaylo Pavlov
+- v0.16.0 Lexical GitHub Actions Bot
+
 ## v0.16.0 (2024-06-04)
 
 - lexical-table Bug Fix Change exported table column width (#6243) Alex Reznik

@@ -2000,35 +2000,39 @@ test.describe.parallel('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter at the beginning of a Link', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello awesome');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type(' world');
+  test(
+    'Can handle pressing Enter at the beginning of a Link',
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type(' world');
 
-    await moveToLineBeginning(page);
-    await page.keyboard.press('Enter');
+      await moveToLineBeginning(page);
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p><br /></p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello awesome</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello awesome</span>
+            </a>
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
   test('Can handle pressing Enter at the end of a Link', async ({
     isCollab,

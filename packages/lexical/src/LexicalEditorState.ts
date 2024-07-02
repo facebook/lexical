@@ -91,6 +91,10 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   return serializedNode;
 }
 
+export interface EditorStateReadOptions {
+  editor?: LexicalEditor | null;
+}
+
 export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | BaseSelection;
@@ -108,8 +112,12 @@ export class EditorState {
     return this._nodeMap.size === 1 && this._selection === null;
   }
 
-  read<V>(callbackFn: () => V): V {
-    return readEditorState(this, callbackFn);
+  read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V {
+    return readEditorState(
+      (options && options.editor) || null,
+      this,
+      callbackFn,
+    );
   }
 
   clone(selection?: null | BaseSelection): EditorState {
@@ -122,7 +130,7 @@ export class EditorState {
     return editorState;
   }
   toJSON(): SerializedEditorState {
-    return readEditorState(this, () => ({
+    return readEditorState(null, this, () => ({
       root: exportNodeToJSON($getRoot()),
     }));
   }

@@ -9,6 +9,7 @@
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   ParagraphNode,
   TextNode,
@@ -89,6 +90,12 @@ describe('LexicalEditorState tests', () => {
         __text: 'foo',
         __type: 'text',
       });
+      expect(() => editor.getEditorState().read(() => $getEditor())).toThrow(
+        /Unable to find an active editor/,
+      );
+      expect(
+        editor.getEditorState().read(() => $getEditor(), {editor: editor}),
+      ).toBe(editor);
     });
 
     test('toJSON()', async () => {

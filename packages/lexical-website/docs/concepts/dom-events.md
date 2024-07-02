@@ -30,20 +30,20 @@ This can be a simple, efficient way to handle some use cases, since it's not nec
 
 ## 2. Directly Attach Handlers
 
-In some cases, it may be better to attach an event handler directly to the underlying DOM node of each specific node. With this approach, you generally don't need to filter the event target in the handler, which can make it a bit simpler. It will also guarantee that you're handler isn't running for events that you don't care about. This approach is implemented via a [Mutation Listener](https://lexical.dev/docs/concepts/listeners).
+In some cases, it may be better to attach an event handler directly to the underlying DOM node of each specific node. With this approach, you generally don't need to filter the event target in the handler, which can make it a bit simpler. It will also guarantee that your handler isn't running for events that you don't care about. This approach is implemented via a [Mutation Listener](https://lexical.dev/docs/concepts/listeners).
 
 ```js
+const registeredElements: WeakSet<HTMLElement> = new WeakSet();
 const removeMutationListener = editor.registerMutationListener(nodeType, (mutations) => {
-    const registeredElements: WeakSet<HTMLElement> = new WeakSet();
     editor.getEditorState().read(() => {
         for (const [key, mutation] of mutations) {
             const element: null | HTMLElement = editor.getElementByKey(key);
             if (
-            // Updated might be a move, so that might mean a new DOM element
-            // is created. In this case, we need to add and event listener too.
-            (mutation === 'created' || mutation === 'updated') &&
-            element !== null &&
-            !registeredElements.has(element)
+                // Updated might be a move, so that might mean a new DOM element
+                // is created. In this case, we need to add and event listener too.
+                (mutation === 'created' || mutation === 'updated') &&
+                element !== null &&
+                !registeredElements.has(element)
             ) {
                 registeredElements.add(element);
                 element.addEventListener('click', (event: Event) => {

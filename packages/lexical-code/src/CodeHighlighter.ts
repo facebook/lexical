@@ -818,18 +818,22 @@ export function registerCodeHighlighting(
   }
 
   return mergeRegister(
-    editor.registerMutationListener(CodeNode, (mutations) => {
-      editor.update(() => {
-        for (const [key, type] of mutations) {
-          if (type !== 'destroyed') {
-            const node = $getNodeByKey(key);
-            if (node !== null) {
-              updateCodeGutter(node as CodeNode, editor);
+    editor.registerMutationListener(
+      CodeNode,
+      (mutations) => {
+        editor.update(() => {
+          for (const [key, type] of mutations) {
+            if (type !== 'destroyed') {
+              const node = $getNodeByKey(key);
+              if (node !== null) {
+                updateCodeGutter(node as CodeNode, editor);
+              }
             }
           }
-        }
-      });
-    }),
+        });
+      },
+      {skipInitialization: false},
+    ),
     editor.registerNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor, tokenizer as Tokenizer),
     ),

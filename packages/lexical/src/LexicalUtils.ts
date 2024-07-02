@@ -1118,16 +1118,21 @@ export function setMutatedNode(
 }
 
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
-  const editorState = getActiveEditorState();
-  const readOnly = editorState._readOnly;
   const klassType = klass.getType();
+  const editorState = getActiveEditorState();
+  if (editorState._readOnly) {
+    const nodes = getCachedTypeToNodeMap(editorState).get(klassType) as
+      | undefined
+      | Map<string, T>;
+    return nodes ? [...nodes.values()] : [];
+  }
   const nodes = editorState._nodeMap;
   const nodesOfType: Array<T> = [];
   for (const [, node] of nodes) {
     if (
       node instanceof klass &&
       node.__type === klassType &&
-      (readOnly || node.isAttached())
+      node.isAttached()
     ) {
       nodesOfType.push(node as T);
     }
@@ -1690,4 +1695,35 @@ export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
  */
 export function $getEditor(): LexicalEditor {
   return getActiveEditor();
+}
+
+/** @internal */
+export type TypeTodNodeMap = Map<string, NodeMap>;
+/**
+ * @internal
+ * Compute a cached Map of node type to nodes for a frozen EditorState
+ */
+const cachedNodeMaps = new WeakMap<EditorState, TypeTodNodeMap>();
+export function getCachedTypeToNodeMap(
+  editorState: EditorState,
+): TypeTodNodeMap {
+  invariant(
+    editorState._readOnly,
+    'computeTypedNodeMap called with a writable EditorState',
+  );
+  let typedNodeMap = cachedNodeMaps.get(editorState);
+  if (!typedNodeMap) {
+    typedNodeMap = new Map();
+    cachedNodeMaps.set(editorState, typedNodeMap);
+    for (const [nodeKey, node] of editorState._nodeMap) {
+      const nodeType = node.__type;
+      let nodeMap = typedNodeMap.get(nodeType);
+      if (!nodeMap) {
+        nodeMap = new Map();
+        typedNodeMap.set(nodeType, nodeMap);
+      }
+      nodeMap.set(nodeKey, node);
+    }
+  }
+  return typedNodeMap;
 }

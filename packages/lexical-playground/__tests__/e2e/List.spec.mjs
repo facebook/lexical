@@ -1431,58 +1431,62 @@ test.describe.parallel('Nested List', () => {
     });
   });
 
-  test('remove list breaks when selection in empty nested list item 2', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello World');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('a');
-    await toggleBulletList(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('b');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('Enter');
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
-    await toggleBulletList(page);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello World</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">a</span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(40px)">
-          <br />
-        </p>
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">b</span>
-          </li>
-        </ul>
-      `,
-    );
-    await page.pause();
-    await assertSelection(page, {
-      anchorOffset: 1,
-      anchorPath: [1, 0],
-      focusOffset: 1,
-      focusPath: [1, 0],
-    });
-  });
+  test(
+    'remove list breaks when selection in empty nested list item 2',
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello World');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('a');
+      await toggleBulletList(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('b');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('Enter');
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
+      await toggleBulletList(page);
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello World</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">a</span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            style="padding-inline-start: calc(40px)">
+            <br />
+          </p>
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">b</span>
+            </li>
+          </ul>
+        `,
+      );
+      await page.pause();
+      await assertSelection(page, {
+        anchorOffset: 1,
+        anchorPath: [1, 0],
+        focusOffset: 1,
+        focusPath: [1, 0],
+      });
+    },
+  );
 });

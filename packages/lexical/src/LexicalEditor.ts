@@ -33,6 +33,7 @@ import {
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
+  getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
   markAllNodesAsDirty,
@@ -847,33 +848,9 @@ export class LexicalEditor {
     listener: MutationListener,
     options?: MutationListenerOptions,
   ): () => void {
-    let registeredNode = this._nodes.get(klass.getType());
-
-    if (registeredNode === undefined) {
-      invariant(
-        false,
-        'Node %s has not been registered. Ensure node has been passed to createEditor.',
-        klass.name,
-      );
-    }
-
-    let klassToMutate = klass;
-
-    let replaceKlass: Klass<LexicalNode> | null = null;
-    while ((replaceKlass = registeredNode.replaceWithKlass)) {
-      klassToMutate = replaceKlass;
-
-      registeredNode = this._nodes.get(replaceKlass.getType());
-
-      if (registeredNode === undefined) {
-        invariant(
-          false,
-          'Node %s has not been registered. Ensure node has been passed to createEditor.',
-          replaceKlass.name,
-        );
-      }
-    }
-
+    const klassToMutate = this.resolveRegisteredNodeAfterReplacements(
+      this.getRegisteredNode(klass),
+    ).klass;
     const mutations = this._listeners.mutation;
     mutations.set(listener, klassToMutate);
     if (!(options && options.skipInitialization)) {
@@ -886,17 +863,45 @@ export class LexicalEditor {
   }
 
   /** @internal */
+  private getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
+    const registeredNode = this._nodes.get(klass.getType());
+
+    if (registeredNode === undefined) {
+      invariant(
+        false,
+        'Node %s has not been registered. Ensure node has been passed to createEditor.',
+        klass.name,
+      );
+    }
+
+    return registeredNode;
+  }
+
+  /** @internal */
+  private resolveRegisteredNodeAfterReplacements(
+    registeredNode: RegisteredNode,
+  ): RegisteredNode {
+    while (registeredNode.replaceWithKlass) {
+      registeredNode = this.getRegisteredNode(registeredNode.replaceWithKlass);
+    }
+    return registeredNode;
+  }
+
+  /** @internal */
   private initializeMutationListener(
     listener: MutationListener,
     klass: Klass<LexicalNode>,
   ): void {
     const prevEditorState = this._editorState;
+    const nodeMap = getCachedTypeToNodeMap(this._editorState).get(
+      klass.getType(),
+    );
+    if (!nodeMap) {
+      return;
+    }
     const nodeMutationMap = new Map<string, NodeMutation>();
-    const klassType = klass.getType();
-    for (const [key, node] of prevEditorState._nodeMap) {
-      if (node.__type === klassType) {
-        nodeMutationMap.set(key, 'created');
-      }
+    for (const k of nodeMap.keys()) {
+      nodeMutationMap.set(k, 'created');
     }
     if (nodeMutationMap.size > 0) {
       listener(nodeMutationMap, {
@@ -912,19 +917,8 @@ export class LexicalEditor {
     klass: Klass<T>,
     listener: Transform<T>,
   ): RegisteredNode {
-    const type = klass.getType();
-
-    const registeredNode = this._nodes.get(type);
-
-    if (registeredNode === undefined) {
-      invariant(
-        false,
-        'Node %s has not been registered. Ensure node has been passed to createEditor.',
-        klass.name,
-      );
-    }
-    const transforms = registeredNode.transforms;
-    transforms.add(listener as Transform<LexicalNode>);
+    const registeredNode = this.getRegisteredNode(klass);
+    registeredNode.transforms.add(listener as Transform<LexicalNode>);
 
     return registeredNode;
   }

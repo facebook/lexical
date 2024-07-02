@@ -494,7 +494,7 @@ export class ElementNode extends LexicalNode {
     return writableSelf;
   }
   // JSON serialization
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedElementNode | null {
     return {
       children: [],
       direction: this.getDirection(),

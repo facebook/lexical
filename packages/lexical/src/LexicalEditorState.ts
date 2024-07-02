@@ -55,8 +55,13 @@ export function createEmptyEditorState(): EditorState {
 
 function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
-): SerializedNode {
+): SerializedNode | null {
   const serializedNode = node.exportJSON();
+
+  if (serializedNode === null) {
+    return null;
+  }
+
   const nodeClass = node.constructor;
 
   if (serializedNode.type !== nodeClass.getType()) {
@@ -83,7 +88,9 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const serializedChildNode = exportNodeToJSON(child);
-      serializedChildren.push(serializedChildNode);
+      if (serializedChildNode !== null) {
+        serializedChildren.push(serializedChildNode);
+      }
     }
   }
 

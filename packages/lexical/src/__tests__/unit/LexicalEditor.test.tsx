@@ -1081,6 +1081,85 @@ describe('LexicalEditor tests', () => {
       });
     });
 
+    it('exportJSON API - excludes nodes which returns null ', async () => {
+      class ExcludedNode extends ElementNode {
+        static getType() {
+          return 'excluded-node';
+        }
+
+        static clone(node: ExcludedNode) {
+          return new ExcludedNode(node.__key);
+        }
+
+        static importJSON() {
+          return new ExcludedNode();
+        }
+
+        exportJSON() {
+          return null;
+        }
+      }
+
+      const newEditor = createTestEditor({nodes: [ExcludedNode]});
+
+      await newEditor.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('123'));
+        root.append(paragraph);
+
+        const excluded = new ExcludedNode();
+        excluded.append($createTextNode('ExcludedText'));
+        root.append(excluded);
+      });
+
+      const stringifiedEditorState = JSON.parse(
+        JSON.stringify(newEditor.getEditorState()),
+      );
+
+      expect(stringifiedEditorState.root.children).toHaveLength(1);
+    });
+
+    it('exportJSON API - excludes nested nodes which returns null ', async () => {
+      class ExcludedNode extends ElementNode {
+        static getType() {
+          return 'excluded-node';
+        }
+
+        static clone(node: ExcludedNode) {
+          return new ExcludedNode(node.__key);
+        }
+
+        static importJSON() {
+          return new ExcludedNode();
+        }
+
+        exportJSON() {
+          return null;
+        }
+      }
+
+      const newEditor = createTestEditor({nodes: [ExcludedNode]});
+
+      await newEditor.update(() => {
+        const root = $getRoot();
+
+        const element = $createTestElementNode();
+        const excluded = new ExcludedNode();
+        excluded.append($createTextNode('ExcludedText'));
+        element.append(excluded);
+        root.append(element);
+      });
+
+      const stringifiedEditorState = JSON.parse(
+        JSON.stringify(newEditor.getEditorState()),
+      );
+
+      expect(stringifiedEditorState.root.children).toHaveLength(1);
+      expect(stringifiedEditorState.root.children[0].children).toHaveLength(0);
+    });
+
     describe('range selection', () => {
       beforeEach(async () => {
         await init();

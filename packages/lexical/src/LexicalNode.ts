@@ -802,7 +802,7 @@ export class LexicalNode {
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
    * */
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(): SerializedLexicalNode | null {
     invariant(false, 'exportJSON: base method not extended');
   }
 

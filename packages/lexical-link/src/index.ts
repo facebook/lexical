@@ -181,9 +181,15 @@ export class LinkNode extends ElementNode {
     return url;
   }
 
-  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
+  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       rel: this.getRel(),
       target: this.getTarget(),
       title: this.getTitle(),
@@ -403,9 +409,15 @@ export class AutoLinkNode extends LinkNode {
     return null;
   }
 
-  exportJSON(): SerializedAutoLinkNode {
+  exportJSON(): SerializedAutoLinkNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       isUnlinked: this.__isUnlinked,
       type: 'autolink',
       version: 1,

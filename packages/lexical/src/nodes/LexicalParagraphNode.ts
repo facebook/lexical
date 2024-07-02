@@ -141,9 +141,15 @@ export class ParagraphNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedParagraphNode {
+  exportJSON(): SerializedParagraphNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       textFormat: this.getTextFormat(),
       type: 'paragraph',
       version: 1,

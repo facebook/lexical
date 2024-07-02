@@ -59,7 +59,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ env.test_script }} ${{ inputs.flaky && '-- --grep @flaky' || '-- --grep-invert @flaky' }}
+        run: npm run ${{ env.test_script }} ${{ inputs.flaky && '-- -- --grep @flaky' || '-- -- --grep-invert @flaky' }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

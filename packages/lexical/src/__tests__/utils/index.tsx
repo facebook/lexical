@@ -45,7 +45,11 @@ import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
-import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
+import {
+  CreateEditorArgs,
+  HTMLConfig,
+  LexicalNodeReplacement,
+} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
@@ -515,6 +519,7 @@ export function createTestEditor(
     onError?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
+    html?: HTMLConfig;
   } = {},
 ): LexicalEditor {
   const customNodes = config.nodes || [];

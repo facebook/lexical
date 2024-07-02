@@ -171,7 +171,11 @@ export type LexicalNodeReplacement = {
 export type HTMLConfig = {
   export?: Map<
     Klass<LexicalNode>,
-    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <T extends {new (...args: any): any}>(
+      editor: LexicalEditor,
+      target: InstanceType<T>,
+    ) => DOMExportOutput
   >;
   import?: DOMConversionMap;
 };

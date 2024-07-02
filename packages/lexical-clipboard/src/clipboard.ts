@@ -147,8 +147,11 @@ export function $insertDataTransferForRichText(
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
-      const nodes = $generateNodesFromDOM(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
+      // confirm that the parsed DOM contains one or more element nodes
+      if (dom.body.querySelector('*')) {
+        const nodes = $generateNodesFromDOM(editor, dom);
+        return $insertGeneratedNodes(editor, nodes, selection);
+      }
     } catch {
       // Fail silently.
     }

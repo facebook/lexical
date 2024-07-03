@@ -30,13 +30,14 @@ export type Props = (
 
 export function ContentEditable(props: Props): JSX.Element {
   let placeholder = null;
+  let rest = props;
   if ('placeholder' in props) {
-    placeholder = props.placeholder;
+    ({placeholder, ...rest} = props);
   }
 
   return (
     <>
-      <ContentEditableElement {...props} />
+      <ContentEditableElement {...rest} />
       <Placeholder content={placeholder} />
     </>
   );

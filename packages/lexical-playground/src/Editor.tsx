@@ -63,6 +63,7 @@ import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
+import TableHoverActionsPlugin from './plugins/TableHoverActionsPlugin';
 import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
@@ -185,6 +186,7 @@ export default function Editor(): JSX.Element {
               hasCellBackgroundColor={tableCellBackgroundColor}
             />
             <TableCellResizer />
+            <TableHoverActionsPlugin />
             <ImagesPlugin />
             <InlineImagePlugin />
             <LinkPlugin />

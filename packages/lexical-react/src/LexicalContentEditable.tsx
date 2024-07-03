@@ -8,9 +8,9 @@
 
 import type {Props as ElementProps} from './shared/LexicalContentEditableElement';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 

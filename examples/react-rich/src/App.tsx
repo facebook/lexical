@@ -39,10 +39,10 @@ export default function App() {
             contentEditable={
               <ContentEditable
                 className="editor-input"
+                aria-placeholder={placeholder}
                 placeholder={
                   <div className="editor-placeholder">{placeholder}</div>
                 }
-                aria-placeholder={placeholder}
               />
             }
             ErrorBoundary={LexicalErrorBoundary}

@@ -39,6 +39,8 @@ const editorConfig = {
   theme: ExampleTheme,
 };
 
+const placeholder = 'Enter some rich text...';
+
 function CodeHighlightingPlugin() {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
@@ -60,10 +62,15 @@ export default function App() {
         <ToolbarPlugin />
         <div className="editor-inner">
           <RichTextPlugin
-            contentEditable={<ContentEditable 
-            className="editor-input" 
-            placeholder="Enter some rich text..." 
-            placeholderClassName="editor-placeholder" />}
+            contentEditable={
+              <ContentEditable
+                className="editor-input"
+                aria-placeholder={placeholder}
+                placeholder={
+                  <div className="editor-placeholder">{placeholder}</div>
+                }
+              />
+            }
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />

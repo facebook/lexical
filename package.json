@@ -140,7 +140,7 @@
     "@typescript-eslint/parser": "^7.8.0",
     "child-process-promise": "^2.2.1",
     "chokidar": "^3.5.2",
-    "concurrently": "^6.2.0",
+    "concurrently": "^8.2.2",
     "confusing-browser-globals": "^1.0.10",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",

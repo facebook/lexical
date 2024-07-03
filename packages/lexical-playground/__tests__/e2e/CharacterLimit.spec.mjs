@@ -402,7 +402,7 @@ function testSuite(charset) {
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('👨‍👩‍👦‍👦');
-    if (['chromium', 'webkit'].includes(browserName)) {
+    if (['chromium', 'webkit', 'firefox'].includes(browserName)) {
       await assertHTML(
         page,
         html`

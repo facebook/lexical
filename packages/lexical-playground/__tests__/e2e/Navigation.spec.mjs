@@ -960,21 +960,12 @@ test.describe('Keyboard Navigation', () => {
         focusPath: [0, 0, 0],
       });
     } else if (browserName === 'firefox') {
-      if (IS_WINDOWS) {
-        await assertSelection(page, {
-          anchorOffset: 4,
-          anchorPath: [0, 2, 0],
-          focusOffset: 4,
-          focusPath: [0, 2, 0],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 5, 0],
-          focusOffset: 0,
-          focusPath: [0, 5, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 5, 0],
+        focusOffset: 0,
+        focusPath: [0, 5, 0],
+      });
     } else {
       await assertSelection(page, {
         anchorOffset: 3,
@@ -993,37 +984,19 @@ test.describe('Keyboard Navigation', () => {
         focusPath: [0, 2, 0],
       });
     } else if (browserName === 'firefox') {
-      if (IS_WINDOWS) {
-        await assertSelection(page, {
-          anchorOffset: 3,
-          anchorPath: [0, 5, 0],
-          focusOffset: 3,
-          focusPath: [0, 5, 0],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0, 5, 0],
-          focusOffset: 2,
-          focusPath: [0, 5, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 5, 0],
+        focusOffset: 2,
+        focusPath: [0, 5, 0],
+      });
     } else {
-      if (IS_WINDOWS) {
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0, 1, 0, 0],
-          focusOffset: 2,
-          focusPath: [0, 1, 0, 0],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0, 1, 0, 0],
-          focusOffset: 2,
-          focusPath: [0, 1, 0, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 1, 0, 0],
+        focusOffset: 2,
+        focusPath: [0, 1, 0, 0],
+      });
     }
     // 3 right
     await moveToNextWord(page);

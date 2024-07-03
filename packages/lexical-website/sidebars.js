@@ -47,6 +47,7 @@ const sidebars = {
         'concepts/commands',
         'concepts/selection',
         'concepts/read-only',
+        'concepts/history',
         'concepts/serialization',
         'concepts/dom-events',
       ],

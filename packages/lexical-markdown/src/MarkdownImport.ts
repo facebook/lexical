@@ -110,8 +110,7 @@ function $importBlocks(
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
-  const lineTextTrimmed = lineText.trim();
-  const textNode = $createTextNode(lineTextTrimmed);
+  const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);
   rootNode.append(elementNode);
@@ -135,7 +134,7 @@ function $importBlocks(
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
-  if (elementNode.isAttached() && lineTextTrimmed.length > 0) {
+  if (elementNode.isAttached() && lineText.length > 0) {
     const previousNode = elementNode.getPreviousSibling();
     if (
       $isParagraphNode(previousNode) ||

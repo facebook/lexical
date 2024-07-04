@@ -106,82 +106,88 @@ test.describe('Clear All Formatting', () => {
     );
   });
 
-  test(`Should preserve the default styling of hashtags and mentions`, async ({
-    page,
-  }) => {
-    await focusEditor(page);
+  test(
+    `Should preserve the default styling of hashtags and mentions`,
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
 
-    await page.keyboard.type('#facebook testing');
-    await selectAll(page);
-    await toggleItalic(page);
-    await selectFromBackgroundColorPicker(page);
-    await selectFromColorPicker(page);
-    await selectFromAdditionalStylesDropdown(page, '.clear');
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #facebook
-          </span>
-          <span data-lexical-text="true">testing</span>
-        </p>
-      `,
-    );
+      await page.keyboard.type('#facebook testing');
+      await selectAll(page);
+      await toggleItalic(page);
+      await selectFromBackgroundColorPicker(page);
+      await selectFromColorPicker(page);
+      await selectFromAdditionalStylesDropdown(page, '.clear');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #facebook
+            </span>
+            <span data-lexical-text="true">testing</span>
+          </p>
+        `,
+      );
 
-    await clearEditor(page);
+      await clearEditor(page);
 
-    await page.keyboard.type('@Luke');
+      await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">@Luke</span>
-        </p>
-      `,
-    );
+      await waitForSelector(page, '#typeahead-menu ul li');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">@Luke</span>
+          </p>
+        `,
+      );
 
-    await page.keyboard.press('Enter');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph">
-          <span
-            class="mention"
-            style="background-color: rgba(24, 119, 232, 0.2);"
-            data-lexical-text="true">
-            Luke Skywalker
-          </span>
-        </p>
-      `,
-    );
+      await page.keyboard.press('Enter');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true">
+              Luke Skywalker
+            </span>
+          </p>
+        `,
+      );
 
-    await page.keyboard.type(' is testing');
-    await selectAll(page);
-    await toggleBold(page);
-    await selectFromColorPicker(page);
-    await selectFromAdditionalStylesDropdown(page, '.clear');
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span
-            class="mention"
-            style="background-color: rgba(24, 119, 232, 0.2);"
-            data-lexical-text="true">
-            Luke Skywalker
-          </span>
-          <span data-lexical-text="true">is testing</span>
-        </p>
-      `,
-    );
-  });
+      await page.keyboard.type(' is testing');
+      await selectAll(page);
+      await toggleBold(page);
+      await selectFromColorPicker(page);
+      await selectFromAdditionalStylesDropdown(page, '.clear');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true">
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true">is testing</span>
+          </p>
+        `,
+      );
+    },
+  );
 });

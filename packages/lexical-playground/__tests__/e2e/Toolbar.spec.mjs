@@ -34,219 +34,225 @@ test.describe('Toolbar', () => {
     initialize({isCollab, page, showNestedEditorTreeView: false}),
   );
 
-  test('Insert image caption + table', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
+  test(
+    'Insert image caption + table',
+    {
+      tag: '@flaky',
+    },
+    async ({page, isPlainText}) => {
+      test.skip(isPlainText);
+      await focusEditor(page);
 
-    // Add caption
-    await insertSampleImage(page);
-    // Catch flakiness earlier
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <span contenteditable="false" data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}" />
-            </div>
-          </span>
-          <br />
-        </p>
-      `,
-      undefined,
-      {
-        ignoreClasses: true,
-        ignoreInlineStyles: true,
-      },
-    );
-    await click(page, '.editor-image img');
-    await click(page, '.image-caption-button');
-    await focus(page, '.ImageNode__contentEditable');
-    await page.keyboard.type('Yellow flower in tilt shift lens');
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <span contenteditable="false" data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}" />
-            </div>
-            <div>
-              <div
-                aria-placeholder="Enter a caption..."
-                contenteditable="true"
-                role="textbox"
-                spellcheck="true"
-                data-lexical-editor="true">
-                <p dir="ltr">
-                  <span data-lexical-text="true">
-                    Yellow flower in tilt shift lens
-                  </span>
-                </p>
+      // Add caption
+      await insertSampleImage(page);
+      // Catch flakiness earlier
+      await assertHTML(
+        page,
+        html`
+          <p>
+            <span contenteditable="false" data-lexical-decorator="true">
+              <div draggable="false">
+                <img
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
-            </div>
-          </span>
-          <br />
-        </p>
-      `,
-      undefined,
-      {
-        ignoreClasses: true,
-        ignoreInlineStyles: true,
-      },
-      (actualHtml) =>
-        // flaky fix: remove the extra <p><br /></p> that appears occasionally in CI runs
-        actualHtml.replace(
-          html`
-            <p dir="ltr">
-              <span data-lexical-text="true">
-                Yellow flower in tilt shift lens
-              </span>
-            </p>
-            <p><br /></p>
-          `,
-          html`
-            <p dir="ltr">
-              <span data-lexical-text="true">
-                Yellow flower in tilt shift lens
-              </span>
-            </p>
-          `,
-        ),
-    );
+            </span>
+            <br />
+          </p>
+        `,
+        undefined,
+        {
+          ignoreClasses: true,
+          ignoreInlineStyles: true,
+        },
+      );
+      await click(page, '.editor-image img');
+      await click(page, '.image-caption-button');
+      await focus(page, '.ImageNode__contentEditable');
+      await page.keyboard.type('Yellow flower in tilt shift lens');
+      await assertHTML(
+        page,
+        html`
+          <p>
+            <span contenteditable="false" data-lexical-decorator="true">
+              <div draggable="false">
+                <img
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}" />
+              </div>
+              <div>
+                <div
+                  aria-placeholder="Enter a caption..."
+                  contenteditable="true"
+                  role="textbox"
+                  spellcheck="true"
+                  data-lexical-editor="true">
+                  <p dir="ltr">
+                    <span data-lexical-text="true">
+                      Yellow flower in tilt shift lens
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </span>
+            <br />
+          </p>
+        `,
+        undefined,
+        {
+          ignoreClasses: true,
+          ignoreInlineStyles: true,
+        },
+        (actualHtml) =>
+          // flaky fix: remove the extra <p><br /></p> that appears occasionally in CI runs
+          actualHtml.replace(
+            html`
+              <p dir="ltr">
+                <span data-lexical-text="true">
+                  Yellow flower in tilt shift lens
+                </span>
+              </p>
+              <p><br /></p>
+            `,
+            html`
+              <p dir="ltr">
+                <span data-lexical-text="true">
+                  Yellow flower in tilt shift lens
+                </span>
+              </p>
+            `,
+          ),
+      );
 
-    // Delete image
-    // TODO Revisit the a11y side of NestedEditors
-    await evaluate(page, () => {
-      const p = document.querySelector('[contenteditable="true"] p');
-      document.getSelection().setBaseAndExtent(p, 0, p, 0);
-    });
-    await selectAll(page);
-    await page.keyboard.press('Delete');
-    await assertHTML(
-      page,
-      html`
-        <p><br /></p>
-      `,
-      undefined,
-      {
-        ignoreClasses: true,
-        ignoreInlineStyles: true,
-      },
-    );
+      // Delete image
+      // TODO Revisit the a11y side of NestedEditors
+      await evaluate(page, () => {
+        const p = document.querySelector('[contenteditable="true"] p');
+        document.getSelection().setBaseAndExtent(p, 0, p, 0);
+      });
+      await selectAll(page);
+      await page.keyboard.press('Delete');
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+        `,
+        undefined,
+        {
+          ignoreClasses: true,
+          ignoreInlineStyles: true,
+        },
+      );
 
-    // Add table
-    await selectFromInsertDropdown(page, '.table');
-    await click(page, '[data-test-id="table-model-confirm-insert"] button');
+      // Add table
+      await selectFromInsertDropdown(page, '.table');
+      await click(page, '[data-test-id="table-model-confirm-insert"] button');
 
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <br />
-        </p>
-        <table>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <th>
-              <p><br /></p>
-            </th>
-            <th>
-              <p><br /></p>
-            </th>
-            <th>
-              <p><br /></p>
-            </th>
-            <th>
-              <p><br /></p>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p><br /></p>
-            </td>
-          </tr>
-        </table>
-        <p><br /></p>
-      `,
-      undefined,
-      {
-        ignoreClasses: true,
-        ignoreInlineStyles: true,
-      },
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p>
+            <br />
+          </p>
+          <table>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        undefined,
+        {
+          ignoreClasses: true,
+          ignoreInlineStyles: true,
+        },
+      );
+    },
+  );
 
   test('Center align image', async ({page, isPlainText, isCollab}) => {
     // Image selection can't be synced in collab

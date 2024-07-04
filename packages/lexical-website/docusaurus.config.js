@@ -239,6 +239,24 @@ const config = {
   onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
+    process.env.FB_INTERNAL
+      ? null
+      : [
+          './plugins/package-docs',
+          /** @type {import('./plugins/package-docs').PackageDocsPluginOptions} */
+          {
+            baseDir: path.resolve(__dirname, '..'),
+            editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,
+            packageFrontMatter: {
+              lexical: [
+                'sidebar_position: 1',
+                'sidebar_label: lexical (core)',
+              ].join('\n'),
+            },
+            targetDir: path.resolve(__dirname, 'docs/packages'),
+          },
+        ],
+    './plugins/webpack-buffer',
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {

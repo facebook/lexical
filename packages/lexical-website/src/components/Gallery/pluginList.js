@@ -9,6 +9,6 @@
 export const plugins = (customFields) => [
   {
     title: 'EmojiPlugin',
-    uri: `${customFields.STACKBLITZ_PREFIX}examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=1`,
+    uri: `${customFields.STACKBLITZ_PREFIX}examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=0`,
   },
 ];

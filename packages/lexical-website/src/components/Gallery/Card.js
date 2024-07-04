@@ -28,7 +28,8 @@ function Card({item}) {
     <li key={item.title} className="card shadow--md">
       <a href={item.uri} target="_blank">
         <div className={clsx('card__image', styles.showcaseCardImage)}>
-          <img src={image} alt={item.title} />
+          {item.renderPreview == null && <img src={image} alt={item.title} />}
+          {item.renderPreview != null && item.renderPreview()}
         </div>
       </a>
       <div className="card__body">

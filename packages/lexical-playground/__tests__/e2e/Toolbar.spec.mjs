@@ -84,6 +84,7 @@ test.describe('Toolbar', () => {
               </div>
               <div>
                 <div
+                  aria-placeholder="Enter a caption..."
                   contenteditable="true"
                   role="textbox"
                   spellcheck="true"

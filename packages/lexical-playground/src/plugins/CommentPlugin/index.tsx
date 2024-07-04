@@ -67,7 +67,6 @@ import useModal from '../../hooks/useModal';
 import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
-import Placeholder from '../../ui/Placeholder';
 
 export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_INLINE_COMMAND',
@@ -168,8 +167,9 @@ function PlainTextEditor({
     <LexicalComposer initialConfig={initialConfig}>
       <div className="CommentPlugin_CommentInputBox_EditorContainer">
         <PlainTextPlugin
-          contentEditable={<ContentEditable className={className} />}
-          placeholder={<Placeholder>{placeholder}</Placeholder>}
+          contentEditable={
+            <ContentEditable placeholder={placeholder} className={className} />
+          }
           ErrorBoundary={LexicalErrorBoundary}
         />
         <OnChangePlugin onChange={onChange} />

@@ -149,7 +149,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     // Set table of contents initial state
     let currentTableOfContents: Array<TableOfContentsEntry> = [];
     editor.getEditorState().read(() => {
-      const updateChildHeadings = (node: ElementNode) => {
+      const updateCurrentTableOfContents = (node: ElementNode) => {
         for (const child of node.getChildren()) {
           if ($isHeadingNode(child)) {
             currentTableOfContents.push([
@@ -158,12 +158,12 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
               child.getTag(),
             ]);
           } else if ($isElementNode(child)) {
-            updateChildHeadings(child);
+            updateCurrentTableOfContents(child);
           }
         }
       };
 
-      updateChildHeadings($getRoot());
+      updateCurrentTableOfContents($getRoot());
       setTableOfContents(currentTableOfContents);
     });
 

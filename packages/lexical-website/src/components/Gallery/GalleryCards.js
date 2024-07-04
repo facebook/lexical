@@ -6,8 +6,10 @@
  *
  */
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
+import {useEffect, useState} from 'react';
 
 import Card from './Card';
 import {plugins} from './pluginList';
@@ -26,13 +28,35 @@ function CardList({cards}) {
 }
 
 export default function GalleryCards() {
+  return <BrowserOnly>{() => <GalleryCardsImpl />}</BrowserOnly>;
+}
+
+function GalleryCardsImpl() {
   const {
     siteConfig: {customFields},
   } = useDocusaurusContext();
 
+  const [internGalleryCards, setInternGalleryCards] = useState(null);
+
+  useEffect(() => {
+    try {
+      if (process.env.FB_INTERNAL) {
+        import('../../../../InternGalleryCards').then(setInternGalleryCards);
+      }
+    } catch (e) {
+      throw e;
+    }
+  }, []);
+
   return (
     <section className="margin-top--lg margin-bottom--xl">
-      <CardList cards={plugins(customFields)} />
+      <CardList
+        cards={plugins(customFields).concat(
+          internGalleryCards != null
+            ? internGalleryCards.InternGalleryCards()
+            : [],
+        )}
+      />
     </section>
   );
 }

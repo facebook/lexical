@@ -7,7 +7,7 @@
 
 .cardList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
   gap: 24px;
 }
 
@@ -28,7 +28,7 @@ html[data-theme='dark'] .showcaseFavorite {
 
 .showcaseCardImage {
   overflow: hidden;
-  height: 150px;
+  height: 240px;
   border-bottom: 2px solid var(--ifm-color-emphasis-200);
 }
 

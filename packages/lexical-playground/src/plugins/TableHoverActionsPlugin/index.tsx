@@ -107,6 +107,7 @@ function TableHoverActionsContainer({
         const {y: editorElemY} = anchorElem.getBoundingClientRect();
 
         if (hoveredRowNode) {
+          setShownColumn(false);
           setShownRow(true);
           setPosition({
             height: BUTTON_WIDTH_PX,
@@ -116,6 +117,7 @@ function TableHoverActionsContainer({
           });
         } else if (hoveredColumnNode) {
           setShownColumn(true);
+          setShownRow(false);
           setPosition({
             height: tableElemHeight,
             left: tableElemRight + 5,

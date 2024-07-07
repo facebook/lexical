@@ -14,7 +14,6 @@ import type {
   SerializedLexicalNode,
 } from '../LexicalNode';
 
-import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 
@@ -49,10 +48,7 @@ export class LineBreakNode extends LexicalNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      br: (node: Node) => {
-        if (isOnlyChild(node)) {
-          return null;
-        }
+      br: () => {
         return {
           conversion: $convertLineBreakElement,
           priority: 0,
@@ -75,7 +71,7 @@ export class LineBreakNode extends LexicalNode {
   }
 }
 
-function $convertLineBreakElement(node: Node): DOMConversionOutput {
+function $convertLineBreakElement(): DOMConversionOutput {
   return {node: $createLineBreakNode()};
 }
 
@@ -87,32 +83,4 @@ export function $isLineBreakNode(
   node: LexicalNode | null | undefined,
 ): node is LineBreakNode {
   return node instanceof LineBreakNode;
-}
-
-function isOnlyChild(node: Node): boolean {
-  const parentElement = node.parentElement;
-  if (parentElement !== null) {
-    const firstChild = parentElement.firstChild!;
-    if (
-      firstChild === node ||
-      (firstChild.nextSibling === node && isWhitespaceDomTextNode(firstChild))
-    ) {
-      const lastChild = parentElement.lastChild!;
-      if (
-        lastChild === node ||
-        (lastChild.previousSibling === node &&
-          isWhitespaceDomTextNode(lastChild))
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function isWhitespaceDomTextNode(node: Node): boolean {
-  return (
-    node.nodeType === DOM_TEXT_TYPE &&
-    /^( |\t|\r?\n)+$/.test(node.textContent || '')
-  );
 }

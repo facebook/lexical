@@ -668,6 +668,16 @@ describe('LexicalEventHelpers', () => {
           ],
           name: 'two lines + two paragraphs separated by an empty paragraph (2)',
         },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p>',
+          inputs: [
+            pasteHTML(
+              '<p class="p1"><span>line 1</span><span><br></span><span>line 2</span></p>',
+            ),
+          ],
+          name: 'two lines and br in spans',
+        },
       ];
 
       suite.forEach((testUnit, i) => {

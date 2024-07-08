@@ -6,6 +6,8 @@
  *
  */
 
+import React from 'react';
+
 import GalleryCards from './GalleryCards';
 
 export default function GalleryPage() {

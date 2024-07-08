@@ -9,11 +9,19 @@
 import {useQueryString} from '@docusaurus/theme-common';
 import {useMemo} from 'react';
 
+import {Example} from './pluginList';
+
 export function useSearchName() {
   return useQueryString('title');
 }
 
-function filterExamples({examples, searchName}) {
+function filterExamples({
+  examples,
+  searchName,
+}: {
+  examples: Array<Example>;
+  searchName: string;
+}) {
   if (searchName) {
     return examples.filter((example) =>
       example.title.toLowerCase().includes(searchName.toLowerCase()),
@@ -22,7 +30,7 @@ function filterExamples({examples, searchName}) {
   return examples;
 }
 
-export function useFilteredExamples(examples) {
+export function useFilteredExamples(examples: Array<Example>) {
   const [searchName] = useSearchName();
   return useMemo(
     () =>

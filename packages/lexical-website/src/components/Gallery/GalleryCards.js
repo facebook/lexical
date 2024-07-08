@@ -40,7 +40,7 @@ function GalleryCardsImpl() {
 
   const [internGalleryCards, setInternGalleryCards] = useState(null);
 
-  const pluginsCombined = plugins(customFields).concat(
+  const pluginsCombined = plugins(customFields ?? {}).concat(
     internGalleryCards != null ? internGalleryCards.InternGalleryCards() : [],
   );
 

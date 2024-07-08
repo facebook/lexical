@@ -6,11 +6,12 @@
  *
  */
 
-import {useSearchName} from '@site/src/components/Gallery/utils';
+import React from 'react';
 
+import {useSearchName} from '../utils';
 import styles from './styles.module.css';
 
-export default function SearchBar(pluginList) {
+export default function SearchBar() {
   const [searchName, setSearchName] = useSearchName();
   return (
     <div className={styles.searchBar}>

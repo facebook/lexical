@@ -7,23 +7,41 @@
  * @flow strict
  */
 
+// $FlowFixMe - Not able to type this with a flow extension
+import type {TRefFor} from 'CoreTypes.flow';
+
 import * as React from 'react';
+
+// Due to Flow limitations, we prefer fixed types over the built-in inexact HTMLElement
+type HTMLDivElementDOMProps = $ReadOnly<{
+  autoCapitalize?:  boolean,
+  autoComplete?: boolean,
+  autoCorrect?: boolean,
+  className?: string,
+  'data-testid'?: string,
+  role?: string,
+  spellCheck?: boolean,
+  suppressContentEditableWarning?: boolean,
+  tabIndex?: number,
+  style?: CSSStyleDeclaration,
+  'data-testid'?: string | null,
+}>
 
 type PlaceholderProps =
   | $ReadOnly<{
       'aria-placeholder'?: void,
-      placeholder?: null,
+      placeholderComponent?: null,
     }>
   | $ReadOnly<{
       'aria-placeholder': string,
-      placeholder:
+      placeholderComponent:
         | ((isEditable: boolean) => null | React$Node)
         | null
         | React$Node,
     }>;
 
 export type Props = $ReadOnly<{
-  ...Partial<HTMLDivElement>,
+  ...HTMLDivElementDOMProps,
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,
   ariaControls?: string,
@@ -33,10 +51,10 @@ export type Props = $ReadOnly<{
   ariaLabelledBy?: string,
   ariaMultiline?: boolean,
   ariaOwns?: string,
-  ariaRequired?: boolean,
+  ariaRequired?: string,
   autoCapitalize?: boolean,
-  'data-testid'?: string | null,
-  ...
-}> & PlaceholderProps;
+  ref?: TRefFor<HTMLDivElement>,
+  ...PlaceholderProps
+}>
 
 declare export function ContentEditable(props: Props): React$Node;

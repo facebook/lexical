@@ -56,7 +56,7 @@ export type InitialConfigType = Readonly<{
 }>;
 
 type Props<T extends NoExtraProperties<InitialConfigType>> = React.PropsWithChildren<{
-  initialConfig: T;
+  initialConfig: T  & Impossible<Exclude<keyof T, keyof InitialConfigType>>;
 }>;
 
 export function LexicalComposer<T extends NoExtraProperties<InitialConfigType>>({

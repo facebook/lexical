@@ -177,6 +177,7 @@ function Editor() {
       <MyOnChangePlugin onChange={onChange}/>
     </LexicalComposer>
   );
+}
 
 ```
 

@@ -18,11 +18,11 @@ import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 export type Props = (
   | {}
   | {
+      placeholder: null;
+    }
+  | {
       'aria-placeholder': string;
-      placeholder:
-        | ((isEditable: boolean) => null | JSX.Element)
-        | null
-        | JSX.Element;
+      placeholder: ((isEditable: boolean) => null | JSX.Element) | JSX.Element;
     }
 ) &
   ElementProps;

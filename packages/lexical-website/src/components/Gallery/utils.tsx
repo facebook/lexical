@@ -38,6 +38,6 @@ export function useFilteredExamples(examples: Array<Example>) {
         examples,
         searchName,
       }),
-    [searchName],
+    [examples, searchName],
   );
 }

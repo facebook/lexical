@@ -126,17 +126,15 @@ export function syncYjsChangesToLexical(
           $syncLocalCursorPosition(binding, provider);
         }
       }
+      // If there was a collision on the top level paragraph
+      // we need to re-add a paragraph
+      if ($getRoot().getChildrenSize() === 0) {
+        $getRoot().append($createParagraphNode());
+      }
     },
     {
       onUpdate: () => {
         syncCursorPositions(binding, provider);
-        editor.update(() => {
-          // If there was a collision on the top level paragraph
-          // we need to re-add a paragraph
-          if ($getRoot().getChildrenSize() === 0) {
-            $getRoot().append($createParagraphNode());
-          }
-        });
       },
       skipTransforms: true,
       tag: isFromUndoManger ? 'historic' : 'collaboration',

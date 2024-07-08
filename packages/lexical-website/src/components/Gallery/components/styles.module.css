@@ -3,15 +3,16 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *
  */
 
-import GalleryCards from './GalleryCards';
+.searchBar {
+  margin-left: auto;
+  margin-bottom: 12px;
+}
 
-export default function GalleryPage() {
-  return (
-    <main className="margin-vert--lg">
-      <GalleryCards />
-    </main>
-  );
+.searchBar input {
+  height: 30px;
+  border-radius: 15px;
+  padding: 10px;
+  border: 1px solid gray;
 }

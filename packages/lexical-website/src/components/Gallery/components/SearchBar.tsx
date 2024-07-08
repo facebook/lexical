@@ -16,7 +16,7 @@ export default function SearchBar() {
   return (
     <div className={styles.searchBar}>
       <input
-        placeholder={'Search for example...'}
+        placeholder={'Search for plugin...'}
         value={searchName}
         onInput={(e) => {
           setSearchName(e.currentTarget.value);

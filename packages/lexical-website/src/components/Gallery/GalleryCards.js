@@ -11,8 +11,8 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 import {useEffect, useState} from 'react';
 
-import SearchBar from './_components/SerarchBar';
 import Card from './Card';
+import SearchBar from './components/SearchBar';
 import {plugins} from './pluginList';
 import styles from './styles.module.css';
 import {useFilteredExamples} from './utils';

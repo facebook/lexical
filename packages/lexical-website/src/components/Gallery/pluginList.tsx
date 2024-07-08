@@ -6,7 +6,16 @@
  *
  */
 
-export const plugins = (customFields) => [
+export type Example = {
+  description: string;
+  title: string;
+  uri?: string;
+  renderPreview?: () => unknown;
+};
+
+export const plugins = (customFields: {
+  [key: string]: unknown;
+}): Array<Example> => [
   {
     description: 'Learn how to create an editor with Emojis',
     title: 'EmojiPlugin',

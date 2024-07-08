@@ -12,8 +12,10 @@ import clsx from 'clsx';
 import {useEffect, useState} from 'react';
 
 import Card from './Card';
+import SearchBar from './components/SearchBar';
 import {plugins} from './pluginList';
 import styles from './styles.module.css';
+import {useFilteredExamples} from './utils';
 
 function CardList({cards}) {
   return (
@@ -38,6 +40,12 @@ function GalleryCardsImpl() {
 
   const [internGalleryCards, setInternGalleryCards] = useState(null);
 
+  const pluginsCombined = plugins(customFields ?? {}).concat(
+    internGalleryCards != null ? internGalleryCards.InternGalleryCards() : [],
+  );
+
+  const filteredPlugins = useFilteredExamples(pluginsCombined);
+
   useEffect(() => {
     try {
       if (process.env.FB_INTERNAL) {
@@ -50,13 +58,10 @@ function GalleryCardsImpl() {
 
   return (
     <section className="margin-top--lg margin-bottom--xl">
-      <CardList
-        cards={plugins(customFields).concat(
-          internGalleryCards != null
-            ? internGalleryCards.InternGalleryCards()
-            : [],
-        )}
-      />
+      <div style={{display: 'flex', marginLeft: 'auto'}} className="container">
+        <SearchBar />
+      </div>
+      <CardList cards={filteredPlugins} />
     </section>
   );
 }

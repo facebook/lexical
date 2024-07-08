@@ -32,6 +32,12 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
 
+type Impossible<K extends keyof any> = {
+  [P in K]: never;
+};
+
+type NoExtraProperties<T, U extends T = T> = U & Impossible<Exclude<keyof U, keyof T>>;
+
 export type InitialEditorStateType =
   | null
   | string
@@ -49,11 +55,14 @@ export type InitialConfigType = Readonly<{
   html?: HTMLConfig;
 }>;
 
-type Props = React.PropsWithChildren<{
-  initialConfig: InitialConfigType;
+type Props<T extends NoExtraProperties<InitialConfigType>> = React.PropsWithChildren<{
+  initialConfig: T;
 }>;
 
-export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
+export function LexicalComposer<T extends NoExtraProperties<InitialConfigType>>({
+  initialConfig, 
+  children
+}: Props<T>): JSX.Element {
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const {

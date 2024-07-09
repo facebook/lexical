@@ -6,11 +6,14 @@
  *
  */
 
+import {ReactNode} from 'react';
+
 export type Example = {
   description: string;
   title: string;
   uri?: string;
-  renderPreview?: () => unknown;
+  preview?: string;
+  renderPreview?: () => ReactNode;
 };
 
 export const plugins = (customFields: {

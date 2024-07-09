@@ -13,17 +13,7 @@ import {typeof LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 import * as React from 'react';
 
-type InitialEditorStateType =
-  | null
-  | string
-  | EditorState
-  | ((editor: LexicalEditor) => void);
-
 declare export function PlainTextPlugin({
   contentEditable: React$Node,
-  placeholder?:
-  | ((isEditable: boolean) => null | React$Node)
-  | null
-  | React$Node;
   ErrorBoundary: LexicalErrorBoundary,
 }): React$Node;

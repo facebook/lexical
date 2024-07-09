@@ -6,7 +6,8 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import type {LexicalEditor} from 'lexical';
+
 import * as React from 'react';
 import {forwardRef, Ref, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -14,6 +15,7 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 import {mergeRefs} from './mergeRefs';
 
 export type Props = {
+  editor: LexicalEditor;
   ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
   ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
   ariaControls?: React.AriaAttributes['aria-controls'];
@@ -30,6 +32,7 @@ export type Props = {
 
 function ContentEditableElementImpl(
   {
+    editor,
     ariaActiveDescendant,
     ariaAutoComplete,
     ariaControls,
@@ -52,7 +55,6 @@ function ContentEditableElementImpl(
   }: Props,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
-  const [editor] = useLexicalComposerContext();
   const [isEditable, setEditable] = useState(false);
 
   const handleRef = (rootElement: null | HTMLElement) => {

@@ -30,11 +30,11 @@ type HTMLDivElementDOMProps = $ReadOnly<{
 type PlaceholderProps =
   | $ReadOnly<{
       'aria-placeholder'?: void,
-      placeholderComponent?: null,
+      placeholder?: null,
     }>
   | $ReadOnly<{
       'aria-placeholder': string,
-      placeholderComponent:
+      placeholder:
         | ((isEditable: boolean) => null | React$Node)
         | null
         | React$Node,

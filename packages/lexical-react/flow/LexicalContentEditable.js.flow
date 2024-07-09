@@ -12,6 +12,7 @@ import type { LexicalEditor } from 'lexical';
 import type {TRefFor} from 'CoreTypes.flow';
 
 import * as React from 'react';
+import type { AbstractComponent } from "react";
 
 // Due to Flow limitations, we prefer fixed types over the built-in inexact HTMLElement
 type HTMLDivElementDOMProps = $ReadOnly<{
@@ -60,4 +61,7 @@ export type Props = $ReadOnly<{
   ...PlaceholderProps
 }>
 
-declare export function ContentEditable(props: Props): React$Node;
+declare export var ContentEditable: AbstractComponent<
+  Props,
+  HTMLDivElement,
+>;

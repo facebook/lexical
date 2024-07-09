@@ -104,7 +104,13 @@ export function useYjsCollaboration(
       const origin = transaction.origin;
       if (origin !== binding) {
         const isFromUndoManger = origin instanceof UndoManager;
-        syncYjsChangesToLexical(binding, provider, events, isFromUndoManger);
+        syncYjsChangesToLexical(
+          binding,
+          provider,
+          events,
+          isFromUndoManger,
+          shouldBootstrap,
+        );
       }
     };
 

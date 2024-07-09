@@ -27,11 +27,13 @@ function Editor({
   provider,
   setEditor,
   awarenessData,
+  shouldBootstrapCollab = true,
 }: {
   doc: Y.Doc;
   provider: Provider;
   setEditor: (editor: LexicalEditor) => void;
   awarenessData?: object | undefined;
+  shouldBootstrapCollab?: boolean;
 }) {
   const context = useCollaborationContext();
 
@@ -48,7 +50,7 @@ function Editor({
       <CollaborationPlugin
         id="main"
         providerFactory={() => provider}
-        shouldBootstrap={true}
+        shouldBootstrap={shouldBootstrapCollab}
         awarenessData={awarenessData}
       />
       <RichTextPlugin
@@ -148,7 +150,11 @@ export class Client implements Provider {
     this._connected = false;
   }
 
-  start(rootContainer: Container, awarenessData?: object) {
+  start(
+    rootContainer: Container,
+    awarenessData?: object,
+    shouldBootstrapCollab = true,
+  ) {
     const container = document.createElement('div');
     const reactRoot = createRoot(container);
     this._container = container;
@@ -171,6 +177,7 @@ export class Client implements Provider {
             doc={this._doc}
             setEditor={(editor) => (this._editor = editor)}
             awarenessData={awarenessData}
+            shouldBootstrapCollab={shouldBootstrapCollab}
           />
         </LexicalComposer>,
       );

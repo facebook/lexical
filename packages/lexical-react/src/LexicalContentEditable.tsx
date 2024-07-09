@@ -7,17 +7,18 @@
  */
 
 import type {Props as ElementProps} from './shared/LexicalContentEditableElement';
+import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import {forwardRef, Ref} from 'react';
+import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
 /* eslint-disable @typescript-eslint/ban-types */
-export type Props = ElementProps &
-  (
+export type Props = Omit<ElementProps, 'editor'> & {
+  editor__DEPRECATED?: LexicalEditor;
+} & (
     | {
         'aria-placeholder'?: void;
         placeholder?: null;
@@ -32,34 +33,43 @@ export type Props = ElementProps &
 
 /* eslint-enable @typescript-eslint/ban-types */
 
+export const ContentEditable = forwardRef(ContentEditableImpl);
+
 function ContentEditableImpl(
   props: Props,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
-  let placeholder = null;
-  let rest: Omit<Props, 'placeholder'> = props;
-  if ('placeholder' in props) {
-    ({placeholder, ...rest} = props);
-  }
+  const {placeholder, editor__DEPRECATED, ...rest} = props;
+  // editor__DEPRECATED will always be defined for non MLC surfaces
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const editor = editor__DEPRECATED || useLexicalComposerContext()[0];
 
   return (
     <>
-      <ContentEditableElement {...rest} ref={ref} />
-      {placeholder != null && <Placeholder content={placeholder} />}
+      <ContentEditableElement editor={editor} {...rest} ref={ref} />
+      {placeholder != null && (
+        <Placeholder editor={editor} content={placeholder} />
+      )}
     </>
   );
 }
 
-export const ContentEditable = forwardRef(ContentEditableImpl);
-
 function Placeholder({
   content,
+  editor,
 }: {
+  editor: LexicalEditor;
   content: ((isEditable: boolean) => null | JSX.Element) | JSX.Element;
 }): null | JSX.Element {
-  const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  const editable = useLexicalEditable();
+
+  const [isEditable, setEditable] = useState(false);
+  useLayoutEffect(() => {
+    setEditable(editor.isEditable());
+    return editor.registerEditableListener((currentIsEditable) => {
+      setEditable(currentIsEditable);
+    });
+  }, [editor]);
 
   if (!showPlaceholder) {
     return null;
@@ -67,7 +77,7 @@ function Placeholder({
 
   let placeholder = null;
   if (typeof content === 'function') {
-    placeholder = content(editable);
+    placeholder = content(isEditable);
   } else if (content !== null) {
     placeholder = content;
   }

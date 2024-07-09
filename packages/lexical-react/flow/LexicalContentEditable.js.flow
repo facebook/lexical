@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type { LexicalEditor } from 'lexical';
 // $FlowFixMe - Not able to type this with a flow extension
 import type {TRefFor} from 'CoreTypes.flow';
 
@@ -43,6 +44,7 @@ type PlaceholderProps =
 
 export type Props = $ReadOnly<{
   ...HTMLDivElementDOMProps,
+  editor__DEPRECATED?: LexicalEditor;
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,
   ariaControls?: string,

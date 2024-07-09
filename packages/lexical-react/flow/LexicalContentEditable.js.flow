@@ -17,6 +17,7 @@ type HTMLDivElementDOMProps = $ReadOnly<{
   autoCapitalize?:  boolean,
   autoComplete?: boolean,
   autoCorrect?: boolean,
+  id?: string,
   className?: string,
   'data-testid'?: string,
   role?: string,

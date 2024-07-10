@@ -972,7 +972,7 @@ describe('LexicalEditor tests', () => {
           [editor] = useLexicalComposerContext();
 
           useEffect(() => {
-            editor.registerRootListener(listener);
+            return editor.registerRootListener(listener);
           }, []);
 
           return null;
@@ -1011,7 +1011,7 @@ describe('LexicalEditor tests', () => {
         await Promise.resolve().then();
       });
 
-      expect(listener).toHaveBeenCalledTimes(3);
+      expect(listener).toHaveBeenCalledTimes(4);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );

@@ -60,6 +60,8 @@ export function ContentEditableElement({
         rootElement.ownerDocument.defaultView
       ) {
         editor.setRootElement(rootElement);
+      } else {
+        editor.setRootElement(null);
       }
     },
     [editor],

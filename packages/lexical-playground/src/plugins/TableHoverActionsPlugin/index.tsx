@@ -169,7 +169,7 @@ function TableHoverActionsContainer({
         });
       }),
     );
-  }, []);
+  }, [editor]);
 
   const insertAction = (insertRow: boolean) => {
     editor.update(() => {

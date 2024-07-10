@@ -14,21 +14,29 @@ import type {TRefFor} from 'CoreTypes.flow';
 import * as React from 'react';
 import type { AbstractComponent } from "react";
 
+type InlineStyle = {
+  [key: string]: mixed;
+}
+
 // Due to Flow limitations, we prefer fixed types over the built-in inexact HTMLElement
 type HTMLDivElementDOMProps = $ReadOnly<{
-  autoCapitalize?:  boolean,
-  autoComplete?: boolean,
-  autoCorrect?: boolean,
-  id?: string,
-  className?: string,
-  'data-testid'?: string,
-  role?: string,
-  spellCheck?: boolean,
-  suppressContentEditableWarning?: boolean,
-  tabIndex?: number,
-  style?: CSSStyleDeclaration,
-  'data-testid'?: string | null,
-}>
+  'aria-label'?: void | string,
+  'aria-labeledby'?: void | string,
+  'title'?: void | string,
+  onClick?: void | (e: SyntheticEvent<HTMLDivElement>) => mixed,
+  autoCapitalize?: void | boolean,
+  autoComplete?: void | boolean,
+  autoCorrect?: void | boolean,
+  id?: void | string,
+  className?: void | string,
+  'data-testid'?: void | string,
+  role?: void | string,
+  spellCheck?: void | boolean,
+  suppressContentEditableWarning?: void | boolean,
+  tabIndex?: void | number,
+  style?: void | InlineStyle | CSSStyleDeclaration,
+  'data-testid'?: void | string,
+}>;
 
 export type PlaceholderProps =
   | $ReadOnly<{

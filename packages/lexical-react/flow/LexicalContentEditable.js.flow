@@ -30,7 +30,7 @@ type HTMLDivElementDOMProps = $ReadOnly<{
   'data-testid'?: string | null,
 }>
 
-type PlaceholderProps =
+export type PlaceholderProps =
   | $ReadOnly<{
       'aria-placeholder'?: void,
       placeholder?: null,

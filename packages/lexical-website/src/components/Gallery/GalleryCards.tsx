@@ -12,9 +12,11 @@ import clsx from 'clsx';
 import React, {useEffect, useState} from 'react';
 
 import Card from './Card';
+import Filters from './components/Filters';
 import SearchBar from './components/SearchBar';
 import {Example, plugins} from './pluginList';
 import styles from './styles.module.css';
+import {TagList} from './tagList';
 import {useFilteredExamples} from './utils';
 
 function CardList({cards}: {cards: Array<Example>}) {
@@ -59,6 +61,7 @@ function GalleryCardsImpl() {
     <section className="margin-top--lg margin-bottom--xl">
       <div style={{display: 'flex', marginLeft: 'auto'}} className="container">
         <SearchBar />
+        <Filters filteredPlugins={filteredPlugins} tagList={TagList} />
       </div>
       <CardList cards={filteredPlugins} />
     </section>

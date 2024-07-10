@@ -6,13 +6,17 @@
  *
  */
 
-import {useQueryString} from '@docusaurus/theme-common';
+import {useQueryString, useQueryStringList} from '@docusaurus/theme-common';
 import {useMemo} from 'react';
 
 import {Example} from './pluginList';
 
 export function useSearchName() {
   return useQueryString('title');
+}
+
+export function useTags() {
+  return useQueryStringList('tags');
 }
 
 function filterExamples({

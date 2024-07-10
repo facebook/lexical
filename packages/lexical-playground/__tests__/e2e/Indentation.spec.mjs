@@ -99,8 +99,8 @@ test.describe('Identation', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"
+          data-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -177,8 +177,8 @@ test.describe('Identation', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"
+          data-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
         <p
@@ -270,8 +270,8 @@ test.describe('Identation', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"
+          data-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
         <p
@@ -357,8 +357,8 @@ test.describe('Identation', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"
+          data-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
         <p
@@ -438,8 +438,8 @@ test.describe('Identation', () => {
           dir="ltr"
           spellcheck="false"
           data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"
+          data-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>

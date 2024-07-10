@@ -9,19 +9,19 @@
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import Card from './Card';
 import SearchBar from './components/SearchBar';
-import {plugins} from './pluginList';
+import {Example, plugins} from './pluginList';
 import styles from './styles.module.css';
 import {useFilteredExamples} from './utils';
 
-function CardList({cards}) {
+function CardList({cards}: {cards: Array<Example>}) {
   return (
     <div className="container">
       <ul className={clsx('clean-list', styles.cardList)}>
-        {cards.map((item) => (
+        {cards.map((item: Example) => (
           <Card key={item.title} item={item} />
         ))}
       </ul>
@@ -38,7 +38,9 @@ function GalleryCardsImpl() {
     siteConfig: {customFields},
   } = useDocusaurusContext();
 
-  const [internGalleryCards, setInternGalleryCards] = useState(null);
+  const [internGalleryCards, setInternGalleryCards] = useState<{
+    InternGalleryCards: () => Array<Example>;
+  } | null>(null);
 
   const pluginsCombined = plugins(customFields ?? {}).concat(
     internGalleryCards != null ? internGalleryCards.InternGalleryCards() : [],
@@ -47,12 +49,9 @@ function GalleryCardsImpl() {
   const filteredPlugins = useFilteredExamples(pluginsCombined);
 
   useEffect(() => {
-    try {
-      if (process.env.FB_INTERNAL) {
-        import('../../../../InternGalleryCards').then(setInternGalleryCards);
-      }
-    } catch (e) {
-      throw e;
+    if (process.env.FB_INTERNAL) {
+      // @ts-ignore runtime dependency for intern builds
+      import('../../../../InternGalleryCards').then(setInternGalleryCards);
     }
   }, []);
 

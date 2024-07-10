@@ -65,10 +65,10 @@ test.describe.parallel('Links', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
@@ -92,10 +92,10 @@ test.describe.parallel('Links', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
@@ -1499,10 +1499,10 @@ test.describe.parallel('Links', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">An Awesome Website</span>
           </a>
         </p>
@@ -1522,10 +1522,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hey, check this out:</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">An Awesome Website</span>
           </a>
           <span data-lexical-text="true">!</span>
@@ -1591,10 +1591,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">This is an</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">Awesome Website</span>
           </a>
           <span data-lexical-text="true">, right?</span>
@@ -1636,10 +1636,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1662,10 +1662,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1742,10 +1742,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1778,10 +1778,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1853,10 +1853,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1876,10 +1876,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </h1>

@@ -54,7 +54,7 @@ export default function TagSelect({
         id={id}
         checked={isSelected}
         onChange={toggle}
-        className="screen-reader-only"
+        className={styles.screenReaderOnly}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             toggle();

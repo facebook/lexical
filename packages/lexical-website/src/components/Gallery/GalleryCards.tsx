@@ -59,11 +59,15 @@ function GalleryCardsImpl() {
 
   return (
     <section className="margin-top--lg margin-bottom--xl">
-      <div style={{display: 'flex', marginLeft: 'auto'}} className="container">
-        <SearchBar />
+      <main className="margin-vert--lg">
         <Filters filteredPlugins={filteredPlugins} tagList={TagList} />
-      </div>
-      <CardList cards={filteredPlugins} />
+        <div
+          style={{display: 'flex', marginLeft: 'auto'}}
+          className="container">
+          <SearchBar />
+        </div>
+        <CardList cards={filteredPlugins} />
+      </main>
     </section>
   );
 }

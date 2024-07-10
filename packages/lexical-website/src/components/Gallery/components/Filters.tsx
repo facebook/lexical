@@ -6,7 +6,7 @@
  *
  */
 
-import type {CSSProperties,ReactNode} from 'react';
+import type {CSSProperties, ReactNode} from 'react';
 
 import Heading from '@theme/Heading';
 import clsx from 'clsx';
@@ -53,13 +53,7 @@ function ShowcaseTagListItem({tag, tagKey}: {tag: Tag; tagKey: string}) {
   );
 }
 
-function ShowcaseTagList({
-  filteredPlugins,
-  allTags,
-}: {
-  filteredPlugins: Array<Example>;
-  allTags: {[type in string]: Tag};
-}) {
+function ShowcaseTagList({allTags}: {allTags: {[type in string]: Tag}}) {
   return (
     <ul className={clsx('clean-list', styles.tagList)}>
       {Object.keys(allTags).map((tag) => {
@@ -102,7 +96,7 @@ export default function Filters({
   return (
     <section className="margin-top--l margin-bottom--lg container">
       <HeadingRow filteredPlugins={filteredPlugins} />
-      <ShowcaseTagList filteredPlugins={filteredPlugins} allTags={tagList} />
+      <ShowcaseTagList allTags={tagList} />
     </section>
   );
 }

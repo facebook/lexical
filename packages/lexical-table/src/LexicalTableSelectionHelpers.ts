@@ -1346,8 +1346,8 @@ function $handleArrowKey(
         event.shiftKey &&
         (direction === 'up' || direction === 'down')
       ) {
-        const anchorNode = selection.anchor.getNode();
-        if ($isRootOrShadowRoot(anchorNode)) {
+        const focusNode = selection.focus.getNode();
+        if ($isRootOrShadowRoot(focusNode)) {
           const selectedNode = selection.getNodes()[0];
           if (selectedNode) {
             const tableCellNode = $findMatchingParent(
@@ -1387,17 +1387,17 @@ function $handleArrowKey(
           }
           return false;
         } else {
-          const anchorParentNode = $findMatchingParent(
-            anchorNode,
+          const focusParentNode = $findMatchingParent(
+            focusNode,
             (n) => $isElementNode(n) && !n.isInline(),
           );
-          if (!anchorParentNode) {
+          if (!focusParentNode) {
             return false;
           }
           const sibling =
             direction === 'down'
-              ? anchorParentNode.getNextSibling()
-              : anchorParentNode.getPreviousSibling();
+              ? focusParentNode.getNextSibling()
+              : focusParentNode.getPreviousSibling();
           if (
             $isTableNode(sibling) &&
             tableObserver.tableNodeKey === sibling.getKey()

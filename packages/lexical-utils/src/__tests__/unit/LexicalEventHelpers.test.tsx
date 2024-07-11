@@ -678,6 +678,16 @@ describe('LexicalEventHelpers', () => {
           ],
           name: 'two lines and br in spans',
         },
+        {
+          expectedHTML: '<ol><li>1<div></div>2</li><li></li></ol>',
+          inputs: [pasteHTML('npm3</li></ol>')],
+          name: 'empty block node behaves like a line break',
+        },
+        {
+          expectedHTML: '<div>1<text></text>2</div>',
+          inputs: [pasteHTML('npm3</li></ol>')],
+          name: 'empty inline node does not behave like a line break',
+        },
       ];
 
       suite.forEach((testUnit, i) => {

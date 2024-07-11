@@ -294,9 +294,16 @@ function $createNodesFromDOM(
   }
 
   if (currentLexicalNode == null) {
-    // If it hasn't been converted to a LexicalNode, we hoist its children
-    // up to the same level as it.
-    lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+    if (childLexicalNodes.length > 0) {
+      // If it hasn't been converted to a LexicalNode, we hoist its children
+      // up to the same level as it.
+      lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+    } else {
+      if (isBlockDomNode(node)) {
+        // Empty block dom node that hasnt been converted, we replace it with a linebreak
+        lexicalNodes = lexicalNodes.concat($createLineBreakNode());
+      }
+    }
   } else {
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after conversion,

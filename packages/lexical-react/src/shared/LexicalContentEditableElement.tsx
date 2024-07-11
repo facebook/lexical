@@ -55,7 +55,7 @@ function ContentEditableElementImpl(
   }: Props,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
-  const [isEditable, setEditable] = useState(false);
+  const [isEditable, setEditable] = useState(editor.isEditable());
 
   const handleRef = (rootElement: null | HTMLElement) => {
     // defaultView is required for a root element.

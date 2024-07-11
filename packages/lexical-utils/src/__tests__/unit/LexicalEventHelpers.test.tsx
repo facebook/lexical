@@ -696,6 +696,16 @@ describe('LexicalEventHelpers', () => {
           inputs: [pasteHTML('<div>1<text></text>2</div>')],
           name: 'empty inline node does not behave like a line break',
         },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">b b</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">c</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">z</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">d e</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">fg</span></p>',
+          inputs: [
+            pasteHTML(
+              `<div>a<div>b b<div>c<div><div></div>z</div>d e</div>fg</div>`,
+            ),
+          ],
+          name: 'nested divs',
+        },
       ];
 
       suite.forEach((testUnit, i) => {

@@ -301,7 +301,7 @@ function $createNodesFromDOM(
     } else {
       if (isBlockDomNode(node) && isDomNodeMiddleChild(node)) {
         // Empty block dom node that hasnt been converted, we replace it with a linebreak if its a middle child
-        //lexicalNodes = lexicalNodes.concat($createLineBreakNode());
+        lexicalNodes = lexicalNodes.concat($createLineBreakNode());
       }
     }
   } else {

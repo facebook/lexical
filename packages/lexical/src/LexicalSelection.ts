@@ -1060,8 +1060,51 @@ export class RangeSelection implements BaseSelection {
   /**
    * Removes the text in the Selection, adjusting the EditorState accordingly.
    */
+  // #region removeText
   removeText(): void {
-    this.insertText('');
+    const {anchor, focus} = this;
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
+    const selectedNodes = this.getNodes();
+    const firstPoint = this.isBackward() ? focus : anchor;
+
+    if (anchorNode === focusNode && $isTextNode(anchorNode)) {
+      const delCount = Math.abs(focus.offset - anchor.offset);
+      anchorNode.spliceText(firstPoint.offset, delCount, '', true);
+      return;
+    }
+    const [beforeFocus, afterFocus] = $isTextNode(focusNode)
+    ? focusNode.splitText(focus.offset)
+      : [];
+    const [beforeAnchor, afterAnchor] = $isTextNode(anchorNode)
+      ? anchorNode.splitText(anchor.offset)
+      : [];
+      // console.log("selectedNodes", selectedNodes);
+      // return;
+    const afterFocusArray = beforeFocus ? beforeFocus.getNextSiblings() : [];
+    selectedNodes.forEach((node) => {
+      if (node.getKey() === firstPoint.key && firstPoint.type === "element") {
+        return;
+      }
+      console.log("node", node.getKey(), "beforeAnchor", beforeAnchor?.getKey(), "afterFocus", afterFocus?.getKey());
+      if (
+        !$hasAncestor(anchorNode, node) &&
+        !$hasAncestor(focusNode, node) &&
+        node.getKey() !== beforeAnchor?.getKey() &&
+        node.getKey() !== afterFocus?.getKey()
+        // node.getKey() !== focusNode.getKey()
+      ) {
+        node.remove();
+      }
+    });
+    if (afterAnchor) {
+      afterAnchor.remove();
+    }
+    let current: LexicalNode = beforeAnchor;
+    afterFocusArray.forEach((node) => {
+      current.insertAfter(node);
+      current = node;
+    });
   }
 
   /**
@@ -1205,6 +1248,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @param nodes - the nodes to insert
    */
+  // #region insertNodes
   insertNodes(nodes: Array<LexicalNode>): void {
     if (nodes.length === 0) {
       return;
@@ -1593,6 +1637,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @param isBackward whether or not the selection is backwards.
    */
+  // #region deleteCharacter
   deleteCharacter(isBackward: boolean): void {
     const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
@@ -2746,9 +2791,9 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let node = anchor.getNode();
   let offset = anchor.offset;
 
-  while (!INTERNAL_$isBlock(node)) {
-    [node, offset] = $splitNodeAtPoint(node, offset);
-  }
+  // while (!INTERNAL_$isBlock(node)) {
+  [node, offset] = $splitNodeAtPoint(node, offset);
+  // }
 
   return offset;
 }

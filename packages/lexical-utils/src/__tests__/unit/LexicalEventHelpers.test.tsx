@@ -679,13 +679,21 @@ describe('LexicalEventHelpers', () => {
           name: 'two lines and br in spans',
         },
         {
-          expectedHTML: '<ol><li>1<div></div>2</li><li></li></ol>',
-          inputs: [pasteHTML('npm3</li></ol>')],
-          name: 'empty block node behaves like a line break',
+          expectedHTML:
+            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br></li></ol>',
+          inputs: [pasteHTML('<ol><li>1<div></div>2</li><li></li></ol>')],
+          name: 'empty block node in li behaves like a line break',
         },
         {
-          expectedHTML: '<div>1<text></text>2</div>',
-          inputs: [pasteHTML('npm3</li></ol>')],
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></p>',
+          inputs: [pasteHTML('<div>1<div></div>2</div>')],
+          name: 'empty block node in div behaves like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">12</span></p>',
+          inputs: [pasteHTML('<div>1<text></text>2</div>')],
           name: 'empty inline node does not behave like a line break',
         },
       ];

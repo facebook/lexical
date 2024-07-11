@@ -299,9 +299,9 @@ function $createNodesFromDOM(
       // up to the same level as it.
       lexicalNodes = lexicalNodes.concat(childLexicalNodes);
     } else {
-      if (isBlockDomNode(node)) {
-        // Empty block dom node that hasnt been converted, we replace it with a linebreak
-        lexicalNodes = lexicalNodes.concat($createLineBreakNode());
+      if (isBlockDomNode(node) && isDomNodeMiddleChild(node)) {
+        // Empty block dom node that hasnt been converted, we replace it with a linebreak if its a middle child
+        //lexicalNodes = lexicalNodes.concat($createLineBreakNode());
       }
     }
   } else {
@@ -365,4 +365,8 @@ function $unwrapArtificalNodes(
     }
     node.remove();
   }
+}
+
+function isDomNodeMiddleChild(node: Node): boolean {
+  return node.nextSibling != null && node.previousSibling != null;
 }

@@ -13,6 +13,12 @@ export type Tag = {
 };
 
 export const TagList: {[type in string]: Tag} = {
+  favorite: {
+    color: '#e9669e',
+    description:
+      'Our favorite Docusaurus sites that you must absolutely check out!',
+    title: 'Favorite',
+  },
   opensource: {
     color: '#39ca30',
     description: 'Open-Source Lexical plugins for inspiration',

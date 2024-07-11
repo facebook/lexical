@@ -31,7 +31,7 @@ function TagCircleIcon({color, style}: {color: string; style?: CSSProperties}) {
   );
 }
 
-function ShowcaseTagListItem({tag, tagKey}: {tag: Tag; tagKey: string}) {
+function TagListItem({tag, tagKey}: {tag: Tag; tagKey: string}) {
   const {title, description, color} = tag;
   return (
     <li className={styles.tagListItem}>
@@ -53,13 +53,11 @@ function ShowcaseTagListItem({tag, tagKey}: {tag: Tag; tagKey: string}) {
   );
 }
 
-function ShowcaseTagList({allTags}: {allTags: {[type in string]: Tag}}) {
+function TagList({allTags}: {allTags: {[type in string]: Tag}}) {
   return (
     <ul className={clsx('clean-list', styles.tagList)}>
       {Object.keys(allTags).map((tag) => {
-        return (
-          <ShowcaseTagListItem key={tag} tag={allTags[tag]} tagKey={tag} />
-        );
+        return <TagListItem key={tag} tag={allTags[tag]} tagKey={tag} />;
       })}
     </ul>
   );
@@ -96,7 +94,7 @@ export default function Filters({
   return (
     <section className="margin-top--l margin-bottom--lg container">
       <HeadingRow filteredPlugins={filteredPlugins} />
-      <ShowcaseTagList allTags={tagList} />
+      <TagList allTags={tagList} />
     </section>
   );
 }

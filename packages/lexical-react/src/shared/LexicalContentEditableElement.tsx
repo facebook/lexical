@@ -9,7 +9,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
-import {forwardRef, Ref, useState} from 'react';
+import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {mergeRefs} from './mergeRefs';
@@ -57,19 +57,23 @@ function ContentEditableElementImpl(
 ): JSX.Element {
   const [isEditable, setEditable] = useState(editor.isEditable());
 
-  const handleRef = (rootElement: null | HTMLElement) => {
-    // defaultView is required for a root element.
-    // In multi-window setups, the defaultView may not exist at certain points.
-    if (
-      rootElement &&
-      rootElement.ownerDocument &&
-      rootElement.ownerDocument.defaultView
-    ) {
-      editor.setRootElement(rootElement);
-    } else {
-      editor.setRootElement(null);
-    }
-  };
+  const handleRef = useCallback(
+    (rootElement: null | HTMLElement) => {
+      // defaultView is required for a root element.
+      // In multi-window setups, the defaultView may not exist at certain points.
+      if (
+        rootElement &&
+        rootElement.ownerDocument &&
+        rootElement.ownerDocument.defaultView
+      ) {
+        editor.setRootElement(rootElement);
+      } else {
+        editor.setRootElement(null);
+      }
+    },
+    [editor],
+  );
+  const mergedRefs = useMemo(() => mergeRefs(ref, handleRef), [handleRef, ref]);
 
   useLayoutEffect(() => {
     setEditable(editor.isEditable());
@@ -99,7 +103,7 @@ function ContentEditableElementImpl(
       contentEditable={isEditable}
       data-testid={testid}
       id={id}
-      ref={mergeRefs(ref, handleRef)}
+      ref={mergedRefs}
       role={isEditable ? role : undefined}
       spellCheck={spellCheck}
       style={style}

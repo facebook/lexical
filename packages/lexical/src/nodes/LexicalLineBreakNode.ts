@@ -16,7 +16,7 @@ import type {
 
 import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement} from '../LexicalUtils';
+import {$applyNodeReplacement, isBlockDomNode} from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
 
@@ -50,7 +50,7 @@ export class LineBreakNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
-        if (isOnlyChildInParagraph(node)) {
+        if (isOnlyChildInBlockNode(node)) {
           return null;
         }
         return {
@@ -89,9 +89,9 @@ export function $isLineBreakNode(
   return node instanceof LineBreakNode;
 }
 
-function isOnlyChildInParagraph(node: Node): boolean {
+function isOnlyChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
-  if (parentElement !== null && parentElement.tagName === 'P') {
+  if (parentElement !== null && isBlockDomNode(parentElement)) {
     const firstChild = parentElement.firstChild!;
     if (
       firstChild === node ||

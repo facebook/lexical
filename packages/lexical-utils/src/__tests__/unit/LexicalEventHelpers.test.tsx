@@ -678,6 +678,12 @@ describe('LexicalEventHelpers', () => {
           ],
           name: 'two lines and br in spans',
         },
+        {
+          expectedHTML:
+            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+          inputs: [pasteHTML('<ol><li>1</li><li><br /></li><li>3</li></ol>')],
+          name: 'only br in a li',
+        },
       ];
 
       suite.forEach((testUnit, i) => {

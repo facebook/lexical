@@ -63,7 +63,7 @@ function Placeholder({
 }): null | JSX.Element {
   const showPlaceholder = useCanShowPlaceholder(editor);
 
-  const [isEditable, setEditable] = useState(false);
+  const [isEditable, setEditable] = useState(editor.isEditable());
   useLayoutEffect(() => {
     setEditable(editor.isEditable());
     return editor.registerEditableListener((currentIsEditable) => {

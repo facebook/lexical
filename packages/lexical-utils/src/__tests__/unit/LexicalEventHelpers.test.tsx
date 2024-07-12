@@ -680,8 +680,10 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br></li></ol>',
-          inputs: [pasteHTML('<ol><li>1<div></div>2</li><li></li></ol>')],
+            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+          inputs: [
+            pasteHTML('<ol><li>1<div></div>2</li><li></li><li>3</li></ol>'),
+          ],
           name: 'empty block node in li behaves like a line break',
         },
         {

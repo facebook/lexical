@@ -720,6 +720,12 @@ describe('LexicalEventHelpers', () => {
           inputs: [pasteHTML('<ol><li>1</li><li><br /></li><li>3</li></ol>')],
           name: 'only br in a li',
         },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span></p><p class="editor-paragraph"><span data-lexical-text="true">2</span></p><p class="editor-paragraph"><span data-lexical-text="true">3</span></p>',
+          inputs: [pasteHTML('1<p>2<br /></p>3')],
+          name: 'last br in a block node is ignored',
+        },
       ];
 
       suite.forEach((testUnit, i) => {

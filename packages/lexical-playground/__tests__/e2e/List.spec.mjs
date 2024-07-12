@@ -98,9 +98,9 @@ test.describe.parallel('Nested List', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul">
           <li
-            value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            value="1">
             <span data-lexical-text="true">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
               venenatis risus ac cursus efficitur. Cras efficitur magna odio,
@@ -258,17 +258,17 @@ test.describe.parallel('Nested List', () => {
             <ul>
               <li value="1">
                 <ul>
-                  <li value="1" dir="ltr">
+                  <li dir="ltr" value="1">
                     <span data-lexical-text="true">foo</span>
                   </li>
                 </ul>
               </li>
-              <li value="1" dir="ltr">
+              <li dir="ltr" value="1">
                 <span data-lexical-text="true">bar</span>
               </li>
               <li value="2">
                 <ul>
-                  <li value="1" dir="ltr">
+                  <li dir="ltr" value="1">
                     <span data-lexical-text="true">baz</span>
                   </li>
                 </ul>
@@ -487,10 +487,10 @@ test.describe.parallel('Nested List', () => {
           dir="ltr">
           <span data-lexical-text="true">One</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">two</span>
           </a>
           <span data-lexical-text="true">three</span>
@@ -518,10 +518,10 @@ test.describe.parallel('Nested List', () => {
           dir="ltr">
           <span data-lexical-text="true">One</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">two</span>
           </a>
           <span data-lexical-text="true">three</span>
@@ -1059,7 +1059,7 @@ test.describe.parallel('Nested List', () => {
       page,
       html`
         <ul>
-          <li value="1" dir="ltr">
+          <li dir="ltr" value="1">
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
@@ -1090,10 +1090,10 @@ test.describe.parallel('Nested List', () => {
       page,
       html`
         <ul>
-          <li value="1" dir="ltr">
+          <li dir="ltr" value="1">
             <span data-lexical-text="true">a</span>
           </li>
-          <li value="2" dir="ltr">
+          <li dir="ltr" value="2">
             <span data-lexical-text="true">b</span>
           </li>
         </ul>
@@ -1106,7 +1106,7 @@ test.describe.parallel('Nested List', () => {
       page,
       html`
         <ul>
-          <li value="1" dir="ltr">
+          <li dir="ltr" value="1">
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
@@ -1132,13 +1132,13 @@ test.describe.parallel('Nested List', () => {
       page,
       html`
         <ul>
-          <li value="1" dir="ltr">
+          <li dir="ltr" value="1">
             <span data-lexical-text="true">a</span>
           </li>
-          <li value="2" dir="ltr">
+          <li dir="ltr" value="2">
             <span data-lexical-text="true">b</span>
           </li>
-          <li value="3" dir="ltr">
+          <li dir="ltr" value="3">
             <span data-lexical-text="true">c</span>
           </li>
         </ul>
@@ -1151,13 +1151,13 @@ test.describe.parallel('Nested List', () => {
       page,
       html`
         <ul>
-          <li value="1" dir="ltr">
+          <li dir="ltr" value="1">
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
         <p dir="ltr"><span data-lexical-text="true">b</span></p>
         <ul>
-          <li value="1" dir="ltr">
+          <li dir="ltr" value="1">
             <span data-lexical-text="true">c</span>
           </li>
         </ul>
@@ -1187,21 +1187,21 @@ test.describe.parallel('Nested List', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
-            aria-checked="true"
-            role="checkbox"
-            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr PlaygroundEditorTheme__listItemChecked"
             dir="ltr"
-            value="1">
+            role="checkbox"
+            tabindex="-1"
+            value="1"
+            aria-checked="true">
             <span data-lexical-text="true">a</span>
           </li>
           <li
-            aria-checked="false"
-            role="checkbox"
-            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="2">
+            role="checkbox"
+            tabindex="-1"
+            value="2"
+            aria-checked="false">
             <span data-lexical-text="true">b</span>
           </li>
           <li
@@ -1210,12 +1210,12 @@ test.describe.parallel('Nested List', () => {
             <ul
               class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
-                aria-checked="false"
-                role="checkbox"
-                tabindex="-1"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                value="1">
+                role="checkbox"
+                tabindex="-1"
+                value="1"
+                aria-checked="false">
                 <span data-lexical-text="true">c</span>
               </li>
             </ul>
@@ -1247,12 +1247,12 @@ test.describe.parallel('Nested List', () => {
             <ul
               class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
-                aria-checked="false"
-                role="checkbox"
-                tabindex="-1"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                value="1">
+                role="checkbox"
+                tabindex="-1"
+                value="1"
+                aria-checked="false">
                 <span data-lexical-text="true">c</span>
               </li>
             </ul>
@@ -1266,21 +1266,21 @@ test.describe.parallel('Nested List', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
-            aria-checked="false"
-            role="checkbox"
-            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="1">
+            role="checkbox"
+            tabindex="-1"
+            value="1"
+            aria-checked="false">
             <span data-lexical-text="true">a</span>
           </li>
           <li
-            aria-checked="false"
-            role="checkbox"
-            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="2">
+            role="checkbox"
+            tabindex="-1"
+            value="2"
+            aria-checked="false">
             <span data-lexical-text="true">b</span>
           </li>
           <li
@@ -1289,12 +1289,12 @@ test.describe.parallel('Nested List', () => {
             <ul
               class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
-                aria-checked="false"
-                role="checkbox"
-                tabindex="-1"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                value="1">
+                role="checkbox"
+                tabindex="-1"
+                value="1"
+                aria-checked="false">
                 <span data-lexical-text="true">c</span>
               </li>
             </ul>
@@ -1431,58 +1431,62 @@ test.describe.parallel('Nested List', () => {
     });
   });
 
-  test('remove list breaks when selection in empty nested list item 2', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello World');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('a');
-    await toggleBulletList(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('b');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('Enter');
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
-    await toggleBulletList(page);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello World</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">a</span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(40px)">
-          <br />
-        </p>
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">b</span>
-          </li>
-        </ul>
-      `,
-    );
-    await page.pause();
-    await assertSelection(page, {
-      anchorOffset: 1,
-      anchorPath: [1, 0],
-      focusOffset: 1,
-      focusPath: [1, 0],
-    });
-  });
+  test(
+    'remove list breaks when selection in empty nested list item 2',
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello World');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('a');
+      await toggleBulletList(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('b');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('Enter');
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
+      await toggleBulletList(page);
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello World</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">a</span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            style="padding-inline-start: calc(40px)">
+            <br />
+          </p>
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">b</span>
+            </li>
+          </ul>
+        `,
+      );
+      await page.pause();
+      await assertSelection(page, {
+        anchorOffset: 1,
+        anchorPath: [1, 0],
+        focusOffset: 1,
+        focusPath: [1, 0],
+      });
+    },
+  );
 });

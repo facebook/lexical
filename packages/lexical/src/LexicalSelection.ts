@@ -1063,48 +1063,93 @@ export class RangeSelection implements BaseSelection {
   // #region removeText
   removeText(): void {
     const {anchor, focus} = this;
-    const anchorNode = anchor.getNode();
-    const focusNode = focus.getNode();
+    // const anchorNode = anchor.getNode();
+    // const focusNode = focus.getNode();
     const selectedNodes = this.getNodes();
-    const firstPoint = this.isBackward() ? focus : anchor;
 
-    if (anchorNode === focusNode && $isTextNode(anchorNode)) {
+    const firstPoint = this.isBackward() ? focus : anchor;
+    const lastPoint = this.isBackward() ? anchor : focus;
+    const firstNode = firstPoint.getNode();
+    const lastNode = lastPoint.getNode();
+
+    if (firstNode === lastNode && $isTextNode(firstNode)) {
       const delCount = Math.abs(focus.offset - anchor.offset);
-      anchorNode.spliceText(firstPoint.offset, delCount, '', true);
+      firstNode.spliceText(firstPoint.offset, delCount, '', true);
       return;
     }
-    const [beforeFocus, afterFocus] = $isTextNode(focusNode)
-    ? focusNode.splitText(focus.offset)
+    const [beforeLast, afterLast] = $isTextNode(lastNode)
+      ? (lastNode.splitText(lastPoint.offset) as [
+          TextNode | undefined,
+          TextNode | undefined,
+        ])
       : [];
-    const [beforeAnchor, afterAnchor] = $isTextNode(anchorNode)
-      ? anchorNode.splitText(anchor.offset)
+    const [beforeFirst, afterFirst] = $isTextNode(firstNode)
+      ? (firstNode.splitText(firstPoint.offset) as [
+          TextNode | undefined,
+          TextNode | undefined,
+        ])
       : [];
-      // console.log("selectedNodes", selectedNodes);
-      // return;
-    const afterFocusArray = beforeFocus ? beforeFocus.getNextSiblings() : [];
+
+    // console.log("selectedNodes", selectedNodes);
+    // return;
+    const afterLastArray = beforeLast ? beforeLast.getNextSiblings() : [];
+    if (!afterLast) afterLastArray.push(beforeLast!);
+    console.log(
+      'firstNode',
+      firstNode.getKey(),
+      firstNode.getTextContent(),
+      '\nlastNode',
+      lastNode.getKey(),
+      lastNode.getTextContent(),
+      '\nbeforeFirst',
+      beforeFirst?.getKey(),
+      beforeFirst?.getTextContent(),
+      '\nafterFirst',
+      afterFirst?.getKey(),
+      afterFirst?.getTextContent(),
+      '\nbeforeLast',
+      beforeLast?.getKey(),
+      beforeLast?.getTextContent(),
+      '\nafterLast',
+      afterLast?.getKey(),
+      afterLast?.getTextContent(),
+      '\nafterLastArray',
+      afterLastArray,
+    );
     selectedNodes.forEach((node) => {
-      if (node.getKey() === firstPoint.key && firstPoint.type === "element") {
+      if (node.getKey() === firstPoint.key && !afterFirst) {
         return;
       }
-      console.log("node", node.getKey(), "beforeAnchor", beforeAnchor?.getKey(), "afterFocus", afterFocus?.getKey());
+      if (node.getKey() === lastPoint.key && !afterLast) {
+        return;
+      }
+      // if (node.getKey() === firstNode.getKey() && !afterFirst) {
+      //   return;
+      // }
+      // if (node.getKey() === lastNode.getKey() && !afterLast) {
+      //   return;
+      // }
+
       if (
-        !$hasAncestor(anchorNode, node) &&
-        !$hasAncestor(focusNode, node) &&
-        node.getKey() !== beforeAnchor?.getKey() &&
-        node.getKey() !== afterFocus?.getKey()
-        // node.getKey() !== focusNode.getKey()
+        !$hasAncestor(firstNode, node) &&
+        !$hasAncestor(lastNode, node) &&
+        node.getKey() !== beforeFirst?.getKey() &&
+        node.getKey() !== afterLast?.getKey()
+        // node.getKey() !== lastNode.getKey()
       ) {
         node.remove();
       }
     });
-    if (afterAnchor) {
-      afterAnchor.remove();
+    if (afterFirst) {
+      afterFirst.remove();
     }
-    let current: LexicalNode = beforeAnchor;
-    afterFocusArray.forEach((node) => {
-      current.insertAfter(node);
-      current = node;
-    });
+    if (beforeFirst) {
+      let current: LexicalNode = beforeFirst;
+      afterLastArray.forEach((node) => {
+        current.insertAfter(node);
+        current = node;
+      });
+    }
   }
 
   /**

@@ -700,6 +700,12 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span></p><p class="editor-paragraph"><span data-lexical-text="true">2</span></p>',
+          inputs: [pasteHTML('<div><div>1</div><div></div><div>2</div></div>')],
+          name: 'empty block node between non inline siblings does not behave like a line break',
+        },
+        {
+          expectedHTML:
             '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">b b</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">c</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">z</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">d e</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">fg</span></p>',
           inputs: [
             pasteHTML(

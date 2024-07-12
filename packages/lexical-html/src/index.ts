@@ -31,6 +31,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  isInlineDomNode,
 } from 'lexical';
 
 /**
@@ -299,8 +300,8 @@ function $createNodesFromDOM(
       // up to the same level as it.
       lexicalNodes = lexicalNodes.concat(childLexicalNodes);
     } else {
-      if (isBlockDomNode(node) && isDomNodeMiddleChild(node)) {
-        // Empty block dom node that hasnt been converted, we replace it with a linebreak if its a middle child
+      if (isBlockDomNode(node) && isDomNodeBetweenTwoInlineNodes(node)) {
+        // Empty block dom node that hasnt been converted, we replace it with a linebreak if its between inline nodes
         lexicalNodes = lexicalNodes.concat($createLineBreakNode());
       }
     }
@@ -367,6 +368,11 @@ function $unwrapArtificalNodes(
   }
 }
 
-function isDomNodeMiddleChild(node: Node): boolean {
-  return node.nextSibling != null && node.previousSibling != null;
+function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
+  if (node.nextSibling == null || node.previousSibling == null) {
+    return false;
+  }
+  return (
+    isInlineDomNode(node.nextSibling) && isInlineDomNode(node.previousSibling)
+  );
 }

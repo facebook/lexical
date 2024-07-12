@@ -18,37 +18,39 @@ import {
 
 test.describe('Regression test #4697', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test('repeated table selection results in table selection', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(
+    'repeated table selection results in table selection',
+    {
+      tag: '@flaky',
+    },
+    async ({page, isPlainText, isCollab}) => {
+      test.skip(isPlainText);
 
-    await focusEditor(page);
+      await focusEditor(page);
 
-    await insertTable(page, 4, 4);
+      await insertTable(page, 4, 4);
 
-    await click(page, '.PlaygroundEditorTheme__tableCell');
-    await selectCellsFromTableCords(
-      page,
-      {x: 1, y: 1},
-      {x: 2, y: 2},
-      false,
-      false,
-    );
+      await click(page, '.PlaygroundEditorTheme__tableCell');
+      await selectCellsFromTableCords(
+        page,
+        {x: 1, y: 1},
+        {x: 2, y: 2},
+        false,
+        false,
+      );
 
-    await selectCellsFromTableCords(
-      page,
-      {x: 2, y: 1},
-      {x: 2, y: 2},
-      false,
-      false,
-    );
+      await selectCellsFromTableCords(
+        page,
+        {x: 2, y: 1},
+        {x: 2, y: 2},
+        false,
+        false,
+      );
 
-    await assertTableSelectionCoordinates(page, {
-      anchor: {x: 2, y: 1},
-      focus: {x: 2, y: 2},
-    });
-  });
+      await assertTableSelectionCoordinates(page, {
+        anchor: {x: 2, y: 1},
+        focus: {x: 2, y: 2},
+      });
+    },
+  );
 });

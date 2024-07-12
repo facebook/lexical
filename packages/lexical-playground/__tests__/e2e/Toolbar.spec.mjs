@@ -84,10 +84,10 @@ test.describe('Toolbar', () => {
               </div>
               <div>
                 <div
-                  aria-placeholder="Enter a caption..."
                   contenteditable="true"
                   role="textbox"
                   spellcheck="true"
+                  aria-placeholder="Enter a caption..."
                   data-lexical-editor="true">
                   <p dir="ltr">
                     <span data-lexical-text="true">
@@ -271,8 +271,8 @@ test.describe('Toolbar', () => {
             data-lexical-decorator="true">
             <div draggable="true">
               <img
-                alt="Yellow flower in tilt shift lens"
                 class="focused draggable"
+                alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
@@ -307,8 +307,8 @@ test.describe('Toolbar', () => {
             data-lexical-decorator="true">
             <div draggable="true">
               <img
-                alt="Yellow flower in tilt shift lens"
                 class="focused draggable"
+                alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />

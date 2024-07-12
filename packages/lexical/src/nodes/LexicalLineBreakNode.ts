@@ -50,7 +50,7 @@ export class LineBreakNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
-        if (isOnlyChild(node)) {
+        if (isOnlyChildInParagraph(node)) {
           return null;
         }
         return {
@@ -89,9 +89,9 @@ export function $isLineBreakNode(
   return node instanceof LineBreakNode;
 }
 
-function isOnlyChild(node: Node): boolean {
+function isOnlyChildInParagraph(node: Node): boolean {
   const parentElement = node.parentElement;
-  if (parentElement !== null) {
+  if (parentElement !== null && parentElement.tagName === 'P') {
     const firstChild = parentElement.firstChild!;
     if (
       firstChild === node ||

@@ -1,0 +1,110 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+.searchBar {
+  margin-left: auto;
+  margin-bottom: 12px;
+}
+
+.searchBar input {
+  height: 30px;
+  border-radius: 15px;
+  padding: 10px;
+  border: 1px solid gray;
+}
+
+.headingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headingText {
+  display: flex;
+  align-items: baseline;
+}
+
+.headingText > h2 {
+  margin-bottom: 0;
+}
+
+.headingText > span {
+  margin-left: 8px;
+}
+
+.headingButtons {
+  display: flex;
+  align-items: center;
+}
+
+.tagList {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tagListItem {
+  user-select: none;
+  white-space: nowrap;
+  height: 32px;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.tagListItem:last-child {
+  margin-right: 0;
+}
+
+.checkboxLabel:hover {
+  opacity: 1;
+  box-shadow: 0 0 2px 1px var(--ifm-color-secondary-darkest);
+}
+
+input[type='checkbox'] + .checkboxLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  line-height: 1.5;
+  border-radius: 4px;
+  padding: 0.275rem 0.8rem;
+  opacity: 0.85;
+  transition: opacity 200ms ease-out;
+  border: 2px solid var(--ifm-color-secondary-darkest);
+}
+
+input:focus-visible + .checkboxLabel {
+  outline: 2px solid currentColor;
+}
+
+input:checked + .checkboxLabel {
+  opacity: 0.9;
+  background-color: hsl(167deg 56% 73% / 25%);
+  border: 2px solid var(--ifm-color-primary-darkest);
+}
+
+input:checked + .checkboxLabel:hover {
+  opacity: 0.75;
+  box-shadow: 0 0 2px 1px var(--ifm-color-primary-dark);
+}
+
+html[data-theme='dark'] input:checked + .checkboxLabel {
+  background-color: hsl(167deg 56% 73% / 10%);
+}
+
+.screenReaderOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: polygon(0 0, 0 0, 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  white-space: nowrap;
+}

@@ -11,18 +11,19 @@ import Heading from '@theme/Heading';
 import clsx from 'clsx';
 import React from 'react';
 
+import {Example} from './pluginList';
 import styles from './styles.module.css';
 
-function getCardImage(item) {
+function getCardImage(item: Example) {
   return (
     item.preview ??
     `https://slorber-api-screenshot.netlify.app/${encodeURIComponent(
-      item.uri,
+      item.uri ?? '',
     )}/showcase`
   );
 }
 
-function Card({item}) {
+function Card({item}: {item: Example}) {
   const image = getCardImage(item);
   return (
     <li key={item.title} className="card shadow--md">
@@ -35,7 +36,7 @@ function Card({item}) {
       <div className="card__body">
         <div className={clsx(styles.showcaseCardHeader)}>
           <Heading as="h4" className={styles.showcaseCardTitle}>
-            <Link href={item.website} className={styles.showcaseCardLink}>
+            <Link href={item.uri} className={styles.showcaseCardLink}>
               {item.title}
             </Link>
           </Heading>

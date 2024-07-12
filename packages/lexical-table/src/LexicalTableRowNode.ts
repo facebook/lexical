@@ -60,9 +60,15 @@ export class TableRowNode extends ElementNode {
     this.__height = height;
   }
 
-  exportJSON(): SerializedTableRowNode {
+  exportJSON(): SerializedTableRowNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       ...(this.getHeight() && {height: this.getHeight()}),
       type: 'tablerow',
       version: 1,

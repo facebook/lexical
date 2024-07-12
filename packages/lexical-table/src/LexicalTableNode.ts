@@ -59,9 +59,15 @@ export class TableNode extends ElementNode {
     super(key);
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedElementNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       type: 'table',
       version: 1,
     };

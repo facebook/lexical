@@ -177,9 +177,15 @@ export class TableCellNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedTableCellNode {
+  exportJSON(): SerializedTableCellNode | null {
+    const baseSerializedNode = super.exportJSON();
+
+    if (baseSerializedNode === null) {
+      return baseSerializedNode;
+    }
+
     return {
-      ...super.exportJSON(),
+      ...baseSerializedNode,
       backgroundColor: this.getBackgroundColor(),
       colSpan: this.__colSpan,
       headerState: this.__headerState,

@@ -680,6 +680,42 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
+            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+          inputs: [
+            pasteHTML('<ol><li>1<div></div>2</li><li></li><li>3</li></ol>'),
+          ],
+          name: 'empty block node in li behaves like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></p>',
+          inputs: [pasteHTML('<div>1<div></div>2</div>')],
+          name: 'empty block node in div behaves like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">12</span></p>',
+          inputs: [pasteHTML('<div>1<text></text>2</div>')],
+          name: 'empty inline node does not behave like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span></p><p class="editor-paragraph"><span data-lexical-text="true">2</span></p>',
+          inputs: [pasteHTML('<div><div>1</div><div></div><div>2</div></div>')],
+          name: 'empty block node between non inline siblings does not behave like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">b b</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">c</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">z</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">d e</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">fg</span></p>',
+          inputs: [
+            pasteHTML(
+              `<div>a<div>b b<div>c<div><div></div>z</div></div>d e</div>fg</div>`,
+            ),
+          ],
+          name: 'nested divs',
+        },
+        {
+          expectedHTML:
             '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
           inputs: [pasteHTML('<ol><li>1</li><li><br /></li><li>3</li></ol>')],
           name: 'only br in a li',

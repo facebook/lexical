@@ -50,7 +50,7 @@ export class LineBreakNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
-        if (isOnlyChildInBlockNode(node)) {
+        if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
           return null;
         }
         return {
@@ -105,6 +105,30 @@ function isOnlyChildInBlockNode(node: Node): boolean {
       ) {
         return true;
       }
+    }
+  }
+  return false;
+}
+
+function isLastChildInBlockNode(node: Node): boolean {
+  const parentElement = node.parentElement;
+  if (parentElement !== null && isBlockDomNode(parentElement)) {
+    // check if node is first child, because only childs dont count
+    const firstChild = parentElement.firstChild!;
+    if (
+      firstChild === node ||
+      (firstChild.nextSibling === node && isWhitespaceDomTextNode(firstChild))
+    ) {
+      return false;
+    }
+
+    // check if its last child
+    const lastChild = parentElement.lastChild!;
+    if (
+      lastChild === node ||
+      (lastChild.previousSibling === node && isWhitespaceDomTextNode(lastChild))
+    ) {
+      return true;
     }
   }
   return false;

@@ -39,7 +39,8 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
-import {format} from 'prettier';
+import path from 'path';
+import * as prettier from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -47,6 +48,10 @@ import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
+
+const prettierConfig = prettier.resolveConfig.sync(
+  path.resolve(__dirname, '../../../../.prettierrc'),
+);
 
 type TestEnv = {
   readonly container: HTMLDivElement;
@@ -779,5 +784,8 @@ export function expectHtmlToBeEqual(expected: string, actual: string): void {
 }
 
 export function prettifyHtml(s: string): string {
-  return format(s.replace(/\n/g, ''), {parser: 'html'});
+  return prettier.format(s.replace(/\n/g, ''), {
+    ...prettierConfig,
+    parser: 'html',
+  });
 }

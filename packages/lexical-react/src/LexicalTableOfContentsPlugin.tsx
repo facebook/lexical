@@ -149,17 +149,21 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     // Set table of contents initial state
     let currentTableOfContents: Array<TableOfContentsEntry> = [];
     editor.getEditorState().read(() => {
-      const root = $getRoot();
-      const rootChildren = root.getChildren();
-      for (const child of rootChildren) {
-        if ($isHeadingNode(child)) {
-          currentTableOfContents.push([
-            child.getKey(),
-            child.getTextContent(),
-            child.getTag(),
-          ]);
+      const updateCurrentTableOfContents = (node: ElementNode) => {
+        for (const child of node.getChildren()) {
+          if ($isHeadingNode(child)) {
+            currentTableOfContents.push([
+              child.getKey(),
+              child.getTextContent(),
+              child.getTag(),
+            ]);
+          } else if ($isElementNode(child)) {
+            updateCurrentTableOfContents(child);
+          }
         }
-      }
+      };
+
+      updateCurrentTableOfContents($getRoot());
       setTableOfContents(currentTableOfContents);
     });
 

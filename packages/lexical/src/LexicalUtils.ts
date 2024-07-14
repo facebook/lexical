@@ -1698,32 +1698,32 @@ export function $getEditor(): LexicalEditor {
 }
 
 /** @internal */
-export type TypeTodNodeMap = Map<string, NodeMap>;
+export type TypeToNodeMap = Map<string, NodeMap>;
 /**
  * @internal
  * Compute a cached Map of node type to nodes for a frozen EditorState
  */
-const cachedNodeMaps = new WeakMap<EditorState, TypeTodNodeMap>();
+const cachedNodeMaps = new WeakMap<EditorState, TypeToNodeMap>();
 export function getCachedTypeToNodeMap(
   editorState: EditorState,
-): TypeTodNodeMap {
+): TypeToNodeMap {
   invariant(
     editorState._readOnly,
-    'computeTypedNodeMap called with a writable EditorState',
+    'getCachedTypeToNodeMap called with a writable EditorState',
   );
-  let typedNodeMap = cachedNodeMaps.get(editorState);
-  if (!typedNodeMap) {
-    typedNodeMap = new Map();
-    cachedNodeMaps.set(editorState, typedNodeMap);
+  let typeToNodeMap = cachedNodeMaps.get(editorState);
+  if (!typeToNodeMap) {
+    typeToNodeMap = new Map();
+    cachedNodeMaps.set(editorState, typeToNodeMap);
     for (const [nodeKey, node] of editorState._nodeMap) {
       const nodeType = node.__type;
-      let nodeMap = typedNodeMap.get(nodeType);
+      let nodeMap = typeToNodeMap.get(nodeType);
       if (!nodeMap) {
         nodeMap = new Map();
-        typedNodeMap.set(nodeType, nodeMap);
+        typeToNodeMap.set(nodeType, nodeMap);
       }
       nodeMap.set(nodeKey, node);
     }
   }
-  return typedNodeMap;
+  return typeToNodeMap;
 }

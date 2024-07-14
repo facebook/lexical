@@ -1139,7 +1139,7 @@ export class LexicalEditor {
   /**
    * Parses a SerializedEditorState (usually produced by {@link EditorState.toJSON}) and returns
    * and EditorState object that can be, for example, passed to {@link LexicalEditor.setEditorState}. Typically,
-   * deserliazation from JSON stored in a database uses this method.
+   * deserialization from JSON stored in a database uses this method.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
@@ -1153,6 +1153,19 @@ export class LexicalEditor {
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
     return parseEditorState(serializedEditorState, this, updateFn);
+  }
+
+  /**
+   * Executes a read of the editor's state, with the
+   * editor context available (useful for exporting and read-only DOM
+   * operations). Much like update, but prevents any mutation of the
+   * editor's state. Any pending updates will be flushed immediately before
+   * the read.
+   * @param callbackFn - A function that has access to read-only editor state.
+   */
+  read<T>(callbackFn: () => T): T {
+    $commitPendingUpdates(this);
+    return this.getEditorState().read(callbackFn, {editor: this});
   }
 
   /**

@@ -22,8 +22,11 @@ import {
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
+  $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
+  $isParagraphNode,
   $isTextNode,
   $parseSerializedNode,
   $setCompositionKey,
@@ -113,7 +116,7 @@ describe('LexicalEditor tests', () => {
 
   let editor: LexicalEditor;
 
-  function init(onError?: () => void) {
+  function init(onError?: (error: Error) => void) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
@@ -132,6 +135,130 @@ describe('LexicalEditor tests', () => {
 
     return Promise.resolve().then();
   }
+
+  describe('read()', () => {
+    it('Can read the editor state', async () => {
+      init(function onError(err) {
+        throw err;
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
+      expect(editor.read(() => $getEditor())).toBe(editor);
+      const onUpdate = jest.fn();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        },
+        {onUpdate},
+      );
+      expect(onUpdate).toHaveBeenCalledTimes(0);
+      // This read will flush pending updates
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'This works!',
+      );
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      // Check to make sure there is not an unexpected reconciliation
+      await Promise.resolve().then();
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      editor.read(() => {
+        const rootElement = editor.getRootElement();
+        expect(rootElement).toBeDefined();
+        // The root never works for this call
+        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
+        const paragraphDom = rootElement!.querySelector('p');
+        expect(paragraphDom).toBeDefined();
+        expect(
+          $isParagraphNode($getNearestNodeFromDOMNode(paragraphDom!)),
+        ).toBe(true);
+        expect(
+          $getNearestNodeFromDOMNode(paragraphDom!)!.getTextContent(),
+        ).toBe('This works!');
+        const textDom = paragraphDom!.querySelector('span');
+        expect(textDom).toBeDefined();
+        expect($isTextNode($getNearestNodeFromDOMNode(textDom!))).toBe(true);
+        expect($getNearestNodeFromDOMNode(textDom!)!.getTextContent()).toBe(
+          'This works!',
+        );
+        expect(
+          $getNearestNodeFromDOMNode(textDom!.firstChild!)!.getTextContent(),
+        ).toBe('This works!');
+      });
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+    it('runs transforms the editor state', async () => {
+      init(function onError(err) {
+        throw err;
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
+      expect(editor.read(() => $getEditor())).toBe(editor);
+      editor.registerNodeTransform(TextNode, (node) => {
+        if (node.getTextContent() === 'This works!') {
+          node.replace($createTextNode('Transforms work!'));
+        }
+      });
+      const onUpdate = jest.fn();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        },
+        {onUpdate},
+      );
+      expect(onUpdate).toHaveBeenCalledTimes(0);
+      // This read will flush pending updates
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'Transforms work!',
+      );
+      expect(editor.getRootElement()!.textContent).toEqual('Transforms work!');
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      // Check to make sure there is not an unexpected reconciliation
+      await Promise.resolve().then();
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(editor.read(() => $getRoot().getTextContent())).toEqual(
+        'Transforms work!',
+      );
+    });
+    it('can be nested in an update or read', async () => {
+      init(function onError(err) {
+        throw err;
+      });
+      editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('This works!');
+        root.append(paragraph);
+        paragraph.append(text);
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('This works!');
+        });
+        editor.read(() => {
+          // Nesting update in read works, although it is discouraged in the documentation.
+          editor.update(() => {
+            expect($getRoot().getTextContent()).toBe('This works!');
+          });
+        });
+        // Updating after a nested read will fail as it has already been committed
+        expect(() => {
+          root.append(
+            $createParagraphNode().append(
+              $createTextNode('update-read-update'),
+            ),
+          );
+        }).toThrow();
+      });
+      editor.read(() => {
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('This works!');
+        });
+      });
+    });
+  });
 
   it('Should create an editor with an initial editor state', async () => {
     const rootElement = document.createElement('div');

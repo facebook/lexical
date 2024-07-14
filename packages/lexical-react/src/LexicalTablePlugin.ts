@@ -38,7 +38,6 @@ import {
   $createParagraphNode,
   $getNodeByKey,
   $isTextNode,
-  $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import {useEffect} from 'react';
@@ -129,17 +128,6 @@ export function TablePlugin({
       }
     };
 
-    // Plugins might be loaded _after_ initial content is set, hence existing table nodes
-    // won't be initialized from mutation[create] listener. Instead doing it here,
-    editor.getEditorState().read(() => {
-      const tableNodes = $nodesOfType(TableNode);
-      for (const tableNode of tableNodes) {
-        if ($isTableNode(tableNode)) {
-          initializeTableNode(tableNode);
-        }
-      }
-    });
-
     const unregisterMutationListener = editor.registerMutationListener(
       TableNode,
       (nodeMutations) => {
@@ -161,6 +149,7 @@ export function TablePlugin({
           }
         }
       },
+      {skipInitialization: false},
     );
 
     return () => {

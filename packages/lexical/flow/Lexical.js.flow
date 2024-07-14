@@ -109,6 +109,9 @@ export type MutationListener = (
     prevEditorState: EditorState,
   },
 ) => void;
+export type MutationListenerOptions = {
+  skipInitialization?: boolean;
+};
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
   decorator: Set<DecoratorListener>,
@@ -178,6 +181,7 @@ declare export class LexicalEditor {
   registerMutationListener(
     klass: Class<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void;
   registerNodeTransform<T: LexicalNode>(
     klass: Class<T>,

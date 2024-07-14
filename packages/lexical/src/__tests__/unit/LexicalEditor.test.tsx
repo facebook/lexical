@@ -1713,8 +1713,12 @@ describe('LexicalEditor tests', () => {
 
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const paragraphKeys: string[] = [];
     const textNodeKeys: string[] = [];
 
@@ -1786,7 +1790,9 @@ describe('LexicalEditor tests', () => {
 
     const initialEditorState = editor.getEditorState();
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
@@ -1856,7 +1862,10 @@ describe('LexicalEditor tests', () => {
     });
 
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    const textNodeMutationsB = jest.fn();
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     // No await intentional (batch with next)
@@ -1879,6 +1888,10 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push(textNode3.getKey());
     });
 
+    editor.registerMutationListener(TextNode, textNodeMutationsB, {
+      skipInitialization: false,
+    });
+
     await editor.update(() => {
       $getRoot().clear();
     });
@@ -1893,6 +1906,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(textNodeMutations.mock.calls.length).toBe(2);
+    expect(textNodeMutationsB.mock.calls.length).toBe(2);
 
     const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
 
@@ -1900,10 +1914,28 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
     expect(textNodeMutation1[0].get(textNodeKeys[1])).toBe('created');
     expect(textNodeMutation1[0].get(textNodeKeys[2])).toBe('created');
+    expect([...textNodeMutation1[1].updateTags]).toEqual([]);
     expect(textNodeMutation2[0].size).toBe(3);
     expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('destroyed');
     expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
+    expect([...textNodeMutation2[1].updateTags]).toEqual([]);
+
+    const [textNodeMutationB1, textNodeMutationB2] =
+      textNodeMutationsB.mock.calls;
+
+    expect(textNodeMutationB1[0].size).toBe(3);
+    expect(textNodeMutationB1[0].get(textNodeKeys[0])).toBe('created');
+    expect(textNodeMutationB1[0].get(textNodeKeys[1])).toBe('created');
+    expect(textNodeMutationB1[0].get(textNodeKeys[2])).toBe('created');
+    expect([...textNodeMutationB1[1].updateTags]).toEqual([
+      'registerMutationListener',
+    ]);
+    expect(textNodeMutationB2[0].size).toBe(3);
+    expect(textNodeMutationB2[0].get(textNodeKeys[0])).toBe('destroyed');
+    expect(textNodeMutationB2[0].get(textNodeKeys[1])).toBe('destroyed');
+    expect(textNodeMutationB2[0].get(textNodeKeys[2])).toBe('destroyed');
+    expect([...textNodeMutationB2[1].updateTags]).toEqual([]);
   });
 
   it('mutation listener should work with the replaced node', async () => {
@@ -1927,10 +1959,12 @@ describe('LexicalEditor tests', () => {
     });
 
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(TestTextNode, textNodeMutations);
+    const textNodeMutationsB = jest.fn();
+    editor.registerMutationListener(TestTextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
-    // No await intentional (batch with next)
     await editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
@@ -1940,12 +1974,25 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push(textNode.getKey());
     });
 
+    editor.registerMutationListener(TestTextNode, textNodeMutationsB, {
+      skipInitialization: false,
+    });
+
     expect(textNodeMutations.mock.calls.length).toBe(1);
 
     const [textNodeMutation1] = textNodeMutations.mock.calls;
 
     expect(textNodeMutation1[0].size).toBe(1);
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+    expect([...textNodeMutation1[1].updateTags]).toEqual([]);
+
+    const [textNodeMutationB1] = textNodeMutationsB.mock.calls;
+
+    expect(textNodeMutationB1[0].size).toBe(1);
+    expect(textNodeMutationB1[0].get(textNodeKeys[0])).toBe('created');
+    expect([...textNodeMutationB1[1].updateTags]).toEqual([
+      'registerMutationListener',
+    ]);
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {
@@ -1953,8 +2000,12 @@ describe('LexicalEditor tests', () => {
 
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
 
     await editor.update(() => {
       $getRoot().append($createParagraphNode());
@@ -1968,7 +2019,9 @@ describe('LexicalEditor tests', () => {
     init();
 
     const textNodeMutations = jest.fn();
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
@@ -2014,8 +2067,12 @@ describe('LexicalEditor tests', () => {
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
 
-    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
-    editor.registerMutationListener(TextNode, textNodeMutations);
+    editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
 
     const paragraphNodeKeys: string[] = [];
     const textNodeKeys: string[] = [];
@@ -2074,8 +2131,12 @@ describe('LexicalEditor tests', () => {
     const tableCellMutations = jest.fn();
     const tableRowMutations = jest.fn();
 
-    editor.registerMutationListener(TableCellNode, tableCellMutations);
-    editor.registerMutationListener(TableRowNode, tableRowMutations);
+    editor.registerMutationListener(TableCellNode, tableCellMutations, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TableRowNode, tableRowMutations, {
+      skipInitialization: false,
+    });
     // Create Table
 
     await editor.update(() => {
@@ -2154,12 +2215,20 @@ describe('LexicalEditor tests', () => {
       });
     });
 
-    editor.registerMutationListener(TextNode, (map) => {
-      mutationListener();
-      editor.registerMutationListener(TextNode, () => {
+    editor.registerMutationListener(
+      TextNode,
+      (map) => {
         mutationListener();
-      });
-    });
+        editor.registerMutationListener(
+          TextNode,
+          () => {
+            mutationListener();
+          },
+          {skipInitialization: true},
+        );
+      },
+      {skipInitialization: false},
+    );
 
     editor.registerNodeTransform(ParagraphNode, () => {
       nodeTransformListener();
@@ -2212,6 +2281,74 @@ describe('LexicalEditor tests', () => {
     expect(textContentListener).toHaveBeenCalledTimes(1);
     expect(nodeTransformListener).toHaveBeenCalledTimes(1);
     expect(mutationListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls mutation listener with initial state', async () => {
+    // TODO add tests for node replacement
+    const mutationListenerA = jest.fn();
+    const mutationListenerB = jest.fn();
+    const mutationListenerC = jest.fn();
+    init();
+
+    editor.registerMutationListener(TextNode, mutationListenerA, {
+      skipInitialization: false,
+    });
+    expect(mutationListenerA).toHaveBeenCalledTimes(0);
+
+    await update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Hello world')),
+      );
+    });
+
+    function asymmetricMatcher<T>(asymmetricMatch: (x: T) => boolean) {
+      return {asymmetricMatch};
+    }
+
+    expect(mutationListenerA).toHaveBeenCalledTimes(1);
+    expect(mutationListenerA).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        updateTags: asymmetricMatcher(
+          (s: Set<string>) => !s.has('registerMutationListener'),
+        ),
+      }),
+    );
+    editor.registerMutationListener(TextNode, mutationListenerB, {
+      skipInitialization: false,
+    });
+    editor.registerMutationListener(TextNode, mutationListenerC, {
+      skipInitialization: true,
+    });
+    expect(mutationListenerA).toHaveBeenCalledTimes(1);
+    expect(mutationListenerB).toHaveBeenCalledTimes(1);
+    expect(mutationListenerB).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        updateTags: asymmetricMatcher((s: Set<string>) =>
+          s.has('registerMutationListener'),
+        ),
+      }),
+    );
+    expect(mutationListenerC).toHaveBeenCalledTimes(0);
+    await update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Another update!')),
+      );
+    });
+    expect(mutationListenerA).toHaveBeenCalledTimes(2);
+    expect(mutationListenerB).toHaveBeenCalledTimes(2);
+    expect(mutationListenerC).toHaveBeenCalledTimes(1);
+    [mutationListenerA, mutationListenerB, mutationListenerC].forEach((fn) => {
+      expect(fn).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          updateTags: asymmetricMatcher(
+            (s: Set<string>) => !s.has('registerMutationListener'),
+          ),
+        }),
+      );
+    });
   });
 
   it('can use flushSync for synchronous updates', () => {

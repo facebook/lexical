@@ -1138,7 +1138,7 @@ describe('LexicalEditor tests', () => {
         await Promise.resolve().then();
       });
 
-      expect(listener).toHaveBeenCalledTimes(4);
+      expect(listener).toHaveBeenCalledTimes(5);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );

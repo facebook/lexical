@@ -768,6 +768,7 @@ export class LexicalEditor {
     listener(this._rootElement, null);
     listenerSetOrMap.add(listener);
     return () => {
+      listener(null, this._rootElement);
       listenerSetOrMap.delete(listener);
     };
   }

@@ -9,18 +9,22 @@
 import {
   deleteBackward,
   deleteForward,
-  extendToNextWord,
+  moveDown,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
+  moveToEditorEnd,
   moveToLineBeginning,
   moveToPrevWord,
+  moveUp,
   pressShiftEnter,
   selectAll,
+  selectPrevWord,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  assertTableSelectionCoordinates,
   click,
   evaluate,
   expect,
@@ -35,16 +39,19 @@ import {
   insertYouTubeEmbed,
   IS_LINUX,
   IS_MAC,
+  IS_WINDOWS,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
+  pressToggleBold,
+  pressToggleItalic,
   selectFromFormatDropdown,
   sleep,
   test,
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
-test.describe('Selection', () => {
+test.describe.parallel('Selection', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('does not focus the editor on load', async ({page}) => {
     const editorHasFocus = async () =>
@@ -144,10 +151,11 @@ test.describe('Selection', () => {
         </p>
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          spellcheck="false"
           dir="ltr"
+          spellcheck="false"
+          data-gutter="1"
           data-highlight-language="javascript"
-          data-gutter="1">
+          data-language="javascript">
           <span data-lexical-text="true">Line2</span>
         </code>
       `,
@@ -206,6 +214,52 @@ test.describe('Selection', () => {
     await assertHTML(page, lines.slice(0, 2).join(''));
     await deleteLine();
     await assertHTML(page, lines.slice(0, 1).join(''));
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('can delete line which ends with element with CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    // sample image
+    await pasteFromClipboard(page, {
+      'text/html': `
+          <span class="editor-image" data-lexical-decorator="true" contenteditable="false">
+            <div draggable="false">
+              <img src="/assets/yellow-flower-vav9Hsve.jpg" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
+            </div>
+          </span>
+        `,
+    });
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+      `,
+    );
     await deleteLine();
     await assertHTML(
       page,
@@ -548,7 +602,7 @@ test.describe('Selection', () => {
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
-          class="selected"
+          class="PlaygroundEditorTheme__hr selected"
           contenteditable="false"
           data-lexical-decorator="true" />
         <h1
@@ -560,39 +614,325 @@ test.describe('Selection', () => {
     );
   });
 
-  test('can delete word at end of line in a multi paragraph with linebreak by backspace', async ({
+  test('Can delete table node present at the end #5543', async ({
     page,
+    isPlainText,
+    isCollab,
+    browserName,
+    legacyEvents,
   }) => {
+    test.skip(isPlainText);
+    test.fixme(
+      legacyEvents && browserName === 'chromium' && IS_WINDOWS,
+      'Flaky on Windows + Chromium + legacy events',
+    );
+
     await focusEditor(page);
-    await page.keyboard.type('This is testing one');
-    // enter linebreak element
-    await pressShiftEnter(page);
-    await page.keyboard.type('This is testing two');
-    // enter linebreak element
-    await pressShiftEnter(page);
-    await page.keyboard.type('This is testing three');
-    // enter linebreak element
-    await pressShiftEnter(page);
-    await page.keyboard.press('ArrowLeft');
+    await insertTable(page, 1, 2);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowUp');
-    await moveLeft(page, 3);
-    await extendToNextWord(page);
+    await page.keyboard.up('Shift');
     await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can persist the text format from the paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pressToggleBold(page);
+    await page.keyboard.type('Line1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Line2');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.type('Line3');
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">This is testing one</span>
-          <br />
-          <span data-lexical-text="true">This is testing</span>
-          <br />
-          <span data-lexical-text="true">This is testing three</span>
-          <br />
-          <br />
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Line1
+          </strong>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Line3
+          </strong>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Line2
+          </strong>
         </p>
       `,
     );
+  });
+
+  test('toggle format at the start of paragraph to a different format persists the format', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pressToggleBold(page);
+    await page.keyboard.type('Line1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await pressToggleItalic(page);
+    await page.keyboard.type('Line2');
+    await page.keyboard.press('ArrowUp');
+    await pressToggleBold(page);
+    await page.keyboard.type('Line3');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Line1
+          </strong>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line3</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            Line2
+          </strong>
+        </p>
+      `,
+    );
+  });
+
+  test('formatting is persisted after deleting all nodes from the paragraph node', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pressToggleBold(page);
+    await page.keyboard.type('Line1');
+    await page.keyboard.press('Enter');
+    await pressToggleBold(page);
+    await page.keyboard.type('Line2');
+    await selectPrevWord(page);
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('Line3');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Line1
+          </strong>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line3</span>
+        </p>
+      `,
+    );
+  });
+
+  test('shift+arrowdown into a table selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+    legacyEvents,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(
+      browserName === 'firefox' || IS_LINUX || (legacyEvents && IS_WINDOWS),
+    );
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+  });
+
+  test('shift+arrowup into a table selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+    legacyEvents,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(
+      browserName === 'firefox' || IS_LINUX || (legacyEvents && IS_WINDOWS),
+    );
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [0],
+    });
+  });
+
+  test('shift+arrowdown into a table, when the table is the last node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+    legacyEvents,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: 1,
+      focusPath: [1, 1, 1],
+    });
+  });
+
+  test('shift+arrowup into a table, when the table is the first node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+    legacyEvents,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1],
+      focusOffset: 1,
+      focusPath: [0, 0, 0],
+    });
+  });
+
+  test('shift+arrowdown into a table, when the table is the only node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    legacyEvents,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveToEditorBeginning(page);
+    await moveUp(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [],
+      focusOffset: 0,
+      focusPath: [],
+    });
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 1, y: 1},
+    });
+  });
+
+  test('shift+arrowup into a table, when the table is the only node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    legacyEvents,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(browserName === 'chromium' && legacyEvents);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveDown(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [],
+      focusOffset: 1,
+      focusPath: [],
+    });
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 1, y: 1},
+    });
   });
 });

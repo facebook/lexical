@@ -59,7 +59,7 @@ function FloatingLinkEditor({
     null,
   );
 
-  const updateLinkEditor = useCallback(() => {
+  const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
@@ -117,7 +117,7 @@ function FloatingLinkEditor({
 
     const update = () => {
       editor.getEditorState().read(() => {
-        updateLinkEditor();
+        $updateLinkEditor();
       });
     };
 
@@ -134,20 +134,20 @@ function FloatingLinkEditor({
         scrollerElem.removeEventListener('scroll', update);
       }
     };
-  }, [anchorElem.parentElement, editor, updateLinkEditor]);
+  }, [anchorElem.parentElement, editor, $updateLinkEditor]);
 
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateLinkEditor();
+          $updateLinkEditor();
         });
       }),
 
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          updateLinkEditor();
+          $updateLinkEditor();
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -164,13 +164,13 @@ function FloatingLinkEditor({
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [editor, updateLinkEditor, setIsLink, isLink]);
+  }, [editor, $updateLinkEditor, setIsLink, isLink]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      updateLinkEditor();
+      $updateLinkEditor();
     });
-  }, [editor, updateLinkEditor]);
+  }, [editor, $updateLinkEditor]);
 
   useEffect(() => {
     if (isLinkEditMode && inputRef.current) {
@@ -292,7 +292,7 @@ function useFloatingLinkEditorToolbar(
   const [isLink, setIsLink] = useState(false);
 
   useEffect(() => {
-    function updateToolbar() {
+    function $updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         const focusNode = getSelectedNode(selection);
@@ -305,19 +305,21 @@ function useFloatingLinkEditorToolbar(
           setIsLink(false);
           return;
         }
-        const badNode = selection.getNodes().find((node) => {
-          const linkNode = $findMatchingParent(node, $isLinkNode);
-          const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
-          if (
-            !linkNode?.is(focusLinkNode) &&
-            !autoLinkNode?.is(focusAutoLinkNode) &&
-            !linkNode &&
-            !autoLinkNode &&
-            !$isLineBreakNode(node)
-          ) {
-            return node;
-          }
-        });
+        const badNode = selection
+          .getNodes()
+          .filter((node) => !$isLineBreakNode(node))
+          .find((node) => {
+            const linkNode = $findMatchingParent(node, $isLinkNode);
+            const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
+            return (
+              (focusLinkNode && !focusLinkNode.is(linkNode)) ||
+              (linkNode && !linkNode.is(focusLinkNode)) ||
+              (focusAutoLinkNode && !focusAutoLinkNode.is(autoLinkNode)) ||
+              (autoLinkNode &&
+                (!autoLinkNode.is(focusAutoLinkNode) ||
+                  autoLinkNode.getIsUnlinked()))
+            );
+          });
         if (!badNode) {
           setIsLink(true);
         } else {
@@ -328,13 +330,13 @@ function useFloatingLinkEditorToolbar(
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateToolbar();
+          $updateToolbar();
         });
       }),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         (_payload, newEditor) => {
-          updateToolbar();
+          $updateToolbar();
           setActiveEditor(newEditor);
           return false;
         },

@@ -8,7 +8,6 @@
 
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
-import React from 'react';
 
 import ImageSwitcher from '../ImageSwitcher';
 

@@ -32,10 +32,12 @@ function findMatchingDOM<T extends Node>(
   return null;
 }
 
-export default function LexicalClickableLinkPlugin({
+export function ClickableLinkPlugin({
   newTab = true,
+  disabled = false,
 }: {
   newTab?: boolean;
+  disabled?: boolean;
 }): null {
   const [editor] = useLexicalComposerContext();
 
@@ -60,14 +62,16 @@ export default function LexicalClickableLinkPlugin({
             clickedNode,
             $isElementNode,
           );
-          if ($isLinkNode(maybeLinkNode)) {
-            url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
-            urlTarget = maybeLinkNode.getTarget();
-          } else {
-            const a = findMatchingDOM(target, isHTMLAnchorElement);
-            if (a !== null) {
-              url = a.href;
-              urlTarget = a.target;
+          if (!disabled) {
+            if ($isLinkNode(maybeLinkNode)) {
+              url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
+              urlTarget = maybeLinkNode.getTarget();
+            } else {
+              const a = findMatchingDOM(target, isHTMLAnchorElement);
+              if (a !== null) {
+                url = a.href;
+                urlTarget = a.target;
+              }
             }
           }
         }
@@ -99,7 +103,7 @@ export default function LexicalClickableLinkPlugin({
     };
 
     const onMouseUp = (event: MouseEvent) => {
-      if (event.button === 1 && editor.isEditable()) {
+      if (event.button === 1) {
         onClick(event);
       }
     };
@@ -114,7 +118,11 @@ export default function LexicalClickableLinkPlugin({
         rootElement.addEventListener('mouseup', onMouseUp);
       }
     });
-  }, [editor, newTab]);
+  }, [editor, newTab, disabled]);
 
   return null;
 }
+
+/** @deprecated use the named export {@link ClickableLinkPlugin} */
+// eslint-disable-next-line no-restricted-exports
+export default ClickableLinkPlugin;

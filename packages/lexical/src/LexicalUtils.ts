@@ -57,13 +57,14 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
-import {flushRootMutations} from './LexicalMutations';
+import {$flushRootMutations} from './LexicalMutations';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
@@ -121,7 +122,7 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
     (nodeName === 'INPUT' ||
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
-        // @ts-ignore iternal field
+        // @ts-ignore internal field
         activeElement.__lexicalEditor == null))
   );
 }
@@ -223,6 +224,9 @@ export function $setNodeKey(
   existingKey: NodeKey | null | undefined,
 ): void {
   if (existingKey != null) {
+    if (__DEV__) {
+      errorOnNodeKeyConstructorMismatch(node, existingKey);
+    }
     node.__key = existingKey;
     return;
   }
@@ -241,6 +245,35 @@ export function $setNodeKey(
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   node.__key = key;
+}
+
+function errorOnNodeKeyConstructorMismatch(
+  node: LexicalNode,
+  existingKey: NodeKey,
+) {
+  const editorState = internalGetActiveEditorState();
+  if (!editorState) {
+    // tests expect to be able to do this kind of clone without an active editor state
+    return;
+  }
+  const existingNode = editorState._nodeMap.get(existingKey);
+  if (existingNode && existingNode.constructor !== node.constructor) {
+    // Lifted condition to if statement because the inverted logic is a bit confusing
+    if (node.constructor.name !== existingNode.constructor.name) {
+      invariant(
+        false,
+        'Lexical node with constructor %s attempted to re-use key from node in active editor state with constructor %s. Keys must not be re-used when the type is changed.',
+        node.constructor.name,
+        existingNode.constructor.name,
+      );
+    } else {
+      invariant(
+        false,
+        'Lexical node with constructor %s attempted to re-use key from node in active editor state with different constructor with the same name (possibly due to invalid Hot Module Replacement). Keys must not be re-used when the type is changed.',
+        node.constructor.name,
+      );
+    }
+  }
 }
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -264,6 +297,7 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
+// TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
 export function removeFromParent(node: LexicalNode): void {
   const oldParent = node.getParent();
   if (oldParent !== null) {
@@ -390,7 +424,7 @@ export function $getNodeByKey<T extends LexicalNode>(
   return node;
 }
 
-export function getNodeFromDOMNode(
+export function $getNodeFromDOMNode(
   dom: Node,
   editorState?: EditorState,
 ): LexicalNode | null {
@@ -409,7 +443,7 @@ export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null {
   let dom: Node | null = startingDOM;
   while (dom != null) {
-    const node = getNodeFromDOMNode(dom, editorState);
+    const node = $getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
     }
@@ -486,10 +520,10 @@ export function $setSelection(selection: null | BaseSelection): void {
 export function $flushMutations(): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  flushRootMutations(editor);
+  $flushRootMutations(editor);
 }
 
-export function getNodeFromDOM(dom: Node): null | LexicalNode {
+export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
   const nodeKey = getNodeKeyFromDOM(dom, editor);
   if (nodeKey === null) {
@@ -713,13 +747,15 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
   if (offset === 0) {
     return (
       !node.canInsertTextBefore() ||
-      !parent.canInsertTextBefore() ||
+      (!parent.canInsertTextBefore() && !node.isComposing()) ||
       isToken ||
       $previousSiblingDoesNotAcceptText(node)
     );
   } else if (offset === node.getTextContentSize()) {
     return (
-      !node.canInsertTextAfter() || !parent.canInsertTextAfter() || isToken
+      !node.canInsertTextAfter() ||
+      (!parent.canInsertTextAfter() && !node.isComposing()) ||
+      isToken
     );
   } else {
     return false;
@@ -727,88 +763,88 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
 }
 
 export function isTab(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return keyCode === 9 && !altKey && !ctrlKey && !metaKey;
+  return key === 'Tab' && !altKey && !ctrlKey && !metaKey;
 }
 
 export function isBold(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 66 && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'b' && !altKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isItalic(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 73 && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'i' && !altKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isUnderline(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 85 && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'u' && !altKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
-export function isParagraph(keyCode: number, shiftKey: boolean): boolean {
-  return isReturn(keyCode) && !shiftKey;
+export function isParagraph(key: string, shiftKey: boolean): boolean {
+  return isReturn(key) && !shiftKey;
 }
 
-export function isLineBreak(keyCode: number, shiftKey: boolean): boolean {
-  return isReturn(keyCode) && shiftKey;
+export function isLineBreak(key: string, shiftKey: boolean): boolean {
+  return isReturn(key) && shiftKey;
 }
 
 // Inserts a new line after the selection
 
-export function isOpenLineBreak(keyCode: number, ctrlKey: boolean): boolean {
+export function isOpenLineBreak(key: string, ctrlKey: boolean): boolean {
   // 79 = KeyO
-  return IS_APPLE && ctrlKey && keyCode === 79;
+  return IS_APPLE && ctrlKey && key.toLowerCase() === 'o';
 }
 
 export function isDeleteWordBackward(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return isBackspace(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+  return isBackspace(key) && (IS_APPLE ? altKey : ctrlKey);
 }
 
 export function isDeleteWordForward(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return isDelete(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+  return isDelete(key) && (IS_APPLE ? altKey : ctrlKey);
 }
 
-export function isDeleteLineBackward(
-  keyCode: number,
-  metaKey: boolean,
-): boolean {
-  return IS_APPLE && metaKey && isBackspace(keyCode);
+export function isDeleteLineBackward(key: string, metaKey: boolean): boolean {
+  return IS_APPLE && metaKey && isBackspace(key);
 }
 
-export function isDeleteLineForward(
-  keyCode: number,
-  metaKey: boolean,
-): boolean {
-  return IS_APPLE && metaKey && isDelete(keyCode);
+export function isDeleteLineForward(key: string, metaKey: boolean): boolean {
+  return IS_APPLE && metaKey && isDelete(key);
 }
 
 export function isDeleteBackward(
-  keyCode: number,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -817,16 +853,16 @@ export function isDeleteBackward(
     if (altKey || metaKey) {
       return false;
     }
-    return isBackspace(keyCode) || (keyCode === 72 && ctrlKey);
+    return isBackspace(key) || (key.toLowerCase() === 'h' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isBackspace(keyCode);
+  return isBackspace(key);
 }
 
 export function isDeleteForward(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
@@ -836,37 +872,42 @@ export function isDeleteForward(
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isDelete(keyCode) || (keyCode === 68 && ctrlKey);
+    return isDelete(key) || (key.toLowerCase() === 'd' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isDelete(keyCode);
+  return isDelete(key);
 }
 
 export function isUndo(
-  keyCode: number,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 90 && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'z' && !shiftKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isRedo(
-  keyCode: number,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   if (IS_APPLE) {
-    return keyCode === 90 && metaKey && shiftKey;
+    return key.toLowerCase() === 'z' && metaKey && shiftKey;
   }
-  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
+  return (
+    (key.toLowerCase() === 'y' && ctrlKey) ||
+    (key.toLowerCase() === 'z' && ctrlKey && shiftKey)
+  );
 }
 
 export function isCopy(
-  keyCode: number,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -874,7 +915,7 @@ export function isCopy(
   if (shiftKey) {
     return false;
   }
-  if (keyCode === 67) {
+  if (key.toLowerCase() === 'c') {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
@@ -882,7 +923,7 @@ export function isCopy(
 }
 
 export function isCut(
-  keyCode: number,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -890,81 +931,81 @@ export function isCut(
   if (shiftKey) {
     return false;
   }
-  if (keyCode === 88) {
+  if (key.toLowerCase() === 'x') {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
   return false;
 }
 
-function isArrowLeft(keyCode: number): boolean {
-  return keyCode === 37;
+function isArrowLeft(key: string): boolean {
+  return key === 'ArrowLeft';
 }
 
-function isArrowRight(keyCode: number): boolean {
-  return keyCode === 39;
+function isArrowRight(key: string): boolean {
+  return key === 'ArrowRight';
 }
 
-function isArrowUp(keyCode: number): boolean {
-  return keyCode === 38;
+function isArrowUp(key: string): boolean {
+  return key === 'ArrowUp';
 }
 
-function isArrowDown(keyCode: number): boolean {
-  return keyCode === 40;
+function isArrowDown(key: string): boolean {
+  return key === 'ArrowDown';
 }
 
 export function isMoveBackward(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowLeft(keyCode) && !ctrlKey && !metaKey && !altKey;
+  return isArrowLeft(key) && !ctrlKey && !metaKey && !altKey;
 }
 
 export function isMoveToStart(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowLeft(keyCode) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return isArrowLeft(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
 }
 
 export function isMoveForward(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowRight(keyCode) && !ctrlKey && !metaKey && !altKey;
+  return isArrowRight(key) && !ctrlKey && !metaKey && !altKey;
 }
 
 export function isMoveToEnd(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowRight(keyCode) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return isArrowRight(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
 }
 
 export function isMoveUp(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
+  return isArrowUp(key) && !ctrlKey && !metaKey;
 }
 
 export function isMoveDown(
-  keyCode: number,
+  key: string,
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
+  return isArrowDown(key) && !ctrlKey && !metaKey;
 }
 
 export function isModifier(
@@ -976,8 +1017,8 @@ export function isModifier(
   return ctrlKey || shiftKey || altKey || metaKey;
 }
 
-export function isSpace(keyCode: number): boolean {
-  return keyCode === 32;
+export function isSpace(key: string): boolean {
+  return key === ' ';
 }
 
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
@@ -987,28 +1028,28 @@ export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   return ctrlKey;
 }
 
-export function isReturn(keyCode: number): boolean {
-  return keyCode === 13;
+export function isReturn(key: string): boolean {
+  return key === 'Enter';
 }
 
-export function isBackspace(keyCode: number): boolean {
-  return keyCode === 8;
+export function isBackspace(key: string): boolean {
+  return key === 'Backspace';
 }
 
-export function isEscape(keyCode: number): boolean {
-  return keyCode === 27;
+export function isEscape(key: string): boolean {
+  return key === 'Escape';
 }
 
-export function isDelete(keyCode: number): boolean {
-  return keyCode === 46;
+export function isDelete(key: string): boolean {
+  return key === 'Delete';
 }
 
 export function isSelectAll(
-  keyCode: number,
+  key: string,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
+  return key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function $selectAll(): void {
@@ -1077,16 +1118,21 @@ export function setMutatedNode(
 }
 
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
-  const editorState = getActiveEditorState();
-  const readOnly = editorState._readOnly;
   const klassType = klass.getType();
+  const editorState = getActiveEditorState();
+  if (editorState._readOnly) {
+    const nodes = getCachedTypeToNodeMap(editorState).get(klassType) as
+      | undefined
+      | Map<string, T>;
+    return nodes ? Array.from(nodes.values()) : [];
+  }
   const nodes = editorState._nodeMap;
   const nodesOfType: Array<T> = [];
   for (const [, node] of nodes) {
     if (
       node instanceof klass &&
       node.__type === klassType &&
-      (readOnly || node.isAttached())
+      node.isAttached()
     ) {
       nodesOfType.push(node as T);
     }
@@ -1583,13 +1629,39 @@ export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
 }
 
 /**
+ *
+ * @param node - the Dom Node to check
+ * @returns if the Dom Node is an inline node
+ */
+export function isInlineDomNode(node: Node) {
+  const inlineNodes = new RegExp(
+    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
+    'i',
+  );
+  return node.nodeName.match(inlineNodes) !== null;
+}
+
+/**
+ *
+ * @param node - the Dom Node to check
+ * @returns if the Dom Node is a block node
+ */
+export function isBlockDomNode(node: Node) {
+  const blockNodes = new RegExp(
+    /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/,
+    'i',
+  );
+  return node.nodeName.match(blockNodes) !== null;
+}
+
+/**
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
 export function INTERNAL_$isBlock(
   node: LexicalNode,
 ): node is ElementNode | DecoratorNode<unknown> {
-  if ($isDecoratorNode(node) && !node.isInline()) {
+  if ($isRootNode(node) || ($isDecoratorNode(node) && !node.isInline())) {
     return true;
   }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
@@ -1623,4 +1695,35 @@ export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
  */
 export function $getEditor(): LexicalEditor {
   return getActiveEditor();
+}
+
+/** @internal */
+export type TypeToNodeMap = Map<string, NodeMap>;
+/**
+ * @internal
+ * Compute a cached Map of node type to nodes for a frozen EditorState
+ */
+const cachedNodeMaps = new WeakMap<EditorState, TypeToNodeMap>();
+export function getCachedTypeToNodeMap(
+  editorState: EditorState,
+): TypeToNodeMap {
+  invariant(
+    editorState._readOnly,
+    'getCachedTypeToNodeMap called with a writable EditorState',
+  );
+  let typeToNodeMap = cachedNodeMaps.get(editorState);
+  if (!typeToNodeMap) {
+    typeToNodeMap = new Map();
+    cachedNodeMaps.set(editorState, typeToNodeMap);
+    for (const [nodeKey, node] of editorState._nodeMap) {
+      const nodeType = node.__type;
+      let nodeMap = typeToNodeMap.get(nodeType);
+      if (!nodeMap) {
+        nodeMap = new Map();
+        typeToNodeMap.set(nodeType, nodeMap);
+      }
+      nodeMap.set(nodeKey, node);
+    }
+  }
+  return typeToNodeMap;
 }

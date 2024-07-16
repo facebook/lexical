@@ -46,7 +46,7 @@ const getJSONData = (req: http.IncomingMessage): Promise<string> => {
   });
 };
 
-const sanitizeNode = (node: LexicalNode): void => {
+const $sanitizeNode = (node: LexicalNode): void => {
   if ($isMarkNode(node)) {
     $unwrapMarkNode(node);
     return;
@@ -54,7 +54,7 @@ const sanitizeNode = (node: LexicalNode): void => {
   if ($isElementNode(node)) {
     const children = node.getChildren();
     for (const child of children) {
-      sanitizeNode(child);
+      $sanitizeNode(child);
     }
   }
 };
@@ -70,7 +70,7 @@ const validateEditorState = async (
   editor.setEditorState(nextEditorState);
   editor.update(() => {
     const root = $getRoot();
-    sanitizeNode(root);
+    $sanitizeNode(root);
   });
   await Promise.resolve().then();
 

@@ -35,7 +35,7 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertExcalidrawElement(
+function $convertExcalidrawElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
@@ -135,7 +135,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
           return null;
         }
         return {
-          conversion: convertExcalidrawElement,
+          conversion: $convertExcalidrawElement,
           priority: 1,
         };
       },

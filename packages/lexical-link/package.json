@@ -8,19 +8,35 @@
     "link"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.16.1",
   "main": "LexicalLink.js",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.14.2"
+    "@lexical/utils": "0.16.1",
+    "lexical": "0.16.1"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-link"
   },
-  "module": "LexicalLink.esm.js",
-  "sideEffects": false
+  "module": "LexicalLink.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalLink.dev.mjs",
+        "production": "./LexicalLink.prod.mjs",
+        "node": "./LexicalLink.node.mjs",
+        "default": "./LexicalLink.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalLink.dev.js",
+        "production": "./LexicalLink.prod.js",
+        "default": "./LexicalLink.js"
+      }
+    }
+  }
 }

@@ -8,19 +8,35 @@
     "history"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.16.1",
   "main": "LexicalHistory.js",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.14.2"
+    "@lexical/utils": "0.16.1",
+    "lexical": "0.16.1"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-history"
   },
-  "module": "LexicalHistory.esm.js",
-  "sideEffects": false
+  "module": "LexicalHistory.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHistory.dev.mjs",
+        "production": "./LexicalHistory.prod.mjs",
+        "node": "./LexicalHistory.node.mjs",
+        "default": "./LexicalHistory.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHistory.dev.js",
+        "production": "./LexicalHistory.prod.js",
+        "default": "./LexicalHistory.js"
+      }
+    }
+  }
 }

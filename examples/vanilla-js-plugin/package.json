@@ -1,7 +1,7 @@
 {
-  "name": "@lexical/vanilla-js-example",
+  "name": "@lexical/vanilla-js-plugin-example",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.16.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,15 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/dragon": "0.13.1",
-    "@lexical/history": "0.13.1",
-    "@lexical/rich-text": "0.13.1",
-    "@lexical/utils": "0.13.1",
+    "@lexical/dragon": "0.16.1",
+    "@lexical/history": "0.16.1",
+    "@lexical/rich-text": "0.16.1",
+    "@lexical/utils": "0.16.1",
     "emoji-datasource-facebook": "15.1.2",
-    "lexical": "0.13.1"
+    "lexical": "0.16.1"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
-    "vite": "^5.1.4"
+    "vite": "^5.2.11"
   }
 }

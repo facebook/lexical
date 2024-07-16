@@ -11,21 +11,21 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
-import {AutoFocusPlugin} from '@lexical/react/src/LexicalAutoFocusPlugin';
-import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
-import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
-import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
-import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   applySelectionInputs,
   pasteHTML,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
-import * as React from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -73,7 +73,7 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
 };
 
 describe('LexicalEventHelpers', () => {
-  let container = null;
+  let container: HTMLDivElement | null = null;
 
   beforeEach(async () => {
     container = document.createElement('div');
@@ -82,15 +82,15 @@ describe('LexicalEventHelpers', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    document.body.removeChild(container!);
     container = null;
   });
 
-  let editor = null;
+  let editor: LexicalEditor | null = null;
 
   async function init() {
     function TestBase() {
-      function TestPlugin(): JSX.Element {
+      function TestPlugin(): null {
         [editor] = useLexicalComposerContext();
 
         return null;
@@ -147,8 +147,8 @@ describe('LexicalEventHelpers', () => {
           }}>
           <RichTextPlugin
             contentEditable={
-              // eslint-disable-next-line jsx-a11y/aria-role
-              <ContentEditable role={null} spellCheck={null} />
+              // eslint-disable-next-line jsx-a11y/aria-role, @typescript-eslint/no-explicit-any
+              <ContentEditable role={null as any} spellCheck={null as any} />
             }
             placeholder={null}
             ErrorBoundary={LexicalErrorBoundary}
@@ -160,20 +160,20 @@ describe('LexicalEventHelpers', () => {
     }
 
     ReactTestUtils.act(() => {
-      createRoot(container).render(<TestBase />);
+      createRoot(container!).render(<TestBase />);
     });
   }
 
-  async function update(fn) {
+  async function update(fn: () => void) {
     await ReactTestUtils.act(async () => {
-      await editor.update(fn);
+      await editor!.update(fn);
     });
 
     return Promise.resolve().then();
   }
 
   test('Expect initial output to be a block with no text', () => {
-    expect(container.innerHTML).toBe(
+    expect(container!.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
     );
   });
@@ -345,10 +345,10 @@ describe('LexicalEventHelpers', () => {
         const name = testUnit.name || 'Test case';
 
         test(name + ` (#${i + 1})`, async () => {
-          await applySelectionInputs(testUnit.inputs, update, editor);
+          await applySelectionInputs(testUnit.inputs, update, editor!);
 
           // Validate HTML matches
-          expect(container.innerHTML).toBe(testUnit.expectedHTML);
+          expect(container!.innerHTML).toBe(testUnit.expectedHTML);
         });
       });
     });
@@ -401,10 +401,10 @@ describe('LexicalEventHelpers', () => {
         const name = testUnit.name || 'Test case';
 
         test(name + ` (#${i + 1})`, async () => {
-          await applySelectionInputs(testUnit.inputs, update, editor);
+          await applySelectionInputs(testUnit.inputs, update, editor!);
 
           // Validate HTML matches
-          expect(container.innerHTML).toBe(testUnit.expectedHTML);
+          expect(container!.innerHTML).toBe(testUnit.expectedHTML);
         });
       });
     });
@@ -668,18 +668,78 @@ describe('LexicalEventHelpers', () => {
           ],
           name: 'two lines + two paragraphs separated by an empty paragraph (2)',
         },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p>',
+          inputs: [
+            pasteHTML(
+              '<p class="p1"><span>line 1</span><span><br></span><span>line 2</span></p>',
+            ),
+          ],
+          name: 'two lines and br in spans',
+        },
+        {
+          expectedHTML:
+            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+          inputs: [
+            pasteHTML('<ol><li>1<div></div>2</li><li></li><li>3</li></ol>'),
+          ],
+          name: 'empty block node in li behaves like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></p>',
+          inputs: [pasteHTML('<div>1<div></div>2</div>')],
+          name: 'empty block node in div behaves like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">12</span></p>',
+          inputs: [pasteHTML('<div>1<text></text>2</div>')],
+          name: 'empty inline node does not behave like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span></p><p class="editor-paragraph"><span data-lexical-text="true">2</span></p>',
+          inputs: [pasteHTML('<div><div>1</div><div></div><div>2</div></div>')],
+          name: 'empty block node between non inline siblings does not behave like a line break',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">b b</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">c</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">z</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">d e</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">fg</span></p>',
+          inputs: [
+            pasteHTML(
+              `<div>a<div>b b<div>c<div><div></div>z</div></div>d e</div>fg</div>`,
+            ),
+          ],
+          name: 'nested divs',
+        },
+        {
+          expectedHTML:
+            '<ol class="editor-list-ol"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+          inputs: [pasteHTML('<ol><li>1</li><li><br /></li><li>3</li></ol>')],
+          name: 'only br in a li',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph"><span data-lexical-text="true">1</span></p><p class="editor-paragraph"><span data-lexical-text="true">2</span></p><p class="editor-paragraph"><span data-lexical-text="true">3</span></p>',
+          inputs: [pasteHTML('1<p>2<br /></p>3')],
+          name: 'last br in a block node is ignored',
+        },
       ];
 
       suite.forEach((testUnit, i) => {
         const name = testUnit.name || 'Test case';
 
         // eslint-disable-next-line no-only-tests/no-only-tests, dot-notation
-        const test_ = testUnit['only'] ? test.only : test;
+        const test_ = 'only' in testUnit && testUnit['only'] ? test.only : test;
         test_(name + ` (#${i + 1})`, async () => {
-          await applySelectionInputs(testUnit.inputs, update, editor);
+          await applySelectionInputs(testUnit.inputs, update, editor!);
 
           // Validate HTML matches
-          expect(container.firstChild.innerHTML).toBe(testUnit.expectedHTML);
+          expect((container!.firstChild as HTMLElement).innerHTML).toBe(
+            testUnit.expectedHTML,
+          );
         });
       });
     });

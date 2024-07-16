@@ -16,6 +16,7 @@ import invariant from 'shared/invariant';
 import {
   $createParagraphNode,
   $isElementNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   ElementNode,
@@ -53,7 +54,7 @@ export type SerializedLexicalNode = {
   version: number;
 };
 
-export function removeNode(
+export function $removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
   preserveEmptyParent?: boolean,
@@ -112,7 +113,7 @@ export function removeNode(
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
-    removeNode(parent, restoreSelection);
+    $removeNode(parent, restoreSelection);
   }
   if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
@@ -702,6 +703,9 @@ export class LexicalNode {
     mutableNode.__next = latestNode.__next;
     mutableNode.__prev = latestNode.__prev;
     if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
+      if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
+        mutableNode.__textFormat = latestNode.__textFormat;
+      }
       mutableNode.__first = latestNode.__first;
       mutableNode.__last = latestNode.__last;
       mutableNode.__size = latestNode.__size;
@@ -840,7 +844,7 @@ export class LexicalNode {
    * other node heuristics such as {@link ElementNode#canBeEmpty}
    * */
   remove(preserveEmptyParent?: boolean): void {
-    removeNode(this, true, preserveEmptyParent);
+    $removeNode(this, true, preserveEmptyParent);
   }
 
   /**
@@ -869,7 +873,7 @@ export class LexicalNode {
     const prevKey = self.__prev;
     const nextKey = self.__next;
     const parentKey = self.__parent;
-    removeNode(self, false, true);
+    $removeNode(self, false, true);
 
     if (prevSibling === null) {
       writableParent.__first = key;

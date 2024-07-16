@@ -11,6 +11,7 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -18,6 +19,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
@@ -55,6 +57,14 @@ function $updateTextNodeProperties<T extends TextNode>(
   return target;
 }
 
+function $updateParagraphNodeProperties<T extends ParagraphNode>(
+  target: T,
+  source: ParagraphNode,
+): T {
+  target.__textFormat = source.__textFormat;
+  return target;
+}
+
 /**
  * Returns a copy of a node, but generates a new key for the copy.
  * @param node - The node to be cloned.
@@ -76,6 +86,9 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
     return $updateTextNodeProperties(clone, node);
   }
 
+  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
+    return $updateParagraphNodeProperties(clone, node);
+  }
   return clone;
 }
 
@@ -158,7 +171,7 @@ export function $isAtNodeEnd(point: Point): boolean {
  * @param anchor - The anchor of the current selection, where the selection should be pointing.
  * @param delCount - The amount of characters to delete. Useful as a dynamic variable eg. textContentSize - maxLength;
  */
-export function trimTextContentFromAnchor(
+export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,
@@ -320,7 +333,7 @@ function $patchStyle(
  * Will update partially selected TextNodes by splitting the TextNode and applying
  * the styles to the appropriate one.
  * @param selection - The selected node(s) to update.
- * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }. Can also accept a function that returns the new property value.
+ * @param patch - The patch to apply, which can include multiple styles. \\{CSSProperty: value\\} . Can also accept a function that returns the new property value.
  */
 export function $patchStyleText(
   selection: BaseSelection,
@@ -414,7 +427,11 @@ export function $patchStyleText(
         // the entire first node isn't selected, so split it
         firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
-        anchor.set(firstNode.getKey(), startOffset, 'text');
+        if (isBefore) {
+          anchor.set(firstNode.getKey(), startOffset, 'text');
+        } else {
+          focus.set(firstNode.getKey(), startOffset, 'text');
+        }
       }
 
       $patchStyle(firstNode as TextNode, patch);

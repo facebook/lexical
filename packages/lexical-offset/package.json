@@ -8,16 +8,34 @@
     "offset"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.16.1",
   "main": "LexicalOffset.js",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-offset"
   },
-  "module": "LexicalOffset.esm.js",
-  "sideEffects": false
+  "module": "LexicalOffset.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalOffset.dev.mjs",
+        "production": "./LexicalOffset.prod.mjs",
+        "node": "./LexicalOffset.node.mjs",
+        "default": "./LexicalOffset.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalOffset.dev.js",
+        "production": "./LexicalOffset.prod.js",
+        "default": "./LexicalOffset.js"
+      }
+    }
+  },
+  "dependencies": {
+    "lexical": "0.16.1"
+  }
 }

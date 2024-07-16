@@ -4,7 +4,6 @@ node_modules
 
 base-build
 build
-build
 coverage
 dist
 npm
@@ -19,6 +18,7 @@ npm
 e2e-screenshots
 test-results
 playwright-report
+/SOURCE_CODE_REVIEW.md
 
 npm-debug.log*
 

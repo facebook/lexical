@@ -21,9 +21,11 @@ import {
   assertSelection,
   click,
   copyToClipboard,
+  expect,
   focusEditor,
   html,
   initialize,
+  locate,
   pasteFromClipboard,
   test,
 } from '../../../utils/index.mjs';
@@ -46,9 +48,9 @@ test.describe('HTML Links CopyAndPaste', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph">
           <a
-            href="https://facebook.com"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com">
             <span data-lexical-text="true">Facebook!</span>
           </a>
         </p>
@@ -77,6 +79,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
 
     await click(page, '.link');
+    await expect(locate(page, '.link-input')).toBeFocused();
     await page.keyboard.type('facebook.com');
     await click(page, '.link-confirm');
 
@@ -85,10 +88,10 @@ test.describe('HTML Links CopyAndPaste', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph">
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">Facebook!</span>
           </a>
         </p>
@@ -121,9 +124,9 @@ test.describe('HTML Links CopyAndPaste', () => {
           dir="ltr">
           <span data-lexical-text="true">beforetext</span>
           <a
-            href="https://test.com/1"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://test.com/1">
             <span data-lexical-text="true">link</span>
           </a>
           <span data-lexical-text="true">textafter</span>
@@ -157,16 +160,16 @@ test.describe('HTML Links CopyAndPaste', () => {
           dir="ltr">
           <span data-lexical-text="true">text</span>
           <a
-            href="https://test.com/"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://test.com/">
             <span data-lexical-text="true">link</span>
           </a>
           <span data-lexical-text="true">text</span>
           <a
-            href="https://test.com/"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://test.com/">
             <span data-lexical-text="true">in</span>
           </a>
         </p>
@@ -191,13 +194,15 @@ test.describe('HTML Links CopyAndPaste', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          style="text-align: left">
           <span data-lexical-text="true">Line 0</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
+            style="text-align: left"
             value="1">
             <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 1Â&nbsp;</span>
             <a
@@ -213,6 +218,7 @@ test.describe('HTML Links CopyAndPaste', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
+            style="text-align: left"
             value="2">
             <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 2.</span>
           </li>

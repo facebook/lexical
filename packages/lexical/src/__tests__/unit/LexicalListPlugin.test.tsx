@@ -6,24 +6,23 @@
  *
  */
 import {ListItemNode, ListNode} from '@lexical/list';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
-import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
-import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
-import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
-import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
   INDENT_CONTENT_COMMAND,
   LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
-} from 'lexical/src';
+} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   INSERT_UNORDERED_LIST_COMMAND,
@@ -59,7 +58,6 @@ describe('@lexical/list tests', () => {
     }
 
     return (
-      //@ts-ignore-next-line
       <TestComposer config={{nodes: [ListNode, ListItemNode], theme: {}}}>
         <RichTextPlugin
           contentEditable={<ContentEditable />}

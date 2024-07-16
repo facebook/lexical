@@ -32,7 +32,7 @@ import {
   waitForSelector,
 } from '../utils/index.mjs';
 
-test.describe('TextFormatting', () => {
+test.describe.parallel('TextFormatting', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create bold text using the shortcut`, async ({
     page,
@@ -1141,8 +1141,8 @@ test.describe('TextFormatting', () => {
               data-lexical-decorator="true">
               <div draggable="false">
                 <img
-                  alt="Yellow flower in tilt shift lens"
                   class="focused"
+                  alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />

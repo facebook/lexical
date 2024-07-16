@@ -22,12 +22,17 @@ import {
   $isTextNode,
 } from 'lexical';
 
-import {transformersByType} from './utils';
+import {isEmptyParagraph, transformersByType} from './utils';
 
+/**
+ * Renders string from markdown. The selection is moved to the start after the operation.
+ */
 export function createMarkdownExport(
   transformers: Array<Transformer>,
+  shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
+  const isNewlineDelimited = !shouldPreserveNewLines;
 
   // Export only uses text formats that are responsible for single format
   // e.g. it will filter out *** (bold, italic) and instead use separate ** and *
@@ -39,7 +44,8 @@ export function createMarkdownExport(
     const output = [];
     const children = (node || $getRoot()).getChildren();
 
-    for (const child of children) {
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
       const result = exportTopLevelElements(
         child,
         byType.element,
@@ -48,11 +54,20 @@ export function createMarkdownExport(
       );
 
       if (result != null) {
-        output.push(result);
+        output.push(
+          // seperate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
+          isNewlineDelimited &&
+            i > 0 &&
+            !isEmptyParagraph(child) &&
+            !isEmptyParagraph(children[i - 1])
+            ? '\n'.concat(result)
+            : result,
+        );
       }
     }
-
-    return output.join('\n\n');
+    // Ensure consecutive groups of texts are atleast \n\n apart while each empty paragraph render as a newline.
+    // Eg. ["hello", "", "", "hi", "\nworld"] -> "hello\n\n\nhi\n\nworld"
+    return output.join('\n');
   };
 }
 
@@ -128,6 +143,7 @@ function exportChildren(
         ),
       );
     } else if ($isElementNode(child)) {
+      // empty paragraph returns ""
       output.push(
         exportChildren(child, textTransformersIndex, textMatchTransformers),
       );

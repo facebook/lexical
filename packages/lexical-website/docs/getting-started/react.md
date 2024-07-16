@@ -37,11 +37,11 @@ import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
-  ...
+  //...
 }
 
 // Catch any errors that occur during Lexical updates and log them
@@ -81,13 +81,13 @@ Below you can find an example of the integration from the previous chapter that 
 
 However no UI can be created w/o CSS and Lexical is not an exception here. Pay attention to `ExampleTheme.ts` and how it's used in this example, with corresponding styles defined in `styles.css`.
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0"></iframe>
+<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
 
 ## Saving Lexical State
 
 :::tip
-While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for [LexicalOnchangePlugin](/docs/react/plugins#lexicalonchangeplugin).
+While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for [LexicalOnChangePlugin](/docs/react/plugins#lexicalonchangeplugin).
 :::
 
 Now that we have a simple editor in React, the next thing we might want to do is access the content of the editor to, for instance,

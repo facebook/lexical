@@ -1,4 +1,3 @@
-/** @module @lexical/table */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -35,6 +34,8 @@ export {
   TableRowNode,
 } from './LexicalTableRowNode';
 export type {
+  TableMapType,
+  TableMapValueType,
   TableSelection,
   TableSelectionShape,
 } from './LexicalTableSelection';
@@ -44,12 +45,15 @@ export {
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
+  $findCellNode,
+  $findTableNode,
   applyTableHandlers,
   getDOMCellFromTarget,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,

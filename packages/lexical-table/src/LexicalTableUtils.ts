@@ -249,7 +249,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const focus = selection.focus.getNode();
   const [focusCell, , grid] = $getNodeTriplet(focus);
@@ -377,7 +377,7 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -500,7 +500,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -576,7 +576,7 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -628,12 +628,18 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
     }
   }
   const focusRowMap = gridMap[focusStartRow];
-  const nextColumn = focusRowMap[focusStartColumn + focusCell.__colSpan];
+  const nextColumn =
+    anchorStartColumn > focusStartColumn
+      ? focusRowMap[anchorStartColumn + anchorCell.__colSpan]
+      : focusRowMap[focusStartColumn + focusCell.__colSpan];
   if (nextColumn !== undefined) {
     const {cell} = nextColumn;
     $moveSelectionToCell(cell);
   } else {
-    const previousRow = focusRowMap[focusStartColumn - 1];
+    const previousRow =
+      focusStartColumn < anchorStartColumn
+        ? focusRowMap[focusStartColumn - 1]
+        : focusRowMap[anchorStartColumn - 1];
     const {cell} = previousRow;
     $moveSelectionToCell(cell);
   }
@@ -661,7 +667,7 @@ export function $unmergeCell(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
-    'Expected a RangeSelection or GridSelection',
+    'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
   const [cell, row, grid] = $getNodeTriplet(anchor);
@@ -720,6 +726,21 @@ export function $computeTableMap(
   cellA: TableCellNode,
   cellB: TableCellNode,
 ): [TableMapType, TableMapValueType, TableMapValueType] {
+  const [tableMap, cellAValue, cellBValue] = $computeTableMapSkipCellCheck(
+    grid,
+    cellA,
+    cellB,
+  );
+  invariant(cellAValue !== null, 'Anchor not found in Grid');
+  invariant(cellBValue !== null, 'Focus not found in Grid');
+  return [tableMap, cellAValue, cellBValue];
+}
+
+export function $computeTableMapSkipCellCheck(
+  grid: TableNode,
+  cellA: null | TableCellNode,
+  cellB: null | TableCellNode,
+): [TableMapType, TableMapValueType | null, TableMapValueType | null] {
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
@@ -739,10 +760,10 @@ export function $computeTableMap(
         tableMap[startRow + i][startColumn + j] = value;
       }
     }
-    if (cellA.is(cell)) {
+    if (cellA !== null && cellA.is(cell)) {
       cellAValue = value;
     }
-    if (cellB.is(cell)) {
+    if (cellB !== null && cellB.is(cell)) {
       cellBValue = value;
     }
   }
@@ -771,8 +792,6 @@ export function $computeTableMap(
       j += cell.__colSpan;
     }
   }
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
   return [tableMap, cellAValue, cellBValue];
 }
 

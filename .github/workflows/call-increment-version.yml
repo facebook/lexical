@@ -1,0 +1,67 @@
+name: Increment Version
+on:
+  workflow_call:
+    inputs:
+      increment:
+        required: true
+        type: string
+      dry-run:
+        required: true
+        type: boolean
+      channel:
+        required: true
+        type: string
+      git-repo:
+        required: true
+        type: string
+    secrets:
+      SSH_KEY:
+        required: true
+    outputs:
+      version:
+        description: 'The new package.json version, e.g. "0.16.0"'
+        value: ${{ jobs.release.outputs.version }}
+      tag-ref:
+        description: 'The fully qualified ref for the tag, e.g. "refs/tags/v0.16.0"'
+        value: ${{ jobs.release.outputs.tag-ref }}
+      latest-release:
+        description: 'The latest release (per GitHub releases) prior to this increment, e.g. "v0.15.0"'
+        value: ${{ jobs.release.outputs.latest-release }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.increment-version.outputs.version }}
+      tag-ref: ${{ steps.increment-version.outputs.tag-ref }}
+      latest-release: ${{ steps.latest.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+          fetch-depth: 0
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: |
+          git config user.name "Lexical GitHub Actions Bot"
+          git config user.email "<>"
+      - id: latest
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          owner: facebook
+          repo: lexical
+          excludes: draft
+      - id: increment-version
+        run: npm run increment-version
+        env:
+          # These are passed in the environment as they are used by
+          # the postversion script
+          INCREMENT: ${{ inputs.increment }}
+          CHANNEL: ${{ inputs.channel }}
+          LATEST_RELEASE: ${{ steps.latest.outputs.release }}
+          DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+          GIT_REPO: ${{ inputs.git-repo }}

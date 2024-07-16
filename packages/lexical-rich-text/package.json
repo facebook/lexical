@@ -7,19 +7,37 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.16.1",
   "main": "LexicalRichText.js",
-  "peerDependencies": {
-    "lexical": "0.14.2",
-    "@lexical/selection": "0.14.2",
-    "@lexical/clipboard": "0.14.2",
-    "@lexical/utils": "0.14.2"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-rich-text"
   },
-  "module": "LexicalRichText.esm.js",
-  "sideEffects": false
+  "module": "LexicalRichText.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalRichText.dev.mjs",
+        "production": "./LexicalRichText.prod.mjs",
+        "node": "./LexicalRichText.node.mjs",
+        "default": "./LexicalRichText.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalRichText.dev.js",
+        "production": "./LexicalRichText.prod.js",
+        "default": "./LexicalRichText.js"
+      }
+    }
+  },
+  "dependencies": {
+    "@lexical/clipboard": "0.16.1",
+    "@lexical/selection": "0.16.1",
+    "@lexical/utils": "0.16.1",
+    "lexical": "0.16.1"
+  }
 }

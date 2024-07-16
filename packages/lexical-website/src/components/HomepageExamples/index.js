@@ -7,8 +7,9 @@
  */
 
 import Link from '@docusaurus/Link';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import * as Tabs from '@radix-ui/react-tabs';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 const EXAMPLES = [
   {
@@ -23,7 +24,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-1',
     label: 'Simple Setup',
-    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0',
+    src: 'vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=1',
   },
   {
     content: (
@@ -38,7 +39,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-2',
     label: 'Powerful Features',
-    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0',
+    src: 'react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1',
   },
   {
     content: (
@@ -50,12 +51,15 @@ const EXAMPLES = [
     ),
     id: 'example-feature-3',
     label: 'Built to Extend',
-    src: 'https://stackblitz.com/github/StyleT/lexical/tree/feature/vanilla-js-plugin-example/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0',
+    src: 'vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=1',
   },
 ];
 
 export default function HomepageExamples() {
   const [activeItemID, setActiveItemID] = useState(EXAMPLES[0].id);
+  const {
+    siteConfig: {customFields},
+  } = useDocusaurusContext();
 
   return (
     <Tabs.Root
@@ -79,7 +83,7 @@ export default function HomepageExamples() {
         </ul>
       </Tabs.List>
 
-      {EXAMPLES.map(({id, content, src}) => (
+      {EXAMPLES.map(({id, content, src, label}) => (
         <Tabs.Content asChild={true} value={id} key={id}>
           <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
             <div className="flex flex-col gap-6">
@@ -97,9 +101,9 @@ export default function HomepageExamples() {
             <div>
               <iframe
                 className="h-[500px] w-full overflow-hidden"
-                src={src}
-                title="lexical-plain-text-example"
-                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                src={`${customFields.STACKBLITZ_PREFIX}examples/${src}`}
+                title={label}
+                sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
               />
             </div>
           </div>

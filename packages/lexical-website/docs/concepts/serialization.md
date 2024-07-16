@@ -284,7 +284,7 @@ export type SerializedTextNode = SerializedTextNodeV1 | SerializedTextNodeV2;
 ```
 ### Handling extended HTML styling
 
-Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON <-> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
+Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON \<-\> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
 
 You need to override the base TextNode:
 
@@ -381,7 +381,7 @@ export class ExtendedTextNode extends TextNode {
 }
 
 export function $createExtendedTextNode(text: string): ExtendedTextNode {
-	return new ExtendedTextNode(text, className);
+	return new ExtendedTextNode(text);
 }
 
 export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {

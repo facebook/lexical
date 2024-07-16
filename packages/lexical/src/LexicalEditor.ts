@@ -20,10 +20,10 @@ import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
-  commitPendingUpdates,
+  $commitPendingUpdates,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -33,10 +33,12 @@ import {
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
+  getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
   markAllNodesAsDirty,
 } from './LexicalUtils';
+import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
@@ -103,6 +105,7 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName;
     h6?: EditorThemeClassName;
   };
+  hr?: EditorThemeClassName;
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;
   list?: {
@@ -208,6 +211,18 @@ export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
 export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
+
+export interface MutationListenerOptions {
+  /**
+   * Skip the initial call of the listener with pre-existing DOM nodes.
+   *
+   * The default is currently true for backwards compatibility with <= 0.16.1
+   * but this default is expected to change to false in 0.17.0.
+   */
+  skipInitialization?: boolean;
+}
+
+const DEFAULT_SKIP_INITIALIZATION = true;
 
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -421,6 +436,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     LineBreakNode,
     TabNode,
     ParagraphNode,
+    ArtificialNode__DO_NOT_USE,
     ...(config.nodes || []),
   ];
   const {onError, html} = config;
@@ -433,8 +449,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes = new Map();
     for (let i = 0; i < nodes.length; i++) {
       let klass = nodes[i];
-      let replace = null;
-      let replaceWithKlass = null;
+      let replace: RegisteredNode['replace'] = null;
+      let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null;
 
       if (typeof klass !== 'function') {
         const options = klass;
@@ -442,10 +458,28 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
-      // Ensure custom nodes implement required methods.
+      // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
+        // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
+        const nodeType =
+          Object.prototype.hasOwnProperty.call(klass, 'getType') &&
+          klass.getType();
         const name = klass.name;
-        if (name !== 'RootNode') {
+
+        if (replaceWithKlass) {
+          invariant(
+            replaceWithKlass.prototype instanceof klass,
+            "%s doesn't extend the %s",
+            replaceWithKlass.name,
+            name,
+          );
+        }
+
+        if (
+          name !== 'RootNode' &&
+          nodeType !== 'root' &&
+          nodeType !== 'artificial'
+        ) {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins
@@ -804,14 +838,42 @@ export class LexicalEditor {
    * One common use case for this is to attach DOM event listeners to the underlying DOM nodes as Lexical nodes are created.
    * {@link LexicalEditor.getElementByKey} can be used for this.
    *
+   * If any existing nodes are in the DOM, and skipInitialization is not true, the listener
+   * will be called immediately with an updateTag of 'registerMutationListener' where all
+   * nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
+   * (default is currently true for backwards compatibility in 0.16.x but will change to false in 0.17.0).
+   *
    * @param klass - The class of the node that you want to listen to mutations on.
    * @param listener - The logic you want to run when the node is mutated.
+   * @param options - see {@link MutationListenerOptions}
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerMutationListener(
     klass: Klass<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void {
+    const klassToMutate = this.resolveRegisteredNodeAfterReplacements(
+      this.getRegisteredNode(klass),
+    ).klass;
+    const mutations = this._listeners.mutation;
+    mutations.set(listener, klassToMutate);
+    const skipInitialization = options && options.skipInitialization;
+    if (
+      !(skipInitialization === undefined
+        ? DEFAULT_SKIP_INITIALIZATION
+        : skipInitialization)
+    ) {
+      this.initializeMutationListener(listener, klassToMutate);
+    }
+
+    return () => {
+      mutations.delete(listener);
+    };
+  }
+
+  /** @internal */
+  private getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
     const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
@@ -822,11 +884,42 @@ export class LexicalEditor {
       );
     }
 
-    const mutations = this._listeners.mutation;
-    mutations.set(listener, klass);
-    return () => {
-      mutations.delete(listener);
-    };
+    return registeredNode;
+  }
+
+  /** @internal */
+  private resolveRegisteredNodeAfterReplacements(
+    registeredNode: RegisteredNode,
+  ): RegisteredNode {
+    while (registeredNode.replaceWithKlass) {
+      registeredNode = this.getRegisteredNode(registeredNode.replaceWithKlass);
+    }
+    return registeredNode;
+  }
+
+  /** @internal */
+  private initializeMutationListener(
+    listener: MutationListener,
+    klass: Klass<LexicalNode>,
+  ): void {
+    const prevEditorState = this._editorState;
+    const nodeMap = getCachedTypeToNodeMap(this._editorState).get(
+      klass.getType(),
+    );
+    if (!nodeMap) {
+      return;
+    }
+    const nodeMutationMap = new Map<string, NodeMutation>();
+    for (const k of nodeMap.keys()) {
+      nodeMutationMap.set(k, 'created');
+    }
+    if (nodeMutationMap.size > 0) {
+      listener(nodeMutationMap, {
+        dirtyLeaves: new Set(),
+        prevEditorState,
+        updateTags: new Set(['registerMutationListener']),
+      });
+    }
   }
 
   /** @internal */
@@ -834,19 +927,8 @@ export class LexicalEditor {
     klass: Klass<T>,
     listener: Transform<T>,
   ): RegisteredNode {
-    const type = klass.getType();
-
-    const registeredNode = this._nodes.get(type);
-
-    if (registeredNode === undefined) {
-      invariant(
-        false,
-        'Node %s has not been registered. Ensure node has been passed to createEditor.',
-        klass.name,
-      );
-    }
-    const transforms = registeredNode.transforms;
-    transforms.add(listener as Transform<LexicalNode>);
+    const registeredNode = this.getRegisteredNode(klass);
+    registeredNode.transforms.add(listener as Transform<LexicalNode>);
 
     return registeredNode;
   }
@@ -979,7 +1061,7 @@ export class LexicalEditor {
 
         this._updateTags.add('history-merge');
 
-        commitPendingUpdates(this);
+        $commitPendingUpdates(this);
 
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
@@ -1030,7 +1112,7 @@ export class LexicalEditor {
       );
     }
 
-    flushRootMutations(this);
+    $flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
@@ -1040,7 +1122,7 @@ export class LexicalEditor {
         tags.add(tag);
       }
 
-      commitPendingUpdates(this);
+      $commitPendingUpdates(this);
     }
 
     this._pendingEditorState = editorState;
@@ -1052,13 +1134,13 @@ export class LexicalEditor {
       tags.add(tag);
     }
 
-    commitPendingUpdates(this);
+    $commitPendingUpdates(this);
   }
 
   /**
    * Parses a SerializedEditorState (usually produced by {@link EditorState.toJSON}) and returns
    * and EditorState object that can be, for example, passed to {@link LexicalEditor.setEditorState}. Typically,
-   * deserliazation from JSON stored in a database uses this method.
+   * deserialization from JSON stored in a database uses this method.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
@@ -1072,6 +1154,19 @@ export class LexicalEditor {
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
     return parseEditorState(serializedEditorState, this, updateFn);
+  }
+
+  /**
+   * Executes a read of the editor's state, with the
+   * editor context available (useful for exporting and read-only DOM
+   * operations). Much like update, but prevents any mutation of the
+   * editor's state. Any pending updates will be flushed immediately before
+   * the read.
+   * @param callbackFn - A function that has access to read-only editor state.
+   */
+  read<T>(callbackFn: () => T): T {
+    $commitPendingUpdates(this);
+    return this.getEditorState().read(callbackFn, {editor: this});
   }
 
   /**

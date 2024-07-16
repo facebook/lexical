@@ -72,8 +72,11 @@ declare export function createRectsFromDOMRange(
   range: Range,
 ): Array<ClientRect>;
 
-declare export function trimTextContentFromAnchor(
+declare export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,
 ): void;
+
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
+declare export const trimTextContentFromAnchor: typeof $trimTextContentFromAnchor;

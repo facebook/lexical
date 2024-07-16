@@ -59,13 +59,53 @@ workflow to prevent cascading/water-falling of updates. You can retrieve the cur
 
 Editor States are also fully serializable to JSON and can easily be serialized back into the editor using `editor.parseEditorState()`.
 
-### Editor Updates
+### Reading and Updating Editor State
 
-When you want to change something in an Editor State, you must do it via an update, `editor.update(() => {...})`. The closure passed
-to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
-access to the underlying Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
-where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
-For those familiar with React Hooks, you can think of these as having a similar functionality (except `$` functions can be used in any order).
+When you want to read and/or update the Lexical node tree, you must do it via `editor.update(() => {...})`. You may also do
+read-only operations with the editor state via `editor.read(() => {...})` or `editor.getEditorState().read(() => {...})`.
+The closure passed to the update or read call is important, and must be synchronous. It's the only place where you have full
+"lexical" context of the active editor state, and providing you with access to the Editor State's node tree. We promote using
+the convention of using `$` prefixed functions (such as `$getRoot()`) to convey that these functions must be called in this
+context. Attempting to use them outside of a read or update will trigger a runtime error.
+
+For those familiar with React Hooks, you can think of these $functions as having similar functionality:
+| *Feature* | React Hooks | Lexical $functions |
+| -- | -- | -- |
+| Naming Convention | `useFunction` | `$function` |
+| Context Required | Can only be called while rendering | Can only be called while in an update or read |
+| Can be composed | Hooks can call other hooks | $functions can call other $functions |
+| Must be synchronous | ✅ | ✅ |
+| Other rules | ❌ Must be called unconditionally in the same order | ✅ None |
+
+Node Transforms and Command Listeners are called with an implicit `editor.update(() => {...})` context.
+
+It is permitted to do nested updates, or nested reads, but an update should not be nested in a read
+or vice versa. For example, `editor.update(() => editor.update(() => {...}))` is allowed. It is permitted
+to nest nest an `editor.read` at the end of an `editor.update`, but this will immediately flush the update
+and any additional update in that callback will throw an error.
+
+All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods
+and access properties of a Lexical Node while in a read or update call (just like `$` functions). Methods
+on Lexical Nodes will first attempt to locate the latest (and possibly a writable) version of the node from the
+active editor state using the node's unique key. All versions of a logical node have the same key. These keys
+are managed by the Editor, are only present at runtime (not serialized), and should be considered to be random and
+opaque (do not write tests that assume hard-coded values for keys).
+
+This is done because the editor state's node tree is recursively frozen after reconciliation to
+support efficient time travel (undo/redo and similar use cases). Methods that update nodes
+first call `node.getWritable()`, which will create a writable clone of a frozen node. This would normally
+mean that any existing references (such as local variables) would refer to a stale version of the node, but
+having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
+
+:::tip
+
+If you use `editor.read(() => { /* callback */ })` it will first flush any pending updates, so you will
+always see a consistent state. When you are in an `editor.update`, you will always be working with the
+pending state, where node transforms and DOM reconciliation may not have run yet.
+`editor.getEditorState().read()` will use the latest reconciled `EditorState` (after any node transforms,
+DOM reconciliation, etc. have already run), any pending `editor.update` mutations will not yet be visible.
+
+:::
 
 ### DOM Reconciler
 

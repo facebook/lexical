@@ -8,6 +8,7 @@
 .docusaurus
 .cache-loader
 /docs/api
+/docs/packages
 
 # Misc
 .DS_Store
@@ -19,3 +20,4 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/fb/sdoc-cache.json

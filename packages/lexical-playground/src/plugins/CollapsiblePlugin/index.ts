@@ -16,11 +16,8 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getPreviousSelection,
   $getSelection,
-  $isElementNode,
   $isRangeSelection,
-  $setSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DELETE_CHARACTER_COMMAND,
@@ -70,7 +67,7 @@ export default function CollapsiblePlugin(): null {
       );
     }
 
-    const onEscapeUp = () => {
+    const $onEscapeUp = () => {
       const selection = $getSelection();
       if (
         $isRangeSelection(selection) &&
@@ -98,7 +95,7 @@ export default function CollapsiblePlugin(): null {
       return false;
     };
 
-    const onEscapeDown = () => {
+    const $onEscapeDown = () => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) && selection.isCollapsed()) {
         const container = $findMatchingParent(
@@ -211,13 +208,13 @@ export default function CollapsiblePlugin(): null {
       // new content even if trailing paragraph is accidentally deleted
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
-        onEscapeDown,
+        $onEscapeDown,
         COMMAND_PRIORITY_LOW,
       ),
 
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        onEscapeDown,
+        $onEscapeDown,
         COMMAND_PRIORITY_LOW,
       ),
 
@@ -227,43 +224,35 @@ export default function CollapsiblePlugin(): null {
       // new content even if leading paragraph is accidentally deleted
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
-        onEscapeUp,
+        $onEscapeUp,
         COMMAND_PRIORITY_LOW,
       ),
 
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
-        onEscapeUp,
+        $onEscapeUp,
         COMMAND_PRIORITY_LOW,
       ),
 
-      // Handling CMD+Enter to toggle collapsible element collapsed state
+      // Enter goes from Title to Content rather than a new line inside Title
       editor.registerCommand(
         INSERT_PARAGRAPH_COMMAND,
         () => {
-          const windowEvent = editor._window?.event as
-            | KeyboardEvent
-            | undefined;
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const titleNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (node) => $isCollapsibleTitleNode(node),
+            );
 
-          if (
-            windowEvent &&
-            (windowEvent.ctrlKey || windowEvent.metaKey) &&
-            windowEvent.key === 'Enter'
-          ) {
-            const selection = $getPreviousSelection();
-            if ($isRangeSelection(selection) && selection.isCollapsed()) {
-              const parent = $findMatchingParent(
-                selection.anchor.getNode(),
-                (node) => $isElementNode(node) && !node.isInline(),
-              );
-
-              if ($isCollapsibleTitleNode(parent)) {
-                const container = parent.getParent<ElementNode>();
-                if ($isCollapsibleContainerNode(container)) {
+            if ($isCollapsibleTitleNode(titleNode)) {
+              const container = titleNode.getParent<ElementNode>();
+              if (container && $isCollapsibleContainerNode(container)) {
+                if (!container.getOpen()) {
                   container.toggleOpen();
-                  $setSelection(selection.clone());
-                  return true;
                 }
+                titleNode.getNextSibling()?.selectEnd();
+                return true;
               }
             }
           }

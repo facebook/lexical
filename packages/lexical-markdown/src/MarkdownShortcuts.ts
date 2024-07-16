@@ -118,7 +118,7 @@ function runTextMatchTransformers(
   return false;
 }
 
-function runTextFormatTransformers(
+function $runTextFormatTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   textFormatTransformers: Readonly<
@@ -350,7 +350,7 @@ export function registerMarkdownShortcuts(
     }
   }
 
-  const transform = (
+  const $transform = (
     parentNode: ElementNode,
     anchorNode: TextNode,
     anchorOffset: number,
@@ -376,7 +376,7 @@ export function registerMarkdownShortcuts(
       return;
     }
 
-    runTextFormatTransformers(
+    $runTextFormatTransformers(
       anchorNode,
       anchorOffset,
       textFormatTransformersIndex,
@@ -431,7 +431,7 @@ export function registerMarkdownShortcuts(
           return;
         }
 
-        transform(parentNode, anchorNode, selection.anchor.offset);
+        $transform(parentNode, anchorNode, selection.anchor.offset);
       });
     },
   );

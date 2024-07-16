@@ -8,8 +8,9 @@
 
 import type {Binding} from '.';
 import type {ElementNode, NodeKey, NodeMap} from 'lexical';
-import type {AbstractType, XmlElement, XmlText} from 'yjs';
+import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 
+import {$createChildrenArray} from '@lexical/offset';
 import {
   $getNodeByKey,
   $isDecoratorNode,
@@ -17,7 +18,6 @@ import {
   $isTextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {YMap} from 'yjs/dist/src/internals';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -25,9 +25,8 @@ import {CollabTextNode} from './CollabTextNode';
 import {
   $createCollabNodeFromLexicalNode,
   $getNodeByKeyOrThrow,
-  createChildrenArray,
+  $getOrInitCollabNodeFromSharedType,
   createLexicalNodeFromCollabNode,
-  getOrInitCollabNodeFromSharedType,
   getPositionFromElementAndOffset,
   removeFromParent,
   spliceString,
@@ -213,7 +212,7 @@ export class CollabElementNode {
             currIndex,
             false,
           );
-          const collabNode = getOrInitCollabNodeFromSharedType(
+          const collabNode = $getOrInitCollabNodeFromSharedType(
             binding,
             sharedType as XmlText | YMap<unknown> | XmlElement,
             this,
@@ -236,7 +235,7 @@ export class CollabElementNode {
     );
 
     const key = lexicalNode.__key;
-    const prevLexicalChildrenKeys = createChildrenArray(lexicalNode, null);
+    const prevLexicalChildrenKeys = $createChildrenArray(lexicalNode, null);
     const nextLexicalChildrenKeys: Array<NodeKey> = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
@@ -438,8 +437,8 @@ export class CollabElementNode {
     const prevChildren =
       prevLexicalNode === null
         ? []
-        : createChildrenArray(prevLexicalNode, prevNodeMap);
-    const nextChildren = createChildrenArray(nextLexicalNode, null);
+        : $createChildrenArray(prevLexicalNode, prevNodeMap);
+    const nextChildren = $createChildrenArray(nextLexicalNode, null);
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;

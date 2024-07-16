@@ -109,7 +109,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           !$isListItemNode(node) &&
           !handled.has(node.getKey())
         ) {
-          createListOrMerge(node, listType);
+          $createListOrMerge(node, listType);
           continue;
         }
 
@@ -132,7 +132,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
               if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
                 handled.add(parentKey);
-                createListOrMerge(parent, listType);
+                $createListOrMerge(parent, listType);
                 break;
               }
 
@@ -149,7 +149,7 @@ function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
   node.splice(node.getChildrenSize(), 0, nodesToAppend);
 }
 
-function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
+function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
   }
@@ -304,6 +304,21 @@ export function updateChildrenListItemValue(list: ListNode): void {
         value++;
       }
     }
+  }
+}
+
+/**
+ * Merge the next sibling list if same type.
+ * <ul> will merge with <ul>, but NOT <ul> with <ol>.
+ * @param list - The list whose next sibling should be potentially merged
+ */
+export function mergeNextSiblingListIfSameType(list: ListNode): void {
+  const nextSibling = list.getNextSibling();
+  if (
+    $isListNode(nextSibling) &&
+    list.getListType() === nextSibling.getListType()
+  ) {
+    mergeLists(list, nextSibling);
   }
 }
 

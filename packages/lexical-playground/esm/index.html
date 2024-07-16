@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Lexical Basic - Vanilla JS with ESM" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="./styles.css" rel="stylesheet" />
     <title>Lexical Basic - Vanilla JS with ESM</title>
   </head>
   <body>
@@ -21,17 +21,17 @@
     <script type="importmap">
       {
         "imports": {
-          "lexical": "./dist/Lexical.esm.js",
-          "@lexical/clipboard": "./dist/LexicalClipboard.esm.js",
-          "@lexical/dragon": "./dist/LexicalDragon.esm.js",
-          "@lexical/history": "./dist/LexicalHistory.esm.js",
-          "@lexical/html": "./dist/LexicalHtml.esm.js",
-          "@lexical/rich-text": "./dist/LexicalRichText.esm.js",
-          "@lexical/selection": "./dist/LexicalSelection.esm.js",
-          "@lexical/utils": "./dist/LexicalUtils.esm.js"
+          "lexical": "./dist/Lexical.mjs",
+          "@lexical/clipboard": "./dist/LexicalClipboard.mjs",
+          "@lexical/dragon": "./dist/LexicalDragon.mjs",
+          "@lexical/history": "./dist/LexicalHistory.mjs",
+          "@lexical/html": "./dist/LexicalHtml.mjs",
+          "@lexical/rich-text": "./dist/LexicalRichText.mjs",
+          "@lexical/selection": "./dist/LexicalSelection.mjs",
+          "@lexical/utils": "./dist/LexicalUtils.mjs"
         }
       }
     </script>
-    <script type="module" src="./index.esm.js"></script>
+    <script src="./index.mjs" type="module"></script>
   </body>
 </html>

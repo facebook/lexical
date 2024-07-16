@@ -1,0 +1,69 @@
+name: Lexical e2e test runner
+
+on:
+  workflow_call:
+    inputs:
+      os: {required: true, type: string}
+      node-version: {required: true, type: string}
+      browser: {required: true, type: string}
+      editor-mode: {required: true, type: string}
+      events-mode: {required: true, type: string}
+      prod: {required: false, type: boolean}
+      flaky: {required: false, type: boolean} # Defaults to false: dont run flaky
+      override-react-version: {required: false, type: string}
+
+jobs:
+  e2e-test:
+    runs-on: ${{ inputs.os }}
+    if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab' || inputs.events-mode != 'legacy-events')
+    env:
+      CI: true
+      E2E_EDITOR_MODE: ${{ inputs.editor-mode }}
+      E2E_EVENTS_MODE: ${{ inputs.events-mode }}
+      OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
+      cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
+      test_results_path: ${{ inputs.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
+      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }} ${{ inputs.flaky && '-- -- --grep "@flaky"' || '-- -- --grep-invert "@flaky"' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - name: Install required ubuntu-latest packages
+        if: inputs.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install xvfb
+      - name: Install dependencies
+        run: npm ci
+      - name: Install React ${{ inputs.override-react-version }}
+        if: inputs.override-react-version != ''
+        # This should be safe since we are caching ~/.npm and not node_modules
+        run: |
+          node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
+          grep version node_modules/{react,react-dom}/package.json
+      - name: Restore playwright from cache
+        uses: actions/cache/restore@v4
+        id: playwright-cache
+        with:
+          path: ${{ env.cache_playwright_path }}
+          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - name: Install playwright
+        run: npx playwright install
+      - name: Save playwright to cache
+        uses: actions/cache/save@v4
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.cache_playwright_path }}
+          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+      - name: Run tests
+        run: npm run ${{ env.test_script }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.events-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.override-react-version }}
+          path: ${{ env.test_results_path }}
+          retention-days: 7

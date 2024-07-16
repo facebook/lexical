@@ -11,13 +11,14 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.16.1",
   "main": "LexicalYjs.js",
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/offset": "0.14.2"
+    "@lexical/offset": "0.16.1",
+    "lexical": "0.16.1"
   },
   "peerDependencies": {
-    "lexical": "0.14.2",
     "yjs": ">=13.5.22"
   },
   "repository": {
@@ -25,6 +26,23 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-yjs"
   },
-  "module": "LexicalYjs.esm.js",
-  "sideEffects": false
+  "module": "LexicalYjs.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalYjs.dev.mjs",
+        "production": "./LexicalYjs.prod.mjs",
+        "node": "./LexicalYjs.node.mjs",
+        "default": "./LexicalYjs.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalYjs.dev.js",
+        "production": "./LexicalYjs.prod.js",
+        "default": "./LexicalYjs.js"
+      }
+    }
+  }
 }

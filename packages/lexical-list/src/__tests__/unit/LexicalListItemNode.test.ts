@@ -6,7 +6,12 @@
  *
  */
 
-import {$createParagraphNode, $getRoot, TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createRangeSelection,
+  $getRoot,
+  TextNode,
+} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
@@ -57,7 +62,7 @@ describe('LexicalListItemNode tests', () => {
         expectHtmlToBeEqual(
           listItemNode.createDOM(editorConfig).outerHTML,
           html`
-            <li value="1" class="my-listItem-item-class"></li>
+            <li class="my-listItem-item-class" value="1"></li>
           `,
         );
 
@@ -85,7 +90,7 @@ describe('LexicalListItemNode tests', () => {
           expectHtmlToBeEqual(
             domElement.outerHTML,
             html`
-              <li value="1" class="my-listItem-item-class"></li>
+              <li class="my-listItem-item-class" value="1"></li>
             `,
           );
           const newListItemNode = new ListItemNode();
@@ -101,7 +106,7 @@ describe('LexicalListItemNode tests', () => {
           expectHtmlToBeEqual(
             domElement.outerHTML,
             html`
-              <li value="1" class="my-listItem-item-class"></li>
+              <li class="my-listItem-item-class" value="1"></li>
             `,
           );
         });
@@ -120,7 +125,7 @@ describe('LexicalListItemNode tests', () => {
           expectHtmlToBeEqual(
             domElement.outerHTML,
             html`
-              <li value="1" class="my-listItem-item-class"></li>
+              <li class="my-listItem-item-class" value="1"></li>
             `,
           );
           const nestedListNode = new ListNode('bullet', 1);
@@ -138,8 +143,8 @@ describe('LexicalListItemNode tests', () => {
             domElement.outerHTML,
             html`
               <li
-                value="1"
-                class="my-listItem-item-class my-nested-list-listItem-class"></li>
+                class="my-listItem-item-class my-nested-list-listItem-class"
+                value="1"></li>
             `,
           );
         });
@@ -147,10 +152,10 @@ describe('LexicalListItemNode tests', () => {
     });
 
     describe('ListItemNode.replace()', () => {
-      let listNode;
-      let listItemNode1;
-      let listItemNode2;
-      let listItemNode3;
+      let listNode: ListNode;
+      let listItemNode1: ListItemNode;
+      let listItemNode2: ListItemNode;
+      let listItemNode3: ListItemNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -179,13 +184,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -212,13 +217,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">bar</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -242,13 +247,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -270,10 +275,10 @@ describe('LexicalListItemNode tests', () => {
               data-lexical-editor="true">
               <p><br /></p>
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -298,10 +303,10 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
               </ul>
@@ -327,13 +332,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
               <p><br /></p>
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -358,7 +363,7 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
@@ -391,7 +396,7 @@ describe('LexicalListItemNode tests', () => {
       // - B
       test('siblings are not nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -418,13 +423,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">x</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -442,10 +447,10 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -459,7 +464,7 @@ describe('LexicalListItemNode tests', () => {
       // - B
       test('the previous sibling is nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -492,15 +497,15 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -520,12 +525,12 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -539,7 +544,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B
       test('the next sibling is nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -570,15 +575,15 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="3">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -598,12 +603,12 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
                 <li value="2">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -619,7 +624,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B
       test('both siblings are nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -656,17 +661,17 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -688,10 +693,10 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
-                    <li value="2" dir="ltr">
+                    <li dir="ltr" value="2">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -708,7 +713,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B
       test('the previous sibling is nested deeper than the next sibling', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -752,24 +757,24 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
                       </ul>
                     </li>
                   </ul>
                 </li>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -791,17 +796,17 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
                       </ul>
                     </li>
-                    <li value="2" dir="ltr">
+                    <li dir="ltr" value="2">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -818,7 +823,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B2
       test('the next sibling is nested deeper than the previous sibling', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -862,24 +867,24 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
                     <li value="1">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -901,17 +906,17 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li value="2" dir="ltr">
+                    <li dir="ltr" value="2">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -929,7 +934,7 @@ describe('LexicalListItemNode tests', () => {
       //   - B2
       test('both siblings are deeply nested', async () => {
         const {editor} = testEnv;
-        let x;
+        let x: ListItemNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -980,31 +985,31 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
                       </ul>
                     </li>
                   </ul>
                 </li>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
                     <li value="1">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -1026,20 +1031,20 @@ describe('LexicalListItemNode tests', () => {
               <ul>
                 <li value="1">
                   <ul>
-                    <li value="1" dir="ltr">
+                    <li dir="ltr" value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li value="1" dir="ltr">
+                        <li dir="ltr" value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
-                        <li value="2" dir="ltr">
+                        <li dir="ltr" value="2">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li value="2" dir="ltr">
+                    <li dir="ltr" value="2">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -1052,10 +1057,10 @@ describe('LexicalListItemNode tests', () => {
     });
 
     describe('ListItemNode.insertNewAfter(): non-empty list items', () => {
-      let listNode;
-      let listItemNode1;
-      let listItemNode2;
-      let listItemNode3;
+      let listNode: ListNode;
+      let listItemNode1: ListItemNode;
+      let listItemNode2: ListItemNode;
+      let listItemNode3: ListItemNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -1084,13 +1089,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -1103,7 +1108,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode1.insertNewAfter();
+          listItemNode1.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1114,14 +1119,14 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
                 <li value="2"><br /></li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="4" dir="ltr">
+                <li dir="ltr" value="4">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -1134,7 +1139,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode3.insertNewAfter();
+          listItemNode3.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1145,13 +1150,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
                 <li value="4"><br /></li>
@@ -1165,7 +1170,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode3.insertNewAfter();
+          listItemNode3.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1176,13 +1181,13 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2" dir="ltr">
+                <li dir="ltr" value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li value="3" dir="ltr">
+                <li dir="ltr" value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
                 <li value="4"><br /></li>
@@ -1208,7 +1213,7 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
@@ -1217,7 +1222,7 @@ describe('LexicalListItemNode tests', () => {
         );
 
         await editor.update(() => {
-          listItemNode1.insertNewAfter();
+          listItemNode1.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1228,7 +1233,7 @@ describe('LexicalListItemNode tests', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
               <ul>
-                <li value="1" dir="ltr">
+                <li dir="ltr" value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
                 <li value="2"><br /></li>
@@ -1264,9 +1269,9 @@ describe('LexicalListItemNode tests', () => {
     });
 
     describe('ListItemNode.setIndent()', () => {
-      let listNode;
-      let listItemNode1;
-      let listItemNode2;
+      let listNode: ListNode;
+      let listItemNode1: ListItemNode;
+      let listItemNode2: ListItemNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -1296,7 +1301,7 @@ describe('LexicalListItemNode tests', () => {
         });
 
         expectHtmlToBeEqual(
-          editor.getRootElement().innerHTML,
+          editor.getRootElement()!.innerHTML,
           html`
             <ul>
               <li value="1">
@@ -1305,7 +1310,7 @@ describe('LexicalListItemNode tests', () => {
                     <ul>
                       <li value="1">
                         <ul>
-                          <li value="1" dir="ltr">
+                          <li dir="ltr" value="1">
                             <span data-lexical-text="true">one</span>
                           </li>
                         </ul>
@@ -1314,7 +1319,7 @@ describe('LexicalListItemNode tests', () => {
                   </li>
                 </ul>
               </li>
-              <li value="1" dir="ltr">
+              <li dir="ltr" value="1">
                 <span data-lexical-text="true">two</span>
               </li>
             </ul>
@@ -1330,13 +1335,13 @@ describe('LexicalListItemNode tests', () => {
         });
 
         expectHtmlToBeEqual(
-          editor.getRootElement().innerHTML,
+          editor.getRootElement()!.innerHTML,
           html`
             <ul>
-              <li value="1" dir="ltr">
+              <li dir="ltr" value="1">
                 <span data-lexical-text="true">one</span>
               </li>
-              <li value="2" dir="ltr">
+              <li dir="ltr" value="2">
                 <span data-lexical-text="true">two</span>
               </li>
             </ul>

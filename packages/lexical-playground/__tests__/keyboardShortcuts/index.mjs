@@ -18,6 +18,11 @@ import {
   sleep,
 } from '../utils/index.mjs';
 
+/**
+ * A delay value that is short enough yet not too short such that keypresses override each other.
+ */
+export const STANDARD_KEYPRESS_DELAY_MS = 100;
+
 export async function moveToLineBeginning(page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);
@@ -68,6 +73,14 @@ export async function moveToPrevWord(page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowLeft');
   await keyUpCtrlOrAlt(page);
+}
+
+export async function selectPrevWord(page) {
+  await keyDownCtrlOrAlt(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('ArrowLeft');
+  await keyUpCtrlOrAlt(page);
+  await page.keyboard.up('Shift');
 }
 
 export async function moveToNextWord(page) {

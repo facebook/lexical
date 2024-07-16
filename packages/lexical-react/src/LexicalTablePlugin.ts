@@ -16,6 +16,7 @@ import type {NodeKey} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
@@ -28,11 +29,15 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$insertFirst, $insertNodeToNearestRoot} from '@lexical/utils';
 import {
+  $insertFirst,
+  $insertNodeToNearestRoot,
+  mergeRegister,
+} from '@lexical/utils';
+import {
+  $createParagraphNode,
   $getNodeByKey,
   $isTextNode,
-  $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import {useEffect} from 'react';
@@ -57,24 +62,50 @@ export function TablePlugin({
       );
     }
 
-    return editor.registerCommand<InsertTableCommandPayload>(
-      INSERT_TABLE_COMMAND,
-      ({columns, rows, includeHeaders}) => {
-        const tableNode = $createTableNodeWithDimensions(
-          Number(rows),
-          Number(columns),
-          includeHeaders,
-        );
-        $insertNodeToNearestRoot(tableNode);
+    return mergeRegister(
+      editor.registerCommand<InsertTableCommandPayload>(
+        INSERT_TABLE_COMMAND,
+        ({columns, rows, includeHeaders}) => {
+          const tableNode = $createTableNodeWithDimensions(
+            Number(rows),
+            Number(columns),
+            includeHeaders,
+          );
+          $insertNodeToNearestRoot(tableNode);
 
-        const firstDescendant = tableNode.getFirstDescendant();
-        if ($isTextNode(firstDescendant)) {
-          firstDescendant.select();
+          const firstDescendant = tableNode.getFirstDescendant();
+          if ($isTextNode(firstDescendant)) {
+            firstDescendant.select();
+          }
+
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerNodeTransform(TableNode, (node) => {
+        const [gridMap] = $computeTableMapSkipCellCheck(node, null, null);
+        const maxRowLength = gridMap.reduce((curLength, row) => {
+          return Math.max(curLength, row.length);
+        }, 0);
+        for (let i = 0; i < gridMap.length; ++i) {
+          const rowLength = gridMap[i].length;
+          if (rowLength === maxRowLength) {
+            continue;
+          }
+          const lastCellMap = gridMap[i][rowLength - 1];
+          const lastRowCell = lastCellMap.cell;
+          for (let j = rowLength; j < maxRowLength; ++j) {
+            // TODO: inherit header state from another header or body
+            const newCell = $createTableCellNode(0);
+            newCell.append($createParagraphNode());
+            if (lastRowCell !== null) {
+              lastRowCell.insertAfter(newCell);
+            } else {
+              $insertFirst(lastRowCell, newCell);
+            }
+          }
         }
-
-        return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
+      }),
     );
   }, [editor]);
 
@@ -97,17 +128,6 @@ export function TablePlugin({
       }
     };
 
-    // Plugins might be loaded _after_ initial content is set, hence existing table nodes
-    // won't be initialized from mutation[create] listener. Instead doing it here,
-    editor.getEditorState().read(() => {
-      const tableNodes = $nodesOfType(TableNode);
-      for (const tableNode of tableNodes) {
-        if ($isTableNode(tableNode)) {
-          initializeTableNode(tableNode);
-        }
-      }
-    });
-
     const unregisterMutationListener = editor.registerMutationListener(
       TableNode,
       (nodeMutations) => {
@@ -129,6 +149,7 @@ export function TablePlugin({
           }
         }
       },
+      {skipInitialization: false},
     );
 
     return () => {

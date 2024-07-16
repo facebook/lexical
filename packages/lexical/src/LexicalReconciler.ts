@@ -23,6 +23,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
 } from '.';
@@ -49,6 +50,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
+let subTreeTextFormat: number | null = null;
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
@@ -162,7 +164,7 @@ function setElementFormat(dom: HTMLElement, format: number): void {
   }
 }
 
-function createNode(
+function $createNode(
   key: NodeKey,
   parentDOM: null | HTMLElement,
   insertDOM: null | Node,
@@ -194,7 +196,7 @@ function createNode(
     if (childrenSize !== 0) {
       const endIndex = childrenSize - 1;
       const children = createChildrenArray(node, activeNextNodeMap);
-      createChildrenWithDirection(children, endIndex, node, dom);
+      $createChildrenWithDirection(children, endIndex, node, dom);
     }
     const format = node.__format;
 
@@ -258,7 +260,7 @@ function createNode(
   return dom;
 }
 
-function createChildrenWithDirection(
+function $createChildrenWithDirection(
   children: Array<NodeKey>,
   endIndex: number,
   element: ElementNode,
@@ -266,12 +268,12 @@ function createChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  createChildren(children, element, 0, endIndex, dom, null);
+  $createChildren(children, element, 0, endIndex, dom, null);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
 }
 
-function createChildren(
+function $createChildren(
   children: Array<NodeKey>,
   element: ElementNode,
   _startIndex: number,
@@ -284,7 +286,11 @@ function createChildren(
   let startIndex = _startIndex;
 
   for (; startIndex <= endIndex; ++startIndex) {
-    createNode(children[startIndex], dom, insertDOM);
+    $createNode(children[startIndex], dom, insertDOM);
+    const node = activeNextNodeMap.get(children[startIndex]);
+    if (node !== null && subTreeTextFormat === null && $isTextNode(node)) {
+      subTreeTextFormat = node.getFormat();
+    }
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
     subTreeTextContent += DOUBLE_LINE_BREAK;
@@ -339,6 +345,17 @@ function reconcileElementTerminatingLineBreak(
     // @ts-expect-error: internal field
     dom.__lexicalLineBreak = element;
     dom.appendChild(element);
+  }
+}
+
+function reconcileParagraphFormat(element: ElementNode): void {
+  if (
+    $isParagraphNode(element) &&
+    subTreeTextFormat != null &&
+    subTreeTextFormat !== element.__textFormat &&
+    !activeEditorStateReadOnly
+  ) {
+    element.setTextFormat(subTreeTextFormat);
   }
 }
 
@@ -415,16 +432,19 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
   }
 }
 
-function reconcileChildrenWithDirection(
+function $reconcileChildrenWithDirection(
   prevElement: ElementNode,
   nextElement: ElementNode,
   dom: HTMLElement,
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  reconcileChildren(prevElement, nextElement, dom);
+  subTreeTextFormat = null;
+  $reconcileChildren(prevElement, nextElement, dom);
   reconcileBlockDirection(nextElement, dom);
+  reconcileParagraphFormat(nextElement);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
+  subTreeTextFormat = null;
 }
 
 function createChildrenArray(
@@ -444,7 +464,7 @@ function createChildrenArray(
   return children;
 }
 
-function reconcileChildren(
+function $reconcileChildren(
   prevElement: ElementNode,
   nextElement: ElementNode,
   dom: HTMLElement,
@@ -458,12 +478,16 @@ function reconcileChildren(
     const prevFirstChildKey = prevElement.__first as NodeKey;
     const nextFrstChildKey = nextElement.__first as NodeKey;
     if (prevFirstChildKey === nextFrstChildKey) {
-      reconcileNode(prevFirstChildKey, dom);
+      $reconcileNode(prevFirstChildKey, dom);
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
-      const replacementDOM = createNode(nextFrstChildKey, null, null);
+      const replacementDOM = $createNode(nextFrstChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevFirstChildKey, null);
+    }
+    const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);
+    if (subTreeTextFormat === null && $isTextNode(nextChildNode)) {
+      subTreeTextFormat = nextChildNode.getFormat();
     }
   } else {
     const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
@@ -471,7 +495,7 @@ function reconcileChildren(
 
     if (prevChildrenSize === 0) {
       if (nextChildrenSize !== 0) {
-        createChildren(
+        $createChildren(
           nextChildren,
           nextElement,
           0,
@@ -498,7 +522,7 @@ function reconcileChildren(
         }
       }
     } else {
-      reconcileNodeChildren(
+      $reconcileNodeChildren(
         nextElement,
         prevChildren,
         nextChildren,
@@ -518,7 +542,7 @@ function reconcileChildren(
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
-function reconcileNode(
+function $reconcileNode(
   key: NodeKey,
   parentDOM: HTMLElement | null,
 ): HTMLElement {
@@ -584,7 +608,7 @@ function reconcileNode(
 
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
-    const replacementDOM = createNode(key, null, null);
+    const replacementDOM = $createNode(key, null, null);
 
     if (parentDOM === null) {
       invariant(false, 'reconcileNode: parentDOM is null');
@@ -609,8 +633,7 @@ function reconcileNode(
       setElementFormat(dom, nextFormat);
     }
     if (isDirty) {
-      reconcileChildrenWithDirection(prevNode, nextNode, dom);
-
+      $reconcileChildrenWithDirection(prevNode, nextNode, dom);
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
         reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
@@ -687,7 +710,7 @@ function getNextSibling(element: HTMLElement): Node | null {
   return nextSibling;
 }
 
-function reconcileNodeChildren(
+function $reconcileNodeChildren(
   nextElement: ElementNode,
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
@@ -708,7 +731,7 @@ function reconcileNodeChildren(
     const nextKey = nextChildren[nextIndex];
 
     if (prevKey === nextKey) {
-      siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
+      siblingDOM = getNextSibling($reconcileNode(nextKey, dom));
       prevIndex++;
       nextIndex++;
     } else {
@@ -730,14 +753,14 @@ function reconcileNodeChildren(
         prevIndex++;
       } else if (!prevHasNextKey) {
         // Create next
-        createNode(nextKey, dom, siblingDOM);
+        $createNode(nextKey, dom, siblingDOM);
         nextIndex++;
       } else {
         // Move next
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
 
         if (childDOM === siblingDOM) {
-          siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
+          siblingDOM = getNextSibling($reconcileNode(nextKey, dom));
         } else {
           if (siblingDOM != null) {
             dom.insertBefore(childDOM, siblingDOM);
@@ -745,12 +768,17 @@ function reconcileNodeChildren(
             dom.appendChild(childDOM);
           }
 
-          reconcileNode(nextKey, dom);
+          $reconcileNode(nextKey, dom);
         }
 
         prevIndex++;
         nextIndex++;
       }
+    }
+
+    const node = activeNextNodeMap.get(nextKey);
+    if (node !== null && subTreeTextFormat === null && $isTextNode(node)) {
+      subTreeTextFormat = node.getFormat();
     }
   }
 
@@ -763,7 +791,7 @@ function reconcileNodeChildren(
       previousNode === undefined
         ? null
         : activeEditor.getElementByKey(previousNode);
-    createChildren(
+    $createChildren(
       nextChildren,
       nextElement,
       nextIndex,
@@ -776,7 +804,7 @@ function reconcileNodeChildren(
   }
 }
 
-export function reconcileRoot(
+export function $reconcileRoot(
   prevEditorState: EditorState,
   nextEditorState: EditorState,
   editor: LexicalEditor,
@@ -807,7 +835,7 @@ export function reconcileRoot(
   // listeners later in the update cycle.
   const currentMutatedNodes = new Map();
   mutatedNodes = currentMutatedNodes;
-  reconcileNode('root', null);
+  $reconcileNode('root', null);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we

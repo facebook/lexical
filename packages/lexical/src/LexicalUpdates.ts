@@ -36,12 +36,12 @@ import {
 } from './LexicalGC';
 import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
-import {reconcileRoot} from './LexicalReconciler';
+import {$reconcileRoot} from './LexicalReconciler';
 import {
+  $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
   applySelectionTransforms,
-  internalCreateSelection,
   updateDOMSelection,
 } from './LexicalSelection';
 import {
@@ -96,7 +96,7 @@ export function getActiveEditorState(): EditorState {
       'Unable to find an active editor state. ' +
         'State helpers or node methods can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editorState.read().',
+        'editor.update(), editor.read(), or editorState.read().',
     );
   }
 
@@ -110,7 +110,7 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update().',
+        'editor.update() or editor.read().',
     );
   }
 
@@ -119,6 +119,10 @@ export function getActiveEditor(): LexicalEditor {
 
 export function internalGetActiveEditor(): LexicalEditor | null {
   return activeEditor;
+}
+
+export function internalGetActiveEditorState(): EditorState | null {
+  return activeEditorState;
 }
 
 export function $applyTransforms(
@@ -393,6 +397,7 @@ export function parseEditorState(
 // function here
 
 export function readEditorState<V>(
+  editor: LexicalEditor | null,
   editorState: EditorState,
   callbackFn: () => V,
 ): V {
@@ -402,7 +407,7 @@ export function readEditorState<V>(
 
   activeEditorState = editorState;
   isReadOnlyMode = true;
-  activeEditor = null;
+  activeEditor = editor;
 
   try {
     return callbackFn();
@@ -433,7 +438,7 @@ function handleDEVOnlyPendingUpdateGuarantees(
   };
 }
 
-export function commitPendingUpdates(
+export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
@@ -474,7 +479,7 @@ export function commitPendingUpdates(
       const dirtyLeaves = editor._dirtyLeaves;
       observer.disconnect();
 
-      mutatedNodes = reconcileRoot(
+      mutatedNodes = $reconcileRoot(
         currentEditorState,
         pendingEditorState,
         editor,
@@ -494,7 +499,7 @@ export function commitPendingUpdates(
         initMutationObserver(editor);
         editor._dirtyType = FULL_RECONCILE;
         isAttemptingToRecoverFromReconcilerError = true;
-        commitPendingUpdates(editor, currentEditorState);
+        $commitPendingUpdates(editor, currentEditorState);
         isAttemptingToRecoverFromReconcilerError = false;
       } else {
         // To avoid a possible situation of infinite loops, lets throw
@@ -638,7 +643,7 @@ export function commitPendingUpdates(
     tags,
   });
   triggerDeferredUpdateCallbacks(editor, deferred);
-  triggerEnqueuedUpdates(editor);
+  $triggerEnqueuedUpdates(editor);
 }
 
 function triggerTextContentListeners(
@@ -740,14 +745,14 @@ export function triggerCommandListeners<
   return false;
 }
 
-function triggerEnqueuedUpdates(editor: LexicalEditor): void {
+function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
   if (queuedUpdates.length !== 0) {
     const queuedUpdate = queuedUpdates.shift();
     if (queuedUpdate) {
       const [updateFn, options] = queuedUpdate;
-      beginUpdate(editor, updateFn, options);
+      $beginUpdate(editor, updateFn, options);
     }
   }
 }
@@ -814,7 +819,7 @@ function processNestedUpdates(
   return skipTransforms;
 }
 
-function beginUpdate(
+function $beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
   options?: EditorUpdateOptions,
@@ -869,7 +874,7 @@ function beginUpdate(
           pendingEditorState._selection = currentEditorState._selection.clone();
         }
       } else {
-        pendingEditorState._selection = internalCreateSelection(editor);
+        pendingEditorState._selection = $internalCreateSelection(editor);
       }
     }
 
@@ -939,7 +944,7 @@ function beginUpdate(
 
     editor._dirtyElements.clear();
 
-    commitPendingUpdates(editor);
+    $commitPendingUpdates(editor);
     return;
   } finally {
     activeEditorState = previousActiveEditorState;
@@ -956,10 +961,10 @@ function beginUpdate(
   if (shouldUpdate) {
     if (pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
-      commitPendingUpdates(editor);
+      $commitPendingUpdates(editor);
     } else if (editorStateWasCloned) {
       scheduleMicroTask(() => {
-        commitPendingUpdates(editor);
+        $commitPendingUpdates(editor);
       });
     }
   } else {
@@ -981,6 +986,6 @@ export function updateEditor(
   if (editor._updating) {
     editor._updates.push([updateFn, options]);
   } else {
-    beginUpdate(editor, updateFn, options);
+    $beginUpdate(editor, updateFn, options);
   }
 }

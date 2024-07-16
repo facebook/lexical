@@ -87,6 +87,19 @@ describe('LexicalNode tests', () => {
         });
       });
 
+      test('LexicalNode.constructor: type change detected', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const validNode = new TextNode(textNode.__text, textNode.__key);
+          expect(textNode.getLatest()).toBe(textNode);
+          expect(validNode.getLatest()).toBe(textNode);
+          expect(() => new TestNode(textNode.__key)).toThrowError(
+            /TestNode.*re-use key.*TextNode/,
+          );
+        });
+      });
+
       test('LexicalNode.clone()', async () => {
         const {editor} = testEnv;
 

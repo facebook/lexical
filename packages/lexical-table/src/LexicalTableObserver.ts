@@ -24,17 +24,21 @@ import {
   $setSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {
-  type TableSelection,
   $createTableSelection,
   $isTableSelection,
+  type TableSelection,
 } from './LexicalTableSelection';
-import {$updateDOMForSelection, getTable} from './LexicalTableSelectionHelpers';
+import {
+  $findTableNode,
+  $updateDOMForSelection,
+  getDOMSelection,
+  getTable,
+} from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {
   elem: HTMLElement;
@@ -52,9 +56,6 @@ export type TableDOMTable = {
   rows: number;
 };
 
-const getDOMSelection = (targetWindow: Window | null): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
-
 export class TableObserver {
   focusX: number;
   focusY: number;
@@ -71,6 +72,7 @@ export class TableObserver {
   editor: LexicalEditor;
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
+  isSelecting: boolean;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -93,6 +95,7 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
     this.trackTable();
+    this.isSelecting = false;
   }
 
   getTable(): TableDOMTable {
@@ -115,7 +118,12 @@ export class TableObserver {
           const target = record.target;
           const nodeName = target.nodeName;
 
-          if (nodeName === 'TABLE' || nodeName === 'TR') {
+          if (
+            nodeName === 'TABLE' ||
+            nodeName === 'TBODY' ||
+            nodeName === 'THEAD' ||
+            nodeName === 'TR'
+          ) {
             gridNeedsRedraw = true;
             break;
           }
@@ -283,7 +291,8 @@ export class TableObserver {
         if (
           this.tableSelection != null &&
           this.anchorCellNodeKey != null &&
-          $isTableCellNode(focusTableCellNode)
+          $isTableCellNode(focusTableCellNode) &&
+          tableNode.is($findTableNode(focusTableCellNode))
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
 

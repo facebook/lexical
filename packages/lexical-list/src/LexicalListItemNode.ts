@@ -24,7 +24,6 @@ import type {
 
 import {
   addClassNamesToElement,
-  isHTMLElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
@@ -116,8 +115,8 @@ export class ListItemNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      li: (node: Node) => ({
-        conversion: convertListItemElement,
+      li: () => ({
+        conversion: $convertListItemElement,
         priority: 0,
       }),
     };
@@ -226,22 +225,6 @@ export class ListItemNode extends ElementNode {
 
     const siblings = this.getNextSiblings();
 
-    // Attempt to merge if the list is of the same type.
-
-    if ($isListNode(node)) {
-      let child = node;
-      const children = node.getChildren<ListNode>();
-
-      for (let i = children.length - 1; i >= 0; i--) {
-        child = children[i];
-
-        this.insertAfter(child, restoreSelection);
-      }
-
-      return child;
-    }
-
-    // Otherwise, split the list
     // Split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 
@@ -385,10 +368,12 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return $isListItemNode(node);
   }
 
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return $isListItemNode(replacement);
   }
@@ -507,9 +492,32 @@ function updateListItemChecked(
   }
 }
 
-function convertListItemElement(domNode: Node): DOMConversionOutput {
+function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
+  const isGitHubCheckList = domNode.classList.contains('task-list-item');
+  if (isGitHubCheckList) {
+    for (const child of domNode.children) {
+      if (child.tagName === 'INPUT') {
+        return $convertCheckboxInput(child);
+      }
+    }
+  }
+
+  const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
-    isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
+    ariaCheckedAttr === 'true'
+      ? true
+      : ariaCheckedAttr === 'false'
+      ? false
+      : undefined;
+  return {node: $createListItemNode(checked)};
+}
+
+function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
+  const isCheckboxInput = domNode.getAttribute('type') === 'checkbox';
+  if (!isCheckboxInput) {
+    return {node: null};
+  }
+  const checked = domNode.hasAttribute('checked');
   return {node: $createListItemNode(checked)};
 }
 

@@ -107,10 +107,8 @@ function getBlockElement(
       ];
 
       const [firstNodeRect, lastNodeRect] = [
-        // eslint-disable-next-line lexical/no-optional-chaining
-        firstNode?.getBoundingClientRect(),
-        // eslint-disable-next-line lexical/no-optional-chaining
-        lastNode?.getBoundingClientRect(),
+        firstNode != null ? firstNode.getBoundingClientRect() : undefined,
+        lastNode != null ? lastNode.getBoundingClientRect() : undefined,
       ];
 
       if (firstNodeRect && lastNodeRect) {
@@ -291,16 +289,16 @@ function useDraggableBlockMenu(
       setDraggableBlockElem(null);
     }
 
-    // eslint-disable-next-line lexical/no-optional-chaining
-    scrollerElem?.addEventListener('mousemove', onMouseMove);
-    // eslint-disable-next-line lexical/no-optional-chaining
-    scrollerElem?.addEventListener('mouseleave', onMouseLeave);
+    if (scrollerElem != null) {
+      scrollerElem.addEventListener('mousemove', onMouseMove);
+      scrollerElem.addEventListener('mouseleave', onMouseLeave);
+    }
 
     return () => {
-      // eslint-disable-next-line lexical/no-optional-chaining
-      scrollerElem?.removeEventListener('mousemove', onMouseMove);
-      // eslint-disable-next-line lexical/no-optional-chaining
-      scrollerElem?.removeEventListener('mouseleave', onMouseLeave);
+      if (scrollerElem != null) {
+        scrollerElem.removeEventListener('mousemove', onMouseMove);
+        scrollerElem.removeEventListener('mouseleave', onMouseLeave);
+      }
     };
   }, [scrollerElem, anchorElem, editor, isOnMenu]);
 
@@ -348,8 +346,8 @@ function useDraggableBlockMenu(
         return false;
       }
       const {target, dataTransfer, pageY} = event;
-      // eslint-disable-next-line lexical/no-optional-chaining
-      const dragData = dataTransfer?.getData(DRAG_DATA_FORMAT) || '';
+      const dragData =
+        dataTransfer != null ? dataTransfer.getData(DRAG_DATA_FORMAT) : '';
       const draggedNode = $getNodeByKey(dragData);
       if (!draggedNode) {
         return false;

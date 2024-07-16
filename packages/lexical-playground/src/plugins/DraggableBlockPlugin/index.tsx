@@ -7,9 +7,8 @@
  */
 import './index.css';
 
+import {DraggableBlockPlugin} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {useRef} from 'react';
-
-import {DraggableBlockPlugin} from '../../../../lexical-react/src/LexicalDraggableBlockPlugin';
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 

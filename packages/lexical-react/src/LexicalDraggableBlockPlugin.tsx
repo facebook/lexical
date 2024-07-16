@@ -28,7 +28,6 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
-// import {isHTMLElement} from '../../utils/guard';
 import {Point} from './shared/point';
 import {Rect} from './shared/rect';
 
@@ -108,7 +107,9 @@ function getBlockElement(
       ];
 
       const [firstNodeRect, lastNodeRect] = [
+        // eslint-disable-next-line lexical/no-optional-chaining
         firstNode?.getBoundingClientRect(),
+        // eslint-disable-next-line lexical/no-optional-chaining
         lastNode?.getBoundingClientRect(),
       ];
 
@@ -256,6 +257,8 @@ function hideTargetLine(targetLineElem: HTMLElement | null) {
 function useDraggableBlockMenu(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
+  menuRef: React.RefObject<HTMLElement>,
+  targetLineRef: React.RefObject<HTMLElement>,
   isEditable: boolean,
   menuComponent: ReactNode,
   targetLineComponent: ReactNode,
@@ -263,8 +266,6 @@ function useDraggableBlockMenu(
 ): JSX.Element {
   const scrollerElem = anchorElem.parentElement;
 
-  const menuRef = useRef<HTMLDivElement>(null);
-  const targetLineRef = useRef<HTMLDivElement>(null);
   const isDraggingBlockRef = useRef<boolean>(false);
   const [draggableBlockElem, setDraggableBlockElem] =
     useState<HTMLElement | null>(null);
@@ -290,11 +291,15 @@ function useDraggableBlockMenu(
       setDraggableBlockElem(null);
     }
 
+    // eslint-disable-next-line lexical/no-optional-chaining
     scrollerElem?.addEventListener('mousemove', onMouseMove);
+    // eslint-disable-next-line lexical/no-optional-chaining
     scrollerElem?.addEventListener('mouseleave', onMouseLeave);
 
     return () => {
+      // eslint-disable-next-line lexical/no-optional-chaining
       scrollerElem?.removeEventListener('mousemove', onMouseMove);
+      // eslint-disable-next-line lexical/no-optional-chaining
       scrollerElem?.removeEventListener('mouseleave', onMouseLeave);
     };
   }, [scrollerElem, anchorElem, editor, isOnMenu]);
@@ -303,7 +308,7 @@ function useDraggableBlockMenu(
     if (menuRef.current) {
       setMenuPosition(draggableBlockElem, menuRef.current, anchorElem);
     }
-  }, [anchorElem, draggableBlockElem]);
+  }, [anchorElem, draggableBlockElem, menuRef]);
 
   useEffect(() => {
     function onDragover(event: DragEvent): boolean {
@@ -343,6 +348,7 @@ function useDraggableBlockMenu(
         return false;
       }
       const {target, dataTransfer, pageY} = event;
+      // eslint-disable-next-line lexical/no-optional-chaining
       const dragData = dataTransfer?.getData(DRAG_DATA_FORMAT) || '';
       const draggedNode = $getNodeByKey(dragData);
       if (!draggedNode) {
@@ -389,7 +395,7 @@ function useDraggableBlockMenu(
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [anchorElem, editor]);
+  }, [anchorElem, editor, targetLineRef]);
 
   function onDragStart(event: ReactDragEvent<HTMLDivElement>): void {
     const dataTransfer = event.dataTransfer;
@@ -412,17 +418,12 @@ function useDraggableBlockMenu(
     isDraggingBlockRef.current = false;
     hideTargetLine(targetLineRef.current);
   }
-  console.log(menuComponent)
   return createPortal(
     <>
-      <div
-        ref={menuRef}
-        draggable={true}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}>
+      <div draggable={true} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         {isEditable && menuComponent}
       </div>
-      <div ref={targetLineRef}>{targetLineComponent}</div>
+      {targetLineComponent}
     </>,
     anchorElem,
   );
@@ -430,11 +431,15 @@ function useDraggableBlockMenu(
 
 export function DraggableBlockPlugin({
   anchorElem = document.body,
+  menuRef,
+  targetLineRef,
   menuComponent,
   targetLineComponent,
   isOnMenu,
 }: {
   anchorElem?: HTMLElement;
+  menuRef: React.RefObject<HTMLElement>;
+  targetLineRef: React.RefObject<HTMLElement>;
   menuComponent: ReactNode;
   targetLineComponent: ReactNode;
   isOnMenu: (element: HTMLElement) => boolean;
@@ -443,6 +448,8 @@ export function DraggableBlockPlugin({
   return useDraggableBlockMenu(
     editor,
     anchorElem,
+    menuRef,
+    targetLineRef,
     editor._editable,
     menuComponent,
     targetLineComponent,

@@ -23,7 +23,7 @@ export default function PlaygroundDraggableBlockPlugin({
   return (
     <DraggableBlockPlugin
       anchorElem={anchorElem}
-      menuComponent={<div className="icon" />}
+      menuComponent={<div className="icon draggable-block-menu" />}
       targetLineComponent={<div className="draggable-block-target-line" />}
       isOnMenu={isOnMenu}
     />

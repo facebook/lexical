@@ -109,6 +109,9 @@ export type MutationListener = (
     prevEditorState: EditorState,
   },
 ) => void;
+export type MutationListenerOptions = {
+  skipInitialization?: boolean;
+};
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
   decorator: Set<DecoratorListener>,
@@ -178,6 +181,7 @@ declare export class LexicalEditor {
   registerMutationListener(
     klass: Class<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void;
   registerNodeTransform<T: LexicalNode>(
     klass: Class<T>,
@@ -198,6 +202,7 @@ declare export class LexicalEditor {
     maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
+  read<V>(callbackFn: () => V, options?: EditorReadOptions): V;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
@@ -205,6 +210,9 @@ declare export class LexicalEditor {
   setEditable(editable: boolean): void;
   toJSON(): SerializedEditor;
 }
+type EditorReadOptions = {
+  pending?: boolean,
+};
 type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string,
@@ -324,9 +332,12 @@ export interface EditorState {
   _readOnly: boolean;
   constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
-  read<V>(callbackFn: () => V): V;
+  read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V;
   toJSON(): SerializedEditorState;
   clone(selection?: BaseSelection | null): EditorState;
+}
+type EditorStateReadOptions = {
+  editor?: LexicalEditor | null;
 }
 
 /**

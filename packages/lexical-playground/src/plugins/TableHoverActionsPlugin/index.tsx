@@ -19,7 +19,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode} from 'lexical';
+import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -39,7 +39,7 @@ function TableHoverActionsContainer({
   const [shouldListenMouseMove, setShouldListenMouseMove] =
     useState<boolean>(false);
   const [position, setPosition] = useState({});
-  const codeSetRef = useRef<Set<string>>(new Set());
+  const codeSetRef = useRef<Set<NodeKey>>(new Set());
   const tableDOMNodeRef = useRef<HTMLElement | null>(null);
 
   const debouncedOnMouseMove = useDebounce(
@@ -148,26 +148,30 @@ function TableHoverActionsContainer({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerMutationListener(TableNode, (mutations) => {
-        editor.getEditorState().read(() => {
-          for (const [key, type] of mutations) {
-            switch (type) {
-              case 'created':
-                codeSetRef.current.add(key);
-                setShouldListenMouseMove(codeSetRef.current.size > 0);
-                break;
+      editor.registerMutationListener(
+        TableNode,
+        (mutations) => {
+          editor.getEditorState().read(() => {
+            for (const [key, type] of mutations) {
+              switch (type) {
+                case 'created':
+                  codeSetRef.current.add(key);
+                  setShouldListenMouseMove(codeSetRef.current.size > 0);
+                  break;
 
-              case 'destroyed':
-                codeSetRef.current.delete(key);
-                setShouldListenMouseMove(codeSetRef.current.size > 0);
-                break;
+                case 'destroyed':
+                  codeSetRef.current.delete(key);
+                  setShouldListenMouseMove(codeSetRef.current.size > 0);
+                  break;
 
-              default:
-                break;
+                default:
+                  break;
+              }
             }
-          }
-        });
-      }),
+          });
+        },
+        {skipInitialization: false},
+      ),
     );
   }, [editor]);
 

@@ -234,6 +234,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
           setTableOfContents(currentTableOfContents);
         });
       },
+      // Initialization is handled separately
+      {skipInitialization: true},
     );
 
     // Listen to text node mutation updates
@@ -258,6 +260,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
           }
         });
       },
+      // Initialization is handled separately
+      {skipInitialization: true},
     );
 
     return () => {

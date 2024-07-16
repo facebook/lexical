@@ -183,17 +183,21 @@ function TableActionMenu({
   );
 
   useEffect(() => {
-    return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
-      const nodeUpdated =
-        nodeMutations.get(tableCellNode.getKey()) === 'updated';
+    return editor.registerMutationListener(
+      TableCellNode,
+      (nodeMutations) => {
+        const nodeUpdated =
+          nodeMutations.get(tableCellNode.getKey()) === 'updated';
 
-      if (nodeUpdated) {
-        editor.getEditorState().read(() => {
-          updateTableCellNode(tableCellNode.getLatest());
-        });
-        setBackgroundColor(currentCellBackgroundColor(editor) || '');
-      }
-    });
+        if (nodeUpdated) {
+          editor.getEditorState().read(() => {
+            updateTableCellNode(tableCellNode.getLatest());
+          });
+          setBackgroundColor(currentCellBackgroundColor(editor) || '');
+        }
+      },
+      {skipInitialization: true},
+    );
   }, [editor, tableCellNode]);
 
   useEffect(() => {

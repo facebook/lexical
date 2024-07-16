@@ -1124,7 +1124,7 @@ export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
     const nodes = getCachedTypeToNodeMap(editorState).get(klassType) as
       | undefined
       | Map<string, T>;
-    return nodes ? [...nodes.values()] : [];
+    return nodes ? Array.from(nodes.values()) : [];
   }
   const nodes = editorState._nodeMap;
   const nodesOfType: Array<T> = [];

@@ -7,4 +7,4 @@
  * @flow strict
  */
 
-declare export function DraggableBlockPlugin(): JSX.Element;
+declare export function DraggableBlockPlugin(): React$MixedElement;

@@ -966,145 +966,149 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(`Can copy + paste (internal) using Table selection`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    await initialize({isCollab, page});
-    test.skip(isPlainText);
+  test(
+    `Can copy + paste (internal) using Table selection`,
+    {
+      tag: '@flaky',
+    },
+    async ({page, isPlainText, isCollab}) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
 
-    await focusEditor(page);
-    await insertTable(page, 2, 3);
+      await focusEditor(page);
+      await insertTable(page, 2, 3);
 
-    await fillTablePartiallyWithText(page);
-    await selectCellsFromTableCords(
-      page,
-      {x: 0, y: 0},
-      {x: 1, y: 1},
-      true,
-      false,
-    );
+      await fillTablePartiallyWithText(page);
+      await selectCellsFromTableCords(
+        page,
+        {x: 0, y: 0},
+        {x: 1, y: 1},
+        true,
+        false,
+      );
 
-    const clipboard = await copyToClipboard(page);
+      const clipboard = await copyToClipboard(page);
 
-    // For some reason you need to click the paragraph twice for this to pass
-    // on Collab Firefox.
-    await click(page, 'div.ContentEditable__root > p:first-of-type');
-    await click(page, 'div.ContentEditable__root > p:first-of-type');
+      // For some reason you need to click the paragraph twice for this to pass
+      // on Collab Firefox.
+      await click(page, 'div.ContentEditable__root > p:first-of-type');
+      await click(page, 'div.ContentEditable__root > p:first-of-type');
 
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-    // Check that the character styles are applied.
-    await assertHTML(
-      page,
-      html`
-        <table>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">a</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">d</span></p>
-            </th>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">e</span></p>
-            </td>
-          </tr>
-        </table>
-        <table>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">a</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">d</span></p>
-            </th>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">e</span></p>
-            </td>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
-            </td>
-          </tr>
-        </table>
-        <p><br /></p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      // Check that the character styles are applied.
+      await assertHTML(
+        page,
+        html`
+          <table>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+            </tr>
+          </table>
+          <table>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
-  test(`Can clear text using Table selection`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    await initialize({isCollab, page});
-    test.skip(isPlainText);
+  test(
+    `Can clear text using Table selection`,
+    {
+      tag: '@flaky',
+    },
+    async ({page, isPlainText, isCollab}) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
 
-    await focusEditor(page);
-    await insertTable(page, 2, 3);
+      await focusEditor(page);
+      await insertTable(page, 2, 3);
 
-    await fillTablePartiallyWithText(page);
-    await selectCellsFromTableCords(
-      page,
-      {x: 0, y: 0},
-      {x: 1, y: 1},
-      true,
-      false,
-    );
+      await fillTablePartiallyWithText(page);
+      await selectCellsFromTableCords(
+        page,
+        {x: 0, y: 0},
+        {x: 1, y: 1},
+        true,
+        false,
+      );
 
-    await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
 
-    // Check that the text was cleared.
-    await assertHTML(
-      page,
-      html`
-        <p><br /></p>
-        <table>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <th>
-              <p><br /></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <p><br /></p>
-            </th>
-            <td>
-              <p><br /></p>
-            </td>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
-            </td>
-          </tr>
-        </table>
-        <p><br /></p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      // Check that the text was cleared.
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <table>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
   test(`Range Selection is corrected when it contains a partial Table.`, async ({
     page,

@@ -1094,26 +1094,7 @@ export class RangeSelection implements BaseSelection {
       }
     });
     firstNode.selectEnd();
-    if ($isElementNode(firstNode) && firstNode.isEmpty()) {
-      firstNode.remove();
-    }
-    if ($isElementNode(lastNode) && lastNode.isEmpty()) {
-      lastNode.remove();
-    }
-
-    if (
-      lastNode.isAttached() &&
-      !INTERNAL_$isBlock(lastNode) &&
-      firstNode.isAttached() &&
-      !INTERNAL_$isBlock(firstNode)
-    ) {
-      const lastAndSiblings = [lastNode, ...lastNode.getNextSiblings()];
-      let current: LexicalNode = firstNode;
-      for (const node of lastAndSiblings) {
-        current.insertAfter(node);
-        current = node;
-      }
-    }
+    $mergeBlocks(firstNode, lastNode);
   }
 
   /**
@@ -2800,9 +2781,9 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let node = anchor.getNode();
   let offset = anchor.offset;
 
-  // while (!INTERNAL_$isBlock(node)) {
-  [node, offset] = $splitNodeAtPoint(node, offset);
-  // }
+  while (!INTERNAL_$isBlock(node)) {
+    [node, offset] = $splitNodeAtPoint(node, offset);
+  }
 
   return offset;
 }
@@ -2888,4 +2869,14 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
   }
 
   return virtualRoot;
+}
+
+function $mergeBlocks(firstNode: LexicalNode, lastNode: LexicalNode): void {
+  const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+  const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
+  const bothElements = $isElementNode(firstBlock) && $isElementNode(lastBlock);
+  if (bothElements && firstBlock !== lastBlock) {
+    firstBlock.append(...lastBlock.getChildren());
+    lastBlock.remove();
+  }
 }

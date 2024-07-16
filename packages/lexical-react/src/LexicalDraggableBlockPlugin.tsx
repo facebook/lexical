@@ -273,7 +273,7 @@ function useDraggableBlockMenu(
   useEffect(() => {
     function onMouseMove(event: MouseEvent) {
       const target = event.target;
-      if (!isHTMLElement(target)) {
+      if (target != null && !isHTMLElement(target)) {
         setDraggableBlockElem(null);
         return;
       }
@@ -320,7 +320,7 @@ function useDraggableBlockMenu(
         return false;
       }
       const {pageY, target} = event;
-      if (!isHTMLElement(target)) {
+      if (target != null && !isHTMLElement(target)) {
         return false;
       }
       const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
@@ -354,7 +354,7 @@ function useDraggableBlockMenu(
       if (!draggedNode) {
         return false;
       }
-      if (!isHTMLElement(target)) {
+      if (target != null && !isHTMLElement(target)) {
         return false;
       }
       const targetBlockElem = getBlockElement(anchorElem, editor, event, true);

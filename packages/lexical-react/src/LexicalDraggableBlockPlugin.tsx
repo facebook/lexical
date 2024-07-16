@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
@@ -20,7 +19,6 @@ import {
   DROP_COMMAND,
   LexicalEditor,
 } from 'lexical';
-import * as React from 'react';
 import {
   DragEvent as ReactDragEvent,
   ReactNode,
@@ -36,7 +34,6 @@ import {Rect} from './shared/rect';
 
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
-const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
 const TEXT_BOX_HORIZONTAL_PADDING = 28;
 
@@ -178,10 +175,6 @@ function getBlockElement(
 
   return blockElem;
 }
-
-// function isOnMenu(element: HTMLElement): boolean {
-//   return !!element.closest(`.${DRAGGABLE_BLOCK_MENU_CLASSNAME}`);
-// }
 
 function setMenuPosition(
   targetElem: HTMLElement | null,
@@ -423,16 +416,13 @@ function useDraggableBlockMenu(
   return createPortal(
     <>
       <div
-        className="icon draggable-block-menu"
         ref={menuRef}
         draggable={true}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}>
-        <div className={isEditable ? 'icon' : ''}>{menuComponent}</div>
+        {isEditable && menuComponent}
       </div>
-      <div className="draggable-block-target-line" ref={targetLineRef}>
-        {targetLineComponent}
-      </div>
+      <div ref={targetLineRef}>{targetLineComponent}</div>
     </>,
     anchorElem,
   );

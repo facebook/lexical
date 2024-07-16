@@ -17,7 +17,7 @@ type ContainsPointReturn = {
   };
 };
 
-export class Rect {
+export class Rectangle {
   private readonly _left: number;
   private readonly _top: number;
   private readonly _right: number;
@@ -60,7 +60,7 @@ export class Rect {
     return Math.abs(this._bottom - this._top);
   }
 
-  public equals({top, left, bottom, right}: Rect): boolean {
+  public equals({top, left, bottom, right}: Rectangle): boolean {
     return (
       top === this._top &&
       bottom === this._bottom &&
@@ -70,8 +70,8 @@ export class Rect {
   }
 
   public contains({x, y}: Point): ContainsPointReturn;
-  public contains({top, left, bottom, right}: Rect): boolean;
-  public contains(target: Point | Rect): boolean | ContainsPointReturn {
+  public contains({top, left, bottom, right}: Rectangle): boolean;
+  public contains(target: Point | Rectangle): boolean | ContainsPointReturn {
     if (isPoint(target)) {
       const {x, y} = target;
 
@@ -108,7 +108,7 @@ export class Rect {
     }
   }
 
-  public intersectsWith(rect: Rect): boolean {
+  public intersectsWith(rect: Rectangle): boolean {
     const {left: x1, top: y1, width: w1, height: h1} = rect;
     const {left: x2, top: y2, width: w2, height: h2} = this;
     const maxX = x1 + w1 >= x2 + w2 ? x1 + w1 : x2 + w2;
@@ -123,8 +123,8 @@ export class Rect {
     top = this.top,
     right = this.right,
     bottom = this.bottom,
-  }): Rect {
-    return new Rect(left, top, right, bottom);
+  }): Rectangle {
+    return new Rectangle(left, top, right, bottom);
   }
 
   static fromLTRB(
@@ -132,8 +132,8 @@ export class Rect {
     top: number,
     right: number,
     bottom: number,
-  ): Rect {
-    return new Rect(left, top, right, bottom);
+  ): Rectangle {
+    return new Rectangle(left, top, right, bottom);
   }
 
   static fromLWTH(
@@ -141,18 +141,18 @@ export class Rect {
     width: number,
     top: number,
     height: number,
-  ): Rect {
-    return new Rect(left, top, left + width, top + height);
+  ): Rectangle {
+    return new Rectangle(left, top, left + width, top + height);
   }
 
-  static fromPoints(startPoint: Point, endPoint: Point): Rect {
+  static fromPoints(startPoint: Point, endPoint: Point): Rectangle {
     const {y: top, x: left} = startPoint;
     const {y: bottom, x: right} = endPoint;
-    return Rect.fromLTRB(left, top, right, bottom);
+    return Rectangle.fromLTRB(left, top, right, bottom);
   }
 
-  static fromDOM(dom: HTMLElement): Rect {
+  static fromDOM(dom: HTMLElement): Rectangle {
     const {top, width, left, height} = dom.getBoundingClientRect();
-    return Rect.fromLWTH(left, width, top, height);
+    return Rectangle.fromLWTH(left, width, top, height);
   }
 }

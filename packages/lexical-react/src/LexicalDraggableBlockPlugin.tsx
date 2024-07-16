@@ -29,7 +29,7 @@ import {
 import {createPortal} from 'react-dom';
 
 import {Point} from './shared/point';
-import {Rect} from './shared/rect';
+import {Rectangle} from './shared/rect';
 
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
@@ -137,7 +137,7 @@ function getBlockElement(
       }
       const zoom = calculateZoomLevel(elem);
       const point = new Point(event.x / zoom, event.y / zoom);
-      const domRect = Rect.fromDOM(elem);
+      const domRect = Rectangle.fromDOM(elem);
       const {marginTop, marginBottom} = getCollapsedMargins(elem);
       const rect = domRect.generateNewRect({
         bottom: domRect.bottom + marginBottom,

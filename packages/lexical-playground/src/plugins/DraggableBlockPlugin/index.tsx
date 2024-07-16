@@ -11,14 +11,18 @@ import {DraggableBlockPlugin} from '../../../../lexical-react/src/LexicalDraggab
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 
-
 function isOnMenu(element: HTMLElement): boolean {
   return !!element.closest(`.${DRAGGABLE_BLOCK_MENU_CLASSNAME}`);
 }
 
-export default function PlaygroundDraggableBlockPlugin(): JSX.Element {
+export default function PlaygroundDraggableBlockPlugin({
+  anchorElem = document.body,
+}: {
+  anchorElem?: HTMLElement;
+}): JSX.Element {
   return (
     <DraggableBlockPlugin
+      anchorElem={anchorElem}
       menuComponent={<div className="icon" />}
       targetLineComponent={<div className="draggable-block-target-line" />}
       isOnMenu={isOnMenu}

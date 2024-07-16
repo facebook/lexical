@@ -412,7 +412,7 @@ function useDraggableBlockMenu(
     isDraggingBlockRef.current = false;
     hideTargetLine(targetLineRef.current);
   }
-
+  console.log(menuComponent)
   return createPortal(
     <>
       <div

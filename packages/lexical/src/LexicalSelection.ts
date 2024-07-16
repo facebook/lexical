@@ -1063,10 +1063,7 @@ export class RangeSelection implements BaseSelection {
   // #region removeText
   removeText(): void {
     const {anchor, focus} = this;
-    // const anchorNode = anchor.getNode();
-    // const focusNode = focus.getNode();
     const selectedNodes = this.getNodes();
-
     const firstPoint = this.isBackward() ? focus : anchor;
     const lastPoint = this.isBackward() ? anchor : focus;
     const firstNode = firstPoint.getNode();
@@ -1077,78 +1074,45 @@ export class RangeSelection implements BaseSelection {
       firstNode.spliceText(firstPoint.offset, delCount, '', true);
       return;
     }
-    const [beforeLast, afterLast] = $isTextNode(lastNode)
-      ? (lastNode.splitText(lastPoint.offset) as [
-          TextNode | undefined,
-          TextNode | undefined,
-        ])
-      : [];
-    const [beforeFirst, afterFirst] = $isTextNode(firstNode)
-      ? (firstNode.splitText(firstPoint.offset) as [
-          TextNode | undefined,
-          TextNode | undefined,
-        ])
-      : [];
 
-    // console.log("selectedNodes", selectedNodes);
-    // return;
-    const afterLastArray = beforeLast ? beforeLast.getNextSiblings() : [];
-    if (!afterLast) afterLastArray.push(beforeLast!);
-    console.log(
-      'firstNode',
-      firstNode.getKey(),
-      firstNode.getTextContent(),
-      '\nlastNode',
-      lastNode.getKey(),
-      lastNode.getTextContent(),
-      '\nbeforeFirst',
-      beforeFirst?.getKey(),
-      beforeFirst?.getTextContent(),
-      '\nafterFirst',
-      afterFirst?.getKey(),
-      afterFirst?.getTextContent(),
-      '\nbeforeLast',
-      beforeLast?.getKey(),
-      beforeLast?.getTextContent(),
-      '\nafterLast',
-      afterLast?.getKey(),
-      afterLast?.getTextContent(),
-      '\nafterLastArray',
-      afterLastArray,
-    );
+    if ($isTextNode(firstNode)) {
+      const delCount = firstNode.getTextContentSize() - firstPoint.offset;
+      firstNode.spliceText(firstPoint.offset, delCount, '');
+    }
+    if ($isTextNode(lastNode)) {
+      lastNode.spliceText(0, lastPoint.offset, '');
+    }
+
     selectedNodes.forEach((node) => {
-      if (node.getKey() === firstPoint.key && !afterFirst) {
-        return;
-      }
-      if (node.getKey() === lastPoint.key && !afterLast) {
-        return;
-      }
-      // if (node.getKey() === firstNode.getKey() && !afterFirst) {
-      //   return;
-      // }
-      // if (node.getKey() === lastNode.getKey() && !afterLast) {
-      //   return;
-      // }
-
       if (
         !$hasAncestor(firstNode, node) &&
         !$hasAncestor(lastNode, node) &&
-        node.getKey() !== beforeFirst?.getKey() &&
-        node.getKey() !== afterLast?.getKey()
-        // node.getKey() !== lastNode.getKey()
+        node.getKey() !== firstNode.getKey() &&
+        node.getKey() !== lastNode.getKey()
       ) {
         node.remove();
       }
     });
-    if (afterFirst) {
-      afterFirst.remove();
+    firstNode.selectEnd();
+    if ($isElementNode(firstNode) && firstNode.isEmpty()) {
+      firstNode.remove();
     }
-    if (beforeFirst) {
-      let current: LexicalNode = beforeFirst;
-      afterLastArray.forEach((node) => {
+    if ($isElementNode(lastNode) && lastNode.isEmpty()) {
+      lastNode.remove();
+    }
+
+    if (
+      lastNode.isAttached() &&
+      !INTERNAL_$isBlock(lastNode) &&
+      firstNode.isAttached() &&
+      !INTERNAL_$isBlock(firstNode)
+    ) {
+      const lastAndSiblings = [lastNode, ...lastNode.getNextSiblings()];
+      let current: LexicalNode = firstNode;
+      for (const node of lastAndSiblings) {
         current.insertAfter(node);
         current = node;
-      });
+      }
     }
   }
 

@@ -9,7 +9,7 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
-import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
@@ -30,9 +30,9 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
-import {isHTMLElement} from '../../utils/guard';
-import {Point} from '../../utils/point';
-import {Rect} from '../../utils/rect';
+// import {isHTMLElement} from '../../utils/guard';
+import {Point} from './shared/point';
+import {Rect} from './shared/rect';
 
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;

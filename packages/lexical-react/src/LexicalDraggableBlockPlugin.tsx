@@ -427,7 +427,7 @@ function useDraggableBlockMenu(
   );
 }
 
-export function DraggableBlockPlugin({
+export function DraggableBlockPlugin_EXPERIMENTAL({
   anchorElem = document.body,
   menuRef,
   targetLineRef,

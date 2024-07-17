@@ -7,7 +7,7 @@
  */
 import './index.css';
 
-import {DraggableBlockPlugin} from '@lexical/react/LexicalDraggableBlockPlugin';
+import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {useRef} from 'react';
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
@@ -25,7 +25,7 @@ export default function PlaygroundDraggableBlockPlugin({
   const targetLineRef = useRef<HTMLDivElement>(null);
 
   return (
-    <DraggableBlockPlugin
+    <DraggableBlockPlugin_EXPERIMENTAL
       anchorElem={anchorElem}
       menuRef={menuRef}
       targetLineRef={targetLineRef}

@@ -146,8 +146,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18.18.0]
-        # Currently using single browser & os combination for flaky tests to reduce cost impact
-        browser: ['chromium']
+        browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
         events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml

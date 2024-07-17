@@ -563,6 +563,10 @@ export class ElementNode extends LexicalNode {
   ): boolean {
     return false;
   }
+
+  canMergeWhenEmpty(): boolean {
+    return false;
+  }
 }
 
 export function $isElementNode(

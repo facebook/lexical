@@ -404,6 +404,10 @@ export class ListItemNode extends ElementNode {
   createParentElementNode(): ElementNode {
     return $createListNode('bullet');
   }
+
+  canMergeWhenEmpty(): true {
+    return true;
+  }
 }
 
 function $setListItemThemeClassNames(

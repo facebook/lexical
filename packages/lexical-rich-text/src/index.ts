@@ -202,6 +202,10 @@ export class QuoteNode extends ElementNode {
     this.replace(paragraph);
     return true;
   }
+
+  canMergeWhenEmpty(): true {
+    return true;
+  }
 }
 
 export function $createQuoteNode(): QuoteNode {

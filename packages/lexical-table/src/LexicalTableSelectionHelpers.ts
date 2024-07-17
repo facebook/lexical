@@ -338,7 +338,7 @@ export function applyTableHandlers(
           }
         }
       }
-      return true;
+      return false;
     }
 
     if ($isTableSelection(selection)) {

@@ -1764,11 +1764,13 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
     mutableNode.__mode = latestNode.__mode;
     mutableNode.__detail = latestNode.__detail;
   }
-  invariant(
-    mutableNode.__key === latestNode.__key,
-    "$cloneWithProperties: %s.clone(node) (with type '%s') did not return a node with the same key, make sure to specify node.__key as the last argument to the constructor",
-    constructor.name,
-    constructor.getType(),
-  );
+  if (__DEV__) {
+    invariant(
+      mutableNode.__key === latestNode.__key,
+      "$cloneWithProperties: %s.clone(node) (with type '%s') did not return a node with the same key, make sure to specify node.__key as the last argument to the constructor",
+      constructor.name,
+      constructor.getType(),
+    );
+  }
   return mutableNode;
 }

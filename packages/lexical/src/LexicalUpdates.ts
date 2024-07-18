@@ -802,6 +802,14 @@ function processNestedUpdates(
         if (options.skipTransforms) {
           skipTransforms = true;
         }
+        if (options.discrete) {
+          const pendingEditorState = editor._pendingEditorState;
+          invariant(
+            pendingEditorState !== null,
+            'Unexpected empty pending editor state on discrete nested update',
+          );
+          pendingEditorState._flushSync = true;
+        }
 
         if (onUpdate) {
           editor._deferred.push(onUpdate);

@@ -1066,21 +1066,43 @@ export class RangeSelection implements BaseSelection {
     const selectedNodes = this.getNodes();
     const firstPoint = this.isBackward() ? focus : anchor;
     const lastPoint = this.isBackward() ? anchor : focus;
-    const firstNode = firstPoint.getNode();
-    const lastNode = lastPoint.getNode();
+    let firstNode = firstPoint.getNode();
+    let lastNode = lastPoint.getNode();
+
+    const replaceIfTokenOrSegmented = (node: TextNode, point: PointType) => {
+      if ($isTokenOrSegmented(node)) {
+        const textNode = $createTextNode(node.getTextContent());
+        textNode.setFormat(node.getFormat());
+        textNode.setStyle(node.getStyle());
+        point.set(textNode.getKey(), point.offset, 'text');
+        return node.replace(textNode);
+      }
+    };
 
     if (firstNode === lastNode && $isTextNode(firstNode)) {
       const delCount = Math.abs(focus.offset - anchor.offset);
       firstNode.spliceText(firstPoint.offset, delCount, '', true);
+      if (firstNode.getTextContent() === '') {
+        firstNode.remove();
+      } else if (delCount !== 0) {
+        replaceIfTokenOrSegmented(firstNode, firstPoint);
+      }
       return;
     }
 
     if ($isTextNode(firstNode)) {
       const delCount = firstNode.getTextContentSize() - firstPoint.offset;
       firstNode.spliceText(firstPoint.offset, delCount, '');
+      if (delCount !== 0) {
+        firstNode =
+          replaceIfTokenOrSegmented(firstNode, firstPoint) || firstNode;
+      }
     }
     if ($isTextNode(lastNode)) {
       lastNode.spliceText(0, lastPoint.offset, '');
+      if (lastPoint.offset !== 0) {
+        lastNode = replaceIfTokenOrSegmented(lastNode, lastPoint) || lastNode;
+      }
     }
 
     selectedNodes.forEach((node) => {
@@ -1094,7 +1116,15 @@ export class RangeSelection implements BaseSelection {
       }
     });
     firstNode.selectEnd();
-    $mergeBlocks(firstNode, lastNode);
+
+    // Merge blocks
+    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+    const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
+    const bothElem = $isElementNode(firstBlock) && $isElementNode(lastBlock);
+    if (bothElem && firstBlock !== lastBlock) {
+      firstBlock.append(...lastBlock.getChildren());
+      lastBlock.remove();
+    }
   }
 
   /**
@@ -2869,14 +2899,4 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
   }
 
   return virtualRoot;
-}
-
-function $mergeBlocks(firstNode: LexicalNode, lastNode: LexicalNode): void {
-  const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
-  const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
-  const bothElements = $isElementNode(firstBlock) && $isElementNode(lastBlock);
-  if (bothElements && firstBlock !== lastBlock) {
-    firstBlock.append(...lastBlock.getChildren());
-    lastBlock.remove();
-  }
 }

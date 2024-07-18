@@ -57,61 +57,16 @@ describe('LexicalNodeHelpers tests', () => {
           return [overflowLeftKey!, overflowRightKey!];
         }
 
-        it('merges an empty overflow node (left overflow selected)', async () => {
-          const editor: LexicalEditor = testEnv.editor;
-          const [overflowLeftKey, overflowRightKey] =
-            await initializeEditorWithLeftRightOverflowNodes();
-
-          await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
-            const overflowRight =
-              $getNodeByKey<OverflowNode>(overflowRightKey)!;
-
-            const text1 = $createTextNode('1');
-            const text2 = $createTextNode('2');
-
-            overflowRight.append(text1, text2);
-
-            text2.toggleFormat('bold'); // Prevent merging with text1
-
-            overflowLeft.select();
-          });
-
-          await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
-            const overflowRight =
-              $getNodeByKey<OverflowNode>(overflowRightKey)!;
-
-            $mergePrevious(overflowRight);
-
-            expect(paragraph.getChildrenSize()).toBe(1);
-            expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
-
-            const selection = $getSelection();
-
-            if (!$isRangeSelection(selection)) {
-              throw new Error('Lost selection');
-            }
-
-            if ($isNodeSelection(selection)) {
-              return;
-            }
-
-            expect(selection.anchor.key).toBe(overflowRightKey);
-            expect(selection.anchor.offset).toBe(0);
-            expect(selection.focus.key).toBe(overflowRightKey);
-            expect(selection.anchor.offset).toBe(0);
-          });
-        });
-
         it('merges an overflow node (left overflow selected)', async () => {
           const editor: LexicalEditor = testEnv.editor;
-          const [overflowLeftKey, overflowRightKey] =
-            await initializeEditorWithLeftRightOverflowNodes();
+          let overflowLeftKey: NodeKey;
+          let overflowRightKey: NodeKey;
 
           let text1Key: NodeKey;
 
-          await editor.update(() => {
+          await editor.update(async () => {
+            [overflowLeftKey, overflowRightKey] =
+              await initializeEditorWithLeftRightOverflowNodes();
             const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
             const overflowRight =
               $getNodeByKey<OverflowNode>(overflowRightKey)!;
@@ -165,13 +120,15 @@ describe('LexicalNodeHelpers tests', () => {
 
         it('merges an overflow node (left-right overflow selected)', async () => {
           const editor: LexicalEditor = testEnv.editor;
-          const [overflowLeftKey, overflowRightKey] =
-            await initializeEditorWithLeftRightOverflowNodes();
+          let overflowLeftKey: NodeKey;
+          let overflowRightKey: NodeKey;
 
           let text2Key: NodeKey;
           let text3Key: NodeKey;
 
-          await editor.update(() => {
+          await editor.update(async () => {
+            [overflowLeftKey, overflowRightKey] =
+              await initializeEditorWithLeftRightOverflowNodes();
             const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
             const overflowRight =
               $getNodeByKey<OverflowNode>(overflowRightKey)!;

@@ -802,6 +802,11 @@ function processNestedUpdates(
         if (options.skipTransforms) {
           skipTransforms = true;
         }
+        if (options.discrete) {
+          const pendingEditorState = editor._pendingEditorState;
+          invariant(pendingEditorState !== null, 'write soemthing');
+          pendingEditorState._flushSync = true;
+        }
 
         if (onUpdate) {
           editor._deferred.push(onUpdate);

@@ -1066,8 +1066,8 @@ export class RangeSelection implements BaseSelection {
     const selectedNodes = this.getNodes();
     const firstPoint = this.isBackward() ? focus : anchor;
     const lastPoint = this.isBackward() ? anchor : focus;
-    let firstNode = firstPoint.getNode();
-    let lastNode = lastPoint.getNode();
+    const firstNode = firstPoint.getNode();
+    const lastNode = lastPoint.getNode();
 
     const fixText = (node: TextNode, point: PointType, delCount: number) => {
       if (node.getTextContent() === '') {
@@ -1077,7 +1077,7 @@ export class RangeSelection implements BaseSelection {
         textNode.setFormat(node.getFormat());
         textNode.setStyle(node.getStyle());
         point.set(textNode.getKey(), point.offset, 'text');
-        return node.replace(textNode);
+        node.replace(textNode);
       }
     };
     if (firstNode === lastNode && $isTextNode(firstNode)) {
@@ -1089,11 +1089,11 @@ export class RangeSelection implements BaseSelection {
     if ($isTextNode(firstNode)) {
       const delCount = firstNode.getTextContentSize() - firstPoint.offset;
       firstNode.spliceText(firstPoint.offset, delCount, '');
-      firstNode = fixText(firstNode, firstPoint, delCount) || firstNode;
+      fixText(firstNode, firstPoint, delCount);
     }
     if ($isTextNode(lastNode)) {
       lastNode.spliceText(0, lastPoint.offset, '');
-      lastNode = fixText(lastNode, lastPoint, lastPoint.offset) || lastNode;
+      fixText(lastNode, lastPoint, lastPoint.offset);
     }
 
     selectedNodes.forEach((node) => {
@@ -1106,9 +1106,6 @@ export class RangeSelection implements BaseSelection {
         node.remove();
       }
     });
-    if (firstNode.isAttached()) {
-      firstNode.selectEnd();
-    }
 
     // Merge blocks
     const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);

@@ -1068,6 +1068,19 @@ export class RangeSelection implements BaseSelection {
     const lastPoint = this.isBackward() ? anchor : focus;
     const firstNode = firstPoint.getNode();
     const lastNode = lastPoint.getNode();
+    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+    const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
+
+    selectedNodes.forEach((node) => {
+      if (
+        !$hasAncestor(firstNode, node) &&
+        !$hasAncestor(lastNode, node) &&
+        node.getKey() !== firstNode.getKey() &&
+        node.getKey() !== lastNode.getKey()
+      ) {
+        node.remove();
+      }
+    });
 
     const fixText = (node: TextNode, point: PointType, delCount: number) => {
       if (node.getTextContent() === '') {
@@ -1095,25 +1108,18 @@ export class RangeSelection implements BaseSelection {
       lastNode.spliceText(0, lastPoint.offset, '');
       fixText(lastNode, lastPoint, lastPoint.offset);
     }
-
-    selectedNodes.forEach((node) => {
-      if (
-        !$hasAncestor(firstNode, node) &&
-        !$hasAncestor(lastNode, node) &&
-        node.getKey() !== firstNode.getKey() &&
-        node.getKey() !== lastNode.getKey()
-      ) {
-        node.remove();
-      }
-    });
+    if (firstNode.isAttached() && $isTextNode(firstNode)) {
+      firstNode.selectEnd();
+    } else if (lastNode.isAttached() && $isTextNode(lastNode)) {
+      lastNode.selectStart();
+    }
 
     // Merge blocks
-    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
-    const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
     const bothElem = $isElementNode(firstBlock) && $isElementNode(lastBlock);
     if (bothElem && firstBlock !== lastBlock) {
       firstBlock.append(...lastBlock.getChildren());
       lastBlock.remove();
+      lastPoint.set(firstPoint.key, firstPoint.offset, firstPoint.type);
     }
   }
 

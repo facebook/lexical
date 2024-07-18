@@ -342,7 +342,7 @@ test.describe.parallel('Selection', () => {
     await assertHTML(
       page,
       html`
-        <h1 class="PlaygroundEditorTheme__h1"><br /></h1>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

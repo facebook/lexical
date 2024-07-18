@@ -7,13 +7,10 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {
-  $addNodeStyle,
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
+  $cloneWithProperties,
   $createTabNode,
   $getRoot,
   $getSelection,

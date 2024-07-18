@@ -11,15 +11,12 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
   BaseSelection,
-  ElementNode,
   LexicalEditor,
   LexicalNode,
-  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
@@ -32,61 +29,6 @@ import {
   getStyleObjectFromCSS,
   getStyleObjectFromRawCSS,
 } from './utils';
-
-function $updateElementNodeProperties<T extends ElementNode>(
-  target: T,
-  source: ElementNode,
-): void {
-  target.__first = source.__first;
-  target.__last = source.__last;
-  target.__size = source.__size;
-  target.__format = source.__format;
-  target.__indent = source.__indent;
-  target.__dir = source.__dir;
-}
-
-function $updateTextNodeProperties<T extends TextNode>(
-  target: T,
-  source: TextNode,
-): void {
-  target.__format = source.__format;
-  target.__style = source.__style;
-  target.__mode = source.__mode;
-  target.__detail = source.__detail;
-}
-
-function $updateParagraphNodeProperties<T extends ParagraphNode>(
-  target: T,
-  source: ParagraphNode,
-): void {
-  target.__textFormat = source.__textFormat;
-}
-
-/**
- * Returns a clone of a node with the same key and parent/next/prev pointers and other
- * properties that are not set by the KlassConstructor.clone (format, style, etc.).
- * @param node - The node to be cloned.
- * @returns The clone of the node.
- */
-export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const constructor = node.constructor;
-  // @ts-expect-error
-  const clone: T = constructor.clone(node);
-  clone.__parent = node.__parent;
-  clone.__next = node.__next;
-  clone.__prev = node.__prev;
-
-  if ($isElementNode(node) && $isElementNode(clone)) {
-    $updateElementNodeProperties(clone, node);
-    if ($isParagraphNode(node) && $isParagraphNode(clone)) {
-      $updateParagraphNodeProperties(clone, node);
-    }
-  } else if ($isTextNode(node) && $isTextNode(clone)) {
-    $updateTextNodeProperties(clone, node);
-  }
-
-  return clone;
-}
 
 /**
  * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"

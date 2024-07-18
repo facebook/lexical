@@ -16,12 +16,10 @@ import type {
   LexicalNode,
 } from 'lexical';
 
-import {
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
+  $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
   $getRoot,

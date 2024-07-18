@@ -1069,8 +1069,10 @@ export class RangeSelection implements BaseSelection {
     let firstNode = firstPoint.getNode();
     let lastNode = lastPoint.getNode();
 
-    const replaceIfTokenOrSegmented = (node: TextNode, point: PointType) => {
-      if ($isTokenOrSegmented(node)) {
+    const fixText = (node: TextNode, point: PointType, delCount: number) => {
+      if (node.getTextContent() === '') {
+        node.remove();
+      } else if (delCount !== 0 && $isTokenOrSegmented(node)) {
         const textNode = $createTextNode(node.getTextContent());
         textNode.setFormat(node.getFormat());
         textNode.setStyle(node.getStyle());
@@ -1078,31 +1080,20 @@ export class RangeSelection implements BaseSelection {
         return node.replace(textNode);
       }
     };
-
     if (firstNode === lastNode && $isTextNode(firstNode)) {
       const delCount = Math.abs(focus.offset - anchor.offset);
       firstNode.spliceText(firstPoint.offset, delCount, '', true);
-      if (firstNode.getTextContent() === '') {
-        firstNode.remove();
-      } else if (delCount !== 0) {
-        replaceIfTokenOrSegmented(firstNode, firstPoint);
-      }
+      fixText(firstNode, firstPoint, delCount);
       return;
     }
-
     if ($isTextNode(firstNode)) {
       const delCount = firstNode.getTextContentSize() - firstPoint.offset;
       firstNode.spliceText(firstPoint.offset, delCount, '');
-      if (delCount !== 0) {
-        firstNode =
-          replaceIfTokenOrSegmented(firstNode, firstPoint) || firstNode;
-      }
+      firstNode = fixText(firstNode, firstPoint, delCount) || firstNode;
     }
     if ($isTextNode(lastNode)) {
       lastNode.spliceText(0, lastPoint.offset, '');
-      if (lastPoint.offset !== 0) {
-        lastNode = replaceIfTokenOrSegmented(lastNode, lastPoint) || lastNode;
-      }
+      lastNode = fixText(lastNode, lastPoint, lastPoint.offset) || lastNode;
     }
 
     selectedNodes.forEach((node) => {
@@ -1115,7 +1106,9 @@ export class RangeSelection implements BaseSelection {
         node.remove();
       }
     });
-    firstNode.selectEnd();
+    if (firstNode.isAttached()) {
+      firstNode.selectEnd();
+    }
 
     // Merge blocks
     const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);

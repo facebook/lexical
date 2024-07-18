@@ -103,7 +103,7 @@ function $appendNodesToHTML(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = $cloneWithProperties(currentNode);
     clone =
       $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)

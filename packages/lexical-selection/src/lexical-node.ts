@@ -36,37 +36,35 @@ import {
 function $updateElementNodeProperties<T extends ElementNode>(
   target: T,
   source: ElementNode,
-): T {
+): void {
   target.__first = source.__first;
   target.__last = source.__last;
   target.__size = source.__size;
   target.__format = source.__format;
   target.__indent = source.__indent;
   target.__dir = source.__dir;
-  return target;
 }
 
 function $updateTextNodeProperties<T extends TextNode>(
   target: T,
   source: TextNode,
-): T {
+): void {
   target.__format = source.__format;
   target.__style = source.__style;
   target.__mode = source.__mode;
   target.__detail = source.__detail;
-  return target;
 }
 
 function $updateParagraphNodeProperties<T extends ParagraphNode>(
   target: T,
   source: ParagraphNode,
-): T {
+): void {
   target.__textFormat = source.__textFormat;
-  return target;
 }
 
 /**
- * Returns a copy of a node, but generates a new key for the copy.
+ * Returns a clone of a node with the same key and parent/next/prev pointers and other
+ * properties that are not set by the KlassConstructor.clone (format, style, etc.).
  * @param node - The node to be cloned.
  * @returns The clone of the node.
  */
@@ -79,16 +77,14 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
   clone.__prev = node.__prev;
 
   if ($isElementNode(node) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, node);
+    $updateElementNodeProperties(clone, node);
+    if ($isParagraphNode(node) && $isParagraphNode(clone)) {
+      $updateParagraphNodeProperties(clone, node);
+    }
+  } else if ($isTextNode(node) && $isTextNode(clone)) {
+    $updateTextNodeProperties(clone, node);
   }
 
-  if ($isTextNode(node) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, node);
-  }
-
-  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
-    return $updateParagraphNodeProperties(clone, node);
-  }
   return clone;
 }
 

@@ -256,7 +256,7 @@ function $appendNodesToJSON(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = $cloneWithProperties(currentNode);
     clone =
       $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
@@ -267,11 +267,11 @@ function $appendNodesToJSON(
 
   const serializedNode = exportNodeToJSON(target);
 
-  // TODO: TextNode calls getTextContent() (NOT node.__text) within it's exportJSON method
+  // TODO: TextNode calls getTextContent() (NOT node.__text) within its exportJSON method
   // which uses getLatest() to get the text from the original node with the same key.
   // This is a deeper issue with the word "clone" here, it's still a reference to the
   // same node as far as the LexicalEditor is concerned since it shares a key.
-  // We need a way to create a clone of a Node in memory with it's own key, but
+  // We need a way to create a clone of a Node in memory with its own key, but
   // until then this hack will work for the selected text extract use case.
   if ($isTextNode(target)) {
     const text = target.__text;

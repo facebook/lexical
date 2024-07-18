@@ -21,6 +21,7 @@ import {
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
@@ -62,6 +63,7 @@ import {
   $createTestElementNode,
   $createTestInlineElementNode,
   createTestEditor,
+  createTestHeadlessEditor,
   TestComposer,
   TestTextNode,
 } from '../utils';
@@ -307,9 +309,11 @@ describe('LexicalEditor tests', () => {
 
   it('Should handle nested updates in the correct sequence', async () => {
     init();
+    const onUpdate = jest.fn();
 
     let log: Array<string> = [];
 
+    editor.registerUpdateListener(onUpdate);
     editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
@@ -354,6 +358,7 @@ describe('LexicalEditor tests', () => {
     // Wait for update to complete
     await Promise.resolve().then();
 
+    expect(onUpdate).toHaveBeenCalledTimes(1);
     expect(log).toEqual(['A1', 'B1', 'C1', 'D1', 'E1', 'F1']);
 
     log = [];
@@ -445,6 +450,28 @@ describe('LexicalEditor tests', () => {
       'B3',
       'TextTransform C3',
     ]);
+  });
+
+  it('nested update after selection update triggers exactly 1 update', async () => {
+    init();
+    const onUpdate = jest.fn();
+    editor.registerUpdateListener(onUpdate);
+    editor.update(() => {
+      $setSelection($createRangeSelection());
+      editor.update(() => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Sync update')),
+        );
+      });
+    });
+
+    await Promise.resolve().then();
+
+    const textContent = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textContent).toBe('Sync update');
+    expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('update does not call onUpdate callback when no dirty nodes', () => {
@@ -2351,7 +2378,7 @@ describe('LexicalEditor tests', () => {
     });
   });
 
-  it('can use flushSync for synchronous updates', () => {
+  it('can use discrete for synchronous updates', () => {
     init();
     const onUpdate = jest.fn();
     editor.registerUpdateListener(onUpdate);
@@ -2370,6 +2397,90 @@ describe('LexicalEditor tests', () => {
       .getEditorState()
       .read(() => $getRoot().getTextContent());
     expect(textContent).toBe('Sync update');
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('can use discrete after a non-discrete update to flush the entire queue', () => {
+    const headless = createTestHeadlessEditor();
+    const onUpdate = jest.fn();
+    headless.registerUpdateListener(onUpdate);
+    headless.update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Async update')),
+      );
+    });
+    headless.update(
+      () => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Sync update')),
+        );
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    const textContent = headless
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textContent).toBe('Async update\n\nSync update');
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('can use discrete after a non-discrete setEditorState to flush the entire queue', () => {
+    init();
+    editor.update(
+      () => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Async update')),
+        );
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    const headless = createTestHeadlessEditor(editor.getEditorState());
+    headless.update(
+      () => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Sync update')),
+        );
+      },
+      {
+        discrete: true,
+      },
+    );
+    const textContent = headless
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textContent).toBe('Async update\n\nSync update');
+  });
+
+  it('can use discrete in a nested update to flush the entire queue', () => {
+    init();
+    const onUpdate = jest.fn();
+    editor.registerUpdateListener(onUpdate);
+    editor.update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Async update')),
+      );
+      editor.update(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Sync update')),
+          );
+        },
+        {
+          discrete: true,
+        },
+      );
+    });
+
+    const textContent = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 

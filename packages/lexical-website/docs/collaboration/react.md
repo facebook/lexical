@@ -31,7 +31,7 @@ $ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket yjs
 
 **Get WebSocket server running:**
 
-This allows different browser windows and different borwsers to find each other and sync Lexical state. On top of this `YPERSISTENCE` allows you to save Yjs documents in between server restarts so clients can simply reconnect and keep editing.
+This allows different browser windows and different browsers to find each other and sync Lexical state. On top of this `YPERSISTENCE` allows you to save Yjs documents in between server restarts so clients can simply reconnect and keep editing.
 
 ```bash
 $ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket

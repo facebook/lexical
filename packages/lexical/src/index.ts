@@ -169,6 +169,7 @@ export {
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isTokenOrSegmented,
   $nodesOfType,
   $selectAll,
   $setCompositionKey,

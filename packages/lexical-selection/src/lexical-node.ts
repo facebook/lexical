@@ -15,6 +15,7 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $isTokenOrSegmented,
   BaseSelection,
   ElementNode,
   LexicalEditor,
@@ -404,8 +405,11 @@ export function $patchStyleText(
         return;
       }
 
-      // The entire node is selected, so just format it
-      if (startOffset === 0 && endOffset === firstNodeTextLength) {
+      // The entire node is selected or a token/segment, so just format it
+      if (
+        $isTokenOrSegmented(firstNode) ||
+        (startOffset === 0 && endOffset === firstNodeTextLength)
+      ) {
         $patchStyle(firstNode, patch);
         firstNode.select(startOffset, endOffset);
       } else {
@@ -423,8 +427,8 @@ export function $patchStyleText(
       startOffset < firstNode.getTextContentSize() &&
       firstNode.canHaveFormat()
     ) {
-      if (startOffset !== 0) {
-        // the entire first node isn't selected, so split it
+      if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
+        // the entire first node isn't selected and it isn't a token or segmented, so split it
         firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
         if (isBefore) {
@@ -449,8 +453,8 @@ export function $patchStyleText(
         endOffset = lastNodeTextLength;
       }
 
-      // if the entire last node isn't selected, split it
-      if (endOffset !== lastNodeTextLength) {
+      // if the entire last node isn't selected and it isn't a token or segmented, split it
+      if (endOffset !== lastNodeTextLength && !$isTokenOrSegmented(lastNode)) {
         [lastNode] = lastNode.splitText(endOffset);
       }
 

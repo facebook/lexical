@@ -74,7 +74,7 @@ export function $generateHtmlFromNodes(
     (typeof window === 'undefined' && typeof global.window === 'undefined')
   ) {
     throw new Error(
-      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
+      'Tooooo use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
     );
   }
 

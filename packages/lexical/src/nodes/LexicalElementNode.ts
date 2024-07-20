@@ -451,6 +451,8 @@ export class ElementNode extends LexicalNode {
       } else {
         writableNodeAfterRange.__prev = null;
       }
+    } else {
+      writableSelf.__last = nodesToInsert[nodesToInsertLength - 1].__key;
     }
 
     writableSelf.__size = newSize;

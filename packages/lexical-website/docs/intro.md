@@ -132,5 +132,5 @@ unregisterListener();
 
 Commands are the communication system used to wire everything together in Lexical. Custom commands can be created using `createCommand()` and
 dispatched to an editor using `editor.dispatchCommand(command, payload)`. Lexical dispatches commands internally when key presses are triggered
-and when other important signals occur. Commands can also be handled using `editor.registerCommand(handler, priority)`, and incoming commands are
+and when other important signals occur. Commands can also be handled using `editor.registerCommand(command, handler, priority)`, and incoming commands are
 propagated through all handlers by priority until a handler stops the propagation (in a similar way to event propagation in the browser).

@@ -22,6 +22,7 @@ import {
   html,
   initialize,
   pasteFromClipboard,
+  pressInsertLinkButton,
   test,
 } from '../utils/index.mjs';
 
@@ -39,17 +40,17 @@ test.describe('Auto Links', () => {
       html`
         <p dir="ltr">
           <span data-lexical-text="true">Hello</span>
-          <a href="http://example.com" dir="ltr">
+          <a dir="ltr" href="http://example.com">
             <span data-lexical-text="true">http://example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="https://example.com/path?with=query#and-hash" dir="ltr">
+          <a dir="ltr" href="https://example.com/path?with=query#and-hash">
             <span data-lexical-text="true">
               https://example.com/path?with=query#and-hash
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="https://www.example.com" dir="ltr">
+          <a dir="ltr" href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -66,7 +67,7 @@ test.describe('Auto Links', () => {
     test.skip(isPlainText);
     const htmlWithLink = html`
       <p dir="ltr">
-        <a href="http://example.com" dir="ltr">
+        <a dir="ltr" href="http://example.com">
           <span data-lexical-text="true">http://example.com</span>
         </a>
       </p>
@@ -138,17 +139,17 @@ test.describe('Auto Links', () => {
       html`
         <p dir="ltr">
           <span data-lexical-text="true">Hello</span>
-          <a href="http://example.com" dir="ltr">
+          <a dir="ltr" href="http://example.com">
             <span data-lexical-text="true">http://example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="https://example.com/path?with=query#and-hash" dir="ltr">
+          <a dir="ltr" href="https://example.com/path?with=query#and-hash">
             <span data-lexical-text="true">
               https://example.com/path?with=query#and-hash
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="https://www.example.com" dir="ltr">
+          <a dir="ltr" href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -171,7 +172,7 @@ test.describe('Auto Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a href="https://" dir="ltr" rel="noreferrer">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">hm</span>
           </a>
         </p>
@@ -186,7 +187,7 @@ test.describe('Auto Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a href="https://" dir="ltr" rel="noreferrer">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">https://facebook.com</span>
           </a>
         </p>
@@ -209,15 +210,15 @@ test.describe('Auto Links', () => {
       page,
       html`
         <p>
-          <a href="https://1.com/" dir="ltr">
+          <a dir="ltr" href="https://1.com/">
             <span data-lexical-text="true">https://1.com/</span>
           </a>
           <span data-lexical-text="true">,</span>
-          <a href="https://2.com/" dir="ltr">
+          <a dir="ltr" href="https://2.com/">
             <span data-lexical-text="true">https://2.com/</span>
           </a>
           <span data-lexical-text="true">;;;</span>
-          <a href="https://3.com" dir="ltr">
+          <a dir="ltr" href="https://3.com">
             <span data-lexical-text="true">https://3.com</span>
           </a>
         </p>
@@ -238,19 +239,19 @@ test.describe('Auto Links', () => {
       page,
       html`
         <p>
-          <a href="https://1.com/" dir="ltr">
+          <a dir="ltr" href="https://1.com/">
             <span data-lexical-text="true">https://1.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a href="https://2.com/" dir="ltr">
+          <a dir="ltr" href="https://2.com/">
             <span data-lexical-text="true">https://2.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a href="https://3.com/" dir="ltr">
+          <a dir="ltr" href="https://3.com/">
             <span data-lexical-text="true">https://3.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a href="https://4.com/" dir="ltr">
+          <a dir="ltr" href="https://4.com/">
             <span data-lexical-text="true">https://4.com/</span>
           </a>
         </p>
@@ -273,7 +274,7 @@ test.describe('Auto Links', () => {
       html`
         <p dir="ltr">
           <span data-lexical-text="true">Hellohttps://example.com</span>
-          <a href="https://example.com" dir="ltr">
+          <a dir="ltr" href="https://example.com">
             <span data-lexical-text="true">https://example.com</span>
           </a>
         </p>
@@ -320,7 +321,7 @@ test.describe('Auto Links', () => {
       html`
         <p dir="ltr">
           <span data-lexical-text="true">Hello</span>
-          <a href="http://example.com" dir="ltr">
+          <a dir="ltr" href="http://example.com">
             <span data-lexical-text="true">http://example.</span>
             <strong data-lexical-text="true">com</strong>
           </a>
@@ -368,7 +369,7 @@ test.describe('Auto Links', () => {
       html`
         <p dir="ltr">
           <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
-          <a href="http://example.com" dir="ltr">
+          <a dir="ltr" href="http://example.com">
             <span style="font-size: 19px;" data-lexical-text="true">
               http://example.com
             </span>
@@ -507,6 +508,68 @@ test.describe('Auto Links', () => {
       html`
         <p dir="ltr">
           <span data-lexical-text="true">${testUrls.join(' ')}</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can unlink the autolink and then make it link again', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello http://www.example.com test');
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a dir="ltr" href="http://www.example.com">
+            <span data-lexical-text="true">http://www.example.com</span>
+          </a>
+          <span data-lexical-text="true">test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://www.example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <span class="PlaygroundEditorTheme__ltr" dir="ltr">
+            <span data-lexical-text="true">http://www.example.com</span>
+          </span>
+          <span data-lexical-text="true">test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await click(page, 'span:has-text("http://www.example.com")');
+
+    pressInsertLinkButton(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a dir="ltr" href="http://www.example.com">
+            <span data-lexical-text="true">http://www.example.com</span>
+          </a>
+          <span data-lexical-text="true">test</span>
         </p>
       `,
       undefined,

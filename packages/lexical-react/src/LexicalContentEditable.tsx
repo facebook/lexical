@@ -6,65 +6,64 @@
  *
  */
 
+import type {Props as ElementProps} from './shared/LexicalContentEditableElement';
+import type {LexicalEditor} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import * as React from 'react';
-import {useCallback, useState} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 
-export type Props = {
-  ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
-  ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
-  ariaControls?: React.AriaAttributes['aria-controls'];
-  ariaDescribedBy?: React.AriaAttributes['aria-describedby'];
-  ariaExpanded?: React.AriaAttributes['aria-expanded'];
-  ariaLabel?: React.AriaAttributes['aria-label'];
-  ariaLabelledBy?: React.AriaAttributes['aria-labelledby'];
-  ariaMultiline?: React.AriaAttributes['aria-multiline'];
-  ariaOwns?: React.AriaAttributes['aria-owns'];
-  ariaRequired?: React.AriaAttributes['aria-required'];
-  autoCapitalize?: HTMLDivElement['autocapitalize'];
-  'data-testid'?: string | null | undefined;
-} & React.AllHTMLAttributes<HTMLDivElement>;
+import {ContentEditableElement} from './shared/LexicalContentEditableElement';
+import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
-export function ContentEditable({
-  ariaActiveDescendant,
-  ariaAutoComplete,
-  ariaControls,
-  ariaDescribedBy,
-  ariaExpanded,
-  ariaLabel,
-  ariaLabelledBy,
-  ariaMultiline,
-  ariaOwns,
-  ariaRequired,
-  autoCapitalize,
-  className,
-  id,
-  role = 'textbox',
-  spellCheck = true,
-  style,
-  tabIndex,
-  'data-testid': testid,
-  ...rest
-}: Props): JSX.Element {
-  const [editor] = useLexicalComposerContext();
-  const [isEditable, setEditable] = useState(false);
-
-  const ref = useCallback(
-    (rootElement: null | HTMLElement) => {
-      // defaultView is required for a root element.
-      // In multi-window setups, the defaultView may not exist at certain points.
-      if (
-        rootElement &&
-        rootElement.ownerDocument &&
-        rootElement.ownerDocument.defaultView
-      ) {
-        editor.setRootElement(rootElement);
+/* eslint-disable @typescript-eslint/ban-types */
+export type Props = Omit<ElementProps, 'editor'> & {
+  editor__DEPRECATED?: LexicalEditor;
+} & (
+    | {
+        'aria-placeholder'?: void;
+        placeholder?: null;
       }
-    },
-    [editor],
+    | {
+        'aria-placeholder': string;
+        placeholder:
+          | ((isEditable: boolean) => null | JSX.Element)
+          | JSX.Element;
+      }
   );
 
+/* eslint-enable @typescript-eslint/ban-types */
+
+export const ContentEditable = forwardRef(ContentEditableImpl);
+
+function ContentEditableImpl(
+  props: Props,
+  ref: Ref<HTMLDivElement>,
+): JSX.Element {
+  const {placeholder, editor__DEPRECATED, ...rest} = props;
+  // editor__DEPRECATED will always be defined for non MLC surfaces
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const editor = editor__DEPRECATED || useLexicalComposerContext()[0];
+
+  return (
+    <>
+      <ContentEditableElement editor={editor} {...rest} ref={ref} />
+      {placeholder != null && (
+        <Placeholder editor={editor} content={placeholder} />
+      )}
+    </>
+  );
+}
+
+function Placeholder({
+  content,
+  editor,
+}: {
+  editor: LexicalEditor;
+  content: ((isEditable: boolean) => null | JSX.Element) | JSX.Element;
+}): null | JSX.Element {
+  const showPlaceholder = useCanShowPlaceholder(editor);
+
+  const [isEditable, setEditable] = useState(editor.isEditable());
   useLayoutEffect(() => {
     setEditable(editor.isEditable());
     return editor.registerEditableListener((currentIsEditable) => {
@@ -72,36 +71,19 @@ export function ContentEditable({
     });
   }, [editor]);
 
-  return (
-    <div
-      {...rest}
-      aria-activedescendant={!isEditable ? undefined : ariaActiveDescendant}
-      aria-autocomplete={!isEditable ? 'none' : ariaAutoComplete}
-      aria-controls={!isEditable ? undefined : ariaControls}
-      aria-describedby={ariaDescribedBy}
-      aria-expanded={
-        !isEditable
-          ? undefined
-          : role === 'combobox'
-          ? !!ariaExpanded
-          : undefined
-      }
-      aria-label={ariaLabel}
-      aria-labelledby={ariaLabelledBy}
-      aria-multiline={ariaMultiline}
-      aria-owns={!isEditable ? undefined : ariaOwns}
-      aria-readonly={!isEditable ? true : undefined}
-      aria-required={ariaRequired}
-      autoCapitalize={autoCapitalize}
-      className={className}
-      contentEditable={isEditable}
-      data-testid={testid}
-      id={id}
-      ref={ref}
-      role={role}
-      spellCheck={spellCheck}
-      style={style}
-      tabIndex={tabIndex}
-    />
-  );
+  if (!showPlaceholder) {
+    return null;
+  }
+
+  let placeholder = null;
+  if (typeof content === 'function') {
+    placeholder = content(isEditable);
+  } else if (content !== null) {
+    placeholder = content;
+  }
+
+  if (placeholder === null) {
+    return null;
+  }
+  return <div aria-hidden={true}>{placeholder}</div>;
 }

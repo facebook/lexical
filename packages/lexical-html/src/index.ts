@@ -31,6 +31,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  isInlineDomNode,
 } from 'lexical';
 
 /**
@@ -294,9 +295,16 @@ function $createNodesFromDOM(
   }
 
   if (currentLexicalNode == null) {
-    // If it hasn't been converted to a LexicalNode, we hoist its children
-    // up to the same level as it.
-    lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+    if (childLexicalNodes.length > 0) {
+      // If it hasn't been converted to a LexicalNode, we hoist its children
+      // up to the same level as it.
+      lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+    } else {
+      if (isBlockDomNode(node) && isDomNodeBetweenTwoInlineNodes(node)) {
+        // Empty block dom node that hasnt been converted, we replace it with a linebreak if its between inline nodes
+        lexicalNodes = lexicalNodes.concat($createLineBreakNode());
+      }
+    }
   } else {
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after conversion,
@@ -321,7 +329,9 @@ function wrapContinuousInlines(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if ($isBlockElementNode(node)) {
-      node.setFormat(textAlign);
+      if (textAlign && !node.getFormat()) {
+        node.setFormat(textAlign);
+      }
       out.push(node);
     } else {
       continuousInlines.push(node);
@@ -356,4 +366,13 @@ function $unwrapArtificalNodes(
     }
     node.remove();
   }
+}
+
+function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
+  if (node.nextSibling == null || node.previousSibling == null) {
+    return false;
+  }
+  return (
+    isInlineDomNode(node.nextSibling) && isInlineDomNode(node.previousSibling)
+  );
 }

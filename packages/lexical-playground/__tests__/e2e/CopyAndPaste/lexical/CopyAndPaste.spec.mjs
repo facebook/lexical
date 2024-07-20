@@ -248,6 +248,10 @@ test.describe('CopyAndPaste', () => {
   }) => {
     test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     test.skip(isPlainText);
+    test.fixme(
+      IS_LINUX && browserName === 'chromium',
+      'Flaky on Linux + Chromium',
+    );
 
     await focusEditor(page);
     await page.keyboard.type('# Heading');
@@ -812,18 +816,18 @@ test.describe('CopyAndPaste', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
           <span data-lexical-text="true">World</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
           <span data-lexical-text="true">World</span>

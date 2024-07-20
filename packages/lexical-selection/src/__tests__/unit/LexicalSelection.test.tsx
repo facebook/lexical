@@ -8,6 +8,7 @@
 
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -187,6 +188,7 @@ describe('LexicalSelection tests', () => {
           />
           <HistoryPlugin />
           <TestPlugin />
+          <AutoFocusPlugin />
         </TestComposer>
       );
     }
@@ -195,7 +197,6 @@ describe('LexicalSelection tests', () => {
       reactRoot.render(<TestBase />);
       await Promise.resolve().then();
     });
-    editor!.getRootElement()!.focus();
 
     await Promise.resolve().then();
     // Focus first element
@@ -2269,7 +2270,7 @@ describe('LexicalSelection tests', () => {
     });
 
     it('adjust offset for inline elements text formatting', async () => {
-      init();
+      await init();
 
       await editor!.update(() => {
         const root = $getRoot();

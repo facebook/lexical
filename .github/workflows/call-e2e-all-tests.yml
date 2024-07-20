@@ -141,3 +141,19 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       prod: ${{ matrix.prod }}
       override-react-version: beta
+
+  flaky:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['chromium', 'firefox']
+        editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      flaky: true
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}

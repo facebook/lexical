@@ -35,7 +35,7 @@ you can convert lexical editor state to markdown on server:
 const { createHeadlessEditor } = require('@lexical/headless');
 const { $convertToMarkdownString, TRANSFORMERS } = require('@lexical/markdown');
 
-app.get('article/:id/markdown', await (req, res) => {
+app.get('article/:id/markdown', async (req, res) => {
   const editor = createHeadlessEditor({
     nodes: [],
     onError: () => {},

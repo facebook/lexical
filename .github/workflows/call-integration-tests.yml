@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.15.1]
     env:
       CI: true
     steps:

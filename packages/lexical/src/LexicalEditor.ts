@@ -33,6 +33,7 @@ import {
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
+  getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
   markAllNodesAsDirty,
@@ -210,6 +211,18 @@ export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
 export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
+
+export interface MutationListenerOptions {
+  /**
+   * Skip the initial call of the listener with pre-existing DOM nodes.
+   *
+   * The default is currently true for backwards compatibility with <= 0.16.1
+   * but this default is expected to change to false in 0.17.0.
+   */
+  skipInitialization?: boolean;
+}
+
+const DEFAULT_SKIP_INITIALIZATION = true;
 
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -825,43 +838,34 @@ export class LexicalEditor {
    * One common use case for this is to attach DOM event listeners to the underlying DOM nodes as Lexical nodes are created.
    * {@link LexicalEditor.getElementByKey} can be used for this.
    *
+   * If any existing nodes are in the DOM, and skipInitialization is not true, the listener
+   * will be called immediately with an updateTag of 'registerMutationListener' where all
+   * nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
+   * (default is currently true for backwards compatibility in 0.16.x but will change to false in 0.17.0).
+   *
    * @param klass - The class of the node that you want to listen to mutations on.
    * @param listener - The logic you want to run when the node is mutated.
+   * @param options - see {@link MutationListenerOptions}
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerMutationListener(
     klass: Klass<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void {
-    let registeredNode = this._nodes.get(klass.getType());
-
-    if (registeredNode === undefined) {
-      invariant(
-        false,
-        'Node %s has not been registered. Ensure node has been passed to createEditor.',
-        klass.name,
-      );
-    }
-
-    let klassToMutate = klass;
-
-    let replaceKlass: Klass<LexicalNode> | null = null;
-    while ((replaceKlass = registeredNode.replaceWithKlass)) {
-      klassToMutate = replaceKlass;
-
-      registeredNode = this._nodes.get(replaceKlass.getType());
-
-      if (registeredNode === undefined) {
-        invariant(
-          false,
-          'Node %s has not been registered. Ensure node has been passed to createEditor.',
-          replaceKlass.name,
-        );
-      }
-    }
-
+    const klassToMutate = this.resolveRegisteredNodeAfterReplacements(
+      this.getRegisteredNode(klass),
+    ).klass;
     const mutations = this._listeners.mutation;
     mutations.set(listener, klassToMutate);
+    const skipInitialization = options && options.skipInitialization;
+    if (
+      !(skipInitialization === undefined
+        ? DEFAULT_SKIP_INITIALIZATION
+        : skipInitialization)
+    ) {
+      this.initializeMutationListener(listener, klassToMutate);
+    }
 
     return () => {
       mutations.delete(listener);
@@ -869,13 +873,8 @@ export class LexicalEditor {
   }
 
   /** @internal */
-  private registerNodeTransformToKlass<T extends LexicalNode>(
-    klass: Klass<T>,
-    listener: Transform<T>,
-  ): RegisteredNode {
-    const type = klass.getType();
-
-    const registeredNode = this._nodes.get(type);
+  private getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
+    const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
       invariant(
@@ -884,8 +883,52 @@ export class LexicalEditor {
         klass.name,
       );
     }
-    const transforms = registeredNode.transforms;
-    transforms.add(listener as Transform<LexicalNode>);
+
+    return registeredNode;
+  }
+
+  /** @internal */
+  private resolveRegisteredNodeAfterReplacements(
+    registeredNode: RegisteredNode,
+  ): RegisteredNode {
+    while (registeredNode.replaceWithKlass) {
+      registeredNode = this.getRegisteredNode(registeredNode.replaceWithKlass);
+    }
+    return registeredNode;
+  }
+
+  /** @internal */
+  private initializeMutationListener(
+    listener: MutationListener,
+    klass: Klass<LexicalNode>,
+  ): void {
+    const prevEditorState = this._editorState;
+    const nodeMap = getCachedTypeToNodeMap(this._editorState).get(
+      klass.getType(),
+    );
+    if (!nodeMap) {
+      return;
+    }
+    const nodeMutationMap = new Map<string, NodeMutation>();
+    for (const k of nodeMap.keys()) {
+      nodeMutationMap.set(k, 'created');
+    }
+    if (nodeMutationMap.size > 0) {
+      listener(nodeMutationMap, {
+        dirtyLeaves: new Set(),
+        prevEditorState,
+        updateTags: new Set(['registerMutationListener']),
+      });
+    }
+  }
+
+  /** @internal */
+  private registerNodeTransformToKlass<T extends LexicalNode>(
+    klass: Klass<T>,
+    listener: Transform<T>,
+  ): RegisteredNode {
+    const registeredNode = this.getRegisteredNode(klass);
+    registeredNode.transforms.add(listener as Transform<LexicalNode>);
 
     return registeredNode;
   }
@@ -1097,7 +1140,7 @@ export class LexicalEditor {
   /**
    * Parses a SerializedEditorState (usually produced by {@link EditorState.toJSON}) and returns
    * and EditorState object that can be, for example, passed to {@link LexicalEditor.setEditorState}. Typically,
-   * deserliazation from JSON stored in a database uses this method.
+   * deserialization from JSON stored in a database uses this method.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
@@ -1111,6 +1154,19 @@ export class LexicalEditor {
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
     return parseEditorState(serializedEditorState, this, updateFn);
+  }
+
+  /**
+   * Executes a read of the editor's state, with the
+   * editor context available (useful for exporting and read-only DOM
+   * operations). Much like update, but prevents any mutation of the
+   * editor's state. Any pending updates will be flushed immediately before
+   * the read.
+   * @param callbackFn - A function that has access to read-only editor state.
+   */
+  read<T>(callbackFn: () => T): T {
+    $commitPendingUpdates(this);
+    return this.getEditorState().read(callbackFn, {editor: this});
   }
 
   /**

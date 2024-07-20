@@ -39,7 +39,6 @@ import LinkPlugin from '../../plugins/LinkPlugin';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 import {DialogActions} from '../../ui/Dialog';
-import Placeholder from '../../ui/Placeholder';
 import Select from '../../ui/Select';
 import TextInput from '../../ui/TextInput';
 import {$isInlineImageNode, InlineImageNode} from './InlineImageNode';
@@ -388,12 +387,11 @@ export default function InlineImageComponent({
               <LinkPlugin />
               <RichTextPlugin
                 contentEditable={
-                  <ContentEditable className="InlineImageNode__contentEditable" />
-                }
-                placeholder={
-                  <Placeholder className="InlineImageNode__placeholder">
-                    Enter a caption...
-                  </Placeholder>
+                  <ContentEditable
+                    placeholder="Enter a caption..."
+                    placeholderClassName="InlineImageNode__placeholder"
+                    className="InlineImageNode__contentEditable"
+                  />
                 }
                 ErrorBoundary={LexicalErrorBoundary}
               />

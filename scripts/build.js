@@ -71,7 +71,7 @@ const wwwMappings = {
   'prismjs/components/prism-sql': 'prism-sql',
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
-  'react-dom': 'ReactDOMComet',
+  'react-dom': 'ReactDOM',
   // The react entrypoint in fb includes the jsx runtime
   'react/jsx-runtime': 'react',
 };

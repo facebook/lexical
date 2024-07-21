@@ -773,6 +773,51 @@ test.describe.parallel('Selection', () => {
     );
   });
 
+  test('Can persist the text style from the paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.getByLabel('Formatting text color').click();
+    await page.locator('.color-picker-basic-color > button').first().click(); //#d0021b
+    await page.getByRole('paragraph').click();
+    await page.keyboard.type('Line1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Line2');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.type('Line3');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
+            Line1
+          </span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
+            Line3
+          </span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
+            Line2
+          </span>
+        </p>
+      `,
+    );
+  });
+
   test('shift+arrowdown into a table selects the whole table', async ({
     page,
     isPlainText,

@@ -348,6 +348,7 @@ function onSelectionChange(
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             const lastNode = anchor.getNode();
+            selection.style = '';
             if (
               lastNode instanceof ParagraphNode &&
               lastNode.getChildrenSize() === 0
@@ -356,7 +357,6 @@ function onSelectionChange(
               selection.style = lastNode.getTextStyle();
             } else {
               selection.format = 0;
-              selection.style = '';
             }
           }
         }

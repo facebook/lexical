@@ -150,6 +150,7 @@ describe('table selection', () => {
       __size: 1,
       __style: '',
       __textFormat: 0,
+      __textStyle: '',
       __type: 'paragraph',
     });
     expect(parsedText).toEqual({

@@ -491,6 +491,36 @@
         "default": "./LexicalDecoratorBlockNode.js"
       }
     },
+    "./LexicalDraggableBlockPlugin": {
+      "import": {
+        "types": "./LexicalDraggableBlockPlugin.d.ts",
+        "development": "./LexicalDraggableBlockPlugin.dev.mjs",
+        "production": "./LexicalDraggableBlockPlugin.prod.mjs",
+        "node": "./LexicalDraggableBlockPlugin.node.mjs",
+        "default": "./LexicalDraggableBlockPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalDraggableBlockPlugin.d.ts",
+        "development": "./LexicalDraggableBlockPlugin.dev.js",
+        "production": "./LexicalDraggableBlockPlugin.prod.js",
+        "default": "./LexicalDraggableBlockPlugin.js"
+      }
+    },
+    "./LexicalDraggableBlockPlugin.js": {
+      "import": {
+        "types": "./LexicalDraggableBlockPlugin.d.ts",
+        "development": "./LexicalDraggableBlockPlugin.dev.mjs",
+        "production": "./LexicalDraggableBlockPlugin.prod.mjs",
+        "node": "./LexicalDraggableBlockPlugin.node.mjs",
+        "default": "./LexicalDraggableBlockPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalDraggableBlockPlugin.d.ts",
+        "development": "./LexicalDraggableBlockPlugin.dev.js",
+        "production": "./LexicalDraggableBlockPlugin.prod.js",
+        "default": "./LexicalDraggableBlockPlugin.js"
+      }
+    },
     "./LexicalEditorRefPlugin": {
       "import": {
         "types": "./LexicalEditorRefPlugin.d.ts",

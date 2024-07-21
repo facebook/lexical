@@ -72,6 +72,9 @@
       "@lexical/react/LexicalDecoratorBlockNode": [
         "../lexical-react/src/LexicalDecoratorBlockNode.ts"
       ],
+      "@lexical/react/LexicalDraggableBlockPlugin": [
+        "../lexical-react/src/LexicalDraggableBlockPlugin.tsx"
+      ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "../lexical-react/src/LexicalEditorRefPlugin.tsx"
       ],

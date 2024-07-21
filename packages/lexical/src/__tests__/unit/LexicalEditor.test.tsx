@@ -1294,17 +1294,18 @@ describe('LexicalEditor tests', () => {
           __textStyle: '',
           __type: 'paragraph',
         });
-        // expect(parsedText).toEqual({
-        //   __detail: 0,
-        //   __format: 0,
-        //   __key: textKey,
-        //   __mode: 0,
-        //   __next: null,
-        //   __parent: paragraphKey,
-        //   __prev: null,
-        //   __text: 'Hello world',
-        //   __type: 'text',
-        // });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __next: null,
+          __parent: paragraphKey,
+          __prev: null,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
       });
 
       it('Parses the text content of the editor state', async () => {
@@ -1357,37 +1358,36 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
-          // __textFormat: 0,
-          // __textStyle: '',
           __type: 'root',
         });
-        // expect(parsedParagraph).toEqual({
-        //   __dir: 'ltr',
-        //   __first: textKey,
-        //   __format: 0,
-        //   __indent: 0,
-        //   __key: paragraphKey,
-        //   __last: textKey,
-        //   __next: null,
-        //   __parent: 'root',
-        //   __prev: null,
-        //   __size: 1,
-        //   __style: '',
-        //   __textFormat: 0,
-        //   __type: 'paragraph',
-        // });
-        // expect(parsedText).toEqual({
-        //   __detail: 0,
-        //   __format: 0,
-        //   __key: textKey,
-        //   __mode: 0,
-        //   __next: null,
-        //   __parent: paragraphKey,
-        //   __prev: null,
-        //   __style: '',
-        //   __text: 'Hello world',
-        //   __type: 'text',
-        // });
+        expect(parsedParagraph).toEqual({
+          __dir: 'ltr',
+          __first: textKey,
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __last: textKey,
+          __next: null,
+          __parent: 'root',
+          __prev: null,
+          __size: 1,
+          __style: '',
+          __textFormat: 0,
+          __textStyle: '',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __next: null,
+          __parent: paragraphKey,
+          __prev: null,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
       });
 
       it('Parses the text content of the editor state', async () => {

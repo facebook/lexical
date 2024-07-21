@@ -353,10 +353,11 @@ function onSelectionChange(
               lastNode.getChildrenSize() === 0
             ) {
               selection.format = lastNode.getTextFormat();
+              selection.style = lastNode.getTextStyle();
             } else {
               selection.format = 0;
+              selection.style = '';
             }
-            selection.style = '';
           }
         }
       } else {

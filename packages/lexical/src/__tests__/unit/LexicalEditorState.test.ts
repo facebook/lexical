@@ -62,6 +62,7 @@ describe('LexicalEditorState tests', () => {
         __parent: null,
         __prev: null,
         __size: 1,
+        __style: '',
         __type: 'root',
       });
       expect(paragraph).toEqual({
@@ -75,6 +76,7 @@ describe('LexicalEditorState tests', () => {
         __parent: 'root',
         __prev: null,
         __size: 1,
+        __style: '',
         __textFormat: 0,
         __type: 'paragraph',
       });

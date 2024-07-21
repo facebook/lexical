@@ -134,19 +134,21 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       }, 0);
     };
 
-    const removeRootListener = editor.registerRootListener((rootElement, prevRootElement) => {
-      rootElement?.addEventListener('mousemove', onMouseMove);
-      rootElement?.addEventListener('mousedown', onMouseDown);
-      rootElement?.addEventListener('mouseup', onMouseUp);
+    const removeRootListener = editor.registerRootListener(
+      (rootElement, prevRootElement) => {
+        rootElement?.addEventListener('mousemove', onMouseMove);
+        rootElement?.addEventListener('mousedown', onMouseDown);
+        rootElement?.addEventListener('mouseup', onMouseUp);
 
-      prevRootElement?.removeEventListener('mousemove', onMouseMove);
-      prevRootElement?.removeEventListener('mousedown', onMouseDown);
-      prevRootElement?.removeEventListener('mouseup', onMouseUp);
-    });
+        prevRootElement?.removeEventListener('mousemove', onMouseMove);
+        prevRootElement?.removeEventListener('mousedown', onMouseDown);
+        prevRootElement?.removeEventListener('mouseup', onMouseUp);
+      },
+    );
 
     return () => {
       removeRootListener();
-    }
+    };
   }, [activeCell, draggingDirection, editor, resetState]);
 
   const isHeightChanging = (direction: MouseDraggingDirection) => {

@@ -36,7 +36,10 @@ editor.setRootElement(editorRef);
 mergeRegister(
   registerRichText(editor),
   registerDragonSupport(editor),
-  registerHistory(editor, createEmptyHistoryState(), 300),
+  registerHistory(editor, createEmptyHistoryState(), {
+    delay: 300,
+    discardHistory: false,
+  }),
 );
 
 editor.update(prepopulatedRichText, {tag: 'history-merge'});

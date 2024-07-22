@@ -1758,6 +1758,7 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
     mutableNode.__size = latestNode.__size;
     mutableNode.__indent = latestNode.__indent;
     mutableNode.__format = latestNode.__format;
+    mutableNode.__style = latestNode.__style;
     mutableNode.__dir = latestNode.__dir;
   } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
     mutableNode.__format = latestNode.__format;

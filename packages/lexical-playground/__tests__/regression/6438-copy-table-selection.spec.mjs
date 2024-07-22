@@ -42,7 +42,7 @@ test.describe('Regression test #6438', () => {
     await page.keyboard.type(randomText);
 
     // Copy the table
-    await page.keyboard.press('Meta+A');
+    await page.keyboard.press('Meta+A', {delay: 100});
     await page.keyboard.press('Meta+C');
 
     // Delete the table
@@ -50,7 +50,7 @@ test.describe('Regression test #6438', () => {
     expect(await page.locator('table').count()).toBe(0);
 
     // Paste the table
-    await page.keyboard.press('Meta+V', {delay: 100});
+    await page.keyboard.press('Meta+V');
 
     expect(await page.locator('table').count()).toBe(1);
     expect(await page.locator('td', {hasText: randomText}).count()).toBe(1);

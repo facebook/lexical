@@ -42,7 +42,7 @@ test.describe('Regression test #6438', () => {
     await page.keyboard.type(randomText);
 
     // Copy the table
-    await page.keyboard.press('Meta+A', {delay: 100});
+    await page.keyboard.press('Meta+A', {delay: 50});
     await page.keyboard.press('Meta+C');
 
     // Delete the table

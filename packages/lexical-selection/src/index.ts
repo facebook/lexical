@@ -8,7 +8,6 @@
 
 import {
   $addNodeStyle,
-  $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
@@ -31,8 +30,10 @@ import {
 } from './utils';
 
 export {
+  /** @deprecated moved to the lexical package */ $cloneWithProperties,
+} from 'lexical';
+export {
   $addNodeStyle,
-  $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,

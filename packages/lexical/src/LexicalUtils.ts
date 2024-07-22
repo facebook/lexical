@@ -41,6 +41,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -1381,10 +1382,15 @@ export function $isRootOrShadowRoot(
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
 
+/**
+ * Returns a shallow clone of node with a new key
+ *
+ * @param node - The node to be copied.
+ * @returns The copy of the node.
+ */
 export function $copyNode<T extends LexicalNode>(node: T): T {
-  const copy = node.constructor.clone(node);
+  const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
-  // @ts-expect-error
   return copy;
 }
 
@@ -1726,4 +1732,45 @@ export function getCachedTypeToNodeMap(
     }
   }
   return typeToNodeMap;
+}
+
+/**
+ * Returns a clone of a node with the same key and parent/next/prev pointers and other
+ * properties that are not set by the KlassConstructor.clone (format, style, etc.).
+ *
+ * Does not mutate the EditorState.
+ * @param node - The node to be cloned.
+ * @returns The clone of the node.
+ */
+export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
+  const constructor = latestNode.constructor;
+  const mutableNode = constructor.clone(latestNode) as T;
+  mutableNode.__parent = latestNode.__parent;
+  mutableNode.__next = latestNode.__next;
+  mutableNode.__prev = latestNode.__prev;
+  if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
+    if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
+      mutableNode.__textFormat = latestNode.__textFormat;
+    }
+    mutableNode.__first = latestNode.__first;
+    mutableNode.__last = latestNode.__last;
+    mutableNode.__size = latestNode.__size;
+    mutableNode.__indent = latestNode.__indent;
+    mutableNode.__format = latestNode.__format;
+    mutableNode.__dir = latestNode.__dir;
+  } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
+    mutableNode.__format = latestNode.__format;
+    mutableNode.__style = latestNode.__style;
+    mutableNode.__mode = latestNode.__mode;
+    mutableNode.__detail = latestNode.__detail;
+  }
+  if (__DEV__) {
+    invariant(
+      mutableNode.__key === latestNode.__key,
+      "$cloneWithProperties: %s.clone(node) (with type '%s') did not return a node with the same key, make sure to specify node.__key as the last argument to the constructor",
+      constructor.name,
+      constructor.getType(),
+    );
+  }
+  return mutableNode;
 }

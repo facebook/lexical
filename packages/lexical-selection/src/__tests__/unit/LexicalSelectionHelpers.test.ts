@@ -30,6 +30,7 @@ import {
   LexicalNode,
   ParagraphNode,
   RangeSelection,
+  TextModeType,
   TextNode,
 } from 'lexical';
 import {
@@ -3076,6 +3077,52 @@ describe('$patchStyleText', () => {
       expect(color).toEqual('');
     });
   });
+
+  test.each<TextModeType>(['token', 'segmented'])(
+    'can update style of text node that is in %s mode',
+    async (mode) => {
+      const editor = createTestEditor();
+
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+
+        const text = $createTextNode('first').setFormat('bold');
+        paragraph.append(text);
+
+        const textInMode = $createTextNode('second').setMode(mode);
+        paragraph.append(textInMode);
+
+        $setAnchorPoint({
+          key: text.getKey(),
+          offset: 'fir'.length,
+          type: 'text',
+        });
+
+        $setFocusPoint({
+          key: textInMode.getKey(),
+          offset: 'sec'.length,
+          type: 'text',
+        });
+
+        const selection = $getSelection();
+        $patchStyleText(selection!, {'font-size': '15px'});
+      });
+
+      expect(element.innerHTML).toBe(
+        '<p dir="ltr">' +
+          '<strong data-lexical-text="true">fir</strong>' +
+          '<strong style="font-size: 15px;" data-lexical-text="true">st</strong>' +
+          '<span style="font-size: 15px;" data-lexical-text="true">second</span>' +
+          '</p>',
+      );
+    },
+  );
 
   test('preserve backward selection when changing style of 2 different text nodes', async () => {
     const editor = createTestEditor();

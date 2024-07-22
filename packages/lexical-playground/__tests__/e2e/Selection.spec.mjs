@@ -773,7 +773,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can persist the text style from the paragraph', async ({
+  test('Can persist the text style (color) from the paragraph', async ({
     page,
     isPlainText,
   }) => {

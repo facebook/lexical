@@ -26,7 +26,6 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -1080,7 +1079,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
-    if ($isNodeSelection(prevSelection)) {
+    if (!$isRangeSelection(prevSelection)) {
       if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);

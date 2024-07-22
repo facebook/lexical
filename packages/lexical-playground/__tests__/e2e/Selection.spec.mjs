@@ -779,9 +779,9 @@ test.describe.parallel('Selection', () => {
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
-    await page.getByLabel('Formatting text color').click();
-    await page.locator('.color-picker-basic-color > button').first().click(); //#d0021b
-    await page.getByRole('paragraph').click();
+    await click(page, '.color-picker');
+    await click(page, '.color-picker-basic-color > button');
+    await click(page, '.PlaygroundEditorTheme__paragraph');
     await page.keyboard.type('Line1');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');

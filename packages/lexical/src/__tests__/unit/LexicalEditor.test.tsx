@@ -35,6 +35,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  createEditor,
   EditorState,
   ElementNode,
   type Klass,
@@ -1807,7 +1808,14 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
   });
-
+  it('mutation listener on newly initialized editor', async () => {
+    editor = createEditor();
+    const textNodeMutations = jest.fn();
+    editor.registerMutationListener(TextNode, textNodeMutations, {
+      skipInitialization: false,
+    });
+    expect(textNodeMutations.mock.calls.length).toBe(0);
+  });
   it('mutation listener with setEditorState', async () => {
     init();
 

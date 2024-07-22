@@ -1751,6 +1751,7 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
     if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
       mutableNode.__textFormat = latestNode.__textFormat;
+      mutableNode.__textStyle = latestNode.__textStyle;
     }
     mutableNode.__first = latestNode.__first;
     mutableNode.__last = latestNode.__last;

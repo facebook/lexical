@@ -15,7 +15,6 @@ import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
-/* eslint-disable @typescript-eslint/ban-types */
 export type Props = Omit<ElementProps, 'editor'> & {
   editor__DEPRECATED?: LexicalEditor;
 } & (
@@ -30,8 +29,6 @@ export type Props = Omit<ElementProps, 'editor'> & {
           | JSX.Element;
       }
   );
-
-/* eslint-enable @typescript-eslint/ban-types */
 
 export const ContentEditable = forwardRef(ContentEditableImpl);
 

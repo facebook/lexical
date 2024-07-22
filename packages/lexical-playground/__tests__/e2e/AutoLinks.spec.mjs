@@ -60,6 +60,35 @@ test.describe('Auto Links', () => {
     );
   });
 
+  test('Can convert url-like text into links for email', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Hello name@example.com and anothername@test.example.uk !',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a dir="ltr" href="mailto:name@example.com">
+            <span data-lexical-text="true">name@example.com</span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a dir="ltr" href="mailto:anothername@test.example.uk">
+            <span data-lexical-text="true">anothername@test.example.uk</span>
+          </a>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
   test('Can destruct links if add non-spacing text in front or right after it', async ({
     page,
     isPlainText,
@@ -159,6 +188,40 @@ test.describe('Auto Links', () => {
     );
   });
 
+  test('Can create link for email when pasting text with urls', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/plain':
+        'Hello name@example.com and anothername@test.example.uk and www.example.com !',
+    });
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a dir="ltr" href="mailto:name@example.com">
+            <span data-lexical-text="true">name@example.com</span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a dir="ltr" href="mailto:anothername@test.example.uk">
+            <span data-lexical-text="true">anothername@test.example.uk</span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a dir="ltr" href="https://www.example.com">
+            <span data-lexical-text="true">www.example.com</span>
+          </a>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
   test('Does not create redundant auto-link', async ({page, isPlainText}) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -204,7 +267,8 @@ test.describe('Auto Links', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await pasteFromClipboard(page, {
-      'text/plain': 'https://1.com/,https://2.com/;;;https://3.com',
+      'text/plain':
+        'https://1.com/,https://2.com/;;;https://3.com;name@domain.uk;',
     });
     await assertHTML(
       page,
@@ -221,6 +285,11 @@ test.describe('Auto Links', () => {
           <a dir="ltr" href="https://3.com">
             <span data-lexical-text="true">https://3.com</span>
           </a>
+          <span data-lexical-text="true">;</span>
+          <a dir="ltr" href="mailto:name@domain.uk">
+            <span data-lexical-text="true">name@domain.uk</span>
+          </a>
+          <span data-lexical-text="true">;</span>
         </p>
       `,
       undefined,
@@ -233,7 +302,7 @@ test.describe('Auto Links', () => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':
-        'https://1.com/ https://2.com/ https://3.com/ https://4.com/',
+        'https://1.com/ https://2.com/ https://3.com/ https://4.com/ name-lastname@meta.com',
     });
     await assertHTML(
       page,
@@ -253,6 +322,10 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true"></span>
           <a dir="ltr" href="https://4.com/">
             <span data-lexical-text="true">https://4.com/</span>
+          </a>
+          <span data-lexical-text="true"></span>
+          <a dir="ltr" href="mailto:name-lastname@meta.com">
+            <span data-lexical-text="true">name-lastname@meta.com</span>
           </a>
         </p>
       `,
@@ -276,6 +349,37 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">Hellohttps://example.com</span>
           <a dir="ltr" href="https://example.com">
             <span data-lexical-text="true">https://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Handles autolink following an invalid autolink to email', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Hello name@example.c name@example.1 name-lastname@example.com name.lastname@meta.com',
+    );
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">
+            Hello name@example.c name@example.1
+          </span>
+          <a dir="ltr" href="mailto:name-lastname@example.com">
+            <span data-lexical-text="true">name-lastname@example.com</span>
+          </a>
+          <span data-lexical-text="true"></span>
+          <a dir="ltr" href="mailto:name.lastname@meta.com">
+            <span data-lexical-text="true">name.lastname@meta.com</span>
           </a>
         </p>
       `,
@@ -467,6 +571,47 @@ test.describe('Auto Links', () => {
     );
   });
 
+  test('Can convert URLs into email links', async ({page, isPlainText}) => {
+    const testUrls = [
+      // Email usecases
+      'email@domain.com',
+      'firstname.lastname@domain.com',
+      'email@subdomain.domain.com',
+      'firstname+lastname@domain.com',
+      'email@[123.123.123.123]',
+      '"email"@domain.com',
+      '1234567890@domain.com',
+      'email@domain-one.com',
+      '_______@domain.com',
+      'email@domain.name',
+      'email@domain.co.uk',
+      'firstname-lastname@domain.com',
+    ];
+
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(testUrls.join(' ') + ' ');
+
+    let expectedHTML = '';
+    for (const url of testUrls) {
+      expectedHTML += `
+          <a href='mailto:${url}' dir="ltr">
+            <span data-lexical-text="true">${url}</span>
+          </a>
+          <span data-lexical-text="true"></span>
+      `;
+    }
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">${expectedHTML}</p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
   test(`Can not convert bad URLs into links`, async ({page, isPlainText}) => {
     const testUrls = [
       // Missing Protocol
@@ -497,6 +642,45 @@ test.describe('Auto Links', () => {
       'this is not a url', // Sentence
       'example', // Single word
       'ftp://example.com', // Unsupported protocol (assuming only HTTP/HTTPS is supported)
+    ];
+
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(testUrls.join(' '));
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">${testUrls.join(' ')}</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Can not convert bad URLs into email links`, async ({
+    page,
+    isPlainText,
+  }) => {
+    const testUrls = [
+      '@domain.com',
+      '@subdomain.domain.com',
+
+      // Invalid Characters
+      'email@domain!.com', // Invalid character in domain
+      'email@domain.c', // Invalid top level domain
+
+      // Missing Domain
+      'email@.com',
+      'email@.org',
+
+      // Incomplete URLs
+      'email@', // Incomplete URL
+
+      // Just Text
+      'not_an_email', // Plain text
     ];
 
     test.skip(isPlainText);

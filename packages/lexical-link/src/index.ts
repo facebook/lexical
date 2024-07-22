@@ -276,6 +276,16 @@ export class LinkNode extends ElementNode {
       selection.getTextContent().length > 0
     );
   }
+
+  isEmailURI(): boolean {
+    return this.__url.startsWith('mailto:');
+  }
+
+  isWebSiteURI(): boolean {
+    return (
+      this.__url.startsWith('https://') || this.__url.startsWith('http://')
+    );
+  }
 }
 
 function $convertAnchorElement(domNode: Node): DOMConversionOutput {

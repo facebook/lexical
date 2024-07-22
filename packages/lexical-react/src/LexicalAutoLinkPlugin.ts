@@ -91,8 +91,19 @@ function startsWithSeparator(textContent: string): boolean {
   return isSeparator(textContent[0]);
 }
 
-function startsWithFullStop(textContent: string): boolean {
-  return /^\.[a-zA-Z0-9]{1,}/.test(textContent);
+/**
+ * Check if the text content starts with a fullstop followed by a top-level domain.
+ * Meaning if the text content can be a beginning of a top level domain.
+ * @param textContent
+ * @param isEmail
+ * @returns boolean
+ */
+function startsWithTLD(textContent: string, isEmail: boolean): boolean {
+  if (isEmail) {
+    return /^\.[a-zA-Z]{2,}/.test(textContent);
+  } else {
+    return /^\.[a-zA-Z0-9]{1,}/.test(textContent);
+  }
 }
 
 function isPreviousNodeValid(node: LexicalNode): boolean {
@@ -385,7 +396,8 @@ function handleBadNeighbors(
   if (
     $isAutoLinkNode(previousSibling) &&
     !previousSibling.getIsUnlinked() &&
-    (!startsWithSeparator(text) || startsWithFullStop(text))
+    (!startsWithSeparator(text) ||
+      startsWithTLD(text, previousSibling.isEmailURI()))
   ) {
     previousSibling.append(textNode);
     handleLinkEdit(previousSibling, matchers, onChange);

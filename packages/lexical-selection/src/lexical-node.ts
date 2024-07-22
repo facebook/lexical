@@ -11,16 +11,13 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
   $isTokenOrSegmented,
   BaseSelection,
-  ElementNode,
   LexicalEditor,
   LexicalNode,
-  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
@@ -33,65 +30,6 @@ import {
   getStyleObjectFromCSS,
   getStyleObjectFromRawCSS,
 } from './utils';
-
-function $updateElementNodeProperties<T extends ElementNode>(
-  target: T,
-  source: ElementNode,
-): T {
-  target.__first = source.__first;
-  target.__last = source.__last;
-  target.__size = source.__size;
-  target.__format = source.__format;
-  target.__indent = source.__indent;
-  target.__dir = source.__dir;
-  return target;
-}
-
-function $updateTextNodeProperties<T extends TextNode>(
-  target: T,
-  source: TextNode,
-): T {
-  target.__format = source.__format;
-  target.__style = source.__style;
-  target.__mode = source.__mode;
-  target.__detail = source.__detail;
-  return target;
-}
-
-function $updateParagraphNodeProperties<T extends ParagraphNode>(
-  target: T,
-  source: ParagraphNode,
-): T {
-  target.__textFormat = source.__textFormat;
-  return target;
-}
-
-/**
- * Returns a copy of a node, but generates a new key for the copy.
- * @param node - The node to be cloned.
- * @returns The clone of the node.
- */
-export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const constructor = node.constructor;
-  // @ts-expect-error
-  const clone: T = constructor.clone(node);
-  clone.__parent = node.__parent;
-  clone.__next = node.__next;
-  clone.__prev = node.__prev;
-
-  if ($isElementNode(node) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, node);
-  }
-
-  if ($isTextNode(node) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, node);
-  }
-
-  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
-    return $updateParagraphNodeProperties(clone, node);
-  }
-  return clone;
-}
 
 /**
  * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"

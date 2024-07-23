@@ -35,7 +35,7 @@ export const plugins = (customFields: {
   {
     description: 'Learn how to create an editor with Tables',
     tags: ['opensource', 'favorite'],
-    title: 'Collab RichText',
+    title: 'TablePlugin',
     uri: `${customFields.STACKBLITZ_PREFIX}examples/react-table?embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0`,
   },
 ];

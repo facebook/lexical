@@ -13,7 +13,12 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import {INSERT_TABLE_COMMAND,TableCellNode,TableNode,TableRowNode} from '@lexical/table';
+import {
+  INSERT_TABLE_COMMAND,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
 import {LexicalEditor} from 'lexical';
 import {useEffect, useState} from 'react';
 

@@ -1751,12 +1751,14 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
     if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
       mutableNode.__textFormat = latestNode.__textFormat;
+      mutableNode.__textStyle = latestNode.__textStyle;
     }
     mutableNode.__first = latestNode.__first;
     mutableNode.__last = latestNode.__last;
     mutableNode.__size = latestNode.__size;
     mutableNode.__indent = latestNode.__indent;
     mutableNode.__format = latestNode.__format;
+    mutableNode.__style = latestNode.__style;
     mutableNode.__dir = latestNode.__dir;
   } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
     mutableNode.__format = latestNode.__format;

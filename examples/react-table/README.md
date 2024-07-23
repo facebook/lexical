@@ -1,6 +1,6 @@
-# React Rich Text example
+# React Table Plugin example
 
-Here we have simplest Lexical setup in rich text configuration (`@lexical/rich-text`) with history (`@lexical/history`) and accessibility (`@lexical/dragon`) features enabled.
+Here we have simplest Lexical setup in rich text configuration (`@lexical/rich-text`) with Table Plugin and history (`@lexical/history`), accessibility (`@lexical/dragon`) features enabled.
 
 **Run it locally:** `npm i && npm run dev`
 

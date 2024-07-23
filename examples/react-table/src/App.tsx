@@ -26,8 +26,6 @@ import ExampleTheme from './ExampleTheme';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 
-const placeholder = 'Enter some rich text...';
-
 const editorConfig = {
   namespace: 'React.js Demo',
   nodes: [TableNode, TableCellNode, TableRowNode],
@@ -69,6 +67,10 @@ function InsertTable({
   return <></>;
 }
 
+function Placeholder() {
+  return <div className="editor-placeholder">Enter some rich text...</div>;
+}
+
 export default function App() {
   const [showTable, setShowTable] = useState<boolean>(false);
   return (
@@ -77,15 +79,8 @@ export default function App() {
         <ToolbarPlugin />
         <div className="editor-inner">
           <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                className="editor-input"
-                aria-placeholder={placeholder}
-              />
-            }
-            placeholder={
-              <div className="editor-placeholder">{placeholder}</div>
-            }
+            contentEditable={<ContentEditable className="editor-input" />}
+            placeholder={<Placeholder />}
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />

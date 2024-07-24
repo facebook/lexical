@@ -688,12 +688,6 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
-    // // When composing, we need to adjust the anchor offset so that
-    // // we correctly replace that right range.
-    // if (textNode.isComposing() && this.anchor.type === 'text') {
-    //   this.anchor.offset -= text.length;
-    // }
-
     this.removeText();
     const anchorNode = this.anchor.getNode();
     const textNode = $createTextNode(text);
@@ -721,6 +715,11 @@ export class RangeSelection implements BaseSelection {
       anchorNode.splice(this.anchor.offset, 0, [textNode]);
     }
     textNode.selectEnd();
+    // When composing, we need to adjust the anchor offset so that
+    // we correctly replace that right range.
+    if (textNode.isComposing() && this.anchor.type === 'text') {
+      this.anchor.offset -= text.length;
+    }
   }
 
   /**

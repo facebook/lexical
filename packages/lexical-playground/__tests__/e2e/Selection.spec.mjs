@@ -349,10 +349,6 @@ test.describe.parallel('Selection', () => {
 
   test('Can delete forward a Collapsible', async ({page, isPlainText}) => {
     test.skip(isPlainText);
-    if (!IS_MAC) {
-      // Do Windows/Linux have equivalent shortcuts?
-      return;
-    }
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertCollapsible(page);

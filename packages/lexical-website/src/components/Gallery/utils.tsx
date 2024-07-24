@@ -51,6 +51,6 @@ export function useFilteredExamples(examples: Array<Example>) {
         searchName,
         tags,
       }),
-    [examples, searchName],
+    [examples, searchName, tags],
   );
 }

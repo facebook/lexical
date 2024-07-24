@@ -6,8 +6,8 @@
  *
  */
 
-import {$cloneWithProperties} from '@lexical/selection';
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $getPreviousSelection,
   $getRoot,
@@ -446,12 +446,7 @@ export function $restoreEditorState(
   const activeEditorState = editor._pendingEditorState;
 
   for (const [key, node] of editorState._nodeMap) {
-    const clone = $cloneWithProperties(node);
-    if ($isTextNode(clone)) {
-      invariant($isTextNode(node), 'Expected node be a TextNode');
-      clone.__text = node.__text;
-    }
-    nodeMap.set(key, clone);
+    nodeMap.set(key, $cloneWithProperties(node));
   }
 
   if (activeEditorState) {

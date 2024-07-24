@@ -773,6 +773,51 @@ test.describe.parallel('Selection', () => {
     );
   });
 
+  test('Can persist the text style (color) from the paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await click(page, '.color-picker');
+    await click(page, '.color-picker-basic-color > button');
+    await click(page, '.PlaygroundEditorTheme__paragraph');
+    await page.keyboard.type('Line1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Line2');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.type('Line3');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
+            Line1
+          </span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
+            Line3
+          </span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
+            Line2
+          </span>
+        </p>
+      `,
+    );
+  });
+
   test('shift+arrowdown into a table selects the whole table', async ({
     page,
     isPlainText,

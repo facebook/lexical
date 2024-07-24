@@ -11,15 +11,13 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $isTokenOrSegmented,
   BaseSelection,
-  ElementNode,
   LexicalEditor,
   LexicalNode,
-  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
@@ -32,65 +30,6 @@ import {
   getStyleObjectFromCSS,
   getStyleObjectFromRawCSS,
 } from './utils';
-
-function $updateElementNodeProperties<T extends ElementNode>(
-  target: T,
-  source: ElementNode,
-): T {
-  target.__first = source.__first;
-  target.__last = source.__last;
-  target.__size = source.__size;
-  target.__format = source.__format;
-  target.__indent = source.__indent;
-  target.__dir = source.__dir;
-  return target;
-}
-
-function $updateTextNodeProperties<T extends TextNode>(
-  target: T,
-  source: TextNode,
-): T {
-  target.__format = source.__format;
-  target.__style = source.__style;
-  target.__mode = source.__mode;
-  target.__detail = source.__detail;
-  return target;
-}
-
-function $updateParagraphNodeProperties<T extends ParagraphNode>(
-  target: T,
-  source: ParagraphNode,
-): T {
-  target.__textFormat = source.__textFormat;
-  return target;
-}
-
-/**
- * Returns a copy of a node, but generates a new key for the copy.
- * @param node - The node to be cloned.
- * @returns The clone of the node.
- */
-export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const constructor = node.constructor;
-  // @ts-expect-error
-  const clone: T = constructor.clone(node);
-  clone.__parent = node.__parent;
-  clone.__next = node.__next;
-  clone.__prev = node.__prev;
-
-  if ($isElementNode(node) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, node);
-  }
-
-  if ($isTextNode(node) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, node);
-  }
-
-  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
-    return $updateParagraphNodeProperties(clone, node);
-  }
-  return clone;
-}
 
 /**
  * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"
@@ -404,8 +343,11 @@ export function $patchStyleText(
         return;
       }
 
-      // The entire node is selected, so just format it
-      if (startOffset === 0 && endOffset === firstNodeTextLength) {
+      // The entire node is selected or a token/segment, so just format it
+      if (
+        $isTokenOrSegmented(firstNode) ||
+        (startOffset === 0 && endOffset === firstNodeTextLength)
+      ) {
         $patchStyle(firstNode, patch);
         firstNode.select(startOffset, endOffset);
       } else {
@@ -423,8 +365,8 @@ export function $patchStyleText(
       startOffset < firstNode.getTextContentSize() &&
       firstNode.canHaveFormat()
     ) {
-      if (startOffset !== 0) {
-        // the entire first node isn't selected, so split it
+      if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
+        // the entire first node isn't selected and it isn't a token or segmented, so split it
         firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
         if (isBefore) {
@@ -449,8 +391,8 @@ export function $patchStyleText(
         endOffset = lastNodeTextLength;
       }
 
-      // if the entire last node isn't selected, split it
-      if (endOffset !== lastNodeTextLength) {
+      // if the entire last node isn't selected and it isn't a token or segmented, split it
+      if (endOffset !== lastNodeTextLength && !$isTokenOrSegmented(lastNode)) {
         [lastNode] = lastNode.splitText(endOffset);
       }
 

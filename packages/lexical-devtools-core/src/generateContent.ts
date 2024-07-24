@@ -284,7 +284,9 @@ function printNode(
     return `ids: [ ${node.getIDs().join(', ')} ]`;
   } else if ($isParagraphNode(node)) {
     const formatText = printTextFormatProperties(node);
-    return formatText !== '' ? `{ ${formatText} }` : '';
+    let paragraphData = formatText !== '' ? `{ ${formatText} }` : '';
+    paragraphData += node.__style ? `(${node.__style})` : '';
+    return paragraphData;
   } else {
     return '';
   }

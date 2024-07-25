@@ -9,8 +9,11 @@
 import {
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
+  $isElementNode,
   $isRangeSelection,
   DecoratorNode,
+  ElementNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -400,6 +403,30 @@ describe('LexicalNode tests', () => {
           expect(paragraphNode.getTopLevelElement()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElement()).toThrow();
+        await editor.update(() => {
+          const node = new InlineDecoratorNode();
+          expect(node.getTopLevelElement()).toBe(null);
+          $getRoot().append(node);
+          expect(node.getTopLevelElement()).toBe(node);
+        });
+        editor.getEditorState().read(() => {
+          const elementNodes: ElementNode[] = [];
+          const decoratorNodes: DecoratorNode<unknown>[] = [];
+          for (const child of $getRoot().getChildren()) {
+            expect(child.getTopLevelElement()).toBe(child);
+            if ($isElementNode(child)) {
+              elementNodes.push(child);
+            } else if ($isDecoratorNode(child)) {
+              decoratorNodes.push(child);
+            } else {
+              throw new Error(
+                'Expecting all children to be ElementNode or DecoratorNode',
+              );
+            }
+          }
+          expect(decoratorNodes).toHaveLength(1);
+          expect(elementNodes).toHaveLength(1);
+        });
       });
 
       test('LexicalNode.getTopLevelElementOrThrow()', async () => {
@@ -415,6 +442,12 @@ describe('LexicalNode tests', () => {
           expect(paragraphNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElementOrThrow()).toThrow();
+        await editor.update(() => {
+          const node = new InlineDecoratorNode();
+          expect(() => node.getTopLevelElementOrThrow()).toThrow();
+          $getRoot().append(node);
+          expect(node.getTopLevelElementOrThrow()).toBe(node);
+        });
       });
 
       test('LexicalNode.getParents()', async () => {

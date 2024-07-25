@@ -57,7 +57,14 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ElementNode {
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
   ['constructor']!: KlassConstructor<typeof ElementNode>;
   /** @internal */

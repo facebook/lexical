@@ -1112,8 +1112,8 @@ export class RangeSelection implements BaseSelection {
     const selectedNodes = this.getNodes();
     const firstPoint = this.isBackward() ? focus : anchor;
     const lastPoint = this.isBackward() ? anchor : focus;
-    const firstNode = firstPoint.getNode();
-    const lastNode = lastPoint.getNode();
+    let firstNode = firstPoint.getNode();
+    let lastNode = lastPoint.getNode();
     const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
     const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
 
@@ -1128,31 +1128,30 @@ export class RangeSelection implements BaseSelection {
       }
     });
 
-    const fixText = (node: TextNode, point: PointType, delCount: number) => {
+    const fixText = (node: TextNode, del: number) => {
       if (node.getTextContent() === '') {
         node.remove();
-      } else if (delCount !== 0 && $isTokenOrSegmented(node)) {
+      } else if (del !== 0 && $isTokenOrSegmented(node)) {
         const textNode = $createTextNode(node.getTextContent());
         textNode.setFormat(node.getFormat());
         textNode.setStyle(node.getStyle());
-        point.set(textNode.getKey(), point.offset, 'text');
-        node.replace(textNode);
+        return node.replace(textNode);
       }
     };
     if (firstNode === lastNode && $isTextNode(firstNode)) {
-      const delCount = Math.abs(focus.offset - anchor.offset);
-      firstNode.spliceText(firstPoint.offset, delCount, '', true);
-      fixText(firstNode, firstPoint, delCount);
+      const del = Math.abs(focus.offset - anchor.offset);
+      firstNode.spliceText(firstPoint.offset, del, '', true);
+      lastNode = fixText(firstNode, del) || lastNode;
       return;
     }
     if ($isTextNode(firstNode)) {
-      const delCount = firstNode.getTextContentSize() - firstPoint.offset;
-      firstNode.spliceText(firstPoint.offset, delCount, '');
-      fixText(firstNode, firstPoint, delCount);
+      const del = firstNode.getTextContentSize() - firstPoint.offset;
+      firstNode.spliceText(firstPoint.offset, del, '');
+      firstNode = fixText(firstNode, del) || firstNode;
     }
     if ($isTextNode(lastNode)) {
       lastNode.spliceText(0, lastPoint.offset, '');
-      fixText(lastNode, lastPoint, lastPoint.offset);
+      lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
     }
     if (firstNode.isAttached() && $isTextNode(firstNode)) {
       firstNode.selectEnd();

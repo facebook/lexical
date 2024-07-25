@@ -1141,7 +1141,7 @@ export class RangeSelection implements BaseSelection {
     if (firstNode === lastNode && $isTextNode(firstNode)) {
       const del = Math.abs(focus.offset - anchor.offset);
       firstNode.spliceText(firstPoint.offset, del, '', true);
-      lastNode = fixText(firstNode, del) || lastNode;
+      fixText(firstNode, del);
       return;
     }
     if ($isTextNode(firstNode)) {

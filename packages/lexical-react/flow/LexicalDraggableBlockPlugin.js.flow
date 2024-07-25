@@ -7,4 +7,17 @@
  * @flow strict
  */
 
-declare export function DraggableBlockPlugin(): React$MixedElement;
+import * as React from 'react';
+
+type Props = $ReadOnly<{
+  anchorElem?: HTMLElement,
+  menuRef: React.RefObject<?HTMLElement>,
+  targetLineRef: React.RefObject<?HTMLElement>,
+  menuComponent: React.Node,
+  targetLineComponent: React.Node,
+  isOnMenu: (element: HTMLElement) => boolean,
+}>;
+	
+declare export function DraggableBlockPlugin_EXPERIMENTAL(
+  props: Props,
+): React$MixedElement;

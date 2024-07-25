@@ -156,6 +156,7 @@ export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
+  $cloneWithProperties,
   $copyNode,
   $getAdjacentNode,
   $getEditor,
@@ -169,6 +170,7 @@ export {
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isTokenOrSegmented,
   $nodesOfType,
   $selectAll,
   $setCompositionKey,

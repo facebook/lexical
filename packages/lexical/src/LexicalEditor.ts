@@ -903,7 +903,7 @@ export class LexicalEditor {
     klass: Klass<LexicalNode>,
   ): void {
     const prevEditorState = this._editorState;
-    const nodeMap = getCachedTypeToNodeMap(this._editorState).get(
+    const nodeMap = getCachedTypeToNodeMap(prevEditorState).get(
       klass.getType(),
     );
     if (!nodeMap) {

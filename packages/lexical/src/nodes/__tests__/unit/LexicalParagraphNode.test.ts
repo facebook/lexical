@@ -53,6 +53,7 @@ describe('LexicalParagraphNode tests', () => {
           format: '',
           indent: 0,
           textFormat: 0,
+          textStyle: '',
           type: 'paragraph',
           version: 1,
         });

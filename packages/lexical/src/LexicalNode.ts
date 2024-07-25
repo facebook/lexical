@@ -15,8 +15,8 @@ import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $isDecoratorNode,
   $isElementNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   ElementNode,
@@ -35,6 +35,7 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
   $isRootOrShadowRoot,
@@ -281,14 +282,41 @@ export class LexicalNode {
     }
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
-    if (
+    const isElementRangeSelection =
       $isRangeSelection(targetSelection) &&
       targetSelection.anchor.type === 'element' &&
-      targetSelection.focus.type === 'element' &&
-      targetSelection.anchor.key === targetSelection.focus.key &&
-      targetSelection.anchor.offset === targetSelection.focus.offset
-    ) {
-      return false;
+      targetSelection.focus.type === 'element';
+
+    if (isElementRangeSelection) {
+      if (targetSelection.isCollapsed()) {
+        return false;
+      }
+
+      const parentNode = this.getParent();
+      if ($isDecoratorNode(this) && this.isInline() && parentNode) {
+        const {anchor, focus} = targetSelection;
+
+        if (anchor.isBefore(focus)) {
+          const anchorNode = anchor.getNode() as ElementNode;
+          const isAnchorPointToLast =
+            anchor.offset === anchorNode.getChildrenSize();
+          const isAnchorNodeIsParent = anchorNode.is(parentNode);
+          const isLastChild = anchorNode.getLastChildOrThrow().is(this);
+
+          if (isAnchorPointToLast && isAnchorNodeIsParent && isLastChild) {
+            return false;
+          }
+        } else {
+          const focusNode = focus.getNode() as ElementNode;
+          const isFocusPointToLast =
+            focus.offset === focusNode.getChildrenSize();
+          const isFocusNodeIsParent = focusNode.is(parentNode);
+          const isLastChild = focusNode.getLastChildOrThrow().is(this);
+          if (isFocusPointToLast && isFocusNodeIsParent && isLastChild) {
+            return false;
+          }
+        }
+      }
     }
     return isSelected;
   }
@@ -686,7 +714,6 @@ export class LexicalNode {
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
-    const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
@@ -697,34 +724,12 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const constructor = latestNode.constructor;
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
-        mutableNode.__textFormat = latestNode.__textFormat;
-      }
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
+    const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.add(key);
-    mutableNode.__key = key;
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
 
-    // @ts-expect-error
     return mutableNode;
   }
 

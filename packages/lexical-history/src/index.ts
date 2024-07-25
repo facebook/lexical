@@ -193,25 +193,26 @@ function isTextNodeUnchanged(
 
   const prevSelection = prevEditorState._selection;
   const nextSelection = nextEditorState._selection;
-  let isDeletingLine = false;
+  const isDeletingLine =
+    $isRangeSelection(prevSelection) &&
+    $isRangeSelection(nextSelection) &&
+    prevSelection.anchor.type === 'element' &&
+    prevSelection.focus.type === 'element' &&
+    nextSelection.anchor.type === 'text' &&
+    nextSelection.focus.type === 'text';
 
-  if ($isRangeSelection(prevSelection) && $isRangeSelection(nextSelection)) {
-    isDeletingLine =
-      prevSelection.anchor.type === 'element' &&
-      prevSelection.focus.type === 'element' &&
-      nextSelection.anchor.type === 'text' &&
-      nextSelection.focus.type === 'text';
-  }
-
-  if (!isDeletingLine && $isTextNode(prevNode) && $isTextNode(nextNode)) {
+  if (
+    !isDeletingLine &&
+    $isTextNode(prevNode) &&
+    $isTextNode(nextNode) &&
+    prevNode.__parent === nextNode.__parent
+  ) {
+    // This has the assumption that object key order won't change if the
+    // content did not change, which should normally be safe given
+    // the manner in which nodes and exportJSON are typically implemented.
     return (
-      prevNode.__type === nextNode.__type &&
-      prevNode.__text === nextNode.__text &&
-      prevNode.__mode === nextNode.__mode &&
-      prevNode.__detail === nextNode.__detail &&
-      prevNode.__style === nextNode.__style &&
-      prevNode.__format === nextNode.__format &&
-      prevNode.__parent === nextNode.__parent
+      JSON.stringify(prevEditorState.read(() => prevNode.exportJSON())) ===
+      JSON.stringify(nextEditorState.read(() => nextNode.exportJSON()))
     );
   }
   return false;

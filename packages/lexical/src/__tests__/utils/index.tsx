@@ -534,9 +534,11 @@ export function createTestEditor(
   return editor;
 }
 
-export function createTestHeadlessEditor(): LexicalEditor {
+export function createTestHeadlessEditor(
+  editorState?: EditorState,
+): LexicalEditor {
   return createHeadlessEditor({
-    namespace: '',
+    editorState,
     onError: (error) => {
       throw error;
     },

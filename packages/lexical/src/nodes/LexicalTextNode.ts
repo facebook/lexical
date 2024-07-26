@@ -21,6 +21,7 @@ import type {
   SerializedLexicalNode,
 } from '../LexicalNode';
 import type {BaseSelection, RangeSelection} from '../LexicalSelection';
+import type {ElementNode} from './LexicalElementNode';
 
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -274,7 +275,14 @@ function wrapElementWith(
   return el;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TextNode {
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TextNode extends LexicalNode {
   ['constructor']!: KlassConstructor<typeof TextNode>;
   __text: string;

@@ -480,25 +480,31 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can delete sibling elements forward', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test(
+    'Can delete sibling elements forward',
+    {
+      tag: '@flaky',
+    },
+    async ({page, isPlainText}) => {
+      test.skip(isPlainText);
 
-    await focusEditor(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('# Title');
-    await page.keyboard.press('ArrowUp');
-    await deleteForward(page);
-    await assertHTML(
-      page,
-      html`
-        <h1
-          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Title</span>
-        </h1>
-      `,
-    );
-  });
+      await focusEditor(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('# Title');
+      await page.keyboard.press('ArrowUp');
+      await deleteForward(page);
+      await assertHTML(
+        page,
+        html`
+          <h1
+            class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Title</span>
+          </h1>
+        `,
+      );
+    },
+  );
 
   test('Can adjust tripple click selection', async ({
     page,

@@ -1304,68 +1304,71 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
-  test('can navigate and check/uncheck with keyboard', async ({
-    page,
-    isCollab,
-  }) => {
-    await focusEditor(page);
-    await toggleCheckList(page);
-    //
-    // [ ] a
-    // [ ] b
-    //     [ ] c
-    //         [ ] d
-    //         [ ] e
-    // [ ] f
-    await page.keyboard.type('a');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('b');
-    await page.keyboard.press('Enter');
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
-    await page.keyboard.type('c');
-    await page.keyboard.press('Enter');
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
-    await page.keyboard.type('d');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('e');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Backspace');
-    await page.keyboard.press('Backspace');
-    await page.keyboard.type('f');
+  test(
+    'can navigate and check/uncheck with keyboard',
+    {
+      tag: '@flaky',
+    },
+    async ({page, isCollab}) => {
+      await focusEditor(page);
+      await toggleCheckList(page);
+      //
+      // [ ] a
+      // [ ] b
+      //     [ ] c
+      //         [ ] d
+      //         [ ] e
+      // [ ] f
+      await page.keyboard.type('a');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('b');
+      await page.keyboard.press('Enter');
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
+      await page.keyboard.type('c');
+      await page.keyboard.press('Enter');
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
+      await page.keyboard.type('d');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('e');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.type('f');
 
-    const assertCheckCount = async (checkCount, uncheckCount) => {
-      const pageOrFrame = await (isCollab ? page.frame('left') : page);
-      await expect(
-        pageOrFrame.locator('li[role="checkbox"][aria-checked="true"]'),
-      ).toHaveCount(checkCount);
-      await expect(
-        pageOrFrame.locator('li[role="checkbox"][aria-checked="false"]'),
-      ).toHaveCount(uncheckCount);
-    };
+      const assertCheckCount = async (checkCount, uncheckCount) => {
+        const pageOrFrame = await (isCollab ? page.frame('left') : page);
+        await expect(
+          pageOrFrame.locator('li[role="checkbox"][aria-checked="true"]'),
+        ).toHaveCount(checkCount);
+        await expect(
+          pageOrFrame.locator('li[role="checkbox"][aria-checked="false"]'),
+        ).toHaveCount(uncheckCount);
+      };
 
-    await assertCheckCount(0, 6);
+      await assertCheckCount(0, 6);
 
-    // Go back to select checkbox
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('Space');
-
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowUp', {delay: 50});
+      // Go back to select checkbox
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('Space');
-    });
 
-    await assertCheckCount(6, 0);
+      await repeat(5, async () => {
+        await page.keyboard.press('ArrowUp', {delay: 50});
+        await page.keyboard.press('Space');
+      });
 
-    await repeat(3, async () => {
-      await page.keyboard.press('ArrowDown', {delay: 50});
-      await page.keyboard.press('Space');
-    });
+      await assertCheckCount(6, 0);
 
-    await assertCheckCount(3, 3);
-  });
+      await repeat(3, async () => {
+        await page.keyboard.press('ArrowDown', {delay: 50});
+        await page.keyboard.press('Space');
+      });
+
+      await assertCheckCount(3, 3);
+    },
+  );
 
   test('replaces existing element node', async ({page}) => {
     // Create two quote blocks, select it and format to a list

@@ -877,7 +877,9 @@ test.describe.parallel('Tables', () => {
 
   test(
     `Can style text using Table selection`,
-    {tag: '@flaky'},
+    {
+      tag: '@flaky',
+    },
     async ({page, isPlainText, isCollab}) => {
       await initialize({isCollab, page});
       test.skip(isPlainText);

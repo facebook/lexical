@@ -57,7 +57,14 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ElementNode {
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
   ['constructor']!: KlassConstructor<typeof ElementNode>;
   /** @internal */
@@ -69,6 +76,8 @@ export class ElementNode extends LexicalNode {
   /** @internal */
   __format: number;
   /** @internal */
+  __style: string;
+  /** @internal */
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
@@ -79,6 +88,7 @@ export class ElementNode extends LexicalNode {
     this.__last = null;
     this.__size = 0;
     this.__format = 0;
+    this.__style = '';
     this.__indent = 0;
     this.__dir = null;
   }
@@ -90,6 +100,10 @@ export class ElementNode extends LexicalNode {
   getFormatType(): ElementFormatType {
     const format = this.getFormat();
     return ELEMENT_FORMAT_TO_TYPE[format] || '';
+  }
+  getStyle(): string {
+    const self = this.getLatest();
+    return self.__style;
   }
   getIndent(): number {
     const self = this.getLatest();
@@ -356,6 +370,11 @@ export class ElementNode extends LexicalNode {
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    return this;
+  }
+  setStyle(style: string): this {
+    const self = this.getWritable();
+    self.__style = style || '';
     return this;
   }
   setIndent(indentLevel: number): this {

@@ -386,8 +386,8 @@ declare export class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T: ElementNode>(): T | null;
   getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): DecoratorNode<mixed> | ElementNode | null;
+  getTopLevelElementOrThrow(): DecoratorNode<mixed> | ElementNode;
   getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T: LexicalNode>(): T | null;
@@ -589,6 +589,8 @@ declare export class TextNode extends LexicalNode {
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
@@ -724,6 +726,8 @@ declare export class ElementNode extends LexicalNode {
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
@@ -790,6 +794,10 @@ declare export function $isElementNode(
 
 declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
+  // Not sure how to get flow to agree that the DecoratorNode<mixed> is compatible with this,
+  // so we have a less precise type than in TS
+  // getTopLevelElement(): this | ElementNode | null;
+  // getTopLevelElementOrThrow(): this | ElementNode;
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
   isInline(): boolean;

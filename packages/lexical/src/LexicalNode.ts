@@ -19,6 +19,7 @@ import {
   $isElementNode,
   $isRootNode,
   $isTextNode,
+  type DecoratorNode,
   ElementNode,
 } from '.';
 import {
@@ -376,14 +377,14 @@ export class LexicalNode {
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElement(): ElementNode | null {
+  getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
         invariant(
-          $isElementNode(node),
-          'Children of root nodes must be elements',
+          $isElementNode(node) || (node === this && $isDecoratorNode(node)),
+          'Children of root nodes must be elements or decorators',
         );
         return node;
       }
@@ -397,7 +398,7 @@ export class LexicalNode {
    * non-root ancestor of this node, or throws if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElementOrThrow(): ElementNode {
+  getTopLevelElementOrThrow(): ElementNode | DecoratorNode<unknown> {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(

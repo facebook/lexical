@@ -359,8 +359,14 @@ export class HeadingNode extends ElementNode {
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
+    const lastDesc = this.getLastDescendant();
+    const isAtEnd =
+      !lastDesc ||
+      (selection &&
+        selection.anchor.key === lastDesc.getKey() &&
+        anchorOffet === lastDesc.getTextContentSize());
     const newElement =
-      anchorOffet === this.getTextContentSize() || !selection
+      isAtEnd || !selection
         ? $createParagraphNode()
         : $createHeadingNode(this.getTag());
     const direction = this.getDirection();

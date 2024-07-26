@@ -1710,9 +1710,15 @@ export type TypeToNodeMap = Map<string, NodeMap>;
  * Compute a cached Map of node type to nodes for a frozen EditorState
  */
 const cachedNodeMaps = new WeakMap<EditorState, TypeToNodeMap>();
+const EMPTY_TYPE_TO_NODE_MAP: TypeToNodeMap = new Map();
 export function getCachedTypeToNodeMap(
   editorState: EditorState,
 ): TypeToNodeMap {
+  // If this is a new Editor it may have a writable this._editorState
+  // with only a 'root' entry.
+  if (!editorState._readOnly && editorState.isEmpty()) {
+    return EMPTY_TYPE_TO_NODE_MAP;
+  }
   invariant(
     editorState._readOnly,
     'getCachedTypeToNodeMap called with a writable EditorState',
@@ -1751,12 +1757,14 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
     if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
       mutableNode.__textFormat = latestNode.__textFormat;
+      mutableNode.__textStyle = latestNode.__textStyle;
     }
     mutableNode.__first = latestNode.__first;
     mutableNode.__last = latestNode.__last;
     mutableNode.__size = latestNode.__size;
     mutableNode.__indent = latestNode.__indent;
     mutableNode.__format = latestNode.__format;
+    mutableNode.__style = latestNode.__style;
     mutableNode.__dir = latestNode.__dir;
   } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
     mutableNode.__format = latestNode.__format;

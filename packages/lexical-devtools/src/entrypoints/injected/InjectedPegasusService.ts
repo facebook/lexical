@@ -6,13 +6,21 @@
  *
  */
 
-import {generateContent, LexicalCommandLog} from '@lexical/devtools-core';
+import {
+  createNodeTreeFromLexicalNode,
+  generateContent,
+  getTreeNodePropDetails,
+  LexicalCommandLog,
+  prepareEditorSelection,
+} from '@lexical/devtools-core';
 import {IPegasusRPCService, PegasusRPCMessage} from '@webext-pegasus/rpc';
 import {LexicalEditor} from 'lexical';
+import {flattenTree, INode} from 'react-accessible-treeview';
 import {StoreApi} from 'zustand';
 
+import {NodeOverlay} from '../../components/NodeOverlay';
 import {ElementPicker} from '../../element-picker';
-import {readEditorState} from '../../lexicalForExtension';
+import {$getRoot, readEditorState} from '../../lexicalForExtension';
 import {deserializeEditorState} from '../../serializeEditorState';
 import {ExtensionState} from '../../store';
 import {SerializedRawEditorState} from '../../types';
@@ -33,6 +41,7 @@ export class InjectedPegasusService
   implements IPegasusRPCService<InjectedPegasusService>
 {
   private pickerActive: ElementPicker | null = null;
+  private nodeOverlay: NodeOverlay | null = null;
 
   constructor(
     private readonly tabID: number,
@@ -91,6 +100,89 @@ export class InjectedPegasusService
     } else {
       this.activatePicker();
     }
+  }
+
+  /**
+   * Generates content for a collapsible tree view
+   * @param _message
+   * @param editorKey
+   * @param exportDOM
+   * @returns string
+   */
+  generateTreeViewNodes(
+    _message: PegasusRPCMessage,
+    editorKey: string,
+  ): string {
+    const editor = queryLexicalEditorByKey(editorKey);
+    if (editor == null) {
+      throw new Error(`Can't find editor with key: ${editorKey}`);
+    }
+
+    return readEditorState(editor, editor.getEditorState(), () => {
+      const editorState = editor.getEditorState();
+      return editorState.read(() => {
+        const initialNode = {
+          children: [createNodeTreeFromLexicalNode($getRoot())],
+          name: '',
+        };
+        return JSON.stringify({
+          selection: prepareEditorSelection(editorState),
+          tree: flattenTree(initialNode),
+        });
+      });
+    });
+  }
+
+  /**
+   * Highlights a node in the editor
+   * @param _message
+   * @param editorKey
+   * @param element
+   * @param isSelected
+   * @returns
+   */
+  highlightEditorNode(
+    _message: PegasusRPCMessage,
+    editorKey: string,
+    element: INode,
+    isSelected: boolean,
+  ): string | null {
+    const editor = queryLexicalEditorByKey(editorKey);
+    if (editor == null) {
+      throw new Error(`Can't find editor with key: ${editorKey}`);
+    }
+
+    return readEditorState(editor, editor.getEditorState(), () => {
+      const el = editor.getElementByKey(String(element.id));
+
+      if (el != null && el.parentNode != null) {
+        if (isSelected) {
+          if (!this.nodeOverlay) {
+            this.nodeOverlay = new NodeOverlay();
+          }
+          this.nodeOverlay.wrapElement(el, String(element.id));
+          return getTreeNodePropDetails(editor, String(element.id));
+        } else {
+          this.nodeOverlay?.removeForElement(String(element.id));
+        }
+      }
+      return null;
+    });
+  }
+
+  clearHighlightEditorNode(
+    _message: PegasusRPCMessage,
+    editorKey: string,
+  ): void {
+    const editor = queryLexicalEditorByKey(editorKey);
+    if (editor == null) {
+      throw new Error(`Can't find editor with key: ${editorKey}`);
+    }
+
+    readEditorState(editor, editor.getEditorState(), () => {
+      this.nodeOverlay?.remove();
+      this.nodeOverlay = null;
+    });
   }
 
   private activatePicker(): void {

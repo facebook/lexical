@@ -7,5 +7,6 @@
  */
 
 export * from './generateContent';
+export * from './tree-view/treeUtils';
 export * from './TreeView';
 export * from './useLexicalCommandsLog';

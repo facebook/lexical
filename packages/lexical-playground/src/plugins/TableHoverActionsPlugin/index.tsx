@@ -131,18 +131,25 @@ function TableHoverActionsContainer({
     250,
   );
 
+  const hideButtons = () => {
+    setShownColumn(false);
+    setShownRow(false);
+  };
+
   useEffect(() => {
     if (!shouldListenMouseMove) {
       return;
     }
 
     document.addEventListener('mousemove', debouncedOnMouseMove);
+    document.addEventListener('keydown', hideButtons);
 
     return () => {
       setShownRow(false);
       setShownColumn(false);
       debouncedOnMouseMove.cancel();
       document.removeEventListener('mousemove', debouncedOnMouseMove);
+      document.removeEventListener('keydown', hideButtons);
     };
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 

@@ -320,26 +320,21 @@ export function applyTableHandlers(
     if (!$isSelectionInTable(selection, tableNode)) {
       const nodes = selection ? selection.getNodes() : null;
       if (nodes) {
-        for (const node of nodes) {
-          // const table = nodes.find(
-          //   (node) =>
-          //     $isTableNode(node) && node.getKey() === tableObserver.tableNodeKey,
-          // );
-
-          if ($isTableNode(node)) {
-            const parentNode = node.getParent();
-            if (!parentNode) {
-              return false;
-            }
-            const nextNode = node.getNextSibling() || node.getPreviousSibling();
-            node.remove();
-            if (nextNode) {
-              nextNode.selectStart();
-            } else {
-              parentNode.selectStart();
-            }
+        const table = nodes.find(
+          (node) =>
+            $isTableNode(node) && node.getKey() === tableObserver.tableNodeKey,
+        );
+        if ($isTableNode(table)) {
+          const parentNode = table.getParent();
+          if (!parentNode) {
+            return false;
+          }
+          const nextNode = table.getNextSibling() || table.getPreviousSibling();
+          table.remove();
+          if (nextNode) {
+            nextNode.selectStart();
           } else {
-            node.remove();
+            parentNode.selectStart();
           }
         }
       }
@@ -362,6 +357,7 @@ export function applyTableHandlers(
         return false;
       }
     }
+
     return false;
   };
 

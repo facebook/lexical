@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18.18.0]
-        browser: ['chromium', 'firefox', 'webkit']
+        browser: ['webkit']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
@@ -56,7 +56,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18.18.0]
-        browser: ['chromium', 'firefox', 'webkit']
+        browser: ['webkit']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'
@@ -94,7 +94,7 @@ jobs:
   prod:
     strategy:
       matrix:
-        os: ['macos-latest']
+        os: ['ubuntu-latest']
         node-version: [18.18.0]
         browser: ['chromium']
         editor-mode: ['rich-text']
@@ -111,7 +111,7 @@ jobs:
   collab-prod:
     strategy:
       matrix:
-        os: ['macos-latest']
+        os: ['ubuntu-latest']
         node-version: [18.18.0]
         browser: ['chromium']
         editor-mode: ['rich-text-with-collab']
@@ -134,7 +134,7 @@ jobs:
         prod: [false]
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'macos-latest'
+      os: 'ubuntu-latest'
       browser: 'chromium'
       node-version: 18.18.0
       events-mode: 'modern-events'
@@ -151,7 +151,7 @@ jobs:
         events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'macos-latest'
+      os: 'ubuntu-latest'
       flaky: true
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}

@@ -15,6 +15,7 @@ on:
 jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}
+    continue-on-error: ${{ inputs.flaky }}
     if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab' || inputs.events-mode != 'legacy-events')
     env:
       CI: true

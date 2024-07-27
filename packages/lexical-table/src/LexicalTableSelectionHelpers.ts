@@ -317,23 +317,6 @@ export function applyTableHandlers(
   const $deleteCellHandler = (event: KeyboardEvent): boolean => {
     const selection = $getSelection();
 
-    if ($isTableSelection(selection)) {
-      event.preventDefault();
-      event.stopPropagation();
-      tableObserver.clearText();
-
-      return true;
-    } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findMatchingParent(
-        selection.anchor.getNode(),
-        (n) => $isTableCellNode(n),
-      );
-
-      if (!$isTableCellNode(tableCellNode)) {
-        return false;
-      }
-    }
-
     if (!$isSelectionInTable(selection, tableNode)) {
       const nodes = selection ? selection.getNodes() : null;
       if (nodes) {
@@ -361,6 +344,23 @@ export function applyTableHandlers(
         }
       }
       return true;
+    }
+
+    if ($isTableSelection(selection)) {
+      event.preventDefault();
+      event.stopPropagation();
+      tableObserver.clearText();
+
+      return true;
+    } else if ($isRangeSelection(selection)) {
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
+
+      if (!$isTableCellNode(tableCellNode)) {
+        return false;
+      }
     }
     return false;
   };

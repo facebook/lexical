@@ -325,20 +325,10 @@ export function applyTableHandlers(
             $isTableNode(node) && node.getKey() === tableObserver.tableNodeKey,
         );
         if ($isTableNode(table)) {
-          const parentNode = table.getParent();
-          if (!parentNode) {
-            return false;
-          }
-          const nextNode = table.getNextSibling() || table.getPreviousSibling();
           table.remove();
-          if (nextNode) {
-            nextNode.selectStart();
-          } else {
-            parentNode.selectStart();
-          }
         }
       }
-      return true;
+      return false;
     }
 
     if ($isTableSelection(selection)) {

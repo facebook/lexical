@@ -1247,6 +1247,30 @@ test.describe.parallel('Tables', () => {
     );
   });
 
+  test('Can delete all with node selection', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Text before');
+    await page.keyboard.press('Enter');
+    await insertSampleImage(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Text after');
+    await insertTable(page, 2, 3);
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
   test(`Horizontal rule inside cell`, async ({page, isPlainText, isCollab}) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);

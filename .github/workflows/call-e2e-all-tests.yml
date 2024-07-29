@@ -4,12 +4,27 @@ on:
   workflow_call:
 
 jobs:
-  mac:
+  mac-rich:
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+        browser: ['webkit', 'chromium', 'firefox']
+        editor-mode: ['rich-text']
+        events-mode: ['modern-events']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  mac-plain:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['webkit']
-        editor-mode: ['rich-text', 'plain-text']
+        editor-mode: ['plain-text']
         events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:

@@ -18,7 +18,6 @@ import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
 import {XmlText} from 'yjs';
 
-import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
 
 export type ClientID = number;
@@ -43,19 +42,28 @@ export type Binding = {
 };
 export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
 
-export function createBinding(
-  editor: LexicalEditor,
-  provider: Provider,
-  id: string,
-  doc: Doc | null | undefined,
-  docMap: Map<string, Doc>,
-  excludedProperties?: ExcludedProperties,
-): Binding {
+export type CreateBindingOptions = {
+  editor: LexicalEditor;
+  id: string;
+  getXmlText?: (ydoc: Doc) => XmlText;
+  doc: Doc | null | undefined;
+  docMap: Map<string, Doc>;
+  excludedProperties?: ExcludedProperties;
+};
+
+export function createBinding({
+  editor,
+  id,
+  getXmlText = (ydoc) => ydoc.get('root', XmlText) as XmlText,
+  doc,
+  docMap,
+  excludedProperties,
+}: CreateBindingOptions): Binding {
   invariant(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  const rootXmlText = doc.get('root', XmlText) as XmlText;
+  const rootXmlText = getXmlText(doc);
   const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,
     null,

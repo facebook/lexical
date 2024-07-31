@@ -339,13 +339,15 @@ declare export function setLocalStateFocus(
   focusing: boolean,
 ): void;
 
-declare export function createBinding(
+declare export type BindingOptions = {
   editor: LexicalEditor,
-  provider: Provider,
   id: string,
+  getXmlText: (ydoc: Doc) => XmlText,
   doc: ?Doc,
-  docMap: Map<string, Doc>,
-): Binding;
+  docMap: Map<string, Doc>
+}
+
+declare export function createBinding(options: BindingOptions): Binding;
 
 declare export function syncCursorPositions(
   binding: Binding,

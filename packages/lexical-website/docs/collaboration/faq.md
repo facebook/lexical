@@ -83,7 +83,7 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
     const doc = new Doc();
     const docMap = new Map([[id, doc]]);
     const provider = createNoOpProvider();
-    const binding = createBinding(editor, provider, id, doc, docMap);
+    const binding = createBinding({ editor, id, doc, docMap });
 
     const unsubscribe = registerCollaborationListeners(editor, provider, binding);
 

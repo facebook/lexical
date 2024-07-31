@@ -6,7 +6,7 @@
  *
  */
 
-import type {Doc} from 'yjs';
+import type {Doc, XmlText} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -45,6 +45,7 @@ type Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  getXmlText?: (doc: Doc) => XmlText;
 };
 
 export function CollaborationPlugin({
@@ -57,6 +58,7 @@ export function CollaborationPlugin({
   initialEditorState,
   excludedProperties,
   awarenessData,
+  getXmlText,
 }: Props): JSX.Element {
   const isBindingInitialized = useRef(false);
   const isProviderInitialized = useRef(false);
@@ -110,20 +112,20 @@ export function CollaborationPlugin({
 
     isBindingInitialized.current = true;
 
-    const newBinding = createBinding(
+    const newBinding = createBinding({
+      doc: doc || yjsDocMap.get(id),
+      docMap: yjsDocMap,
       editor,
-      provider,
-      id,
-      doc || yjsDocMap.get(id),
-      yjsDocMap,
       excludedProperties,
-    );
+      getXmlText,
+      id,
+    });
     setBinding(newBinding);
 
     return () => {
       newBinding.root.destroy(newBinding);
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);
+  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, getXmlText]);
 
   if (!provider || !binding) {
     return <></>;

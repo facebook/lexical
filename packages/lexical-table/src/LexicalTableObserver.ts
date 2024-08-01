@@ -151,6 +151,7 @@ export class TableObserver {
 
       this.table = getTable(tableElement);
       observer.observe(tableElement, {
+        attributes: true,
         childList: true,
         subtree: true,
       });

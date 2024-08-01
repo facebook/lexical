@@ -112,14 +112,15 @@ export function CollaborationPlugin({
 
     isBindingInitialized.current = true;
 
-    const newBinding = createBinding({
-      doc: doc || yjsDocMap.get(id),
-      docMap: yjsDocMap,
+    const newBinding = createBinding(
       editor,
+      provider,
+      id,
+      doc || yjsDocMap.get(id),
+      yjsDocMap,
       excludedProperties,
       getXmlText,
-      id,
-    });
+    );
     setBinding(newBinding);
 
     return () => {

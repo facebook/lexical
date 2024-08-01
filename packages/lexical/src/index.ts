@@ -181,6 +181,7 @@ export {
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
+  isLexicalEditor,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   resetRandomKey,

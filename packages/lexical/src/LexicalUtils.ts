@@ -149,14 +149,22 @@ export function isSelectionWithinEditor(
   }
 }
 
+/**
+ * @returns true if the given argument is a LexicalEditor instance from this build of Lexical
+ */
+export function isLexicalEditor(editor: unknown): editor is LexicalEditor {
+  // Check instanceof to prevent issues with multiple embedded Lexical installations
+  return editor instanceof LexicalEditor;
+}
+
 export function getNearestEditorFromDOMNode(
   node: Node | null,
 ): LexicalEditor | null {
   let currentNode = node;
   while (currentNode != null) {
     // @ts-expect-error: internal field
-    const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null) {
+    const editor: unknown = currentNode.__lexicalEditor;
+    if (isLexicalEditor(editor)) {
       return editor;
     }
     currentNode = getParentElement(currentNode);

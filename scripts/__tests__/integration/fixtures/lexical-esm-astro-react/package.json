@@ -26,6 +26,5 @@
   "devDependencies": {
     "@playwright/test": "^1.43.1"
   },
-  "sideEffects": false,
-  "exports": {}
+  "sideEffects": false
 }

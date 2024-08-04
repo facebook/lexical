@@ -1753,8 +1753,8 @@ button.item.dropdown-item-active i {
   display: block;
   position: absolute;
   top: -2px;
-  height: 18px;
-  border-left: 1px solid black;
+  width: 20px;
+  border-top: 1px solid black;
   animation: CursorBlink 1.1s steps(2, start) infinite;
 }
 

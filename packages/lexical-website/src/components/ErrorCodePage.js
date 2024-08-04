@@ -7,43 +7,50 @@
  */
 
 import BrowserOnly from '@docusaurus/BrowserOnly';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Layout from '@theme/Layout';
-import {useMemo} from 'react';
-
-import codes from '../../../../../../scripts/error-codes/codes.json';
+import {useEffect, useMemo, useState} from 'react';
 
 export default function ErrorCodePage() {
-  const {siteConfig} = useDocusaurusContext();
   return (
-    <Layout description={siteConfig.tagline}>
-      <div className="flex flex-col pb-8 pt-4">
-        <h1>Error Code</h1>
-        <p>
-          In the minified production build of Lexical, we avoid sending down
-          full error messages in order to reduce the number of bytes sent over
-          the wire.
-        </p>
+    <div className="flex flex-col pb-8 pt-4">
+      <p>
+        In the minified production build of Lexical, we avoid sending down full
+        error messages in order to reduce the number of bytes sent over the
+        wire.
+      </p>
 
-        <p>
-          We highly recommend using the development build locally when debugging
-          your app since it tracks additional debug info and provides helpful
-          warnings about potential problems in your apps, but if you encounter
-          an exception while using the production build, this page will
-          reassemble the original text of the error.
-        </p>
+      <p>
+        We highly recommend using the development build locally when debugging
+        your app since it tracks additional debug info and provides helpful
+        warnings about potential problems in your apps, but if you encounter an
+        exception while using the production build, this page will reassemble
+        the original text of the error.
+      </p>
 
-        <BrowserOnly>{() => <ErrorFinder />}</BrowserOnly>
-      </div>
-    </Layout>
+      <BrowserOnly>{() => <ErrorFinder />}</BrowserOnly>
+    </div>
   );
 }
 
 function ErrorFinder() {
+  const [codes, setCodes] = useState(null);
+
+  useEffect(() => {
+    try {
+      if (!process.env.FB_INTERNAL) {
+        import('../../../../scripts/error-codes/codes.json').then(setCodes);
+      }
+    } catch (e) {
+      throw e;
+    }
+  }, []);
+
   const error = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code === null) {
+      return null;
+    }
+    if (codes == null) {
       return null;
     }
     let description = codes[code];
@@ -54,7 +61,7 @@ function ErrorFinder() {
       description = description.replace('%s', value);
     }
     return {code, description};
-  }, []);
+  }, [codes]);
 
   if (error !== null) {
     return (

@@ -9,11 +9,13 @@ on:
       editor-mode: {required: true, type: string}
       events-mode: {required: true, type: string}
       prod: {required: false, type: boolean}
+      flaky: {required: false, type: boolean} # Defaults to false: dont run flaky
       override-react-version: {required: false, type: string}
 
 jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}
+    continue-on-error: ${{ inputs.flaky }}
     if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab' || inputs.events-mode != 'legacy-events')
     env:
       CI: true
@@ -22,7 +24,7 @@ jobs:
       OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
       cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
       test_results_path: ${{ inputs.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
-      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
+      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }} ${{ inputs.flaky && '-- -- --grep "@flaky"' || '-- -- --grep-invert "@flaky"' }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ inputs.node-version }}

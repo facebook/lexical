@@ -23,7 +23,9 @@ export default defineBackground(() => {
 
   // Store initialization so other extension surfaces can use it
   // as all changes go through background SW
-  initExtensionStoreBackend();
+  initExtensionStoreBackend().catch((err) =>
+    console.error('Failed to initialize extension store', err),
+  );
 
   ActionIconWatchdog.start(extensionStore).catch(console.error);
 });

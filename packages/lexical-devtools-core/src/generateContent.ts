@@ -284,7 +284,9 @@ function printNode(
     return `ids: [ ${node.getIDs().join(', ')} ]`;
   } else if ($isParagraphNode(node)) {
     const formatText = printTextFormatProperties(node);
-    return formatText !== '' ? `{ ${formatText} }` : '';
+    let paragraphData = formatText !== '' ? `{ ${formatText} }` : '';
+    paragraphData += node.__style ? `(${node.__style})` : '';
+    return paragraphData;
   } else {
     return '';
   }
@@ -445,7 +447,7 @@ function $printSelectedCharsLine({
   ];
   const unselectedChars = Array(start + 1).fill(' ');
   const selectedChars = Array(end - start).fill(SYMBOLS.selectedChar);
-  const paddingLength = typeDisplay.length + 3; // 2 for the spaces around + 1 for the double quote.
+  const paddingLength = typeDisplay.length + 2; // 1 for the space after + 1 for the double quote.
 
   const nodePrintSpaces = Array(nodeKeyDisplay.length + paddingLength).fill(
     ' ',

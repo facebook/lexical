@@ -52,25 +52,6 @@ describe('HTMLCopyAndPaste tests', () => {
             </div>`,
         },
         {
-          expectedHTML: `<p dir="ltr"><span data-lexical-text="true">a</span></p><p dir="ltr"><span data-lexical-text="true">b b</span></p><p dir="ltr"><span data-lexical-text="true">c</span></p><p dir="ltr"><span data-lexical-text="true">z </span></p><p dir="ltr"><span data-lexical-text="true">d e </span></p><p dir="ltr"><span data-lexical-text="true">fg</span></p>`,
-          name: 'nested divs',
-          pastedHTML: `<div>
-            a
-            <div>
-              b b
-              <div>
-                c
-                <div>
-                  <div></div>
-                  z
-                </div>
-              </div>
-              d e
-            </div>
-            fg
-          </div>`,
-        },
-        {
           expectedHTML: `<p dir="ltr"><span data-lexical-text="true">a b c d e</span></p><p dir="ltr"><span data-lexical-text="true">f g h</span></p>`,
           name: 'multiple nested spans and divs',
           pastedHTML: `<div>

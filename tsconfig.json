@@ -64,7 +64,7 @@
         "./packages/lexical-react/src/LexicalCollaborationContext.ts"
       ],
       "@lexical/react/LexicalCollaborationPlugin": [
-        "./packages/lexical-react/src/LexicalCollaborationPlugin.ts"
+        "./packages/lexical-react/src/LexicalCollaborationPlugin.tsx"
       ],
       "@lexical/react/LexicalComposer": [
         "./packages/lexical-react/src/LexicalComposer.tsx"
@@ -80,6 +80,9 @@
       ],
       "@lexical/react/LexicalDecoratorBlockNode": [
         "./packages/lexical-react/src/LexicalDecoratorBlockNode.ts"
+      ],
+      "@lexical/react/LexicalDraggableBlockPlugin": [
+        "./packages/lexical-react/src/LexicalDraggableBlockPlugin.tsx"
       ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "./packages/lexical-react/src/LexicalEditorRefPlugin.tsx"

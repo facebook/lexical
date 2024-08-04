@@ -13,7 +13,9 @@
 const {github: lightCodeTheme, dracula: darkCodeTheme} =
   require('prism-react-renderer').themes;
 const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
-const {packagesManager} = require('../../scripts/shared/packagesManager');
+const {packagesManager} = process.env.FB_INTERNAL
+  ? {}
+  : require('../../scripts/shared/packagesManager');
 const path = require('node:path');
 
 const TITLE = 'Lexical';
@@ -170,15 +172,20 @@ const sidebarItemsGenerator = async ({
 /** @type {Partial<import('docusaurus-plugin-typedoc/dist/types').PluginOptions>} */
 const docusaurusPluginTypedocConfig = {
   ...sourceLinkOptions(),
-  entryPoints: packagesManager
-    .getPublicPackages()
-    .flatMap((pkg) =>
-      pkg
-        .getExportedNpmModuleEntries()
-        .map((entry) => [
-          path.relative(__dirname, pkg.resolve('src', entry.sourceFileName)),
-        ]),
-    ),
+  entryPoints: process.env.FB_INTERNAL
+    ? []
+    : packagesManager
+        .getPublicPackages()
+        .flatMap((pkg) =>
+          pkg
+            .getExportedNpmModuleEntries()
+            .map((entry) => [
+              path.relative(
+                __dirname,
+                pkg.resolve('src', entry.sourceFileName),
+              ),
+            ]),
+        ),
   excludeInternal: true,
   plugin: [
     './src/plugins/lexical-typedoc-plugin-no-inherit',
@@ -219,7 +226,6 @@ const config = {
   favicon: 'img/favicon.ico',
 
   markdown: {
-    format: 'md',
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
         'https://stackblitz.com/github/facebook/lexical/tree/main/',
@@ -233,21 +239,23 @@ const config = {
   onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
-    [
-      './plugins/package-docs',
-      /** @type {import('./plugins/package-docs').PackageDocsPluginOptions} */
-      {
-        baseDir: path.resolve(__dirname, '..'),
-        editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,
-        packageFrontMatter: {
-          lexical: [
-            'sidebar_position: 1',
-            'sidebar_label: lexical (core)',
-          ].join('\n'),
-        },
-        targetDir: path.resolve(__dirname, 'docs/packages'),
-      },
-    ],
+    process.env.FB_INTERNAL
+      ? null
+      : [
+          './plugins/package-docs',
+          /** @type {import('./plugins/package-docs').PackageDocsPluginOptions} */
+          {
+            baseDir: path.resolve(__dirname, '..'),
+            editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,
+            packageFrontMatter: {
+              lexical: [
+                'sidebar_position: 1',
+                'sidebar_label: lexical (core)',
+              ].join('\n'),
+            },
+            targetDir: path.resolve(__dirname, 'docs/packages'),
+          },
+        ],
     './plugins/webpack-buffer',
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
@@ -260,13 +268,12 @@ const config = {
         name: 'docusaurus-tailwindcss',
       };
     },
-  ],
+  ].filter((plugin) => plugin != null),
 
   presets: [
     [
-      'classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
+      {
         blog: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/blog/`,
           showReadingTime: true, // TODO: Update when directory finalized
@@ -281,10 +288,11 @@ const config = {
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },
+        staticDocsProject: 'lexical',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-      }),
+      },
     ],
   ],
 
@@ -377,18 +385,29 @@ const config = {
             sidebarId: 'docs',
             type: 'docSidebar',
           },
-          {
-            label: 'API',
-            position: 'left',
-            sidebarId: 'api',
-            type: 'docSidebar',
-          },
+          process.env.FB_INTERNAL
+            ? {
+                href: 'https://lexical.dev/docs/api/',
+                label: 'API',
+                position: 'left',
+              }
+            : {
+                label: 'API',
+                position: 'left',
+                sidebarId: 'api',
+                type: 'docSidebar',
+              },
 
           {label: 'Community', position: 'left', to: '/community'},
           {
             href: 'https://facebook.github.io/lexical-ios/',
             label: 'iOS',
             position: 'left',
+          },
+          {
+            label: 'Gallery',
+            position: 'left',
+            to: '/gallery',
           },
           {
             href: GITHUB_REPO_URL,
@@ -400,7 +419,7 @@ const config = {
             label: 'iOS GitHub',
             position: 'right',
           },
-        ],
+        ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
           src: 'img/logo.svg',

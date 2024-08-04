@@ -24,6 +24,9 @@ import {
 
 import {isEmptyParagraph, transformersByType} from './utils';
 
+/**
+ * Renders string from markdown. The selection is moved to the start after the operation.
+ */
 export function createMarkdownExport(
   transformers: Array<Transformer>,
   shouldPreserveNewLines: boolean = false,

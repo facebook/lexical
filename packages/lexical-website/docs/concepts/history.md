@@ -1,7 +1,6 @@
-# Lexical's useHistory adds support for Undo and Redo
+# useHistory
 
-Part of undo and redo requires supporting coalescing of certain dynamic operations such as continuous typing.
-The below provides background information regarding the continuous typing undo coalescing feature.
+Lexical's useHistory adds support for Undo and Redo. Part of undo and redo requires supporting coalescing of certain dynamic operations such as continuous typing. The below provides background information regarding the continuous typing undo coalescing feature.
 
 **Undo Coalescing of Typed Text**
 

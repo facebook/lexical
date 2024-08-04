@@ -582,6 +582,23 @@ export class ElementNode extends LexicalNode {
   ): boolean {
     return false;
   }
+
+  /**
+   * Determines whether this node, when empty, can merge with a first block
+   * of nodes being inserted.
+   *
+   * This method is specifically called in {@link RangeSelection.insertNodes}
+   * to determine merging behavior during nodes insertion.
+   *
+   * @example
+   * // In a ListItemNode or QuoteNode implementation:
+   * canMergeWhenEmpty(): true {
+   *  return true;
+   * }
+   */
+  canMergeWhenEmpty(): boolean {
+    return false;
+  }
 }
 
 export function $isElementNode(

@@ -329,16 +329,10 @@ export function applyTableHandlers(
           if (!parentNode) {
             return false;
           }
-          const nextNode = table.getNextSibling() || table.getPreviousSibling();
           table.remove();
-          if (nextNode) {
-            nextNode.selectStart();
-          } else {
-            parentNode.selectStart();
-          }
         }
       }
-      return true;
+      return false;
     }
 
     if ($isTableSelection(selection)) {

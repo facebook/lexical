@@ -121,45 +121,36 @@ export function getActiveEditor(): LexicalEditor {
 }
 
 function collectBuildInformation(): string {
-  if (__DEV__) {
-    let compatibleEditors = 0;
-    const incompatibleEditors = new Set<string>();
-    const thisVersion = LexicalEditor.version;
-    if (typeof window !== 'undefined') {
-      for (const node of document.querySelectorAll('[contenteditable]')) {
-        const editor = getEditorPropertyFromDOMNode(node);
-        if (isLexicalEditor(editor)) {
-          compatibleEditors += 1;
-        } else if (editor) {
-          const constructor =
+  let compatibleEditors = 0;
+  const incompatibleEditors = new Set<string>();
+  const thisVersion = LexicalEditor.version;
+  if (typeof window !== 'undefined') {
+    for (const node of document.querySelectorAll('[contenteditable]')) {
+      const editor = getEditorPropertyFromDOMNode(node);
+      if (isLexicalEditor(editor)) {
+        compatibleEditors++;
+      } else if (editor) {
+        let version = String(
+          (
             editor.constructor as typeof editor['constructor'] &
-              Record<string, unknown>;
-          let version =
-            typeof constructor.version === 'string'
-              ? constructor.version
-              : '<0.17.1';
-          if (version === thisVersion) {
-            version +=
-              ' (separately built, likely a bundler configuration issue)';
-          }
-          incompatibleEditors.add(version);
+              Record<string, unknown>
+          ).version || '<0.17.1',
+        );
+        if (version === thisVersion) {
+          version +=
+            ' (separately built, likely a bundler configuration issue)';
         }
+        incompatibleEditors.add(version);
       }
     }
-    const output = [
-      ` Detected on the page: ${compatibleEditors} compatible editor(s) with version ${thisVersion}`,
-    ];
-    if (incompatibleEditors.size > 0) {
-      output.push(
-        ` and incompatible editors with versions ${Array.from(
-          incompatibleEditors,
-        ).join(', ')}`,
-      );
-    }
-    return output.join('');
-  } else {
-    return '';
   }
+  let output = ` Detected on the page: ${compatibleEditors} compatible editor(s) with version ${thisVersion}`;
+  if (incompatibleEditors.size) {
+    output += ` and incompatible editors with versions ${Array.from(
+      incompatibleEditors,
+    ).join(', ')}`;
+  }
+  return output;
 }
 
 export function internalGetActiveEditor(): LexicalEditor | null {

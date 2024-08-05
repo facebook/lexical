@@ -1684,6 +1684,26 @@ export function INTERNAL_$isBlock(
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
+export function INTERNAL_$isParentLeafElement(
+  node: LexicalNode,
+): node is ElementNode | DecoratorNode<unknown> {
+  if ($isRootNode(node) || ($isDecoratorNode(node) && !node.isInline())) {
+    return true;
+  }
+  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
+    return false;
+  }
+
+  const firstChild = node.getFirstChild();
+  const isLeafElement =
+    firstChild === null ||
+    $isLineBreakNode(firstChild) ||
+    $isTextNode(firstChild) ||
+    firstChild.isInline();
+
+  return isLeafElement;
+}
+
 export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,
   predicate: (ancestor: LexicalNode) => ancestor is NodeType,

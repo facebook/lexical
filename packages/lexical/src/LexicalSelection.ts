@@ -56,6 +56,7 @@ import {
   getElementByKeyOrThrow,
   getTextNodeOffset,
   INTERNAL_$isBlock,
+  INTERNAL_$isParentLeafElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
@@ -1220,7 +1221,10 @@ export class RangeSelection implements BaseSelection {
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
-    const firstBlock = $getAncestor(firstPoint.getNode(), INTERNAL_$isBlock)!;
+    const firstBlock = $getAncestor(
+      firstPoint.getNode(),
+      INTERNAL_$isParentLeafElement,
+    )!;
 
     const last = nodes[nodes.length - 1]!;
 

@@ -2750,7 +2750,7 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let node = anchor.getNode();
   let offset = anchor.offset;
 
-  while (!INTERNAL_$isBlock(node)) {
+  while (!INTERNAL_$isParentLeafElement(node)) {
     [node, offset] = $splitNodeAtPoint(node, offset);
   }
 

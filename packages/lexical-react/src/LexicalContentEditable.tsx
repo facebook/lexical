@@ -10,7 +10,7 @@ import type {Props as ElementProps} from './shared/LexicalContentEditableElement
 import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
+import {useLayoutEffect, useState} from 'react';
 
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
@@ -30,12 +30,7 @@ export type Props = Omit<ElementProps, 'editor'> & {
       }
   );
 
-export const ContentEditable = forwardRef(ContentEditableImpl);
-
-function ContentEditableImpl(
-  props: Props,
-  ref: Ref<HTMLDivElement>,
-): JSX.Element {
+export function ContentEditable(props: Props): JSX.Element {
   const {placeholder, editor__DEPRECATED, ...rest} = props;
   // editor__DEPRECATED will always be defined for non MLC surfaces
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -43,7 +38,7 @@ function ContentEditableImpl(
 
   return (
     <>
-      <ContentEditableElement editor={editor} {...rest} ref={ref} />
+      <ContentEditableElement editor={editor} {...rest} />
       {placeholder != null && (
         <Placeholder editor={editor} content={placeholder} />
       )}

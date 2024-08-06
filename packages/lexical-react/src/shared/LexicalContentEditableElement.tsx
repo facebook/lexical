@@ -9,7 +9,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
-import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';
+import {Ref, useCallback, useMemo, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {mergeRefs} from './mergeRefs';
@@ -28,33 +28,32 @@ export type Props = {
   ariaRequired?: React.AriaAttributes['aria-required'];
   autoCapitalize?: HTMLDivElement['autocapitalize'];
   'data-testid'?: string | null | undefined;
+  contentEditableRef?: Ref<HTMLDivElement>;
 } & Omit<React.AllHTMLAttributes<HTMLDivElement>, 'placeholder'>;
 
-function ContentEditableElementImpl(
-  {
-    editor,
-    ariaActiveDescendant,
-    ariaAutoComplete,
-    ariaControls,
-    ariaDescribedBy,
-    ariaExpanded,
-    ariaLabel,
-    ariaLabelledBy,
-    ariaMultiline,
-    ariaOwns,
-    ariaRequired,
-    autoCapitalize,
-    className,
-    id,
-    role = 'textbox',
-    spellCheck = true,
-    style,
-    tabIndex,
-    'data-testid': testid,
-    ...rest
-  }: Props,
-  ref: Ref<HTMLDivElement>,
-): JSX.Element {
+function ContentEditableElementImpl({
+  editor,
+  ariaActiveDescendant,
+  ariaAutoComplete,
+  ariaControls,
+  ariaDescribedBy,
+  ariaExpanded,
+  ariaLabel,
+  ariaLabelledBy,
+  ariaMultiline,
+  ariaOwns,
+  ariaRequired,
+  autoCapitalize,
+  className,
+  id,
+  role = 'textbox',
+  spellCheck = true,
+  style,
+  tabIndex,
+  'data-testid': testid,
+  contentEditableRef,
+  ...rest
+}: Props): JSX.Element {
   const [isEditable, setEditable] = useState(editor.isEditable());
 
   const handleRef = useCallback(
@@ -73,7 +72,10 @@ function ContentEditableElementImpl(
     },
     [editor],
   );
-  const mergedRefs = useMemo(() => mergeRefs(ref, handleRef), [handleRef, ref]);
+  const mergedRefs = useMemo(
+    () => mergeRefs(contentEditableRef, handleRef),
+    [handleRef, contentEditableRef],
+  );
 
   useLayoutEffect(() => {
     setEditable(editor.isEditable());
@@ -112,4 +114,4 @@ function ContentEditableElementImpl(
   );
 }
 
-export const ContentEditableElement = forwardRef(ContentEditableElementImpl);
+export const ContentEditableElement = ContentEditableElementImpl;

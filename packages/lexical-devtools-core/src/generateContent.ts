@@ -161,8 +161,8 @@ export function generateContent(
   } else {
     res += '\n  └ None dispatched.';
   }
-
-  res += '\n\n editor:';
+  const {version} = editor.constructor;
+  res += `\n\n editor${version ? ` (v${version})` : ''}:`;
   res += `\n  └ namespace ${editorConfig.namespace}`;
   if (compositionKey !== null) {
     res += `\n  └ compositionKey ${compositionKey}`;

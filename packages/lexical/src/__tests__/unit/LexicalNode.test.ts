@@ -9,7 +9,11 @@
 import {
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
+  $isElementNode,
   $isRangeSelection,
+  DecoratorNode,
+  ElementNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -44,6 +48,40 @@ class TestNode extends LexicalNode {
 
   exportJSON() {
     return {type: 'test', version: 1};
+  }
+}
+
+class InlineDecoratorNode extends DecoratorNode<string> {
+  static getType(): string {
+    return 'inline-decorator';
+  }
+
+  static clone(): InlineDecoratorNode {
+    return new InlineDecoratorNode();
+  }
+
+  static importJSON() {
+    return new InlineDecoratorNode();
+  }
+
+  exportJSON() {
+    return {type: 'inline-decorator', version: 1};
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('span');
+  }
+
+  isInline(): true {
+    return true;
+  }
+
+  isParentRequired(): true {
+    return true;
+  }
+
+  decorate() {
+    return 'inline-decorator';
   }
 }
 
@@ -266,6 +304,56 @@ describe('LexicalNode tests', () => {
         await Promise.resolve().then();
       });
 
+      test('LexicalNode.isSelected(): with inline decorator node', async () => {
+        const {editor} = testEnv;
+        let paragraphNode1: ParagraphNode;
+        let paragraphNode2: ParagraphNode;
+        let inlineDecoratorNode: InlineDecoratorNode;
+
+        editor.update(() => {
+          paragraphNode1 = $createParagraphNode();
+          paragraphNode2 = $createParagraphNode();
+          inlineDecoratorNode = new InlineDecoratorNode();
+          paragraphNode1.append(inlineDecoratorNode);
+          $getRoot().append(paragraphNode1, paragraphNode2);
+          paragraphNode1.selectEnd();
+          const selection = $getSelection();
+
+          if ($isRangeSelection(selection)) {
+            expect(selection.anchor.getNode().is(paragraphNode1)).toBe(true);
+          }
+        });
+
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            expect(selection.anchor.key).toBe(paragraphNode1.getKey());
+
+            selection.focus.set(paragraphNode2.getKey(), 1, 'element');
+          }
+        });
+
+        await Promise.resolve().then();
+
+        editor.getEditorState().read(() => {
+          expect(inlineDecoratorNode.isSelected()).toBe(false);
+        });
+
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.anchor.set(paragraphNode2.getKey(), 0, 'element');
+            selection.focus.set(paragraphNode1.getKey(), 1, 'element');
+          }
+        });
+
+        await Promise.resolve().then();
+
+        editor.getEditorState().read(() => {
+          expect(inlineDecoratorNode.isSelected()).toBe(false);
+        });
+      });
+
       test('LexicalNode.getKey()', async () => {
         expect(textNode.getKey()).toEqual(textNode.__key);
       });
@@ -315,6 +403,30 @@ describe('LexicalNode tests', () => {
           expect(paragraphNode.getTopLevelElement()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElement()).toThrow();
+        await editor.update(() => {
+          const node = new InlineDecoratorNode();
+          expect(node.getTopLevelElement()).toBe(null);
+          $getRoot().append(node);
+          expect(node.getTopLevelElement()).toBe(node);
+        });
+        editor.getEditorState().read(() => {
+          const elementNodes: ElementNode[] = [];
+          const decoratorNodes: DecoratorNode<unknown>[] = [];
+          for (const child of $getRoot().getChildren()) {
+            expect(child.getTopLevelElement()).toBe(child);
+            if ($isElementNode(child)) {
+              elementNodes.push(child);
+            } else if ($isDecoratorNode(child)) {
+              decoratorNodes.push(child);
+            } else {
+              throw new Error(
+                'Expecting all children to be ElementNode or DecoratorNode',
+              );
+            }
+          }
+          expect(decoratorNodes).toHaveLength(1);
+          expect(elementNodes).toHaveLength(1);
+        });
       });
 
       test('LexicalNode.getTopLevelElementOrThrow()', async () => {
@@ -330,6 +442,12 @@ describe('LexicalNode tests', () => {
           expect(paragraphNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElementOrThrow()).toThrow();
+        await editor.update(() => {
+          const node = new InlineDecoratorNode();
+          expect(() => node.getTopLevelElementOrThrow()).toThrow();
+          $getRoot().append(node);
+          expect(node.getTopLevelElementOrThrow()).toBe(node);
+        });
       });
 
       test('LexicalNode.getParents()', async () => {
@@ -1206,7 +1324,7 @@ describe('LexicalNode tests', () => {
     },
     {
       namespace: '',
-      nodes: [LexicalNode, TestNode],
+      nodes: [LexicalNode, TestNode, InlineDecoratorNode],
       theme: {},
     },
   );

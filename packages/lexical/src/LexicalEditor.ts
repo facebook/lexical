@@ -562,6 +562,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 export class LexicalEditor {
   ['constructor']!: KlassConstructor<typeof LexicalEditor>;
 
+  /** The version with build identifiers for this editor (since 0.17.1) */
+  static version: string | undefined;
+
   /** @internal */
   _headless: boolean;
   /** @internal */
@@ -903,7 +906,7 @@ export class LexicalEditor {
     klass: Klass<LexicalNode>,
   ): void {
     const prevEditorState = this._editorState;
-    const nodeMap = getCachedTypeToNodeMap(this._editorState).get(
+    const nodeMap = getCachedTypeToNodeMap(prevEditorState).get(
       klass.getType(),
     );
     if (!nodeMap) {
@@ -1284,3 +1287,5 @@ export class LexicalEditor {
     };
   }
 }
+
+LexicalEditor.version = process.env.LEXICAL_VERSION;

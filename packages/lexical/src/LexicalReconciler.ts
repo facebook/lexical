@@ -51,6 +51,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
 let subTreeTextFormat: number | null = null;
+let subTreeTextStyle: string = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
@@ -288,8 +289,13 @@ function $createChildren(
   for (; startIndex <= endIndex; ++startIndex) {
     $createNode(children[startIndex], dom, insertDOM);
     const node = activeNextNodeMap.get(children[startIndex]);
-    if (node !== null && subTreeTextFormat === null && $isTextNode(node)) {
-      subTreeTextFormat = node.getFormat();
+    if (node !== null && $isTextNode(node)) {
+      if (subTreeTextFormat === null) {
+        subTreeTextFormat = node.getFormat();
+      }
+      if (subTreeTextStyle === '') {
+        subTreeTextStyle = node.getStyle();
+      }
     }
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
@@ -356,6 +362,18 @@ function reconcileParagraphFormat(element: ElementNode): void {
     !activeEditorStateReadOnly
   ) {
     element.setTextFormat(subTreeTextFormat);
+    element.setTextStyle(subTreeTextStyle);
+  }
+}
+
+function reconcileParagraphStyle(element: ElementNode): void {
+  if (
+    $isParagraphNode(element) &&
+    subTreeTextStyle !== '' &&
+    subTreeTextStyle !== element.__textStyle &&
+    !activeEditorStateReadOnly
+  ) {
+    element.setTextStyle(subTreeTextStyle);
   }
 }
 
@@ -440,11 +458,12 @@ function $reconcileChildrenWithDirection(
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
   subTreeTextFormat = null;
+  subTreeTextStyle = '';
   $reconcileChildren(prevElement, nextElement, dom);
   reconcileBlockDirection(nextElement, dom);
   reconcileParagraphFormat(nextElement);
+  reconcileParagraphStyle(nextElement);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
-  subTreeTextFormat = null;
 }
 
 function createChildrenArray(
@@ -486,8 +505,13 @@ function $reconcileChildren(
       destroyNode(prevFirstChildKey, null);
     }
     const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);
-    if (subTreeTextFormat === null && $isTextNode(nextChildNode)) {
-      subTreeTextFormat = nextChildNode.getFormat();
+    if ($isTextNode(nextChildNode)) {
+      if (subTreeTextFormat === null) {
+        subTreeTextFormat = nextChildNode.getFormat();
+      }
+      if (subTreeTextStyle === '') {
+        subTreeTextStyle = nextChildNode.getStyle();
+      }
     }
   } else {
     const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
@@ -777,8 +801,13 @@ function $reconcileNodeChildren(
     }
 
     const node = activeNextNodeMap.get(nextKey);
-    if (node !== null && subTreeTextFormat === null && $isTextNode(node)) {
-      subTreeTextFormat = node.getFormat();
+    if (node !== null && $isTextNode(node)) {
+      if (subTreeTextFormat === null) {
+        subTreeTextFormat = node.getFormat();
+      }
+      if (subTreeTextStyle === '') {
+        subTreeTextStyle = node.getStyle();
+      }
     }
   }
 

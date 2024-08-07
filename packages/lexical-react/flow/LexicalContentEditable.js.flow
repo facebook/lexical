@@ -22,6 +22,9 @@ type InlineStyle = {
 type HTMLDivElementDOMProps = $ReadOnly<{
   'aria-label'?: void | string,
   'aria-labeledby'?: void | string,
+  'aria-activedescendant'?: void | string,
+  'aria-autocomplete'?: void | string,
+  'aria-owns'?: void | string,
   'title'?: void | string,
   onClick?: void | (e: SyntheticEvent<HTMLDivElement>) => mixed,
   autoCapitalize?: void | boolean,

@@ -15,9 +15,8 @@ import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
-export type Props = Omit<ElementProps, 'editor'> & {
-  editor__DEPRECATED?: LexicalEditor;
-} & (
+export type Props = Omit<ElementProps, 'editor'> &
+  (
     | {
         'aria-placeholder'?: void;
         placeholder?: null;
@@ -36,10 +35,8 @@ function ContentEditableImpl(
   props: Props,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
-  const {placeholder, editor__DEPRECATED, ...rest} = props;
-  // editor__DEPRECATED will always be defined for non MLC surfaces
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const editor = editor__DEPRECATED || useLexicalComposerContext()[0];
+  const {placeholder, ...rest} = props;
+  const [editor] = useLexicalComposerContext();
 
   return (
     <>

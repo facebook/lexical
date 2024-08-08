@@ -23,3 +23,4 @@ flow-typed
 .prettierignore
 **/.docusaurus
 /playwright-report
+test-results

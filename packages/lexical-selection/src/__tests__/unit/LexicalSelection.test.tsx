@@ -18,6 +18,7 @@ import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $getSelectionStyleValueForProperty,
+  $patchStyleText,
   $setBlocksType,
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
@@ -30,6 +31,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   DecoratorNode,
   ElementNode,
@@ -2496,6 +2498,113 @@ describe('LexicalSelection tests', () => {
           '',
         );
         expect(cssFontSizeValue).toBe('30px');
+      });
+    });
+  });
+
+  describe('$patchStyle', () => {
+    it('should patch the style with the new style object', async () => {
+      await ReactTestUtils.act(async () => {
+        await editor!.update(() => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const textNode = $createTextNode('Hello, World!');
+          textNode.setStyle('font-family: serif; color: red;');
+          $addNodeStyle(textNode);
+          paragraph.append(textNode);
+          root.append(paragraph);
+
+          const selection = $createRangeSelection();
+          $setSelection(selection);
+          selection.insertParagraph();
+          $setAnchorPoint({
+            key: textNode.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+
+          $setFocusPoint({
+            key: textNode.getKey(),
+            offset: 10,
+            type: 'text',
+          });
+
+          const newStyle = {
+            color: 'blue',
+            'font-family': 'Arial',
+          };
+
+          $patchStyleText(selection, newStyle);
+
+          const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+            selection,
+            'font-family',
+            '',
+          );
+          expect(cssFontFamilyValue).toBe('Arial');
+
+          const cssColorValue = $getSelectionStyleValueForProperty(
+            selection,
+            'color',
+            '',
+          );
+          expect(cssColorValue).toBe('blue');
+        });
+      });
+    });
+
+    it('should patch the style with property function', async () => {
+      await ReactTestUtils.act(async () => {
+        await editor!.update(() => {
+          const currentColor = 'red';
+          const nextColor = 'blue';
+
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const textNode = $createTextNode('Hello, World!');
+          textNode.setStyle(`color: ${currentColor};`);
+          $addNodeStyle(textNode);
+          paragraph.append(textNode);
+          root.append(paragraph);
+
+          const selection = $createRangeSelection();
+          $setSelection(selection);
+          selection.insertParagraph();
+          $setAnchorPoint({
+            key: textNode.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+
+          $setFocusPoint({
+            key: textNode.getKey(),
+            offset: 10,
+            type: 'text',
+          });
+
+          const newStyle = {
+            color: jest.fn(
+              (current: string | null, target: LexicalNode | RangeSelection) =>
+                nextColor,
+            ),
+          };
+
+          $patchStyleText(selection, newStyle);
+
+          const cssColorValue = $getSelectionStyleValueForProperty(
+            selection,
+            'color',
+            '',
+          );
+
+          expect(cssColorValue).toBe(nextColor);
+          expect(newStyle.color).toHaveBeenCalledTimes(1);
+
+          const lastCall = newStyle.color.mock.lastCall!;
+          expect(lastCall[0]).toBe(currentColor);
+          // @ts-ignore - It expected to be a LexicalNode
+          expect($isTextNode(lastCall[1])).toBeTruthy();
+        });
       });
     });
   });

@@ -243,7 +243,9 @@ function $patchStyle(
   target: TextNode | RangeSelection,
   patch: Record<
     string,
-    string | null | ((currentStyleValue: string | null) => string)
+    | string
+    | null
+    | ((currentStyleValue: string | null, _target: typeof target) => string)
   >,
 ): void {
   const prevStyles = getStyleObjectFromCSS(
@@ -251,8 +253,8 @@ function $patchStyle(
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
-      if (value instanceof Function) {
-        styles[key] = value(prevStyles[key]);
+      if (typeof value === 'function') {
+        styles[key] = value(prevStyles[key], target);
       } else if (value === null) {
         delete styles[key];
       } else {
@@ -278,7 +280,12 @@ export function $patchStyleText(
   selection: BaseSelection,
   patch: Record<
     string,
-    string | null | ((currentStyleValue: string | null) => string)
+    | string
+    | null
+    | ((
+        currentStyleValue: string | null,
+        target: TextNode | RangeSelection,
+      ) => string)
   >,
 ): void {
   const selectedNodes = selection.getNodes();

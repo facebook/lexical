@@ -6,7 +6,14 @@
  *
  */
 
-import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  ParagraphNode,
+  TextNode,
+  UNDO_COMMAND,
+} from 'lexical';
 
 import {Client, createTestConnection, waitForReact} from './utils';
 
@@ -308,6 +315,78 @@ describe('Collaboration', () => {
     expect(client2.awareness.getLocalState()!.awarenessData).toEqual(
       awarenessData2,
     );
+
+    client1.stop();
+    client2.stop();
+  });
+
+  it('Should not break Ydoc if initial content is undone with shouldBootstrap=false', async () => {
+    const connector = createTestConnection();
+
+    const client1 = connector.createClient('1');
+    const client2 = connector.createClient('2');
+
+    client1.start(container!, undefined, false);
+    client2.start(container!, undefined, false);
+
+    expect(client1.getHTML()).toEqual('');
+    expect(client1.getHTML()).toEqual(client2.getHTML());
+
+    // Wait for clients to render the initial content
+    await Promise.resolve().then();
+
+    expect(client1.getHTML()).toEqual('');
+    expect(client1.getHTML()).toEqual(client2.getHTML());
+
+    await waitForReact(() => {
+      client1.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello');
+        paragraph.append(text);
+
+        root.append(paragraph);
+      });
+    });
+
+    expect(client1.getHTML()).toEqual(
+      '<p dir="ltr"><span data-lexical-text="true">Hello</span></p>',
+    );
+    expect(client1.getHTML()).toEqual(client2.getHTML());
+    expect(client1.getDocJSON()).toEqual({
+      root: '[object Object]Hello',
+    });
+    expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+    await waitForReact(() => {
+      client1.getEditor().dispatchCommand(UNDO_COMMAND, undefined);
+    });
+
+    expect(client1.getHTML()).toEqual('');
+    expect(client1.getHTML()).toEqual(client2.getHTML());
+    expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+    await waitForReact(() => {
+      client1.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello world');
+        paragraph.append(text);
+
+        root.append(paragraph);
+      });
+    });
+
+    expect(client1.getHTML()).toEqual(
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+    );
+    expect(client1.getHTML()).toEqual(client2.getHTML());
+    expect(client1.getDocJSON()).toEqual({
+      root: '[object Object]Hello world',
+    });
+    expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
     client1.stop();
     client2.stop();

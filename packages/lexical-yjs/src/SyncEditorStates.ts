@@ -83,6 +83,7 @@ export function syncYjsChangesToLexical(
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
+  shouldBootstrap: boolean,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -100,10 +101,14 @@ export function syncYjsChangesToLexical(
         const event = events[i];
         $syncEvent(binding, event);
       }
-      // If there was a collision on the top level paragraph
-      // we need to re-add a paragraph
-      if ($getRoot().getChildrenSize() === 0) {
-        $getRoot().append($createParagraphNode());
+      // Only re-add paragraph if shouldBootstrap is true,
+      // as otherwise it will break the yjs tree
+      if (shouldBootstrap === true) {
+        // If there was a collision on the top level paragraph
+        // we need to re-add a paragraph
+        if ($getRoot().getChildrenSize() === 0) {
+          $getRoot().append($createParagraphNode());
+        }
       }
 
       const selection = $getSelection();

@@ -9,15 +9,20 @@
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
   $isTextNode,
+  $setSelection,
   LexicalEditor,
+  ParagraphNode,
   RangeSelection,
+  TextNode,
 } from 'lexical';
 
-import {initializeUnitTest, invariant} from '../utils';
+import {$assertRangeSelection, initializeUnitTest, invariant} from '../utils';
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -335,6 +340,161 @@ describe('LexicalSelection tests', () => {
 
           //   await insertText({container, editor, method: 'insertNodes'});
           // });
+        });
+      });
+    });
+    describe('removeText', () => {
+      describe('with a leading TextNode and a trailing segmented TextNode', () => {
+        let leadingText: TextNode;
+        let trailingSegmentedText: TextNode;
+        let paragraph: ParagraphNode;
+        beforeEach(() => {
+          testEnv.editor.update(
+            () => {
+              leadingText = $createTextNode('leading text');
+              trailingSegmentedText =
+                $createTextNode('segmented text').setMode('segmented');
+              paragraph = $createParagraphNode().append(
+                leadingText,
+                trailingSegmentedText,
+              );
+              $getRoot().clear().append(paragraph);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove all text', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingSegmentedText.getKey(),
+                trailingSegmentedText.getTextContentSize(),
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(false);
+              expect(trailingSegmentedText.isAttached()).toBe(false);
+              expect($getRoot().getAllTextNodes()).toHaveLength(0);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(paragraph.getKey());
+              expect(selection.anchor.offset).toBe(0);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove initial TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                leadingText.getKey(),
+                leadingText.getTextContentSize(),
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(false);
+              expect(trailingSegmentedText.isAttached()).toBe(true);
+              expect($getRoot().getAllTextNodes()).toHaveLength(1);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(trailingSegmentedText.getKey());
+              expect(selection.anchor.offset).toBe(0);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove trailing segmented TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(trailingSegmentedText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingSegmentedText.getKey(),
+                trailingSegmentedText.getTextContentSize(),
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(true);
+              expect(trailingSegmentedText.isAttached()).toBe(false);
+              expect($getRoot().getAllTextNodes()).toHaveLength(1);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(leadingText.getKey());
+              expect(selection.anchor.offset).toBe(
+                leadingText.getTextContentSize(),
+              );
+            },
+            {discrete: true},
+          );
+        });
+        test('remove initial TextNode and partial segmented TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingSegmentedText.getKey(),
+                'segmented '.length,
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(false);
+              // expecting a new node since it was segmented
+              expect(trailingSegmentedText.isAttached()).toBe(false);
+              const allTextNodes = $getRoot().getAllTextNodes();
+              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
+                ['text'],
+              );
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(allTextNodes[0].getKey());
+              expect(selection.anchor.offset).toBe(0);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove partial initial TextNode and partial segmented TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 'lead'.length, 'text');
+              sel.focus.set(
+                trailingSegmentedText.getKey(),
+                'segmented '.length,
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(true);
+              expect(trailingSegmentedText.isAttached()).toBe(false);
+              const allTextNodes = $getRoot().getAllTextNodes();
+              // These should get merged in reconciliation
+              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
+                ['lead', 'text'],
+              );
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(leadingText.getKey());
+              expect(selection.anchor.offset).toBe('lead'.length);
+            },
+            {discrete: true},
+          );
+          testEnv.editor.getEditorState().read(() => {
+            const allTextNodes = $getRoot().getAllTextNodes();
+            // These should get merged in reconciliation
+            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+              'leadtext',
+            ]);
+            expect(leadingText.isAttached()).toBe(true);
+          });
         });
       });
     });

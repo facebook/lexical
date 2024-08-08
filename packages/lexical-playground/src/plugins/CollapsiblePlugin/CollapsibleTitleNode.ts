@@ -96,6 +96,18 @@ export class CollapsibleTitleNode extends ElementNode {
     return true;
   }
 
+  static transform(): (node: LexicalNode) => void {
+    return (node: LexicalNode) => {
+      invariant(
+        $isCollapsibleTitleNode(node),
+        'node is not a CollapsibleTitleNode',
+      );
+      if (node.isEmpty()) {
+        node.remove();
+      }
+    };
+  }
+
   insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {
     const containerNode = this.getParentOrThrow();
 

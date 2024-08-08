@@ -16,6 +16,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
+  $nodesOfType,
   $setSelection,
   $splitNode,
   EditorState,
@@ -23,6 +24,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -604,4 +606,44 @@ export function calculateZoomLevel(element: Element | null): number {
  */
 export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
   return editor._parentEditor !== null;
+}
+
+export function registerNodesOfTypeListener(
+  editor: LexicalEditor,
+  klass: Klass<LexicalNode>,
+  listener: (nodes: Set<NodeKey>) => void,
+  fireImmediately: void | boolean = false,
+): () => void {
+  let nodes = new Set<NodeKey>();
+  editor.getEditorState().read(() => {
+    const nodesArr = $nodesOfType(klass);
+    for (const node of nodesArr) {
+      nodes.add(node.getKey());
+    }
+  });
+  if (fireImmediately) {
+    listener(nodes);
+  }
+  return editor.registerMutationListener(klass, (mutations) => {
+    let newNodes = null;
+    for (const [key, mutation] of mutations) {
+      const created = mutation === 'created';
+      const destroyed = mutation === 'destroyed';
+      if (created || destroyed) {
+        if (newNodes === null) {
+          newNodes = new Set(nodes);
+        }
+        if (created) {
+          newNodes.add(key);
+        }
+        if (destroyed) {
+          newNodes.delete(key);
+        }
+      }
+    }
+    if (newNodes !== null) {
+      nodes = newNodes;
+      listener(nodes);
+    }
+  });
 }

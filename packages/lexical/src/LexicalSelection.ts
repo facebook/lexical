@@ -1255,14 +1255,12 @@ export class RangeSelection implements BaseSelection {
     const blocksParent = $wrapInlineNodes(nodes);
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
-    const isLI = (node: LexicalNode) =>
-      '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode): node is ElementNode =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      (!firstBlock.isEmpty() || isLI(firstBlock));
+      (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty());
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
@@ -1284,7 +1282,7 @@ export class RangeSelection implements BaseSelection {
     if (
       insertedParagraph &&
       $isElementNode(lastInsertedBlock) &&
-      (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
+      (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))
     ) {
       lastInsertedBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();

@@ -6,7 +6,7 @@
  *
  */
 
-import type {ListNode} from './';
+import type {ListNode, ListType} from './';
 import type {
   BaseSelection,
   DOMConversionMap,
@@ -320,7 +320,14 @@ export class ListItemNode extends ElementNode {
   getChecked(): boolean | undefined {
     const self = this.getLatest();
 
-    return self.__checked;
+    let listType: ListType | undefined;
+
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      listType = parent.getListType();
+    }
+
+    return listType === 'check' ? Boolean(self.__checked) : undefined;
   }
 
   setChecked(checked?: boolean): void {
@@ -403,6 +410,10 @@ export class ListItemNode extends ElementNode {
 
   createParentElementNode(): ElementNode {
     return $createListNode('bullet');
+  }
+
+  canMergeWhenEmpty(): true {
+    return true;
   }
 }
 

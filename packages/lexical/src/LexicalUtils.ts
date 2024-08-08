@@ -123,8 +123,7 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
     (nodeName === 'INPUT' ||
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
-        // @ts-ignore internal field
-        activeElement.__lexicalEditor == null))
+        getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
 
@@ -149,19 +148,32 @@ export function isSelectionWithinEditor(
   }
 }
 
+/**
+ * @returns true if the given argument is a LexicalEditor instance from this build of Lexical
+ */
+export function isLexicalEditor(editor: unknown): editor is LexicalEditor {
+  // Check instanceof to prevent issues with multiple embedded Lexical installations
+  return editor instanceof LexicalEditor;
+}
+
 export function getNearestEditorFromDOMNode(
   node: Node | null,
 ): LexicalEditor | null {
   let currentNode = node;
   while (currentNode != null) {
-    // @ts-expect-error: internal field
-    const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null) {
+    const editor = getEditorPropertyFromDOMNode(currentNode);
+    if (isLexicalEditor(editor)) {
       return editor;
     }
     currentNode = getParentElement(currentNode);
   }
   return null;
+}
+
+/** @internal */
+export function getEditorPropertyFromDOMNode(node: Node | null): unknown {
+  // @ts-expect-error: internal field
+  return node ? node.__lexicalEditor : null;
 }
 
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {

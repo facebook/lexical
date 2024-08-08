@@ -1,3 +1,63 @@
+## v0.17.0 (2024-07-31)
+
+- LexicaCI run extended tests for safari in mac-os and chromefirefox in linuxwindows (#6466) Sahejkm
+- lexical-table Bug Fix cannot delete content when a table inside selection (#6412) placeba
+- LexicalCI Update canary e2e test os (#6465) Sahejkm
+- CI tag flaky tests (#6462) Sherry
+- lexical Bug Fix Allow getTopLevelElement to return a DecoratorNode (#6458) Bob Ippolito
+- CI dont cancel other test runs if e2e flaky job fails (#6460) Sherry
+- Flow add tags type to OnChange plugin (#6457) Gerard Rovira
+- lexical-rich-text Bug Fix HeadingNode.insertNewAfter (#6435) Germn Jabloski
+- lexical-react sync format in flow file (#6448) Sherry
+- lexical Bug Fix getCachedTypeToNodeMap should handle a empty and writable EditorState (#6444) Bob Ippolito
+- lexical lexical-selection Preserve paragraph styles between lines (#6437) Ivaylo Pavlov
+- LexicalGallery Add tableplugin example to gallery (#6447) Sahejkm
+- LexicalCI ignore running unitintegeritye2e tests on examples folder code (#6446) Sahejkm
+- LexicalGallery Create Simple Tableplugin example (#6445) Sahejkm
+- lexicalauto-link Fix auto link crash editor (#6433) Maksym Plavinskyi
+- lexicallexical-selection Bug Fix Respect mode when patching text style (#6428) Adrian Busse
+- lexical-historylexical-selectionlexical-react Fix #6409 TextNode change detection (#6420) Bob Ippolito
+- lexical-playground Refactor run prettier to fix CI (#6436) Germn Jabloski
+- fix(LexicalNode) fix inline decorator isSelected (#5948) Xuan
+- lexical-playgroundTableCellResizer Bug Fix Register event handlers on root element (#6416) JBWereRuss
+- lexical-react update flow typing for draggable block plugin (#6426) Sherry
+- docs fix typo in editor.registerCommand() usage (#6429) Yangshun Tay
+- fix(docs) correct typo in Lexical collaboration guide (#6421) Francois Polo
+- Fix discrete nested updates (#6419) Gerard Rovira
+- CI fix build failure on astro integration tests (#6414) wnhlee
+- CI run flaky tests on firefox browsers (#6411) Sherry
+- CI tag flaky tests (#6405) Sherry
+- lexical-reactlexical-playground sync draggable block plugin to www (#6397) Sherry
+- Fix transpile nodesOfType (#6408) Gerard Rovira
+- Restore registerRootListener null call (#6403) Gerard Rovira
+- Add ref to contenteditable (#6381) Gerard Rovira
+- lexical Feature registerMutationListener should initialize its existing nodes (#6357) Bob Ippolito
+- lexical Feature Implement Editor.read and EditorState.read with editor argument (#6347) Bob Ippolito
+- lexical Bug Fix more accurate line break pasting (#6395) Sherry
+- lexical-html Feature support pasting empty block nodes (#6392) Sherry
+- lexical-playgroundlexical-table Bug Fix Fix Shift Down Arrow regression for table sequence. (#6393) Serey Roth
+- Gallery Add option to filter plugins based on tags  (#6391) Sahejkm
+- Fix clear rootElement on React (#6389) Gerard Rovira
+- CI tag flaky tests (#6388) Sherry
+- Prettier sort test attributes (#6384) Gerard Rovira
+- Fix integrity test (#6385) Gerard Rovira
+- LexicalGallery Convert files to follow typescript (#6383) Sahejkm
+- lexicallexical-playground Bug Fix Create line break on paste of content type texthtml (#6376) Janna Wieneke
+- examples Chore Use named export of LexicalErrorBoundary in the examples (#6378) Bob Ippolito
+- LexicalGallery Add option to search examples in the gallery (#6379) Sahejkm
+- lexical-playground Fix Table Hover Actions Noclick Bug (#6375) Ivaylo Pavlov
+- Lexical Fix flow errors on syncing build to meta intern (#6373) Sahejkm
+- rexical-react Bug Fix Headings inside collapsible sections are lost when Table of Contents is re-initialized (#6371) Katsia
+- LexicalGallery Add description in the card, option to render preview card at run time if no image (#6372) Sahejkm
+- Lexical Create initial Gallery View with Emoji Plugin Example (#6369) Sahejkm
+- CI run e2e flaky tests in a separate job (#6365) Sherry
+- Make placeholder accessible (#6171) Gerard Rovira
+- lexical-playground Table Hover Action Buttons (#6355) Ivaylo Pavlov
+- lexicallexical-table Chore Replace references to old GridSelection with TableSelection (#6366) Bob Ippolito
+- lexical-markdown Feature Change Dont trim whitespaces on convertFromMarkdownString (#6360) Sherry
+- v0.16.1 (#6363) Ivaylo Pavlov
+- v0.16.1 Lexical GitHub Actions Bot
+
 ## v0.16.1 (2024-07-01)
 
 - lexical-playgroundlexical-poll Bug Fix Fixes undefined context inside Poll add option (#6361) Roman Lyubimov

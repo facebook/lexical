@@ -6,10 +6,12 @@
  *
  */
 
+import {getEditorPropertyFromDOMNode} from 'lexical';
+
 import {LexicalHTMLElement} from '../types';
 
 export function isLexicalNode(
   node: LexicalHTMLElement | Element,
 ): node is LexicalHTMLElement {
-  return (node as LexicalHTMLElement).__lexicalEditor !== undefined;
+  return getEditorPropertyFromDOMNode(node) !== undefined;
 }

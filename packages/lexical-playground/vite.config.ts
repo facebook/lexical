@@ -52,6 +52,10 @@ export default defineConfig(({command}) => {
             from: /__DEV__/g,
             to: 'true',
           },
+          {
+            from: 'process.env.LEXICAL_VERSION',
+            to: JSON.stringify(`${process.env.npm_package_version}+git`),
+          },
         ],
       }),
       babel({

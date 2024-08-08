@@ -17,3 +17,14 @@ test('index page has expected h1 and lexical state', async ({ page }) => {
 		/"text": "Welcome to the Vanilla JS Lexical Demo!"/
 	);
 });
+
+test('lexical editor has an accessible numeric version', async ({ page }) => {
+	await page.goto('/');
+	await expect(
+		page.getByRole('heading', { name: 'SvelteKit Lexical Basic - Vanilla JS' })
+	).toBeVisible();
+	expect(await page.evaluate(() =>
+		// @ts-expect-error
+		document.querySelector('[contenteditable]')!.__lexicalEditor.constructor.version
+	)).toMatch(/^\d+\.\d+\.\d+/);
+});

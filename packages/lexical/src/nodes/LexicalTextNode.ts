@@ -935,7 +935,7 @@ export class TextNode extends LexicalNode {
       return [self];
     }
     const firstPart = parts[0];
-    const parent = self.getParentOrThrow();
+    const parent = self.getParent();
     let writableNode;
     const format = self.getFormat();
     const style = self.getStyle();
@@ -1005,23 +1005,25 @@ export class TextNode extends LexicalNode {
     }
 
     // Insert the nodes into the parent's children
-    internalMarkSiblingsAsDirty(this);
-    const writableParent = parent.getWritable();
-    const insertionIndex = this.getIndexWithinParent();
-    if (hasReplacedSelf) {
-      writableParent.splice(insertionIndex, 0, splitNodes);
-      this.remove();
-    } else {
-      writableParent.splice(insertionIndex, 1, splitNodes);
-    }
+    if (parent !== null) {
+      internalMarkSiblingsAsDirty(this);
+      const writableParent = parent.getWritable();
+      const insertionIndex = this.getIndexWithinParent();
+      if (hasReplacedSelf) {
+        writableParent.splice(insertionIndex, 0, splitNodes);
+        this.remove();
+      } else {
+        writableParent.splice(insertionIndex, 1, splitNodes);
+      }
 
-    if ($isRangeSelection(selection)) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        parent,
-        insertionIndex,
-        partsLength - 1,
-      );
+      if ($isRangeSelection(selection)) {
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          parent,
+          insertionIndex,
+          partsLength - 1,
+        );
+      }
     }
 
     return splitNodes;

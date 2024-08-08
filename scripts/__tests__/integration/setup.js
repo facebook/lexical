@@ -28,6 +28,9 @@ module.exports = async function (globalConfig, projectConfig) {
         ),
     );
   if (!needsBuild) {
+    console.log(
+      '\nWARNING: Running integration tests with cached build artifacts from a previous `npm run prepare-release`.',
+    );
     return;
   }
   await exec('npm run prepare-release');

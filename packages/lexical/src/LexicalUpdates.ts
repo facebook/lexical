@@ -6,16 +6,6 @@
  *
  */
 
-import type {
-  CommandPayloadType,
-  EditorUpdateOptions,
-  LexicalCommand,
-  LexicalEditor,
-  Listener,
-  MutatedNodes,
-  RegisteredNodes,
-  Transform,
-} from './LexicalEditor';
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
@@ -23,7 +13,17 @@ import invariant from 'shared/invariant';
 
 import {$isElementNode, $isTextNode, SELECTION_CHANGE_COMMAND} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {resetEditor} from './LexicalEditor';
+import {
+  CommandPayloadType,
+  EditorUpdateOptions,
+  LexicalCommand,
+  LexicalEditor,
+  Listener,
+  MutatedNodes,
+  RegisteredNodes,
+  resetEditor,
+  Transform,
+} from './LexicalEditor';
 import {
   cloneEditorState,
   createEmptyEditorState,
@@ -47,9 +47,11 @@ import {
 import {
   $getCompositionKey,
   getDOMSelection,
+  getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
+  isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
   updateDOMBlockCursorElement,
@@ -96,7 +98,8 @@ export function getActiveEditorState(): EditorState {
       'Unable to find an active editor state. ' +
         'State helpers or node methods can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update(), editor.read(), or editorState.read().',
+        'editor.update(), editor.read(), or editorState.read().%s',
+      collectBuildInformation(),
     );
   }
 
@@ -110,11 +113,44 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editor.read().',
+        'editor.update() or editor.read().%s',
+      collectBuildInformation(),
     );
   }
-
   return activeEditor;
+}
+
+function collectBuildInformation(): string {
+  let compatibleEditors = 0;
+  const incompatibleEditors = new Set<string>();
+  const thisVersion = LexicalEditor.version;
+  if (typeof window !== 'undefined') {
+    for (const node of document.querySelectorAll('[contenteditable]')) {
+      const editor = getEditorPropertyFromDOMNode(node);
+      if (isLexicalEditor(editor)) {
+        compatibleEditors++;
+      } else if (editor) {
+        let version = String(
+          (
+            editor.constructor as typeof editor['constructor'] &
+              Record<string, unknown>
+          ).version || '<0.17.1',
+        );
+        if (version === thisVersion) {
+          version +=
+            ' (separately built, likely a bundler configuration issue)';
+        }
+        incompatibleEditors.add(version);
+      }
+    }
+  }
+  let output = ` Detected on the page: ${compatibleEditors} compatible editor(s) with version ${thisVersion}`;
+  if (incompatibleEditors.size) {
+    output += ` and incompatible editors with versions ${Array.from(
+      incompatibleEditors,
+    ).join(', ')}`;
+  }
+  return output;
 }
 
 export function internalGetActiveEditor(): LexicalEditor | null {

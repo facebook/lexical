@@ -205,6 +205,16 @@ export class LexicalNode {
     );
   }
 
+  /**
+   * Perform any state updates on the clone of prevNode that are not already
+   * handled by the constructor call in the static clone method.
+   */
+  afterCloneFrom(prevNode: this) {
+    this.__parent = prevNode.__parent;
+    this.__next = prevNode.__next;
+    this.__prev = prevNode.__prev;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static importDOM?: () => DOMConversionMap<any> | null;
 

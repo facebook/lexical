@@ -29,12 +29,13 @@ export class TabNode extends TextNode {
   }
 
   static clone(node: TabNode): TabNode {
-    const newNode = new TabNode(node.__key);
+    return new TabNode(node.__key);
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
     // TabNode __text can be either '\t' or ''. insertText will remove the empty Node
-    newNode.__text = node.__text;
-    newNode.__format = node.__format;
-    newNode.__style = node.__style;
-    return newNode;
+    this.__text = prevNode.__text;
   }
 
   constructor(key?: NodeKey) {

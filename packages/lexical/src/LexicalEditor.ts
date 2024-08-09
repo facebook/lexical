@@ -79,7 +79,7 @@ export type TextNodeThemeClasses = {
 export type EditorUpdateOptions = {
   onUpdate?: () => void;
   skipTransforms?: true;
-  tag?: string;
+  tag?: string | Array<string>;
   discrete?: true;
 };
 

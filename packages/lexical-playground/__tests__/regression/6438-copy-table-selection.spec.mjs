@@ -13,6 +13,7 @@ import {
 import {
   expect,
   focusEditor,
+  getEditorElement,
   initialize,
   insertTable,
   test,
@@ -33,9 +34,11 @@ test.describe('Regression test #6438', () => {
     // Delete the first empty paragraph
     await moveToEditorBeginning(page);
     await page.keyboard.press('Backspace');
+    expect(await getEditorElement(page).locator(':scope > p').count()).toBe(1);
     // Delete the last empty paragraph
     await moveToEditorEnd(page);
     await page.keyboard.press('Backspace');
+    expect(await getEditorElement(page).locator(':scope > p').count()).toBe(0);
 
     // Enter some random text in the last cell.
     const randomText = Math.random().toString(36).substring(7);
@@ -43,10 +46,10 @@ test.describe('Regression test #6438', () => {
 
     // Copy the table
     await page.keyboard.press('Meta+A', {delay: 50});
-    await page.keyboard.press('Meta+C');
+    await page.keyboard.press('Meta+C', {delay: 50});
 
     // Delete the table
-    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace', {delay: 50});
     expect(await page.locator('table').count()).toBe(0);
 
     // Paste the table

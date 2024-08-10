@@ -367,13 +367,18 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         options={options}
         menuRenderFn={(
           anchorElementRef,
-          {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
+          {
+            selectedIndex,
+            selectOptionAndCleanUp,
+            setHighlightedIndex,
+            options: menuOptions,
+          },
         ) =>
-          anchorElementRef.current && options.length
+          anchorElementRef.current && menuOptions.length
             ? ReactDOM.createPortal(
                 <div className="typeahead-popover component-picker-menu">
                   <ul>
-                    {options.map((option, i: number) => (
+                    {menuOptions.map((option, i: number) => (
                       <ComponentPickerMenuItem
                         index={i}
                         isSelected={selectedIndex === i}

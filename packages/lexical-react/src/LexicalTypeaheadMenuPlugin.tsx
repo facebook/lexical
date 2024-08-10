@@ -14,7 +14,9 @@ import type {
 } from './shared/LexicalMenu';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$isTableNode} from '@lexical/table';
 import {
+  $findMatchingParent,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
@@ -26,7 +28,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
@@ -220,6 +222,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
+  const [isLocatedTable, setIsLocatedTable] = useState<boolean>(false);
   const anchorElementRef = useMenuAnchorRef(
     resolution,
     setResolution,
@@ -274,6 +277,17 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
             range,
             editorWindow,
           );
+
+          const tableNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            $isTableNode,
+          );
+          if (tableNode) {
+            setIsLocatedTable(true);
+          } else {
+            setIsLocatedTable(false);
+          }
+
           if (isRangePositioned !== null) {
             startTransition(() =>
               openTypeahead({
@@ -302,13 +316,20 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     openTypeahead,
   ]);
 
+  const internalOptions = useMemo(() => {
+    if (isLocatedTable) {
+      return options.filter((option) => option.key !== 'Table');
+    }
+    return options;
+  }, [isLocatedTable, options]);
+
   return resolution === null || editor === null ? null : (
     <LexicalMenu
       close={closeTypeahead}
       resolution={resolution}
       editor={editor}
       anchorElementRef={anchorElementRef}
-      options={options}
+      options={internalOptions}
       menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}

@@ -158,6 +158,7 @@ export {
   $applyNodeReplacement,
   $cloneWithProperties,
   $copyNode,
+  $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,

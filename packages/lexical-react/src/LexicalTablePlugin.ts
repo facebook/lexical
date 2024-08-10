@@ -36,7 +36,11 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $findMatchingParent,
   $getNodeByKey,
+  $getPreviousSelection,
+  $getSelection,
+  $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
@@ -71,6 +75,20 @@ export function TablePlugin({
             Number(columns),
             includeHeaders,
           );
+
+          const selection = $getSelection() || $getPreviousSelection();
+
+          if ($isRangeSelection(selection)) {
+            const {anchor, focus} = selection;
+            const focusNode = focus.getNode();
+            const anchorNode = anchor.getNode();
+            if (
+              $findMatchingParent(focusNode, $isTableRowNode) ||
+              $findMatchingParent(anchorNode, $isTableRowNode)
+            ) {
+              return false;
+            }
+          }
           $insertNodeToNearestRoot(tableNode);
 
           const firstDescendant = tableNode.getFirstDescendant();

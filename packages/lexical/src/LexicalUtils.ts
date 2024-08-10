@@ -1752,8 +1752,13 @@ export function getCachedTypeToNodeMap(
 }
 
 /**
- * Returns a clone of a node with the same key and parent/next/prev pointers and other
- * properties that are not set by the KlassConstructor.clone (format, style, etc.).
+ * Returns a clone of a node using `node.constructor.clone()` followed by
+ * `clone.afterCloneFrom(node)`. The resulting clone must have the same key,
+ * parent/next/prev pointers, and other properties that are not set by
+ * `node.constructor.clone` (format, style, etc.). This is primarily used by
+ * {@link LexicalNode.getWritable} to create a writable version of an
+ * existing node. The clone is the same logical node as the original node,
+ * do not try and use this function to duplicate or copy an existing node.
  *
  * Does not mutate the EditorState.
  * @param node - The node to be cloned.

@@ -24,6 +24,7 @@ import {
   copyToClipboard,
   deleteTableColumns,
   deleteTableRows,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -246,62 +247,30 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the first cell of a nested table into the parent table cell`, async ({
+    test('Can not table node insert table cell', async ({
       page,
       isPlainText,
       isCollab,
     }) => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
-
       await focusEditor(page);
       await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, 0, 0, 1, 0, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, 0, 0, 1, 0, 0, 0],
-      });
-
-      await moveLeft(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, 0, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, 0, 0, 0],
-      });
     });
+  });
 
-    test(`Can exit the last cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      await initialize({isCollab, page});
-      test.skip(isPlainText);
+  test('After the cursor is positioned on the table, the toolbar does not display the inserted table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    const element = await page.$('.toolbar-item[aria-label="Insert table"]');
 
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await moveRight(page, 3);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, 0, 0, 1, 1, 1, 0],
-        focusOffset: 0,
-        focusPath: [1, 0, 0, 1, 1, 1, 0],
-      });
-
-      await moveRight(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, 0, 0, 2],
-        focusOffset: 0,
-        focusPath: [1, 0, 0, 2],
-      });
-    });
+    expect(element).toEqual(null);
   });
 
   test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({

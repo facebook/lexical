@@ -322,7 +322,8 @@ test.describe('HTML Tables CopyAndPaste', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: start">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>

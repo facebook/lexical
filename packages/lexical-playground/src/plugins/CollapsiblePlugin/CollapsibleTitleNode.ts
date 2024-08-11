@@ -18,13 +18,15 @@ import {
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
+import {IS_CHROME} from 'shared/environment';
+import invariant from 'shared/invariant';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
 
 type SerializedCollapsibleTitleNode = SerializedElementNode;
 
-export function convertSummaryElement(
+export function $convertSummaryElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const node = $createCollapsibleTitleNode();
@@ -45,6 +47,18 @@ export class CollapsibleTitleNode extends ElementNode {
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('summary');
     dom.classList.add('Collapsible__title');
+    if (IS_CHROME) {
+      dom.addEventListener('click', () => {
+        editor.update(() => {
+          const collapsibleContainer = this.getLatest().getParentOrThrow();
+          invariant(
+            $isCollapsibleContainerNode(collapsibleContainer),
+            'Expected parent node to be a CollapsibleContainerNode',
+          );
+          collapsibleContainer.toggleOpen();
+        });
+      });
+    }
     return dom;
   }
 
@@ -56,7 +70,7 @@ export class CollapsibleTitleNode extends ElementNode {
     return {
       summary: (domNode: HTMLElement) => {
         return {
-          conversion: convertSummaryElement,
+          conversion: $convertSummaryElement,
           priority: 1,
         };
       },

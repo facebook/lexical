@@ -31,7 +31,9 @@ function preparePackage(pkg) {
   fs.removeSync(pkg.resolve('npm'));
   fs.ensureDirSync(pkg.resolve('npm'));
   fs.copySync(pkg.resolve('dist'), pkg.resolve('npm'));
-  const flowSources = glob.sync(pkg.resolve('flow', '*.flow'));
+  const flowSources = glob.sync(pkg.resolve('flow', '*.flow'), {
+    windowsPathsNoEscape: true,
+  });
   if (flowSources.length === 0) {
     console.error(
       `Missing Flow type definitions for package ${pkg.getDirectoryName()}`,

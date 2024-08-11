@@ -32,7 +32,6 @@ type Segment = {
   segment: string;
 };
 
-// @ts-ignore
 if (!Selection.prototype.modify) {
   const wordBreakPolyfillRegex =
     /[\s.,\\/#!$%^&*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/u;
@@ -87,7 +86,6 @@ if (!Selection.prototype.modify) {
     return segments;
   };
 
-  // @ts-ignore
   Selection.prototype.modify = function (alter, direction, granularity) {
     // This is not a thorough implementation, it was more to get tests working
     // given the refactor to use this selection method.
@@ -877,7 +875,7 @@ export async function applySelectionInputs(
   }
 }
 
-export function setAnchorPoint(
+export function $setAnchorPoint(
   point: Pick<PointType, 'type' | 'offset' | 'key'>,
 ) {
   const selection = $getSelection();
@@ -885,7 +883,7 @@ export function setAnchorPoint(
   if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    return setAnchorPoint(point);
+    return $setAnchorPoint(point);
   }
 
   if ($isNodeSelection(selection)) {
@@ -898,7 +896,7 @@ export function setAnchorPoint(
   anchor.key = point.key;
 }
 
-export function setFocusPoint(
+export function $setFocusPoint(
   point: Pick<PointType, 'type' | 'offset' | 'key'>,
 ) {
   const selection = $getSelection();
@@ -906,7 +904,7 @@ export function setFocusPoint(
   if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    return setFocusPoint(point);
+    return $setFocusPoint(point);
   }
 
   if ($isNodeSelection(selection)) {

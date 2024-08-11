@@ -15,10 +15,11 @@ import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $isDecoratorNode,
   $isElementNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
+  type DecoratorNode,
   ElementNode,
 } from '.';
 import {
@@ -35,6 +36,7 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
   $isRootOrShadowRoot,
@@ -54,7 +56,7 @@ export type SerializedLexicalNode = {
   version: number;
 };
 
-export function removeNode(
+export function $removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
   preserveEmptyParent?: boolean,
@@ -113,7 +115,7 @@ export function removeNode(
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
-    removeNode(parent, restoreSelection);
+    $removeNode(parent, restoreSelection);
   }
   if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
@@ -281,14 +283,30 @@ export class LexicalNode {
     }
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
-    if (
+    const isElementRangeSelection =
       $isRangeSelection(targetSelection) &&
       targetSelection.anchor.type === 'element' &&
-      targetSelection.focus.type === 'element' &&
-      targetSelection.anchor.key === targetSelection.focus.key &&
-      targetSelection.anchor.offset === targetSelection.focus.offset
-    ) {
-      return false;
+      targetSelection.focus.type === 'element';
+
+    if (isElementRangeSelection) {
+      if (targetSelection.isCollapsed()) {
+        return false;
+      }
+
+      const parentNode = this.getParent();
+      if ($isDecoratorNode(this) && this.isInline() && parentNode) {
+        const firstPoint = targetSelection.isBackward()
+          ? targetSelection.focus
+          : targetSelection.anchor;
+        const firstElement = firstPoint.getNode() as ElementNode;
+        if (
+          firstPoint.offset === firstElement.getChildrenSize() &&
+          firstElement.is(parentNode) &&
+          firstElement.getLastChildOrThrow().is(this)
+        ) {
+          return false;
+        }
+      }
     }
     return isSelected;
   }
@@ -348,14 +366,14 @@ export class LexicalNode {
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElement(): ElementNode | null {
+  getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
         invariant(
-          $isElementNode(node),
-          'Children of root nodes must be elements',
+          $isElementNode(node) || (node === this && $isDecoratorNode(node)),
+          'Children of root nodes must be elements or decorators',
         );
         return node;
       }
@@ -369,7 +387,7 @@ export class LexicalNode {
    * non-root ancestor of this node, or throws if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElementOrThrow(): ElementNode {
+  getTopLevelElementOrThrow(): ElementNode | DecoratorNode<unknown> {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(
@@ -686,7 +704,6 @@ export class LexicalNode {
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
-    const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
@@ -697,34 +714,12 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const constructor = latestNode.constructor;
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
-        mutableNode.__textFormat = latestNode.__textFormat;
-      }
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
+    const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.add(key);
-    mutableNode.__key = key;
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
 
-    // @ts-expect-error
     return mutableNode;
   }
 
@@ -844,7 +839,7 @@ export class LexicalNode {
    * other node heuristics such as {@link ElementNode#canBeEmpty}
    * */
   remove(preserveEmptyParent?: boolean): void {
-    removeNode(this, true, preserveEmptyParent);
+    $removeNode(this, true, preserveEmptyParent);
   }
 
   /**
@@ -873,7 +868,7 @@ export class LexicalNode {
     const prevKey = self.__prev;
     const nextKey = self.__next;
     const parentKey = self.__parent;
-    removeNode(self, false, true);
+    $removeNode(self, false, true);
 
     if (prevSibling === null) {
       writableParent.__first = key;

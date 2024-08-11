@@ -24,9 +24,9 @@ import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
+  $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
-  getNodeFromDOMNode,
   getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
@@ -71,7 +71,7 @@ function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   });
 }
 
-function handleTextMutation(
+function $handleTextMutation(
   target: Text,
   node: TextNode,
   editor: LexicalEditor,
@@ -153,7 +153,7 @@ export function $flushMutations(
             $isTextNode(targetNode) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            handleTextMutation(
+            $handleTextMutation(
               // nodeType === DOM_TEXT_TYPE is a Text DOM node
               targetDOM as Text,
               targetNode,
@@ -169,7 +169,7 @@ export function $flushMutations(
 
           for (let s = 0; s < addedDOMs.length; s++) {
             const addedDOM = addedDOMs[s];
-            const node = getNodeFromDOMNode(addedDOM);
+            const node = $getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
 
             if (
@@ -303,7 +303,7 @@ export function $flushMutations(
   }
 }
 
-export function flushRootMutations(editor: LexicalEditor): void {
+export function $flushRootMutations(editor: LexicalEditor): void {
   const observer = editor._observer;
 
   if (observer !== null) {

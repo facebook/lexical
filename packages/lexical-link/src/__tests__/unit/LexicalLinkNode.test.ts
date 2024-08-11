@@ -9,9 +9,9 @@
 import {
   $createLinkNode,
   $isLinkNode,
+  $toggleLink,
   LinkNode,
   SerializedLinkNode,
-  toggleLink,
 } from '@lexical/link';
 import {
   $getRoot,
@@ -391,7 +391,7 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
-    test('toggleLink applies the title attribute when creating', async () => {
+    test('$toggleLink applies the title attribute when creating', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const p = new ParagraphNode();
@@ -401,7 +401,7 @@ describe('LexicalLinkNode tests', () => {
 
       await editor.update(() => {
         $selectAll();
-        toggleLink('https://lexical.dev/', {title: 'Lexical Website'});
+        $toggleLink('https://lexical.dev/', {title: 'Lexical Website'});
       });
 
       const paragraph = editor!.getEditorState().toJSON().root

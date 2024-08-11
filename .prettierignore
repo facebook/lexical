@@ -3,6 +3,10 @@
 **/dist/**
 **/build/**
 **/npm/**
+!scripts/npm/**
+**/.output/**
+**/.browser-profiles/**
+!scripts/npm/**
 **/__tests__/integration/fixtures/**
 packages/**/.wxt/**
 packages/playwright

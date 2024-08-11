@@ -75,7 +75,10 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
-import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
+import {
+  $internalCreateRangeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import {getActiveEditor, updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -91,6 +94,7 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMTextNode,
+  getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
   getWindow,
@@ -108,6 +112,7 @@ import {
   isEscape,
   isFirefoxClipboardEvents,
   isItalic,
+  isLexicalEditor,
   isLineBreak,
   isModifier,
   isMoveBackward,
@@ -162,7 +167,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyDownTimeStamp = 0;
-let lastKeyCode = 0;
+let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
 const rootElementsRegistered = new WeakMap<Document, number>();
@@ -345,15 +350,16 @@ function onSelectionChange(
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             const lastNode = anchor.getNode();
+            selection.style = '';
             if (
               lastNode instanceof ParagraphNode &&
               lastNode.getChildrenSize() === 0
             ) {
               selection.format = lastNode.getTextFormat();
+              selection.style = lastNode.getTextStyle();
             } else {
               selection.format = 0;
             }
-            selection.style = '';
           }
         }
       } else {
@@ -456,7 +462,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           // When we click on an empty paragraph node or the end of a paragraph that ends
           // with an image/poll, the nodeType will be ELEMENT_NODE
           if (nodeType === DOM_ELEMENT_TYPE || nodeType === DOM_TEXT_TYPE) {
-            const newSelection = internalCreateRangeSelection(
+            const newSelection = $internalCreateRangeSelection(
               lastSelection,
               domSelection,
               editor,
@@ -513,7 +519,7 @@ function $canRemoveText(
 
 function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
   return (
-    lastKeyCode === 229 &&
+    lastKeyCode === 'MediaLast' &&
     timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
   );
 }
@@ -817,7 +823,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       // to ensure to disable composition before dispatching the
       // insertText command for when changing the sequence for FF.
       if (isFirefoxEndingComposition) {
-        onCompositionEndImpl(editor, data);
+        $onCompositionEndImpl(editor, data);
         isFirefoxEndingComposition = false;
       }
       const anchor = selection.anchor;
@@ -873,7 +879,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
       // onInput always fires after onCompositionEnd for FF.
       if (isFirefoxEndingComposition) {
-        onCompositionEndImpl(editor, data || undefined);
+        $onCompositionEndImpl(editor, data || undefined);
         isFirefoxEndingComposition = false;
       }
     }
@@ -923,7 +929,7 @@ function onCompositionStart(
   });
 }
 
-function onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
+function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
 
@@ -984,108 +990,112 @@ function onCompositionEnd(
     isFirefoxEndingComposition = true;
   } else {
     updateEditor(editor, () => {
-      onCompositionEndImpl(editor, event.data);
+      $onCompositionEndImpl(editor, event.data);
     });
   }
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
-  lastKeyCode = event.keyCode;
+  lastKeyCode = event.key;
   if (editor.isComposing()) {
     return;
   }
 
-  const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+  const {key, shiftKey, ctrlKey, metaKey, altKey} = event;
 
   if (dispatchCommand(editor, KEY_DOWN_COMMAND, event)) {
     return;
   }
 
-  if (isMoveForward(keyCode, ctrlKey, altKey, metaKey)) {
+  if (key == null) {
+    return;
+  }
+
+  if (isMoveForward(key, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
-  } else if (isMoveToEnd(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveToEnd(key, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_END, event);
-  } else if (isMoveBackward(keyCode, ctrlKey, altKey, metaKey)) {
+  } else if (isMoveBackward(key, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
-  } else if (isMoveToStart(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveToStart(key, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_START, event);
-  } else if (isMoveUp(keyCode, ctrlKey, metaKey)) {
+  } else if (isMoveUp(key, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
-  } else if (isMoveDown(keyCode, ctrlKey, metaKey)) {
+  } else if (isMoveDown(key, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
-  } else if (isLineBreak(keyCode, shiftKey)) {
+  } else if (isLineBreak(key, shiftKey)) {
     isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isSpace(keyCode)) {
+  } else if (isSpace(key)) {
     dispatchCommand(editor, KEY_SPACE_COMMAND, event);
-  } else if (isOpenLineBreak(keyCode, ctrlKey)) {
+  } else if (isOpenLineBreak(key, ctrlKey)) {
     event.preventDefault();
     isInsertLineBreak = true;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
-  } else if (isParagraph(keyCode, shiftKey)) {
+  } else if (isParagraph(key, shiftKey)) {
     isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
-    if (isBackspace(keyCode)) {
+  } else if (isDeleteBackward(key, altKey, metaKey, ctrlKey)) {
+    if (isBackspace(key)) {
       dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
     }
-  } else if (isEscape(keyCode)) {
+  } else if (isEscape(key)) {
     dispatchCommand(editor, KEY_ESCAPE_COMMAND, event);
-  } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-    if (isDelete(keyCode)) {
+  } else if (isDeleteForward(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    if (isDelete(key)) {
       dispatchCommand(editor, KEY_DELETE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
     }
-  } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {
+  } else if (isDeleteWordBackward(key, altKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, true);
-  } else if (isDeleteWordForward(keyCode, altKey, ctrlKey)) {
+  } else if (isDeleteWordForward(key, altKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, false);
-  } else if (isDeleteLineBackward(keyCode, metaKey)) {
+  } else if (isDeleteLineBackward(key, metaKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, true);
-  } else if (isDeleteLineForward(keyCode, metaKey)) {
+  } else if (isDeleteLineForward(key, metaKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
-  } else if (isBold(keyCode, altKey, metaKey, ctrlKey)) {
+  } else if (isBold(key, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
-  } else if (isUnderline(keyCode, altKey, metaKey, ctrlKey)) {
+  } else if (isUnderline(key, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
-  } else if (isItalic(keyCode, altKey, metaKey, ctrlKey)) {
+  } else if (isItalic(key, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
-  } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
+  } else if (isTab(key, altKey, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
-  } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
+  } else if (isUndo(key, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, UNDO_COMMAND, undefined);
-  } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
+  } else if (isRedo(key, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
     if ($isNodeSelection(prevSelection)) {
-      if (isCopy(keyCode, shiftKey, metaKey, ctrlKey)) {
+      if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);
-      } else if (isCut(keyCode, shiftKey, metaKey, ctrlKey)) {
+      } else if (isCut(key, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
-      } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
+      } else if (isSelectAll(key, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
       // FF does it well (no need to override behavior)
-    } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
+    } else if (!IS_FIREFOX && isSelectAll(key, metaKey, ctrlKey)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }
@@ -1148,7 +1158,7 @@ function onDocumentSelectionChange(event: Event): void {
       if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
         return;
       }
-      const newSelection = internalCreateRangeSelection(
+      const newSelection = $internalCreateRangeSelection(
         lastSelection,
         domSelection,
         nextActiveEditor,
@@ -1234,72 +1244,67 @@ export function addRootElementEvents(
               return;
             }
             stopLexicalPropagation(event);
-            if (editor.isEditable()) {
-              switch (eventName) {
-                case 'cut':
-                  return dispatchCommand(
-                    editor,
-                    CUT_COMMAND,
-                    event as ClipboardEvent,
-                  );
+            const isEditable = editor.isEditable();
+            switch (eventName) {
+              case 'cut':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent)
+                );
 
-                case 'copy':
-                  return dispatchCommand(
-                    editor,
-                    COPY_COMMAND,
-                    event as ClipboardEvent,
-                  );
+              case 'copy':
+                return dispatchCommand(
+                  editor,
+                  COPY_COMMAND,
+                  event as ClipboardEvent,
+                );
 
-                case 'paste':
-                  return dispatchCommand(
+              case 'paste':
+                return (
+                  isEditable &&
+                  dispatchCommand(
                     editor,
                     PASTE_COMMAND,
                     event as ClipboardEvent,
-                  );
+                  )
+                );
 
-                case 'dragstart':
-                  return dispatchCommand(
-                    editor,
-                    DRAGSTART_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragstart':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent)
+                );
 
-                case 'dragover':
-                  return dispatchCommand(
-                    editor,
-                    DRAGOVER_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragover':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGOVER_COMMAND, event as DragEvent)
+                );
 
-                case 'dragend':
-                  return dispatchCommand(
-                    editor,
-                    DRAGEND_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragend':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGEND_COMMAND, event as DragEvent)
+                );
 
-                case 'focus':
-                  return dispatchCommand(
-                    editor,
-                    FOCUS_COMMAND,
-                    event as FocusEvent,
-                  );
+              case 'focus':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, FOCUS_COMMAND, event as FocusEvent)
+                );
 
-                case 'blur': {
-                  return dispatchCommand(
-                    editor,
-                    BLUR_COMMAND,
-                    event as FocusEvent,
-                  );
-                }
-
-                case 'drop':
-                  return dispatchCommand(
-                    editor,
-                    DROP_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'blur': {
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)
+                );
               }
+
+              case 'drop':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DROP_COMMAND, event as DragEvent)
+                );
             }
           };
     rootElement.addEventListener(eventName, eventHandler);
@@ -1326,13 +1331,17 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 
-  // @ts-expect-error: internal field
-  const editor: LexicalEditor | null | undefined = rootElement.__lexicalEditor;
+  const editor = getEditorPropertyFromDOMNode(rootElement);
 
-  if (editor !== null && editor !== undefined) {
+  if (isLexicalEditor(editor)) {
     cleanActiveNestedEditorsMap(editor);
     // @ts-expect-error: internal field
     rootElement.__lexicalEditor = null;
+  } else if (editor) {
+    invariant(
+      false,
+      'Attempted to remove event handlers from a node that does not belong to this build of Lexical',
+    );
   }
 
   const removeHandles = getRootElementRemoveHandles(rootElement);

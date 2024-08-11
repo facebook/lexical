@@ -60,6 +60,7 @@ const theme: EditorThemeClasses = {
     h5: 'PlaygroundEditorTheme__h5',
     h6: 'PlaygroundEditorTheme__h6',
   },
+  hr: 'PlaygroundEditorTheme__hr',
   image: 'editor-image',
   indent: 'PlaygroundEditorTheme__indent',
   inlineImage: 'inline-editor-image',
@@ -90,8 +91,6 @@ const theme: EditorThemeClasses = {
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',
   table: 'PlaygroundEditorTheme__table',
-  tableAddColumns: 'PlaygroundEditorTheme__tableAddColumns',
-  tableAddRows: 'PlaygroundEditorTheme__tableAddRows',
   tableCell: 'PlaygroundEditorTheme__tableCell',
   tableCellActionButton: 'PlaygroundEditorTheme__tableCellActionButton',
   tableCellActionButtonContainer:

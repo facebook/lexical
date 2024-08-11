@@ -36,9 +36,13 @@ module.exports = async function (context, options) {
     loadContent: () => {
       fs.mkdirSync(options.targetDir, {recursive: true});
       const oldTargets = new Set(
-        glob.sync(path.resolve(options.targetDir, '*.md')),
+        glob.sync(path.resolve(options.targetDir, '*.md'), {
+          windowsPathsNoEscape: true,
+        }),
       );
-      for (const srcPath of glob.sync(`${options.baseDir}/*/README.md`)) {
+      for (const srcPath of glob.sync(`${options.baseDir}/*/README.md`, {
+        windowsPathsNoEscape: true,
+      })) {
         const jsonPath = path.resolve(path.dirname(srcPath), 'package.json');
         if (!fs.existsSync(jsonPath)) {
           continue;

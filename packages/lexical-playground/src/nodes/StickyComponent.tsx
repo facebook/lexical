@@ -13,7 +13,7 @@ import './StickyNode.css';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
@@ -27,7 +27,6 @@ import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import ContentEditable from '../ui/ContentEditable';
-import Placeholder from '../ui/Placeholder';
 import {$isStickyNode} from './StickyNode';
 
 type Positioning = {
@@ -254,12 +253,11 @@ export default function StickyComponent({
           )}
           <PlainTextPlugin
             contentEditable={
-              <ContentEditable className="StickyNode__contentEditable" />
-            }
-            placeholder={
-              <Placeholder className="StickyNode__placeholder">
-                What's up?
-              </Placeholder>
+              <ContentEditable
+                placeholder="What's up?"
+                placeholderClassName="StickyNode__placeholder"
+                className="StickyNode__contentEditable"
+              />
             }
             ErrorBoundary={LexicalErrorBoundary}
           />

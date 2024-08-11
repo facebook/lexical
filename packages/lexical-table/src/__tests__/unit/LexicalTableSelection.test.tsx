@@ -21,7 +21,7 @@ import {
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 describe('table selection', () => {
   let originalText: TextNode;
@@ -134,6 +134,7 @@ describe('table selection', () => {
       __parent: null,
       __prev: null,
       __size: 1,
+      __style: '',
       __type: 'root',
     });
     expect(parsedParagraph).toEqual({
@@ -147,7 +148,9 @@ describe('table selection', () => {
       __parent: 'root',
       __prev: null,
       __size: 1,
+      __style: '',
       __textFormat: 0,
+      __textStyle: '',
       __type: 'paragraph',
     });
     expect(parsedText).toEqual({

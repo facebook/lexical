@@ -1,0 +1,49 @@
+{
+  "name": "@lexical/eslint-plugin",
+  "description": "Lexical specific linting rules for ESLint",
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "lexical",
+    "editor"
+  ],
+  "version": "0.17.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-eslint-plugin"
+  },
+  "main": "LexicalEslintPlugin.js",
+  "types": "index.d.ts",
+  "bugs": {
+    "url": "https://github.com/facebook/lexical/issues"
+  },
+  "homepage": "https://lexical.dev/docs/packages/lexical-eslint-plugin",
+  "sideEffects": false,
+  "peerDependencies": {
+    "eslint": ">=7.31.0 || ^8.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalEslintPlugin.dev.mjs",
+        "production": "./LexicalEslintPlugin.prod.mjs",
+        "node": "./LexicalEslintPlugin.node.mjs",
+        "default": "./LexicalEslintPlugin.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalEslintPlugin.dev.js",
+        "production": "./LexicalEslintPlugin.prod.js",
+        "default": "./LexicalEslintPlugin.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/eslint": "^8.56.9"
+  },
+  "module": "LexicalEslintPlugin.mjs"
+}

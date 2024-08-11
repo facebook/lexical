@@ -45,7 +45,7 @@ export class TableNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       table: (_node: Node) => ({
-        conversion: convertTableElement,
+        conversion: $convertTableElement,
         priority: 1,
       }),
     };
@@ -241,7 +241,7 @@ export function $getElementForTableNode(
   return getTable(tableElement);
 }
 
-export function convertTableElement(_domNode: Node): DOMConversionOutput {
+export function $convertTableElement(_domNode: Node): DOMConversionOutput {
   return {node: $createTableNode()};
 }
 

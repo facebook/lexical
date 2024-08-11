@@ -17,7 +17,6 @@ const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
 const json = require('@rollup/plugin-json');
-const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 const compiler = require('@ampproject/rollup-plugin-closure-compiler');
 const terser = require('@rollup/plugin-terser');
@@ -72,7 +71,9 @@ const wwwMappings = {
   'prismjs/components/prism-sql': 'prism-sql',
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
-  'react-dom': 'ReactDOMComet',
+  'react-dom': 'ReactDOM',
+  // The react entrypoint in fb includes the jsx runtime
+  'react/jsx-runtime': 'react',
 };
 
 /**
@@ -95,19 +96,11 @@ function resolveExternalEsm(id) {
  * party dependencies or peerDependencies that we do not want to include
  * in the bundles.
  */
-const externals = [
-  ...Object.entries(wwwMappings).flat(),
-  'react-dom',
-  'react',
-  'yjs',
-  'y-websocket',
-].sort();
-
-const errorCodeOpts = {
-  errorMapFilePath: 'scripts/error-codes/codes.json',
-};
-
-const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
+const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
+const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternalsRegExp = new RegExp(
+  `^(${thirdPartyExternals.join('|')})(\\/|$)`,
+);
 
 const strictWWWMappings = {};
 
@@ -132,13 +125,25 @@ function getExtension(format) {
  * @param {string} outputFile
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
+ * @param {string} version
  * @returns {Promise<Array<string>>} the exports of the built module
  */
-async function build(name, inputFile, outputPath, outputFile, isProd, format) {
+async function build(
+  name,
+  inputFile,
+  outputPath,
+  outputFile,
+  isProd,
+  format,
+  version,
+) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
-      return externals.includes(modulePath);
+      return (
+        monorepoExternalsSet.has(modulePath) ||
+        thirdPartyExternalsRegExp.test(modulePath)
+      );
     },
     input: inputFile,
     onwarn(warning) {
@@ -175,14 +180,6 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
         ],
       }),
-      // Extract error codes from invariant() messages into a file.
-      {
-        transform(source) {
-          // eslint-disable-next-line no-unused-expressions
-          extractCodes && findAndRecordErrorCodes(source);
-          return source;
-        },
-      },
       nodeResolve({
         extensions,
       }),
@@ -195,7 +192,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
         plugins: [
           [
             require('./error-codes/transform-error-messages'),
-            {noMinify: !isProd},
+            {extractCodes, noMinify: !isProd},
           ],
           '@babel/plugin-transform-optional-catch-binding',
         ],
@@ -206,7 +203,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
-          '@babel/preset-react',
+          ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
       {
@@ -226,6 +223,9 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
             __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
+            'process.env.LEXICAL_VERSION': JSON.stringify(
+              `${version}+${isProd ? 'prod' : 'dev'}.${format}`,
+            ),
           },
           isWWW && strictWWWMappings,
         ),
@@ -251,9 +251,14 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
     // This ensures PrismJS imports get included in the bundle
     treeshake: name !== 'Lexical Code' ? 'smallest' : false,
   };
+  /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
     esModule: false,
-    exports: 'auto',
+    exports:
+      // Special case for lexical-eslint-plugin which is written in cjs and
+      // requires a default export. Default exports in all other modules are
+      // deprecated.
+      name === 'Lexical Eslint Plugin' ? 'auto' : 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules
@@ -400,6 +405,7 @@ async function buildAll() {
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition();
+    const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
@@ -415,6 +421,7 @@ async function buildAll() {
           ),
           isProduction,
           format,
+          version,
         );
 
         if (isRelease) {
@@ -428,6 +435,7 @@ async function buildAll() {
             ),
             false,
             format,
+            version,
           );
           buildForkModules(outputPath, outputFileName, format, exports);
         }

@@ -1,25 +1,26 @@
 name: Nightly Release Branch
 on:
+  # Run daily at 2:30am UTC
   schedule:
-    # Run daily at 2:30am UTC
-    # - cron: '30 2 * * 1-5'
+    - cron: '30 2 * * 1-5'
 jobs:
-  release:
+  increment-version:
     # prevents this action from running on forks
     if: github.repository_owner == 'facebook'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ssh-key: ${{ secrets.SSH_KEY }}
-          fetch-depth: 0
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v4
-        with:
-          registry-url: 'https://registry.npmjs.org'
-      - run: |
-          git config user.name "Lexical GitHub Actions Bot"
-          git config user.email "<>"
-      - run: npm install
-      - run: npm run increment-version -- --i prerelease
-      - run: git push -u git@github.com:facebook/lexical.git --follow-tags
+    uses: ./.github/workflows/call-increment-version.yml
+    with:
+      channel: nightly
+      increment: prerelease
+      dry-run: false
+      git-repo: 'git@github.com:facebook/lexical.git'
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+  npm-release:
+    uses: ./.github/workflows/call-npm-publish.yml
+    needs: [increment-version]
+    with:
+      ref: ${{ needs.increment-version.outputs.tag-ref }}
+      dry-run: false
+      channel: nightly
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -25,7 +25,7 @@ import {
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {mergePrevious} from '../../shared/useCharacterLimit';
+import {$mergePrevious} from '../../shared/useCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(
@@ -82,7 +82,7 @@ describe('LexicalNodeHelpers tests', () => {
             const overflowRight =
               $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
-            mergePrevious(overflowRight);
+            $mergePrevious(overflowRight);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
@@ -141,7 +141,7 @@ describe('LexicalNodeHelpers tests', () => {
             const overflowRight =
               $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
-            mergePrevious(overflowRight);
+            $mergePrevious(overflowRight);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
@@ -211,7 +211,7 @@ describe('LexicalNodeHelpers tests', () => {
             const overflowRight =
               $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
-            mergePrevious(overflowRight);
+            $mergePrevious(overflowRight);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);

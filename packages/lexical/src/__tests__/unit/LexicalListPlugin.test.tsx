@@ -8,7 +8,7 @@
 import {ListItemNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
@@ -22,7 +22,7 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   INSERT_UNORDERED_LIST_COMMAND,
@@ -58,7 +58,6 @@ describe('@lexical/list tests', () => {
     }
 
     return (
-      //@ts-ignore-next-line
       <TestComposer config={{nodes: [ListNode, ListItemNode], theme: {}}}>
         <RichTextPlugin
           contentEditable={<ContentEditable />}

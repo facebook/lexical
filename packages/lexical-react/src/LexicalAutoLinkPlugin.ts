@@ -6,7 +6,7 @@
  *
  */
 
-import type {LinkAttributes} from '@lexical/link';
+import type {AutoLinkAttributes} from '@lexical/link';
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
@@ -14,6 +14,7 @@ import {
   $isAutoLinkNode,
   $isLinkNode,
   AutoLinkNode,
+  TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
@@ -25,6 +26,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_LOW,
   TextNode,
 } from 'lexical';
 import {useEffect} from 'react';
@@ -33,7 +35,7 @@ import invariant from 'shared/invariant';
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 
 type LinkMatcherResult = {
-  attributes?: LinkAttributes;
+  attributes?: AutoLinkAttributes;
   index: number;
   length: number;
   text: string;
@@ -87,6 +89,21 @@ function endsWithSeparator(textContent: string): boolean {
 
 function startsWithSeparator(textContent: string): boolean {
   return isSeparator(textContent[0]);
+}
+
+/**
+ * Check if the text content starts with a fullstop followed by a top-level domain.
+ * Meaning if the text content can be a beginning of a top level domain.
+ * @param textContent
+ * @param isEmail
+ * @returns boolean
+ */
+function startsWithTLD(textContent: string, isEmail: boolean): boolean {
+  if (isEmail) {
+    return /^\.[a-zA-Z]{2,}/.test(textContent);
+  } else {
+    return /^\.[a-zA-Z0-9]{1,}/.test(textContent);
+  }
 }
 
 function isPreviousNodeValid(node: LexicalNode): boolean {
@@ -179,7 +196,7 @@ function extractMatchingNodes(
   ];
 }
 
-function createAutoLinkNode(
+function $createAutoLinkNode_(
   nodes: TextNode[],
   startIndex: number,
   endIndex: number,
@@ -200,6 +217,7 @@ function createAutoLinkNode(
     const textNode = $createTextNode(match.text);
     textNode.setFormat(linkTextNode.getFormat());
     textNode.setDetail(linkTextNode.getDetail());
+    textNode.setStyle(linkTextNode.getStyle());
     linkNode.append(textNode);
     linkTextNode.replace(linkNode);
     return remainingTextNode;
@@ -240,6 +258,7 @@ function createAutoLinkNode(
     const textNode = $createTextNode(firstLinkTextNode.getTextContent());
     textNode.setFormat(firstLinkTextNode.getFormat());
     textNode.setDetail(firstLinkTextNode.getDetail());
+    textNode.setStyle(firstLinkTextNode.getStyle());
     linkNode.append(textNode, ...linkNodes);
     // it does not preserve caret position if caret was at the first text node
     // so we need to restore caret position
@@ -256,7 +275,7 @@ function createAutoLinkNode(
   return undefined;
 }
 
-function handleLinkCreation(
+function $handleLinkCreation(
   nodes: TextNode[],
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
@@ -290,7 +309,7 @@ function handleLinkCreation(
 
       const actualMatchStart = invalidMatchEnd + matchStart - matchingOffset;
       const actualMatchEnd = invalidMatchEnd + matchEnd - matchingOffset;
-      const remainingTextNode = createAutoLinkNode(
+      const remainingTextNode = $createAutoLinkNode_(
         matchingNodes,
         actualMatchStart,
         actualMatchEnd,
@@ -374,13 +393,22 @@ function handleBadNeighbors(
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
 
-  if ($isAutoLinkNode(previousSibling) && !startsWithSeparator(text)) {
+  if (
+    $isAutoLinkNode(previousSibling) &&
+    !previousSibling.getIsUnlinked() &&
+    (!startsWithSeparator(text) ||
+      startsWithTLD(text, previousSibling.isEmailURI()))
+  ) {
     previousSibling.append(textNode);
     handleLinkEdit(previousSibling, matchers, onChange);
     onChange(null, previousSibling.getURL());
   }
 
-  if ($isAutoLinkNode(nextSibling) && !endsWithSeparator(text)) {
+  if (
+    $isAutoLinkNode(nextSibling) &&
+    !nextSibling.getIsUnlinked() &&
+    !endsWithSeparator(text)
+  ) {
     replaceWithChildren(nextSibling);
     handleLinkEdit(nextSibling, matchers, onChange);
     onChange(null, nextSibling.getURL());
@@ -440,7 +468,7 @@ function useAutoLink(
       editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         const previous = textNode.getPreviousSibling();
-        if ($isAutoLinkNode(parent)) {
+        if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
           handleLinkEdit(parent, matchers, onChangeWrapped);
         } else if (!$isLinkNode(parent)) {
           if (
@@ -449,12 +477,34 @@ function useAutoLink(
               !$isAutoLinkNode(previous))
           ) {
             const textNodesToMatch = getTextNodesToMatch(textNode);
-            handleLinkCreation(textNodesToMatch, matchers, onChangeWrapped);
+            $handleLinkCreation(textNodesToMatch, matchers, onChangeWrapped);
           }
 
           handleBadNeighbors(textNode, matchers, onChangeWrapped);
         }
       }),
+      editor.registerCommand(
+        TOGGLE_LINK_COMMAND,
+        (payload) => {
+          const selection = $getSelection();
+          if (payload !== null || !$isRangeSelection(selection)) {
+            return false;
+          }
+          const nodes = selection.extract();
+          nodes.forEach((node) => {
+            const parent = node.getParent();
+
+            if ($isAutoLinkNode(parent)) {
+              // invert the value
+              parent.setIsUnlinked(!parent.getIsUnlinked());
+              parent.markDirty();
+              return true;
+            }
+          });
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [editor, matchers, onChange]);
 }

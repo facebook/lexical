@@ -26,7 +26,7 @@ export type SerializedMentionNode = Spread<
   SerializedTextNode
 >;
 
-function convertMentionElement(
+function $convertMentionElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const textContent = domNode.textContent;
@@ -97,7 +97,7 @@ export class MentionNode extends TextNode {
           return null;
         }
         return {
-          conversion: convertMentionElement,
+          conversion: $convertMentionElement,
           priority: 1,
         };
       },

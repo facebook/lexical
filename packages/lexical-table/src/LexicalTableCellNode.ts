@@ -11,7 +11,6 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
-  ElementFormatType,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -23,14 +22,13 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
-  $isBlockElementNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
 } from 'lexical';
 
-import {PIXEL_VALUE_REG_EXP} from './constants';
+import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -85,11 +83,11 @@ export class TableCellNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
       th: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
     };
@@ -154,8 +152,6 @@ export class TableCellNode extends ElementNode {
 
     if (element) {
       const element_ = element as HTMLTableCellElement;
-      const maxWidth = 700;
-      const colCount = this.getParentOrThrow().getChildrenSize();
       element_.style.border = '1px solid black';
       if (this.__colSpan > 1) {
         element_.colSpan = this.__colSpan;
@@ -163,9 +159,7 @@ export class TableCellNode extends ElementNode {
       if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
-      element_.style.width = `${
-        this.getWidth() || Math.max(90, maxWidth / colCount)
-      }px`;
+      element_.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
@@ -292,7 +286,7 @@ export class TableCellNode extends ElementNode {
   }
 }
 
-export function convertTableCellNodeElement(
+export function $convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
@@ -325,39 +319,16 @@ export function convertTableCellNodeElement(
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   const hasItalicFontStyle = style.fontStyle === 'italic';
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
-  const textAlign = style.textAlign;
   return {
     after: (childLexicalNodes) => {
-      const children = [];
-      let paragraphNode = $createParagraphNode().setFormat(
-        textAlign as ElementFormatType,
-      );
       if (childLexicalNodes.length === 0) {
-        children.push(paragraphNode);
+        childLexicalNodes.push($createParagraphNode());
       }
-
-      childLexicalNodes.forEach((node) => {
-        if ($isBlockElementNode(node)) {
-          if (paragraphNode.getChildrenSize() !== 0) {
-            children.push(paragraphNode);
-            paragraphNode = $createParagraphNode().setFormat(
-              textAlign as ElementFormatType,
-            );
-          }
-          children.push(node);
-        } else {
-          paragraphNode.append(node);
-        }
-      });
-      if (paragraphNode.getChildrenSize() !== 0) {
-        children.push(paragraphNode);
-      }
-      return children;
+      return childLexicalNodes;
     },
     forChild: (lexicalNode, parentLexicalNode) => {
       if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
         const paragraphNode = $createParagraphNode();
-        paragraphNode.setFormat(textAlign as ElementFormatType);
         if (
           $isLineBreakNode(lexicalNode) &&
           lexicalNode.getTextContent() === '\n'

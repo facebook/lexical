@@ -23,7 +23,7 @@ const BLOCK_REGEX =
 
 function flowTemplate(wwwName) {
   return (
-    headerTemplate.replace(/^( *\/)$/, '* @flow strict\n$1') +
+    headerTemplate.replace(/^( \*\/)$/m, ' * @flow strict\n$1') +
     `
 /**
  * ${wwwName}
@@ -59,22 +59,7 @@ function updateFlowconfig(flowconfigPath = './.flowconfig') {
     const resolveRelative = (...subPaths) =>
       '<PROJECT_ROOT>/' +
       path.relative(configDir, pkg.resolve(...subPaths)).replace(/^(?!\.)/, '');
-    if (pkg.isPrivate()) {
-      if (pkg.getDirectoryName() !== 'shared') {
-        continue;
-      }
-      if (process.env.TODO_DOES_WWW_NEED_SHARED_FILES === '1') {
-        // Do these even work? These .js files aren't on disk and `npm run flow`
-        // passes without them. Code is left in for demonstration purposes if
-        // this is needed for www.
-        for (const {name, sourceFileName} of pkg.getPrivateModuleEntries()) {
-          emit(
-            name,
-            resolveRelative('src', sourceFileName.replace(/\.tsx?$/, '.js')),
-          );
-        }
-      }
-    } else {
+    if (!pkg.isPrivate()) {
       for (const name of pkg.getExportedNpmModuleNames()) {
         const wwwName = npmToWwwName(name);
         const flowFile = `${wwwName}.js.flow`;
@@ -85,6 +70,7 @@ function updateFlowconfig(flowconfigPath = './.flowconfig') {
           console.log(
             `Creating boilerplate ${resolvedFlowFile.replace(/^[^/]+\//, '')}`,
           );
+          fs.mkdirsSync(path.dirname(flowFilePath));
           fs.writeFileSync(flowFilePath, flowTemplate(wwwName));
         }
       }

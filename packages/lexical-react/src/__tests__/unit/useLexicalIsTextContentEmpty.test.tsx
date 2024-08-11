@@ -17,7 +17,7 @@ import {
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {useLexicalIsTextContentEmpty} from '../../useLexicalIsTextContentEmpty';
 

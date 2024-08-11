@@ -1,10 +1,10 @@
-name: 'size'
+name: 'Bundles'
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
 jobs:
-  size:
+  size-limit:
     runs-on: ubuntu-latest
     env:
       CI_JOB_NUMBER: 1

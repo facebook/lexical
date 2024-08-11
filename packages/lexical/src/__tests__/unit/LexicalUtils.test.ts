@@ -13,6 +13,7 @@ import {
   $nodesOfType,
   emptyFunction,
   generateRandomKey,
+  getCachedTypeToNodeMap,
   getTextDirection,
   isArray,
   isSelectionWithinEditor,
@@ -46,20 +47,22 @@ describe('LexicalUtils tests', () => {
 
     test('scheduleMicroTask(): promise', async () => {
       jest.resetModules();
-      // @ts-ignore
-      window.queueMicrotask = undefined;
+      const nativeQueueMicrotask = window.queueMicrotask;
+      const fn = jest.fn();
+      try {
+        // @ts-ignore
+        window.queueMicrotask = undefined;
+        scheduleMicroTask(fn);
+      } finally {
+        // Reset it before yielding control
+        window.queueMicrotask = nativeQueueMicrotask;
+      }
 
-      let flag = false;
-
-      scheduleMicroTask(() => {
-        flag = true;
-      });
-
-      expect(flag).toBe(false);
+      expect(fn).toHaveBeenCalledTimes(0);
 
       await null;
 
-      expect(flag).toBe(true);
+      expect(fn).toHaveBeenCalledTimes(1);
     });
 
     test('emptyFunction()', () => {
@@ -232,6 +235,59 @@ describe('LexicalUtils tests', () => {
           expect.arrayContaining(paragraphKeys),
         );
       });
+    });
+
+    test('getCachedTypeToNodeMap', async () => {
+      const {editor} = testEnv;
+      const paragraphKeys: string[] = [];
+
+      const initialTypeToNodeMap = getCachedTypeToNodeMap(
+        editor.getEditorState(),
+      );
+      expect(getCachedTypeToNodeMap(editor.getEditorState())).toBe(
+        initialTypeToNodeMap,
+      );
+      expect([...initialTypeToNodeMap.keys()]).toEqual(['root']);
+      expect(initialTypeToNodeMap.get('root')).toMatchObject({size: 1});
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph1 = $createParagraphNode().append(
+            $createTextNode('a'),
+          );
+          const paragraph2 = $createParagraphNode().append(
+            $createTextNode('b'),
+          );
+          // these will be garbage collected and not in the readonly map
+          $createParagraphNode().append($createTextNode('c'));
+          root.append(paragraph1, paragraph2);
+          paragraphKeys.push(paragraph1.getKey(), paragraph2.getKey());
+        },
+        {discrete: true},
+      );
+
+      const typeToNodeMap = getCachedTypeToNodeMap(editor.getEditorState());
+      // verify that the initial cache was not used
+      expect(typeToNodeMap).not.toBe(initialTypeToNodeMap);
+      // verify that the cache is used for subsequent calls
+      expect(getCachedTypeToNodeMap(editor.getEditorState())).toBe(
+        typeToNodeMap,
+      );
+      expect(typeToNodeMap.size).toEqual(3);
+      expect([...typeToNodeMap.keys()]).toEqual(
+        expect.arrayContaining(['root', 'paragraph', 'text']),
+      );
+      const paragraphMap = typeToNodeMap.get('paragraph')!;
+      expect(paragraphMap.size).toEqual(paragraphKeys.length);
+      expect([...paragraphMap.keys()]).toEqual(
+        expect.arrayContaining(paragraphKeys),
+      );
+      const textMap = typeToNodeMap.get('text')!;
+      expect(textMap.size).toEqual(2);
+      expect(
+        [...textMap.values()].map((node) => (node as TextNode).__text),
+      ).toEqual(expect.arrayContaining(['a', 'b']));
     });
   });
 });

@@ -24,7 +24,7 @@ import {
 import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   $createTestSegmentedNode,
@@ -582,6 +582,18 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+
+    test('with detached parent', async () => {
+      await update(() => {
+        const textNode = $createTextNode('foo');
+        const splits = textNode.splitText(1, 2);
+        expect(splits.map((split) => split.getTextContent())).toEqual([
+          'f',
+          'o',
+          'o',
+        ]);
+      });
+    });
   });
 
   describe('createDOM()', () => {

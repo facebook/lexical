@@ -142,7 +142,7 @@ export class QuoteNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       blockquote: (node: Node) => ({
-        conversion: convertBlockquoteElement,
+        conversion: $convertBlockquoteElement,
         priority: 0,
       }),
     };
@@ -202,6 +202,10 @@ export class QuoteNode extends ElementNode {
     this.replace(paragraph);
     return true;
   }
+
+  canMergeWhenEmpty(): true {
+    return true;
+  }
 }
 
 export function $createQuoteNode(): QuoteNode {
@@ -259,27 +263,27 @@ export class HeadingNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       h1: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h2: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h3: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h4: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h5: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h6: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       p: (node: Node) => {
@@ -355,8 +359,14 @@ export class HeadingNode extends ElementNode {
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
+    const lastDesc = this.getLastDescendant();
+    const isAtEnd =
+      !lastDesc ||
+      (selection &&
+        selection.anchor.key === lastDesc.getKey() &&
+        anchorOffet === lastDesc.getTextContentSize());
     const newElement =
-      anchorOffet === this.getTextContentSize() || !selection
+      isAtEnd || !selection
         ? $createParagraphNode()
         : $createHeadingNode(this.getTag());
     const direction = this.getDirection();
@@ -392,7 +402,7 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
+function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
@@ -411,7 +421,7 @@ function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   return {node};
 }
 
-function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
+function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
@@ -494,7 +504,7 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-function handleIndentAndOutdent(
+function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
   const selection = $getSelection();
@@ -696,7 +706,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           block.setIndent(indent + 1);
         });
@@ -706,7 +716,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           if (indent > 0) {
             block.setIndent(indent - 1);

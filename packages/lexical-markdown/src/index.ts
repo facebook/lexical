@@ -68,20 +68,34 @@ const TRANSFORMERS: Array<Transformer> = [
   ...TEXT_MATCH_TRANSFORMERS,
 ];
 
+/**
+ * Renders markdown from a string. The selection is moved to the start after the operation.
+ */
 function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
+  shouldPreserveNewLines = false,
 ): void {
-  const importMarkdown = createMarkdownImport(transformers);
+  const importMarkdown = createMarkdownImport(
+    transformers,
+    shouldPreserveNewLines,
+  );
   return importMarkdown(markdown, node);
 }
 
+/**
+ * Renders string from markdown. The selection is moved to the start after the operation.
+ */
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
+  shouldPreserveNewLines: boolean = false,
 ): string {
-  const exportMarkdown = createMarkdownExport(transformers);
+  const exportMarkdown = createMarkdownExport(
+    transformers,
+    shouldPreserveNewLines,
+  );
   return exportMarkdown(node);
 }
 

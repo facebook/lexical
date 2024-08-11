@@ -37,6 +37,7 @@ import {$isTextNode, TextFormatType} from './LexicalTextNode';
 export type SerializedParagraphNode = Spread<
   {
     textFormat: number;
+    textStyle: string;
   },
   SerializedElementNode
 >;
@@ -46,10 +47,12 @@ export class ParagraphNode extends ElementNode {
   ['constructor']!: KlassConstructor<typeof ParagraphNode>;
   /** @internal */
   __textFormat: number;
+  __textStyle: string;
 
   constructor(key?: NodeKey) {
     super(key);
     this.__textFormat = 0;
+    this.__textStyle = '';
   }
 
   static getType(): string {
@@ -70,6 +73,17 @@ export class ParagraphNode extends ElementNode {
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getTextFormat() & formatFlag) !== 0;
+  }
+
+  getTextStyle(): string {
+    const self = this.getLatest();
+    return self.__textStyle;
+  }
+
+  setTextStyle(style: string): this {
+    const self = this.getWritable();
+    self.__textStyle = style;
+    return self;
   }
 
   static clone(node: ParagraphNode): ParagraphNode {
@@ -98,7 +112,7 @@ export class ParagraphNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       p: (node: Node) => ({
-        conversion: convertParagraphElement,
+        conversion: $convertParagraphElement,
         priority: 0,
       }),
     };
@@ -145,6 +159,7 @@ export class ParagraphNode extends ElementNode {
     return {
       ...super.exportJSON(),
       textFormat: this.getTextFormat(),
+      textStyle: this.getTextStyle(),
       type: 'paragraph',
       version: 1,
     };
@@ -158,9 +173,11 @@ export class ParagraphNode extends ElementNode {
   ): ParagraphNode {
     const newElement = $createParagraphNode();
     newElement.setTextFormat(rangeSelection.format);
+    newElement.setTextStyle(rangeSelection.style);
     const direction = this.getDirection();
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
+    newElement.setStyle(this.getTextStyle());
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }
@@ -190,7 +207,7 @@ export class ParagraphNode extends ElementNode {
   }
 }
 
-function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
+function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);

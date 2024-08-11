@@ -16,6 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {TableSelection} from '@lexical/table';
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -517,7 +518,7 @@ function $getNodeStyleValueForProperty(
  * @returns The value of the property for the selected TextNodes.
  */
 export function $getSelectionStyleValueForProperty(
-  selection: RangeSelection,
+  selection: RangeSelection | TableSelection,
   styleProperty: string,
   defaultValue = '',
 ): string {
@@ -529,7 +530,11 @@ export function $getSelectionStyleValueForProperty(
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
 
-  if (selection.isCollapsed() && selection.style !== '') {
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.style !== ''
+  ) {
     const css = selection.style;
     const styleObject = getStyleObjectFromCSS(css);
 

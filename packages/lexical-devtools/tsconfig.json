@@ -14,6 +14,7 @@
       "@lexical/code": ["../lexical-code/src/index.ts"],
       "@lexical/devtools-core": ["../lexical-devtools-core/src/index.ts"],
       "@lexical/dragon": ["../lexical-dragon/src/index.ts"],
+      "@lexical/eslint-plugin": ["../lexical-eslint-plugin/src/index.ts"],
       "@lexical/file": ["../lexical-file/src/index.ts"],
       "@lexical/hashtag": ["../lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["../lexical-headless/src/index.ts"],
@@ -54,7 +55,7 @@
         "../lexical-react/src/LexicalCollaborationContext.ts"
       ],
       "@lexical/react/LexicalCollaborationPlugin": [
-        "../lexical-react/src/LexicalCollaborationPlugin.ts"
+        "../lexical-react/src/LexicalCollaborationPlugin.tsx"
       ],
       "@lexical/react/LexicalComposer": [
         "../lexical-react/src/LexicalComposer.tsx"
@@ -70,6 +71,9 @@
       ],
       "@lexical/react/LexicalDecoratorBlockNode": [
         "../lexical-react/src/LexicalDecoratorBlockNode.ts"
+      ],
+      "@lexical/react/LexicalDraggableBlockPlugin": [
+        "../lexical-react/src/LexicalDraggableBlockPlugin.tsx"
       ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "../lexical-react/src/LexicalEditorRefPlugin.tsx"
@@ -122,6 +126,9 @@
       "@lexical/react/LexicalTableOfContents": [
         "../lexical-react/src/LexicalTableOfContents.tsx"
       ],
+      "@lexical/react/LexicalTableOfContentsPlugin": [
+        "../lexical-react/src/LexicalTableOfContentsPlugin.tsx"
+      ],
       "@lexical/react/LexicalTablePlugin": [
         "../lexical-react/src/LexicalTablePlugin.ts"
       ],
@@ -157,6 +164,7 @@
       "shared/environment": ["../shared/src/environment.ts"],
       "shared/invariant": ["../shared/src/invariant.ts"],
       "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],
+      "shared/react-test-utils": ["../shared/src/react-test-utils.ts"],
       "shared/simpleDiffWithCursor": ["../shared/src/simpleDiffWithCursor.ts"],
       "shared/useLayoutEffect": ["../shared/src/useLayoutEffect.ts"],
       "shared/warnOnlyOnce": ["../shared/src/warnOnlyOnce.ts"]

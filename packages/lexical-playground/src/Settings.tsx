@@ -30,6 +30,7 @@ export default function Settings(): JSX.Element {
       disableBeforeInput,
       showTableOfContents,
       shouldUseLexicalContextMenu,
+      shouldPreserveNewLinesInMarkdown,
     },
   } = useSettings();
   useEffect(() => {
@@ -149,6 +150,16 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldUseLexicalContextMenu}
             text="Use Lexical Context Menu"
+          />
+          <Switch
+            onClick={() => {
+              setOption(
+                'shouldPreserveNewLinesInMarkdown',
+                !shouldPreserveNewLinesInMarkdown,
+              );
+            }}
+            checked={shouldPreserveNewLinesInMarkdown}
+            text="Preserve newlines in Markdown"
           />
         </div>
       ) : null}

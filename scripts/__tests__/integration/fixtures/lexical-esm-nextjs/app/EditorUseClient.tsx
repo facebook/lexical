@@ -9,7 +9,7 @@
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import {
@@ -28,10 +28,6 @@ import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getRoot } from "lexical";
 
-function Placeholder() {
-  return <div className="editor-placeholder">Enter some rich text...</div>;
-}
-
 const editorConfig = {
   namespace: "React.js Demo",
   nodes: [CodeNode, CodeHighlightNode],
@@ -42,6 +38,8 @@ const editorConfig = {
   // The editor theme
   theme: ExampleTheme,
 };
+
+const placeholder = 'Enter some rich text...';
 
 function CodeHighlightingPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -64,8 +62,15 @@ export default function App() {
         <ToolbarPlugin />
         <div className="editor-inner">
           <RichTextPlugin
-            contentEditable={<ContentEditable className="editor-input" />}
-            placeholder={<Placeholder />}
+            contentEditable={
+              <ContentEditable
+                className="editor-input"
+                aria-placeholder={placeholder}
+                placeholder={
+                  <div className="editor-placeholder">{placeholder}</div>
+                }
+              />
+            }
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />

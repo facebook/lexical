@@ -15,12 +15,17 @@ const common = {
 };
 
 // Use tsconfig's paths to configure jest's module name mapper
-const moduleNameMapper = Object.fromEntries(
-  Object.entries(tsconfig.compilerOptions.paths).map(([name, [firstPath]]) => [
-    `^${name}$`,
-    firstPath.replace(/^\./, '<rootDir>'),
-  ]),
-);
+const moduleNameMapper = {
+  ...Object.fromEntries(
+    Object.entries(tsconfig.compilerOptions.paths).map(
+      ([name, [firstPath]]) => [
+        `^${name}$`,
+        firstPath.replace(/^\./, '<rootDir>'),
+      ],
+    ),
+  ),
+  '^shared/invariant$': '<rootDir>/packages/shared/src/__mocks__/invariant.ts',
+};
 
 module.exports = {
   projects: [
@@ -28,6 +33,7 @@ module.exports = {
       ...common,
       displayName: 'unit',
       globals: {
+        // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#configuring-your-testing-environment
         IS_REACT_ACT_ENVIRONMENT: true,
         __DEV__: true,
       },

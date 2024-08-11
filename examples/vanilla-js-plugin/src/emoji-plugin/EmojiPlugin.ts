@@ -11,7 +11,7 @@ import {LexicalEditor, TextNode} from 'lexical';
 import {$createEmojiNode} from './EmojiNode';
 import findEmoji from './findEmoji';
 
-function textNodeTransform(node: TextNode): void {
+function $textNodeTransform(node: TextNode): void {
   if (!node.isSimpleText() || node.hasFormat('code')) {
     return;
   }
@@ -46,5 +46,5 @@ function textNodeTransform(node: TextNode): void {
 export function registerEmoji(editor: LexicalEditor): () => void {
   // We don't use editor.registerUpdateListener here as alternative approach where we rely
   // on update listener is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
-  return editor.registerNodeTransform(TextNode, textNodeTransform);
+  return editor.registerNodeTransform(TextNode, $textNodeTransform);
 }

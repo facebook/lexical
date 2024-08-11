@@ -52,6 +52,10 @@ export default defineConfig(({command}) => {
             from: /__DEV__/g,
             to: 'true',
           },
+          {
+            from: 'process.env.LEXICAL_VERSION',
+            to: JSON.stringify(`${process.env.npm_package_version}+git`),
+          },
         ],
       }),
       babel({
@@ -69,11 +73,15 @@ export default defineConfig(({command}) => {
             },
           ],
         ],
-        presets: ['@babel/preset-react'],
+        presets: [['@babel/preset-react', {runtime: 'automatic'}]],
       }),
       react(),
       viteCopyEsm(),
-      commonjs(),
+      commonjs({
+        // This is required for React 19 (at least 19.0.0-beta-26f2496093-20240514)
+        // because @rollup/plugin-commonjs does not analyze it correctly
+        strictRequires: [/\/node_modules\/(react-dom|react)\/[^/]\.js$/],
+      }),
     ],
     resolve: {
       alias: moduleResolution(command === 'serve' ? 'source' : 'development'),

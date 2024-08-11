@@ -15,11 +15,13 @@ import type {
 
 import './ImageNode.css';
 
+import {HashtagNode} from '@lexical/hashtag';
+import {LinkNode} from '@lexical/link';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
@@ -40,7 +42,11 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  LineBreakNode,
+  ParagraphNode,
+  RootNode,
   SELECTION_CHANGE_COMMAND,
+  TextNode,
 } from 'lexical';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
@@ -48,6 +54,7 @@ import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import {createWebsocketProvider} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import brokenImage from '../images/image-broken.svg';
 import EmojisPlugin from '../plugins/EmojisPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import LinkPlugin from '../plugins/LinkPlugin';
@@ -55,8 +62,9 @@ import MentionsPlugin from '../plugins/MentionsPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
-import Placeholder from '../ui/Placeholder';
+import {EmojiNode} from './EmojiNode';
 import {$isImageNode} from './ImageNode';
+import {KeywordNode} from './KeywordNode';
 
 const imageCache = new Set();
 
@@ -72,6 +80,9 @@ function useSuspenseImage(src: string) {
         imageCache.add(src);
         resolve(null);
       };
+      img.onerror = () => {
+        imageCache.add(src);
+      };
     });
   }
 }
@@ -84,6 +95,7 @@ function LazyImage({
   width,
   height,
   maxWidth,
+  onError,
 }: {
   altText: string;
   className: string | null;
@@ -92,6 +104,7 @@ function LazyImage({
   maxWidth: number;
   src: string;
   width: 'inherit' | number;
+  onError: () => void;
 }): JSX.Element {
   useSuspenseImage(src);
   return (
@@ -104,6 +117,21 @@ function LazyImage({
         height,
         maxWidth,
         width,
+      }}
+      onError={onError}
+      draggable="false"
+    />
+  );
+}
+
+function BrokenImage(): JSX.Element {
+  return (
+    <img
+      src={brokenImage}
+      style={{
+        height: 200,
+        opacity: 0.2,
+        width: 200,
       }}
       draggable="false"
     />
@@ -142,8 +170,9 @@ export default function ImageComponent({
   const [editor] = useLexicalComposerContext();
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
+  const [isLoadError, setIsLoadError] = useState<boolean>(false);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
@@ -159,7 +188,7 @@ export default function ImageComponent({
     [isSelected, nodeKey],
   );
 
-  const onEnter = useCallback(
+  const $onEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
       const buttonElem = buttonRef.current;
@@ -188,7 +217,7 @@ export default function ImageComponent({
     [caption, isSelected, showCaption],
   );
 
-  const onEscape = useCallback(
+  const $onEscape = useCallback(
     (event: KeyboardEvent) => {
       if (
         activeEditorRef.current === caption ||
@@ -293,18 +322,18 @@ export default function ImageComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_ENTER_COMMAND, onEnter, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
-        onEscape,
+        $onEscape,
         COMMAND_PRIORITY_LOW,
       ),
     );
@@ -322,9 +351,9 @@ export default function ImageComponent({
     isResizing,
     isSelected,
     nodeKey,
-    onDelete,
-    onEnter,
-    onEscape,
+    $onDelete,
+    $onEnter,
+    $onEscape,
     onClick,
     onRightClick,
     setSelected,
@@ -371,23 +400,40 @@ export default function ImageComponent({
     <Suspense fallback={null}>
       <>
         <div draggable={draggable}>
-          <LazyImage
-            className={
-              isFocused
-                ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
-                : null
-            }
-            src={src}
-            altText={altText}
-            imageRef={imageRef}
-            width={width}
-            height={height}
-            maxWidth={maxWidth}
-          />
+          {isLoadError ? (
+            <BrokenImage />
+          ) : (
+            <LazyImage
+              className={
+                isFocused
+                  ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                  : null
+              }
+              src={src}
+              altText={altText}
+              imageRef={imageRef}
+              width={width}
+              height={height}
+              maxWidth={maxWidth}
+              onError={() => setIsLoadError(true)}
+            />
+          )}
         </div>
+
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer initialEditor={caption}>
+            <LexicalNestedComposer
+              initialEditor={caption}
+              initialNodes={[
+                RootNode,
+                TextNode,
+                LineBreakNode,
+                ParagraphNode,
+                LinkNode,
+                EmojiNode,
+                HashtagNode,
+                KeywordNode,
+              ]}>
               <AutoFocusPlugin />
               <MentionsPlugin />
               <LinkPlugin />
@@ -405,12 +451,11 @@ export default function ImageComponent({
               )}
               <RichTextPlugin
                 contentEditable={
-                  <ContentEditable className="ImageNode__contentEditable" />
-                }
-                placeholder={
-                  <Placeholder className="ImageNode__placeholder">
-                    Enter a caption...
-                  </Placeholder>
+                  <ContentEditable
+                    placeholder="Enter a caption..."
+                    placeholderClassName="ImageNode__placeholder"
+                    className="ImageNode__contentEditable"
+                  />
                 }
                 ErrorBoundary={LexicalErrorBoundary}
               />
@@ -428,7 +473,7 @@ export default function ImageComponent({
             maxWidth={maxWidth}
             onResizeStart={onResizeStart}
             onResizeEnd={onResizeEnd}
-            captionsEnabled={captionsEnabled}
+            captionsEnabled={!isLoadError && captionsEnabled}
           />
         )}
       </>

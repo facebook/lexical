@@ -9,13 +9,14 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeMap, SerializedLexicalNode} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
+import type {SerializedElementNode} from './nodes/LexicalElementNode';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, SerializedElementNode} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
+import {$isElementNode} from './nodes/LexicalElementNode';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
 export interface SerializedEditorState<
@@ -90,6 +91,10 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   return serializedNode;
 }
 
+export interface EditorStateReadOptions {
+  editor?: LexicalEditor | null;
+}
+
 export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | BaseSelection;
@@ -107,8 +112,12 @@ export class EditorState {
     return this._nodeMap.size === 1 && this._selection === null;
   }
 
-  read<V>(callbackFn: () => V): V {
-    return readEditorState(this, callbackFn);
+  read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V {
+    return readEditorState(
+      (options && options.editor) || null,
+      this,
+      callbackFn,
+    );
   }
 
   clone(selection?: null | BaseSelection): EditorState {
@@ -121,7 +130,7 @@ export class EditorState {
     return editorState;
   }
   toJSON(): SerializedEditorState {
-    return readEditorState(this, () => ({
+    return readEditorState(null, this, () => ({
       root: exportNodeToJSON($getRoot()),
     }));
   }

@@ -25,8 +25,8 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
-  internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
@@ -57,7 +57,14 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ElementNode {
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
   ['constructor']!: KlassConstructor<typeof ElementNode>;
   /** @internal */
@@ -69,6 +76,8 @@ export class ElementNode extends LexicalNode {
   /** @internal */
   __format: number;
   /** @internal */
+  __style: string;
+  /** @internal */
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
@@ -79,6 +88,7 @@ export class ElementNode extends LexicalNode {
     this.__last = null;
     this.__size = 0;
     this.__format = 0;
+    this.__style = '';
     this.__indent = 0;
     this.__dir = null;
   }
@@ -90,6 +100,10 @@ export class ElementNode extends LexicalNode {
   getFormatType(): ElementFormatType {
     const format = this.getFormat();
     return ELEMENT_FORMAT_TO_TYPE[format] || '';
+  }
+  getStyle(): string {
+    const self = this.getLatest();
+    return self.__style;
   }
   getIndent(): number {
     const self = this.getLatest();
@@ -316,7 +330,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,
@@ -356,6 +370,11 @@ export class ElementNode extends LexicalNode {
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    return this;
+  }
+  setStyle(style: string): this {
+    const self = this.getWritable();
+    self.__style = style || '';
     return this;
   }
   setIndent(indentLevel: number): this {
@@ -525,9 +544,11 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
   }
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return true;
   }
@@ -550,6 +571,7 @@ export class ElementNode extends LexicalNode {
   isShadowRoot(): boolean {
     return false;
   }
+  /** @deprecated @internal */
   canMergeWith(node: ElementNode): boolean {
     return false;
   }
@@ -558,6 +580,23 @@ export class ElementNode extends LexicalNode {
     selection: BaseSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
+    return false;
+  }
+
+  /**
+   * Determines whether this node, when empty, can merge with a first block
+   * of nodes being inserted.
+   *
+   * This method is specifically called in {@link RangeSelection.insertNodes}
+   * to determine merging behavior during nodes insertion.
+   *
+   * @example
+   * // In a ListItemNode or QuoteNode implementation:
+   * canMergeWhenEmpty(): true {
+   *  return true;
+   * }
+   */
+  canMergeWhenEmpty(): boolean {
     return false;
   }
 }

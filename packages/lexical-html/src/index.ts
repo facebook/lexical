@@ -11,16 +11,15 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  ElementFormatType,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
 
-import {
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
+  $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
   $getRoot,
@@ -30,6 +29,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  isInlineDomNode,
 } from 'lexical';
 
 /**
@@ -58,7 +58,7 @@ export function $generateNodesFromDOM(
       }
     }
   }
-  unwrapArtificalNodes(allArtificialNodes);
+  $unwrapArtificalNodes(allArtificialNodes);
 
   return lexicalNodes;
 }
@@ -101,7 +101,7 @@ function $appendNodesToHTML(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = $cloneWithProperties(currentNode);
     clone =
       $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
@@ -293,9 +293,16 @@ function $createNodesFromDOM(
   }
 
   if (currentLexicalNode == null) {
-    // If it hasn't been converted to a LexicalNode, we hoist its children
-    // up to the same level as it.
-    lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+    if (childLexicalNodes.length > 0) {
+      // If it hasn't been converted to a LexicalNode, we hoist its children
+      // up to the same level as it.
+      lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+    } else {
+      if (isBlockDomNode(node) && isDomNodeBetweenTwoInlineNodes(node)) {
+        // Empty block dom node that hasnt been converted, we replace it with a linebreak if its between inline nodes
+        lexicalNodes = lexicalNodes.concat($createLineBreakNode());
+      }
+    }
   } else {
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after conversion,
@@ -312,12 +319,17 @@ function wrapContinuousInlines(
   nodes: Array<LexicalNode>,
   createWrapperFn: () => ElementNode,
 ): Array<LexicalNode> {
+  const textAlign = (domNode as HTMLElement).style
+    .textAlign as ElementFormatType;
   const out: Array<LexicalNode> = [];
   let continuousInlines: Array<LexicalNode> = [];
   // wrap contiguous inline child nodes in para
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if ($isBlockElementNode(node)) {
+      if (textAlign && !node.getFormat()) {
+        node.setFormat(textAlign);
+      }
       out.push(node);
     } else {
       continuousInlines.push(node);
@@ -326,6 +338,7 @@ function wrapContinuousInlines(
         (i < nodes.length - 1 && $isBlockElementNode(nodes[i + 1]))
       ) {
         const wrapper = createWrapperFn();
+        wrapper.setFormat(textAlign);
         wrapper.append(...continuousInlines);
         out.push(wrapper);
         continuousInlines = [];
@@ -335,7 +348,7 @@ function wrapContinuousInlines(
   return out;
 }
 
-function unwrapArtificalNodes(
+function $unwrapArtificalNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   for (const node of allArtificialNodes) {
@@ -351,4 +364,13 @@ function unwrapArtificalNodes(
     }
     node.remove();
   }
+}
+
+function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
+  if (node.nextSibling == null || node.previousSibling == null) {
+    return false;
+  }
+  return (
+    isInlineDomNode(node.nextSibling) && isInlineDomNode(node.previousSibling)
+  );
 }

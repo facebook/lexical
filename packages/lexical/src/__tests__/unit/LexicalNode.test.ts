@@ -7,22 +7,24 @@
  */
 
 import {
+  $createRangeSelection,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
   $setSelection,
+  createEditor,
   DecoratorNode,
   ElementNode,
   LexicalEditor,
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  SerializedTextNode,
   TextNode,
 } from 'lexical';
 
-import {$createRangeSelection} from '../..';
 import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
@@ -150,6 +152,75 @@ describe('LexicalNode tests', () => {
 
           expect(() => LexicalNode.clone(node)).toThrow();
         });
+      });
+      test('LexicalNode.afterCloneFrom()', () => {
+        class VersionedTextNode extends TextNode {
+          // ['constructor']!: KlassConstructor<typeof VersionedTextNode>;
+          __version = 0;
+          static getType(): 'vtext' {
+            return 'vtext';
+          }
+          static clone(node: VersionedTextNode): VersionedTextNode {
+            return new VersionedTextNode(node.__text, node.__key);
+          }
+          static importJSON(node: SerializedTextNode): VersionedTextNode {
+            throw new Error('Not implemented');
+          }
+          exportJSON(): SerializedTextNode {
+            throw new Error('Not implemented');
+          }
+          afterCloneFrom(node: this): void {
+            super.afterCloneFrom(node);
+            this.__version = node.__version + 1;
+          }
+        }
+        const editor = createEditor({
+          nodes: [VersionedTextNode],
+          onError(err) {
+            throw err;
+          },
+        });
+        let versionedTextNode: VersionedTextNode;
+
+        editor.update(
+          () => {
+            versionedTextNode = new VersionedTextNode('test');
+            $getRoot().append($createParagraphNode().append(versionedTextNode));
+            expect(versionedTextNode.__version).toEqual(0);
+          },
+          {discrete: true},
+        );
+        editor.update(
+          () => {
+            expect(versionedTextNode.getLatest().__version).toEqual(0);
+            expect(
+              versionedTextNode.setTextContent('update').setMode('token')
+                .__version,
+            ).toEqual(1);
+          },
+          {discrete: true},
+        );
+        editor.update(
+          () => {
+            let latest = versionedTextNode.getLatest();
+            expect(versionedTextNode.__version).toEqual(0);
+            expect(versionedTextNode.__mode).toEqual(0);
+            expect(versionedTextNode.getMode()).toEqual('token');
+            expect(latest.__version).toEqual(1);
+            expect(latest.__mode).toEqual(1);
+            latest = latest.setTextContent('another update');
+            expect(latest.__version).toEqual(2);
+            expect(latest.getWritable().__version).toEqual(2);
+            expect(
+              versionedTextNode.getLatest().getWritable().__version,
+            ).toEqual(2);
+            expect(versionedTextNode.getLatest().__version).toEqual(2);
+            expect(versionedTextNode.__mode).toEqual(0);
+            expect(versionedTextNode.getLatest().__mode).toEqual(1);
+            expect(versionedTextNode.getMode()).toEqual('token');
+          },
+          {discrete: true},
+        );
       });
 
       test('LexicalNode.getType()', async () => {

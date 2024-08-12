@@ -90,6 +90,12 @@ export class ParagraphNode extends ElementNode {
     return new ParagraphNode(node.__key);
   }
 
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__textFormat = prevNode.__textFormat;
+    this.__textStyle = prevNode.__textStyle;
+  }
+
   // View
 
   createDOM(config: EditorConfig): HTMLElement {

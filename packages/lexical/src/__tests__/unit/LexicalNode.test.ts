@@ -13,10 +13,14 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
+  $setSelection,
   createEditor,
   DecoratorNode,
   ElementNode,
+  LexicalEditor,
+  NodeKey,
   ParagraphNode,
+  RangeSelection,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
@@ -375,54 +379,165 @@ describe('LexicalNode tests', () => {
         await Promise.resolve().then();
       });
 
-      test('LexicalNode.isSelected(): with inline decorator node', async () => {
-        const {editor} = testEnv;
+      describe('LexicalNode.isSelected(): with inline decorator node', () => {
+        let editor: LexicalEditor;
         let paragraphNode1: ParagraphNode;
         let paragraphNode2: ParagraphNode;
+        let paragraphNode3: ParagraphNode;
         let inlineDecoratorNode: InlineDecoratorNode;
-
-        editor.update(() => {
-          paragraphNode1 = $createParagraphNode();
-          paragraphNode2 = $createParagraphNode();
-          inlineDecoratorNode = new InlineDecoratorNode();
-          paragraphNode1.append(inlineDecoratorNode);
-          $getRoot().append(paragraphNode1, paragraphNode2);
-          paragraphNode1.selectEnd();
-          const selection = $getSelection();
-
-          if ($isRangeSelection(selection)) {
-            expect(selection.anchor.getNode().is(paragraphNode1)).toBe(true);
-          }
+        let names: Record<NodeKey, string>;
+        beforeEach(() => {
+          editor = testEnv.editor;
+          editor.update(() => {
+            inlineDecoratorNode = new InlineDecoratorNode();
+            paragraphNode1 = $createParagraphNode();
+            paragraphNode2 = $createParagraphNode().append(inlineDecoratorNode);
+            paragraphNode3 = $createParagraphNode();
+            names = {
+              [inlineDecoratorNode.getKey()]: 'd',
+              [paragraphNode1.getKey()]: 'p1',
+              [paragraphNode2.getKey()]: 'p2',
+              [paragraphNode3.getKey()]: 'p3',
+            };
+            $getRoot()
+              .clear()
+              .append(paragraphNode1, paragraphNode2, paragraphNode3);
+          });
         });
-
-        editor.update(() => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            expect(selection.anchor.key).toBe(paragraphNode1.getKey());
-
-            selection.focus.set(paragraphNode2.getKey(), 1, 'element');
-          }
-        });
-
-        await Promise.resolve().then();
-
-        editor.getEditorState().read(() => {
-          expect(inlineDecoratorNode.isSelected()).toBe(false);
-        });
-
-        editor.update(() => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            selection.anchor.set(paragraphNode2.getKey(), 0, 'element');
-            selection.focus.set(paragraphNode1.getKey(), 1, 'element');
-          }
-        });
-
-        await Promise.resolve().then();
-
-        editor.getEditorState().read(() => {
-          expect(inlineDecoratorNode.isSelected()).toBe(false);
-        });
+        const cases: {
+          label: string;
+          isSelected: boolean;
+          update: () => void;
+        }[] = [
+          {
+            isSelected: true,
+            label: 'whole editor',
+            update() {
+              $getRoot().select(0);
+            },
+          },
+          {
+            isSelected: true,
+            label: 'containing paragraph',
+            update() {
+              paragraphNode2.select(0);
+            },
+          },
+          {
+            isSelected: true,
+            label: 'before and containing',
+            update() {
+              paragraphNode2
+                .select(0)
+                .anchor.set(paragraphNode1.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: true,
+            label: 'containing and after',
+            update() {
+              paragraphNode2
+                .select(0)
+                .focus.set(paragraphNode3.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: true,
+            label: 'before and after',
+            update() {
+              paragraphNode1
+                .select(0)
+                .focus.set(paragraphNode3.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: false,
+            label: 'collapsed before',
+            update() {
+              paragraphNode2.select(0, 0);
+            },
+          },
+          {
+            isSelected: false,
+            label: 'in another element',
+            update() {
+              paragraphNode1.select(0);
+            },
+          },
+          {
+            isSelected: false,
+            label: 'before',
+            update() {
+              paragraphNode1
+                .select(0)
+                .focus.set(paragraphNode2.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: false,
+            label: 'collapsed after',
+            update() {
+              paragraphNode2.selectEnd();
+            },
+          },
+          {
+            isSelected: false,
+            label: 'after',
+            update() {
+              paragraphNode3
+                .select(0)
+                .anchor.set(
+                  paragraphNode2.getKey(),
+                  paragraphNode2.getChildrenSize(),
+                  'element',
+                );
+            },
+          },
+        ];
+        for (const {label, isSelected, update} of cases) {
+          test(`${isSelected ? 'is' : "isn't"} selected ${label}`, () => {
+            editor.update(update);
+            const $verify = () => {
+              const selection = $getSelection() as RangeSelection;
+              expect($isRangeSelection(selection)).toBe(true);
+              const dbg = [selection.anchor, selection.focus]
+                .map(
+                  (point) =>
+                    `(${names[point.key] || point.key}:${point.offset})`,
+                )
+                .join(' ');
+              const nodes = `[${selection
+                .getNodes()
+                .map((k) => names[k.__key] || k.__key)
+                .join(',')}]`;
+              expect([dbg, nodes, inlineDecoratorNode.isSelected()]).toEqual([
+                dbg,
+                nodes,
+                isSelected,
+              ]);
+            };
+            editor.read($verify);
+            editor.update(() => {
+              const selection = $getSelection();
+              if ($isRangeSelection(selection)) {
+                const backwards = $createRangeSelection();
+                backwards.anchor.set(
+                  selection.focus.key,
+                  selection.focus.offset,
+                  selection.focus.type,
+                );
+                backwards.focus.set(
+                  selection.anchor.key,
+                  selection.anchor.offset,
+                  selection.anchor.type,
+                );
+                $setSelection(backwards);
+              }
+              expect($isRangeSelection(selection)).toBe(true);
+            });
+            editor.read($verify);
+          });
+        }
       });
 
       test('LexicalNode.getKey()', async () => {

@@ -351,27 +351,16 @@ export class LexicalNode {
 
       const parentNode = this.getParent();
       if ($isDecoratorNode(this) && this.isInline() && parentNode) {
-        const {anchor, focus} = targetSelection;
-
-        if (anchor.isBefore(focus)) {
-          const anchorNode = anchor.getNode() as ElementNode;
-          const isAnchorPointToLast =
-            anchor.offset === anchorNode.getChildrenSize();
-          const isAnchorNodeIsParent = anchorNode.is(parentNode);
-          const isLastChild = anchorNode.getLastChildOrThrow().is(this);
-
-          if (isAnchorPointToLast && isAnchorNodeIsParent && isLastChild) {
-            return false;
-          }
-        } else {
-          const focusNode = focus.getNode() as ElementNode;
-          const isFocusPointToLast =
-            focus.offset === focusNode.getChildrenSize();
-          const isFocusNodeIsParent = focusNode.is(parentNode);
-          const isLastChild = focusNode.getLastChildOrThrow().is(this);
-          if (isFocusPointToLast && isFocusNodeIsParent && isLastChild) {
-            return false;
-          }
+        const firstPoint = targetSelection.isBackward()
+          ? targetSelection.focus
+          : targetSelection.anchor;
+        const firstElement = firstPoint.getNode() as ElementNode;
+        if (
+          firstPoint.offset === firstElement.getChildrenSize() &&
+          firstElement.is(parentNode) &&
+          firstElement.getLastChildOrThrow().is(this)
+        ) {
+          return false;
         }
       }
     }

@@ -340,7 +340,9 @@ function reconcileElementTerminatingLineBreak(
       const element = dom.__lexicalLineBreak;
 
       if (element != null) {
-        dom.removeChild(element);
+        if (dom.hasChildNodes()) {
+          dom.removeChild(element);
+        }
       }
 
       // @ts-expect-error: internal field
@@ -501,7 +503,9 @@ function $reconcileChildren(
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
       const replacementDOM = $createNode(nextFrstChildKey, null, null);
-      dom.replaceChild(replacementDOM, lastDOM);
+      if (dom.hasChildNodes()) {
+        dom.replaceChild(replacementDOM, lastDOM);
+      }
       destroyNode(prevFirstChildKey, null);
     }
     const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);

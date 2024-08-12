@@ -47,7 +47,10 @@ function updatePackage(pkg) {
 function updateVersion() {
   packagesManager.getPackages().forEach(updatePackage);
   glob
-    .sync('./examples/*/package.json')
+    .sync([
+      './examples/*/package.json',
+      './scripts/__tests__/integration/fixtures/*/package.json',
+    ])
     .forEach((packageJsonPath) =>
       updatePackage(new PackageMetadata(packageJsonPath)),
     );

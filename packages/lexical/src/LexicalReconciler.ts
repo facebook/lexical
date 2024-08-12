@@ -72,7 +72,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
 
   if (parentDOM !== null) {
     const dom = getPrevElementByKeyOrThrow(key);
-    if (dom.parentNode === parentDOM) {
+    if (dom.parentNode === parentDOM && parentDOM.hasChildNodes()) {
       parentDOM.removeChild(dom);
     }
   }

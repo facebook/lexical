@@ -62,6 +62,21 @@ declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**
+ * LexicalConstnats
+ */
+
+declare export var IS_ALL_FORMATTING: number;
+declare export var IS_BOLD: number;
+declare export var IS_CODE: number;
+declare export var IS_HIGHLIGHT: number;
+declare export var IS_ITALIC: number;
+declare export var IS_STRIKETHROUGH: number;
+declare export var IS_SUBSCRIPT: number;
+declare export var IS_SUPERSCRIPT: number;
+declare export var IS_UNDERLIN: number;
+declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
+
+/**
  * LexicalEditor
  */
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -94,6 +109,9 @@ export type MutationListener = (
     prevEditorState: EditorState,
   },
 ) => void;
+export type MutationListenerOptions = {
+  skipInitialization?: boolean;
+};
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
   decorator: Set<DecoratorListener>,
@@ -163,6 +181,7 @@ declare export class LexicalEditor {
   registerMutationListener(
     klass: Class<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void;
   registerNodeTransform<T: LexicalNode>(
     klass: Class<T>,
@@ -183,6 +202,7 @@ declare export class LexicalEditor {
     maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
+  read<V>(callbackFn: () => V, options?: EditorReadOptions): V;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
@@ -190,6 +210,9 @@ declare export class LexicalEditor {
   setEditable(editable: boolean): void;
   toJSON(): SerializedEditor;
 }
+type EditorReadOptions = {
+  pending?: boolean,
+};
 type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string,
@@ -309,9 +332,12 @@ export interface EditorState {
   _readOnly: boolean;
   constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
-  read<V>(callbackFn: () => V): V;
+  read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V;
   toJSON(): SerializedEditorState;
   clone(selection?: BaseSelection | null): EditorState;
+}
+type EditorStateReadOptions = {
+  editor?: LexicalEditor | null;
 }
 
 /**
@@ -360,8 +386,8 @@ declare export class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T: ElementNode>(): T | null;
   getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): DecoratorNode<mixed> | ElementNode | null;
+  getTopLevelElementOrThrow(): DecoratorNode<mixed> | ElementNode;
   getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T: LexicalNode>(): T | null;
@@ -563,6 +589,8 @@ declare export class TextNode extends LexicalNode {
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
@@ -698,6 +726,8 @@ declare export class ElementNode extends LexicalNode {
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
@@ -764,6 +794,10 @@ declare export function $isElementNode(
 
 declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
+  // Not sure how to get flow to agree that the DecoratorNode<mixed> is compatible with this,
+  // so we have a less precise type than in TS
+  // getTopLevelElement(): this | ElementNode | null;
+  // getTopLevelElementOrThrow(): this | ElementNode;
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
   isInline(): boolean;
@@ -807,6 +841,7 @@ declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
 declare export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null;
+declare export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N;
 declare export function $getRoot(): RootNode;
 declare export function $isLeafNode<T = mixed>(
   node: ?LexicalNode,
@@ -820,6 +855,7 @@ declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
+declare export function resetRandomKey(): void;
 declare export function generateRandomKey(): string;
 declare export function $isInlineElementOrDecoratorNode<T = mixed>(
   node: LexicalNode,
@@ -834,6 +870,7 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function $copyNode(
   node: ElementNode,
   offset: number,

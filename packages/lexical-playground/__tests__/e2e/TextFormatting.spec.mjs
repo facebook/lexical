@@ -1141,8 +1141,8 @@ test.describe.parallel('TextFormatting', () => {
               data-lexical-decorator="true">
               <div draggable="false">
                 <img
-                  alt="Yellow flower in tilt shift lens"
                   class="focused"
+                  alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />

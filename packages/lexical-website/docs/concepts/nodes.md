@@ -111,6 +111,8 @@ class MyCustomNode extends SomeOtherNode {
   }
 
   static clone(node: MyCustomNode): MyCustomNode {
+    // If any state needs to be set after construction, it should be
+    // done by overriding the `afterCloneFrom` instance method.
     return new MyCustomNode(node.__foo, node.__key);
   }
 

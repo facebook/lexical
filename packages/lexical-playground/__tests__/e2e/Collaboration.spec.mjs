@@ -119,29 +119,29 @@ test.describe('Collaboration', () => {
         </p>
         <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
-            aria-checked="false"
-            role="checkbox"
-            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="1">
+            role="checkbox"
+            tabindex="-1"
+            value="1"
+            aria-checked="false">
             <span data-lexical-text="true">a</span>
           </li>
           <li
-            aria-checked="false"
-            role="checkbox"
-            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="2">
+            role="checkbox"
+            tabindex="-1"
+            value="2"
+            aria-checked="false">
             <span data-lexical-text="true">b</span>
           </li>
           <li
-            aria-checked="false"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"
             role="checkbox"
             tabindex="-1"
-            value="3">
+            value="3"
+            aria-checked="false">
             <br />
           </li>
         </ul>

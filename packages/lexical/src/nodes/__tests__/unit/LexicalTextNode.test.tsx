@@ -582,6 +582,18 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+
+    test('with detached parent', async () => {
+      await update(() => {
+        const textNode = $createTextNode('foo');
+        const splits = textNode.splitText(1, 2);
+        expect(splits.map((split) => split.getTextContent())).toEqual([
+          'f',
+          'o',
+          'o',
+        ]);
+      });
+    });
   });
 
   describe('createDOM()', () => {

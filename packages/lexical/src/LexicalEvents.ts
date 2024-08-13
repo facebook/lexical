@@ -94,6 +94,7 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMTextNode,
+  getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
   getWindow,
@@ -111,6 +112,7 @@ import {
   isEscape,
   isFirefoxClipboardEvents,
   isItalic,
+  isLexicalEditor,
   isLineBreak,
   isModifier,
   isMoveBackward,
@@ -348,15 +350,16 @@ function onSelectionChange(
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             const lastNode = anchor.getNode();
+            selection.style = '';
             if (
               lastNode instanceof ParagraphNode &&
               lastNode.getChildrenSize() === 0
             ) {
               selection.format = lastNode.getTextFormat();
+              selection.style = lastNode.getTextStyle();
             } else {
               selection.format = 0;
             }
-            selection.style = '';
           }
         }
       } else {
@@ -1328,13 +1331,17 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 
-  // @ts-expect-error: internal field
-  const editor: LexicalEditor | null | undefined = rootElement.__lexicalEditor;
+  const editor = getEditorPropertyFromDOMNode(rootElement);
 
-  if (editor !== null && editor !== undefined) {
+  if (isLexicalEditor(editor)) {
     cleanActiveNestedEditorsMap(editor);
     // @ts-expect-error: internal field
     rootElement.__lexicalEditor = null;
+  } else if (editor) {
+    invariant(
+      false,
+      'Attempted to remove event handlers from a node that does not belong to this build of Lexical',
+    );
   }
 
   const removeHandles = getRootElementRemoveHandles(rootElement);

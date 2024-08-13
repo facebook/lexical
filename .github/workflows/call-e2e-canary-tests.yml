@@ -7,7 +7,7 @@ jobs:
   canary:
     strategy:
       matrix:
-        os: ['macos-latest']
+        os: ['ubuntu-latest']
         node-version: [18.18.0]
         browser: ['chromium']
         editor-mode: ['rich-text']

@@ -281,7 +281,6 @@ const config = {
         docs: {
           beforeDefaultRemarkPlugins: [slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
-          exclude: process.env.FB_INTERNAL ? ['docs/error/**'] : [],
           path: 'docs',
           sidebarItemsGenerator,
           sidebarPath: require.resolve('./sidebars.js'),
@@ -406,6 +405,11 @@ const config = {
             position: 'left',
           },
           {
+            label: 'Gallery',
+            position: 'left',
+            to: '/gallery',
+          },
+          {
             href: GITHUB_REPO_URL,
             label: 'GitHub',
             position: 'right',
@@ -415,7 +419,7 @@ const config = {
             label: 'iOS GitHub',
             position: 'right',
           },
-        ],
+        ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
           src: 'img/logo.svg',

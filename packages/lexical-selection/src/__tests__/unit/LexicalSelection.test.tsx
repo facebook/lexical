@@ -8,6 +8,7 @@
 
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -17,6 +18,7 @@ import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $getSelectionStyleValueForProperty,
+  $patchStyleText,
   $setBlocksType,
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
@@ -29,6 +31,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   DecoratorNode,
   ElementNode,
@@ -187,6 +190,7 @@ describe('LexicalSelection tests', () => {
           />
           <HistoryPlugin />
           <TestPlugin />
+          <AutoFocusPlugin />
         </TestComposer>
       );
     }
@@ -195,7 +199,6 @@ describe('LexicalSelection tests', () => {
       reactRoot.render(<TestBase />);
       await Promise.resolve().then();
     });
-    editor!.getRootElement()!.focus();
 
     await Promise.resolve().then();
     // Focus first element
@@ -2269,44 +2272,46 @@ describe('LexicalSelection tests', () => {
     });
 
     it('adjust offset for inline elements text formatting', async () => {
-      init();
+      await init();
 
-      await editor!.update(() => {
-        const root = $getRoot();
+      await ReactTestUtils.act(async () => {
+        await editor!.update(() => {
+          const root = $getRoot();
 
-        const text1 = $createTextNode('--');
-        const text2 = $createTextNode('abc');
-        const text3 = $createTextNode('--');
+          const text1 = $createTextNode('--');
+          const text2 = $createTextNode('abc');
+          const text3 = $createTextNode('--');
 
-        root.append(
-          $createParagraphNode().append(
-            text1,
-            $createLinkNode('https://lexical.dev').append(text2),
-            text3,
-          ),
-        );
+          root.append(
+            $createParagraphNode().append(
+              text1,
+              $createLinkNode('https://lexical.dev').append(text2),
+              text3,
+            ),
+          );
 
-        $setAnchorPoint({
-          key: text1.getKey(),
-          offset: 2,
-          type: 'text',
+          $setAnchorPoint({
+            key: text1.getKey(),
+            offset: 2,
+            type: 'text',
+          });
+
+          $setFocusPoint({
+            key: text3.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+
+          const selection = $getSelection();
+
+          if (!$isRangeSelection(selection)) {
+            return;
+          }
+
+          selection.formatText('bold');
+
+          expect(text2.hasFormat('bold')).toBe(true);
         });
-
-        $setFocusPoint({
-          key: text3.getKey(),
-          offset: 0,
-          type: 'text',
-        });
-
-        const selection = $getSelection();
-
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
-
-        selection.formatText('bold');
-
-        expect(text2.hasFormat('bold')).toBe(true);
       });
     });
   });
@@ -2493,6 +2498,113 @@ describe('LexicalSelection tests', () => {
           '',
         );
         expect(cssFontSizeValue).toBe('30px');
+      });
+    });
+  });
+
+  describe('$patchStyle', () => {
+    it('should patch the style with the new style object', async () => {
+      await ReactTestUtils.act(async () => {
+        await editor!.update(() => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const textNode = $createTextNode('Hello, World!');
+          textNode.setStyle('font-family: serif; color: red;');
+          $addNodeStyle(textNode);
+          paragraph.append(textNode);
+          root.append(paragraph);
+
+          const selection = $createRangeSelection();
+          $setSelection(selection);
+          selection.insertParagraph();
+          $setAnchorPoint({
+            key: textNode.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+
+          $setFocusPoint({
+            key: textNode.getKey(),
+            offset: 10,
+            type: 'text',
+          });
+
+          const newStyle = {
+            color: 'blue',
+            'font-family': 'Arial',
+          };
+
+          $patchStyleText(selection, newStyle);
+
+          const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+            selection,
+            'font-family',
+            '',
+          );
+          expect(cssFontFamilyValue).toBe('Arial');
+
+          const cssColorValue = $getSelectionStyleValueForProperty(
+            selection,
+            'color',
+            '',
+          );
+          expect(cssColorValue).toBe('blue');
+        });
+      });
+    });
+
+    it('should patch the style with property function', async () => {
+      await ReactTestUtils.act(async () => {
+        await editor!.update(() => {
+          const currentColor = 'red';
+          const nextColor = 'blue';
+
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const textNode = $createTextNode('Hello, World!');
+          textNode.setStyle(`color: ${currentColor};`);
+          $addNodeStyle(textNode);
+          paragraph.append(textNode);
+          root.append(paragraph);
+
+          const selection = $createRangeSelection();
+          $setSelection(selection);
+          selection.insertParagraph();
+          $setAnchorPoint({
+            key: textNode.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+
+          $setFocusPoint({
+            key: textNode.getKey(),
+            offset: 10,
+            type: 'text',
+          });
+
+          const newStyle = {
+            color: jest.fn(
+              (current: string | null, target: LexicalNode | RangeSelection) =>
+                nextColor,
+            ),
+          };
+
+          $patchStyleText(selection, newStyle);
+
+          const cssColorValue = $getSelectionStyleValueForProperty(
+            selection,
+            'color',
+            '',
+          );
+
+          expect(cssColorValue).toBe(nextColor);
+          expect(newStyle.color).toHaveBeenCalledTimes(1);
+
+          const lastCall = newStyle.color.mock.lastCall!;
+          expect(lastCall[0]).toBe(currentColor);
+          // @ts-ignore - It expected to be a LexicalNode
+          expect($isTextNode(lastCall[1])).toBeTruthy();
+        });
       });
     });
   });

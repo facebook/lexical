@@ -1,0 +1,38 @@
+{
+  "logo.alt": {
+    "message": "Lexical",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Playground": {
+    "message": "線上測試",
+    "description": "Navbar item with label Playground"
+  },
+  "item.label.Docs": {
+    "message": "Docs",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.API": {
+    "message": "API",
+    "description": "Navbar item with label API"
+  },
+  "item.label.Community": {
+    "message": "社群",
+    "description": "Navbar item with label Community"
+  },
+  "item.label.iOS": {
+    "message": "iOS",
+    "description": "Navbar item with label iOS"
+  },
+  "item.label.Gallery": {
+    "message": "展示",
+    "description": "Navbar item with label Gallery"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  },
+  "item.label.iOS GitHub": {
+    "message": "iOS GitHub",
+    "description": "Navbar item with label iOS GitHub"
+  }
+}

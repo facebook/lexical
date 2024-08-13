@@ -233,6 +233,11 @@ const config = {
       ),
   },
 
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en','zh-Hant']
+  },
+
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
@@ -417,6 +422,9 @@ const config = {
           {
             href: IOS_GITHUB_REPO_URL,
             label: 'iOS GitHub',
+            position: 'right',
+          },{
+            type: 'localeDropdown',
             position: 'right',
           },
         ].filter((item) => item != null),

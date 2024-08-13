@@ -579,6 +579,10 @@ export class TextNode extends LexicalNode {
         conversion: convertTextFormatElement,
         priority: 0,
       }),
+      mark: () => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
       s: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -1284,6 +1288,7 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   code: 'code',
   em: 'italic',
   i: 'italic',
+  mark: 'highlight',
   s: 'strikethrough',
   strong: 'bold',
   sub: 'subscript',

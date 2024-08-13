@@ -107,6 +107,7 @@ const theme: EditorThemeClasses = {
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
     code: 'PlaygroundEditorTheme__textCode',
+    highlight: 'PlaygroundEditorTheme__textHighlight',
     italic: 'PlaygroundEditorTheme__textItalic',
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',
     subscript: 'PlaygroundEditorTheme__textSubscript',

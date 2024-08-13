@@ -406,6 +406,10 @@ i.superscript {
   background-image: url(images/icons/type-superscript.svg);
 }
 
+i.highlight {
+  background-image: url(images/icons/highlighter.svg);
+}
+
 i.link {
   background-image: url(images/icons/link.svg);
 }

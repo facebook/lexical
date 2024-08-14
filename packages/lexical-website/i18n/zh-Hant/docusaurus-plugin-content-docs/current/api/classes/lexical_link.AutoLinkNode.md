@@ -397,3 +397,247 @@ LinkNode.getType
 #### 返回
 
 `string`
+
+#### 繼承自
+
+[LinkNode](lexical_link.LinkNode.md).[sanitizeUrl](lexical_link.LinkNode.md#sanitizeurl)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:171](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L171)
+
+---
+
+### setIsUnlinked
+
+▸ **setIsUnlinked**(`value`): [`AutoLinkNode`](lexical_link.AutoLinkNode.md)
+
+#### 參數
+
+| 名稱    | 類型      |
+| :------ | :-------- |
+| `value` | `boolean` |
+
+#### 返回
+
+[`AutoLinkNode`](lexical_link.AutoLinkNode.md)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:373](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L373)
+
+---
+
+### setRel
+
+▸ **setRel**(`rel`): `void`
+
+#### 參數
+
+| 名稱  | 類型               |
+| :---- | :----------------- |
+| `rel` | `null` \| `string` |
+
+#### 返回
+
+`void`
+
+#### 繼承自
+
+[LinkNode](lexical_link.LinkNode.md).[setRel](lexical_link.LinkNode.md#setrel)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:218](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L218)
+
+---
+
+### setTarget
+
+▸ **setTarget**(`target`): `void`
+
+#### 參數
+
+| 名稱     | 類型               |
+| :------- | :----------------- |
+| `target` | `null` \| `string` |
+
+#### 返回
+
+`void`
+
+#### 繼承自
+
+[LinkNode](lexical_link.LinkNode.md).[setTarget](lexical_link.LinkNode.md#settarget)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:209](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L209)
+
+---
+
+### setTitle
+
+▸ **setTitle**(`title`): `void`
+
+#### 參數
+
+| 名稱    | 類型               |
+| :------ | :----------------- |
+| `title` | `null` \| `string` |
+
+#### 返回
+
+`void`
+
+#### 繼承自
+
+[LinkNode](lexical_link.LinkNode.md).[setTitle](lexical_link.LinkNode.md#settitle)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:227](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L227)
+
+---
+
+### setURL
+
+▸ **setURL**(`url`): `void`
+
+#### 參數
+
+| 名稱  | 類型     |
+| :---- | :------- |
+| `url` | `string` |
+
+#### 返回
+
+`void`
+
+#### 繼承自
+
+[LinkNode](lexical_link.LinkNode.md).[setURL](lexical_link.LinkNode.md#seturl)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:200](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L200)
+
+---
+
+### updateDOM
+
+▸ **updateDOM**(`prevNode`, `anchor`, `config`): `boolean`
+
+當一個節點發生變化時，會調用此方法，更新 DOM 使其與任何變更保持一致。
+
+返回 "true" 將使 Lexical 卸載並重新創建 DOM 節點（通過調用 createDOM）。例如，如果元素標籤更改，則需要這樣做。
+
+#### 參數
+
+| 名稱       | 類型                                                 |
+| :--------- | :--------------------------------------------------- |
+| `prevNode` | [`AutoLinkNode`](lexical_link.AutoLinkNode.md)       |
+| `anchor`   | `LinkHTMLElementType`                                |
+| `config`   | [`EditorConfig`](../modules/lexical.md#editorconfig) |
+
+#### 返回
+
+`boolean`
+
+#### 重寫自
+
+[LinkNode](lexical_link.LinkNode.md).[updateDOM](lexical_link.LinkNode.md#updatedom)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:387](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L387)
+
+---
+
+### clone
+
+▸ **clone**(`node`): [`AutoLinkNode`](lexical_link.AutoLinkNode.md)
+
+複製此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不將其附加到任何地方！）。所有節點都必須實現此方法。
+
+#### 參數
+
+| 名稱   | 類型                                           |
+| :----- | :--------------------------------------------- |
+| `node` | [`AutoLinkNode`](lexical_link.AutoLinkNode.md) |
+
+#### 返回
+
+[`AutoLinkNode`](lexical_link.AutoLinkNode.md)
+
+#### 重寫自
+
+[LinkNode](lexical_link.LinkNode.md).[clone](lexical_link.LinkNode.md#clone)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:356](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L356)
+
+---
+
+### getType
+
+▸ **getType**(): `string`
+
+返回此節點的字符串類型。每個節點都必須實現這一點，並且在編輯器上註冊的節點中，這個類型必須是唯一的。
+
+#### 返回
+
+`string`
+
+#### 重寫自
+
+[LinkNode](lexical_link.LinkNode.md).[getType](lexical_link.LinkNode.md#gettype)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:352](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L352)
+
+---
+
+### importDOM
+
+▸ **importDOM**(): `null`
+
+#### 返回
+
+`null`
+
+#### 重寫自
+
+[LinkNode](lexical_link.LinkNode.md).[importDOM](lexical_link.LinkNode.md#importdom)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:411](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L411)
+
+---
+
+### importJSON
+
+▸ **importJSON**(`serializedNode`): [`AutoLinkNode`](lexical_link.AutoLinkNode.md)
+
+控制此節點如何從 JSON 反序列化。這通常是樣板代碼，但提供了一個抽象層，該層在節點模式進行重大更改時（如添加或刪除屬性）可能很重要。請參見 [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html)。
+
+#### 參數
+
+| 名稱             | 類型                                                                          |
+| :--------------- | :---------------------------------------------------------------------------- |
+| `serializedNode` | [`SerializedAutoLinkNode`](../modules/lexical_link.md#serializedautolinknode) |
+
+#### 返回
+
+[`AutoLinkNode`](lexical_link.AutoLinkNode.md)
+
+#### 重寫自
+
+[LinkNode](lexical_link.LinkNode.md).[importJSON](lexical_link.LinkNode.md#importjson)
+
+#### 定義於
+
+[packages/lexical-link/src/index.ts:398](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L398)

@@ -93,6 +93,17 @@ export class ElementNode extends LexicalNode {
     this.__dir = null;
   }
 
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__first = prevNode.__first;
+    this.__last = prevNode.__last;
+    this.__size = prevNode.__size;
+    this.__indent = prevNode.__indent;
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__dir = prevNode.__dir;
+  }
+
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;

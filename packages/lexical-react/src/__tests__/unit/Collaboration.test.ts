@@ -10,7 +10,6 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  CLEAR_EDITOR_COMMAND,
   ParagraphNode,
   TextNode,
   UNDO_COMMAND,

@@ -1,6 +1,6 @@
 ---
 id: 'lexical.RangeSelection'
-title: '類別: RangeSelection'
+title: 'Class: RangeSelection'
 custom_edit_url: null
 ---
 
@@ -101,7 +101,7 @@ custom_edit_url: null
 
 [packages/lexical/src/LexicalSelection.ts:399](https://github.com/facebook/lexical/tree/main/packages/lexical/src/LexicalSelection.ts#L399)
 
-## 方法
+## 函式
 
 ### applyDOMRange
 
@@ -411,7 +411,7 @@ custom_edit_url: null
 
 ▸ **insertNodes**(`nodes`): `void`
 
-嘗試根據一組啟發式方法「智能地」將任意列表的 Lexical 節點插入到 EditorState 的當前選取中，這些方法決定如何更改、替換或移動周圍的節點以容納插入的節點。
+嘗試根據一組啟發式函式「智能地」將任意列表的 Lexical 節點插入到 EditorState 的當前選取中，這些函式決定如何更改、替換或移動周圍的節點以容納插入的節點。
 
 #### 參數
 
@@ -481,7 +481,7 @@ custom_edit_url: null
 
 ▸ **insertText**(`text`): `void`
 
-嘗試將提供的文本作為新的 Lexical TextNode 插入到 EditorState 的當前選取中，根據選取類型和位置的系列插入啟發式方法進行操作。
+嘗試將提供的文本作為新的 Lexical TextNode 插入到 EditorState 的當前選取中，根據選取類型和位置的系列插入啟發式函式進行操作。
 
 #### 參數
 
@@ -579,7 +579,7 @@ custom_edit_url: null
 
 ▸ **modify**(`alter`, `isBackward`, `granularity`): `void`
 
-根據參數和考慮各種節點類型的一組啟發式方法修改選取。可以用於安全地移動或擴展選取一個邏輯「單位」，而無需顯式處理所有可能的節點類型。
+根據參數和考慮各種節點類型的一組啟發式函式修改選取。可以用於安全地移動或擴展選取一個邏輯「單位」，而無需顯式處理所有可能的節點類型。
 
 #### 參數
 

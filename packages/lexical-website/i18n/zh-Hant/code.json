@@ -32,7 +32,8 @@
     "description": "Hyperlink to contributor covenant"
   },
   "pages.community.howTo.guidelines": {
-    "message": "我們期望所有社群成員遵守"
+    "message": "我們期望所有社群成員遵守",
+    "description": "Phrase about our expectations that all contributors adhere to all policies listed herein."
   },
   "pages.community.howTo.contributingLink": {
     "message": "貢獻指南",
@@ -90,7 +91,8 @@
     "description": "short description of why Lexical is fast"
   },
   "page.home.features.crossplatform": {
-    "message": "Lexical 作為 JavaScript 框架可供在網頁瀏覽器中使用，還有作為 Swift 框架供原生 iOS 開發使用。"
+    "message": "Lexical 作為 JavaScript 框架可供在網頁瀏覽器中使用，還有作為 Swift 框架供原生 iOS 開發使用。",
+    "description": "short description of why Lexical is cross platform (web/iOS)"
   },
   "theme.ErrorPageContent.title": {
     "message": "此頁已當機。",
@@ -529,5 +531,42 @@
   "theme.tags.tagsPageTitle": {
     "message": "標籤",
     "description": "The title of the tag list page"
+  },
+  "homepage.getStarted": {
+    "message": "入門指南",
+    "description": "The 'Get Started' button on the homepage"
+  },
+  "homepage.tagline": {
+    "message": "一個不一樣且可擴展的文字編輯引擎",
+    "description": "The tagline of the project"
+  },
+  "homepage.visitPlayground": {
+    "message": "線上測試",
+    "description": "The 'Visit Playground' button on the homepage"
+  },
+  "homepage.example1": {
+    "message": "在任何環境中開始使用 Lexical 都非常簡單。Lexical 沒有限制框架，但提供了一套適用於 React 的框架，讓您能夠更快速地上手。在初始設置完成後，使用起來令人愉快且直覺的 API 使構建自定義功能變得簡單且有趣！"
+  },
+  "homepage.example2": {
+    "message": "Lexical 的核心是一個文本編輯引擎——一個構建功能豐富的網頁編輯器的平台。與此同時，我們認為用戶不應該重複編寫相同的富文本功能。Lexical 提供了一組獨立的模塊化包，可用於添加常見的功能，例如列表、鏈接和表格。"
+  },
+  "homepage.example3": {
+    "message": "Lexical 強調擴展性。節點可以擴展以添加或更改行為，簡單的命令式 API 讓構建自定義功能變得輕而易舉。"
+  },
+  "page.home.features.title.reliable": {
+    "message": "可靠的",
+    "description": "title for the reliable feature"
+  },
+  "page.home.features.title.accessible": {
+    "message": "無障礙",
+    "description": "title for the accessible feature"
+  },
+  "page.home.features.title.fast": {
+    "message": "快速",
+    "description": "title for the fast feature"
+  },
+  "page.home.features.title.crossplatform": {
+    "message": "跨平台",
+    "description": "title for the cross platform feature"
   }
 }

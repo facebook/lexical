@@ -1,0 +1,42 @@
+{
+  "version.label": {
+    "message": "最新版本",
+    "description": "The label for version current"
+  },
+  "sidebar.api.category.Modules": {
+    "message": "模組",
+    "description": "The label for category Modules in sidebar api"
+  },
+  "sidebar.api.category.@lexical/react": {
+    "message": "@lexical/react",
+    "description": "The label for category @lexical/react in sidebar api"
+  },
+  "sidebar.api.category.Classes": {
+    "message": "Classes",
+    "description": "The label for category Classes in sidebar api"
+  },
+  "sidebar.api.category.Interfaces": {
+    "message": "介面",
+    "description": "The label for category Interfaces in sidebar api"
+  },
+  "sidebar.docs.category.Getting Started": {
+    "message": "入門指南",
+    "description": "The label for category Getting Started in sidebar docs"
+  },
+  "sidebar.docs.category.Concepts": {
+    "message": "概念",
+    "description": "The label for category Concepts in sidebar docs"
+  },
+  "sidebar.docs.category.Packages": {
+    "message": "套件",
+    "description": "The label for category Packages in sidebar docs"
+  },
+  "sidebar.docs.category.React": {
+    "message": "React",
+    "description": "The label for category React in sidebar docs"
+  },
+  "sidebar.docs.category.Collaboration": {
+    "message": "貢獻",
+    "description": "The label for category Collaboration in sidebar docs"
+  }
+}

@@ -1,6 +1,6 @@
 ---
 id: 'lexical_table.TableRowNode'
-title: '類別: TableRowNode'
+title: 'Class: TableRowNode'
 custom_edit_url: null
 ---
 
@@ -37,7 +37,7 @@ custom_edit_url: null
 
 [packages/lexical-table/src/LexicalTableRowNode.ts:58](https://github.com/facebook/lexical/tree/main/packages/lexical-table/src/LexicalTableRowNode.ts#L58)
 
-## 方法
+## 函式
 
 ### canBeEmpty
 
@@ -81,7 +81,7 @@ custom_edit_url: null
 
 在調解過程中呼叫，以確定要將哪些節點插入到此 Lexical 節點的 DOM 中。
 
-此方法必須返回一個 `HTMLElement`。不支援嵌套元素。
+此函式必須返回一個 `HTMLElement`。不支援嵌套元素。
 
 在更新生命周期的此階段，請勿嘗試更新 Lexical EditorState。
 
@@ -213,7 +213,7 @@ custom_edit_url: null
 
 複製此節點，創建一個具有不同鍵的新節點
 並將其添加到 EditorState（但不附加到任何地方！）。所有節點必須
-實現此方法。
+實現此函式。
 
 #### 參數
 
@@ -240,7 +240,7 @@ custom_edit_url: null
 ▸ **getType**(): `string`
 
 返回此節點的字符串類型。每個節點必須
-實現此方法，並且必須在編輯器中註冊的節點中唯一。
+實現此函式，並且必須在編輯器中註冊的節點中唯一。
 
 #### 回傳值
 

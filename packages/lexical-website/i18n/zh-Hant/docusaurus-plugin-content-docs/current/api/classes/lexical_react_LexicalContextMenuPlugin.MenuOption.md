@@ -1,6 +1,6 @@
 ---
 id: 'lexical_react_LexicalContextMenuPlugin.MenuOption'
-title: '類別: MenuOption'
+title: 'Class: MenuOption'
 custom_edit_url: null
 ---
 
@@ -52,7 +52,7 @@ custom_edit_url: null
 
 [packages/lexical-react/src/shared/LexicalMenu.ts:53](https://github.com/facebook/lexical/tree/main/packages/lexical-react/src/shared/LexicalMenu.ts#L53)
 
-## 方法
+## 函式
 
 ### setRefElement
 

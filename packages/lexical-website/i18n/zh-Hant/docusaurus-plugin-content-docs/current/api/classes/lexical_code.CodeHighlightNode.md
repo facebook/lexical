@@ -1,6 +1,6 @@
 ---
-id: "lexical_code.CodeHighlightNode"
-title: "類別: CodeHighlightNode"
+id: 'lexical_code.CodeHighlightNode'
+title: 'Class: CodeHighlightNode'
 custom_edit_url: null
 ---
 
@@ -20,11 +20,11 @@ custom_edit_url: null
 
 #### 參數
 
-| 名稱 | 類型 |
-| :------ | :------ |
-| `text` | `string` |
-| `highlightType?` | ``null`` \| `string` |
-| `key?` | `string` |
+| 名稱             | 類型               |
+| :--------------- | :----------------- |
+| `text`           | `string`           |
+| `highlightType?` | `null` \| `string` |
+| `key?`           | `string`           |
 
 #### 回傳
 
@@ -58,7 +58,7 @@ custom_edit_url: null
 
 [packages/lexical-code/src/CodeHighlightNode.ts:126](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L126)
 
-___
+---
 
 ### createDOM
 
@@ -66,14 +66,14 @@ ___
 
 在調解過程中調用以確定要插入此 Lexical 節點的 DOM 元素。
 
-此方法必須返回確切的一個 HTMLElement。嵌套元素不被支援。
+此函式必須返回確切的一個 HTMLElement。嵌套元素不被支援。
 
 不要在更新週期的此階段嘗試更新 Lexical EditorState。
 
 #### 參數
 
-| 名稱 | 類型 | 描述 |
-| :------ | :------ | :------ |
+| 名稱     | 類型                                                 | 描述                                                   |
+| :------- | :--------------------------------------------------- | :----------------------------------------------------- |
 | `config` | [`EditorConfig`](../modules/lexical.md#editorconfig) | 允許在調解過程中訪問例如 EditorTheme（應用樣式類別）。 |
 
 #### 回傳
@@ -88,13 +88,13 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:130](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L130)
 
-___
+---
 
 ### createParentElementNode
 
 ▸ **createParentElementNode**(): [`ElementNode`](lexical.ElementNode.md)
 
-任何所需父元素的創建邏輯。如果 [isParentRequired](lexical.LexicalNode.md#isparentrequired) 返回 true，則應實現此方法。
+任何所需父元素的創建邏輯。如果 [isParentRequired](lexical.LexicalNode.md#isparentrequired) 返回 true，則應實現此函式。
 
 #### 回傳
 
@@ -108,7 +108,7 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:197](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L197)
 
-___
+---
 
 ### exportJSON
 
@@ -129,31 +129,31 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:179](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L179)
 
-___
+---
 
 ### getHighlightType
 
-▸ **getHighlightType**(): `undefined` \| ``null`` \| `string`
+▸ **getHighlightType**(): `undefined` \| `null` \| `string`
 
 #### 回傳
 
-`undefined` \| ``null`` \| `string`
+`undefined` \| `null` \| `string`
 
 #### 定義於
 
 [packages/lexical-code/src/CodeHighlightNode.ts:121](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L121)
 
-___
+---
 
 ### isParentRequired
 
-▸ **isParentRequired**(): ``true``
+▸ **isParentRequired**(): `true`
 
 此節點是否有需要的父元素。在複製+粘貼操作期間使用，以標準化本來會成為孤立節點的節點。例如，沒有 ListNode 父節點的 ListItemNode 或具有 ParagraphNode 父節點的 TextNode。
 
 #### 回傳
 
-``true``
+`true`
 
 #### 覆寫
 
@@ -163,7 +163,7 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:193](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L193)
 
-___
+---
 
 ### setFormat
 
@@ -173,8 +173,8 @@ ___
 
 #### 參數
 
-| 名稱 | 類型 | 描述 |
-| :------ | :------ | :------ |
+| 名稱     | 類型     | 描述                                         |
+| :------- | :------- | :------------------------------------------- |
 | `format` | `number` | 表示節點格式的 TextFormatType 或 32 位整數。 |
 
 #### 回傳
@@ -192,7 +192,7 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:189](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L189)
 
-___
+---
 
 ### updateDOM
 
@@ -206,11 +206,11 @@ ___
 
 #### 參數
 
-| 名稱 | 類型 |
-| :------ | :------ |
+| 名稱       | 類型                                                     |
+| :--------- | :------------------------------------------------------- |
 | `prevNode` | [`CodeHighlightNode`](lexical_code.CodeHighlightNode.md) |
-| `dom` | `HTMLElement` |
-| `config` | [`EditorConfig`](../modules/lexical.md#editorconfig) |
+| `dom`      | `HTMLElement`                                            |
+| `config`   | [`EditorConfig`](../modules/lexical.md#editorconfig)     |
 
 #### 回傳
 
@@ -224,7 +224,7 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:140](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L140)
 
-___
+---
 
 ### clone
 
@@ -232,12 +232,12 @@ ___
 
 複製此節點，創建一個具有不同鍵的新節點
 並將其添加到 EditorState（但不將其附加到任何位置！）。所有節點都必須
-實現此方法。
+實現此函式。
 
 #### 參數
 
-| 名稱 | 類型 |
-| :------ | :------ |
+| 名稱   | 類型                                                     |
+| :----- | :------------------------------------------------------- |
 | `node` | [`CodeHighlightNode`](lexical_code.CodeHighlightNode.md) |
 
 #### 回傳
@@ -252,14 +252,14 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:113](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L113)
 
-___
+---
 
 ### getType
 
 ▸ **getType**(): `string`
 
 返回此節點的字串類型。每個節點都必須
-實現此方法，並且在註冊到編輯器上的節點中必須是唯一的。
+實現此函式，並且在註冊到編輯器上的節點中必須是唯一的。
 
 #### 回傳
 
@@ -273,9 +273,7 @@ ___
 
 [packages/lexical-code/src/CodeHighlightNode.ts:109](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeHighlightNode.ts#L109)
 
-
-
-___
+---
 
 ### importJSON
 
@@ -287,8 +285,8 @@ ___
 
 #### 參數
 
-| 名稱 | 類型 |
-| :------ | :------ |
+| 名稱             | 類型                          |
+| :--------------- | :---------------------------- |
 | `serializedNode` | `SerializedCodeHighlightNode` |
 
 #### 回傳

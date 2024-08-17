@@ -1,6 +1,6 @@
 ---
 id: 'lexical_react_LexicalAutoEmbedPlugin.AutoEmbedOption'
-title: '類別: AutoEmbedOption'
+title: 'Class: AutoEmbedOption'
 custom_edit_url: null
 ---
 
@@ -100,7 +100,7 @@ custom_edit_url: null
 
 [packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx:63](https://github.com/facebook/lexical/tree/main/packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx#L63)
 
-## 方法
+## 函式
 
 ### setRefElement
 

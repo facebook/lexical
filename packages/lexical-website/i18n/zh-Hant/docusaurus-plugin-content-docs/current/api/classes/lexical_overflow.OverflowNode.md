@@ -1,6 +1,6 @@
 ---
 id: 'lexical_overflow.OverflowNode'
-title: '類別: OverflowNode'
+title: 'Class: OverflowNode'
 custom_edit_url: null
 ---
 
@@ -36,7 +36,7 @@ custom_edit_url: null
 
 [packages/lexical-overflow/src/index.ts:39](https://github.com/facebook/lexical/tree/main/packages/lexical-overflow/src/index.ts#L39)
 
-## 方法
+## 函式
 
 ### createDOM
 
@@ -44,7 +44,7 @@ custom_edit_url: null
 
 在重新和諧處理過程中被調用，以決定要將哪些節點插入到此 Lexical 節點的 DOM 中。
 
-此方法必須返回一個 `HTMLElement`。不支持嵌套元素。
+此函式必須返回一個 `HTMLElement`。不支持嵌套元素。
 
 在此更新生命周期階段，請勿嘗試更新 Lexical EditorState。
 
@@ -136,7 +136,7 @@ custom_edit_url: null
 
 ▸ **updateDOM**(`prevNode`, `dom`): `boolean`
 
-當節點發生變化時調用此方法，並應更新 DOM 以使其與更新期間可能發生的任何變化對齊。
+當節點發生變化時調用此函式，並應更新 DOM 以使其與更新期間可能發生的任何變化對齊。
 
 返回 "true" 會導致 lexical 卸載並重新創建 DOM 節點（通過調用 createDOM）。例如，當元素標籤發生變化時，你需要這樣做。
 
@@ -165,7 +165,7 @@ custom_edit_url: null
 
 ▸ **clone**(`node`): [`OverflowNode`](lexical_overflow.OverflowNode.md)
 
-克隆此節點，創建一個具有不同鍵的新節點，並將其添加到 EditorState（但不附加到任何地方！）。所有節點都必須實現此方法。
+克隆此節點，創建一個具有不同鍵的新節點，並將其添加到 EditorState（但不附加到任何地方！）。所有節點都必須實現此函式。
 
 #### 參數
 
@@ -191,7 +191,7 @@ custom_edit_url: null
 
 ▸ **getType**(): `string`
 
-返回此節點的字符串類型。每個節點必須實現此方法，且必須在編輯器中註冊的節點之間唯一。
+返回此節點的字符串類型。每個節點必須實現此函式，且必須在編輯器中註冊的節點之間唯一。
 
 #### 返回
 

@@ -1,6 +1,6 @@
 ---
 id: 'lexical_link.LinkNode'
-title: '類別: LinkNode'
+title: 'Class: LinkNode'
 custom_edit_url: null
 ---
 
@@ -40,7 +40,7 @@ custom_edit_url: null
 
 [packages/lexical-link/src/index.ts:82](https://github.com/facebook/lexical/tree/main/packages/lexical-link/src/index.ts#L82)
 
-## 方法
+## 函式
 
 ### canBeEmpty
 
@@ -102,7 +102,7 @@ custom_edit_url: null
 
 在調解過程中調用以確定要將哪些節點插入此 Lexical Node 的 DOM 中。
 
-此方法必須返回一個 HTMLElement。不支援嵌套元素。
+此函式必須返回一個 HTMLElement。不支援嵌套元素。
 
 在更新生命週期的此階段，請勿嘗試更新 Lexical EditorState。
 
@@ -403,7 +403,7 @@ custom_edit_url: null
 
 ▸ **updateDOM**(`prevNode`, `anchor`, `config`): `boolean`
 
-當節點發生變更並且需要更新 DOM 以使其與更新期間可能發生的變化對齊時，將調用此方法。
+當節點發生變更並且需要更新 DOM 以使其與更新期間可能發生的變化對齊時，將調用此函式。
 
 如果返回 "true"，則會導致 lexical 卸載並重新創建 DOM 節點（通過調用 createDOM）。例如，當元素標籤更改時，您需要這樣做。
 
@@ -433,7 +433,7 @@ custom_edit_url: null
 
 ▸ **clone**(`node`): [`LinkNode`](lexical_link.LinkNode.md)
 
-克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState（但不將其附加到任何地方！）。所有節點都必須實現此方法。
+克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState（但不將其附加到任何地方！）。所有節點都必須實現此函式。
 
 #### 參數
 
@@ -459,7 +459,7 @@ custom_edit_url: null
 
 ▸ **getType**(): `string`
 
-返回此節點的字串類型。每個節點必須實現此方法，並且在編輯器中註冊的節點中必須是唯一的。
+返回此節點的字串類型。每個節點必須實現此函式，並且在編輯器中註冊的節點中必須是唯一的。
 
 #### 返回值
 

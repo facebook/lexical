@@ -1,6 +1,6 @@
 ---
 id: 'lexical_code.CodeNode'
-title: '類別：CodeNode'
+title: 'Class: CodeNode'
 custom_edit_url: null
 ---
 
@@ -12,7 +12,7 @@ custom_edit_url: null
 
   ↳ **`CodeNode`**
 
-## 構造函數
+## 構造函式
 
 ### constructor
 
@@ -37,7 +37,7 @@ custom_edit_url: null
 
 [packages/lexical-code/src/CodeNode.ts:90](https://github.com/facebook/lexical/tree/main/packages/lexical-code/src/CodeNode.ts#L90)
 
-## 方法
+## 函式
 
 ### canIndent
 
@@ -81,7 +81,7 @@ custom_edit_url: null
 
 在對應過程中調用，以確定要插入到 DOM 中的節點。
 
-此方法必須返回一個 HTMLElement。嵌套元素不受支持。
+此函式必須返回一個 HTMLElement。嵌套元素不受支持。
 
 在更新生命周期的此階段，請勿嘗試更新 Lexical EditorState。
 
@@ -109,7 +109,7 @@ custom_edit_url: null
 
 ▸ **exportDOM**(`editor`): [`DOMExportOutput`](../modules/lexical.md#domexportoutput)
 
-控制此節點如何序列化為 HTML。這對於 Lexical 和非 Lexical 編輯器之間的複製和粘貼，或具有不同命名空間的 Lexical 編輯器很重要，此情況下主要的傳輸格式是 HTML。如果您通過 [@lexical/html!$generateHtmlFromNodes](../modules/lexical_html.md#$generatehtmlfromnodes) 序列化為 HTML，這也很重要。您還可以使用此方法來構建自己的 HTML 渲染器。
+控制此節點如何序列化為 HTML。這對於 Lexical 和非 Lexical 編輯器之間的複製和粘貼，或具有不同命名空間的 Lexical 編輯器很重要，此情況下主要的傳輸格式是 HTML。如果您通過 [@lexical/html!$generateHtmlFromNodes](../modules/lexical_html.md#$generatehtmlfromnodes) 序列化為 HTML，這也很重要。您還可以使用此函式來構建自己的 HTML 渲染器。
 
 #### 參數
 
@@ -258,7 +258,7 @@ custom_edit_url: null
 
 ▸ **clone**(`node`): [`CodeNode`](lexical_code.CodeNode.md)
 
-克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState（但不附加到任何地方！）。所有節點必須實現此方法。
+克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState（但不附加到任何地方！）。所有節點必須實現此函式。
 
 #### 參數
 
@@ -284,7 +284,7 @@ custom_edit_url: null
 
 ▸ **getType**(): `string`
 
-返回此節點的字串類型。每個節點必須實作此方法，並且在編輯器上註冊的節點中必須是唯一的。
+返回此節點的字串類型。每個節點必須實作此函式，並且在編輯器上註冊的節點中必須是唯一的。
 
 #### 返回值
 

@@ -1,6 +1,6 @@
 ---
 id: 'lexical_list.ListNode'
-title: '類別: ListNode'
+title: 'Class: ListNode'
 custom_edit_url: null
 ---
 
@@ -30,7 +30,7 @@ custom_edit_url: null
 
 [`ListNode`](lexical_list.ListNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[constructor](lexical.ElementNode.md#constructor)
 
@@ -38,7 +38,7 @@ custom_edit_url: null
 
 [packages/lexical-list/src/LexicalListNode.ts:72](https://github.com/facebook/lexical/tree/main/packages/lexical-list/src/LexicalListNode.ts#L72)
 
-## 方法
+## 函式
 
 ### append
 
@@ -54,7 +54,7 @@ custom_edit_url: null
 
 `this`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[append](lexical.ElementNode.md#append)
 
@@ -72,7 +72,7 @@ custom_edit_url: null
 
 `false`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[canBeEmpty](lexical.ElementNode.md#canbeempty)
 
@@ -90,7 +90,7 @@ custom_edit_url: null
 
 `false`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[canIndent](lexical.ElementNode.md#canindent)
 
@@ -106,7 +106,7 @@ custom_edit_url: null
 
 在和諧過程中調用，以確定將哪些節點插入到此 Lexical Node 的 DOM 中。
 
-此方法必須返回恰好一個 `HTMLElement`。不支持嵌套元素。
+此函式必須返回恰好一個 `HTMLElement`。不支持嵌套元素。
 
 在更新生命週期的這個階段，不要嘗試更新 Lexical EditorState。
 
@@ -121,7 +121,7 @@ custom_edit_url: null
 
 `HTMLElement`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[createDOM](lexical.ElementNode.md#createdom)
 
@@ -135,7 +135,7 @@ custom_edit_url: null
 
 ▸ **exportDOM**(`editor`): [`DOMExportOutput`](../modules/lexical.md#domexportoutput)
 
-控制此節點如何序列化為 HTML。這對於 Lexical 和非 Lexical 編輯器之間的複製和粘貼，或者不同命名空間的 Lexical 編輯器非常重要，此時主要的傳輸格式是 HTML。如果你還有其他原因需要序列化為 HTML，可以使用 [@lexical/html!$generateHtmlFromNodes](../modules/lexical_html.md#$generatehtmlfromnodes) 進行序列化。你也可以使用此方法構建自己的 HTML 渲染器。
+控制此節點如何序列化為 HTML。這對於 Lexical 和非 Lexical 編輯器之間的複製和粘貼，或者不同命名空間的 Lexical 編輯器非常重要，此時主要的傳輸格式是 HTML。如果你還有其他原因需要序列化為 HTML，可以使用 [@lexical/html!$generateHtmlFromNodes](../modules/lexical_html.md#$generatehtmlfromnodes) 進行序列化。你也可以使用此函式構建自己的 HTML 渲染器。
 
 #### 參數
 
@@ -147,7 +147,7 @@ custom_edit_url: null
 
 [`DOMExportOutput`](../modules/lexical.md#domexportoutput)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[exportDOM](lexical.ElementNode.md#exportdom)
 
@@ -167,7 +167,7 @@ custom_edit_url: null
 
 [`SerializedListNode`](../modules/lexical_list.md#serializedlistnode)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[exportJSON](lexical.ElementNode.md#exportjson)
 
@@ -191,7 +191,7 @@ custom_edit_url: null
 
 `boolean`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[extractWithChild](lexical.ElementNode.md#extractwithchild)
 
@@ -283,7 +283,7 @@ custom_edit_url: null
 
 `boolean`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[updateDOM](lexical.ElementNode.md#updatedom)
 
@@ -297,7 +297,7 @@ custom_edit_url: null
 
 ▸ **clone**(`node`): [`ListNode`](lexical_list.ListNode.md)
 
-克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState（但不附加到任何地方！）。所有節點必須實現此方法。
+克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState（但不附加到任何地方！）。所有節點必須實現此函式。
 
 #### 參數
 
@@ -309,7 +309,7 @@ custom_edit_url: null
 
 [`ListNode`](lexical_list.ListNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[clone](lexical.ElementNode.md#clone)
 
@@ -323,13 +323,13 @@ custom_edit_url: null
 
 ▸ **getType**(): `string`
 
-返回此節點的字符串類型。每個節點必須實現此方法，並且必須在編輯器中註冊的節點中唯一。
+返回此節點的字符串類型。每個節點必須實現此函式，並且必須在編輯器中註冊的節點中唯一。
 
 #### 返回
 
 `string`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[getType](lexical.ElementNode.md#gettype-1)
 
@@ -347,7 +347,7 @@ custom_edit_url: null
 
 `null` \| [`DOMConversionMap`](../modules/lexical.md#domconversionmap)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 ElementNode.importDOM
 
@@ -373,7 +373,7 @@ ElementNode.importDOM
 
 [`ListNode`](lexical_list.ListNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[importJSON](lexical.ElementNode.md#importjson)
 
@@ -387,7 +387,7 @@ ElementNode.importDOM
 
 ▸ **transform**(): (`node`: [`LexicalNode`](lexical.LexicalNode.md)) => `void`
 
-在編輯器初始化期間將返回的函數註冊為節點上的變換。大多數這樣的用例應該通過 [LexicalEditor.registerNodeTransform](lexical.LexicalEditor.md#registernodetransform) API 進行處理。
+在編輯器初始化期間將返回的函式註冊為節點上的變換。大多數這樣的用例應該通過 [LexicalEditor.registerNodeTransform](lexical.LexicalEditor.md#registernodetransform) API 進行處理。
 
 實驗性 - 使用時請自行風險。
 
@@ -407,7 +407,7 @@ ElementNode.importDOM
 
 `void`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[transform](lexical.ElementNode.md#transform)
 

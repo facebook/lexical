@@ -1,6 +1,6 @@
 ---
 id: 'lexical_offset.OffsetView'
-title: '類別: OffsetView'
+title: 'Class: OffsetView'
 custom_edit_url: null
 ---
 
@@ -58,7 +58,7 @@ custom_edit_url: null
 
 [packages/lexical-offset/src/index.ts:61](https://github.com/facebook/lexical/tree/main/packages/lexical-offset/src/index.ts#L61)
 
-## 方法
+## 函式
 
 ### createSelectionFromOffsets
 

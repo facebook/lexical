@@ -1,6 +1,6 @@
 ---
 id: 'lexical_hashtag.HashtagNode'
-title: '類別：HashtagNode'
+title: 'Class: HashtagNode'
 custom_edit_url: null
 ---
 
@@ -37,13 +37,13 @@ custom_edit_url: null
 
 [packages/lexical-hashtag/src/LexicalHashtagNode.ts:29](https://github.com/facebook/lexical/tree/main/packages/lexical-hashtag/src/LexicalHashtagNode.ts#L29)
 
-## 方法
+## 函式
 
 ### canInsertTextBefore
 
 ▸ **canInsertTextBefore**(): `boolean`
 
-此方法應由 `TextNode` 子類別覆寫，以控制在使用者事件發生時，文字插入此節點之前的行為。如果回傳 `true`，Lexical 將嘗試將文字插入此節點。如果回傳 `false`，則會將文字插入新的兄弟節點。
+此函式應由 `TextNode` 子類別覆寫，以控制在使用者事件發生時，文字插入此節點之前的行為。如果回傳 `true`，Lexical 將嘗試將文字插入此節點。如果回傳 `false`，則會將文字插入新的兄弟節點。
 
 #### 回傳值
 
@@ -67,7 +67,7 @@ custom_edit_url: null
 
 在對此 Lexical 節點進行對比時調用，以決定插入 DOM 的節點。
 
-此方法必須回傳一個 `HTMLElement`。嵌套元素不支援。
+此函式必須回傳一個 `HTMLElement`。嵌套元素不支援。
 
 請勿在此更新生命週期階段中嘗試更新 Lexical EditorState。
 
@@ -116,7 +116,7 @@ custom_edit_url: null
 
 ▸ **isTextEntity**(): `true`
 
-此方法應由 `TextNode` 子類別覆寫，以控制在使用 `registerLexicalTextEntity` 函數時，這些節點的行為。如果使用 `registerLexicalTextEntity`，則您創建並替換匹配文字的節點類別應回傳 `true`。
+此函式應由 `TextNode` 子類別覆寫，以控制在使用 `registerLexicalTextEntity` 函式時，這些節點的行為。如果使用 `registerLexicalTextEntity`，則您創建並替換匹配文字的節點類別應回傳 `true`。
 
 #### 回傳值
 
@@ -138,7 +138,7 @@ custom_edit_url: null
 
 ▸ **clone**(`node`): [`HashtagNode`](lexical_hashtag.HashtagNode.md)
 
-複製此節點，創建一個具有不同 `key` 的新節點，並將其添加到 `EditorState` 中（但不附加到任何位置）。所有節點都必須實現此方法。
+複製此節點，創建一個具有不同 `key` 的新節點，並將其添加到 `EditorState` 中（但不附加到任何位置）。所有節點都必須實現此函式。
 
 #### 參數
 
@@ -164,7 +164,7 @@ custom_edit_url: null
 
 ▸ **getType**(): `string`
 
-回傳此節點的字串類型。每個節點必須實現此方法，並且在編輯器中註冊的節點之間必須唯一。
+回傳此節點的字串類型。每個節點必須實現此函式，並且在編輯器中註冊的節點之間必須唯一。
 
 #### 回傳值
 

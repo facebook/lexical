@@ -1,6 +1,6 @@
 ---
 id: 'lexical_mark.MarkNode'
-title: '類別：MarkNode'
+title: 'Class: MarkNode'
 custom_edit_url: null
 ---
 
@@ -37,7 +37,7 @@ custom_edit_url: null
 
 [packages/lexical-mark/src/MarkNode.ts:66](https://github.com/facebook/lexical/tree/main/packages/lexical-mark/src/MarkNode.ts#L66)
 
-## 方法
+## 函式
 
 ### addID
 
@@ -117,9 +117,9 @@ custom_edit_url: null
 
 ▸ **createDOM**(`config`): `HTMLElement`
 
-在和解過程中調用此方法，以確定將哪些節點插入 DOM 以表示這個 Lexical 節點。
+在和解過程中調用此函式，以確定將哪些節點插入 DOM 以表示這個 Lexical 節點。
 
-此方法必須返回一個 HTMLElement。嵌套元素不受支持。
+此函式必須返回一個 HTMLElement。嵌套元素不受支持。
 
 在更新生命周期的這一階段，不要嘗試更新 Lexical EditorState。
 
@@ -313,7 +313,7 @@ custom_edit_url: null
 
 ▸ **updateDOM**(`prevNode`, `element`, `config`): `boolean`
 
-當節點發生變化時調用此方法，應根據需要更新 DOM，使其與更新期間可能發生的任何變化保持一致。
+當節點發生變化時調用此函式，應根據需要更新 DOM，使其與更新期間可能發生的任何變化保持一致。
 
 在此處返回 "true" 會導致 Lexical 卸載並重新創建 DOM 節點（通過調用 createDOM）。如果元素標籤發生變化，您需要這樣做。
 
@@ -343,7 +343,7 @@ custom_edit_url: null
 
 ▸ **clone**(`node`): [`MarkNode`](lexical_mark.MarkNode.md)
 
-克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不將其附加到任何地方！）。所有節點都必須實現此方法。
+克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不將其附加到任何地方！）。所有節點都必須實現此函式。
 
 #### 參數
 
@@ -369,7 +369,7 @@ custom_edit_url: null
 
 ▸ **getType**(): `string`
 
-返回此節點的字串類型。每個節點必須實現此方法，並且在註冊於編輯器中的節點之間必須是唯一的。
+返回此節點的字串類型。每個節點必須實現此函式，並且在註冊於編輯器中的節點之間必須是唯一的。
 
 #### 返回
 

@@ -1,6 +1,6 @@
 ---
 id: 'lexical_link.AutoLinkNode'
-title: '類別：AutoLinkNode'
+title: 'Class: AutoLinkNode'
 custom_edit_url: null
 ---
 
@@ -12,7 +12,7 @@ custom_edit_url: null
 
   ↳ **`AutoLinkNode`**
 
-## 構造函數
+## 構造函式
 
 ### constructor
 
@@ -64,7 +64,7 @@ LinkNode.constructor
 
 [packages/lexical/src/nodes/LexicalElementNode.ts:69](https://github.com/facebook/lexical/tree/main/packages/lexical/src/nodes/LexicalElementNode.ts#L69)
 
-## 方法
+## 函式
 
 ### canBeEmpty
 
@@ -126,7 +126,7 @@ LinkNode.constructor
 
 在重新調整過程中調用，以確定要插入到 DOM 中的節點。
 
-此方法必須返回確切的一個 HTMLElement。不支持嵌套元素。
+此函式必須返回確切的一個 HTMLElement。不支持嵌套元素。
 
 在更新生命週期的此階段，請勿嘗試更新 Lexical EditorState。
 
@@ -528,7 +528,7 @@ LinkNode.getType
 
 ▸ **updateDOM**(`prevNode`, `anchor`, `config`): `boolean`
 
-當一個節點發生變化時，會調用此方法，更新 DOM 使其與任何變更保持一致。
+當一個節點發生變化時，會調用此函式，更新 DOM 使其與任何變更保持一致。
 
 返回 "true" 將使 Lexical 卸載並重新創建 DOM 節點（通過調用 createDOM）。例如，如果元素標籤更改，則需要這樣做。
 
@@ -558,7 +558,7 @@ LinkNode.getType
 
 ▸ **clone**(`node`): [`AutoLinkNode`](lexical_link.AutoLinkNode.md)
 
-複製此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不將其附加到任何地方！）。所有節點都必須實現此方法。
+複製此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不將其附加到任何地方！）。所有節點都必須實現此函式。
 
 #### 參數
 

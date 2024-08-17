@@ -1,6 +1,6 @@
 ---
 id: 'lexical_list.ListItemNode'
-title: '類別：ListItemNode'
+title: 'Class: ListItemNode'
 custom_edit_url: null
 ---
 
@@ -38,7 +38,7 @@ custom_edit_url: null
 
 [packages/lexical-list/src/LexicalListItemNode.ts:68](https://github.com/facebook/lexical/tree/main/packages/lexical-list/src/LexicalListItemNode.ts#L68)
 
-## 方法
+## 函式
 
 ### append
 
@@ -70,7 +70,7 @@ custom_edit_url: null
 
 確定當此節點為空時，是否可以與插入的第一個節點塊合併。
 
-此方法專門在 [RangeSelection.insertNodes](lexical.RangeSelection.md#insertnodes) 中調用，以確定節點插入期間的合併行為。
+此函式專門在 [RangeSelection.insertNodes](lexical.RangeSelection.md#insertnodes) 中調用，以確定節點插入期間的合併行為。
 
 #### 返回值
 
@@ -149,7 +149,7 @@ ElementNode.canMergeWith
 
 在和解過程中調用，以確定要將哪些節點插入到此 Lexical 節點的 DOM 中。
 
-此方法必須返回精確的一個 HTMLElement。嵌套元素不被支持。
+此函式必須返回精確的一個 HTMLElement。嵌套元素不被支持。
 
 請勿在此更新生命週期階段嘗試更新 Lexical EditorState。
 
@@ -177,7 +177,7 @@ ElementNode.canMergeWith
 
 ▸ **createParentElementNode**(): [`ElementNode`](lexical.ElementNode.md)
 
-任何需要的父節點的創建邏輯。如果 [isParentRequired](lexical.LexicalNode.md#isparentrequired) 返回 true，則應實現此方法。
+任何需要的父節點的創建邏輯。如果 [isParentRequired](lexical.LexicalNode.md#isparentrequired) 返回 true，則應實現此函式。
 
 #### 返回值
 
@@ -197,7 +197,7 @@ ElementNode.canMergeWith
 
 ▸ **exportDOM**(`editor`): [`DOMExportOutput`](../modules/lexical.md#domexportoutput)
 
-控制此節點如何序列化為 HTML。這對於在 Lexical 和非 Lexical 編輯器之間，或在具有不同命名空間的 Lexical 編輯器之間進行複製和粘貼很重要，在這種情況下，主要的傳輸格式是 HTML。如果您因其他原因需要序列化為 HTML，也很重要，可以通過 [@lexical/html!$generateHtmlFromNodes](../modules/lexical_html.md#$generatehtmlfromnodes) 進行。您也可以使用此方法來構建自己的 HTML 渲染器。
+控制此節點如何序列化為 HTML。這對於在 Lexical 和非 Lexical 編輯器之間，或在具有不同命名空間的 Lexical 編輯器之間進行複製和粘貼很重要，在這種情況下，主要的傳輸格式是 HTML。如果您因其他原因需要序列化為 HTML，也很重要，可以通過 [@lexical/html!$generateHtmlFromNodes](../modules/lexical_html.md#$generatehtmlfromnodes) 進行。您也可以使用此函式來構建自己的 HTML 渲染器。
 
 #### 參數
 
@@ -254,7 +254,7 @@ ElementNode.canMergeWith
 
 `boolean`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[extractWithChild](lexical.ElementNode.md#extractwithchild)
 
@@ -286,7 +286,7 @@ ElementNode.canMergeWith
 
 `number`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[getIndent](lexical.ElementNode.md#getindent)
 
@@ -327,7 +327,7 @@ ElementNode.canMergeWith
 
 [`LexicalNode`](lexical.LexicalNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[insertAfter](lexical.ElementNode.md#insertafter)
 
@@ -352,7 +352,7 @@ ElementNode.canMergeWith
 
 [`ParagraphNode`](lexical.ParagraphNode.md) \| [`ListItemNode`](lexical_list.ListItemNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[insertNewAfter](lexical.ElementNode.md#insertnewafter)
 
@@ -372,7 +372,7 @@ ElementNode.canMergeWith
 
 `true`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[isParentRequired](lexical.ElementNode.md#isparentrequired)
 
@@ -396,7 +396,7 @@ ElementNode.canMergeWith
 
 `void`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[remove](lexical.ElementNode.md#remove)
 
@@ -429,7 +429,7 @@ ElementNode.canMergeWith
 
 `N`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[replace](lexical.ElementNode.md#replace)
 
@@ -473,7 +473,7 @@ ElementNode.canMergeWith
 
 `this`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[setIndent](lexical.ElementNode.md#setindent)
 
@@ -537,7 +537,7 @@ ElementNode.canMergeWith
 
 `boolean`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[updateDOM](lexical.ElementNode.md#updatedom)
 
@@ -551,7 +551,7 @@ ElementNode.canMergeWith
 
 ▸ **clone**(`node`): [`ListItemNode`](lexical_list.ListItemNode.md)
 
-克隆此節點，創建具有不同鍵的新節點並將其添加到 EditorState 中（但不附加到任何位置！）。所有節點都必須實現此方法。
+克隆此節點，創建具有不同鍵的新節點並將其添加到 EditorState 中（但不附加到任何位置！）。所有節點都必須實現此函式。
 
 #### 參數
 
@@ -563,7 +563,7 @@ ElementNode.canMergeWith
 
 [`ListItemNode`](lexical_list.ListItemNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[clone](lexical.ElementNode.md#clone)
 
@@ -577,13 +577,13 @@ ElementNode.canMergeWith
 
 ▸ **getType**(): `string`
 
-返回此節點的字符串類型。每個節點都必須實現此方法，並且在編輯器中註冊的節點之間必須是唯一的。
+返回此節點的字符串類型。每個節點都必須實現此函式，並且在編輯器中註冊的節點之間必須是唯一的。
 
 #### 返回
 
 `string`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[getType](lexical.ElementNode.md#gettype-1)
 
@@ -601,7 +601,7 @@ ElementNode.canMergeWith
 
 `null` \| [`DOMConversionMap`](../modules/lexical.md#domconversionmap)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 ElementNode.importDOM
 
@@ -627,7 +627,7 @@ ElementNode.importDOM
 
 [`ListItemNode`](lexical_list.ListItemNode.md)
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[importJSON](lexical.ElementNode.md#importjson)
 
@@ -641,7 +641,7 @@ ElementNode.importDOM
 
 ▸ **transform**(): (`node`: [`LexicalNode`](lexical.LexicalNode.md)) => `void`
 
-在編輯器初始化期間，將返回的函數註冊為節點上的轉換。大多數此類使用情況應通過 [LexicalEditor.registerNodeTransform](lexical.LexicalEditor.md#registernodetransform) API 來解決。
+在編輯器初始化期間，將返回的函式註冊為節點上的轉換。大多數此類使用情況應通過 [LexicalEditor.registerNodeTransform](lexical.LexicalEditor.md#registernodetransform) API 來解決。
 
 實驗性 - 使用風險自負。
 
@@ -663,7 +663,7 @@ ElementNode.importDOM
 
 `void`
 
-#### 覆蓋方法
+#### 覆蓋函式
 
 [ElementNode](lexical.ElementNode.md).[transform](lexical.ElementNode.md#transform)
 

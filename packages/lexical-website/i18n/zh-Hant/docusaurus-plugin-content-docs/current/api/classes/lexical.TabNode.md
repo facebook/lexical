@@ -1,6 +1,6 @@
 ---
 id: 'lexical.TabNode'
-title: '類別：TabNode'
+title: 'Class: TabNode'
 custom_edit_url: null
 ---
 
@@ -12,7 +12,7 @@ custom_edit_url: null
 
   ↳ **`TabNode`**
 
-## 構造函數
+## 構造函式
 
 ### constructor
 
@@ -36,13 +36,13 @@ custom_edit_url: null
 
 [packages/lexical/src/nodes/LexicalTabNode.ts:41](https://github.com/facebook/lexical/tree/main/packages/lexical/src/nodes/LexicalTabNode.ts#L41)
 
-## 方法
+## 函式
 
 ### afterCloneFrom
 
 ▸ **afterCloneFrom**(`prevNode`): `void`
 
-在 `prevNode` 的克隆上執行任何狀態更新，這些更新在靜態克隆方法中的構造函數調用時尚未處理。如果你的克隆中有狀態需要更新，而這些狀態沒有被構造函數直接處理，建議覆寫此方法，但實現中必須包含對 `super.afterCloneFrom(prevNode)` 的調用。這僅用於由 [$cloneWithProperties](../modules/lexical.md#$clonewithproperties) 函數或通過 super 調用。
+在 `prevNode` 的克隆上執行任何狀態更新，這些更新在靜態克隆函式中的構造函式調用時尚未處理。如果你的克隆中有狀態需要更新，而這些狀態沒有被構造函式直接處理，建議覆寫此函式，但實現中必須包含對 `super.afterCloneFrom(prevNode)` 的調用。這僅用於由 [$cloneWithProperties](../modules/lexical.md#$clonewithproperties) 函式或通過 super 調用。
 
 #### 參數
 
@@ -61,8 +61,8 @@ class ClassesTextNode extends TextNode {
   // 未顯示：static getType, static importJSON, exportJSON, createDOM, updateDOM
   __classes = new Set<string>();
   static clone(node: ClassesTextNode): ClassesTextNode {
-    // 這裡使用繼承的 TextNode 構造函數，所以
-    // classes 不由此方法設置。
+    // 這裡使用繼承的 TextNode 構造函式，所以
+    // classes 不由此函式設置。
     return new ClassesTextNode(node.__text, node.__key);
   }
   afterCloneFrom(node: this): void {
@@ -71,7 +71,7 @@ class ClassesTextNode extends TextNode {
     super.afterCloneFrom(node);
     this.__addClasses(node.__classes);
   }
-  // 此方法是私有實現細節，不適用於公共 API 因為它不調用 getWritable
+  // 此函式是私有實現細節，不適用於公共 API 因為它不調用 getWritable
   __addClasses(classNames: Iterable<string>): this {
     for (const className of classNames) {
       this.__classes.add(className);
@@ -108,7 +108,7 @@ class ClassesTextNode extends TextNode {
 
 ▸ **canInsertTextAfter**(): `boolean`
 
-此方法應由 TextNode 子類覆寫，以控制當用戶事件會導致文本在編輯器中插入在其之後的節點時的行為。如果返回 `true`，Lexical 將嘗試將文本插入到此節點中。如果返回 `false`，則會在新兄弟節點中插入文本。
+此函式應由 TextNode 子類覆寫，以控制當用戶事件會導致文本在編輯器中插入在其之後的節點時的行為。如果返回 `true`，Lexical 將嘗試將文本插入到此節點中。如果返回 `false`，則會在新兄弟節點中插入文本。
 
 #### 返回
 
@@ -130,7 +130,7 @@ class ClassesTextNode extends TextNode {
 
 ▸ **canInsertTextBefore**(): `boolean`
 
-此方法應由 TextNode 子類覆寫，以控制當用戶事件會導致文本在編輯器中插入在其之前的節點時的行為。如果返回 `true`，Lexical 將嘗試將文本插入到此節點中。如果返回 `false`，則會在新兄弟節點中插入文本。
+此函式應由 TextNode 子類覆寫，以控制當用戶事件會導致文本在編輯器中插入在其之前的節點時的行為。如果返回 `true`，Lexical 將嘗試將文本插入到此節點中。如果返回 `false`，則會在新兄弟節點中插入文本。
 
 #### 返回
 
@@ -257,7 +257,7 @@ class ClassesTextNode extends TextNode {
 
 ▸ **clone**(`node`): [`TabNode`](lexical.TabNode.md)
 
-克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不附加到任何地方！）。所有節點必須實現此方法。
+克隆此節點，創建一個具有不同鍵的新節點並將其添加到 EditorState 中（但不附加到任何地方！）。所有節點必須實現此函式。
 
 #### 參數
 
@@ -283,7 +283,7 @@ class ClassesTextNode extends TextNode {
 
 ▸ **getType**(): `string`
 
-返回此節點的字符串類型。每個節點必須實現此方法，並且在編輯器中註冊的節點之間必須唯一。
+返回此節點的字符串類型。每個節點必須實現此函式，並且在編輯器中註冊的節點之間必須唯一。
 
 #### 返回
 

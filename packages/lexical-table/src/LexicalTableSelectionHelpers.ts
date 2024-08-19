@@ -390,27 +390,24 @@ export function applyTableHandlers(
               ? (event as ClipboardEvent)
               : null,
           );
-          editor.update(() => {
-            if ($isTableSelection(selection)) {
-              $deleteCellHandler(event);
-              return true;
-            } else if ($isSelectionInTable(selection, tableNode)) {
+
+          if ($isTableSelection(selection)) {
+            $deleteCellHandler(event);
+            return true;
+          } else if ($isSelectionInTable(selection, tableNode)) {
+            editor.update(() => {
               selection.getNodes().forEach((node) => {
                 if ($isParagraphNode(node)) {
                   node.clear();
                 }
               });
-              return true;
-            }
-            // else if ($isRangeSelection(selection)) {
-            //   const containsTable = selection.getNodes().some((node) => $isTableNode(node));
-            //   if (containsTable) {
-            //     $deleteCellHandler(event);
-            //   }
-            //   selection.getNodes().forEach((node) => node.remove());
-            //   return true;
-            // }
-          });
+            });
+            return true;
+          } else if ($isRangeSelection(selection)) {
+            $deleteCellHandler(event);
+            selection.removeText();
+            return true;
+          }
         }
         return false;
       },

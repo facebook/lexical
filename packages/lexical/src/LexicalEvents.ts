@@ -26,6 +26,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -1081,13 +1082,20 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
-    if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
-      event.preventDefault();
-      dispatchCommand(editor, COPY_COMMAND, event);
-    } else if (isCut(key, shiftKey, metaKey, ctrlKey)) {
-      event.preventDefault();
-      dispatchCommand(editor, CUT_COMMAND, event);
-    } else if (isSelectAll(key, metaKey, ctrlKey)) {
+    const prevSelection = editor._editorState._selection;
+    if ($isNodeSelection(prevSelection)) {
+      if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
+        event.preventDefault();
+        dispatchCommand(editor, COPY_COMMAND, event);
+      } else if (isCut(key, shiftKey, metaKey, ctrlKey)) {
+        event.preventDefault();
+        dispatchCommand(editor, CUT_COMMAND, event);
+      } else if (isSelectAll(key, metaKey, ctrlKey)) {
+        event.preventDefault();
+        dispatchCommand(editor, SELECT_ALL_COMMAND, event);
+      }
+      // FF does it well (no need to override behavior)
+    } else if (!IS_FIREFOX && isSelectAll(key, metaKey, ctrlKey)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }

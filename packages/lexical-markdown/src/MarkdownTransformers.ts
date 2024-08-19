@@ -46,6 +46,10 @@ export type Transformer =
 
 export type ElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
+  /**
+   * export is called when the $convertToMarkdownString is called to convert the editor state into markdown.
+   * If null is returned, the next transformer will be tried.
+   */
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
@@ -61,9 +65,11 @@ export type ElementTransformer = {
     match: Array<string>,
     /**
      * Whether the match is from an import operation (e.g. through $convertFromMarkdownString) or not (e.g. through typing in the editor).
+     *
+     * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
      */
     isImport: boolean,
-  ) => void;
+  ) => boolean | void;
   type: 'element';
 };
 
@@ -73,7 +79,8 @@ export type ElementTransformer = {
 export type MultilineElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
   /**
-   * export is called when the $convertToMarkdownString is called to convert the editor state into markdown
+   * export is called when the $convertToMarkdownString is called to convert the editor state into markdown.
+   * If null is returned, the next transformer will be tried.
    */
   export?: (
     node: LexicalNode,
@@ -90,13 +97,15 @@ export type MultilineElementTransformer = {
   regExpEnd: RegExp;
   /**
    * replace is called only when markdown is imported in the editor, not when it's typed
+   *
+   * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
    */
   replace: (
     rootNode: ElementNode,
     openMatch: Array<string>,
     closeMatch: Array<string>,
     linesInBetween: Array<string>,
-  ) => void;
+  ) => boolean | void;
   type: 'multilineElement';
 };
 

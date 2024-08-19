@@ -66,8 +66,9 @@ function runElementTransformers(
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
-      replace(parentNode, siblings, match, false);
-      return true;
+      if (replace(parentNode, siblings, match, false) !== false) {
+        return true;
+      }
     }
   }
 

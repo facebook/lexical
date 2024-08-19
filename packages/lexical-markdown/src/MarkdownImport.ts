@@ -124,18 +124,30 @@ function $importMultiline(
       let endLineIndex = startLineIndex;
       const linesLength = lines.length;
 
-      while (++endLineIndex < linesLength) {
+      // ++ at the end - we want to check the current line as well. The current line could also contain the closing match
+      while (endLineIndex < linesLength) {
         const closeMatch = lines[endLineIndex].match(regExpEnd);
 
         // all lines between the open and close match
-        const linesInBetween = lines.slice(startLineIndex + 1, endLineIndex);
+        const linesInBetween =
+          startLineIndex !== endLineIndex
+            ? lines.slice(startLineIndex + 1, endLineIndex)
+            : [
+                lines[startLineIndex].slice(
+                  openMatch[0].length - 1,
+                  -closeMatch[0].length - 1,
+                ),
+              ];
 
         if (closeMatch) {
-          replace(rootNode, openMatch, closeMatch, linesInBetween);
-
-          // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
-          return [true, endLineIndex];
+          if (
+            replace(rootNode, openMatch, closeMatch, linesInBetween) !== false
+          ) {
+            // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
+            return [true, endLineIndex];
+          }
         }
+        endLineIndex++;
       }
     }
   }
@@ -160,8 +172,9 @@ function $importBlocks(
 
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));
-      replace(elementNode, [textNode], match, true);
-      break;
+      if (replace(elementNode, [textNode], match, true) !== false) {
+        break;
+      }
     }
   }
 

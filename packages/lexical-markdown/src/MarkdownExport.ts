@@ -49,7 +49,7 @@ export function createMarkdownExport(
       const child = children[i];
       const result = exportTopLevelElements(
         child,
-        [...byType.element, ...byType.multilineElement],
+        [...byType.multilineElement, ...byType.element],
         textFormatTransformers,
         byType.textMatch,
       );

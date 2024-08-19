@@ -6,12 +6,6 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
 import type {ElementNode} from 'lexical';
 
 import {createMarkdownExport} from './MarkdownExport';
@@ -24,15 +18,21 @@ import {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
+  CODE_MULTILINE,
+  ElementTransformer,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  MultilineElementTransformer,
   ORDERED_LIST,
   QUOTE,
   STRIKETHROUGH,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
 
@@ -42,6 +42,10 @@ const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   CODE,
   UNORDERED_LIST,
   ORDERED_LIST,
+];
+
+const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> = [
+  CODE_MULTILINE,
 ];
 
 // Order of text format transformers matters:
@@ -64,6 +68,7 @@ const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
 
 const TRANSFORMERS: Array<Transformer> = [
   ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];

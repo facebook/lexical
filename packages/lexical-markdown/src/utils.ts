@@ -25,6 +25,8 @@ import {
   type TextFormatType,
 } from 'lexical';
 
+import {MultilineElementTransformer} from './MarkdownTransformers';
+
 type MarkdownFormatKind =
   | 'noTransformation'
   | 'paragraphH1'
@@ -422,6 +424,7 @@ export function indexBy<T>(
 
 export function transformersByType(transformers: Array<Transformer>): Readonly<{
   element: Array<ElementTransformer>;
+  multilineElement: Array<MultilineElementTransformer>;
   textFormat: Array<TextFormatTransformer>;
   textMatch: Array<TextMatchTransformer>;
 }> {
@@ -429,6 +432,8 @@ export function transformersByType(transformers: Array<Transformer>): Readonly<{
 
   return {
     element: (byType.element || []) as Array<ElementTransformer>,
+    multilineElement: (byType.multilineElement ||
+      []) as Array<MultilineElementTransformer>,
     textFormat: (byType['text-format'] || []) as Array<TextFormatTransformer>,
     textMatch: (byType['text-match'] || []) as Array<TextMatchTransformer>,
   };

@@ -6,7 +6,6 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
 import type {
   ElementTransformer,
   TextFormatTransformer,
@@ -15,7 +14,6 @@ import type {
 } from '@lexical/markdown';
 import type {TextNode} from 'lexical';
 
-import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
@@ -30,13 +28,13 @@ import {
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
+import {MultilineElementTransformer} from './MarkdownTransformers';
 import {
   isEmptyParagraph,
   PUNCTUATION_OR_SPACE,
   transformersByType,
 } from './utils';
 
-const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
   openTagsRegExp: RegExp;
@@ -63,13 +61,15 @@ export function createMarkdownImport(
 
     for (let i = 0; i < linesLength; i++) {
       const lineText = lines[i];
-      // Codeblocks are processed first as anything inside such block
-      // is ignored for further processing
-      // TODO:
-      // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = $importCodeBlock(lines, i, root);
 
-      if (codeBlockNode != null) {
+      const [imported, shiftedIndex] = $importMultiline(
+        lines,
+        i,
+        byType.multilineElement,
+        root,
+      );
+
+      if (imported) {
         i = shiftedIndex;
         continue;
       }
@@ -101,6 +101,46 @@ export function createMarkdownImport(
       root.selectStart();
     }
   };
+}
+
+/**
+ *
+ * @returns first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed.
+ */
+function $importMultiline(
+  lines: Array<string>,
+  startLineIndex: number,
+  multilineElementTransformers: Array<MultilineElementTransformer>,
+  rootNode: ElementNode,
+): [boolean, number] {
+  for (const {
+    regExpStart,
+    regExpEnd,
+    replace,
+  } of multilineElementTransformers) {
+    const openMatch = lines[startLineIndex].match(regExpStart);
+
+    if (openMatch) {
+      let endLineIndex = startLineIndex;
+      const linesLength = lines.length;
+
+      while (++endLineIndex < linesLength) {
+        const closeMatch = lines[endLineIndex].match(regExpEnd);
+
+        // all lines between the open and close match
+        const linesInBetween = lines.slice(startLineIndex + 1, endLineIndex);
+
+        if (closeMatch) {
+          replace(rootNode, openMatch, closeMatch, linesInBetween);
+
+          // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
+          return [true, endLineIndex];
+        }
+      }
+    }
+  }
+
+  return [false, startLineIndex];
 }
 
 function $importBlocks(
@@ -161,35 +201,6 @@ function $importBlocks(
       }
     }
   }
-}
-
-function $importCodeBlock(
-  lines: Array<string>,
-  startLineIndex: number,
-  rootNode: ElementNode,
-): [CodeNode | null, number] {
-  const openMatch = lines[startLineIndex].match(CODE_BLOCK_REG_EXP);
-
-  if (openMatch) {
-    let endLineIndex = startLineIndex;
-    const linesLength = lines.length;
-
-    while (++endLineIndex < linesLength) {
-      const closeMatch = lines[endLineIndex].match(CODE_BLOCK_REG_EXP);
-
-      if (closeMatch) {
-        const codeBlockNode = $createCodeNode(openMatch[1]);
-        const textNode = $createTextNode(
-          lines.slice(startLineIndex + 1, endLineIndex).join('\n'),
-        );
-        codeBlockNode.append(textNode);
-        rootNode.append(codeBlockNode);
-        return [codeBlockNode, endLineIndex];
-      }
-    }
-  }
-
-  return [null, startLineIndex];
 }
 
 // Processing text content and replaces text format tags.

@@ -40,6 +40,7 @@ import {
 
 export type Transformer =
   | ElementTransformer
+  | MultilineElementTransformer
   | TextFormatTransformer
   | TextMatchTransformer;
 
@@ -51,13 +52,52 @@ export type ElementTransformer = {
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
   regExp: RegExp;
+  /**
+   * replace is called when markdown is imported or typed in the editor
+   */
   replace: (
     parentNode: ElementNode,
     children: Array<LexicalNode>,
     match: Array<string>,
+    /**
+     * Whether the match is from an import operation (e.g. through $convertFromMarkdownString) or not (e.g. through typing in the editor).
+     */
     isImport: boolean,
   ) => void;
   type: 'element';
+};
+
+/**
+ * Multiline element transformers are only run during import
+ */
+export type MultilineElementTransformer = {
+  dependencies: Array<Klass<LexicalNode>>;
+  /**
+   * export is called when the $convertToMarkdownString is called to convert the editor state into markdown
+   */
+  export?: (
+    node: LexicalNode,
+    // eslint-disable-next-line no-shadow
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null;
+  /**
+   * This regex determines when to start matching
+   */
+  regExpStart: RegExp;
+  /**
+   * This regex determines when to stop matching. Anything in between regExpStart and regExpEnd will be matched
+   */
+  regExpEnd: RegExp;
+  /**
+   * replace is called only when markdown is imported in the editor, not when it's typed
+   */
+  replace: (
+    rootNode: ElementNode,
+    openMatch: Array<string>,
+    closeMatch: Array<string>,
+    linesInBetween: Array<string>,
+  ) => void;
+  type: 'multilineElement';
 };
 
 export type TextFormatTransformer = Readonly<{
@@ -261,6 +301,22 @@ export const CODE: ElementTransformer = {
     return $createCodeNode(match ? match[1] : undefined);
   }),
   type: 'element',
+};
+
+const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
+
+// This is only used for multiline markdown imports. For markdown imports while typing, or markdown exports, the normal CODE ElementTransformer is used
+export const CODE_MULTILINE: MultilineElementTransformer = {
+  dependencies: [CodeNode],
+  regExpEnd: CODE_BLOCK_REG_EXP,
+  regExpStart: CODE_BLOCK_REG_EXP,
+  replace: (rootNode, openMatch, closeMatch, linesInBetween) => {
+    const codeBlockNode = $createCodeNode(openMatch[1]);
+    const textNode = $createTextNode(linesInBetween.join('\n'));
+    codeBlockNode.append(textNode);
+    rootNode.append(codeBlockNode);
+  },
+  type: 'multilineElement',
 };
 
 export const UNORDERED_LIST: ElementTransformer = {

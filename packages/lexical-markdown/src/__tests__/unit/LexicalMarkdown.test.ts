@@ -35,8 +35,8 @@ const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
     }
     return null; // Run next transformer
   },
-  regExpEnd: /<(\w+)[^>]*>/,
-  regExpStart: /<\/(\w+)>/,
+  regExpEnd: /<\/(\w+)\s*>/,
+  regExpStart: /<(\w+)[^>]*>/,
   replace: (rootNode, openMatch, closeMatch, linesInBetween) => {
     if (openMatch[1] === 'MyComponent') {
       const codeBlockNode = $createCodeNode(openMatch[1]);
@@ -99,7 +99,7 @@ describe('Markdown', () => {
       md: '> Hello\n> world!',
     },
     {
-      // Miltiline list items
+      // Multiline list items
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span><br><span style="white-space: pre-wrap;">!</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
     },
@@ -213,6 +213,11 @@ describe('Markdown', () => {
       md: 'Hello ~~__*world*__~~!',
       skipExport: true,
     },
+    /*{
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Inline Code</span></pre>',
+      md: '```Inline Code```',
+    },*/
+    // TODO: This test currently fails. Fix it
     {
       html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```\nCode\n```',
@@ -266,6 +271,11 @@ describe('Markdown', () => {
       customTransformers: [MDX_HTML_TRANSFORMER],
       html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Some Text</MyComponent>',
+    },
+    {
+      customTransformers: [MDX_HTML_TRANSFORMER],
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1\nSome Text</span></pre>',
+      md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
     },
   ];
 

@@ -128,18 +128,41 @@ function $importMultiline(
       while (endLineIndex < linesLength) {
         const closeMatch = lines[endLineIndex].match(regExpEnd);
 
-        // all lines between the open and close match
-        const linesInBetween =
-          startLineIndex !== endLineIndex
-            ? lines.slice(startLineIndex + 1, endLineIndex)
-            : [
-                lines[startLineIndex].slice(
-                  openMatch[0].length - 1,
-                  -closeMatch[0].length - 1,
-                ),
-              ];
-
         if (closeMatch) {
+          // everything between the open and close match, not including the matches, split up by lines
+          const linesInBetween = [];
+
+          if (startLineIndex === endLineIndex) {
+            // In case the end regex matches the same thing as the start regex, we need to continue searching - this is not the actual end
+            if (closeMatch.index === endLineIndex) {
+              endLineIndex++;
+              continue;
+            }
+
+            linesInBetween.push(
+              lines[startLineIndex].slice(
+                openMatch[0].length,
+                -closeMatch[0].length,
+              ),
+            );
+          } else {
+            for (let i = startLineIndex; i <= endLineIndex; i++) {
+              if (i === startLineIndex) {
+                const text = lines[i].slice(openMatch[0].length);
+                if (text.length) {
+                  linesInBetween.push(text);
+                }
+              } else if (i === endLineIndex) {
+                const text = lines[i].slice(0, -closeMatch[0].length);
+                if (text.length) {
+                  linesInBetween.push(text);
+                }
+              } else {
+                linesInBetween.push(lines[i]);
+              }
+            }
+          }
+
           if (
             replace(rootNode, openMatch, closeMatch, linesInBetween) !== false
           ) {

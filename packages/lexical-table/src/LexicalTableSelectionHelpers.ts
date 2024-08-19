@@ -341,8 +341,10 @@ export function applyTableHandlers(
     }
 
     if ($isTableSelection(selection)) {
-      event.preventDefault();
-      event.stopPropagation();
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       tableObserver.clearText();
 
       return true;

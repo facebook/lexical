@@ -7,12 +7,6 @@
  */
 
 import type {ListNode} from '@lexical/list';
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
 
 import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
@@ -25,7 +19,13 @@ import {
   type TextFormatType,
 } from 'lexical';
 
-import {MultilineElementTransformer} from './MarkdownTransformers';
+import {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 
 type MarkdownFormatKind =
   | 'noTransformation'

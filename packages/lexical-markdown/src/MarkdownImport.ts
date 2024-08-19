@@ -8,10 +8,11 @@
 
 import type {
   ElementTransformer,
+  MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '@lexical/markdown';
+} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
@@ -28,7 +29,6 @@ import {
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-import {MultilineElementTransformer} from './MarkdownTransformers';
 import {
   isEmptyParagraph,
   PUNCTUATION_OR_SPACE,

@@ -11,7 +11,7 @@ import type {
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '@lexical/markdown';
+} from './MarkdownTransformers';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';

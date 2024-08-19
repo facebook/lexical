@@ -6,12 +6,6 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
 import {
@@ -22,7 +16,13 @@ import {
   $isTextNode,
 } from 'lexical';
 
-import {MultilineElementTransformer} from './MarkdownTransformers';
+import {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
 /**

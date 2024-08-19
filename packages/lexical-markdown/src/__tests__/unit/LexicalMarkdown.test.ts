@@ -6,21 +6,51 @@
  *
  */
 
-import {CodeNode} from '@lexical/code';
+import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {$getRoot, $insertNodes} from 'lexical';
+import {$createTextNode, $getRoot, $insertNodes} from 'lexical';
 
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   LINK,
   TextMatchTransformer,
+  Transformer,
   TRANSFORMERS,
 } from '../..';
+import {MultilineElementTransformer} from '../../MarkdownTransformers';
+
+// Matches html within a mdx file
+const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
+  dependencies: [CodeNode],
+  export: (node) => {
+    if (node.getTextContent().startsWith('From HTML:')) {
+      return `<MyComponent>${node
+        .getTextContent()
+        .replace('From HTML: ', '')}</MyComponent>`;
+    }
+    return null; // Run next transformer
+  },
+  regExpEnd: /<(\w+)[^>]*>/,
+  regExpStart: /<\/(\w+)>/,
+  replace: (rootNode, openMatch, closeMatch, linesInBetween) => {
+    if (openMatch[1] === 'MyComponent') {
+      const codeBlockNode = $createCodeNode(openMatch[1]);
+      const textNode = $createTextNode(
+        'From HTML: ' + linesInBetween.join('\n'),
+      );
+      codeBlockNode.append(textNode);
+      rootNode.append(codeBlockNode);
+      return;
+    }
+    return false; // Run next transformer
+  },
+  type: 'multilineElement',
+};
 
 describe('Markdown', () => {
   type Input = Array<{
@@ -29,6 +59,7 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
     shouldPreserveNewLines?: true;
+    customTransformers?: Transformer[];
   }>;
 
   const URL = 'https://lexical.dev';
@@ -231,6 +262,11 @@ describe('Markdown', () => {
       md: "$$H$&e$`l$'l$o$",
       skipImport: true,
     },
+    {
+      customTransformers: [MDX_HTML_TRANSFORMER],
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Some Text</span></pre>',
+      md: 'Some HTML in mdx:\n\n<MyComponent>Some Text</MyComponent>',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -246,6 +282,7 @@ describe('Markdown', () => {
     md,
     skipImport,
     shouldPreserveNewLines,
+    customTransformers,
   } of IMPORT_AND_EXPORT) {
     if (skipImport) {
       continue;
@@ -267,7 +304,11 @@ describe('Markdown', () => {
         () =>
           $convertFromMarkdownString(
             md,
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+            [
+              ...(customTransformers || []),
+              ...TRANSFORMERS,
+              HIGHLIGHT_TEXT_MATCH_IMPORT,
+            ],
             undefined,
             shouldPreserveNewLines,
           ),
@@ -287,6 +328,7 @@ describe('Markdown', () => {
     md,
     skipExport,
     shouldPreserveNewLines,
+    customTransformers,
   } of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
@@ -322,7 +364,7 @@ describe('Markdown', () => {
           .getEditorState()
           .read(() =>
             $convertToMarkdownString(
-              TRANSFORMERS,
+              [...(customTransformers || []), ...TRANSFORMERS],
               undefined,
               shouldPreserveNewLines,
             ),

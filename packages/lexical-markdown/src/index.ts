@@ -6,6 +6,13 @@
  *
  */
 
+import type {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 import type {ElementNode} from 'lexical';
 
 import {createMarkdownExport} from './MarkdownExport';
@@ -19,20 +26,15 @@ import {
   CHECK_LIST,
   CODE,
   CODE_MULTILINE,
-  ElementTransformer,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
-  MultilineElementTransformer,
   ORDERED_LIST,
   QUOTE,
   STRIKETHROUGH,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
 

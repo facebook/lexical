@@ -35,7 +35,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isParagraphNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -384,6 +384,10 @@ export function applyTableHandlers(
       (event) => {
         const selection = $getSelection();
         if (selection) {
+          if ($isNodeSelection(selection)) {
+            return false;
+          }
+
           copyToClipboard(
             editor,
             objectKlassEquals(event, ClipboardEvent)
@@ -394,18 +398,11 @@ export function applyTableHandlers(
           if ($isTableSelection(selection)) {
             $deleteCellHandler(event);
             return true;
-          } else if ($isSelectionInTable(selection, tableNode)) {
-            editor.update(() => {
-              selection.getNodes().forEach((node) => {
-                if ($isParagraphNode(node)) {
-                  node.clear();
-                }
-              });
-            });
-            return true;
           } else if ($isRangeSelection(selection)) {
-            $deleteCellHandler(event);
-            selection.removeText();
+            editor.update(() => {
+              $deleteCellHandler(event);
+              selection.removeText();
+            });
             return true;
           }
         }

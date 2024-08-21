@@ -150,7 +150,7 @@ describe('LexicalTableNode tests', () => {
         );
       });
 
-      test('Cut with table in the middle of a range selection ', async () => {
+      test('Cut table in the middle of a range selection', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
@@ -175,7 +175,7 @@ describe('LexicalTableNode tests', () => {
         expect(testEnv.innerHTML).toBe(`<p><br></p>`);
       });
 
-      test('Cut with table as last node in range selection ', async () => {
+      test('Cut table as last node in range selection ', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
@@ -198,7 +198,7 @@ describe('LexicalTableNode tests', () => {
         expect(testEnv.innerHTML).toBe(`<p><br></p>`);
       });
 
-      test('Cut with table as first node in range selection ', async () => {
+      test('Cut table as first node in range selection ', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
@@ -221,7 +221,7 @@ describe('LexicalTableNode tests', () => {
         expect(testEnv.innerHTML).toBe(`<p><br></p>`);
       });
 
-      test('Cut whole table selected only, should remove it', async () => {
+      test('Cut table is whole selection, should remove it', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {

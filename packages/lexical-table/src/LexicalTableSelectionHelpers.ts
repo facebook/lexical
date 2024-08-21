@@ -695,7 +695,6 @@ export function applyTableHandlers(
             newAnchorCellKey,
             newFocusCellKey,
           );
-          $setSelection(newTableSelection);
         }
         return true;
       },

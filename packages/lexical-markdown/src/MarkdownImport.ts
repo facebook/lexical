@@ -134,7 +134,7 @@ function $importMultiline(
 
           if (startLineIndex === endLineIndex) {
             // In case the end regex matches the same thing as the start regex, we need to continue searching - this is not the actual end
-            if (closeMatch.index === endLineIndex) {
+            if (closeMatch.index === openMatch.index) {
               endLineIndex++;
               continue;
             }

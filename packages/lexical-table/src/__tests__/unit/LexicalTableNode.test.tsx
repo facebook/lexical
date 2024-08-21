@@ -32,6 +32,36 @@ import {
 
 import {$getElementForTableNode, TableNode} from '../../LexicalTableNode';
 
+export class ClipboardDataMock {
+  getData: jest.Mock<string, [string]>;
+  setData: jest.Mock<void, [string, string]>;
+
+  constructor() {
+    this.getData = jest.fn();
+    this.setData = jest.fn();
+  }
+}
+
+export class ClipboardEventMock extends Event {
+  clipboardData: ClipboardDataMock;
+
+  constructor(type: string, options?: EventInit) {
+    super(type, options);
+    this.clipboardData = new ClipboardDataMock();
+  }
+}
+
+global.document.execCommand = function execCommandMock(
+  commandId: string,
+  showUI?: boolean,
+  value?: string,
+): boolean {
+  return true;
+};
+Object.defineProperty(window, 'ClipboardEvent', {
+  value: new ClipboardEventMock('cut'),
+});
+
 const editorConfig = Object.freeze({
   namespace: '',
   theme: {

@@ -7,7 +7,7 @@
  */
 
 import '../css/tailwind.css';
-
+import Translate from '@docusaurus/Translate';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import HomepageExamples from '@site/src/components/HomepageExamples';
@@ -30,19 +30,33 @@ function HomepageHeader() {
         />
       </h1>
 
-      <p className="text-2xl">{siteConfig.tagline}</p>
+      <p className="text-2xl">
+        <Translate
+          id="homepage.tagline"
+          description="The tagline of the project">
+          An extensible text editor framework that does things differently
+        </Translate>
+      </p>
 
       <div className="flex gap-4">
         <Link
           className="whitespace-nowrap rounded-md bg-white/90 px-6 py-2 text-sm font-bold text-black transition-opacity hover:text-black hover:no-underline hover:opacity-90"
           to="/docs/intro">
-          Get Started
+          <Translate
+            id="homepage.getStarted"
+            description="The 'Get Started' button on the homepage">
+            Get Started
+          </Translate>
         </Link>
 
         <Link
           className="whitespace-nowrap rounded-md px-6 py-2 text-sm font-bold text-white hover:text-white hover:no-underline"
           to="https://playground.lexical.dev">
-          Visit Playground
+          <Translate
+            id="homepage.visitPlayground"
+            description="The 'Visit Playground' button on the homepage">
+            Visit Playground
+          </Translate>
         </Link>
       </div>
     </header>

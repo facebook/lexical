@@ -6,6 +6,7 @@
  *
  */
 
+import Translate from '@docusaurus/Translate';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import * as Tabs from '@radix-ui/react-tabs';
@@ -15,11 +16,13 @@ const EXAMPLES = [
   {
     content: (
       <>
-        It's super easy to get started with Lexical in any environment. Lexical
-        is framework agnostic, but provides a set of bindings for React to help
-        you get off the ground even quicker. After the initial setup,
-        delightfully ergonomic APIs make building custom functionality
-        straightforward and downright fun!
+        <Translate id="homepage.example1">
+          It's super easy to get started with Lexical in any environment.
+          Lexical is framework agnostic, but provides a set of bindings for
+          React to help you get off the ground even quicker. After the initial
+          setup, delightfully ergonomic APIs make building custom functionality
+          straightforward and downright fun!
+        </Translate>
       </>
     ),
     id: 'example-feature-1',
@@ -28,14 +31,14 @@ const EXAMPLES = [
   },
   {
     content: (
-      <>
+      <><Translate id="homepage.example2">
         At its core, Lexical is a text-editing engine - a platform for building
         feature-rich editors for the web. At the same time, we believe users
         shouldn't have to rewrite the same rich text functionality over and over
         in every implementation. Lexical exposes a set of individual, modular
         packages that can be used to add common features like lists, links, and
         tables.
-      </>
+      </Translate></>
     ),
     id: 'example-feature-2',
     label: 'Powerful Features',
@@ -43,11 +46,11 @@ const EXAMPLES = [
   },
   {
     content: (
-      <>
+      <><Translate id="homepage.example3">
         Lexical emphasizes extensibility. Nodes can be extended to add or change
         behavior and simple, imperative APIs make it a breeze to build for
         custom use cases.
-      </>
+      </Translate></>
     ),
     id: 'example-feature-3',
     label: 'Built to Extend',

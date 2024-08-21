@@ -93,6 +93,17 @@ export class ElementNode extends LexicalNode {
     this.__dir = null;
   }
 
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__first = prevNode.__first;
+    this.__last = prevNode.__last;
+    this.__size = prevNode.__size;
+    this.__indent = prevNode.__indent;
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__dir = prevNode.__dir;
+  }
+
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
@@ -580,6 +591,23 @@ export class ElementNode extends LexicalNode {
     selection: BaseSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
+    return false;
+  }
+
+  /**
+   * Determines whether this node, when empty, can merge with a first block
+   * of nodes being inserted.
+   *
+   * This method is specifically called in {@link RangeSelection.insertNodes}
+   * to determine merging behavior during nodes insertion.
+   *
+   * @example
+   * // In a ListItemNode or QuoteNode implementation:
+   * canMergeWhenEmpty(): true {
+   *  return true;
+   * }
+   */
+  canMergeWhenEmpty(): boolean {
     return false;
   }
 }

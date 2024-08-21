@@ -874,30 +874,28 @@ test.describe.parallel('Selection', () => {
     });
   });
 
-  test('shift+arrowdown into a table, when the table is the last node, selects the whole table', async ({
-    page,
-    isPlainText,
-    isCollab,
-    browserName,
-    legacyEvents,
-  }) => {
-    test.skip(isPlainText);
-    test.fixme(browserName === 'chromium' && legacyEvents);
-    await focusEditor(page);
-    await insertTable(page, 2, 2);
-    await moveToEditorEnd(page);
-    await deleteBackward(page);
-    await moveToEditorBeginning(page);
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.up('Shift');
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0],
-      focusOffset: 1,
-      focusPath: [1, 1, 1],
-    });
-  });
+  test(
+    'shift+arrowdown into a table, when the table is the last node, selects the whole table',
+    {tag: '@flaky'},
+    async ({page, isPlainText, isCollab, browserName, legacyEvents}) => {
+      test.skip(isPlainText);
+      test.fixme(browserName === 'chromium' && legacyEvents);
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await moveToEditorEnd(page);
+      await deleteBackward(page);
+      await moveToEditorBeginning(page);
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.up('Shift');
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 1,
+        focusPath: [1, 1, 1],
+      });
+    },
+  );
 
   test('shift+arrowup into a table, when the table is the first node, selects the whole table', async ({
     page,
@@ -924,37 +922,35 @@ test.describe.parallel('Selection', () => {
     });
   });
 
-  test('shift+arrowdown into a table, when the table is the only node, selects the whole table', async ({
-    page,
-    isPlainText,
-    isCollab,
-    legacyEvents,
-    browserName,
-  }) => {
-    test.skip(isPlainText);
-    test.fixme(browserName === 'chromium' && legacyEvents);
-    await focusEditor(page);
-    await insertTable(page, 2, 2);
-    await moveToEditorBeginning(page);
-    await deleteBackward(page);
-    await moveToEditorEnd(page);
-    await deleteBackward(page);
-    await moveToEditorBeginning(page);
-    await moveUp(page, 1);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [],
-      focusOffset: 0,
-      focusPath: [],
-    });
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.up('Shift');
-    await assertTableSelectionCoordinates(page, {
-      anchor: {x: 0, y: 0},
-      focus: {x: 1, y: 1},
-    });
-  });
+  test(
+    'shift+arrowdown into a table, when the table is the only node, selects the whole table',
+    {tag: '@flaky'},
+    async ({page, isPlainText, isCollab, legacyEvents, browserName}) => {
+      test.skip(isPlainText);
+      test.fixme(browserName === 'chromium' && legacyEvents);
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await moveToEditorBeginning(page);
+      await deleteBackward(page);
+      await moveToEditorEnd(page);
+      await deleteBackward(page);
+      await moveToEditorBeginning(page);
+      await moveUp(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [],
+        focusOffset: 0,
+        focusPath: [],
+      });
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.up('Shift');
+      await assertTableSelectionCoordinates(page, {
+        anchor: {x: 0, y: 0},
+        focus: {x: 1, y: 1},
+      });
+    },
+  );
 
   test('shift+arrowup into a table, when the table is the only node, selects the whole table', async ({
     page,

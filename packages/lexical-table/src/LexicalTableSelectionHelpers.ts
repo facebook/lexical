@@ -66,10 +66,7 @@ import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {
-  $createTableSelection,
-  $isTableSelection,
-} from './LexicalTableSelection';
+import {$isTableSelection} from './LexicalTableSelection';
 import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
@@ -633,8 +630,6 @@ export function applyTableHandlers(
         const toY = Math.max(startY, stopY);
         const gridRowNodes = gridNode.getChildren();
         let newRowIdx = 0;
-        let newAnchorCellKey;
-        let newFocusCellKey;
 
         for (let r = fromY; r <= toY; r++) {
           const currentGridRowNode = gridRowNodes[r];
@@ -666,12 +661,6 @@ export function applyTableHandlers(
               return false;
             }
 
-            if (r === fromY && c === fromX) {
-              newAnchorCellKey = currentGridCellNode.getKey();
-            } else if (r === toY && c === toX) {
-              newFocusCellKey = currentGridCellNode.getKey();
-            }
-
             const originalChildren = currentGridCellNode.getChildren();
             newGridCellNode.getChildren().forEach((child) => {
               if ($isTextNode(child)) {
@@ -687,14 +676,6 @@ export function applyTableHandlers(
           }
 
           newRowIdx++;
-        }
-        if (newAnchorCellKey && newFocusCellKey) {
-          const newTableSelection = $createTableSelection();
-          newTableSelection.set(
-            nodes[0].getKey(),
-            newAnchorCellKey,
-            newFocusCellKey,
-          );
         }
         return true;
       },

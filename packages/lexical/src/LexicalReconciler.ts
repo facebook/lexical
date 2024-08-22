@@ -340,7 +340,18 @@ function reconcileElementTerminatingLineBreak(
       const element = dom.__lexicalLineBreak;
 
       if (element != null) {
-        dom.removeChild(element);
+        try {
+          dom.removeChild(element);
+        } catch (error) {
+          if (typeof error === 'object' && error != null) {
+            const msg = `${error.toString()} Parent: ${dom.tagName}, child: ${
+              element.tagName
+            }.`;
+            throw new Error(msg);
+          } else {
+            throw error;
+          }
+        }
       }
 
       // @ts-expect-error: internal field
@@ -501,7 +512,22 @@ function $reconcileChildren(
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
       const replacementDOM = $createNode(nextFrstChildKey, null, null);
-      dom.replaceChild(replacementDOM, lastDOM);
+      try {
+        dom.replaceChild(replacementDOM, lastDOM);
+      } catch (error) {
+        if (typeof error === 'object' && error != null) {
+          const msg = `${error.toString()} Parent: ${
+            dom.tagName
+          }, new child: {tag: ${
+            replacementDOM.tagName
+          } key: ${nextFrstChildKey}}, old child: {tag: ${
+            lastDOM.tagName
+          }, key: ${prevFirstChildKey}}.`;
+          throw new Error(msg);
+        } else {
+          throw error;
+        }
+      }
       destroyNode(prevFirstChildKey, null);
     }
     const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);

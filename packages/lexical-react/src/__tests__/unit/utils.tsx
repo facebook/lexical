@@ -27,11 +27,13 @@ function Editor({
   provider,
   setEditor,
   awarenessData,
+  shouldBootstrapEditor = true,
 }: {
   doc: Y.Doc;
   provider: Provider;
   setEditor: (editor: LexicalEditor) => void;
   awarenessData?: object | undefined;
+  shouldBootstrapEditor?: boolean;
 }) {
   const context = useCollaborationContext();
 
@@ -48,7 +50,7 @@ function Editor({
       <CollaborationPlugin
         id="main"
         providerFactory={() => provider}
-        shouldBootstrap={true}
+        shouldBootstrap={shouldBootstrapEditor}
         awarenessData={awarenessData}
       />
       <RichTextPlugin
@@ -148,7 +150,15 @@ export class Client implements Provider {
     this._connected = false;
   }
 
-  start(rootContainer: Container, awarenessData?: object) {
+  /**
+   * @param options
+   *  - shouldBootstrapEditor: Whether to initialize the editor with an empty paragraph
+   */
+  start(
+    rootContainer: Container,
+    awarenessData?: object,
+    options: {shouldBootstrapEditor?: boolean} = {},
+  ) {
     const container = document.createElement('div');
     const reactRoot = createRoot(container);
     this._container = container;
@@ -162,8 +172,8 @@ export class Client implements Provider {
           initialConfig={{
             editorState: null,
             namespace: '',
-            onError: () => {
-              throw Error();
+            onError: (e) => {
+              throw e;
             },
           }}>
           <Editor
@@ -171,6 +181,7 @@ export class Client implements Provider {
             doc={this._doc}
             setEditor={(editor) => (this._editor = editor)}
             awarenessData={awarenessData}
+            shouldBootstrapEditor={options.shouldBootstrapEditor}
           />
         </LexicalComposer>,
       );

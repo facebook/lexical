@@ -17,12 +17,12 @@ export const TreeView = forwardRef<
   HTMLPreElement,
   {
     editorState: EditorState;
-    treeTypeButtonClassName: string;
-    timeTravelButtonClassName: string;
-    timeTravelPanelButtonClassName: string;
-    timeTravelPanelClassName: string;
-    timeTravelPanelSliderClassName: string;
-    viewClassName: string;
+    treeTypeButtonClassName?: string;
+    timeTravelButtonClassName?: string;
+    timeTravelPanelButtonClassName?: string;
+    timeTravelPanelClassName?: string;
+    timeTravelPanelSliderClassName?: string;
+    viewClassName?: string;
     generateContent: (exportDOM: boolean) => Promise<string>;
     setEditorState: (state: EditorState, options?: EditorSetOptions) => void;
     setEditorReadOnly: (isReadonly: boolean) => void;

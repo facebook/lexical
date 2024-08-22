@@ -365,10 +365,7 @@ export class ExtendedTextNode extends TextNode {
   }
 
   isSimpleText() {
-    return (
-      (this.__type === 'text' || this.__type === 'extended-text') &&
-      this.__mode === 0
-    );
+    return this.__type === 'extended-text' && this.__mode === 0;
   }
 
   exportJSON(): SerializedTextNode {

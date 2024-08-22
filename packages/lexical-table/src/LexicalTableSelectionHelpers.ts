@@ -24,7 +24,8 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {$findMatchingParent} from '@lexical/utils';
+import {copyToClipboard} from '@lexical/clipboard';
+import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
@@ -34,6 +35,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -41,6 +43,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -314,7 +317,9 @@ export function applyTableHandlers(
     },
   );
 
-  const $deleteCellHandler = (event: KeyboardEvent): boolean => {
+  const $deleteCellHandler = (
+    event: KeyboardEvent | ClipboardEvent | null,
+  ): boolean => {
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
@@ -336,8 +341,10 @@ export function applyTableHandlers(
     }
 
     if ($isTableSelection(selection)) {
-      event.preventDefault();
-      event.stopPropagation();
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       tableObserver.clearText();
 
       return true;
@@ -367,6 +374,38 @@ export function applyTableHandlers(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       $deleteCellHandler,
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+
+  tableObserver.listenersToRemove.add(
+    editor.registerCommand<KeyboardEvent | ClipboardEvent | null>(
+      CUT_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if (selection) {
+          if ($isNodeSelection(selection)) {
+            return false;
+          }
+
+          copyToClipboard(
+            editor,
+            objectKlassEquals(event, ClipboardEvent)
+              ? (event as ClipboardEvent)
+              : null,
+          );
+
+          if ($isTableSelection(selection)) {
+            $deleteCellHandler(event);
+            return true;
+          } else if ($isRangeSelection(selection)) {
+            $deleteCellHandler(event);
+            selection.removeText();
+            return true;
+          }
+        }
+        return false;
+      },
       COMMAND_PRIORITY_CRITICAL,
     ),
   );

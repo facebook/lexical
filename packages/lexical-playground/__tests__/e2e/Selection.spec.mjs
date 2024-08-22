@@ -648,6 +648,38 @@ test.describe.parallel('Selection', () => {
     );
   });
 
+  test('Triple-clicking last cell in table should not select entire document', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+    legacyEvents,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Line1');
+    await insertTable(page, 1, 2);
+
+    const lastCell = page.locator(
+      '.PlaygroundEditorTheme__tableCell:last-child',
+    );
+    await lastCell.click();
+    await page.keyboard.type('Foo');
+
+    const lastCellText = lastCell.locator('span');
+    const tripleClickDelay = 50;
+    await lastCellText.click({clickCount: 3, delay: tripleClickDelay});
+
+    // Only the last cell should be selected, and not the entire docuemnt
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 1, 0],
+      focusOffset: 1,
+      focusPath: [1, 0, 1, 0],
+    });
+  });
+
   test('Can persist the text format from the paragraph', async ({
     page,
     isPlainText,

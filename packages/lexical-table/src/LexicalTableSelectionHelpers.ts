@@ -764,14 +764,6 @@ export function applyTableHandlers(
                   : lastCell.getChildrenSize(),
                 'element',
               );
-            } else {
-              newSelection.anchor.set(
-                tableNode.getParentOrThrow().getKey(),
-                isBackward
-                  ? tableNode.getIndexWithinParent() + 1
-                  : tableNode.getIndexWithinParent(),
-                'element',
-              );
             }
             $setSelection(newSelection);
             $addHighlightStyleToTable(editor, tableObserver);

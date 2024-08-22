@@ -152,7 +152,7 @@ export class Client implements Provider {
 
   /**
    * @param options
-   *  - shouldBootstrapCollab: Whether to initialize the editor with an empty paragraph
+   *  - shouldBootstrapEditor: Whether to initialize the editor with an empty paragraph
    */
   start(
     rootContainer: Container,

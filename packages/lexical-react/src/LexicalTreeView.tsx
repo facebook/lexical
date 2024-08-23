@@ -29,12 +29,12 @@ export function TreeView({
   customPrintNode,
 }: {
   editor: LexicalEditor;
-  treeTypeButtonClassName: string;
-  timeTravelButtonClassName: string;
-  timeTravelPanelButtonClassName: string;
-  timeTravelPanelClassName: string;
-  timeTravelPanelSliderClassName: string;
-  viewClassName: string;
+  treeTypeButtonClassName?: string;
+  timeTravelButtonClassName?: string;
+  timeTravelPanelButtonClassName?: string;
+  timeTravelPanelClassName?: string;
+  timeTravelPanelSliderClassName?: string;
+  viewClassName?: string;
   customPrintNode?: CustomPrintNodeFn;
 }): JSX.Element {
   const treeElementRef = React.createRef<HTMLPreElement>();

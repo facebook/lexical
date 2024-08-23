@@ -25,7 +25,6 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_LINUX,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
@@ -1923,82 +1922,86 @@ test.describe.parallel('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter inside a Link', async ({page}) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello awesome');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type('world');
+  test(
+    'Can handle pressing Enter inside a Link',
+    {tag: '@flaky'},
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type('world');
 
-    await moveToLineBeginning(page);
-    await moveRight(page, 6);
+      await moveToLineBeginning(page);
+      await moveRight(page, 6);
 
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello</span>
-          </a>
-        </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">awesome</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello</span>
+            </a>
+          </p>
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">awesome</span>
+            </a>
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
-  test('Can handle pressing Enter inside a Link containing multiple TextNodes', async ({
-    page,
-    isCollab,
-  }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
-    await focusEditor(page);
-    await page.keyboard.type('Hello ');
-    await toggleBold(page);
-    await page.keyboard.type('awe');
-    await toggleBold(page);
-    await page.keyboard.type('some');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type(' world');
+  test(
+    'Can handle pressing Enter inside a Link containing multiple TextNodes',
+    {tag: '@flaky'},
+    async ({page, isCollab}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello ');
+      await toggleBold(page);
+      await page.keyboard.type('awe');
+      await toggleBold(page);
+      await page.keyboard.type('some');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type(' world');
 
-    await moveToLineBeginning(page);
-    await moveRight(page, 6);
+      await moveToLineBeginning(page);
+      await moveRight(page, 6);
 
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello</span>
-          </a>
-        </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <strong data-lexical-text="true">awe</strong>
-            <span data-lexical-text="true">some</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello</span>
+            </a>
+          </p>
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <strong data-lexical-text="true">awe</strong>
+              <span data-lexical-text="true">some</span>
+            </a>
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
   test(
     'Can handle pressing Enter at the beginning of a Link',

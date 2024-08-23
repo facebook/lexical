@@ -203,18 +203,23 @@ export default function InlineImageComponent({
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isInlineImageNode(node)) {
-          node.remove();
-          return true;
+        if (isSelected && $isNodeSelection(deleteSelection)) {
+          editor.update(() => {
+            deleteSelection.getNodes().forEach((node) => {
+              if ($isInlineImageNode(node)) {
+                node.remove();
+              }
+            });
+          });
         }
       }
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   const $onEnter = useCallback(

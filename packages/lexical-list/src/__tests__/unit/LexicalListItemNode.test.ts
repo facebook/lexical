@@ -1348,6 +1348,18 @@ describe('LexicalListItemNode tests', () => {
           `,
         );
       });
+
+      it('handles fractional indent values', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          listItemNode1.setIndent(0.5);
+        });
+
+        await editor.update(() => {
+          expect(listItemNode1.getIndent()).toBe(0);
+        });
+      });
     });
   });
 });

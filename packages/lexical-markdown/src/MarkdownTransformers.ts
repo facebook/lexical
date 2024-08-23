@@ -306,22 +306,52 @@ export const CODE: ElementTransformer = {
     );
   },
   regExp: /^[ \t]*```(\w{1,10})?\s/,
-  replace: createBlockNode((match) => {
-    return $createCodeNode(match ? match[1] : undefined);
-  }),
+  replace: (parentNode, children, match, isImport) => {
+    if (isImport) {
+      // Let multiline code transformer handle imports.
+      // That's because for single-line code blocks, we always assume that the text right next to the backticks indicates the language,
+      // and that the user will likely want to type the code right after the backticks - possibly in a new line.
+      // However, for imports, the entire code block is already there, and the text next to the backticks will only be the language if it's a multiline code block.
+      // We cannot determine that here, so we let the multiline code transformer handle it.
+      return false;
+    }
+
+    return createBlockNode(() => {
+      return $createCodeNode(match ? match[1] : undefined);
+    })(parentNode, children, match, isImport);
+  },
   type: 'element',
 };
-
-const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
 
 // This is only used for multiline markdown imports. For markdown imports while typing, or markdown exports, the normal CODE ElementTransformer is used
 export const CODE_MULTILINE: MultilineElementTransformer = {
   dependencies: [CodeNode],
-  regExpEnd: CODE_BLOCK_REG_EXP,
-  regExpStart: CODE_BLOCK_REG_EXP,
+  regExpEnd: /[ \t]*```$/,
+  regExpStart: /^[ \t]*```(\w+)?/,
   replace: (rootNode, openMatch, closeMatch, linesInBetween) => {
-    const codeBlockNode = $createCodeNode(openMatch[1]);
-    const textNode = $createTextNode(linesInBetween.join('\n'));
+    let codeBlockNode: CodeNode;
+    let code: string;
+    if (linesInBetween.length === 1) {
+      // Single-line code block => no language next to backticks
+      codeBlockNode = $createCodeNode();
+      code = openMatch[1] + linesInBetween[0];
+    } else {
+      codeBlockNode = $createCodeNode(openMatch[1]);
+      // Filter out all start and end lines that are length 0 until we find the first line with content
+      while (linesInBetween.length > 0 && !linesInBetween[0].length) {
+        linesInBetween.shift();
+      }
+      // Filter out all end lines that are length 0 until we find the last line with content
+      while (
+        linesInBetween.length > 0 &&
+        !linesInBetween[linesInBetween.length - 1].length
+      ) {
+        linesInBetween.pop();
+      }
+      code = linesInBetween.join('\n');
+    }
+
+    const textNode = $createTextNode(code);
     codeBlockNode.append(textNode);
     rootNode.append(codeBlockNode);
   },

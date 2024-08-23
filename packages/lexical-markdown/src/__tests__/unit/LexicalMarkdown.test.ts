@@ -213,11 +213,11 @@ describe('Markdown', () => {
       md: 'Hello ~~__*world*__~~!',
       skipExport: true,
     },
-    /*{
-      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Inline Code</span></pre>',
-      md: '```Inline Code```',
-    },*/
-    // TODO: This test currently fails. Fix it
+    {
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Single line Code</span></pre>',
+      md: '```Single line Code```', // Ensure that "Single" is not read as the language by the code transformer. It should only be read as the language if there is a multi-line code block
+      skipExport: true, // Export will fail, as the code transformer will add new lines to the code block to make it multi-line. This is expected though, as the lexical code block is a block node and cannot be inline.
+    },
     {
       html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```\nCode\n```',

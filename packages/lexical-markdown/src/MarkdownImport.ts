@@ -163,14 +163,10 @@ function $importMultiline(
         for (let i = startLineIndex; i <= endLineIndex; i++) {
           if (i === startLineIndex) {
             const text = lines[i].slice(openMatch[0].length);
-            if (text.length) {
-              linesInBetween.push(text);
-            }
+            linesInBetween.push(text); // Also include empty text
           } else if (i === endLineIndex) {
             const text = lines[i].slice(0, -closeMatch[0].length);
-            if (text.length) {
-              linesInBetween.push(text);
-            }
+            linesInBetween.push(text); // Also include empty text
           } else {
             linesInBetween.push(lines[i]);
           }

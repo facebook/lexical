@@ -162,7 +162,9 @@ export class TableNode extends ElementNode {
       return null;
     }
 
-    const cell = row[x];
+    const index = x < row.length ? x : row.length - 1;
+
+    const cell = row[index];
 
     if (cell == null) {
       return null;

@@ -11,7 +11,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $getNodeByKey,
   $getSelection,
   $isNodeSelection,
   CLICK_COMMAND,
@@ -39,16 +38,19 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
   const $onDelete = useCallback(
     (event: KeyboardEvent) => {
       event.preventDefault();
-      if (isSelected && $isNodeSelection($getSelection())) {
-        const node = $getNodeByKey(nodeKey);
-        if ($isPageBreakNode(node)) {
-          node.remove();
-          return true;
-        }
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
+        editor.update(() => {
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isPageBreakNode(node)) {
+              node.remove();
+            }
+          });
+        });
       }
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   useEffect(() => {

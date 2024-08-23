@@ -54,18 +54,20 @@ export function BlockWithAlignableContents({
 
   const $onDelete = useCallback(
     (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isDecoratorNode(node)) {
-          node.remove();
-          return true;
-        }
+        editor.update(() => {
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isDecoratorNode(node)) {
+              node.remove();
+            }
+          });
+        });
       }
-
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   useEffect(() => {

@@ -56,7 +56,6 @@ export type PlaceholderProps =
 
 export type Props = $ReadOnly<{
   ...HTMLDivElementDOMProps,
-  editor__DEPRECATED?: LexicalEditor;
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,
   ariaControls?: string,

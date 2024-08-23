@@ -124,6 +124,7 @@ export {
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  MULTILINE_ELEMENT_TRANSFORMERS,
   type MultilineElementTransformer,
   ORDERED_LIST,
   QUOTE,

@@ -100,11 +100,6 @@ export function syncYjsChangesToLexical(
         const event = events[i];
         $syncEvent(binding, event);
       }
-      // If there was a collision on the top level paragraph
-      // we need to re-add a paragraph
-      if ($getRoot().getChildrenSize() === 0) {
-        $getRoot().append($createParagraphNode());
-      }
 
       const selection = $getSelection();
 
@@ -135,6 +130,14 @@ export function syncYjsChangesToLexical(
     {
       onUpdate: () => {
         syncCursorPositions(binding, provider);
+        // If there was a collision on the top level paragraph
+        // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
+        // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+        editor.update(() => {
+          if ($getRoot().getChildrenSize() === 0) {
+            $getRoot().append($createParagraphNode());
+          }
+        });
       },
       skipTransforms: true,
       tag: isFromUndoManger ? 'historic' : 'collaboration',

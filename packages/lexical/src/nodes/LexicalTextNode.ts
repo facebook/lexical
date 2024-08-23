@@ -303,6 +303,14 @@ export class TextNode extends LexicalNode {
     return new TextNode(node.__text, node.__key);
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__mode = prevNode.__mode;
+    this.__detail = prevNode.__detail;
+  }
+
   constructor(text: string, key?: NodeKey) {
     super(key);
     this.__text = text;

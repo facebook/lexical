@@ -607,7 +607,14 @@ export class TextNode extends LexicalNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTextNode): TextNode {
+  static importJSON(
+    serializedNode: Spread<
+      {
+        type: string;
+      },
+      SerializedTextNode
+    >,
+  ): TextNode {
     const node = $createTextNode(serializedNode.text);
     node.setFormat(serializedNode.format);
     node.setDetail(serializedNode.detail);
@@ -647,7 +654,12 @@ export class TextNode extends LexicalNode {
     };
   }
 
-  exportJSON(): SerializedTextNode {
+  exportJSON(): Spread<
+    {
+      type: string;
+    },
+    SerializedTextNode
+  > {
     return {
       detail: this.getDetail(),
       format: this.getFormat(),

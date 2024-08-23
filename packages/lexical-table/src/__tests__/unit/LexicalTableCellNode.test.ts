@@ -7,6 +7,7 @@
  */
 
 import {$createTableCellNode, TableCellHeaderStates} from '@lexical/table';
+import {$createParagraphNode, $createTextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -63,6 +64,22 @@ describe('LexicalTableCellNode tests', () => {
         );
         expect(cellWithCustomWidthNode.createDOM(editorConfig).outerHTML).toBe(
           `<td style="width: ${cellWidth}px;" class="${editorConfig.theme.tableCell}"></td>`,
+        );
+      });
+    });
+
+    test('TableCellNode Toggle Writing Direction', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const cellNode = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
+        const p = $createParagraphNode();
+        p.append($createTextNode('abc'));
+        cellNode.append(p);
+        cellNode.setWritingMode('lr-vertical');
+
+        expect(cellNode.createDOM(editorConfig).outerHTML).toBe(
+          `<td style="writing-mode: lr-vertical; vertical-align: bottom; transform: rotate(180deg);" class="${editorConfig.theme.tableCell}"></td>`,
         );
       });
     });

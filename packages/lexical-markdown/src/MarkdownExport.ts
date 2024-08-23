@@ -33,6 +33,7 @@ export function createMarkdownExport(
   shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
+  const elementTransformers = [...byType.multilineElement, ...byType.element];
   const isNewlineDelimited = !shouldPreserveNewLines;
 
   // Export only uses text formats that are responsible for single format
@@ -49,7 +50,7 @@ export function createMarkdownExport(
       const child = children[i];
       const result = exportTopLevelElements(
         child,
-        [...byType.multilineElement, ...byType.element],
+        elementTransformers,
         textFormatTransformers,
         byType.textMatch,
       );

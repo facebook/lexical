@@ -48,21 +48,22 @@ export default function ExcalidrawComponent({
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
         editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if ($isExcalidrawNode(node)) {
-            node.remove();
-            return true;
-          }
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isExcalidrawNode(node)) {
+              node.remove();
+            }
+          });
         });
       }
       return false;
     },
-    [editor, isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   // Set editor to readOnly if excalidraw is open to prevent unwanted changes
@@ -103,16 +104,16 @@ export default function ExcalidrawComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, isResizing, $onDelete, setSelected]);
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);

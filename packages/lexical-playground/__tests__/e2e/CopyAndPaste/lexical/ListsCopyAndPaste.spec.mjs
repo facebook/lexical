@@ -108,183 +108,182 @@ test.describe('Lists CopyAndPaste', () => {
     });
   });
 
-  test('Copy and paste of partial list items into the list', async ({
-    page,
-    isPlainText,
-    isCollab,
-    browserName,
-  }) => {
-    test.skip(isPlainText);
+  test(
+    'Copy and paste of partial list items into the list',
+    {tag: '@flaky'},
+    async ({page, isPlainText, isCollab, browserName}) => {
+      test.skip(isPlainText);
 
-    await focusEditor(page);
+      await focusEditor(page);
 
-    // Add three list items
-    await page.keyboard.type('- one');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('two');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('three');
+      // Add three list items
+      await page.keyboard.type('- one');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('two');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('three');
 
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    // Add a paragraph
-    await page.keyboard.type('Some text.');
+      // Add a paragraph
+      await page.keyboard.type('Some text.');
 
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">one</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="2">
-            <span data-lexical-text="true">two</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="3">
-            <span data-lexical-text="true">three</span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Some text.</span>
-        </p>
-      `,
-    );
-    await assertSelection(page, {
-      anchorOffset: 10,
-      anchorPath: [1, 0, 0],
-      focusOffset: 10,
-      focusPath: [1, 0, 0],
-    });
+      await assertHTML(
+        page,
+        html`
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">one</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="2">
+              <span data-lexical-text="true">two</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="3">
+              <span data-lexical-text="true">three</span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Some text.</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 10,
+        anchorPath: [1, 0, 0],
+        focusOffset: 10,
+        focusPath: [1, 0, 0],
+      });
 
-    await page.keyboard.down('Shift');
-    await moveToLineBeginning(page);
-    await moveLeft(page, 3);
-    await page.keyboard.up('Shift');
+      await page.keyboard.down('Shift');
+      await moveToLineBeginning(page);
+      await moveLeft(page, 3);
+      await page.keyboard.up('Shift');
 
-    await assertSelection(page, {
-      anchorOffset: 10,
-      anchorPath: [1, 0, 0],
-      focusOffset: 3,
-      focusPath: [0, 2, 0, 0],
-    });
+      await assertSelection(page, {
+        anchorOffset: 10,
+        anchorPath: [1, 0, 0],
+        focusOffset: 3,
+        focusPath: [0, 2, 0, 0],
+      });
 
-    // Copy the partial list item and paragraph
-    const clipboard = await copyToClipboard(page);
+      // Copy the partial list item and paragraph
+      const clipboard = await copyToClipboard(page);
 
-    // Select all and remove content
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
-    if (!IS_WINDOWS && browserName === 'firefox') {
+      // Select all and remove content
       await page.keyboard.press('ArrowUp');
-    }
-    await moveToLineEnd(page);
+      await page.keyboard.press('ArrowUp');
+      if (!IS_WINDOWS && browserName === 'firefox') {
+        await page.keyboard.press('ArrowUp');
+      }
+      await moveToLineEnd(page);
 
-    await page.keyboard.down('Enter');
+      await page.keyboard.down('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">one</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="2">
-            <br />
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="3">
-            <span data-lexical-text="true">two</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="4">
-            <span data-lexical-text="true">three</span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Some text.</span>
-        </p>
-      `,
-    );
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 1],
-      focusOffset: 0,
-      focusPath: [0, 1],
-    });
+      await assertHTML(
+        page,
+        html`
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">one</span>
+            </li>
+            <li class="PlaygroundEditorTheme__listItem" value="2">
+              <br />
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="3">
+              <span data-lexical-text="true">two</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="4">
+              <span data-lexical-text="true">three</span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Some text.</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 1],
+        focusOffset: 0,
+        focusPath: [0, 1],
+      });
 
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">one</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="2">
-            <span data-lexical-text="true">ee</span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Some text.</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">two</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="2">
-            <span data-lexical-text="true">three</span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Some text.</span>
-        </p>
-      `,
-    );
-    await assertSelection(page, {
-      anchorOffset: 10,
-      anchorPath: [1, 0, 0],
-      focusOffset: 10,
-      focusPath: [1, 0, 0],
-    });
-  });
+      await assertHTML(
+        page,
+        html`
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">one</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="2">
+              <span data-lexical-text="true">ee</span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Some text.</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">two</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="2">
+              <span data-lexical-text="true">three</span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Some text.</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 10,
+        anchorPath: [1, 0, 0],
+        focusOffset: 10,
+        focusPath: [1, 0, 0],
+      });
+    },
+  );
 
   test('Copy list items and paste back into list', async ({
     page,

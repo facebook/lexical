@@ -475,6 +475,26 @@ test.describe('Hashtags', () => {
     await focusEditor(page);
     await page.keyboard.type('```markdown #hello#invalid #a #b');
 
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="markdown"
+          data-language="markdown">
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            #
+          </span>
+          <span data-lexical-text="true">hello#invalid #a #b</span>
+        </code>
+      `,
+    );
+
     await click(page, '.action-button .markdown');
     await click(page, '.action-button .markdown');
     await click(page, '.action-button .markdown');

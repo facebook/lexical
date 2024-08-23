@@ -43,7 +43,7 @@ export type SerializedLinkNode = Spread<
   {
     url: string;
   },
-  Spread<LinkAttributes, SerializedElementNode>
+  Spread<LinkAttributes & {type: 'link'}, SerializedElementNode>
 >;
 
 type LinkHTMLElementType = HTMLAnchorElement | HTMLSpanElement;
@@ -330,6 +330,7 @@ export function $isLinkNode(
 export type SerializedAutoLinkNode = Spread<
   {
     isUnlinked: boolean;
+    type: 'autolink';
   },
   SerializedLinkNode
 >;

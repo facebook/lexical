@@ -12,6 +12,7 @@ import type {SerializedElementNode} from './LexicalElementNode';
 import invariant from 'shared/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
+import {Spread} from '../LexicalEditor';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
 import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
@@ -19,7 +20,12 @@ import {$isElementNode, ElementNode} from './LexicalElementNode';
 
 export type SerializedRootNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
-> = SerializedElementNode<T>;
+> = Spread<
+  {
+    type: 'root';
+  },
+  SerializedElementNode<T>
+>;
 
 /** @noInheritDoc */
 export class RootNode extends ElementNode {

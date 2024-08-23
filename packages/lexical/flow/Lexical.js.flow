@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import {Spread} from 'lexical';
+
 /**
  * LexicalCommands
  */
@@ -646,7 +648,10 @@ declare export function $isTextNode(
  * LexicalTabNode
  */
 
-export type SerializedTabNode = SerializedTextNode;
+export type SerializedTabNode = Spread<
+  {
+    type: 'tab',
+  }, SerializedTextNode>;
 
 declare export function $createTabNode(): TabNode;
 
@@ -916,6 +921,7 @@ export type SerializedTextNode = {
   mode: TextModeType,
   style: string,
   text: string,
+  type: 'text',
   ...
 };
 
@@ -930,11 +936,13 @@ export type SerializedElementNode = {
 
 export type SerializedParagraphNode = {
   ...SerializedElementNode,
+  type: 'paragraph'
   ...
 };
 
 export type SerializedLineBreakNode = {
   ...SerializedLexicalNode,
+  type: 'linebreak'
   ...
 };
 

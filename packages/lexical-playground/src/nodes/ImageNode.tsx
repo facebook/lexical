@@ -65,6 +65,7 @@ export type SerializedImageNode = Spread<
     showCaption: boolean;
     src: string;
     width?: number;
+    type: 'image';
   },
   SerializedLexicalNode
 >;

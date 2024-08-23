@@ -32,6 +32,7 @@ declare global {
 export type SerializedAutocompleteNode = Spread<
   {
     uuid: string;
+    type: 'autocomplete';
   },
   SerializedLexicalNode
 >;

@@ -76,6 +76,7 @@ export type SerializedTextNode = Spread<
     mode: TextModeType;
     style: string;
     text: string;
+    type: 'text';
   },
   SerializedLexicalNode
 >;

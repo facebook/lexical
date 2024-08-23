@@ -25,6 +25,7 @@ import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
 export type SerializedMarkNode = Spread<
   {
     ids: Array<string>;
+    type: 'mark';
   },
   SerializedElementNode
 >;

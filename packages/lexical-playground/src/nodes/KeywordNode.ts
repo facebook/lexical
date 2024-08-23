@@ -6,11 +6,21 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  SerializedTextNode,
+  Spread,
+} from 'lexical';
 
 import {TextNode} from 'lexical';
 
-export type SerializedKeywordNode = SerializedTextNode;
+export type SerializedKeywordNode = Spread<
+  {
+    type: 'keyword';
+  },
+  SerializedTextNode
+>;
 
 export class KeywordNode extends TextNode {
   static getType(): string {

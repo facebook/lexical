@@ -11,12 +11,18 @@ import type {
   EditorConfig,
   LexicalNode,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {ElementNode} from 'lexical';
 
-export type SerializedLayoutItemNode = SerializedElementNode;
+export type SerializedLayoutItemNode = Spread<
+  {
+    type: 'layout-item';
+  },
+  SerializedElementNode
+>;
 
 export class LayoutItemNode extends ElementNode {
   static getType(): string {

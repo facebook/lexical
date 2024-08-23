@@ -11,13 +11,17 @@ import type {
   NodeKey,
   RangeSelection,
   TextNode,
-  SerializedElementNode,
+  SerializedElementNode, Spread,
 } from 'lexical';
 import {ElementNode, LexicalNode} from 'lexical';
 
-export type SerializedMarkNode = SerializedElementNode & {
-  ids: Array<string>,
-};
+export type SerializedMarkNode = Spread<
+  {
+    ids: Array<string>;
+    type: 'mark';
+  },
+  SerializedElementNode
+>;
 
 declare export class MarkNode extends ElementNode {
   __ids: Array<string>;

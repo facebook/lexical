@@ -45,6 +45,10 @@ import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 import {TabNode} from './nodes/LexicalTabNode';
 
+/**
+ * Spread is a Typescript utility that allows us to spread the properties
+ * over the base SerializedLexicalNode type.
+ */
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
 // https://github.com/microsoft/TypeScript/issues/3841

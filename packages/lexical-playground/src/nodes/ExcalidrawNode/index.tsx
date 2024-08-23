@@ -31,6 +31,7 @@ export type SerializedExcalidrawNode = Spread<
     data: string;
     width: Dimension;
     height: Dimension;
+    type: 'excalidraw';
   },
   SerializedLexicalNode
 >;

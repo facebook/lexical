@@ -38,6 +38,7 @@ export type SerializedParagraphNode = Spread<
   {
     textFormat: number;
     textStyle: string;
+    type: 'paragraph';
   },
   SerializedElementNode
 >;

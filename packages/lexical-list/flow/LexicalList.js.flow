@@ -13,7 +13,7 @@ import type {
   ParagraphNode,
   RangeSelection,
   LexicalCommand,
-  SerializedElementNode,
+  SerializedElementNode, Spread,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
@@ -79,12 +79,12 @@ declare export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
 declare export var INSERT_CHECK_LIST_COMMAND: LexicalCommand<void>;
 declare export var REMOVE_LIST_COMMAND: LexicalCommand<void>;
 
-export type SerializedListItemNode = SerializedElementNode & {
+export type SerializedListItemNode = Spread<{type: 'listitem'}, SerializedElementNode> & {
   checked: boolean | void,
   value: number,
 };
 
-export type SerializedListNode = SerializedElementNode & {
+export type SerializedListNode = Spread<{type: 'list'}, SerializedElementNode> & {
   listType: ListType,
   start: number,
   tag: ListNodeTagType,

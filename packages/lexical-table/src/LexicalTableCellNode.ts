@@ -47,6 +47,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
+    type: 'tablecell';
   },
   SerializedElementNode
 >;

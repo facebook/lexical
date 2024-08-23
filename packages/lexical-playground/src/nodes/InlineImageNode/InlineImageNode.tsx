@@ -62,6 +62,7 @@ export type SerializedInlineImageNode = Spread<
     src: string;
     width?: number;
     position?: Position;
+    type: 'inline-image';
   },
   SerializedLexicalNode
 >;

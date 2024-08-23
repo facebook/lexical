@@ -25,11 +25,17 @@ import {
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
+  Spread,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect} from 'react';
 
-export type SerializedPageBreakNode = SerializedLexicalNode;
+export type SerializedPageBreakNode = Spread<
+  {
+    type: 'page-break';
+  },
+  SerializedLexicalNode
+>;
 
 function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();

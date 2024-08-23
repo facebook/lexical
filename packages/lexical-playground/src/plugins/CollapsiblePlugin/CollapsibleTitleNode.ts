@@ -17,6 +17,7 @@ import {
   LexicalNode,
   RangeSelection,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -24,7 +25,12 @@ import invariant from 'shared/invariant';
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
 
-type SerializedCollapsibleTitleNode = SerializedElementNode;
+type SerializedCollapsibleTitleNode = Spread<
+  {
+    type: 'collapsible-title';
+  },
+  SerializedElementNode
+>;
 
 export function $convertSummaryElement(
   domNode: HTMLElement,

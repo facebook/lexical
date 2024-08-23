@@ -15,6 +15,7 @@ import {
   LexicalEditor,
   LexicalNode,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -22,7 +23,12 @@ import invariant from 'shared/invariant';
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {domOnBeforeMatch, setDomHiddenUntilFound} from './CollapsibleUtils';
 
-type SerializedCollapsibleContentNode = SerializedElementNode;
+type SerializedCollapsibleContentNode = Spread<
+  {
+    type: 'collapsible-content';
+  },
+  SerializedElementNode
+>;
 
 export function $convertCollapsibleContentElement(
   domNode: HTMLElement,

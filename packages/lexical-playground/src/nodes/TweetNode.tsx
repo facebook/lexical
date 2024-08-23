@@ -126,6 +126,7 @@ function TweetComponent({
 export type SerializedTweetNode = Spread<
   {
     id: string;
+    type: 'tweet';
   },
   SerializedDecoratorBlockNode
 >;

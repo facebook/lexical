@@ -19,6 +19,7 @@ import {DecoratorNode} from 'lexical';
 export type SerializedDecoratorBlockNode = Spread<
   {
     format: ElementFormatType;
+    type: 'decorator-block';
   },
   SerializedLexicalNode
 >;

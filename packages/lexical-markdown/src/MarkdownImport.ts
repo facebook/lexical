@@ -70,7 +70,11 @@ export function createMarkdownImport(
       );
 
       if (imported) {
-        i = shiftedIndex;
+        // If a multiline markdown element was imported, we don't want to process the lines that were part of it anymore.
+        // There could be other sub-markdown elements (both multiline and normal ones) matching within this matched multiline element's children.
+        // However, it would be the responsibility of the matched multiline transformer to decide how it wants to handle them.
+        // We cannot handle those, as there is no way for us to know how to maintain the correct order of generated lexical nodes for possible children.
+        i = shiftedIndex; // Next loop will start from the line after the last line of the multiline element
         continue;
       }
 
@@ -113,68 +117,78 @@ function $importMultiline(
   multilineElementTransformers: Array<MultilineElementTransformer>,
   rootNode: ElementNode,
 ): [boolean, number] {
-  for (const {
+  transformerLoop: for (const {
     regExpStart,
     regExpEnd,
     replace,
   } of multilineElementTransformers) {
     const openMatch = lines[startLineIndex].match(regExpStart);
+    if (!openMatch) {
+      continue transformerLoop; // Try next transformer
+    }
 
-    if (openMatch) {
-      let endLineIndex = startLineIndex;
-      const linesLength = lines.length;
+    let endLineIndex = startLineIndex;
+    const linesLength = lines.length;
 
-      // ++ at the end - we want to check the current line as well. The current line could also contain the closing match
-      while (endLineIndex < linesLength) {
-        const closeMatch = lines[endLineIndex].match(regExpEnd);
+    // check every single line for the closing match. It could also be on the same line as the opening match.
+    lineLoop: while (endLineIndex < linesLength) {
+      const closeMatch = lines[endLineIndex].match(regExpEnd);
+      if (!closeMatch) {
+        endLineIndex++;
+        continue lineLoop; // Search next line for closing match
+      }
 
-        if (closeMatch) {
-          // everything between the open and close match, not including the matches, split up by lines
-          const linesInBetween = [];
+      // Now, check if the closing match matched is the same as the opening match.
+      // If it is, we need to continue searching for the actual closing match.
+      if (
+        startLineIndex === endLineIndex &&
+        closeMatch.index === openMatch.index
+      ) {
+        endLineIndex++;
+        continue lineLoop; // Search next line for closing match
+      }
 
-          if (startLineIndex === endLineIndex) {
-            // In case the end regex matches the same thing as the start regex, we need to continue searching - this is not the actual end
-            if (closeMatch.index === openMatch.index) {
-              endLineIndex++;
-              continue;
+      // At this point, we have found the closing match. Next: calculate the lines in between open and closing match
+      // This should not include the matches themselves, and be split up by lines
+      const linesInBetween = [];
+
+      if (startLineIndex === endLineIndex) {
+        linesInBetween.push(
+          lines[startLineIndex].slice(
+            openMatch[0].length,
+            -closeMatch[0].length,
+          ),
+        );
+      } else {
+        for (let i = startLineIndex; i <= endLineIndex; i++) {
+          if (i === startLineIndex) {
+            const text = lines[i].slice(openMatch[0].length);
+            if (text.length) {
+              linesInBetween.push(text);
             }
-
-            linesInBetween.push(
-              lines[startLineIndex].slice(
-                openMatch[0].length,
-                -closeMatch[0].length,
-              ),
-            );
+          } else if (i === endLineIndex) {
+            const text = lines[i].slice(0, -closeMatch[0].length);
+            if (text.length) {
+              linesInBetween.push(text);
+            }
           } else {
-            for (let i = startLineIndex; i <= endLineIndex; i++) {
-              if (i === startLineIndex) {
-                const text = lines[i].slice(openMatch[0].length);
-                if (text.length) {
-                  linesInBetween.push(text);
-                }
-              } else if (i === endLineIndex) {
-                const text = lines[i].slice(0, -closeMatch[0].length);
-                if (text.length) {
-                  linesInBetween.push(text);
-                }
-              } else {
-                linesInBetween.push(lines[i]);
-              }
-            }
-          }
-
-          if (
-            replace(rootNode, openMatch, closeMatch, linesInBetween) !== false
-          ) {
-            // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
-            return [true, endLineIndex];
+            linesInBetween.push(lines[i]);
           }
         }
-        endLineIndex++;
       }
+
+      if (replace(rootNode, openMatch, closeMatch, linesInBetween) !== false) {
+        // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
+        return [true, endLineIndex];
+      }
+
+      // The replace function returned false, despite finding the matching open and close tags => this transformer does not want to handle it.
+      // Thus, we continue letting the remaining transformers handle the passed lines of text from the beginning
+      continue transformerLoop;
     }
   }
 
+  // No multiline transformer handled this line successfully
   return [false, startLineIndex];
 }
 

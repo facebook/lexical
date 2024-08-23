@@ -47,8 +47,9 @@ export type Transformer =
 export type ElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
   /**
-   * export is called when the $convertToMarkdownString is called to convert the editor state into markdown.
-   * If null is returned, the next transformer will be tried.
+   * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
+   *
+   * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
    */
   export: (
     node: LexicalNode,
@@ -57,16 +58,16 @@ export type ElementTransformer = {
   ) => string | null;
   regExp: RegExp;
   /**
-   * replace is called when markdown is imported or typed in the editor
+   * `replace` is called when markdown is imported or typed in the editor
+   *
+   * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
    */
   replace: (
     parentNode: ElementNode,
     children: Array<LexicalNode>,
     match: Array<string>,
     /**
-     * Whether the match is from an import operation (e.g. through $convertFromMarkdownString) or not (e.g. through typing in the editor).
-     *
-     * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
+     * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
      */
     isImport: boolean,
   ) => boolean | void;
@@ -79,8 +80,9 @@ export type ElementTransformer = {
 export type MultilineElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
   /**
-   * export is called when the $convertToMarkdownString is called to convert the editor state into markdown.
-   * If null is returned, the next transformer will be tried.
+   * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
+   *
+   * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
    */
   export?: (
     node: LexicalNode,
@@ -96,7 +98,7 @@ export type MultilineElementTransformer = {
    */
   regExpEnd: RegExp;
   /**
-   * replace is called only when markdown is imported in the editor, not when it's typed
+   * `replace` is called only when markdown is imported in the editor, not when it's typed
    *
    * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
    */

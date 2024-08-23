@@ -396,8 +396,10 @@ export function applyTableHandlers(
             $deleteCellHandler(event);
             return true;
           } else if ($isRangeSelection(selection)) {
-            $deleteCellHandler(event);
-            selection.removeText();
+            editor.update(() => {
+              $deleteCellHandler(event);
+              selection.removeText();
+            });
             return true;
           }
         }

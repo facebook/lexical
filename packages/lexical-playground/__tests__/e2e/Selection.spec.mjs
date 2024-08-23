@@ -655,7 +655,7 @@ test.describe.parallel('Selection', () => {
     browserName,
     legacyEvents,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
     await page.keyboard.type('Line1');

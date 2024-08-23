@@ -501,6 +501,17 @@ function TableActionMenu({
     [editor],
   );
 
+  const toggleTextDirection = useCallback(() => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+        const [cell] = $getNodeTriplet(selection.anchor);
+        const currentTextDirection = cell.getWritingMode();
+        cell.setWritingMode(!currentTextDirection ? 'vertical-lr' : null);
+      }
+    });
+  }, [editor]);
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {

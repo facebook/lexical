@@ -11,6 +11,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
+  ElementFormatType,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -26,9 +27,11 @@ import {
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
+  ParagraphNode,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
+import {computeVerticalFormat} from './LexicalTableUtils';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -47,6 +50,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
+    writingMode?: null | string;
   },
   SerializedElementNode
 >;
@@ -63,6 +67,8 @@ export class TableCellNode extends ElementNode {
   __width?: number;
   /** @internal */
   __backgroundColor: null | string;
+  /** @internal */
+  __writingMode: null | string;
 
   static getType(): string {
     return 'tablecell';
@@ -77,6 +83,7 @@ export class TableCellNode extends ElementNode {
     );
     cellNode.__rowSpan = node.__rowSpan;
     cellNode.__backgroundColor = node.__backgroundColor;
+    cellNode.__writingMode = node.__writingMode;
     return cellNode;
   }
 
@@ -103,6 +110,7 @@ export class TableCellNode extends ElementNode {
     );
     cellNode.__rowSpan = rowSpan;
     cellNode.__backgroundColor = serializedNode.backgroundColor || null;
+    cellNode.__writingMode = serializedNode.writingMode || null;
     return cellNode;
   }
 
@@ -118,6 +126,7 @@ export class TableCellNode extends ElementNode {
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
+    this.__writingMode = null;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -136,6 +145,16 @@ export class TableCellNode extends ElementNode {
     }
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
+    }
+    if (this.__writingMode !== null) {
+      element.style.writingMode = this.__writingMode;
+      element.style.verticalAlign = computeVerticalFormat(
+        this.getChildFormatType(),
+      );
+      element.style.transform = 'rotate(180deg)';
+    } else {
+      element.style.verticalAlign = '';
+      element.style.transform = '';
     }
 
     addClassNamesToElement(
@@ -164,6 +183,11 @@ export class TableCellNode extends ElementNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
+      const writingMode = this.getWritingMode();
+      if (writingMode !== null) {
+        element_.style.writingMode = writingMode;
+      }
+
       const backgroundColor = this.getBackgroundColor();
       if (backgroundColor !== null) {
         element_.style.backgroundColor = backgroundColor;
@@ -186,6 +210,7 @@ export class TableCellNode extends ElementNode {
       rowSpan: this.__rowSpan,
       type: 'tablecell',
       width: this.getWidth(),
+      writingMode: this.getWritingMode(),
     };
   }
 
@@ -231,6 +256,18 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__width;
   }
 
+  getChildFormatType(): ElementFormatType {
+    return this.getFirstChild<ParagraphNode>().getFormatType();
+  }
+
+  getWritingMode(): null | string {
+    return this.getLatest().__writingMode;
+  }
+
+  setWritingMode(newWritingMode: null | string): void {
+    this.getWritable().__writingMode = newWritingMode;
+  }
+
   getBackgroundColor(): null | string {
     return this.getLatest().__backgroundColor;
   }
@@ -265,7 +302,10 @@ export class TableCellNode extends ElementNode {
       prevNode.__width !== this.__width ||
       prevNode.__colSpan !== this.__colSpan ||
       prevNode.__rowSpan !== this.__rowSpan ||
-      prevNode.__backgroundColor !== this.__backgroundColor
+      prevNode.__backgroundColor !== this.__backgroundColor ||
+      prevNode.__writingMode !== this.__writingMode ||
+      prevNode.__format !== this.__format ||
+      this.getFormatType() !== this.getChildFormatType()
     );
   }
 
@@ -310,6 +350,10 @@ export function $convertTableCellNodeElement(
   const backgroundColor = domNode_.style.backgroundColor;
   if (backgroundColor !== '') {
     tableCellNode.__backgroundColor = backgroundColor;
+  }
+  const writingMode = domNode_.style.writingMode;
+  if (writingMode !== '') {
+    tableCellNode.__writingMode = writingMode;
   }
 
   const style = domNode_.style;

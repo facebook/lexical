@@ -117,25 +117,25 @@ function $importMultiline(
   multilineElementTransformers: Array<MultilineElementTransformer>,
   rootNode: ElementNode,
 ): [boolean, number] {
-  transformerLoop: for (const {
+  for (const {
     regExpStart,
     regExpEnd,
     replace,
   } of multilineElementTransformers) {
     const openMatch = lines[startLineIndex].match(regExpStart);
     if (!openMatch) {
-      continue transformerLoop; // Try next transformer
+      continue; // Try next transformer
     }
 
     let endLineIndex = startLineIndex;
     const linesLength = lines.length;
 
     // check every single line for the closing match. It could also be on the same line as the opening match.
-    lineLoop: while (endLineIndex < linesLength) {
+    while (endLineIndex < linesLength) {
       const closeMatch = lines[endLineIndex].match(regExpEnd);
       if (!closeMatch) {
         endLineIndex++;
-        continue lineLoop; // Search next line for closing match
+        continue; // Search next line for closing match
       }
 
       // Now, check if the closing match matched is the same as the opening match.
@@ -145,7 +145,7 @@ function $importMultiline(
         closeMatch.index === openMatch.index
       ) {
         endLineIndex++;
-        continue lineLoop; // Search next line for closing match
+        continue; // Search next line for closing match
       }
 
       // At this point, we have found the closing match. Next: calculate the lines in between open and closing match
@@ -180,7 +180,7 @@ function $importMultiline(
 
       // The replace function returned false, despite finding the matching open and close tags => this transformer does not want to handle it.
       // Thus, we continue letting the remaining transformers handle the passed lines of text from the beginning
-      continue transformerLoop;
+      break;
     }
   }
 

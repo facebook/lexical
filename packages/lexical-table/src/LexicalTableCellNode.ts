@@ -257,7 +257,7 @@ export class TableCellNode extends ElementNode {
   }
 
   getChildFormatType(): ElementFormatType {
-    return this.getFirstChild<ParagraphNode>().getFormatType();
+    return this.getFirstChild<ParagraphNode>()!.getFormatType();
   }
 
   getWritingMode(): null | string {

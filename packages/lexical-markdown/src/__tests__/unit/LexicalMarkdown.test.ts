@@ -244,6 +244,14 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
+      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
+      md: `### Code blocks
+
+\`\`\`javascript
+1 + 1 = 2;
+\`\`\``,
+    },
+    {
       // Import only: extra empty lines will be removed for export
       html: '<p><span style="white-space: pre-wrap;">Hello</span></p><p><span style="white-space: pre-wrap;">world</span></p>',
       md: ['Hello', '', '', '', 'world'].join('\n'),

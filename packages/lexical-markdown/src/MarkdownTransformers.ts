@@ -104,8 +104,8 @@ export type MultilineElementTransformer = {
    */
   replace: (
     rootNode: ElementNode,
-    openMatch: Array<string>,
-    closeMatch: Array<string>,
+    startMatch: Array<string>,
+    endMatch: Array<string>,
     linesInBetween: Array<string>,
   ) => boolean | void;
   type: 'multilineElement';
@@ -330,15 +330,15 @@ export const CODE_MULTILINE: MultilineElementTransformer = {
   dependencies: [CodeNode],
   regExpEnd: /[ \t]*```$/,
   regExpStart: /^[ \t]*```(\w+)?/,
-  replace: (rootNode, openMatch, closeMatch, linesInBetween) => {
+  replace: (rootNode, startMatch, endMatch, linesInBetween) => {
     let codeBlockNode: CodeNode;
     let code: string;
     if (linesInBetween.length === 1) {
       // Single-line code block => no language next to backticks
       codeBlockNode = $createCodeNode();
-      code = openMatch[1] + linesInBetween[0];
+      code = startMatch[1] + linesInBetween[0];
     } else {
-      codeBlockNode = $createCodeNode(openMatch[1]);
+      codeBlockNode = $createCodeNode(startMatch[1]);
       // Filter out all start and end lines that are length 0 until we find the first line with content
       while (linesInBetween.length > 0 && !linesInBetween[0].length) {
         linesInBetween.shift();

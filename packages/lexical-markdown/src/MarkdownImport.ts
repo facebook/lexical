@@ -122,8 +122,8 @@ function $importMultiline(
     regExpEnd,
     replace,
   } of multilineElementTransformers) {
-    const openMatch = lines[startLineIndex].match(regExpStart);
-    if (!openMatch) {
+    const startMatch = lines[startLineIndex].match(regExpStart);
+    if (!startMatch) {
       continue; // Try next transformer
     }
 
@@ -132,8 +132,8 @@ function $importMultiline(
 
     // check every single line for the closing match. It could also be on the same line as the opening match.
     while (endLineIndex < linesLength) {
-      const closeMatch = lines[endLineIndex].match(regExpEnd);
-      if (!closeMatch) {
+      const endMatch = lines[endLineIndex].match(regExpEnd);
+      if (!endMatch) {
         endLineIndex++;
         continue; // Search next line for closing match
       }
@@ -142,7 +142,7 @@ function $importMultiline(
       // If it is, we need to continue searching for the actual closing match.
       if (
         startLineIndex === endLineIndex &&
-        closeMatch.index === openMatch.index
+        endMatch.index === startMatch.index
       ) {
         endLineIndex++;
         continue; // Search next line for closing match
@@ -155,17 +155,17 @@ function $importMultiline(
       if (startLineIndex === endLineIndex) {
         linesInBetween.push(
           lines[startLineIndex].slice(
-            openMatch[0].length,
-            -closeMatch[0].length,
+            startMatch[0].length,
+            -endMatch[0].length,
           ),
         );
       } else {
         for (let i = startLineIndex; i <= endLineIndex; i++) {
           if (i === startLineIndex) {
-            const text = lines[i].slice(openMatch[0].length);
+            const text = lines[i].slice(startMatch[0].length);
             linesInBetween.push(text); // Also include empty text
           } else if (i === endLineIndex) {
-            const text = lines[i].slice(0, -closeMatch[0].length);
+            const text = lines[i].slice(0, -endMatch[0].length);
             linesInBetween.push(text); // Also include empty text
           } else {
             linesInBetween.push(lines[i]);
@@ -173,7 +173,7 @@ function $importMultiline(
         }
       }
 
-      if (replace(rootNode, openMatch, closeMatch, linesInBetween) !== false) {
+      if (replace(rootNode, startMatch, endMatch, linesInBetween) !== false) {
         // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
         return [true, endLineIndex];
       }

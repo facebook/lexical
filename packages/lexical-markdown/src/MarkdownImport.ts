@@ -352,6 +352,7 @@ function findOutermostMatch(
 
   return null;
 }
+const a = 1;
 
 function createTextFormatTransformersIndex(
   textTransformers: Array<TextFormatTransformer>,

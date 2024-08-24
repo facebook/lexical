@@ -16,6 +16,7 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
@@ -30,16 +31,26 @@ import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
 
-export type SerializedTableNode = SerializedElementNode;
+export type SerializedTableNode = Spread<
+  {
+    rowStriping?: boolean;
+  },
+  SerializedElementNode
+>;
 
 /** @noInheritDoc */
 export class TableNode extends ElementNode {
+  /** @internal */
+  __rowStriping: boolean;
+
   static getType(): string {
     return 'table';
   }
 
   static clone(node: TableNode): TableNode {
-    return new TableNode(node.__key);
+    const tableNode = new TableNode(node.__key);
+    tableNode.__rowStriping = node.__rowStriping;
+    return tableNode;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -51,17 +62,21 @@ export class TableNode extends ElementNode {
     };
   }
 
-  static importJSON(_serializedNode: SerializedTableNode): TableNode {
-    return $createTableNode();
+  static importJSON(serializedNode: SerializedTableNode): TableNode {
+    const tableNode = $createTableNode();
+    tableNode.__rowStriping = serializedNode.rowStriping || false;
+    return tableNode;
   }
 
   constructor(key?: NodeKey) {
     super(key);
+    this.__rowStriping = false;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
+      rowStriping: this.__rowStriping,
       type: 'table',
       version: 1,
     };
@@ -70,13 +85,17 @@ export class TableNode extends ElementNode {
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
 
+    if (this.__rowStriping) {
+      addClassNamesToElement(tableElement, config.theme.tableRowStriping);
+      tableElement.setAttribute('data-lexical-row-striping', 'true');
+    }
     addClassNamesToElement(tableElement, config.theme.table);
 
     return tableElement;
   }
 
-  updateDOM(): boolean {
-    return false;
+  updateDOM(prevNode: TableNode): boolean {
+    return prevNode.__rowStriping !== this.__rowStriping;
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -221,6 +240,14 @@ export class TableNode extends ElementNode {
     return node;
   }
 
+  getRowStriping(): boolean {
+    return this.getLatest().__rowStriping;
+  }
+
+  setRowStriping(newRowStriping: boolean): void {
+    this.getWritable().__rowStriping = newRowStriping;
+  }
+
   canSelectBefore(): true {
     return true;
   }
@@ -243,8 +270,14 @@ export function $getElementForTableNode(
   return getTable(tableElement);
 }
 
-export function $convertTableElement(_domNode: Node): DOMConversionOutput {
-  return {node: $createTableNode()};
+export function $convertTableElement(
+  domNode: HTMLElement,
+): DOMConversionOutput {
+  const tableNode = $createTableNode();
+  if (domNode.hasAttribute('data-lexical-row-striping')) {
+    tableNode.setRowStriping(true);
+  }
+  return {node: tableNode};
 }
 
 export function $createTableNode(): TableNode {

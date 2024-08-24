@@ -66,6 +66,7 @@ const editorConfig = Object.freeze({
   namespace: '',
   theme: {
     table: 'test-table-class',
+    tableRowStriping: 'test-table-row-striping-class',
   },
 });
 

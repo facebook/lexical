@@ -304,8 +304,8 @@ export class TableCellNode extends ElementNode {
       prevNode.__rowSpan !== this.__rowSpan ||
       prevNode.__backgroundColor !== this.__backgroundColor ||
       prevNode.__writingMode !== this.__writingMode ||
-      prevNode.__format !== this.__format ||
-      prevNode.getFormatType() !== this.getChildFormatType()
+      prevNode.__format !== this.__format //||
+      // prevNode.getFormatType() !== this.getChildFormatType()
     );
   }
 

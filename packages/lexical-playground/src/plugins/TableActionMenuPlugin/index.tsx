@@ -507,7 +507,19 @@ function TableActionMenu({
       if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const [cell] = $getNodeTriplet(selection.anchor);
         const currentTextDirection = cell.getWritingMode();
-        cell.setWritingMode(!currentTextDirection ? 'vertical-lr' : null);
+        const newTextDirection = !currentTextDirection ? 'vertical-lr' : null;
+        cell.setWritingMode(newTextDirection);
+
+        if ($isTableSelection(selection)) {
+          const nodes = selection.getNodes();
+
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if ($isTableCellNode(node)) {
+              node.setWritingMode(newTextDirection);
+            }
+          }
+        }
       }
     });
   }, [editor]);

@@ -24,7 +24,10 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {copyToClipboard} from '@lexical/clipboard';
+import {
+  $getClipboardDataFromSelection,
+  copyToClipboard,
+} from '@lexical/clipboard';
 import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -35,7 +38,6 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -381,25 +383,23 @@ export function applyTableHandlers(
       (event) => {
         const selection = $getSelection();
         if (selection) {
-          if ($isNodeSelection(selection)) {
+          if (!($isTableSelection(selection) || $isRangeSelection(selection))) {
             return false;
           }
-
-          copyToClipboard(
+          // Copying to the clipboard is async so we must capture the data
+          // before we delete it
+          void copyToClipboard(
             editor,
             objectKlassEquals(event, ClipboardEvent)
               ? (event as ClipboardEvent)
               : null,
+            $getClipboardDataFromSelection(selection),
           );
-
-          if ($isTableSelection(selection)) {
-            $deleteCellHandler(event);
-            return true;
-          } else if ($isRangeSelection(selection)) {
-            $deleteCellHandler(event);
+          const intercepted = $deleteCellHandler(event);
+          if ($isRangeSelection(selection)) {
             selection.removeText();
-            return true;
           }
+          return intercepted;
         }
         return false;
       },

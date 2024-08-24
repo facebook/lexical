@@ -76,10 +76,10 @@ describe('LexicalTableCellNode tests', () => {
         const p = $createParagraphNode();
         p.append($createTextNode('abc'));
         cellNode.append(p);
-        cellNode.setWritingMode('lr-vertical');
+        cellNode.setWritingMode('vertical-rl');
 
         expect(cellNode.createDOM(editorConfig).outerHTML).toBe(
-          `<td style="writing-mode: lr-vertical; vertical-align: bottom; transform: rotate(180deg);" class="${editorConfig.theme.tableCell}"></td>`,
+          `<td style="writing-mode: vertical-rl; vertical-align: bottom; transform: rotate(180deg);" class="${editorConfig.theme.tableCell}"></td>`,
         );
       });
     });

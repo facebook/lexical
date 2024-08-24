@@ -305,7 +305,7 @@ export class TableCellNode extends ElementNode {
       prevNode.__backgroundColor !== this.__backgroundColor ||
       prevNode.__writingMode !== this.__writingMode ||
       prevNode.__format !== this.__format ||
-      this.getFormatType() !== this.getChildFormatType()
+      prevNode.getFormatType() !== this.getChildFormatType()
     );
   }
 

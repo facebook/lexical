@@ -331,10 +331,10 @@ export class TableSelection implements BaseSelection {
   }
 
   getTextContent(): string {
-    const nodes = this.getNodes();
+    const nodes = this.getNodes().filter((node) => $isTableCellNode(node));
     let textContent = '';
     for (let i = 0; i < nodes.length; i++) {
-      textContent += nodes[i].getTextContent();
+      textContent += nodes[i].getTextContent() + '\n';
     }
     return textContent;
   }

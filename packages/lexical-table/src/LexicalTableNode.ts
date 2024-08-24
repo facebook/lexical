@@ -41,7 +41,7 @@ export type SerializedTableNode = Spread<
 /** @noInheritDoc */
 export class TableNode extends ElementNode {
   /** @internal */
-  __rowStriping: boolean;
+  __rowStriping?: boolean;
 
   static getType(): string {
     return 'table';
@@ -85,11 +85,11 @@ export class TableNode extends ElementNode {
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
 
+    addClassNamesToElement(tableElement, config.theme.table);
     if (this.__rowStriping) {
       addClassNamesToElement(tableElement, config.theme.tableRowStriping);
       tableElement.setAttribute('data-lexical-row-striping', 'true');
     }
-    addClassNamesToElement(tableElement, config.theme.table);
 
     return tableElement;
   }
@@ -241,7 +241,7 @@ export class TableNode extends ElementNode {
   }
 
   getRowStriping(): boolean {
-    return this.getLatest().__rowStriping;
+    return Boolean(this.getLatest().__rowStriping);
   }
 
   setRowStriping(newRowStriping: boolean): void {

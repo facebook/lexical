@@ -334,7 +334,7 @@ export class TableSelection implements BaseSelection {
     const nodes = this.getNodes().filter((node) => $isTableCellNode(node));
     let textContent = '';
     for (let i = 0; i < nodes.length; i++) {
-      const node: TableCellNode = nodes[i];
+      const node = nodes[i];
       const row = node.__parent;
       const nextRow = (nodes[i + 1] || {}).__parent;
       textContent +=

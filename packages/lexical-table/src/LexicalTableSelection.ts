@@ -336,7 +336,7 @@ export class TableSelection implements BaseSelection {
     for (let i = 0; i < nodes.length; i++) {
       const node: TableCellNode = nodes[i];
       const row = node.__parent;
-      const nextRow = nodes[i + 1 < nodes.length ? i + 1 : 0].__parent;
+      const nextRow = (nodes[i + 1] || {}).__parent;
       textContent +=
         (node.getTextContent() || ' ') + (nextRow !== row ? '\n' : '\t');
     }

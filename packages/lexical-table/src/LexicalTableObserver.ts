@@ -73,6 +73,8 @@ export class TableObserver {
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
+  abortController: AbortController;
+  listenerOptions: {signal: AbortSignal};
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -96,6 +98,8 @@ export class TableObserver {
     this.hasHijackedSelectionStyles = false;
     this.trackTable();
     this.isSelecting = false;
+    this.abortController = new AbortController();
+    this.listenerOptions = {signal: this.abortController.signal};
   }
 
   getTable(): TableDOMTable {
@@ -103,9 +107,11 @@ export class TableObserver {
   }
 
   removeListeners() {
+    this.abortController.abort('removeListeners');
     Array.from(this.listenersToRemove).forEach((removeListener) =>
       removeListener(),
     );
+    this.listenersToRemove.clear();
   }
 
   trackTable() {

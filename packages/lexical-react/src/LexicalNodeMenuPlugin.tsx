@@ -18,16 +18,9 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
+import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
-
-function startTransition(callback: () => void) {
-  if (React.startTransition) {
-    React.startTransition(callback);
-  } else {
-    callback();
-  }
-}
 
 export type NodeMenuPluginProps<TOption extends MenuOption> = {
   onSelectOption: (

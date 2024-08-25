@@ -3,30 +3,27 @@ name: After Approval
 on:
   pull_request_review:
     types: [submitted]
-  pull_request_target:
-    types: [review_requested, opened, reopened, synchronize]
-    branches:
-      - 'main'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
-  label-pr:
-    if: github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
+  pre_job:
+    if: (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
-      - name: Add label for extended tests
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "Adding label 'extended-tests' to PR $NUMBER"
-          gh pr edit "$NUMBER" --add-label "extended-tests" || (echo "Failed to add label" && exit 1)
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: 'same_content_newer'
+          skip_after_successful_duplicate: 'true'
+          do_not_skip: '["pull_request", "merge_group"]'
+          paths_ignore: '["packages/lexical-website/**", "packages/*/README.md", ".size-limit.js", "examples/**"]'
   e2e-tests:
-    needs: label-pr
+    needs: pre_job
+    if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     uses: ./.github/workflows/call-e2e-all-tests.yml
+
+  integration-tests:
+    needs: pre_job
+    if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
+    uses: ./.github/workflows/call-integration-tests.yml

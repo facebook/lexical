@@ -7,14 +7,12 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {
-  $addNodeStyle,
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
+  $cloneWithProperties,
   $createTabNode,
+  $getEditor,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -37,6 +35,12 @@ import invariant from 'shared/invariant';
 const getDOMSelection = (targetWindow: Window | null): Selection | null =>
   CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
+export interface LexicalClipboardData {
+  'text/html'?: string | undefined;
+  'application/x-lexical-editor'?: string | undefined;
+  'text/plain': string;
+}
+
 /**
  * Returns the *currently selected* Lexical content as an HTML string, relying on the
  * logic defined in the exportDOM methods on the LexicalNode classes. Note that
@@ -44,11 +48,13 @@ const getDOMSelection = (targetWindow: Window | null): Selection | null =>
  * in the current selection).
  *
  * @param editor - LexicalEditor instance to get HTML content from
+ * @param selection - The selection to use (default is $getSelection())
  * @returns a string of HTML content
  */
-export function $getHtmlContent(editor: LexicalEditor): string {
-  const selection = $getSelection();
-
+export function $getHtmlContent(
+  editor: LexicalEditor,
+  selection = $getSelection(),
+): string {
   if (selection == null) {
     invariant(false, 'Expected valid LexicalSelection');
   }
@@ -71,11 +77,13 @@ export function $getHtmlContent(editor: LexicalEditor): string {
  * in the current selection).
  *
  * @param editor  - LexicalEditor instance to get the JSON content from
+ * @param selection - The selection to use (default is $getSelection())
  * @returns
  */
-export function $getLexicalContent(editor: LexicalEditor): null | string {
-  const selection = $getSelection();
-
+export function $getLexicalContent(
+  editor: LexicalEditor,
+  selection = $getSelection(),
+): null | string {
   if (selection == null) {
     invariant(false, 'Expected valid LexicalSelection');
   }
@@ -256,7 +264,7 @@ function $appendNodesToJSON(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = $cloneWithProperties(currentNode);
     clone =
       $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
@@ -267,11 +275,11 @@ function $appendNodesToJSON(
 
   const serializedNode = exportNodeToJSON(target);
 
-  // TODO: TextNode calls getTextContent() (NOT node.__text) within it's exportJSON method
+  // TODO: TextNode calls getTextContent() (NOT node.__text) within its exportJSON method
   // which uses getLatest() to get the text from the original node with the same key.
   // This is a deeper issue with the word "clone" here, it's still a reference to the
   // same node as far as the LexicalEditor is concerned since it shares a key.
-  // We need a way to create a clone of a Node in memory with it's own key, but
+  // We need a way to create a clone of a Node in memory with its own key, but
   // until then this hack will work for the selected text extract use case.
   if ($isTextNode(target)) {
     const text = target.__text;
@@ -386,6 +394,7 @@ let clipboardEventTimeout: null | number = null;
 export async function copyToClipboard(
   editor: LexicalEditor,
   event: null | ClipboardEvent,
+  data?: LexicalClipboardData,
 ): Promise<boolean> {
   if (clipboardEventTimeout !== null) {
     // Prevent weird race conditions that can happen when this function is run multiple times
@@ -395,7 +404,7 @@ export async function copyToClipboard(
   if (event !== null) {
     return new Promise((resolve, reject) => {
       editor.update(() => {
-        resolve($copyToClipboardEvent(editor, event));
+        resolve($copyToClipboardEvent(editor, event, data));
       });
     });
   }
@@ -426,7 +435,9 @@ export async function copyToClipboard(
             window.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
-          resolve($copyToClipboardEvent(editor, secondEvent as ClipboardEvent));
+          resolve(
+            $copyToClipboardEvent(editor, secondEvent as ClipboardEvent, data),
+          );
         }
         // Block the entire copy flow while we wait for the next ClipboardEvent
         return true;
@@ -449,38 +460,83 @@ export async function copyToClipboard(
 function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
+  data?: LexicalClipboardData,
 ): boolean {
-  const domSelection = getDOMSelection(editor._window);
-  if (!domSelection) {
-    return false;
-  }
-  const anchorDOM = domSelection.anchorNode;
-  const focusDOM = domSelection.focusNode;
-  if (
-    anchorDOM !== null &&
-    focusDOM !== null &&
-    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
-  ) {
-    return false;
+  if (data === undefined) {
+    const domSelection = getDOMSelection(editor._window);
+    if (!domSelection) {
+      return false;
+    }
+    const anchorDOM = domSelection.anchorNode;
+    const focusDOM = domSelection.focusNode;
+    if (
+      anchorDOM !== null &&
+      focusDOM !== null &&
+      !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+    ) {
+      return false;
+    }
+    const selection = $getSelection();
+    if (selection === null) {
+      return false;
+    }
+    data = $getClipboardDataFromSelection(selection);
   }
   event.preventDefault();
   const clipboardData = event.clipboardData;
-  const selection = $getSelection();
-  if (clipboardData === null || selection === null) {
+  if (clipboardData === null) {
     return false;
   }
-  const htmlString = $getHtmlContent(editor);
-  const lexicalString = $getLexicalContent(editor);
-  let plainString = '';
-  if (selection !== null) {
-    plainString = selection.getTextContent();
-  }
-  if (htmlString !== null) {
-    clipboardData.setData('text/html', htmlString);
-  }
-  if (lexicalString !== null) {
-    clipboardData.setData('application/x-lexical-editor', lexicalString);
-  }
-  clipboardData.setData('text/plain', plainString);
+  setLexicalClipboardDataTransfer(clipboardData, data);
   return true;
+}
+
+const clipboardDataFunctions = [
+  ['text/html', $getHtmlContent],
+  ['application/x-lexical-editor', $getLexicalContent],
+] as const;
+
+/**
+ * Serialize the content of the current selection to strings in
+ * text/plain, text/html, and application/x-lexical-editor (Lexical JSON)
+ * formats (as available).
+ *
+ * @param selection the selection to serialize (defaults to $getSelection())
+ * @returns LexicalClipboardData
+ */
+export function $getClipboardDataFromSelection(
+  selection: BaseSelection | null = $getSelection(),
+): LexicalClipboardData {
+  const clipboardData: LexicalClipboardData = {
+    'text/plain': selection ? selection.getTextContent() : '',
+  };
+  if (selection) {
+    const editor = $getEditor();
+    for (const [mimeType, $editorFn] of clipboardDataFunctions) {
+      const v = $editorFn(editor, selection);
+      if (v !== null) {
+        clipboardData[mimeType] = v;
+      }
+    }
+  }
+  return clipboardData;
+}
+
+/**
+ * Call setData on the given clipboardData for each MIME type present
+ * in the given data (from {@link $getClipboardDataFromSelection})
+ *
+ * @param clipboardData the event.clipboardData to populate from data
+ * @param data The lexical data
+ */
+export function setLexicalClipboardDataTransfer(
+  clipboardData: DataTransfer,
+  data: LexicalClipboardData,
+) {
+  for (const k in data) {
+    const v = data[k as keyof LexicalClipboardData];
+    if (v !== undefined) {
+      clipboardData.setData(k, v);
+    }
+  }
 }

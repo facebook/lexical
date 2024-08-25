@@ -135,11 +135,11 @@ export class ListNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      ol: (node: Node) => ({
+      ol: () => ({
         conversion: $convertListNode,
         priority: 0,
       }),
-      ul: (node: Node) => ({
+      ul: () => ({
         conversion: $convertListNode,
         priority: 0,
       }),
@@ -302,7 +302,24 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   return normalizedListItems;
 }
 
-function $convertListNode(domNode: Node): DOMConversionOutput {
+function isDomChecklist(domNode: HTMLElement) {
+  if (
+    domNode.getAttribute('__lexicallisttype') === 'check' ||
+    // is github checklist
+    domNode.classList.contains('contains-task-list')
+  ) {
+    return true;
+  }
+  // if children are checklist items, the node is a checklist ul. Applicable for googledoc checklist pasting.
+  for (const child of domNode.childNodes) {
+    if (isHTMLElement(child) && child.hasAttribute('aria-checked')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function $convertListNode(domNode: HTMLElement): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
   if (nodeName === 'ol') {
@@ -310,10 +327,7 @@ function $convertListNode(domNode: Node): DOMConversionOutput {
     const start = domNode.start;
     node = $createListNode('number', start);
   } else if (nodeName === 'ul') {
-    if (
-      isHTMLElement(domNode) &&
-      domNode.getAttribute('__lexicallisttype') === 'check'
-    ) {
+    if (isDomChecklist(domNode)) {
       node = $createListNode('check');
     } else {
       node = $createListNode('bullet');

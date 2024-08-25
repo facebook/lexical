@@ -12,26 +12,31 @@
  */
 
 import type {
-    LexicalEditor,
-    LexicalCommand
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
 } from 'lexical';
 
-export type LexicalCommandLog = $ReadOnlyArray<LexicalCommand<mixed> | {payload: mixed}>;
+export type LexicalCommandLog = $ReadOnlyArray<
+  {index: number} | LexicalCommand<mixed> | {payload: mixed}
+ >;
+export type CustomPrintNodeFn = (node: LexicalNode, obfuscateText?: boolean) => string;
 
 declare export function generateContent(
-editor: LexicalEditor,
-commandsLog: $ReadOnlyArray<LexicalCommandLog>,
-exportDOM: boolean,
-obfuscateText?: boolean,
+  editor: LexicalEditor,
+  commandsLog: $ReadOnlyArray<LexicalCommandLog>,
+  exportDOM: boolean,
+  customPrintNode?: CustomPrintNodeFn,
+  obfuscateText?: boolean,
 ): string;
 
 declare export function registerLexicalCommandLogger(
-editor: LexicalEditor,
-setLoggedCommands: (
-  v: (oldValue: LexicalCommandLog) => LexicalCommandLog,
-) => void,
+  editor: LexicalEditor,
+  setLoggedCommands: (
+    v: (oldValue: LexicalCommandLog) => LexicalCommandLog,
+  ) => void,
 ): () => void;
 
 declare export function useLexicalCommandsLog(
-editor: LexicalEditor,
+  editor: LexicalEditor,
 ): LexicalCommandLog;

@@ -258,7 +258,7 @@ The postversion script will:
 - Create a version commit and tag from the branch
 
 This is typically executed through the `version.yml` GitHub Workflow which
-will also push the tag.
+will also push the tag and branch.
 
 ### npm run changelog
 
@@ -270,3 +270,20 @@ Update the changelog from git history.
 plus creating a tag in git, and likely other steps.
 
 Runs prepare-release to do a full build and then uploads to npm.
+
+## Release Procedure
+
+This is the current release procedure for public releases, at least as of
+May 2024 (~0.15.0).
+
+The main branch should be "frozen" during this procedure (no other PRs should
+be merged during this time). This avoids a mismatch between the contents of
+the GitHub release (created from main in step 1) and the NPM release (created
+from main in step 4).
+
+1. Create a new version with the Github Actions "Create New Release Branch" workflow (`version.yml`)
+2. Raise a PR against version branch created by that action
+3. After PR is approved with passing tests, merge PR
+4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
+5. Create a GitHub release from the tag created in step 1, manually editing the release notes
+6. Announce the release in #announcements on Discord

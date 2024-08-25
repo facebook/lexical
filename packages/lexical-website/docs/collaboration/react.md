@@ -31,7 +31,7 @@ $ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket yjs
 
 **Get WebSocket server running:**
 
-This allows different browser windows and different borwsers to find each other and sync Lexical state. On top of this `YPERSISTENCE` allows you to save Yjs documents in between server restarts so clients can simply reconnect and keep editing.
+This allows different browser windows and different browsers to find each other and sync Lexical state. On top of this `YPERSISTENCE` allows you to save Yjs documents in between server restarts so clients can simply reconnect and keep editing.
 
 ```bash
 $ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket
@@ -100,7 +100,7 @@ function Editor() {
 
 Source code: [examples/react-rich-collab](https://github.com/facebook/lexical/tree/main/examples/react-rich-collab)
 
-<iframe width="100%" height="600" src="https://stackblitz.com/github/facebook/lexical/tree/fix/collab_example/examples/react-rich-collab?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+<iframe width="100%" height="600" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich-collab?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
 ## Building collaborative plugins
 

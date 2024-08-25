@@ -6,8 +6,8 @@
  *
  */
 
-import {$cloneWithProperties} from '@lexical/selection';
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $getPreviousSelection,
   $getRoot,
@@ -131,9 +131,9 @@ export function isMimeType(
  *  3. Order aware (respects the order when multiple Files are passed)
  *
  * const filesResult = await mediaFileReader(files, ['image/']);
- * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', {
+ * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', \\{
  *   src: file.result,
- * }));
+ * \\}));
  */
 export function mediaFileReader(
   files: Array<File>,
@@ -174,7 +174,7 @@ export function mediaFileReader(
  * @param startingNode - The node to start the search, if ommitted, it will start at the root node.
  * @param endingNode - The node to end the search, if ommitted, it will find all descendants of the startingNode.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
- * {depth: number, node: LexicalNode} It will always return at least 1 node (the ending node) so long as it exists
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the ending node) so long as it exists
  */
 export function $dfs(
   startingNode?: LexicalNode,
@@ -446,12 +446,7 @@ export function $restoreEditorState(
   const activeEditorState = editor._pendingEditorState;
 
   for (const [key, node] of editorState._nodeMap) {
-    const clone = $cloneWithProperties(node);
-    if ($isTextNode(clone)) {
-      invariant($isTextNode(node), 'Expected node be a TextNode');
-      clone.__text = node.__text;
-    }
-    nodeMap.set(key, clone);
+    nodeMap.set(key, $cloneWithProperties(node));
   }
 
   if (activeEditorState) {
@@ -602,4 +597,11 @@ export function calculateZoomLevel(element: Element | null): number {
     element = element.parentElement;
   }
   return zoom;
+}
+
+/**
+ * Checks if the editor is a nested editor created by LexicalNestedComposer
+ */
+export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
+  return editor._parentEditor !== null;
 }

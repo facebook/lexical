@@ -770,6 +770,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
+        nextSibling.setStyle(style);
         if (!firstNodeParent.canInsertTextAfter()) {
           firstNodeParent.insertAfter(nextSibling);
         } else {
@@ -1132,8 +1133,11 @@ export class RangeSelection implements BaseSelection {
       if (startOffset === endOffset) {
         return;
       }
-      // The entire node is selected, so just format it
-      if (startOffset === 0 && endOffset === firstNode.getTextContentSize()) {
+      // The entire node is selected or it is token, so just format it
+      if (
+        $isTokenOrSegmented(firstNode) ||
+        (startOffset === 0 && endOffset === firstNode.getTextContentSize())
+      ) {
         firstNode.setFormat(firstNextFormat);
       } else {
         // Node is partially selected, so split it into two nodes
@@ -1157,7 +1161,7 @@ export class RangeSelection implements BaseSelection {
     }
     // Multiple nodes selected
     // The entire first node isn't selected, so split it
-    if (startOffset !== 0) {
+    if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
       [, firstNode as TextNode] = firstNode.splitText(startOffset);
       startOffset = 0;
     }
@@ -1167,7 +1171,10 @@ export class RangeSelection implements BaseSelection {
     // If the offset is 0, it means no actual characters are selected,
     // so we skip formatting the last node altogether.
     if (endOffset > 0) {
-      if (endOffset !== lastNode.getTextContentSize()) {
+      if (
+        endOffset !== lastNode.getTextContentSize() &&
+        !$isTokenOrSegmented(lastNode)
+      ) {
         [lastNode as TextNode] = lastNode.splitText(endOffset);
       }
       lastNode.setFormat(lastNextFormat);
@@ -1176,10 +1183,8 @@ export class RangeSelection implements BaseSelection {
     // Process all text nodes in between
     for (let i = firstIndex + 1; i < lastIndex; i++) {
       const textNode = selectedTextNodes[i];
-      if (!textNode.isToken()) {
-        const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
-        textNode.setFormat(nextFormat);
-      }
+      const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
+      textNode.setFormat(nextFormat);
     }
 
     // Update selection only if starts/ends on text node
@@ -1250,14 +1255,12 @@ export class RangeSelection implements BaseSelection {
     const blocksParent = $wrapInlineNodes(nodes);
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
-    const isLI = (node: LexicalNode) =>
-      '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode): node is ElementNode =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      (!firstBlock.isEmpty() || isLI(firstBlock));
+      (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty());
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
@@ -1279,7 +1282,7 @@ export class RangeSelection implements BaseSelection {
     if (
       insertedParagraph &&
       $isElementNode(lastInsertedBlock) &&
-      (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
+      (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))
     ) {
       lastInsertedBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
@@ -1696,9 +1699,15 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      if (this.anchor.type === 'text') {
-        this.modify('extend', isBackward, 'lineboundary');
+      // Since `domSelection.modify('extend', ..., 'lineboundary')` works well for text selections
+      // but doesn't properly handle selections which end on elements, a space character is added
+      // for such selections transforming their anchor's type to 'text'
+      const anchorIsElement = this.anchor.type === 'element';
+      if (anchorIsElement) {
+        this.insertText(' ');
       }
+
+      this.modify('extend', isBackward, 'lineboundary');
 
       // If selection is extended to cover text edge then extend it one character more
       // to delete its parent element. Otherwise text content will be deleted but empty
@@ -1706,6 +1715,12 @@ export class RangeSelection implements BaseSelection {
       const endPoint = isBackward ? this.focus : this.anchor;
       if (endPoint.offset === 0) {
         this.modify('extend', isBackward, 'character');
+      }
+
+      // Adjusts selection to include an extra character added for element anchors to remove it
+      if (anchorIsElement) {
+        const startPoint = isBackward ? this.anchor : this.focus;
+        startPoint.set(startPoint.key, startPoint.offset + 1, startPoint.type);
       }
     }
     this.removeText();

@@ -10,21 +10,57 @@
 
 'use strict';
 
-const {exec} = require('child-process-promise');
+const {spawn} = require('child-process-promise');
 const argv = require('minimist')(process.argv.slice(2));
 
-const increment = argv.i;
-const validIncrements = new Set(['minor', 'patch', 'prerelease']);
-if (!validIncrements.has(increment)) {
-  console.error(`Invalid value for increment: ${increment}`);
+const increment = argv.i || process.env.INCREMENT;
+const channel = argv.channel || process.env.CHANNEL;
+
+const validChannels = new Set(['next', 'latest', 'nightly', 'dev']);
+if (!validChannels.has(channel)) {
+  console.error(`Invalid value for channel: ${channel}`);
   process.exit(1);
 }
 
+const validIncrements = new Set(['minor', 'patch', 'prerelease']);
+if (
+  !validIncrements.has(increment) ||
+  (channel === 'nightly' && increment !== 'prerelease')
+) {
+  console.error(
+    `Invalid value for increment in ${channel} channel: ${increment}`,
+  );
+  process.exit(1);
+}
+
+function incrementArgs() {
+  return [
+    ...(increment === 'prerelease'
+      ? [
+          '--preid',
+          channel === 'nightly'
+            ? `${channel}.${new Date()
+                .toISOString()
+                .split('T')[0]
+                .replaceAll('-', '')}`
+            : channel,
+        ]
+      : []),
+    increment,
+  ];
+}
+
 async function incrementVersion() {
-  const preId = increment === 'prerelease' ? '--preid next' : '';
-  const workspaces = '';
-  const command = `npm --no-git-tag-version version ${increment} --include-workspace-root true ${preId} ${workspaces}`;
-  await exec(command);
+  const commandArr = [
+    'npm',
+    'version',
+    '--no-git-tag-version',
+    '--include-workspace-root',
+    'true',
+    ...incrementArgs(),
+  ];
+  console.log(commandArr.join(' '));
+  await spawn(commandArr[0], commandArr.slice(1), {stdio: 'inherit'});
 }
 
 incrementVersion();

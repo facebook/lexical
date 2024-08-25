@@ -18,6 +18,8 @@ import {
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
+import {IS_CHROME} from 'shared/environment';
+import invariant from 'shared/invariant';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
@@ -45,6 +47,18 @@ export class CollapsibleTitleNode extends ElementNode {
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('summary');
     dom.classList.add('Collapsible__title');
+    if (IS_CHROME) {
+      dom.addEventListener('click', () => {
+        editor.update(() => {
+          const collapsibleContainer = this.getLatest().getParentOrThrow();
+          invariant(
+            $isCollapsibleContainerNode(collapsibleContainer),
+            'Expected parent node to be a CollapsibleContainerNode',
+          );
+          collapsibleContainer.toggleOpen();
+        });
+      });
+    }
     return dom;
   }
 

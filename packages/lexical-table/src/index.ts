@@ -34,6 +34,8 @@ export {
   TableRowNode,
 } from './LexicalTableRowNode';
 export type {
+  TableMapType,
+  TableMapValueType,
   TableSelection,
   TableSelectionShape,
 } from './LexicalTableSelection';
@@ -43,6 +45,8 @@ export {
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
+  $findCellNode,
+  $findTableNode,
   applyTableHandlers,
   getDOMCellFromTarget,
   getTableObserverFromTableElement,

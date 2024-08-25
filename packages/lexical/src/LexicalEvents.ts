@@ -94,6 +94,7 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMTextNode,
+  getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
   getWindow,
@@ -111,6 +112,7 @@ import {
   isEscape,
   isFirefoxClipboardEvents,
   isItalic,
+  isLexicalEditor,
   isLineBreak,
   isModifier,
   isMoveBackward,
@@ -348,15 +350,16 @@ function onSelectionChange(
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             const lastNode = anchor.getNode();
+            selection.style = '';
             if (
               lastNode instanceof ParagraphNode &&
               lastNode.getChildrenSize() === 0
             ) {
               selection.format = lastNode.getTextFormat();
+              selection.style = lastNode.getTextStyle();
             } else {
               selection.format = 0;
             }
-            selection.style = '';
           }
         }
       } else {
@@ -1241,72 +1244,67 @@ export function addRootElementEvents(
               return;
             }
             stopLexicalPropagation(event);
-            if (editor.isEditable()) {
-              switch (eventName) {
-                case 'cut':
-                  return dispatchCommand(
-                    editor,
-                    CUT_COMMAND,
-                    event as ClipboardEvent,
-                  );
+            const isEditable = editor.isEditable();
+            switch (eventName) {
+              case 'cut':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent)
+                );
 
-                case 'copy':
-                  return dispatchCommand(
-                    editor,
-                    COPY_COMMAND,
-                    event as ClipboardEvent,
-                  );
+              case 'copy':
+                return dispatchCommand(
+                  editor,
+                  COPY_COMMAND,
+                  event as ClipboardEvent,
+                );
 
-                case 'paste':
-                  return dispatchCommand(
+              case 'paste':
+                return (
+                  isEditable &&
+                  dispatchCommand(
                     editor,
                     PASTE_COMMAND,
                     event as ClipboardEvent,
-                  );
+                  )
+                );
 
-                case 'dragstart':
-                  return dispatchCommand(
-                    editor,
-                    DRAGSTART_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragstart':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent)
+                );
 
-                case 'dragover':
-                  return dispatchCommand(
-                    editor,
-                    DRAGOVER_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragover':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGOVER_COMMAND, event as DragEvent)
+                );
 
-                case 'dragend':
-                  return dispatchCommand(
-                    editor,
-                    DRAGEND_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'dragend':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DRAGEND_COMMAND, event as DragEvent)
+                );
 
-                case 'focus':
-                  return dispatchCommand(
-                    editor,
-                    FOCUS_COMMAND,
-                    event as FocusEvent,
-                  );
+              case 'focus':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, FOCUS_COMMAND, event as FocusEvent)
+                );
 
-                case 'blur': {
-                  return dispatchCommand(
-                    editor,
-                    BLUR_COMMAND,
-                    event as FocusEvent,
-                  );
-                }
-
-                case 'drop':
-                  return dispatchCommand(
-                    editor,
-                    DROP_COMMAND,
-                    event as DragEvent,
-                  );
+              case 'blur': {
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)
+                );
               }
+
+              case 'drop':
+                return (
+                  isEditable &&
+                  dispatchCommand(editor, DROP_COMMAND, event as DragEvent)
+                );
             }
           };
     rootElement.addEventListener(eventName, eventHandler);
@@ -1333,13 +1331,17 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 
-  // @ts-expect-error: internal field
-  const editor: LexicalEditor | null | undefined = rootElement.__lexicalEditor;
+  const editor = getEditorPropertyFromDOMNode(rootElement);
 
-  if (editor !== null && editor !== undefined) {
+  if (isLexicalEditor(editor)) {
     cleanActiveNestedEditorsMap(editor);
     // @ts-expect-error: internal field
     rootElement.__lexicalEditor = null;
+  } else if (editor) {
+    invariant(
+      false,
+      'Attempted to remove event handlers from a node that does not belong to this build of Lexical',
+    );
   }
 
   const removeHandles = getRootElementRemoveHandles(rootElement);

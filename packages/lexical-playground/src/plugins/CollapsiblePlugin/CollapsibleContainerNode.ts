@@ -12,12 +12,17 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  isHTMLElement,
   LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import {IS_CHROME} from 'shared/environment';
+import invariant from 'shared/invariant';
+
+import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
 type SerializedCollapsibleContainerNode = Spread<
   {
@@ -53,15 +58,24 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('details');
+    // details is not well supported in Chrome #5582
+    let dom: HTMLElement;
+    if (IS_CHROME) {
+      dom = document.createElement('div');
+      dom.setAttribute('open', '');
+    } else {
+      const detailsDom = document.createElement('details');
+      detailsDom.open = this.__open;
+      detailsDom.addEventListener('toggle', () => {
+        const open = editor.getEditorState().read(() => this.getOpen());
+        if (open !== detailsDom.open) {
+          editor.update(() => this.toggleOpen());
+        }
+      });
+      dom = detailsDom;
+    }
     dom.classList.add('Collapsible__container');
-    dom.open = this.__open;
-    dom.addEventListener('toggle', () => {
-      const open = editor.getEditorState().read(() => this.getOpen());
-      if (open !== dom.open) {
-        editor.update(() => this.toggleOpen());
-      }
-    });
+
     return dom;
   }
 
@@ -69,8 +83,25 @@ export class CollapsibleContainerNode extends ElementNode {
     prevNode: CollapsibleContainerNode,
     dom: HTMLDetailsElement,
   ): boolean {
-    if (prevNode.__open !== this.__open) {
-      dom.open = this.__open;
+    const currentOpen = this.__open;
+    if (prevNode.__open !== currentOpen) {
+      // details is not well supported in Chrome #5582
+      if (IS_CHROME) {
+        const contentDom = dom.children[1];
+        invariant(
+          isHTMLElement(contentDom),
+          'Expected contentDom to be an HTMLElement',
+        );
+        if (currentOpen) {
+          dom.setAttribute('open', '');
+          contentDom.hidden = false;
+        } else {
+          dom.removeAttribute('open');
+          setDomHiddenUntilFound(contentDom);
+        }
+      } else {
+        dom.open = this.__open;
+      }
     }
 
     return false;

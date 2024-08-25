@@ -9,6 +9,7 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {
+  CustomPrintNodeFn,
   generateContent,
   TreeView as TreeViewCore,
   useLexicalCommandsLog,
@@ -25,14 +26,16 @@ export function TreeView({
   viewClassName,
   timeTravelPanelClassName,
   editor,
+  customPrintNode,
 }: {
   editor: LexicalEditor;
-  treeTypeButtonClassName: string;
-  timeTravelButtonClassName: string;
-  timeTravelPanelButtonClassName: string;
-  timeTravelPanelClassName: string;
-  timeTravelPanelSliderClassName: string;
-  viewClassName: string;
+  treeTypeButtonClassName?: string;
+  timeTravelButtonClassName?: string;
+  timeTravelPanelButtonClassName?: string;
+  timeTravelPanelClassName?: string;
+  timeTravelPanelSliderClassName?: string;
+  viewClassName?: string;
+  customPrintNode?: CustomPrintNodeFn;
 }): JSX.Element {
   const treeElementRef = React.createRef<HTMLPreElement>();
   const [editorCurrentState, setEditorCurrentState] = useState<EditorState>(
@@ -87,7 +90,7 @@ export function TreeView({
       editorState={editorCurrentState}
       setEditorState={(state) => editor.setEditorState(state)}
       generateContent={async function (exportDOM) {
-        return generateContent(editor, commandsLog, exportDOM);
+        return generateContent(editor, commandsLog, exportDOM, customPrintNode);
       }}
       ref={treeElementRef}
     />

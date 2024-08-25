@@ -6,13 +6,12 @@
  *
  */
 
-import type {Binding, ExcludedProperties, Provider} from '@lexical/yjs';
+import type {Binding, Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
   CONNECTED_COMMAND,
-  createBinding,
   createUndoManager,
   initLocalState,
   setLocalStateFocus,
@@ -34,7 +33,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
 
@@ -50,18 +49,13 @@ export function useYjsCollaboration(
   name: string,
   color: string,
   shouldBootstrap: boolean,
+  binding: Binding,
+  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
-  excludedProperties?: ExcludedProperties,
   awarenessData?: object,
-): [JSX.Element, Binding] {
+): JSX.Element {
   const isReloadingDoc = useRef(false);
-  const [doc, setDoc] = useState(docMap.get(id));
-
-  const binding = useMemo(
-    () => createBinding(editor, provider, id, doc, docMap, excludedProperties),
-    [editor, provider, id, docMap, doc, excludedProperties],
-  );
 
   const connect = useCallback(() => {
     provider.connect();
@@ -186,6 +180,7 @@ export function useYjsCollaboration(
     provider,
     shouldBootstrap,
     awarenessData,
+    setDoc,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {
@@ -222,7 +217,7 @@ export function useYjsCollaboration(
     );
   }, [connect, disconnect, editor]);
 
-  return [cursorsContainer, binding];
+  return cursorsContainer;
 }
 
 export function useYjsFocusTracking(

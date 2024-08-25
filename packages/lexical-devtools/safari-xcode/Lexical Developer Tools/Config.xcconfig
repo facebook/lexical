@@ -1,0 +1,14 @@
+//
+//  Config.xcconfig
+//  Lexical Developer Tools
+//
+//  Created by Vladlen Fedosov on 5/21/24.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+
+VERSION=0.0.0
+
+// This file is generated during npm run safari:archive
+#include? "VersioningConfig.xcconfig"

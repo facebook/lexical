@@ -24,7 +24,11 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {$findMatchingParent} from '@lexical/utils';
+import {
+  $getClipboardDataFromSelection,
+  copyToClipboard,
+} from '@lexical/clipboard';
+import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
@@ -35,11 +39,13 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -65,11 +71,8 @@ import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {
-  $createTableSelection,
-  $isTableSelection,
-} from './LexicalTableSelection';
-import {$computeTableMap} from './LexicalTableUtils';
+import {$isTableSelection} from './LexicalTableSelection';
+import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -313,16 +316,34 @@ export function applyTableHandlers(
     },
   );
 
-  const $deleteCellHandler = (event: KeyboardEvent): boolean => {
+  const $deleteCellHandler = (
+    event: KeyboardEvent | ClipboardEvent | null,
+  ): boolean => {
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
+      const nodes = selection ? selection.getNodes() : null;
+      if (nodes) {
+        const table = nodes.find(
+          (node) =>
+            $isTableNode(node) && node.getKey() === tableObserver.tableNodeKey,
+        );
+        if ($isTableNode(table)) {
+          const parentNode = table.getParent();
+          if (!parentNode) {
+            return false;
+          }
+          table.remove();
+        }
+      }
       return false;
     }
 
     if ($isTableSelection(selection)) {
-      event.preventDefault();
-      event.stopPropagation();
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       tableObserver.clearText();
 
       return true;
@@ -352,6 +373,36 @@ export function applyTableHandlers(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       $deleteCellHandler,
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+
+  tableObserver.listenersToRemove.add(
+    editor.registerCommand<KeyboardEvent | ClipboardEvent | null>(
+      CUT_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if (selection) {
+          if (!($isTableSelection(selection) || $isRangeSelection(selection))) {
+            return false;
+          }
+          // Copying to the clipboard is async so we must capture the data
+          // before we delete it
+          void copyToClipboard(
+            editor,
+            objectKlassEquals(event, ClipboardEvent)
+              ? (event as ClipboardEvent)
+              : null,
+            $getClipboardDataFromSelection(selection),
+          );
+          const intercepted = $deleteCellHandler(event);
+          if ($isRangeSelection(selection)) {
+            selection.removeText();
+          }
+          return intercepted;
+        }
+        return false;
+      },
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
@@ -618,8 +669,6 @@ export function applyTableHandlers(
         const toY = Math.max(startY, stopY);
         const gridRowNodes = gridNode.getChildren();
         let newRowIdx = 0;
-        let newAnchorCellKey;
-        let newFocusCellKey;
 
         for (let r = fromY; r <= toY; r++) {
           const currentGridRowNode = gridRowNodes[r];
@@ -651,12 +700,6 @@ export function applyTableHandlers(
               return false;
             }
 
-            if (r === fromY && c === fromX) {
-              newAnchorCellKey = currentGridCellNode.getKey();
-            } else if (r === toY && c === toX) {
-              newFocusCellKey = currentGridCellNode.getKey();
-            }
-
             const originalChildren = currentGridCellNode.getChildren();
             newGridCellNode.getChildren().forEach((child) => {
               if ($isTextNode(child)) {
@@ -672,15 +715,6 @@ export function applyTableHandlers(
           }
 
           newRowIdx++;
-        }
-        if (newAnchorCellKey && newFocusCellKey) {
-          const newTableSelection = $createTableSelection();
-          newTableSelection.set(
-            nodes[0].getKey(),
-            newAnchorCellKey,
-            newFocusCellKey,
-          );
-          $setSelection(newTableSelection);
         }
         return true;
       },
@@ -716,17 +750,18 @@ export function applyTableHandlers(
           if (isPartialyWithinTable) {
             const newSelection = selection.clone();
             if (isFocusInside) {
-              newSelection.focus.set(
-                tableNode.getParentOrThrow().getKey(),
-                tableNode.getIndexWithinParent(),
-                'element',
+              const [tableMap] = $computeTableMap(
+                tableNode,
+                focusCellNode,
+                focusCellNode,
               );
-            } else {
-              newSelection.anchor.set(
-                tableNode.getParentOrThrow().getKey(),
+              const firstCell = tableMap[0][0].cell;
+              const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+              newSelection.focus.set(
+                isBackward ? firstCell.getKey() : lastCell.getKey(),
                 isBackward
-                  ? tableNode.getIndexWithinParent() + 1
-                  : tableNode.getIndexWithinParent(),
+                  ? firstCell.getChildrenSize()
+                  : lastCell.getChildrenSize(),
                 'element',
               );
             }
@@ -1257,7 +1292,7 @@ function $removeHighlightFromDOM(
   element.style.removeProperty('caret-color');
 }
 
-function $findCellNode(node: LexicalNode): null | TableCellNode {
+export function $findCellNode(node: LexicalNode): null | TableCellNode {
   const cellNode = $findMatchingParent(node, $isTableCellNode);
   return $isTableCellNode(cellNode) ? cellNode : null;
 }
@@ -1284,37 +1319,112 @@ function $handleArrowKey(
   const selection = $getSelection();
 
   if (!$isSelectionInTable(selection, tableNode)) {
-    if (
-      direction === 'backward' &&
-      $isRangeSelection(selection) &&
-      selection.isCollapsed()
-    ) {
-      const anchorType = selection.anchor.type;
-      const anchorOffset = selection.anchor.offset;
-      if (
-        anchorType !== 'element' &&
-        !(anchorType === 'text' && anchorOffset === 0)
+    if ($isRangeSelection(selection)) {
+      if (selection.isCollapsed() && direction === 'backward') {
+        const anchorType = selection.anchor.type;
+        const anchorOffset = selection.anchor.offset;
+        if (
+          anchorType !== 'element' &&
+          !(anchorType === 'text' && anchorOffset === 0)
+        ) {
+          return false;
+        }
+        const anchorNode = selection.anchor.getNode();
+        if (!anchorNode) {
+          return false;
+        }
+        const parentNode = $findMatchingParent(
+          anchorNode,
+          (n) => $isElementNode(n) && !n.isInline(),
+        );
+        if (!parentNode) {
+          return false;
+        }
+        const siblingNode = parentNode.getPreviousSibling();
+        if (!siblingNode || !$isTableNode(siblingNode)) {
+          return false;
+        }
+        stopEvent(event);
+        siblingNode.selectEnd();
+        return true;
+      } else if (
+        event.shiftKey &&
+        (direction === 'up' || direction === 'down')
       ) {
-        return false;
+        const focusNode = selection.focus.getNode();
+        if ($isRootOrShadowRoot(focusNode)) {
+          const selectedNode = selection.getNodes()[0];
+          if (selectedNode) {
+            const tableCellNode = $findMatchingParent(
+              selectedNode,
+              $isTableCellNode,
+            );
+            if (tableCellNode && tableNode.isParentOf(tableCellNode)) {
+              const firstDescendant = tableNode.getFirstDescendant();
+              const lastDescendant = tableNode.getLastDescendant();
+              if (!firstDescendant || !lastDescendant) {
+                return false;
+              }
+              const [firstCellNode] = $getNodeTriplet(firstDescendant);
+              const [lastCellNode] = $getNodeTriplet(lastDescendant);
+              const firstCellCoords = tableNode.getCordsFromCellNode(
+                firstCellNode,
+                tableObserver.table,
+              );
+              const lastCellCoords = tableNode.getCordsFromCellNode(
+                lastCellNode,
+                tableObserver.table,
+              );
+              const firstCellDOM = tableNode.getDOMCellFromCordsOrThrow(
+                firstCellCoords.x,
+                firstCellCoords.y,
+                tableObserver.table,
+              );
+              const lastCellDOM = tableNode.getDOMCellFromCordsOrThrow(
+                lastCellCoords.x,
+                lastCellCoords.y,
+                tableObserver.table,
+              );
+              tableObserver.setAnchorCellForSelection(firstCellDOM);
+              tableObserver.setFocusCellForSelection(lastCellDOM, true);
+              return true;
+            }
+          }
+          return false;
+        } else {
+          const focusParentNode = $findMatchingParent(
+            focusNode,
+            (n) => $isElementNode(n) && !n.isInline(),
+          );
+          if (!focusParentNode) {
+            return false;
+          }
+          const sibling =
+            direction === 'down'
+              ? focusParentNode.getNextSibling()
+              : focusParentNode.getPreviousSibling();
+          if (
+            $isTableNode(sibling) &&
+            tableObserver.tableNodeKey === sibling.getKey()
+          ) {
+            const firstDescendant = sibling.getFirstDescendant();
+            const lastDescendant = sibling.getLastDescendant();
+            if (!firstDescendant || !lastDescendant) {
+              return false;
+            }
+            const [firstCellNode] = $getNodeTriplet(firstDescendant);
+            const [lastCellNode] = $getNodeTriplet(lastDescendant);
+            const newSelection = selection.clone();
+            newSelection.focus.set(
+              (direction === 'up' ? firstCellNode : lastCellNode).getKey(),
+              direction === 'up' ? 0 : lastCellNode.getChildrenSize(),
+              'element',
+            );
+            $setSelection(newSelection);
+            return true;
+          }
+        }
       }
-      const anchorNode = selection.anchor.getNode();
-      if (!anchorNode) {
-        return false;
-      }
-      const parentNode = $findMatchingParent(
-        anchorNode,
-        (n) => $isElementNode(n) && !n.isInline(),
-      );
-      if (!parentNode) {
-        return false;
-      }
-      const siblingNode = parentNode.getPreviousSibling();
-      if (!siblingNode || !$isTableNode(siblingNode)) {
-        return false;
-      }
-      stopEvent(event);
-      siblingNode.selectEnd();
-      return true;
     }
     return false;
   }

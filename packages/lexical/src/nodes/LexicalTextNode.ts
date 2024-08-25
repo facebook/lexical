@@ -21,6 +21,7 @@ import type {
   SerializedLexicalNode,
 } from '../LexicalNode';
 import type {BaseSelection, RangeSelection} from '../LexicalSelection';
+import type {ElementNode} from './LexicalElementNode';
 
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -274,7 +275,14 @@ function wrapElementWith(
   return el;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TextNode {
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TextNode extends LexicalNode {
   ['constructor']!: KlassConstructor<typeof TextNode>;
   __text: string;
@@ -293,6 +301,14 @@ export class TextNode extends LexicalNode {
 
   static clone(node: TextNode): TextNode {
     return new TextNode(node.__text, node.__key);
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__mode = prevNode.__mode;
+    this.__detail = prevNode.__detail;
   }
 
   constructor(text: string, key?: NodeKey) {
@@ -927,7 +943,7 @@ export class TextNode extends LexicalNode {
       return [self];
     }
     const firstPart = parts[0];
-    const parent = self.getParentOrThrow();
+    const parent = self.getParent();
     let writableNode;
     const format = self.getFormat();
     const style = self.getStyle();
@@ -997,23 +1013,25 @@ export class TextNode extends LexicalNode {
     }
 
     // Insert the nodes into the parent's children
-    internalMarkSiblingsAsDirty(this);
-    const writableParent = parent.getWritable();
-    const insertionIndex = this.getIndexWithinParent();
-    if (hasReplacedSelf) {
-      writableParent.splice(insertionIndex, 0, splitNodes);
-      this.remove();
-    } else {
-      writableParent.splice(insertionIndex, 1, splitNodes);
-    }
+    if (parent !== null) {
+      internalMarkSiblingsAsDirty(this);
+      const writableParent = parent.getWritable();
+      const insertionIndex = this.getIndexWithinParent();
+      if (hasReplacedSelf) {
+        writableParent.splice(insertionIndex, 0, splitNodes);
+        this.remove();
+      } else {
+        writableParent.splice(insertionIndex, 1, splitNodes);
+      }
 
-    if ($isRangeSelection(selection)) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        parent,
-        insertionIndex,
-        partsLength - 1,
-      );
+      if ($isRangeSelection(selection)) {
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          parent,
+          insertionIndex,
+          partsLength - 1,
+        );
+      }
     }
 
     return splitNodes;
@@ -1088,9 +1106,9 @@ export class TextNode extends LexicalNode {
   }
 }
 
-function convertSpanElement(domNode: Node): DOMConversionOutput {
+function convertSpanElement(domNode: HTMLSpanElement): DOMConversionOutput {
   // domNode is a <span> since we matched it by nodeName
-  const span = domNode as HTMLSpanElement;
+  const span = domNode;
   const style = span.style;
 
   return {
@@ -1099,9 +1117,11 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
+function convertBringAttentionToElement(
+  domNode: HTMLElement,
+): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
-  const b = domNode as HTMLElement;
+  const b = domNode;
   // Google Docs wraps all copied HTML in a <b> with font-weight normal
   const hasNormalFontWeight = b.style.fontWeight === 'normal';
 
@@ -1271,13 +1291,13 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   u: 'underline',
 };
 
-function convertTextFormatElement(domNode: Node): DOMConversionOutput {
+function convertTextFormatElement(domNode: HTMLElement): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
   if (format === undefined) {
     return {node: null};
   }
   return {
-    forChild: applyTextFormatFromStyle((domNode as HTMLElement).style, format),
+    forChild: applyTextFormatFromStyle(domNode.style, format),
     node: null,
   };
 }

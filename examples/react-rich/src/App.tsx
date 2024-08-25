@@ -16,9 +16,7 @@ import ExampleTheme from './ExampleTheme';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 
-function Placeholder() {
-  return <div className="editor-placeholder">Enter some rich text...</div>;
-}
+const placeholder = 'Enter some rich text...';
 
 const editorConfig = {
   namespace: 'React.js Demo',
@@ -38,8 +36,15 @@ export default function App() {
         <ToolbarPlugin />
         <div className="editor-inner">
           <RichTextPlugin
-            contentEditable={<ContentEditable className="editor-input" />}
-            placeholder={<Placeholder />}
+            contentEditable={
+              <ContentEditable
+                className="editor-input"
+                aria-placeholder={placeholder}
+                placeholder={
+                  <div className="editor-placeholder">{placeholder}</div>
+                }
+              />
+            }
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />

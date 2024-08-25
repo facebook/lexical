@@ -16,7 +16,11 @@ Unit tests can be found in [this directory](https://github.com/facebook/lexical/
 
 ## End-to-end (E2E) tests
 
-We use [Playwright](https://playwright.dev/) for running E2E tests in Chromium, Firefox and WebKit.
+We use [Playwright](https://playwright.dev/) for running E2E tests in Chromium, Firefox and WebKit. Before running these tests, make sure to install the necessary browsers using the following command:
+
+```
+npx playwright install
+```
 
 These tests run in the `lexical-playground` package and are divided into proactive and reactive tests (`e2e` and `regression` directories).
 

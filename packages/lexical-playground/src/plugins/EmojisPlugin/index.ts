@@ -19,10 +19,6 @@ const emojis: Map<string, [string, string]> = new Map([
   [':D', ['emoji veryhappysmile', '😀']],
   [':(', ['emoji unhappysmile', '🙁']],
   ['<3', ['emoji heart', '❤']],
-  ['🙂', ['emoji happysmile', '🙂']],
-  ['😀', ['emoji veryhappysmile', '😀']],
-  ['🙁', ['emoji unhappysmile', '🙁']],
-  ['❤', ['emoji heart', '❤']],
 ]);
 
 function $findAndTransformEmoji(node: TextNode): null | TextNode {

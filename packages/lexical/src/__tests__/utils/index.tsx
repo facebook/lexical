@@ -39,7 +39,8 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
-import {format} from 'prettier';
+import path from 'path';
+import * as prettier from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -51,6 +52,10 @@ import {
   LexicalNodeReplacement,
 } from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
+
+const prettierConfig = prettier.resolveConfig.sync(
+  path.resolve(__dirname, '../../../../.prettierrc'),
+);
 
 type TestEnv = {
   readonly container: HTMLDivElement;
@@ -534,9 +539,11 @@ export function createTestEditor(
   return editor;
 }
 
-export function createTestHeadlessEditor(): LexicalEditor {
+export function createTestHeadlessEditor(
+  editorState?: EditorState,
+): LexicalEditor {
   return createHeadlessEditor({
-    namespace: '',
+    editorState,
     onError: (error) => {
       throw error;
     },
@@ -555,6 +562,16 @@ export function invariant(cond?: boolean, message?: string): asserts cond {
     return;
   }
   throw new Error(`Invariant: ${message}`);
+}
+
+export class ClipboardDataMock {
+  getData: jest.Mock<string, [string]>;
+  setData: jest.Mock<void, [string, string]>;
+
+  constructor() {
+    this.getData = jest.fn();
+    this.setData = jest.fn();
+  }
 }
 
 export class DataTransferMock implements DataTransfer {
@@ -784,5 +801,8 @@ export function expectHtmlToBeEqual(expected: string, actual: string): void {
 }
 
 export function prettifyHtml(s: string): string {
-  return format(s.replace(/\n/g, ''), {parser: 'html'});
+  return prettier.format(s.replace(/\n/g, ''), {
+    ...prettierConfig,
+    parser: 'html',
+  });
 }

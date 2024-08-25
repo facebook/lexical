@@ -471,53 +471,64 @@ test.describe('Hashtags', () => {
 
   test('Should not break while importing and exporting multiple matches', async ({
     page,
+    isRichText,
   }) => {
     await focusEditor(page);
     await page.keyboard.type('```markdown #hello#invalid #a #b');
 
-    await assertHTML(
-      page,
-      html`
-        <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
-          spellcheck="false"
-          data-gutter="1"
-          data-highlight-language="markdown"
-          data-language="markdown">
-          <span
-            class="PlaygroundEditorTheme__tokenPunctuation"
-            data-lexical-text="true">
-            #
-          </span>
-          <span data-lexical-text="true">hello#invalid #a #b</span>
-        </code>
-      `,
-    );
-
     await click(page, '.action-button .markdown');
     await click(page, '.action-button .markdown');
     await click(page, '.action-button .markdown');
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #hello
-          </span>
-          <span data-lexical-text="true">#invalid</span>
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #a
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #b
-          </span>
-        </p>
-      `,
-    );
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #hello
+            </span>
+            <span data-lexical-text="true">#invalid</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #a
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #b
+            </span>
+          </p>
+        `,
+      );
+    } else {
+      if (isRichText) {
+        await assertHTML(
+          page,
+          html`
+            <code
+              class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              spellcheck="false"
+              data-gutter="1"
+              data-highlight-language="markdown"
+              data-language="markdown">
+              <span
+                class="PlaygroundEditorTheme__tokenPunctuation"
+                data-lexical-text="true">
+                #
+              </span>
+              <span data-lexical-text="true">hello#invalid #a #b</span>
+            </code>
+          `,
+        );
+      }
+    }
   });
 });

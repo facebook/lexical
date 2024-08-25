@@ -559,6 +559,16 @@ export function invariant(cond?: boolean, message?: string): asserts cond {
   throw new Error(`Invariant: ${message}`);
 }
 
+export class ClipboardDataMock {
+  getData: jest.Mock<string, [string]>;
+  setData: jest.Mock<void, [string, string]>;
+
+  constructor() {
+    this.getData = jest.fn();
+    this.setData = jest.fn();
+  }
+}
+
 export class DataTransferMock implements DataTransfer {
   _data: Map<string, string> = new Map();
   get dropEffect(): DataTransfer['dropEffect'] {

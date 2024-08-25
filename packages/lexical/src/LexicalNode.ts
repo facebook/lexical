@@ -205,6 +205,62 @@ export class LexicalNode {
     );
   }
 
+  /**
+   * Perform any state updates on the clone of prevNode that are not already
+   * handled by the constructor call in the static clone method. If you have
+   * state to update in your clone that is not handled directly by the
+   * constructor, it is advisable to override this method but it is required
+   * to include a call to `super.afterCloneFrom(prevNode)` in your
+   * implementation. This is only intended to be called by
+   * {@link $cloneWithProperties} function or via a super call.
+   *
+   * @example
+   * ```ts
+   * class ClassesTextNode extends TextNode {
+   *   // Not shown: static getType, static importJSON, exportJSON, createDOM, updateDOM
+   *   __classes = new Set<string>();
+   *   static clone(node: ClassesTextNode): ClassesTextNode {
+   *     // The inherited TextNode constructor is used here, so
+   *     // classes is not set by this method.
+   *     return new ClassesTextNode(node.__text, node.__key);
+   *   }
+   *   afterCloneFrom(node: this): void {
+   *     // This calls TextNode.afterCloneFrom and LexicalNode.afterCloneFrom
+   *     // for necessary state updates
+   *     super.afterCloneFrom(node);
+   *     this.__addClasses(node.__classes);
+   *   }
+   *   // This method is a private implementation detail, it is not
+   *   // suitable for the public API because it does not call getWritable
+   *   __addClasses(classNames: Iterable<string>): this {
+   *     for (const className of classNames) {
+   *       this.__classes.add(className);
+   *     }
+   *     return this;
+   *   }
+   *   addClass(...classNames: string[]): this {
+   *     return this.getWritable().__addClasses(classNames);
+   *   }
+   *   removeClass(...classNames: string[]): this {
+   *     const node = this.getWritable();
+   *     for (const className of classNames) {
+   *       this.__classes.delete(className);
+   *     }
+   *     return this;
+   *   }
+   *   getClasses(): Set<string> {
+   *     return this.getLatest().__classes;
+   *   }
+   * }
+   * ```
+   *
+   */
+  afterCloneFrom(prevNode: this) {
+    this.__parent = prevNode.__parent;
+    this.__next = prevNode.__next;
+    this.__prev = prevNode.__prev;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static importDOM?: () => DOMConversionMap<any> | null;
 
@@ -295,27 +351,16 @@ export class LexicalNode {
 
       const parentNode = this.getParent();
       if ($isDecoratorNode(this) && this.isInline() && parentNode) {
-        const {anchor, focus} = targetSelection;
-
-        if (anchor.isBefore(focus)) {
-          const anchorNode = anchor.getNode() as ElementNode;
-          const isAnchorPointToLast =
-            anchor.offset === anchorNode.getChildrenSize();
-          const isAnchorNodeIsParent = anchorNode.is(parentNode);
-          const isLastChild = anchorNode.getLastChildOrThrow().is(this);
-
-          if (isAnchorPointToLast && isAnchorNodeIsParent && isLastChild) {
-            return false;
-          }
-        } else {
-          const focusNode = focus.getNode() as ElementNode;
-          const isFocusPointToLast =
-            focus.offset === focusNode.getChildrenSize();
-          const isFocusNodeIsParent = focusNode.is(parentNode);
-          const isLastChild = focusNode.getLastChildOrThrow().is(this);
-          if (isFocusPointToLast && isFocusNodeIsParent && isLastChild) {
-            return false;
-          }
+        const firstPoint = targetSelection.isBackward()
+          ? targetSelection.focus
+          : targetSelection.anchor;
+        const firstElement = firstPoint.getNode() as ElementNode;
+        if (
+          firstPoint.offset === firstElement.getChildrenSize() &&
+          firstElement.is(parentNode) &&
+          firstElement.getLastChildOrThrow().is(this)
+        ) {
+          return false;
         }
       }
     }
@@ -703,8 +748,9 @@ export class LexicalNode {
   }
 
   /**
-   * Returns a mutable version of the node. Will throw an error if
-   * called outside of a Lexical Editor {@link LexicalEditor.update} callback.
+   * Returns a mutable version of the node using {@link $cloneWithProperties}
+   * if necessary. Will throw an error if called outside of a Lexical Editor
+   * {@link LexicalEditor.update} callback.
    *
    */
   getWritable(): this {

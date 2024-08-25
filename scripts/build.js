@@ -125,9 +125,18 @@ function getExtension(format) {
  * @param {string} outputFile
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
+ * @param {string} version
  * @returns {Promise<Array<string>>} the exports of the built module
  */
-async function build(name, inputFile, outputPath, outputFile, isProd, format) {
+async function build(
+  name,
+  inputFile,
+  outputPath,
+  outputFile,
+  isProd,
+  format,
+  version,
+) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
@@ -214,6 +223,9 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
             __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
+            'process.env.LEXICAL_VERSION': JSON.stringify(
+              `${version}+${isProd ? 'prod' : 'dev'}.${format}`,
+            ),
           },
           isWWW && strictWWWMappings,
         ),
@@ -393,6 +405,7 @@ async function buildAll() {
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition();
+    const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
@@ -408,6 +421,7 @@ async function buildAll() {
           ),
           isProduction,
           format,
+          version,
         );
 
         if (isRelease) {
@@ -421,6 +435,7 @@ async function buildAll() {
             ),
             false,
             format,
+            version,
           );
           buildForkModules(outputPath, outputFileName, format, exports);
         }

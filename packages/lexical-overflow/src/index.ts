@@ -74,10 +74,6 @@ export class OverflowNode extends ElementNode {
     return true;
   }
 
-  isInline(): boolean {
-    return true;
-  }
-
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
       invariant($isOverflowNode(node), 'node is not a OverflowNode');

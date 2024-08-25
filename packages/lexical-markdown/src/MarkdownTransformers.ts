@@ -308,9 +308,20 @@ export const CODE: ElementTransformer = {
     );
   },
   regExp: /^[ \t]*```(\w{1,10})?\s/,
-  replace: createBlockNode((match) => {
-    return $createCodeNode(match ? match[1] : undefined);
-  }),
+  replace: (parentNode, children, match, isImport) => {
+    if (isImport) {
+      // Let multiline code transformer handle imports.
+      // That's because for single-line code blocks, we always assume that the text right next to the backticks indicates the language,
+      // and that the user will likely want to type the code right after the backticks - possibly in a new line.
+      // However, for imports, the entire code block is already there, and the text next to the backticks will only be the language if it's a multiline code block.
+      // We cannot determine that here, so we let the multiline code transformer handle it.
+      return false;
+    }
+
+    return createBlockNode(() => {
+      return $createCodeNode(match ? match[1] : undefined);
+    })(parentNode, children, match, isImport);
+  },
   type: 'element',
 };
 

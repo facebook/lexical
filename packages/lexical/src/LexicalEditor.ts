@@ -11,6 +11,7 @@ import type {
   DOMConversion,
   DOMConversionMap,
   DOMExportOutput,
+  DOMExportOutputMap,
   NodeKey,
 } from './LexicalNode';
 
@@ -169,10 +170,7 @@ export type LexicalNodeReplacement = {
 };
 
 export type HTMLConfig = {
-  export?: Map<
-    Klass<LexicalNode>,
-    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
-  >;
+  export?: DOMExportOutputMap;
   import?: DOMConversionMap;
 };
 

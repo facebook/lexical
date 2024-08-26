@@ -132,8 +132,18 @@ function $importMultiline(
 
     // check every single line for the closing match. It could also be on the same line as the opening match.
     while (endLineIndex < linesLength) {
-      const endMatch = lines[endLineIndex].match(regExpEnd);
-      if (!endMatch) {
+      const regexpEndRegex =
+        typeof regExpEnd === 'object' && 'regExp' in regExpEnd
+          ? regExpEnd.regExp
+          : regExpEnd;
+
+      const isEndOptional =
+        typeof regExpEnd === 'object' && 'optional' in regExpEnd
+          ? regExpEnd.optional
+          : false;
+
+      const endMatch = lines[endLineIndex].match(regexpEndRegex);
+      if (!endMatch && !isEndOptional) {
         endLineIndex++;
         continue; // Search next line for closing match
       }
@@ -141,6 +151,7 @@ function $importMultiline(
       // Now, check if the closing match matched is the same as the opening match.
       // If it is, we need to continue searching for the actual closing match.
       if (
+        !isEndOptional &&
         startLineIndex === endLineIndex &&
         endMatch.index === startMatch.index
       ) {
@@ -152,7 +163,7 @@ function $importMultiline(
       // This should not include the matches themselves, and be split up by lines
       const linesInBetween = [];
 
-      if (startLineIndex === endLineIndex) {
+      if (!isEndOptional && startLineIndex === endLineIndex) {
         linesInBetween.push(
           lines[startLineIndex].slice(
             startMatch[0].length,
@@ -164,7 +175,7 @@ function $importMultiline(
           if (i === startLineIndex) {
             const text = lines[i].slice(startMatch[0].length);
             linesInBetween.push(text); // Also include empty text
-          } else if (i === endLineIndex) {
+          } else if (i === endLineIndex && !isEndOptional) {
             const text = lines[i].slice(0, -endMatch[0].length);
             linesInBetween.push(text); // Also include empty text
           } else {

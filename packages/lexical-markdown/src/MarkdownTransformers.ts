@@ -96,7 +96,16 @@ export type MultilineElementTransformer = {
   /**
    * This regex determines when to stop matching. Anything in between regExpStart and regExpEnd will be matched
    */
-  regExpEnd: RegExp;
+  regExpEnd:
+    | RegExp
+    | {
+        /**
+         * Whether the end match is optional. If true, the end match is not required to match for the transformer to be triggered.
+         * The entire text from regexpStart to the end of the document will then be matched.
+         */
+        optional?: true;
+        regExp?: RegExp;
+      };
   /**
    * `replace` is called only when markdown is imported in the editor, not when it's typed
    *
@@ -328,13 +337,17 @@ export const CODE: ElementTransformer = {
 // This is only used for multiline markdown imports. For markdown imports while typing, or markdown exports, the normal CODE ElementTransformer is used
 export const CODE_MULTILINE: MultilineElementTransformer = {
   dependencies: [CodeNode],
-  regExpEnd: /[ \t]*```$/,
+  regExpEnd: {
+    optional: true,
+    regExp: /[ \t]*```$/,
+  },
   regExpStart: /^[ \t]*```(\w+)?/,
   replace: (rootNode, startMatch, endMatch, linesInBetween) => {
     let codeBlockNode: CodeNode;
     let code: string;
-    if (linesInBetween.length === 1) {
-      // Single-line code block => no language next to backticks
+    if (linesInBetween.length === 1 && endMatch) {
+      // Single-line code block => no language next to backticks if there is an endMatch (closing ```).
+      // If there is no endMatch, we should assume the language is next to the backticks.
       codeBlockNode = $createCodeNode();
       code = startMatch[1] + linesInBetween[0];
     } else {

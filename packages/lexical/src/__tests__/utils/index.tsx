@@ -46,7 +46,11 @@ import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
-import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
+import {
+  CreateEditorArgs,
+  HTMLConfig,
+  LexicalNodeReplacement,
+} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
 const prettierConfig = prettier.resolveConfig.sync(
@@ -520,6 +524,7 @@ export function createTestEditor(
     onError?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
+    html?: HTMLConfig;
   } = {},
 ): LexicalEditor {
   const customNodes = config.nodes || [];
@@ -557,6 +562,16 @@ export function invariant(cond?: boolean, message?: string): asserts cond {
     return;
   }
   throw new Error(`Invariant: ${message}`);
+}
+
+export class ClipboardDataMock {
+  getData: jest.Mock<string, [string]>;
+  setData: jest.Mock<void, [string, string]>;
+
+  constructor() {
+    this.getData = jest.fn();
+    this.setData = jest.fn();
+  }
 }
 
 export class DataTransferMock implements DataTransfer {

@@ -114,7 +114,7 @@ export type MultilineElementTransformer = {
   replace: (
     rootNode: ElementNode,
     startMatch: Array<string>,
-    endMatch: Array<string>,
+    endMatch: Array<string> | null,
     linesInBetween: Array<string>,
   ) => boolean | void;
   type: 'multilineElement';

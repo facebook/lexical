@@ -1888,7 +1888,9 @@ test.describe.parallel('Tables', () => {
                 <span data-lexical-text="true">second</span>
               </p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -2007,15 +2009,21 @@ test.describe.parallel('Tables', () => {
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
           </tr>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
-            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>

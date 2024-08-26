@@ -219,6 +219,19 @@ describe('Markdown', () => {
       skipExport: true, // Export will fail, as the code transformer will add new lines to the code block to make it multi-line. This is expected though, as the lexical code block is a block node and cannot be inline.
     },
     {
+      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
+      md: '```javascript Incomplete tag',
+      skipExport: true,
+    },
+    {
+      html:
+        '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
+        '\n' +
+        'Tag</span></pre>',
+      md: '```javascript Incomplete multiline\n\nTag',
+      skipExport: true,
+    },
+    {
       html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```\nCode\n```',
     },

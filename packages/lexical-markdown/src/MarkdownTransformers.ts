@@ -345,17 +345,36 @@ export const CODE_MULTILINE: MultilineElementTransformer = {
   replace: (rootNode, startMatch, endMatch, linesInBetween) => {
     let codeBlockNode: CodeNode;
     let code: string;
-    if (linesInBetween.length === 1 && endMatch) {
-      // Single-line code block => no language next to backticks if there is an endMatch (closing ```).
-      // If there is no endMatch, we should assume the language is next to the backticks.
-      codeBlockNode = $createCodeNode();
-      code = startMatch[1] + linesInBetween[0];
-    } else {
-      codeBlockNode = $createCodeNode(startMatch[1]);
-      // Filter out all start and end lines that are length 0 until we find the first line with content
-      while (linesInBetween.length > 0 && !linesInBetween[0].length) {
-        linesInBetween.shift();
+
+    if (linesInBetween.length === 1) {
+      // Single-line code blocks
+      if (endMatch) {
+        // End match on same line. Example: ```markdown hello```. markdown should not be considered the language here.
+        codeBlockNode = $createCodeNode();
+        code = startMatch[1] + linesInBetween[0];
+      } else {
+        // No end match. We should assume the language is next to the backticks and that code will be typed on the next line in the future
+        codeBlockNode = $createCodeNode(startMatch[1]);
+        code = linesInBetween[0].startsWith(' ')
+          ? linesInBetween[0].slice(1)
+          : linesInBetween[0];
       }
+    } else {
+      // Treat multi-line code blocks as if they always have an end match
+      codeBlockNode = $createCodeNode(startMatch[1]);
+
+      if (linesInBetween[0].trim().length === 0) {
+        // Filter out all start and end lines that are length 0 until we find the first line with content
+        while (linesInBetween.length > 0 && !linesInBetween[0].length) {
+          linesInBetween.shift();
+        }
+      } else {
+        // The first line already has content => Remove the first space of the line if it exists
+        linesInBetween[0] = linesInBetween[0].startsWith(' ')
+          ? linesInBetween[0].slice(1)
+          : linesInBetween[0];
+      }
+
       // Filter out all end lines that are length 0 until we find the last line with content
       while (
         linesInBetween.length > 0 &&
@@ -363,6 +382,7 @@ export const CODE_MULTILINE: MultilineElementTransformer = {
       ) {
         linesInBetween.pop();
       }
+
       code = linesInBetween.join('\n');
     }
 

@@ -143,15 +143,20 @@ function $importMultiline(
           : false;
 
       const endMatch = lines[endLineIndex].match(regexpEndRegex);
-      if (!endMatch && !isEndOptional) {
-        endLineIndex++;
-        continue; // Search next line for closing match
+      if (!endMatch) {
+        if (
+          !isEndOptional ||
+          (isEndOptional && endLineIndex < linesLength - 1) // Optional end, but didn't reach the end of the document yet => continue searching for potential closing match
+        ) {
+          endLineIndex++;
+          continue; // Search next line for closing match
+        }
       }
 
       // Now, check if the closing match matched is the same as the opening match.
       // If it is, we need to continue searching for the actual closing match.
       if (
-        !isEndOptional &&
+        endMatch &&
         startLineIndex === endLineIndex &&
         endMatch.index === startMatch.index
       ) {
@@ -163,7 +168,7 @@ function $importMultiline(
       // This should not include the matches themselves, and be split up by lines
       const linesInBetween = [];
 
-      if (!isEndOptional && startLineIndex === endLineIndex) {
+      if (endMatch && startLineIndex === endLineIndex) {
         linesInBetween.push(
           lines[startLineIndex].slice(
             startMatch[0].length,
@@ -175,7 +180,7 @@ function $importMultiline(
           if (i === startLineIndex) {
             const text = lines[i].slice(startMatch[0].length);
             linesInBetween.push(text); // Also include empty text
-          } else if (i === endLineIndex && !isEndOptional) {
+          } else if (i === endLineIndex && endMatch) {
             const text = lines[i].slice(0, -endMatch[0].length);
             linesInBetween.push(text); // Also include empty text
           } else {

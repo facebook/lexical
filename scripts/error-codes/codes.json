@@ -193,5 +193,10 @@
   "191": "Unexpected empty pending editor state on discrete nested update",
   "192": "getCachedTypeToNodeMap called with a writable EditorState",
   "193": "$cloneWithProperties: %s.clone(node) (with type '%s') did not return a node with the same key, make sure to specify node.__key as the last argument to the constructor",
-  "194": "Children of root nodes must be elements or decorators"
+  "194": "Children of root nodes must be elements or decorators",
+  "195": "Unable to find an active editor state. State helpers or node methods can only be used synchronously during the callback of editor.update(), editor.read(), or editorState.read().%s",
+  "196": "Unable to find an active editor. This method can only be used synchronously during the callback of editor.update() or editor.read().%s",
+  "197": "$cloneWithProperties: %s.clone(node) (with type '%s') overrided afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
+  "198": "Attempted to remove event handlers from a node that does not belong to this build of Lexical",
+  "199": "Indent value must be non-negative."
 }

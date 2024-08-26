@@ -294,6 +294,56 @@ describe('LexicalTableNode tests', () => {
           `<p><br></p><table><tr><th><p><br></p></th><th><p><br></p></th><th><p><br></p></th><th><p><br></p></th></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr></table>`,
         );
       });
+
+      test('Table plain text output validation', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = $createTableNodeWithDimensions(4, 4, true);
+          root.append(table);
+        });
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          if (table) {
+            const DOMTable = $getElementForTableNode(editor, table);
+            if (DOMTable) {
+              table
+                ?.getCellNodeFromCords(0, 0, DOMTable)
+                ?.getLastChild<ParagraphNode>()
+                ?.append($createTextNode('1'));
+              table
+                ?.getCellNodeFromCords(1, 0, DOMTable)
+                ?.getLastChild<ParagraphNode>()
+                ?.append($createTextNode(''));
+              table
+                ?.getCellNodeFromCords(2, 0, DOMTable)
+                ?.getLastChild<ParagraphNode>()
+                ?.append($createTextNode('2'));
+              table
+                ?.getCellNodeFromCords(0, 1, DOMTable)
+                ?.getLastChild<ParagraphNode>()
+                ?.append($createTextNode('3'));
+              table
+                ?.getCellNodeFromCords(1, 1, DOMTable)
+                ?.getLastChild<ParagraphNode>()
+                ?.append($createTextNode('4'));
+              table
+                ?.getCellNodeFromCords(2, 1, DOMTable)
+                ?.getLastChild<ParagraphNode>()
+                ?.append($createTextNode(''));
+              const selection = $createTableSelection();
+              selection.set(
+                table.__key,
+                table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                table?.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
+              );
+              expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
+            }
+          }
+        });
+      });
     },
     undefined,
     <TablePlugin />,

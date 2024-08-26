@@ -104,7 +104,7 @@ export type MultilineElementTransformer = {
          * The entire text from regexpStart to the end of the document will then be matched.
          */
         optional?: true;
-        regExp?: RegExp;
+        regExp: RegExp;
       };
   /**
    * `replace` is called only when markdown is imported in the editor, not when it's typed

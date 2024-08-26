@@ -8,6 +8,7 @@
 
 import type {
   ElementTransformer,
+  MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
@@ -59,7 +60,11 @@ function runElementTransformers(
   for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
-    if (match && match[0].length === anchorOffset) {
+    if (
+      match &&
+      match[0].length ===
+        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
+    ) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
       leadingNode.remove();
@@ -67,6 +72,64 @@ function runElementTransformers(
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
       if (replace(parentNode, siblings, match, false) !== false) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function runMultilineElementTransformers(
+  parentNode: ElementNode,
+  anchorNode: TextNode,
+  anchorOffset: number,
+  elementTransformers: ReadonlyArray<MultilineElementTransformer>,
+): boolean {
+  const grandParentNode = parentNode.getParent();
+
+  if (
+    !$isRootOrShadowRoot(grandParentNode) ||
+    parentNode.getFirstChild() !== anchorNode
+  ) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+
+  // Checking for anchorOffset position to prevent any checks for cases when caret is too far
+  // from a line start to be a part of block-level markdown trigger.
+  //
+  // TODO:
+  // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
+  // since otherwise it won't be a markdown shortcut, but tables are exception
+  if (textContent[anchorOffset - 1] !== ' ') {
+    return false;
+  }
+
+  for (const {regExpStart, replace, regExpEnd} of elementTransformers) {
+    if (
+      (regExpEnd && !('optional' in regExpEnd)) ||
+      ('optional' in regExpEnd && !regExpEnd.optional)
+    ) {
+      continue;
+    }
+
+    const match = textContent.match(regExpStart);
+
+    if (
+      match &&
+      match[0].length ===
+        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
+    ) {
+      const nextSiblings = anchorNode.getNextSiblings();
+      const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
+      leadingNode.remove();
+      const siblings = remainderNode
+        ? [remainderNode, ...nextSiblings]
+        : nextSiblings;
+
+      if (replace(parentNode, siblings, match, null, null, false) !== false) {
         return true;
       }
     }
@@ -337,7 +400,11 @@ export function registerMarkdownShortcuts(
 
   for (const transformer of transformers) {
     const type = transformer.type;
-    if (type === 'element' || type === 'text-match') {
+    if (
+      type === 'element' ||
+      type === 'text-match' ||
+      type === 'multilineElement'
+    ) {
       const dependencies = transformer.dependencies;
       for (const node of dependencies) {
         if (!editor.hasNode(node)) {
@@ -362,6 +429,17 @@ export function registerMarkdownShortcuts(
         anchorNode,
         anchorOffset,
         byType.element,
+      )
+    ) {
+      return;
+    }
+
+    if (
+      runMultilineElementTransformers(
+        parentNode,
+        anchorNode,
+        anchorOffset,
+        byType.multilineElement,
       )
     ) {
       return;

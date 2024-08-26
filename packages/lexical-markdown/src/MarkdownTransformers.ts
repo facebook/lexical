@@ -74,9 +74,6 @@ export type ElementTransformer = {
   type: 'element';
 };
 
-/**
- * Multiline element transformers are only run during import
- */
 export type MultilineElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
   /**
@@ -96,7 +93,7 @@ export type MultilineElementTransformer = {
   /**
    * This regex determines when to stop matching. Anything in between regExpStart and regExpEnd will be matched
    */
-  regExpEnd:
+  regExpEnd?:
     | RegExp
     | {
         /**
@@ -113,9 +110,18 @@ export type MultilineElementTransformer = {
    */
   replace: (
     rootNode: ElementNode,
+    /**
+     * During markdown shortcut transforms, children nodes may be provided to the transformer. If this is the case, no `linesInBetween` will be provided and
+     * the children nodes should be used instead of the `linesInBetween` to create the new node.
+     */
+    children: Array<LexicalNode> | null,
     startMatch: Array<string>,
     endMatch: Array<string> | null,
-    linesInBetween: Array<string>,
+    linesInBetween: Array<string> | null,
+    /**
+     * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
+     */
+    isImport: boolean,
   ) => boolean | void;
   type: 'multilineElement';
 };
@@ -301,7 +307,7 @@ export const QUOTE: ElementTransformer = {
   type: 'element',
 };
 
-export const CODE: ElementTransformer = {
+export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
@@ -316,78 +322,62 @@ export const CODE: ElementTransformer = {
       '```'
     );
   },
-  regExp: /^[ \t]*```(\w{1,10})?\s/,
-  replace: (parentNode, children, match, isImport) => {
-    if (isImport) {
-      // Let multiline code transformer handle imports.
-      // That's because for single-line code blocks, we always assume that the text right next to the backticks indicates the language,
-      // and that the user will likely want to type the code right after the backticks - possibly in a new line.
-      // However, for imports, the entire code block is already there, and the text next to the backticks will only be the language if it's a multiline code block.
-      // We cannot determine that here, so we let the multiline code transformer handle it.
-      return false;
-    }
-
-    return createBlockNode(() => {
-      return $createCodeNode(match ? match[1] : undefined);
-    })(parentNode, children, match, isImport);
-  },
-  type: 'element',
-};
-
-// This is only used for multiline markdown imports. For markdown imports while typing, or markdown exports, the normal CODE ElementTransformer is used
-export const CODE_MULTILINE: MultilineElementTransformer = {
-  dependencies: [CodeNode],
   regExpEnd: {
     optional: true,
     regExp: /[ \t]*```$/,
   },
   regExpStart: /^[ \t]*```(\w+)?/,
-  replace: (rootNode, startMatch, endMatch, linesInBetween) => {
+  replace: (rootNode, children, startMatch, endMatch, linesInBetween) => {
     let codeBlockNode: CodeNode;
     let code: string;
 
-    if (linesInBetween.length === 1) {
-      // Single-line code blocks
-      if (endMatch) {
-        // End match on same line. Example: ```markdown hello```. markdown should not be considered the language here.
-        codeBlockNode = $createCodeNode();
-        code = startMatch[1] + linesInBetween[0];
-      } else {
-        // No end match. We should assume the language is next to the backticks and that code will be typed on the next line in the future
-        codeBlockNode = $createCodeNode(startMatch[1]);
-        code = linesInBetween[0].startsWith(' ')
-          ? linesInBetween[0].slice(1)
-          : linesInBetween[0];
-      }
-    } else {
-      // Treat multi-line code blocks as if they always have an end match
-      codeBlockNode = $createCodeNode(startMatch[1]);
-
-      if (linesInBetween[0].trim().length === 0) {
-        // Filter out all start and end lines that are length 0 until we find the first line with content
-        while (linesInBetween.length > 0 && !linesInBetween[0].length) {
-          linesInBetween.shift();
+    if (!children) {
+      if (linesInBetween.length === 1) {
+        // Single-line code blocks
+        if (endMatch) {
+          // End match on same line. Example: ```markdown hello```. markdown should not be considered the language here.
+          codeBlockNode = $createCodeNode();
+          code = startMatch[1] + linesInBetween[0];
+        } else {
+          // No end match. We should assume the language is next to the backticks and that code will be typed on the next line in the future
+          codeBlockNode = $createCodeNode(startMatch[1]);
+          code = linesInBetween[0].startsWith(' ')
+            ? linesInBetween[0].slice(1)
+            : linesInBetween[0];
         }
       } else {
-        // The first line already has content => Remove the first space of the line if it exists
-        linesInBetween[0] = linesInBetween[0].startsWith(' ')
-          ? linesInBetween[0].slice(1)
-          : linesInBetween[0];
-      }
+        // Treat multi-line code blocks as if they always have an end match
+        codeBlockNode = $createCodeNode(startMatch[1]);
 
-      // Filter out all end lines that are length 0 until we find the last line with content
-      while (
-        linesInBetween.length > 0 &&
-        !linesInBetween[linesInBetween.length - 1].length
-      ) {
-        linesInBetween.pop();
-      }
+        if (linesInBetween[0].trim().length === 0) {
+          // Filter out all start and end lines that are length 0 until we find the first line with content
+          while (linesInBetween.length > 0 && !linesInBetween[0].length) {
+            linesInBetween.shift();
+          }
+        } else {
+          // The first line already has content => Remove the first space of the line if it exists
+          linesInBetween[0] = linesInBetween[0].startsWith(' ')
+            ? linesInBetween[0].slice(1)
+            : linesInBetween[0];
+        }
 
-      code = linesInBetween.join('\n');
+        // Filter out all end lines that are length 0 until we find the last line with content
+        while (
+          linesInBetween.length > 0 &&
+          !linesInBetween[linesInBetween.length - 1].length
+        ) {
+          linesInBetween.pop();
+        }
+
+        code = linesInBetween.join('\n');
+      }
+      const textNode = $createTextNode(code);
+      codeBlockNode.append(textNode);
+    } else {
+      codeBlockNode = $createCodeNode(startMatch[1]);
+      codeBlockNode.append(...children);
     }
 
-    const textNode = $createTextNode(code);
-    codeBlockNode.append(textNode);
     rootNode.append(codeBlockNode);
   },
   type: 'multilineElement',

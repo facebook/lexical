@@ -25,7 +25,6 @@ import {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
-  CODE_MULTILINE,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
@@ -41,13 +40,12 @@ import {
 const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   HEADING,
   QUOTE,
-  CODE,
   UNORDERED_LIST,
   ORDERED_LIST,
 ];
 
 const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> = [
-  CODE_MULTILINE,
+  CODE,
 ];
 
 // Order of text format transformers matters:
@@ -115,7 +113,6 @@ export {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
-  CODE_MULTILINE,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   HEADING,

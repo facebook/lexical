@@ -127,22 +127,24 @@ function $importMultiline(
       continue; // Try next transformer
     }
 
-    const regexpEndRegex =
+    const regexpEndRegex: RegExp | undefined =
       typeof regExpEnd === 'object' && 'regExp' in regExpEnd
         ? regExpEnd.regExp
         : regExpEnd;
 
     const isEndOptional =
-      typeof regExpEnd === 'object' && 'optional' in regExpEnd
+      regExpEnd && typeof regExpEnd === 'object' && 'optional' in regExpEnd
         ? regExpEnd.optional
-        : false;
+        : !regExpEnd;
 
     let endLineIndex = startLineIndex;
     const linesLength = lines.length;
 
     // check every single line for the closing match. It could also be on the same line as the opening match.
     while (endLineIndex < linesLength) {
-      const endMatch = lines[endLineIndex].match(regexpEndRegex);
+      const endMatch = regexpEndRegex
+        ? lines[endLineIndex].match(regexpEndRegex)
+        : null;
       if (!endMatch) {
         if (
           !isEndOptional ||
@@ -189,7 +191,10 @@ function $importMultiline(
         }
       }
 
-      if (replace(rootNode, startMatch, endMatch, linesInBetween) !== false) {
+      if (
+        replace(rootNode, null, startMatch, endMatch, linesInBetween, true) !==
+        false
+      ) {
         // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
         return [true, endLineIndex];
       }

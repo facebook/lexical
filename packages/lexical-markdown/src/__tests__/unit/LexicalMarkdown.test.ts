@@ -37,7 +37,7 @@ const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
   },
   regExpEnd: /<\/(\w+)\s*>/,
   regExpStart: /<(\w+)[^>]*>/,
-  replace: (rootNode, startMatch, endMatch, linesInBetween) => {
+  replace: (rootNode, children, startMatch, endMatch, linesInBetween) => {
     if (startMatch[1] === 'MyComponent') {
       const codeBlockNode = $createCodeNode(startMatch[1]);
       const textNode = $createTextNode(

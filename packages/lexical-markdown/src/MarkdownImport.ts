@@ -127,21 +127,21 @@ function $importMultiline(
       continue; // Try next transformer
     }
 
+    const regexpEndRegex =
+      typeof regExpEnd === 'object' && 'regExp' in regExpEnd
+        ? regExpEnd.regExp
+        : regExpEnd;
+
+    const isEndOptional =
+      typeof regExpEnd === 'object' && 'optional' in regExpEnd
+        ? regExpEnd.optional
+        : false;
+
     let endLineIndex = startLineIndex;
     const linesLength = lines.length;
 
     // check every single line for the closing match. It could also be on the same line as the opening match.
     while (endLineIndex < linesLength) {
-      const regexpEndRegex =
-        typeof regExpEnd === 'object' && 'regExp' in regExpEnd
-          ? regExpEnd.regExp
-          : regExpEnd;
-
-      const isEndOptional =
-        typeof regExpEnd === 'object' && 'optional' in regExpEnd
-          ? regExpEnd.optional
-          : false;
-
       const endMatch = lines[endLineIndex].match(regexpEndRegex);
       if (!endMatch) {
         if (

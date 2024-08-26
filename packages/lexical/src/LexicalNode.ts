@@ -148,6 +148,11 @@ export type DOMConversionOutput = {
   node: null | LexicalNode | Array<LexicalNode>;
 };
 
+export type DOMExportOutputMap = Map<
+  Klass<LexicalNode>,
+  (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+>;
+
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | Text | null | undefined,

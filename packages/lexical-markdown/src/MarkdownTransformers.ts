@@ -331,7 +331,7 @@ export const CODE: MultilineElementTransformer = {
     let codeBlockNode: CodeNode;
     let code: string;
 
-    if (!children) {
+    if (!children && linesInBetween) {
       if (linesInBetween.length === 1) {
         // Single-line code blocks
         if (endMatch) {

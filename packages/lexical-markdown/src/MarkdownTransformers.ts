@@ -385,7 +385,7 @@ export const CODE: MultilineElementTransformer = {
       const textNode = $createTextNode(code);
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
-    } else {
+    } else if (children) {
       createBlockNode((match) => {
         return $createCodeNode(match ? match[1] : undefined);
       })(rootNode, children, startMatch, isImport);

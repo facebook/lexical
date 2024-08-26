@@ -675,7 +675,11 @@ export function $unmergeCell(): void {
   const rowSpan = cell.__rowSpan;
   if (colSpan > 1) {
     for (let i = 1; i < colSpan; i++) {
-      cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      cell.insertAfter(
+        $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+          $createParagraphNode(),
+        ),
+      );
     }
     cell.setColSpan(1);
   }
@@ -706,13 +710,17 @@ export function $unmergeCell(): void {
         for (let j = 0; j < colSpan; j++) {
           $insertFirst(
             currentRowNode,
-            $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+            $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+              $createParagraphNode(),
+            ),
           );
         }
       } else {
         for (let j = 0; j < colSpan; j++) {
           insertAfterCell.insertAfter(
-            $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+            $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+              $createParagraphNode(),
+            ),
           );
         }
       }

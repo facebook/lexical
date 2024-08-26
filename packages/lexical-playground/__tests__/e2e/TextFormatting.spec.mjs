@@ -1111,23 +1111,48 @@ test.describe.parallel('TextFormatting', () => {
     expect(isButtonActiveStatusDisplayedCorrectly).toBe(true);
   });
 
-  test('Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ', async ({
-    page,
-    isCollab,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
+  test(
+    'Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ',
+    {tag: '@flaky'},
+    async ({page, isCollab, isPlainText}) => {
+      test.skip(isPlainText);
+      await focusEditor(page);
 
-    await page.keyboard.type('A');
-    await insertSampleImage(page);
-    await page.keyboard.type('BC');
+      await page.keyboard.type('A');
+      await insertSampleImage(page);
+      await page.keyboard.type('BC');
 
-    await moveLeft(page, 1);
-    await selectCharacters(page, 'left', 2);
+      await moveLeft(page, 1);
+      await selectCharacters(page, 'left', 2);
 
-    if (!isCollab) {
-      await waitForSelector(page, '.editor-image img');
+      if (!isCollab) {
+        await waitForSelector(page, '.editor-image img');
+        await assertHTML(
+          page,
+          html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">A</span>
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="false">
+                  <img
+                    class="focused"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+              </span>
+              <span data-lexical-text="true">BC</span>
+            </p>
+          `,
+        );
+      }
+      await toggleBold(page);
       await assertHTML(
         page,
         html`
@@ -1141,7 +1166,35 @@ test.describe.parallel('TextFormatting', () => {
               data-lexical-decorator="true">
               <div draggable="false">
                 <img
-                  class="focused"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+            </span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              B
+            </strong>
+            <span data-lexical-text="true">C</span>
+          </p>
+        `,
+      );
+      await toggleBold(page);
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">A</span>
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="false">
+                <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   src="${SAMPLE_IMAGE_URL}"
@@ -1152,61 +1205,8 @@ test.describe.parallel('TextFormatting', () => {
           </p>
         `,
       );
-    }
-    await toggleBold(page);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">A</span>
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            B
-          </strong>
-          <span data-lexical-text="true">C</span>
-        </p>
-      `,
-    );
-    await toggleBold(page);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">A</span>
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
-          <span data-lexical-text="true">BC</span>
-        </p>
-      `,
-    );
-  });
+    },
+  );
 
   test('Multiline selection format ignores new lines', async ({
     page,

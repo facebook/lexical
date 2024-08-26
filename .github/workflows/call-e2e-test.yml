@@ -3,6 +3,7 @@ name: Lexical e2e test runner
 on:
   workflow_call:
     inputs:
+      # Make sure that all of these are present in the name of the actions/upload-artifact@v4 action below
       os: {required: true, type: string}
       node-version: {required: true, type: string}
       browser: {required: true, type: string}
@@ -65,6 +66,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.events-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.override-react-version }}
+          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.events-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.override-react-version }}-${{ inputs.flaky && 'flaky' || ''}}
           path: ${{ env.test_results_path }}
           retention-days: 7

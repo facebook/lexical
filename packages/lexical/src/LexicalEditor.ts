@@ -11,6 +11,7 @@ import type {
   DOMConversion,
   DOMConversionMap,
   DOMExportOutput,
+  DOMExportOutputMap,
   NodeKey,
 } from './LexicalNode';
 
@@ -170,10 +171,7 @@ export type LexicalNodeReplacement = {
 };
 
 export type HTMLConfig = {
-  export?: Map<
-    Klass<LexicalNode>,
-    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
-  >;
+  export?: DOMExportOutputMap;
   import?: DOMConversionMap;
 };
 
@@ -561,6 +559,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 }
 export class LexicalEditor {
   ['constructor']!: KlassConstructor<typeof LexicalEditor>;
+
+  /** The version with build identifiers for this editor (since 0.17.1) */
+  static version: string | undefined;
 
   /** @internal */
   _headless: boolean;
@@ -1284,3 +1285,5 @@ export class LexicalEditor {
     };
   }
 }
+
+LexicalEditor.version = process.env.LEXICAL_VERSION;

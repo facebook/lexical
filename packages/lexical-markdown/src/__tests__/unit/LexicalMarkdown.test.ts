@@ -38,6 +38,9 @@ const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
   regExpEnd: /<\/(\w+)\s*>/,
   regExpStart: /<(\w+)[^>]*>/,
   replace: (rootNode, children, startMatch, endMatch, linesInBetween) => {
+    if (!linesInBetween) {
+      return false; // Run next transformer. We don't need to support markdown shortcuts for this test
+    }
     if (startMatch[1] === 'MyComponent') {
       const codeBlockNode = $createCodeNode(startMatch[1]);
       const textNode = $createTextNode(

@@ -117,6 +117,10 @@ export type MultilineElementTransformer = {
     children: Array<LexicalNode> | null,
     startMatch: Array<string>,
     endMatch: Array<string> | null,
+    /**
+     * linesInBetween includes the text between the start & end matches, split up by lines, not including the matches themselves.
+     * This is null when the transformer is triggered through markdown shortcuts (by typing in the editor)
+     */
     linesInBetween: Array<string> | null,
     /**
      * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
@@ -375,7 +379,9 @@ export const CODE: MultilineElementTransformer = {
       codeBlockNode.append(textNode);
     } else {
       codeBlockNode = $createCodeNode(startMatch[1]);
-      codeBlockNode.append(...children);
+      if (children && children.length) {
+        codeBlockNode.append(...children);
+      }
     }
 
     rootNode.append(codeBlockNode);

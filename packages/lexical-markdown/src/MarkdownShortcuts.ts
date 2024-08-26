@@ -110,7 +110,7 @@ function runMultilineElementTransformers(
   for (const {regExpStart, replace, regExpEnd} of elementTransformers) {
     if (
       (regExpEnd && !('optional' in regExpEnd)) ||
-      ('optional' in regExpEnd && !regExpEnd.optional)
+      (regExpEnd && 'optional' in regExpEnd && !regExpEnd.optional)
     ) {
       continue;
     }

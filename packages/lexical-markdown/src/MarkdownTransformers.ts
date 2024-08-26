@@ -331,7 +331,14 @@ export const CODE: MultilineElementTransformer = {
     regExp: /[ \t]*```$/,
   },
   regExpStart: /^[ \t]*```(\w+)?/,
-  replace: (rootNode, children, startMatch, endMatch, linesInBetween) => {
+  replace: (
+    rootNode,
+    children,
+    startMatch,
+    endMatch,
+    linesInBetween,
+    isImport,
+  ) => {
     let codeBlockNode: CodeNode;
     let code: string;
 
@@ -377,14 +384,12 @@ export const CODE: MultilineElementTransformer = {
       }
       const textNode = $createTextNode(code);
       codeBlockNode.append(textNode);
+      rootNode.append(codeBlockNode);
     } else {
-      codeBlockNode = $createCodeNode(startMatch[1]);
-      if (children && children.length) {
-        codeBlockNode.append(...children);
-      }
+      createBlockNode((match) => {
+        return $createCodeNode(match ? match[1] : undefined);
+      })(rootNode, children, startMatch, isImport);
     }
-
-    rootNode.append(codeBlockNode);
   },
   type: 'multilineElement',
 };

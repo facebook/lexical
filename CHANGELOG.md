@@ -1,3 +1,42 @@
+## v0.17.1 (2024-08-26)
+
+- lexical-playground Bug Fix fix comment timestamps (#6555) Ira Hopkinson
+- lexical Add tests for HTMLConfig (#5507) wnhlee
+- lexical-table Bug Fix Append a ParagraphNode to each cell when unmerging (#6556) Minseo Kang
+- lexical-table Fix table selection paste as plain text (#6548) Ivaylo Pavlov
+- lexical-tablelexical-clipboard Bug Fix Race condition in table CUTCOMMAND (#6550) Bob Ippolito
+- lexical-playground Bug Fix Fix firefox e2e test regression in Selection.spec.mjs (#6546) Bob Ippolito
+- Bug Fix Fix issue where triple-clicking a cell would dangerously select entire document (#6542) Mo
+- lexical-playground Fix in playground show component-menu when scroll (#6510) keiseiTi
+- lexical-react Fix multiple node selection deletion (#6538) Ivaylo Pavlov
+- lexical-yjs Bug Fix Properly sync when emptying document via undo (#6523) Mo
+- lexical-table Stop selecting the whole table after pasting cells (#6539) Ivaylo Pavlov
+- lexical-table Fix a number of table Cut command scenarios (#6528) Ivaylo Pavlov
+- Chore change className props in TreeView component to optional (#6531) Mingxuan Wang
+- lexical-list Bug Fix handle non-integer numbers in setIndent (#6522) jrfitzsimmons
+-  Chore Mark additional tests as flaky from #6535 test runs (#6536) Bob Ippolito
+- lexical-table Bug Fix Selection in tables with merged cells (#6529) Botho
+- Revert Fix OverflowNode configuration (#6535) Bob Ippolito
+- lexical-react Fix Fix React.startTransition on Webpack  React 17 (#6517) Turner
+- Fix OverflowNode configuration (#6027) Gerard Rovira
+- lexical-react remove editorDEPRECATED that has been deprecated for two years (#6494) Bob Ippolito
+- lexical Refactor RFC LexicalNode.afterCloneFrom to simplify clone implementation (#6505) Bob Ippolito
+- lexicalselection Feature yield target to style patch fn (#6472) Divyansh Kumar
+- lexical surface more error details in reconciler (#6511) Sherry
+- lexical Bug Fix Fix decorator selection regression with short-circuiting (#6508) Bob Ippolito
+- Fix splitText when detached (#6501) Gerard Rovira
+- Flow add more HTMLDivElementDOMProps (#6500) Gerard Rovira
+- lexical-playground Bug Fix Update tooltip for redo button with correct macOS shortcut (#6497) Bob Ippolito
+- lexical Feature Add version identifier to LexicalEditor constructor (#6488) Bob Ippolito
+- docs prevent automatic p tag wrapping (#6491) Devy
+- Revert lexicalplayground fix block cursor show horizontal (#6490) Bob Ippolito
+- When creating a new check list, set the checked value of the list item to false instead of undefined (#5978) Aman Harwara
+- lexicalplayground fix block cursor show horizontal (#6486) keiseiTi
+- lexical Bug Fix Merge pasted paragraph into empty quote (#6367) wnhlee
+- lexical-table Bug Fix Enable observer updates on table elements attributes change (#6479) Evgeny Vorobyev
+- v0.17.0 (#6487) Sherry
+- v0.17.0 Lexical GitHub Actions Bot
+
 ## v0.17.0 (2024-07-31)
 
 - LexicaCI run extended tests for safari in mac-os and chromefirefox in linuxwindows (#6466) Sahejkm

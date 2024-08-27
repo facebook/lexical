@@ -96,7 +96,7 @@ export class TableNode extends ElementNode {
   exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
-      rowStriping: this.__rowStriping,
+      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
       type: 'table',
       version: 1,
     };

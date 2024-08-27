@@ -34,6 +34,7 @@ import {
   $isTextNode,
   ElementNode,
 } from 'lexical';
+import {languages} from 'prismjs';
 
 import {
   $createCodeHighlightNode,
@@ -53,7 +54,7 @@ const isLanguageSupportedByPrism = (
 ): boolean => {
   try {
     // eslint-disable-next-line no-prototype-builtins
-    return language ? window.Prism.languages.hasOwnProperty(language) : false;
+    return language ? languages.hasOwnProperty(language) : false;
   } catch {
     return false;
   }

@@ -6,7 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -19,14 +18,18 @@ import type {
   Spread,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
+import {
+  addClassNamesToElement,
+  isHTMLElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getNearestNodeFromDOMNode,
   ElementNode,
 } from 'lexical';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
@@ -38,19 +41,36 @@ export type SerializedTableNode = Spread<
   SerializedElementNode
 >;
 
+function setRowStriping(
+  dom: HTMLElement,
+  config: EditorConfig,
+  rowStriping: boolean,
+) {
+  if (rowStriping) {
+    addClassNamesToElement(dom, config.theme.tableRowStriping);
+    dom.setAttribute('data-lexical-row-striping', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableRowStriping);
+    dom.removeAttribute('data-lexical-row-striping');
+  }
+}
+
 /** @noInheritDoc */
 export class TableNode extends ElementNode {
   /** @internal */
-  __rowStriping?: boolean;
+  __rowStriping: boolean;
 
   static getType(): string {
     return 'table';
   }
 
   static clone(node: TableNode): TableNode {
-    const tableNode = new TableNode(node.__key);
-    tableNode.__rowStriping = node.__rowStriping;
-    return tableNode;
+    return new TableNode(node.__key);
+  }
+
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__rowStriping = prevNode.__rowStriping;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -87,15 +107,21 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(tableElement, config.theme.table);
     if (this.__rowStriping) {
-      addClassNamesToElement(tableElement, config.theme.tableRowStriping);
-      tableElement.setAttribute('data-lexical-row-striping', 'true');
+      setRowStriping(tableElement, config, true);
     }
 
     return tableElement;
   }
 
-  updateDOM(prevNode: TableNode): boolean {
-    return prevNode.__rowStriping !== this.__rowStriping;
+  updateDOM(
+    prevNode: TableNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    if (prevNode.__rowStriping !== this.__rowStriping) {
+      setRowStriping(dom, config, this.__rowStriping);
+    }
+    return false;
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {

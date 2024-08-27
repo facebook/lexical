@@ -1411,22 +1411,33 @@ export function $applyNodeReplacement<N extends LexicalNode>(
   const editor = getActiveEditor();
   const nodeType = node.constructor.getType();
   const registeredNode = editor._nodes.get(nodeType);
-  if (registeredNode === undefined) {
-    invariant(
-      false,
-      '$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
-    );
-  }
+  invariant(
+    registeredNode !== undefined,
+    '$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
+    node.constructor.name,
+    nodeType,
+  );
   const replaceFunc = registeredNode.replace;
   if (replaceFunc !== null) {
-    const replacementNode = replaceFunc(node) as N;
-    if (!(replacementNode instanceof node.constructor)) {
-      invariant(
-        false,
-        '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
-      );
-    }
-    return replacementNode;
+    const replacementNode = replaceFunc(node);
+    invariant(
+      replacementNode instanceof node.constructor,
+      '$applyNodeReplacement failed. Ensure replacement node %s with type %s is a subclass of the original node %s with type %s.',
+      replacementNode.constructor.name,
+      replacementNode.getType(),
+      node.constructor.name,
+      nodeType,
+    );
+    invariant(
+      replacementNode.constructor === node.constructor ||
+        replacementNode.__key !== node.__key,
+      '$applyNodeReplacement failed. Ensure that the key argument is *not* used in your replace function (from node %s with type %s to node %s with type %s), Node keys must never be re-used except by the static clone method.',
+      node.constructor.name,
+      nodeType,
+      replacementNode.constructor.name,
+      replacementNode.getType(),
+    );
+    return replacementNode as N;
   }
   return node as N;
 }

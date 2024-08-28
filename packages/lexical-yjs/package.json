@@ -16,6 +16,7 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/offset": "0.17.1",
+    "@lexical/selection": "0.17.1",
     "lexical": "0.17.1"
   },
   "peerDependencies": {

@@ -8,7 +8,7 @@
 
 import './board.css';
 
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 
 import Card from './card';
 import Column from './column';
@@ -26,6 +26,8 @@ export interface Column {
 }
 
 const Board: React.FC = () => {
+  const [boardTitle, setBoardTitle] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [columns, setColumns] = useState<Column[]>([
     {cards: [], id: 'todo', title: 'To Do'},
     {cards: [], id: 'ongoing', title: 'Ongoing'},
@@ -134,9 +136,104 @@ const Board: React.FC = () => {
     setIsCardModalOpen(true);
   };
 
+  const updateCards = useCallback((columnId: string, updatedCards: Card[]) => {
+    setColumns((prevColumns) =>
+      prevColumns.map((column) =>
+        column.id === columnId ? {...column, cards: updatedCards} : column,
+      ),
+    );
+  }, []);
+
+  const updateCardContent = useCallback(
+    (cardId: string, editedContent: string) => {
+      setColumns((prevColumns) =>
+        prevColumns.map((column) => ({
+          ...column,
+          cards: column.cards.map((card) =>
+            card.id === cardId ? {...card, content: editedContent} : card,
+          ),
+        })),
+      );
+    },
+    [],
+  );
+
+  const updateColumnName = useCallback((columnId: string, newName: string) => {
+    setColumns((prevColumns) =>
+      prevColumns.map((column) =>
+        column.id === columnId ? {...column, title: newName} : column,
+      ),
+    );
+  }, []);
+
+  const deleteColumn = useCallback(
+    (columnId: string) => {
+      if (columns.length === 1) {
+        alert('you must have at least one column');
+        return;
+      }
+
+      setColumns((prevColumns) =>
+        prevColumns.filter((column) => column.id !== columnId),
+      );
+    },
+    [columns],
+  );
+
+  useEffect(() => {
+    const savedData = localStorage.getItem('boardData');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setBoardTitle(parsedData.boardTitle);
+      setColumns(parsedData.columns);
+    } else {
+      setColumns([
+        {cards: [], id: 'todo', title: 'To Do'},
+        {cards: [], id: 'ongoing', title: 'Ongoing'},
+        {cards: [], id: 'done', title: 'Done'},
+      ]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const dataToSave = {
+      boardTitle,
+      columns,
+    };
+    localStorage.setItem('boardData', JSON.stringify(dataToSave));
+  }, [boardTitle, columns]);
+
   return (
     <div className="Board__container">
-      <h1 className="Board__title">Kanban Board</h1>
+      <div className="Board__titleContainer">
+        {isEditing || !boardTitle ? (
+          <input
+            className="Board__titleInput"
+            type="text"
+            placeholder="Board name"
+            autoFocus={true}
+            value={boardTitle || ''}
+            onChange={(e) => setBoardTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setIsEditing(false);
+                setBoardTitle(e.currentTarget.value || 'Untitled board');
+              } else if (e.key === 'Escape') {
+                setIsEditing(false);
+                setBoardTitle('Untitled board');
+              }
+            }}
+            onBlur={() => {
+              setIsEditing(false);
+              setBoardTitle(boardTitle || 'Untitled board');
+            }}
+          />
+        ) : (
+          <h3 className="Board__title" onClick={() => setIsEditing(true)}>
+            {boardTitle || 'Untitled board'}
+          </h3>
+        )}
+      </div>
       <div className="Board__columnContainer">
         {columns.map((column) => (
           <Column
@@ -148,6 +245,10 @@ const Board: React.FC = () => {
             handleDragStart={handleDragStart}
             openCardModal={openCardModal}
             isCardDragging={isCardDragging}
+            updateCards={updateCards}
+            updateCardContent={updateCardContent}
+            updateColumnName={updateColumnName}
+            deleteColumn={deleteColumn}
           />
         ))}
         <div className="Board__newColumnButtonContainer">

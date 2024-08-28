@@ -6,13 +6,45 @@
   background-color: rgb(243 244 246);
 }
 
-.Board__title {
-  padding: 0 0 1rem 0;
-  font-size: 1.5rem;
-  font-weight: bold;
-  text-align: center;
+.Board__container {
+  width: 100%;
+  padding: 20px;
 }
 
+.Board__titleContainer {
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.Board__titleInput {
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  padding: 5px 0;
+  width: 100%;
+  background: transparent;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.Board__titleInput:focus {
+  border-bottom-color: #007bff;
+}
+
+.Board__title {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+  padding: 5px 0;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.Board__title:hover {
+  background-color: #f0f0f0;
+}
 .Board__columnContainer {
   position: relative;
   display: flex;
@@ -82,6 +114,7 @@
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
 }
 
 .BoardPlugin__modalContainer {

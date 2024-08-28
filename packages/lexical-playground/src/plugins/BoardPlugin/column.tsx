@@ -8,6 +8,8 @@
 
 import './board.css';
 
+import {useState} from 'react';
+
 import {Card as CardType} from './board';
 import Card from './card';
 
@@ -27,6 +29,10 @@ interface ColumnProps {
   ) => void;
   openCardModal: (e: React.MouseEvent, columnId: string) => void;
   isCardDragging: string | null;
+  updateCards: (columnId: string, updatedCards: CardType[]) => void;
+  updateCardContent: (cardId: string, editedContent: string) => void;
+  updateColumnName: (columnId: string, newName: string) => void;
+  deleteColumn: (columnId: string) => void;
 }
 
 export default function Column(props: ColumnProps) {
@@ -39,15 +45,65 @@ export default function Column(props: ColumnProps) {
     handleDragStart,
     openCardModal,
     isCardDragging,
+    updateColumnName,
+    deleteColumn,
+    updateCards,
+    updateCardContent,
   } = props;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
+
+  const deleteCard = (cardId: string) => {
+    const updatedCards = cards.filter((card) => card.id !== cardId);
+    updateCards(columnId, updatedCards);
+  };
+
+  const handleEditTitle = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    updateColumnName(columnId, editedTitle);
+    setIsEditing(false);
+  };
   return (
     <>
       <div
         key={columnId}
         className="BoardPlugin__columnContainer"
         onDragOver={handleDragOver}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onDrop={(e) => handleDrop(e, columnId)}>
-        <h2 className="BoardPlugin__columnTitle">{title}</h2>
+        <div className="BoardPlugin__columnTitleContainer">
+          {isEditing ? (
+            <input
+              className="BoardPlugin__columnTitleInput"
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={handleSave}
+              autoFocus={true}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSave();
+                } else if (e.key === 'Escape') {
+                  setIsEditing(false);
+                  setEditedTitle(title);
+                }
+              }}
+            />
+          ) : (
+            <h2 className="BoardPlugin__columnTitle">{title}</h2>
+          )}
+          {isHovered && !isEditing && (
+            <div className="BoardPlugin__columnButtons">
+              <button onClick={handleEditTitle}>✏️</button>
+              <button onClick={() => deleteColumn(columnId)}>🗑️</button>
+            </div>
+          )}
+        </div>
         <div>
           {cards.map((card) => (
             <Card
@@ -56,6 +112,8 @@ export default function Column(props: ColumnProps) {
               content={card.content}
               handleDragStart={handleDragStart}
               isCardDragging={isCardDragging}
+              deleteCard={deleteCard}
+              updateCardContent={updateCardContent}
             />
           ))}
         </div>

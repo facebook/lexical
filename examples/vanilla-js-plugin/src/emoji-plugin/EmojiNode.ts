@@ -13,6 +13,7 @@ import {TextNode} from 'lexical';
 export type SerializedEmojiNode = Spread<
   {
     unifiedID: string;
+    type: 'emoji';
   },
   SerializedTextNode
 >;

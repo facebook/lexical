@@ -46,6 +46,7 @@ export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
+    type: 'listitem';
   },
   SerializedElementNode
 >;

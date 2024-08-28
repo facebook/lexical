@@ -16,6 +16,7 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
@@ -30,7 +31,12 @@ import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
 
-export type SerializedTableNode = SerializedElementNode;
+export type SerializedTableNode = Spread<
+  {
+    type: 'table';
+  },
+  SerializedElementNode
+>;
 
 /** @noInheritDoc */
 export class TableNode extends ElementNode {

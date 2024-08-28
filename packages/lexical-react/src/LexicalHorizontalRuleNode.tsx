@@ -15,6 +15,7 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
+  Spread,
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -38,7 +39,12 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect} from 'react';
 
-export type SerializedHorizontalRuleNode = SerializedLexicalNode;
+export type SerializedHorizontalRuleNode = Spread<
+  {
+    type: 'horizontalrule';
+  },
+  SerializedLexicalNode
+>;
 
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_HORIZONTAL_RULE_COMMAND');

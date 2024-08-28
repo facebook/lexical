@@ -25,6 +25,7 @@ import {PIXEL_VALUE_REG_EXP} from './constants';
 export type SerializedTableRowNode = Spread<
   {
     height?: number;
+    type: 'tablerow';
   },
   SerializedElementNode
 >;

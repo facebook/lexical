@@ -23,6 +23,7 @@ import {ElementNode} from 'lexical';
 export type SerializedLayoutContainerNode = Spread<
   {
     templateColumns: string;
+    type: 'layout-container';
   },
   SerializedElementNode
 >;

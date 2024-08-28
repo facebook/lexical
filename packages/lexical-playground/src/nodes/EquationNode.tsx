@@ -27,6 +27,7 @@ export type SerializedEquationNode = Spread<
   {
     equation: string;
     inline: boolean;
+    type: 'equation';
   },
   SerializedLexicalNode
 >;

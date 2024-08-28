@@ -44,6 +44,7 @@ import {
 export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
+    type: 'code';
   },
   SerializedElementNode
 >;

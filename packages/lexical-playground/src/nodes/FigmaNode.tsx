@@ -57,6 +57,7 @@ function FigmaComponent({
 export type SerializedFigmaNode = Spread<
   {
     documentID: string;
+    type: 'figma';
   },
   SerializedDecoratorBlockNode
 >;

@@ -31,6 +31,7 @@ export type SerializedStickyNode = Spread<
     yOffset: number;
     color: StickyNoteColor;
     caption: SerializedEditor;
+    type: 'sticky';
   },
   SerializedLexicalNode
 >;

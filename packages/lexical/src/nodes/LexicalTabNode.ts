@@ -11,6 +11,7 @@ import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {Spread} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 import {
@@ -20,7 +21,12 @@ import {
   TextNode,
 } from './LexicalTextNode';
 
-export type SerializedTabNode = SerializedTextNode;
+export type SerializedTabNode = Spread<
+  {
+    type: 'tab';
+  },
+  SerializedTextNode
+>;
 
 /** @noInheritDoc */
 export class TabNode extends TextNode {

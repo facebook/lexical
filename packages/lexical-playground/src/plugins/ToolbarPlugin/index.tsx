@@ -43,6 +43,7 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $getNearestNodeOfType,
+  $insertNodeToNearestRoot,
   $isEditorIsNestedEditor,
   mergeRegister,
 } from '@lexical/utils';
@@ -58,6 +59,7 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
@@ -77,12 +79,14 @@ import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import {$createKanbanNode} from '../../nodes/BoardNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
+import {INSERT_KANBAN_COMMAND} from '../BoardPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
@@ -513,6 +517,16 @@ function ElementFormatDropdown({
   );
 }
 
+// function KanbanButton() {
+//   const [editor] = useLexicalComposerContext();
+
+//   const insertKanban = () => {
+//     editor.dispatchCommand(INSERT_KANBAN_COMMAND, undefined);
+//   };
+
+//   return <button onClick={insertKanban}>Insert Kanban Board</button>;
+// }
+
 export default function ToolbarPlugin({
   setIsLinkEditMode,
 }: {
@@ -858,6 +872,16 @@ export default function ToolbarPlugin({
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
   };
 
+  editor.registerCommand(
+    INSERT_KANBAN_COMMAND,
+    () => {
+      const kanbanNode = $createKanbanNode();
+      $insertNodeToNearestRoot(kanbanNode);
+      return true;
+    },
+    COMMAND_PRIORITY_EDITOR,
+  );
+
   const canViewerSeeInsertDropdown = !isImageCaption;
   const canViewerSeeInsertCodeButton = !isImageCaption;
 
@@ -1070,6 +1094,14 @@ export default function ToolbarPlugin({
                 buttonLabel="Insert"
                 buttonAriaLabel="Insert specialized editor node"
                 buttonIconClassName="icon plus">
+                <DropDownItem
+                  className="item"
+                  onClick={() => {
+                    editor.dispatchCommand(INSERT_KANBAN_COMMAND, undefined);
+                  }}>
+                  <i className="icon table" />
+                  <span className="text">Insert Board</span>
+                </DropDownItem>
                 <DropDownItem
                   onClick={() => {
                     activeEditor.dispatchCommand(

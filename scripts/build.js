@@ -47,13 +47,16 @@ const closureOptions = {
   warning_level: 'QUIET',
 };
 
+const modulePackageMappings = Object.fromEntries(
+  packagesManager.getPublicPackages().flatMap((pkg) => {
+    const pkgName = pkg.getNpmName();
+    return pkg.getExportedNpmModuleNames().map((npm) => [npm, pkgName]);
+  }),
+);
+
 const wwwMappings = {
   ...Object.fromEntries(
-    packagesManager
-      .getPublicPackages()
-      .flatMap((pkg) =>
-        pkg.getExportedNpmModuleNames().map((npm) => [npm, npmToWwwName(npm)]),
-      ),
+    Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
   ),
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
@@ -126,6 +129,7 @@ function getExtension(format) {
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
  * @param {string} version
+ * @param {import('./shared/PackageMetadata').PackageMetadata} pkg
  * @returns {Promise<Array<string>>} the exports of the built module
  */
 async function build(
@@ -136,10 +140,30 @@ async function build(
   isProd,
   format,
   version,
+  pkg,
 ) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
+      const modulePkgName = modulePackageMappings[modulePath];
+      if (
+        typeof modulePkgName === 'string' &&
+        !(
+          modulePkgName in pkg.packageJson.dependencies ||
+          modulePkgName === pkg.getNpmName()
+        )
+      ) {
+        console.error(
+          `Error: ${path.relative(
+            '.',
+            src,
+          )} has an undeclared dependency in its import of ${modulePath}.\nAdd the following to the dependencies in ${path.relative(
+            '.',
+            pkg.resolve('package.json'),
+          )}: "${modulePkgName}": "${version}"`,
+        );
+        process.exit(1);
+      }
       return (
         monorepoExternalsSet.has(modulePath) ||
         thirdPartyExternalsRegExp.test(modulePath)
@@ -422,6 +446,7 @@ async function buildAll() {
           isProduction,
           format,
           version,
+          pkg,
         );
 
         if (isRelease) {
@@ -436,6 +461,7 @@ async function buildAll() {
             false,
             format,
             version,
+            pkg,
           );
           buildForkModules(outputPath, outputFileName, format, exports);
         }

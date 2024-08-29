@@ -506,9 +506,11 @@ function TableActionMenu({
       const selection = $getSelection();
       if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const [cell] = $getNodeTriplet(selection.anchor);
-        const currentTextDirection = cell.getWritingMode();
-        const newTextDirection = !currentTextDirection ? 'vertical-lr' : null;
-        cell.setWritingMode(newTextDirection);
+        const currentTextDirection = cell.getCellDirection();
+        const newTextDirection = !currentTextDirection
+          ? 'vertical'
+          : 'horizontal';
+        cell.setCellDirection(newTextDirection);
 
         if ($isTableSelection(selection)) {
           const nodes = selection.getNodes();
@@ -516,7 +518,7 @@ function TableActionMenu({
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             if ($isTableCellNode(node)) {
-              node.setWritingMode(newTextDirection);
+              node.setCellDirection(newTextDirection);
             }
           }
         }

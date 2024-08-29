@@ -50,7 +50,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
-    writingMode?: null | string;
+    writingMode?: string;
   },
   SerializedElementNode
 >;
@@ -68,7 +68,7 @@ export class TableCellNode extends ElementNode {
   /** @internal */
   __backgroundColor: null | string;
   /** @internal */
-  __writingMode: null | string;
+  __writingMode?: string;
 
   static getType(): string {
     return 'tablecell';
@@ -110,7 +110,7 @@ export class TableCellNode extends ElementNode {
     );
     cellNode.__rowSpan = rowSpan;
     cellNode.__backgroundColor = serializedNode.backgroundColor || null;
-    cellNode.__writingMode = serializedNode.writingMode || null;
+    cellNode.__writingMode = serializedNode.writingMode;
     return cellNode;
   }
 
@@ -126,7 +126,6 @@ export class TableCellNode extends ElementNode {
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
-    this.__writingMode = null;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -146,7 +145,7 @@ export class TableCellNode extends ElementNode {
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
     }
-    if (this.__writingMode !== null) {
+    if (this.__writingMode) {
       element.style.writingMode = this.__writingMode;
       element.style.verticalAlign = computeVerticalFormat(
         this.getChildFormatType(),
@@ -183,7 +182,7 @@ export class TableCellNode extends ElementNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
-      const writingMode = this.getWritingMode();
+      const writingMode = this.getCellDirection();
       if (writingMode !== null) {
         element_.style.writingMode = writingMode;
       }
@@ -210,7 +209,7 @@ export class TableCellNode extends ElementNode {
       rowSpan: this.__rowSpan,
       type: 'tablecell',
       width: this.getWidth(),
-      writingMode: this.getWritingMode(),
+      writingMode: this.__writingMode,
     };
   }
 
@@ -260,12 +259,25 @@ export class TableCellNode extends ElementNode {
     return this.getFirstChild<ParagraphNode>()!.getFormatType();
   }
 
-  getWritingMode(): null | string {
-    return this.getLatest().__writingMode;
+  getChildTextDirection(): 'ltr' | 'rtl' | null {
+    return this.getFirstChild<ParagraphNode>()!.getDirection();
   }
 
-  setWritingMode(newWritingMode: null | string): void {
-    this.getWritable().__writingMode = newWritingMode;
+  getCellDirection(): null | string {
+    return this.getLatest().__writingMode || null;
+  }
+
+  setCellDirection(direction: 'horizontal' | 'vertical'): void {
+    if (direction === 'vertical') {
+      const childTextDirection = this.getChildTextDirection();
+      if (childTextDirection === 'rtl') {
+        this.getWritable().__writingMode = 'vertical-rl';
+      } else {
+        this.getWritable().__writingMode = 'vertical-lr';
+      }
+    } else {
+      this.getWritable().__writingMode = undefined;
+    }
   }
 
   getBackgroundColor(): null | string {
@@ -304,8 +316,8 @@ export class TableCellNode extends ElementNode {
       prevNode.__rowSpan !== this.__rowSpan ||
       prevNode.__backgroundColor !== this.__backgroundColor ||
       prevNode.__writingMode !== this.__writingMode ||
-      prevNode.__format !== this.__format //||
-      // prevNode.getFormatType() !== this.getChildFormatType()
+      prevNode.__format !== this.__format ||
+      this.getFormatType() !== this.getChildFormatType()
     );
   }
 

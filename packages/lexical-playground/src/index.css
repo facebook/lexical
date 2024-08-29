@@ -7,6 +7,9 @@
  */
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body {
   margin: 0;

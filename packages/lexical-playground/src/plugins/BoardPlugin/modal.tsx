@@ -68,19 +68,17 @@ const Modal: React.FC<ModalProps> = ({
     : {};
 
   return (
-    <div className="BoardPlugin__modalBackdrop">
-      <div className="BoardPlugin__modalContainer" style={modalStyle}>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={value}
-            placeholder={title}
-            onChange={(e) => setValue(e.target.value)}
-            className="BoardPlugin__modalInput"
-            autoFocus={true}
-          />
-        </form>
-      </div>
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-950 opacity-50">
+      <form onSubmit={handleSubmit} style={modalStyle}>
+        <input
+          type="text"
+          value={value}
+          placeholder={title}
+          onChange={(e) => setValue(e.target.value)}
+          className="rounded-lg border-none bg-white p-2 shadow-md outline-none"
+          autoFocus={true}
+        />
+      </form>
     </div>
   );
 };

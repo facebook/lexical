@@ -27,7 +27,7 @@ export interface Column {
 
 const Board: React.FC = () => {
   const [boardTitle, setBoardTitle] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [columns, setColumns] = useState<Column[]>([
     {cards: [], id: 'todo', title: 'To Do'},
     {cards: [], id: 'ongoing', title: 'Ongoing'},
@@ -204,11 +204,11 @@ const Board: React.FC = () => {
   }, [boardTitle, columns]);
 
   return (
-    <div className="Board__container">
-      <div className="Board__titleContainer">
-        {isEditing || !boardTitle ? (
+    <div className="mx-auto flex flex-col overflow-x-scroll lg:w-8/12">
+      <div className="flex w-full flex-col lg:flex-row lg:items-start lg:justify-between">
+        {isEditing! ? (
           <input
-            className="Board__titleInput"
+            className="w-full bg-transparent px-2 py-1.5 text-lg font-bold outline-none transition duration-300 ease-in-out"
             type="text"
             placeholder="Board name"
             autoFocus={true}
@@ -229,12 +229,22 @@ const Board: React.FC = () => {
             }}
           />
         ) : (
-          <h3 className="Board__title" onClick={() => setIsEditing(true)}>
+          <h3
+            className="rounded-lg px-2 py-1.5 text-lg font-bold hover:bg-neutral-100"
+            onClick={() => setIsEditing(true)}>
             {boardTitle || 'Untitled board'}
           </h3>
         )}
+        <div className="m-0.5 flex flex-shrink-0 items-center border-none p-0.5 lg:justify-center">
+          <button
+            onClick={openColumnModal}
+            className="rounded-lg border-none bg-neutral-200 px-2 py-1.5 transition-all duration-300 ease-in-out hover:bg-neutral-200 lg:bg-transparent"
+            title="Add new column">
+            <p className="text-sm font-semibold capitalize">New column</p>
+          </button>
+        </div>
       </div>
-      <div className="Board__columnContainer">
+      <div className="relative mx-auto my-0 flex flex-1">
         {columns.map((column) => (
           <Column
             columnId={column.id}
@@ -251,14 +261,6 @@ const Board: React.FC = () => {
             deleteColumn={deleteColumn}
           />
         ))}
-        <div className="Board__newColumnButtonContainer">
-          <button
-            onClick={openColumnModal}
-            className="Board__newColumnButton"
-            title="Add new column">
-            New
-          </button>
-        </div>
       </div>
       <Modal
         isOpen={isColumnModalOpen}

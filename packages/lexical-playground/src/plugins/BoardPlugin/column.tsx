@@ -12,6 +12,7 @@ import {useState} from 'react';
 
 import {Card as CardType} from './board';
 import Card from './card';
+import {DeleteIcon, EditIcon} from './icons';
 
 interface ColumnProps {
   columnId: string;
@@ -72,15 +73,16 @@ export default function Column(props: ColumnProps) {
     <>
       <div
         key={columnId}
-        className="BoardPlugin__columnContainer"
+        className="mx-auto w-64 flex-shrink-0 p-2 "
         onDragOver={handleDragOver}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         onDrop={(e) => handleDrop(e, columnId)}>
-        <div className="BoardPlugin__columnTitleContainer">
+        <div
+          className="flex items-center justify-between  p-2.5"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}>
           {isEditing ? (
             <input
-              className="BoardPlugin__columnTitleInput"
+              className="mb-0.5 border-b border-none border-slate-900 bg-transparent text-lg font-semibold outline-none"
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               onBlur={handleSave}
@@ -95,16 +97,26 @@ export default function Column(props: ColumnProps) {
               }}
             />
           ) : (
-            <h2 className="BoardPlugin__columnTitle">{title}</h2>
+            <h2 className="mb-0.5 text-lg font-semibold">{title}</h2>
           )}
           {isHovered && !isEditing && (
-            <div className="BoardPlugin__columnButtons">
-              <button onClick={handleEditTitle}>✏️</button>
-              <button onClick={() => deleteColumn(columnId)}>🗑️</button>
+            <div className="space-x-2 transition-all duration-300 ease-in-out">
+              <button
+                className="rounded-md p-1 transition-all duration-300 ease-in-out hover:bg-neutral-200"
+                onClick={handleEditTitle}>
+                <EditIcon />
+              </button>
+              <button
+                className="rounded-md p-1 transition-all duration-300 ease-in-out hover:bg-neutral-200"
+                onClick={() => deleteColumn(columnId)}>
+                <DeleteIcon />
+              </button>
             </div>
           )}
         </div>
-        <div>
+
+        <hr />
+        <div className="my-3 space-y-2">
           {cards.map((card) => (
             <Card
               cardId={card.id}
@@ -119,8 +131,8 @@ export default function Column(props: ColumnProps) {
         </div>
         <button
           onClick={(e) => openCardModal(e, columnId)}
-          className="BoardPlugin__columnAddCardButton">
-          Add Card
+          className="mt-0.5 w-fit rounded-lg border-none bg-transparent px-2 py-1.5 outline-none transition-all duration-300 ease-in-out hover:bg-neutral-200">
+          <p className="text-sm font-semibold capitalize">Add new card</p>
         </button>
       </div>
     </>

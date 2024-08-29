@@ -8,6 +8,8 @@
 
 import React, {useState} from 'react';
 
+import {DeleteIcon, EditIcon} from './icons';
+
 interface CardProps {
   cardId: string;
   columnId: string;
@@ -54,7 +56,7 @@ export default function Card(props: CardProps) {
       onMouseLeave={() => setIsHovered(false)}
       className={`${
         isCardDragging ? 'BoardPlugin__cardDragging' : ''
-      } BoardPlugin__card`}>
+      } flex items-center justify-between rounded-lg bg-white p-1 shadow-md transition-shadow duration-300 ease-in-out hover:shadow-lg`}>
       {isEditing ? (
         <input
           value={editedContent}
@@ -69,14 +71,25 @@ export default function Card(props: CardProps) {
               setEditedContent(content);
             }
           }}
+          className="w-full rounded-md border border-gray-300 bg-gray-100 p-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         />
       ) : (
-        <div>{content}</div>
+        <div className="p-2 text-sm font-semibold text-gray-800">{content}</div>
       )}
       {isHovered && !isEditing && (
-        <div className="BoardPlugin__cardButtons">
-          <button onClick={() => deleteCard(cardId)}>🗑️</button>
-          <button onClick={handleEdit}>✏️</button>
+        <div className="space-x-2 transition-all duration-300 ease-in-out">
+          <button
+            title="Delete card"
+            onClick={() => deleteCard(cardId)}
+            className="rounded-md p-1 transition-all duration-300 ease-in-out hover:bg-neutral-200">
+            <DeleteIcon />
+          </button>
+          <button
+            title="Rename card"
+            onClick={handleEdit}
+            className="rounded-md p-1 transition-all duration-300 ease-in-out hover:bg-neutral-200">
+            <EditIcon />
+          </button>
         </div>
       )}
     </div>

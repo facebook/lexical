@@ -8,8 +8,9 @@
 
 import './board.css';
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 
+import BoardTitleContainer from './boardTitleContainer';
 import Card from './card';
 import Column from './column';
 import Modal from './modal';
@@ -24,6 +25,13 @@ export interface Column {
   title: string;
   cards: Card[];
 }
+
+export type ModalPositionType =
+  | {
+      top: number;
+      left: number;
+    }
+  | undefined;
 
 const Board: React.FC = () => {
   const [boardTitle, setBoardTitle] = useState('');
@@ -41,66 +49,60 @@ const Board: React.FC = () => {
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
-  const [modalPosition, setModalPosition] = useState<
-    | {
-        top: number;
-        left: number;
-      }
-    | undefined
-  >(undefined);
+  const [modalPosition, setModalPosition] =
+    useState<ModalPositionType>(undefined);
 
-  const handleDragStart = (
-    e: React.DragEvent<HTMLDivElement>,
-    cardId: string,
-    columnId: string,
-  ) => {
-    setIsCardDragging(cardId);
-    setDraggedCard({cardId, sourceColumnId: columnId});
-  };
+  const handleDragStart = useCallback(
+    (e: React.DragEvent<HTMLDivElement>, cardId: string, columnId: string) => {
+      setIsCardDragging(cardId);
+      setDraggedCard({cardId, sourceColumnId: columnId});
+    },
+    [],
+  );
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     setIsCardDragging(null);
     e.preventDefault();
-  };
+  }, []);
 
-  const handleDrop = (
-    e: React.DragEvent<HTMLDivElement>,
-    targetColumnId: string,
-  ) => {
-    e.preventDefault();
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>, targetColumnId: string) => {
+      e.preventDefault();
 
-    if (!draggedCard) {
-      return;
-    }
+      if (!draggedCard) {
+        return;
+      }
 
-    setColumns((prevColumns) => {
-      const newColumns = prevColumns.map((column) => {
-        if (column.id === draggedCard.sourceColumnId) {
-          return {
-            ...column,
-            cards: column.cards.filter(
-              (card) => card.id !== draggedCard.cardId,
-            ),
-          };
-        }
-        if (column.id === targetColumnId) {
-          const cardToMove = prevColumns
-            .find((col) => col.id === draggedCard.sourceColumnId)
-            ?.cards.find((card) => card.id === draggedCard.cardId);
+      setColumns((prevColumns) => {
+        const newColumns = prevColumns.map((column) => {
+          if (column.id === draggedCard.sourceColumnId) {
+            return {
+              ...column,
+              cards: column.cards.filter(
+                (card) => card.id !== draggedCard.cardId,
+              ),
+            };
+          }
+          if (column.id === targetColumnId) {
+            const cardToMove = prevColumns
+              .find((col) => col.id === draggedCard.sourceColumnId)
+              ?.cards.find((card) => card.id === draggedCard.cardId);
 
-          return cardToMove
-            ? {...column, cards: [...column.cards, cardToMove]}
-            : column;
-        }
-        return column;
+            return cardToMove
+              ? {...column, cards: [...column.cards, cardToMove]}
+              : column;
+          }
+          return column;
+        });
+        return newColumns;
       });
-      return newColumns;
-    });
 
-    setDraggedCard(null);
-  };
+      setDraggedCard(null);
+    },
+    [draggedCard],
+  );
 
-  const addCard = (columnId: string, content: string) => {
+  const addCard = useCallback((columnId: string, content: string) => {
     const newCard: Card = {
       content,
       id: Math.random().toString(36).substr(2, 9),
@@ -111,9 +113,9 @@ const Board: React.FC = () => {
         col.id === columnId ? {...col, cards: [...col.cards, newCard]} : col,
       ),
     );
-  };
+  }, []);
 
-  const addColumn = (title: string) => {
+  const addColumn = useCallback((title: string) => {
     const newColumn: Column = {
       cards: [],
       id: Math.random().toString(36).substr(2, 9),
@@ -121,20 +123,20 @@ const Board: React.FC = () => {
     };
 
     setColumns((prevColumns) => [...prevColumns, newColumn]);
-  };
+  }, []);
 
-  const openColumnModal = (e: React.MouseEvent) => {
+  const openColumnModal = useCallback((e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setModalPosition({left: rect.left, top: rect.bottom});
     setIsColumnModalOpen(true);
-  };
+  }, []);
 
-  const openCardModal = (e: React.MouseEvent, columnId: string) => {
+  const openCardModal = useCallback((e: React.MouseEvent, columnId: string) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setModalPosition({left: rect.left, top: rect.bottom});
     setActiveColumnId(columnId);
     setIsCardModalOpen(true);
-  };
+  }, []);
 
   const updateCards = useCallback((columnId: string, updatedCards: Card[]) => {
     setColumns((prevColumns) =>
@@ -205,48 +207,17 @@ const Board: React.FC = () => {
 
   return (
     <div className="mx-auto flex flex-col overflow-x-scroll lg:w-8/12">
-      <div className="flex w-full flex-col lg:flex-row lg:items-start lg:justify-between">
-        {isEditing! ? (
-          <input
-            className="w-full bg-transparent px-2 py-1.5 text-lg font-bold outline-none transition duration-300 ease-in-out"
-            type="text"
-            placeholder="Board name"
-            autoFocus={true}
-            value={boardTitle || ''}
-            onChange={(e) => setBoardTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setIsEditing(false);
-                setBoardTitle(e.currentTarget.value || 'Untitled board');
-              } else if (e.key === 'Escape') {
-                setIsEditing(false);
-                setBoardTitle('Untitled board');
-              }
-            }}
-            onBlur={() => {
-              setIsEditing(false);
-              setBoardTitle(boardTitle || 'Untitled board');
-            }}
-          />
-        ) : (
-          <h3
-            className="rounded-lg px-2 py-1.5 text-lg font-bold hover:bg-neutral-100"
-            onClick={() => setIsEditing(true)}>
-            {boardTitle || 'Untitled board'}
-          </h3>
-        )}
-        <div className="m-0.5 flex flex-shrink-0 items-center border-none p-0.5 lg:justify-center">
-          <button
-            onClick={openColumnModal}
-            className="rounded-lg border-none bg-neutral-200 px-2 py-1.5 transition-all duration-300 ease-in-out hover:bg-neutral-200 lg:bg-transparent"
-            title="Add new column">
-            <p className="text-sm font-semibold capitalize">New column</p>
-          </button>
-        </div>
-      </div>
+      <BoardTitleContainer
+        isEditing={isEditing}
+        boardTitle={boardTitle}
+        setBoardTitle={setBoardTitle}
+        setIsEditing={setIsEditing}
+        openColumnModal={openColumnModal}
+      />
       <div className="relative mx-auto my-0 flex flex-1">
         {columns.map((column) => (
           <Column
+            key={column.id}
             columnId={column.id}
             handleDragOver={handleDragOver}
             handleDrop={handleDrop}
@@ -287,4 +258,4 @@ const Board: React.FC = () => {
   );
 };
 
-export default Board;
+export default memo(Board);

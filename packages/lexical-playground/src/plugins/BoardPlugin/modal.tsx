@@ -18,13 +18,9 @@ interface ModalProps {
   position?: {top: number; left: number};
 }
 
-const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  title,
-  position,
-}) => {
+const Modal: React.FC<ModalProps> = (props) => {
+  const {isOpen, onClose, onSubmit, title, position} = props;
+
   const [value, setValue] = useState('');
 
   useEffect(() => {

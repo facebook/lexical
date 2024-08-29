@@ -8,7 +8,7 @@
 
 import './board.css';
 
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 
 import {Card as CardType} from './board';
 import Card from './card';
@@ -36,7 +36,7 @@ interface ColumnProps {
   deleteColumn: (columnId: string) => void;
 }
 
-export default function Column(props: ColumnProps) {
+const Column: React.FC<ColumnProps> = (props) => {
   const {
     columnId,
     handleDragOver,
@@ -56,10 +56,13 @@ export default function Column(props: ColumnProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
 
-  const deleteCard = (cardId: string) => {
-    const updatedCards = cards.filter((card) => card.id !== cardId);
-    updateCards(columnId, updatedCards);
-  };
+  const deleteCard = useCallback(
+    (cardId: string) => {
+      const updatedCards = cards.filter((card) => card.id !== cardId);
+      updateCards(columnId, updatedCards);
+    },
+    [cards, columnId, updateCards],
+  );
 
   const handleEditTitle = () => {
     setIsEditing(true);
@@ -137,4 +140,6 @@ export default function Column(props: ColumnProps) {
       </div>
     </>
   );
-}
+};
+
+export default Column;

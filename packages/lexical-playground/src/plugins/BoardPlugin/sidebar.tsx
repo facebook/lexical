@@ -14,7 +14,9 @@ interface SidebarProps {
   cardContent: string;
 }
 
-export default function Sidebar({isOpen, onClose, cardContent}: SidebarProps) {
+const Sidebar: React.FC<SidebarProps> = (props) => {
+  const {isOpen, onClose, cardContent} = props;
+
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,4 +83,6 @@ export default function Sidebar({isOpen, onClose, cardContent}: SidebarProps) {
       </form>
     </div>
   );
-}
+};
+
+export default Sidebar;

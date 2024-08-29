@@ -6,7 +6,7 @@
  *
  */
 
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 
 import {DeleteIcon, EditIcon} from './icons';
 import Sidebar from './sidebar';
@@ -25,7 +25,7 @@ interface CardProps {
   updateCardContent: (cardId: string, editedContent: string) => void;
 }
 
-export default function Card(props: CardProps) {
+const Card: React.FC<CardProps> = (props) => {
   const {
     cardId,
     columnId,
@@ -35,6 +35,7 @@ export default function Card(props: CardProps) {
     deleteCard,
     updateCardContent,
   } = props;
+
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
@@ -48,10 +49,10 @@ export default function Card(props: CardProps) {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     setIsEditing(false);
     updateCardContent(cardId, editedContent);
-  };
+  }, [cardId, editedContent, updateCardContent]);
 
   return (
     <>
@@ -64,7 +65,7 @@ export default function Card(props: CardProps) {
         onClick={handleCardClick}
         className={`${
           isCardDragging ? 'BoardPlugin__cardDragging' : ''
-        } relative flex items-center justify-between rounded-lg bg-white p-1 shadow-md transition-shadow duration-300 ease-in-out hover:bg-neutral-100 hover:shadow-lg`}>
+        } relative flex cursor-pointer items-center justify-between rounded-lg bg-white p-1 shadow-md transition-shadow duration-300 ease-in-out hover:bg-neutral-100 hover:shadow-lg`}>
         {isEditing ? (
           <input
             value={editedContent}
@@ -79,7 +80,7 @@ export default function Card(props: CardProps) {
                 setEditedContent(content);
               }
             }}
-            className="w-full rounded-md border border-gray-300 bg-gray-100 p-2 pl-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="w-full rounded-md border border-gray-300 bg-white p-2 pl-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           />
         ) : (
           <div className="p-2 pl-3 text-sm font-semibold text-gray-800">
@@ -106,8 +107,10 @@ export default function Card(props: CardProps) {
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        cardContent={content} // Pass card content to Sidebar
+        cardContent={content}
       />
     </>
   );
-}
+};
+
+export default Card;

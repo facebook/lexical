@@ -263,8 +263,12 @@ export class TableCellNode extends ElementNode {
     return this.getFirstChild<ParagraphNode>()!.getDirection();
   }
 
-  getCellDirection(): null | string {
-    return this.getLatest().__writingMode || null;
+  getCellDirection(): 'horizontal' | 'vertical' {
+    if (this.getLatest().__writingMode) {
+      return 'vertical';
+    } else {
+      return 'horizontal';
+    }
   }
 
   setCellDirection(direction: 'horizontal' | 'vertical'): void {
@@ -364,7 +368,7 @@ export function $convertTableCellNodeElement(
     tableCellNode.__backgroundColor = backgroundColor;
   }
   const writingMode = domNode_.style.writingMode;
-  if (writingMode !== '') {
+  if (writingMode) {
     tableCellNode.__writingMode = writingMode;
   }
 

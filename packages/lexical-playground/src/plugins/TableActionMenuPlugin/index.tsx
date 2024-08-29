@@ -507,9 +507,8 @@ function TableActionMenu({
       if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const [cell] = $getNodeTriplet(selection.anchor);
         const currentTextDirection = cell.getCellDirection();
-        const newTextDirection = !currentTextDirection
-          ? 'vertical'
-          : 'horizontal';
+        const newTextDirection =
+          currentTextDirection === 'horizontal' ? 'vertical' : 'horizontal';
         cell.setCellDirection(newTextDirection);
 
         if ($isTableSelection(selection)) {
@@ -580,6 +579,17 @@ function TableActionMenu({
         onClick={() => toggleRowStriping()}
         data-test-id="table-row-striping">
         <span className="text">Toggle Row Striping</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleTextDirection()}
+        data-test-id="table-toggle-text-direction">
+        <span className="text">
+          {tableCellNode.__writingMode
+            ? 'Horizontal Direction'
+            : 'Vertical Direction'}
+        </span>
       </button>
       <hr />
       <button

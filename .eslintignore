@@ -15,3 +15,5 @@
 **/.docusaurus
 /playwright-report
 test-results
+postcss.config.js
+tailwind.config.js

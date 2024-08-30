@@ -714,15 +714,15 @@ test.describe.parallel('Selection', () => {
     await focusEditor(page);
     await insertTable(page, 1, 2);
     await moveToEditorEnd(page);
-    const lastCellText = 'Some text';
-    await page.keyboard.type(lastCellText);
+
+    const endParagraphText = 'Some text';
+    await page.keyboard.type(endParagraphText);
 
     const lastCell = page.locator(
       '.PlaygroundEditorTheme__tableCell:last-child',
     );
     await lastCell.click();
-    const cellText = 'Foo';
-    await page.keyboard.type(cellText);
+    await page.keyboard.type('Foo');
 
     const expectedSelection = createHumanReadableSelection({
       anchorOffset: {desc: 'beginning of cell', value: 0},
@@ -731,7 +731,7 @@ test.describe.parallel('Selection', () => {
         {desc: 'first table row', value: 0},
         {desc: 'first cell', value: 0},
       ],
-      focusOffset: {desc: 'full text length', value: lastCellText.length},
+      focusOffset: {desc: 'full text length', value: endParagraphText.length},
       focusPath: [
         {desc: 'index of last paragraph', value: 2},
         {desc: 'index of first span', value: 0},

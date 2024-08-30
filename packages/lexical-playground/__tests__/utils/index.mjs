@@ -978,7 +978,7 @@ export async function pressInsertLinkButton(page) {
  *     {desc: 'first table row', value: 0},
  *     {desc: 'first cell', value: 0},
  *   ],
- *   focusOffset: {desc: 'full text length', value: lastCellText.length},
+ *   focusOffset: {desc: 'full text length', value: 9},
  *   focusPath: [
  *     {desc: 'index of last paragraph', value: 2},
  *     {desc: 'index of first span', value: 0},

@@ -110,40 +110,53 @@ export function TablePlugin({
   }, [editor]);
 
   useEffect(() => {
-    const tableSelections = new Map<NodeKey, TableObserver>();
+    const tableSelections = new Map<
+      NodeKey,
+      [TableObserver, HTMLTableElementWithWithTableSelectionState]
+    >();
 
-    const initializeTableNode = (tableNode: TableNode) => {
-      const nodeKey = tableNode.getKey();
-      const tableElement = editor.getElementByKey(
-        nodeKey,
-      ) as HTMLTableElementWithWithTableSelectionState;
-      if (tableElement && !tableSelections.has(nodeKey)) {
-        const tableSelection = applyTableHandlers(
-          tableNode,
-          tableElement,
-          editor,
-          hasTabHandler,
-        );
-        tableSelections.set(nodeKey, tableSelection);
-      }
+    const initializeTableNode = (
+      tableNode: TableNode,
+      nodeKey: NodeKey,
+      dom: HTMLElement,
+    ) => {
+      const tableElement = dom as HTMLTableElementWithWithTableSelectionState;
+      const tableSelection = applyTableHandlers(
+        tableNode,
+        tableElement,
+        editor,
+        hasTabHandler,
+      );
+      tableSelections.set(nodeKey, [tableSelection, tableElement]);
     };
 
     const unregisterMutationListener = editor.registerMutationListener(
       TableNode,
       (nodeMutations) => {
         for (const [nodeKey, mutation] of nodeMutations) {
-          if (mutation === 'created') {
-            editor.getEditorState().read(() => {
-              const tableNode = $getNodeByKey<TableNode>(nodeKey);
-              if ($isTableNode(tableNode)) {
-                initializeTableNode(tableNode);
+          if (mutation === 'created' || mutation === 'updated') {
+            const tableSelection = tableSelections.get(nodeKey);
+            const dom = editor.getElementByKey(nodeKey);
+            if (!(tableSelection && dom === tableSelection[1])) {
+              // The update created a new DOM node, destroy the existing TableObserver
+              if (tableSelection) {
+                tableSelection[0].removeListeners();
+                tableSelections.delete(nodeKey);
               }
-            });
+              if (dom !== null) {
+                // Create a new TableObserver
+                editor.getEditorState().read(() => {
+                  const tableNode = $getNodeByKey<TableNode>(nodeKey);
+                  if ($isTableNode(tableNode)) {
+                    initializeTableNode(tableNode, nodeKey, dom);
+                  }
+                });
+              }
+            }
           } else if (mutation === 'destroyed') {
             const tableSelection = tableSelections.get(nodeKey);
-
             if (tableSelection !== undefined) {
-              tableSelection.removeListeners();
+              tableSelection[0].removeListeners();
               tableSelections.delete(nodeKey);
             }
           }
@@ -156,7 +169,7 @@ export function TablePlugin({
       unregisterMutationListener();
       // Hook might be called multiple times so cleaning up tables listeners as well,
       // as it'll be reinitialized during recurring call
-      for (const [, tableSelection] of tableSelections) {
+      for (const [, [tableSelection]] of tableSelections) {
         tableSelection.removeListeners();
       }
     };

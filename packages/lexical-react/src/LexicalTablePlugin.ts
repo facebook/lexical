@@ -87,20 +87,21 @@ export function TablePlugin({
         const maxRowLength = gridMap.reduce((curLength, row) => {
           return Math.max(curLength, row.length);
         }, 0);
+        const rowNodes = node.getChildren();
         for (let i = 0; i < gridMap.length; ++i) {
-          const row = gridMap[i].filter((cell) => cell);
-          const rowLength = row.length;
-          if (rowLength === maxRowLength) {
+          const rowLength = gridMap[i].reduce(
+            (acc, cell) => (cell ? 1 + acc : acc),
+            0,
+          );
+          const rowNode = rowNodes[i];
+          if (rowLength === maxRowLength || !rowNode) {
             continue;
           }
-          const rowNode: TableRowNode | null = node.getChildAtIndex(i);
           for (let j = rowLength; j < maxRowLength; ++j) {
             // TODO: inherit header state from another header or body
             const newCell = $createTableCellNode(0);
             newCell.append($createParagraphNode());
-            if (rowNode) {
-              rowNode.append(newCell);
-            }
+            rowNode.append(newCell);
           }
         }
       }),

@@ -79,7 +79,7 @@ describe('LexicalTableCellNode tests', () => {
         cellNode.setCellDirection('vertical');
 
         expect(cellNode.createDOM(editorConfig).outerHTML).toBe(
-          `<td style="writing-mode: vertical-lr; vertical-align: top;" class="${editorConfig.theme.tableCell}"></td>`,
+          `<td style="writing-mode: vertical-rl; vertical-align: top;" class="${editorConfig.theme.tableCell}"></td>`,
         );
       });
     });

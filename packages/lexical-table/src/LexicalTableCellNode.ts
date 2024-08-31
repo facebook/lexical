@@ -176,8 +176,8 @@ export class TableCellNode extends ElementNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
-      const writingMode = this.getCellDirection();
-      if (writingMode !== null) {
+      const writingMode = this.getWritingMode();
+      if (writingMode) {
         element_.style.writingMode = writingMode;
       }
 
@@ -249,19 +249,22 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__width;
   }
 
-  getCellDirection(): 'horizontal' | 'vertical' {
-    if (this.getLatest().__writingMode) {
-      return 'vertical';
-    } else {
-      return 'horizontal';
-    }
+  /**
+   * Returns the currently set cell writing direction
+   * @returns undefined for horizontal, string value for vertical
+   */
+  getCellDirection(): string | undefined {
+    return this.getLatest().__writingMode;
   }
 
-  setCellDirection(direction: 'horizontal' | 'vertical'): void {
-    if (direction === 'vertical') {
-      this.getWritable().__writingMode = 'vertical-lr';
-    } else {
+  toggleCellDirection(): void {
+    if (
+      this.getLatest().__writingMode === 'vertical-rl' ||
+      this.getLatest().__writingMode === 'vertical-lr'
+    ) {
       this.getWritable().__writingMode = undefined;
+    } else {
+      this.getWritable().__writingMode = 'vertical-rl';
     }
   }
 
@@ -348,7 +351,7 @@ export function $convertTableCellNodeElement(
     tableCellNode.__backgroundColor = backgroundColor;
   }
   const writingMode = domNode_.style.writingMode;
-  if (writingMode) {
+  if (writingMode && writingMode !== 'horizontal-tb') {
     tableCellNode.__writingMode = writingMode;
   }
 

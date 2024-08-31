@@ -501,15 +501,12 @@ function TableActionMenu({
     [editor],
   );
 
-  const toggleTextDirection = useCallback(() => {
+  const toggleCellDirection = useCallback(() => {
     editor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const [cell] = $getNodeTriplet(selection.anchor);
-        const currentTextDirection = cell.getCellDirection();
-        const newTextDirection =
-          currentTextDirection === 'horizontal' ? 'vertical' : 'horizontal';
-        cell.setCellDirection(newTextDirection);
+        cell.toggleCellDirection();
 
         if ($isTableSelection(selection)) {
           const nodes = selection.getNodes();
@@ -517,7 +514,7 @@ function TableActionMenu({
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             if ($isTableCellNode(node)) {
-              node.setCellDirection(newTextDirection);
+              node.toggleCellDirection();
             }
           }
         }
@@ -583,12 +580,12 @@ function TableActionMenu({
       <button
         type="button"
         className="item"
-        onClick={() => toggleTextDirection()}
+        onClick={() => toggleCellDirection()}
         data-test-id="table-toggle-text-direction">
         <span className="text">
           {tableCellNode.__writingMode
-            ? 'Horizontal Direction'
-            : 'Vertical Direction'}
+            ? 'Horizontal Text Direction'
+            : 'Vertical Text Direction'}
         </span>
       </button>
       <hr />

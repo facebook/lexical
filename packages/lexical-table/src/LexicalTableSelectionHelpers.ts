@@ -460,6 +460,21 @@ export function applyTableHandlers(
       (formatType) => {
         const selection = $getSelection();
         if (
+          $isSelectionInTable(selection, tableNode) &&
+          selection!.getNodes().length === 1 &&
+          $isTextNode(selection!.getNodes()[0])
+        ) {
+          const tableCellNode = $findMatchingParent(
+            selection!.getNodes()[0],
+            $isTableCellNode,
+          );
+          if (tableCellNode) {
+            tableCellNode.setFormat(formatType);
+          }
+          return false;
+        }
+
+        if (
           !$isTableSelection(selection) ||
           !$isSelectionInTable(selection, tableNode)
         ) {

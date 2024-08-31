@@ -11,7 +11,6 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
-  ElementFormatType,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -27,7 +26,6 @@ import {
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
-  ParagraphNode,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -147,13 +145,9 @@ export class TableCellNode extends ElementNode {
     }
     if (this.__writingMode) {
       element.style.writingMode = this.__writingMode;
-      element.style.verticalAlign = computeVerticalFormat(
-        this.getChildFormatType(),
-      );
-      element.style.transform = 'rotate(180deg)';
+      element.style.verticalAlign = computeVerticalFormat(this.getFormatType());
     } else {
       element.style.verticalAlign = '';
-      element.style.transform = '';
     }
 
     addClassNamesToElement(
@@ -255,14 +249,6 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__width;
   }
 
-  getChildFormatType(): ElementFormatType {
-    return this.getFirstChild<ParagraphNode>()!.getFormatType();
-  }
-
-  getChildTextDirection(): 'ltr' | 'rtl' | null {
-    return this.getFirstChild<ParagraphNode>()!.getDirection();
-  }
-
   getCellDirection(): 'horizontal' | 'vertical' {
     if (this.getLatest().__writingMode) {
       return 'vertical';
@@ -273,12 +259,7 @@ export class TableCellNode extends ElementNode {
 
   setCellDirection(direction: 'horizontal' | 'vertical'): void {
     if (direction === 'vertical') {
-      const childTextDirection = this.getChildTextDirection();
-      if (childTextDirection === 'rtl') {
-        this.getWritable().__writingMode = 'vertical-rl';
-      } else {
-        this.getWritable().__writingMode = 'vertical-lr';
-      }
+      this.getWritable().__writingMode = 'vertical-lr';
     } else {
       this.getWritable().__writingMode = undefined;
     }

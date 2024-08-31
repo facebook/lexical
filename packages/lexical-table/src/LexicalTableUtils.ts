@@ -893,11 +893,11 @@ export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   return null;
 }
 
-export const computeVerticalFormat = (format?: ElementFormatType) => {
+export const computeVerticalFormat = (format: ElementFormatType) => {
   if (format === 'center') {
     return 'middle';
   } else if (format === 'right' || format === 'end') {
-    return 'top';
+    return 'bottom';
   }
-  return 'bottom';
+  return 'top';
 };

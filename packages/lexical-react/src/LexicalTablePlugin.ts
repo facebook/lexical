@@ -89,19 +89,22 @@ export function TablePlugin({
         }, 0);
         const rowNodes = node.getChildren();
         for (let i = 0; i < gridMap.length; ++i) {
+          const rowNode = rowNodes[i];
+          if (!rowNode) {
+            continue;
+          }
           const rowLength = gridMap[i].reduce(
             (acc, cell) => (cell ? 1 + acc : acc),
             0,
           );
-          const rowNode = rowNodes[i];
-          if (rowLength === maxRowLength || !rowNode) {
+          if (rowLength === maxRowLength) {
             continue;
           }
           for (let j = rowLength; j < maxRowLength; ++j) {
             // TODO: inherit header state from another header or body
             const newCell = $createTableCellNode(0);
             newCell.append($createParagraphNode());
-            rowNode.append(newCell);
+            (rowNode as TableRowNode).append(newCell);
           }
         }
       }),

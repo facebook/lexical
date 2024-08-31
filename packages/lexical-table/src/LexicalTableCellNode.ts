@@ -176,7 +176,7 @@ export class TableCellNode extends ElementNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
-      const writingMode = this.getWritingMode();
+      const writingMode = this.getCellDirection();
       if (writingMode) {
         element_.style.writingMode = writingMode;
       }
@@ -250,7 +250,7 @@ export class TableCellNode extends ElementNode {
   }
 
   /**
-   * Returns the currently set cell writing direction
+   * Returns the current cell writing direction
    * @returns undefined for horizontal, string value for vertical
    */
   getCellDirection(): string | undefined {

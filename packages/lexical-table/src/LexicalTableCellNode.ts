@@ -351,7 +351,7 @@ export function $convertTableCellNodeElement(
     tableCellNode.__backgroundColor = backgroundColor;
   }
   const writingMode = domNode_.style.writingMode;
-  if (writingMode && writingMode !== 'horizontal-tb') {
+  if (writingMode === 'vertical-lr' || writingMode === 'vertical-rl') {
     tableCellNode.__writingMode = writingMode;
   }
 

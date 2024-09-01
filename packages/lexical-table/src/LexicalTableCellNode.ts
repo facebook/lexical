@@ -251,20 +251,22 @@ export class TableCellNode extends ElementNode {
 
   /**
    * Returns the current cell writing direction
-   * @returns undefined for horizontal, string value for vertical
+   * @returns undefined for horizontal, string value if vertical
    */
   getCellDirection(): string | undefined {
     return this.getLatest().__writingMode;
   }
 
-  toggleCellDirection(): void {
-    if (
-      this.getLatest().__writingMode === 'vertical-rl' ||
-      this.getLatest().__writingMode === 'vertical-lr'
-    ) {
+  /**
+   * Update cell writing direction, set to null or undefined for horizontal (default)
+   * Set to 'vertical-rl' or 'vertical-lr' for vertical and paragraph order preference.
+   * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode}
+   */
+  setCellDirection(direction?: null | 'vertical-rl' | 'vertical-lr'): void {
+    if (!direction) {
       this.getWritable().__writingMode = undefined;
     } else {
-      this.getWritable().__writingMode = 'vertical-rl';
+      this.getLatest().__writingMode = direction;
     }
   }
 

@@ -506,7 +506,10 @@ function TableActionMenu({
       const selection = $getSelection();
       if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const [cell] = $getNodeTriplet(selection.anchor);
-        cell.toggleCellDirection();
+        const newDirection = cell.getCellDirection()
+          ? 'vertical-rl'
+          : undefined;
+        cell.setCellDirection(newDirection);
 
         if ($isTableSelection(selection)) {
           const nodes = selection.getNodes();
@@ -514,7 +517,7 @@ function TableActionMenu({
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             if ($isTableCellNode(node)) {
-              node.toggleCellDirection();
+              node.setCellDirection(newDirection);
             }
           }
         }

@@ -501,15 +501,13 @@ function TableActionMenu({
     [editor],
   );
 
-  const toggleCellDirection = useCallback(() => {
+  const toggleWritingMode = useCallback(() => {
     editor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const [cell] = $getNodeTriplet(selection.anchor);
-        const newDirection = cell.getCellDirection()
-          ? 'vertical-rl'
-          : undefined;
-        cell.setCellDirection(newDirection);
+        const newDirection = cell.getWritingMode() ? 'vertical-rl' : undefined;
+        cell.setWritingMode(newDirection);
 
         if ($isTableSelection(selection)) {
           const nodes = selection.getNodes();
@@ -517,7 +515,7 @@ function TableActionMenu({
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             if ($isTableCellNode(node)) {
-              node.setCellDirection(newDirection);
+              node.setWritingMode(newDirection);
             }
           }
         }
@@ -583,7 +581,7 @@ function TableActionMenu({
       <button
         type="button"
         className="item"
-        onClick={() => toggleCellDirection()}
+        onClick={() => toggleWritingMode()}
         data-test-id="table-toggle-text-direction">
         <span className="text">
           {tableCellNode.__writingMode

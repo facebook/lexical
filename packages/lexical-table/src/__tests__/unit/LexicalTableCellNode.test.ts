@@ -76,7 +76,7 @@ describe('LexicalTableCellNode tests', () => {
         const p = $createParagraphNode();
         p.append($createTextNode('abc'));
         cellNode.append(p);
-        cellNode.setCellDirection('vertical-rl');
+        cellNode.setWritingMode('vertical-rl');
 
         expect(cellNode.createDOM(editorConfig).outerHTML).toBe(
           `<td style="writing-mode: vertical-rl; vertical-align: top;" class="${editorConfig.theme.tableCell}"></td>`,

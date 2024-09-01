@@ -176,7 +176,7 @@ export class TableCellNode extends ElementNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
-      const writingMode = this.getCellDirection();
+      const writingMode = this.getWritingMode();
       if (writingMode) {
         element_.style.writingMode = writingMode;
       }
@@ -253,7 +253,7 @@ export class TableCellNode extends ElementNode {
    * Returns the current cell writing direction
    * @returns undefined for horizontal, string value if vertical
    */
-  getCellDirection(): string | undefined {
+  getWritingMode(): string | undefined {
     return this.getLatest().__writingMode;
   }
 
@@ -262,7 +262,7 @@ export class TableCellNode extends ElementNode {
    * Set to 'vertical-rl' or 'vertical-lr' for vertical and paragraph order preference.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode}
    */
-  setCellDirection(direction?: null | 'vertical-rl' | 'vertical-lr'): void {
+  setWritingMode(direction?: null | 'vertical-rl' | 'vertical-lr'): void {
     if (!direction) {
       this.getWritable().__writingMode = undefined;
     } else {

@@ -38,6 +38,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -460,17 +461,15 @@ export function applyTableHandlers(
       (formatType) => {
         const selection = $getSelection();
         if (
-          $isSelectionInTable(selection, tableNode) &&
-          selection!.getNodes().length === 1 &&
-          $isTextNode(selection!.getNodes()[0])
+          $isSelectionInTable(selection, tableNode) ||
+          $isNodeSelection(selection)
         ) {
-          const tableCellNode = $findMatchingParent(
-            selection!.getNodes()[0],
-            $isTableCellNode,
-          );
-          if (tableCellNode) {
-            tableCellNode.setFormat(formatType);
-          }
+          selection!.getNodes().forEach((node) => {
+            const tableCellNode = $findMatchingParent(node, $isTableCellNode);
+            if (tableCellNode) {
+              tableCellNode.setFormat(formatType);
+            }
+          });
           return false;
         }
 

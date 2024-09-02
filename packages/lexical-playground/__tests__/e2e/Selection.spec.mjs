@@ -755,6 +755,12 @@ test.describe.parallel('Selection', () => {
     await lastCell.click();
     await page.keyboard.type('Foo');
 
+    // Move the mouse to the last cell
+    await lastCell.hover();
+    await page.mouse.down();
+    // Move the mouse to the end of the document
+    await page.mouse.move(500, 500);
+
     const expectedSelection = createHumanReadableSelection(
       'the full table from beginning to the end of the text in the last cell',
       {
@@ -772,13 +778,6 @@ test.describe.parallel('Selection', () => {
         ],
       },
     );
-
-    // Move the mouse to the last cell
-    await lastCell.hover();
-    await page.mouse.down();
-    // Move the mouse to the end of the document
-    await page.mouse.move(0, 500);
-
     await assertSelection(page, expectedSelection);
   });
 

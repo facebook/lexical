@@ -971,7 +971,7 @@ export async function pressInsertLinkButton(page) {
  * then the cursor is at the 4th character of the 3rd element of the 2nd element of the 1st element.
  *
  * @example
- * const expectedSelection = createHumanReadableSelection({
+ * const expectedSelection = createHumanReadableSelection('the full text of the last cell', {
  *   anchorOffset: {desc: 'beginning of cell', value: 0},
  *   anchorPath: [
  *     {desc: 'index of table in root', value: 1},
@@ -986,7 +986,7 @@ export async function pressInsertLinkButton(page) {
  *   ],
  * });
  */
-export function createHumanReadableSelection(dto) {
+export function createHumanReadableSelection(_overview, dto) {
   return {
     anchorOffset: dto.anchorOffset.value,
     anchorPath: dto.anchorPath.map((p) => p.value),

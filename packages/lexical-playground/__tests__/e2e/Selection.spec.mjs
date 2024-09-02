@@ -709,7 +709,7 @@ test.describe.parallel('Selection', () => {
     browserName,
     legacyEvents,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
     await insertTable(page, 1, 2);

@@ -8,9 +8,14 @@
 
 import type {SerializedListItemNode} from './LexicalListItemNode';
 import type {ListType, SerializedListNode} from './LexicalListNode';
-import type {LexicalCommand} from 'lexical';
+import type {LexicalCommand, LexicalEditor} from 'lexical';
 
-import {createCommand} from 'lexical';
+import {mergeRegister} from '@lexical/utils';
+import {
+  COMMAND_PRIORITY_LOW,
+  createCommand,
+  INSERT_PARAGRAPH_COMMAND,
+} from 'lexical';
 
 import {$handleListInsertParagraph, insertList, removeList} from './formatList';
 import {
@@ -48,3 +53,46 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
 export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
+
+export function registerList(editor: LexicalEditor): () => void {
+  const removeListener = mergeRegister(
+    editor.registerCommand(
+      INSERT_ORDERED_LIST_COMMAND,
+      () => {
+        insertList(editor, 'number');
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      INSERT_UNORDERED_LIST_COMMAND,
+      () => {
+        insertList(editor, 'bullet');
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      REMOVE_LIST_COMMAND,
+      () => {
+        removeList(editor);
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      INSERT_PARAGRAPH_COMMAND,
+      () => {
+        const hasHandledInsertParagraph = $handleListInsertParagraph();
+
+        if (hasHandledInsertParagraph) {
+          return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+  );
+  return removeListener;
+}

@@ -125,6 +125,9 @@
   width: max-content;
   margin: 0px 25px 30px 0px;
 }
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
+  background-color: #f2f5fb;
+}
 .PlaygroundEditorTheme__tableSelection *::selection {
   background-color: transparent;
 }

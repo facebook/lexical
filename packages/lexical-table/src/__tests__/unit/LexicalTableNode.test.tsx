@@ -66,6 +66,7 @@ const editorConfig = Object.freeze({
   namespace: '',
   theme: {
     table: 'test-table-class',
+    tableRowStriping: 'test-table-row-striping-class',
   },
 });
 
@@ -342,6 +343,47 @@ describe('LexicalTableNode tests', () => {
               expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
             }
           }
+        });
+      });
+
+      test('Toggle row striping ON/OFF', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = $createTableNodeWithDimensions(4, 4, true);
+          root.append(table);
+        });
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          if (table) {
+            table.setRowStriping(true);
+          }
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          expect(table!.createDOM(editorConfig).outerHTML).toBe(
+            `<table class="${editorConfig.theme.table} ${editorConfig.theme.tableRowStriping}" data-lexical-row-striping="true"></table>`,
+          );
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          if (table) {
+            table.setRowStriping(false);
+          }
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          expect(table!.createDOM(editorConfig).outerHTML).toBe(
+            `<table class="${editorConfig.theme.table}"></table>`,
+          );
         });
       });
     },

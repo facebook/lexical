@@ -72,7 +72,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
 
   if (parentDOM !== null) {
     const dom = getPrevElementByKeyOrThrow(key);
-    if (dom.parentNode === parentDOM) {
+    if (dom.parentNode === parentDOM || isCustomElementChild(dom, parentDOM)) {
       parentDOM.removeChild(dom);
     }
   }
@@ -940,4 +940,17 @@ function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
   }
 
   return element;
+}
+
+function isCustomElementChild(dom: HTMLElement, parentDOM: HTMLElement) {
+  if (!parentDOM.tagName.includes('-')) {
+    return false;
+  }
+  for (let i = 0, l = parentDOM.children.length; i < l; i++) {
+    const child = parentDOM.children.item(i);
+    if (dom === child) {
+      return true;
+    }
+  }
+  return false;
 }

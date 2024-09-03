@@ -96,15 +96,16 @@ export function getStartOfCodeInLine(
   while (true) {
     if (nodeOffset === 0) {
       node = node.getPreviousSibling();
-      if (node === null) {
+      if (
+        node === null ||
+        !(
+          $isCodeHighlightNode(node) ||
+          $isTabNode(node) ||
+          $isLineBreakNode(node)
+        )
+      ) {
         break;
       }
-      invariant(
-        $isCodeHighlightNode(node) ||
-          $isTabNode(node) ||
-          $isLineBreakNode(node),
-        'Expected a valid Code Node: CodeHighlightNode, TabNode, LineBreakNode',
-      );
       if ($isLineBreakNode(node)) {
         last = {
           node,

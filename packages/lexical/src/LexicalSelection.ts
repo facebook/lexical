@@ -709,12 +709,56 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
-   * Attempts to insert the provided text into the EditorState at the current Selection as a new
-   * Lexical TextNode, according to a series of insertion heuristics based on the selection type and position.
+   * Insert the provided text into the EditorState at the current Selection.
    *
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
+    // Now that "removeText" has been improved and does not depend on
+    // insertText, insertText can be greatly simplified. The next
+    // commented version is a WIP (about 5 tests fail).
+    //
+    // this.removeText();
+    // if (text === '') {
+    //   return;
+    // }
+    // const anchorNode = this.anchor.getNode();
+    // const textNode = $createTextNode(text);
+    // textNode.setFormat(this.format);
+    // textNode.setStyle(this.style);
+    // if ($isTextNode(anchorNode)) {
+    //   const parent = anchorNode.getParentOrThrow();
+    //   if (this.anchor.offset === 0) {
+    //     if (parent.isInline() && !anchorNode.__prev) {
+    //       parent.insertBefore(textNode);
+    //     } else {
+    //       anchorNode.insertBefore(textNode);
+    //     }
+    //   } else if (this.anchor.offset === anchorNode.getTextContentSize()) {
+    //     if (parent.isInline() && !anchorNode.__next) {
+    //       parent.insertAfter(textNode);
+    //     } else {
+    //       anchorNode.insertAfter(textNode);
+    //     }
+    //   } else {
+    //     const [before] = anchorNode.splitText(this.anchor.offset);
+    //     before.insertAfter(textNode);
+    //   }
+    // } else {
+    //   anchorNode.splice(this.anchor.offset, 0, [textNode]);
+    // }
+    // const nodeToSelect = textNode.isAttached() ? textNode : anchorNode;
+    // nodeToSelect.selectEnd();
+    // // When composing, we need to adjust the anchor offset so that
+    // // we correctly replace that right range.
+    // if (
+    //   textNode.isComposing() &&
+    //   this.anchor.type === 'text' &&
+    //   anchorNode.getTextContent() !== ''
+    // ) {
+    //   this.anchor.offset -= text.length;
+    // }
+
     const anchor = this.anchor;
     const focus = this.focus;
     const format = this.format;
@@ -1061,7 +1105,67 @@ export class RangeSelection implements BaseSelection {
    * Removes the text in the Selection, adjusting the EditorState accordingly.
    */
   removeText(): void {
-    this.insertText('');
+    if (this.isCollapsed()) {
+      return;
+    }
+    const {anchor, focus} = this;
+    const selectedNodes = this.getNodes();
+    const firstPoint = this.isBackward() ? focus : anchor;
+    const lastPoint = this.isBackward() ? anchor : focus;
+    let firstNode = firstPoint.getNode();
+    let lastNode = lastPoint.getNode();
+    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+    const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
+
+    selectedNodes.forEach((node) => {
+      if (
+        !$hasAncestor(firstNode, node) &&
+        !$hasAncestor(lastNode, node) &&
+        node.getKey() !== firstNode.getKey() &&
+        node.getKey() !== lastNode.getKey()
+      ) {
+        node.remove();
+      }
+    });
+
+    const fixText = (node: TextNode, del: number) => {
+      if (node.getTextContent() === '') {
+        node.remove();
+      } else if (del !== 0 && $isTokenOrSegmented(node)) {
+        const textNode = $createTextNode(node.getTextContent());
+        textNode.setFormat(node.getFormat());
+        textNode.setStyle(node.getStyle());
+        return node.replace(textNode);
+      }
+    };
+    if (firstNode === lastNode && $isTextNode(firstNode)) {
+      const del = Math.abs(focus.offset - anchor.offset);
+      firstNode.spliceText(firstPoint.offset, del, '', true);
+      fixText(firstNode, del);
+      return;
+    }
+    if ($isTextNode(firstNode)) {
+      const del = firstNode.getTextContentSize() - firstPoint.offset;
+      firstNode.spliceText(firstPoint.offset, del, '');
+      firstNode = fixText(firstNode, del) || firstNode;
+    }
+    if ($isTextNode(lastNode)) {
+      lastNode.spliceText(0, lastPoint.offset, '');
+      lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
+    }
+    if (firstNode.isAttached() && $isTextNode(firstNode)) {
+      firstNode.selectEnd();
+    } else if (lastNode.isAttached() && $isTextNode(lastNode)) {
+      lastNode.selectStart();
+    }
+
+    // Merge blocks
+    const bothElem = $isElementNode(firstBlock) && $isElementNode(lastBlock);
+    if (bothElem && firstBlock !== lastBlock) {
+      firstBlock.append(...lastBlock.getChildren());
+      lastBlock.remove();
+      lastPoint.set(firstPoint.key, firstPoint.offset, firstPoint.type);
+    }
   }
 
   /**

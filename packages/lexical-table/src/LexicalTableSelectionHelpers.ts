@@ -414,6 +414,7 @@ export function applyTableHandlers(
           const intercepted = $deleteCellHandler(event);
           if ($isRangeSelection(selection)) {
             selection.removeText();
+            return true;
           }
           return intercepted;
         }

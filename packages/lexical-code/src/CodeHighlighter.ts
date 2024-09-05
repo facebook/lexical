@@ -96,16 +96,15 @@ export function getStartOfCodeInLine(
   while (true) {
     if (nodeOffset === 0) {
       node = node.getPreviousSibling();
-      if (
-        node === null ||
-        !(
-          $isCodeHighlightNode(node) ||
-          $isTabNode(node) ||
-          $isLineBreakNode(node)
-        )
-      ) {
+      if (node === null) {
         break;
       }
+      invariant(
+        $isCodeHighlightNode(node) ||
+          $isTabNode(node) ||
+          $isLineBreakNode(node),
+        'Expected a valid Code Node: CodeHighlightNode, TabNode, LineBreakNode',
+      );
       if ($isLineBreakNode(node)) {
         last = {
           node,
@@ -774,7 +773,9 @@ function $handleMoveTo(
   const focusNode = focus.getNode();
   const isMoveToStart = type === MOVE_TO_START;
 
+  // Ensure the selection is within the codeblock
   if (
+    !$isSelectionInCode(selection) ||
     !($isCodeHighlightNode(anchorNode) || $isTabNode(anchorNode)) ||
     !($isCodeHighlightNode(focusNode) || $isTabNode(focusNode))
   ) {

@@ -29,6 +29,7 @@ import {
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
+import {computeVerticalFormat} from './LexicalTableUtils';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -47,6 +48,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
+    writingMode?: string;
   },
   SerializedElementNode
 >;
@@ -63,6 +65,8 @@ export class TableCellNode extends ElementNode {
   __width?: number;
   /** @internal */
   __backgroundColor: null | string;
+  /** @internal */
+  __writingMode?: string;
 
   static getType(): string {
     return 'tablecell';
@@ -77,6 +81,7 @@ export class TableCellNode extends ElementNode {
     );
     cellNode.__rowSpan = node.__rowSpan;
     cellNode.__backgroundColor = node.__backgroundColor;
+    cellNode.__writingMode = node.__writingMode;
     return cellNode;
   }
 
@@ -103,6 +108,7 @@ export class TableCellNode extends ElementNode {
     );
     cellNode.__rowSpan = rowSpan;
     cellNode.__backgroundColor = serializedNode.backgroundColor || null;
+    cellNode.__writingMode = serializedNode.writingMode;
     return cellNode;
   }
 
@@ -137,6 +143,12 @@ export class TableCellNode extends ElementNode {
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
     }
+    if (this.__writingMode) {
+      element.style.writingMode = this.__writingMode;
+      element.style.verticalAlign = computeVerticalFormat(this.getFormatType());
+    } else {
+      element.style.verticalAlign = '';
+    }
 
     addClassNamesToElement(
       element,
@@ -164,6 +176,11 @@ export class TableCellNode extends ElementNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
+      const writingMode = this.getWritingMode();
+      if (writingMode) {
+        element_.style.writingMode = writingMode;
+      }
+
       const backgroundColor = this.getBackgroundColor();
       if (backgroundColor !== null) {
         element_.style.backgroundColor = backgroundColor;
@@ -186,6 +203,7 @@ export class TableCellNode extends ElementNode {
       rowSpan: this.__rowSpan,
       type: 'tablecell',
       width: this.getWidth(),
+      writingMode: this.__writingMode,
     };
   }
 
@@ -231,6 +249,27 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__width;
   }
 
+  /**
+   * Returns the current cell writing direction
+   * @returns undefined for horizontal, string value if vertical
+   */
+  getWritingMode(): string | undefined {
+    return this.getLatest().__writingMode;
+  }
+
+  /**
+   * Update cell writing direction, set to null or undefined for horizontal (default)
+   * Set to 'vertical-rl' or 'vertical-lr' for vertical and paragraph order preference.
+   * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode}
+   */
+  setWritingMode(direction?: null | 'vertical-rl' | 'vertical-lr'): void {
+    if (!direction) {
+      this.getWritable().__writingMode = undefined;
+    } else {
+      this.getLatest().__writingMode = direction;
+    }
+  }
+
   getBackgroundColor(): null | string {
     return this.getLatest().__backgroundColor;
   }
@@ -265,7 +304,9 @@ export class TableCellNode extends ElementNode {
       prevNode.__width !== this.__width ||
       prevNode.__colSpan !== this.__colSpan ||
       prevNode.__rowSpan !== this.__rowSpan ||
-      prevNode.__backgroundColor !== this.__backgroundColor
+      prevNode.__backgroundColor !== this.__backgroundColor ||
+      prevNode.__writingMode !== this.__writingMode ||
+      prevNode.__format !== this.__format
     );
   }
 
@@ -310,6 +351,10 @@ export function $convertTableCellNodeElement(
   const backgroundColor = domNode_.style.backgroundColor;
   if (backgroundColor !== '') {
     tableCellNode.__backgroundColor = backgroundColor;
+  }
+  const writingMode = domNode_.style.writingMode;
+  if (writingMode === 'vertical-lr' || writingMode === 'vertical-rl') {
+    tableCellNode.__writingMode = writingMode;
   }
 
   const style = domNode_.style;

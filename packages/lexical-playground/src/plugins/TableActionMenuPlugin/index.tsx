@@ -501,6 +501,28 @@ function TableActionMenu({
     [editor],
   );
 
+  const toggleWritingMode = useCallback(() => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+        const [cell] = $getNodeTriplet(selection.anchor);
+        const newDirection = cell.getWritingMode() ? 'vertical-rl' : undefined;
+        cell.setWritingMode(newDirection);
+
+        if ($isTableSelection(selection)) {
+          const nodes = selection.getNodes();
+
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if ($isTableCellNode(node)) {
+              node.setWritingMode(newDirection);
+            }
+          }
+        }
+      }
+    });
+  }, [editor]);
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {
@@ -555,6 +577,17 @@ function TableActionMenu({
         onClick={() => toggleRowStriping()}
         data-test-id="table-row-striping">
         <span className="text">Toggle Row Striping</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleWritingMode()}
+        data-test-id="table-toggle-text-direction">
+        <span className="text">
+          {tableCellNode.__writingMode
+            ? 'Horizontal Text Direction'
+            : 'Vertical Text Direction'}
+        </span>
       </button>
       <hr />
       <button

@@ -407,12 +407,14 @@ function TableActionMenu({
         throw new Error('Expected table row');
       }
 
+      const newStyle =
+        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.ROW;
       tableRow.getChildren().forEach((tableCell) => {
         if (!$isTableCellNode(tableCell)) {
           throw new Error('Expected table cell');
         }
 
-        tableCell.toggleHeaderStyle(TableCellHeaderStates.ROW);
+        tableCell.setHeaderStyles(newStyle, TableCellHeaderStates.ROW);
       });
 
       clearTableSelection();
@@ -436,6 +438,8 @@ function TableActionMenu({
         throw new Error('Expected table cell to be inside of table row.');
       }
 
+      const newStyle =
+        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.COLUMN;
       for (let r = 0; r < tableRows.length; r++) {
         const tableRow = tableRows[r];
 
@@ -455,7 +459,7 @@ function TableActionMenu({
           throw new Error('Expected table cell');
         }
 
-        tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
+        tableCell.setHeaderStyles(newStyle, TableCellHeaderStates.COLUMN);
       }
       clearTableSelection();
       onClose();

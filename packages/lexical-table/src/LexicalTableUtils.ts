@@ -557,7 +557,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
     const rowNode = grid.getChildAtIndex(row);
     invariant(
       $isTableRowNode(rowNode),
-      'Expected GridNode childAtIndex(%s) to be RowNode',
+      'Expected TableNode childAtIndex(%s) to be RowNode',
       String(row),
     );
     rowNode.remove();
@@ -673,19 +673,43 @@ export function $unmergeCell(): void {
   const [cell, row, grid] = $getNodeTriplet(anchor);
   const colSpan = cell.__colSpan;
   const rowSpan = cell.__rowSpan;
+  if (colSpan === 1 && rowSpan === 1) {
+    return;
+  }
+  const [map, cellMap] = $computeTableMap(grid, cell, cell);
+  const {startColumn, startRow} = cellMap;
+  // Create a heuristic for what the style of the unmerged cells should be
+  // based on whether every row or column already had that state before the
+  // unmerge.
+  const baseColStyle = cell.__headerState & TableCellHeaderStates.COLUMN;
+  const colStyles = Array.from({length: colSpan}, (_v, i) => {
+    let colStyle = baseColStyle;
+    for (let rowIdx = 0; colStyle !== 0 && rowIdx < map.length; rowIdx++) {
+      colStyle &= map[rowIdx][i + startColumn].cell.__headerState;
+    }
+    return colStyle;
+  });
+  const baseRowStyle = cell.__headerState & TableCellHeaderStates.ROW;
+  const rowStyles = Array.from({length: rowSpan}, (_v, i) => {
+    let rowStyle = baseRowStyle;
+    for (let colIdx = 0; rowStyle !== 0 && colIdx < map[0].length; colIdx++) {
+      rowStyle &= map[i + startRow][colIdx].cell.__headerState;
+    }
+    return rowStyle;
+  });
+
   if (colSpan > 1) {
     for (let i = 1; i < colSpan; i++) {
       cell.insertAfter(
-        $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+        $createTableCellNode(colStyles[i] | rowStyles[0]).append(
           $createParagraphNode(),
         ),
       );
     }
     cell.setColSpan(1);
   }
+
   if (rowSpan > 1) {
-    const [map, cellMap] = $computeTableMap(grid, cell, cell);
-    const {startColumn, startRow} = cellMap;
     let currentRowNode;
     for (let i = 1; i < rowSpan; i++) {
       const currentRow = startRow + i;
@@ -707,18 +731,18 @@ export function $unmergeCell(): void {
         }
       }
       if (insertAfterCell === null) {
-        for (let j = 0; j < colSpan; j++) {
+        for (let j = colSpan - 1; j >= 0; j--) {
           $insertFirst(
             currentRowNode,
-            $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+            $createTableCellNode(colStyles[j] | rowStyles[i]).append(
               $createParagraphNode(),
             ),
           );
         }
       } else {
-        for (let j = 0; j < colSpan; j++) {
+        for (let j = colSpan - 1; j >= 0; j--) {
           insertAfterCell.insertAfter(
-            $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+            $createTableCellNode(colStyles[j] | rowStyles[i]).append(
               $createParagraphNode(),
             ),
           );
@@ -739,8 +763,8 @@ export function $computeTableMap(
     cellA,
     cellB,
   );
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
+  invariant(cellAValue !== null, 'Anchor not found in Table');
+  invariant(cellBValue !== null, 'Focus not found in Table');
   return [tableMap, cellAValue, cellBValue];
 }
 
@@ -784,7 +808,7 @@ export function $computeTableMapSkipCellCheck(
     const row = gridChildren[i];
     invariant(
       $isTableRowNode(row),
-      'Expected GridNode children to be TableRowNode',
+      'Expected TableNode children to be TableRowNode',
     );
     const rowChildren = row.getChildren();
     let j = 0;
@@ -832,7 +856,7 @@ export function $getNodeTriplet(
   const grid = row.getParent();
   invariant(
     $isTableNode(grid),
-    'Expected TableRowNode to have a parent GridNode',
+    'Expected TableRowNode to have a parent TableNode',
   );
   return [cell, row, grid];
 }

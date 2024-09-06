@@ -1703,11 +1703,12 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
-      if ($isElementNode(anchorNode)) {
-        const childNode = anchorNode.getChildAtIndex(0);
-        if ($isDecoratorNode(childNode) && anchor.offset === 0) {
-          return;
-        }
+      if (
+        anchor.offset === 0 &&
+        $isElementNode(anchorNode) &&
+        $isDecoratorNode(anchorNode.getFirstChild())
+      ) {
+        return;
       }
       // Handle the deletion around decorators.
       const focus = this.focus;

@@ -1777,9 +1777,10 @@ export class RangeSelection implements BaseSelection {
       }
     }
     this.removeText();
+
     if (
       isBackward &&
-      !wasCollapsed &&
+      wasCollapsed &&
       this.isCollapsed() &&
       this.anchor.type === 'element' &&
       this.anchor.offset === 0
@@ -1787,10 +1788,15 @@ export class RangeSelection implements BaseSelection {
       const anchorNode = this.anchor.getNode();
       if (
         anchorNode.isEmpty() &&
-        $isRootNode(anchorNode.getParent()) &&
-        anchorNode.getIndexWithinParent() === 0
+        anchorNode.getIndexWithinParent() === 0 &&
+        anchorNode.__prev == null &&
+        anchorNode.__next == null
       ) {
-        anchorNode.collapseAtStart(this);
+        const parentNode = anchorNode.getParent();
+
+        if (parentNode) {
+          parentNode.collapseAtStart(this);
+        }
       }
     }
   }

@@ -8,6 +8,7 @@
 
 import type {
   ElementTransformer,
+  MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
@@ -39,9 +40,12 @@ import {
 const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   HEADING,
   QUOTE,
-  CODE,
   UNORDERED_LIST,
   ORDERED_LIST,
+];
+
+const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> = [
+  CODE,
 ];
 
 // Order of text format transformers matters:
@@ -64,6 +68,7 @@ const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
 
 const TRANSFORMERS: Array<Transformer> = [
   ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];
@@ -109,22 +114,24 @@ export {
   CHECK_LIST,
   CODE,
   ELEMENT_TRANSFORMERS,
-  ElementTransformer,
+  type ElementTransformer,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  MULTILINE_ELEMENT_TRANSFORMERS,
+  type MultilineElementTransformer,
   ORDERED_LIST,
   QUOTE,
   registerMarkdownShortcuts,
   STRIKETHROUGH,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
   TRANSFORMERS,
   UNORDERED_LIST,
 };

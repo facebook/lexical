@@ -183,17 +183,21 @@ function TableActionMenu({
   );
 
   useEffect(() => {
-    return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
-      const nodeUpdated =
-        nodeMutations.get(tableCellNode.getKey()) === 'updated';
+    return editor.registerMutationListener(
+      TableCellNode,
+      (nodeMutations) => {
+        const nodeUpdated =
+          nodeMutations.get(tableCellNode.getKey()) === 'updated';
 
-      if (nodeUpdated) {
-        editor.getEditorState().read(() => {
-          updateTableCellNode(tableCellNode.getLatest());
-        });
-        setBackgroundColor(currentCellBackgroundColor(editor) || '');
-      }
-    });
+        if (nodeUpdated) {
+          editor.getEditorState().read(() => {
+            updateTableCellNode(tableCellNode.getLatest());
+          });
+          setBackgroundColor(currentCellBackgroundColor(editor) || '');
+        }
+      },
+      {skipInitialization: true},
+    );
   }, [editor, tableCellNode]);
 
   useEffect(() => {
@@ -278,9 +282,9 @@ function TableActionMenu({
           throw new Error('Expected to find tableElement in DOM');
         }
 
-        const tableSelection = getTableObserverFromTableElement(tableElement);
-        if (tableSelection !== null) {
-          tableSelection.clearHighlight();
+        const tableObserver = getTableObserverFromTableElement(tableElement);
+        if (tableObserver !== null) {
+          tableObserver.clearHighlight();
         }
 
         tableNode.markDirty();
@@ -453,7 +457,19 @@ function TableActionMenu({
 
         tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
       }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const toggleRowStriping = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setRowStriping(!tableNode.getRowStriping());
+        }
+      }
       clearTableSelection();
       onClose();
     });
@@ -532,6 +548,13 @@ function TableActionMenu({
         }
         data-test-id="table-background-color">
         <span className="text">Background color</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleRowStriping()}
+        data-test-id="table-row-striping">
+        <span className="text">Toggle Row Striping</span>
       </button>
       <hr />
       <button

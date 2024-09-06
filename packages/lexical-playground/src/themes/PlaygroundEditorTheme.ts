@@ -91,8 +91,6 @@ const theme: EditorThemeClasses = {
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',
   table: 'PlaygroundEditorTheme__table',
-  tableAddColumns: 'PlaygroundEditorTheme__tableAddColumns',
-  tableAddRows: 'PlaygroundEditorTheme__tableAddRows',
   tableCell: 'PlaygroundEditorTheme__tableCell',
   tableCellActionButton: 'PlaygroundEditorTheme__tableCellActionButton',
   tableCellActionButtonContainer:
@@ -104,6 +102,7 @@ const theme: EditorThemeClasses = {
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
   tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
+  tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {

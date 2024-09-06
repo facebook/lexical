@@ -39,7 +39,6 @@ import LinkPlugin from '../../plugins/LinkPlugin';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 import {DialogActions} from '../../ui/Dialog';
-import Placeholder from '../../ui/Placeholder';
 import Select from '../../ui/Select';
 import TextInput from '../../ui/TextInput';
 import {$isInlineImageNode, InlineImageNode} from './InlineImageNode';
@@ -204,18 +203,23 @@ export default function InlineImageComponent({
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isInlineImageNode(node)) {
-          node.remove();
-          return true;
+        if (isSelected && $isNodeSelection(deleteSelection)) {
+          editor.update(() => {
+            deleteSelection.getNodes().forEach((node) => {
+              if ($isInlineImageNode(node)) {
+                node.remove();
+              }
+            });
+          });
         }
       }
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   const $onEnter = useCallback(
@@ -388,12 +392,11 @@ export default function InlineImageComponent({
               <LinkPlugin />
               <RichTextPlugin
                 contentEditable={
-                  <ContentEditable className="InlineImageNode__contentEditable" />
-                }
-                placeholder={
-                  <Placeholder className="InlineImageNode__placeholder">
-                    Enter a caption...
-                  </Placeholder>
+                  <ContentEditable
+                    placeholder="Enter a caption..."
+                    placeholderClassName="InlineImageNode__placeholder"
+                    className="InlineImageNode__contentEditable"
+                  />
                 }
                 ErrorBoundary={LexicalErrorBoundary}
               />

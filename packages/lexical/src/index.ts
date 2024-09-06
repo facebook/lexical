@@ -30,7 +30,11 @@ export type {
   Spread,
   Transform,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {
+  EditorState,
+  EditorStateReadOptions,
+  SerializedEditorState,
+} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,
@@ -152,6 +156,7 @@ export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
+  $cloneWithProperties,
   $copyNode,
   $getAdjacentNode,
   $getEditor,
@@ -165,16 +170,19 @@ export {
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isTokenOrSegmented,
   $nodesOfType,
   $selectAll,
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
   isBlockDomNode,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
+  isLexicalEditor,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   resetRandomKey,

@@ -40,24 +40,94 @@ import {
 
 export type Transformer =
   | ElementTransformer
+  | MultilineElementTransformer
   | TextFormatTransformer
   | TextMatchTransformer;
 
 export type ElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
+  /**
+   * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
+   *
+   * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
+   */
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
   regExp: RegExp;
+  /**
+   * `replace` is called when markdown is imported or typed in the editor
+   *
+   * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
+   */
   replace: (
     parentNode: ElementNode,
     children: Array<LexicalNode>,
     match: Array<string>,
+    /**
+     * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
+     */
     isImport: boolean,
-  ) => void;
+  ) => boolean | void;
   type: 'element';
+};
+
+export type MultilineElementTransformer = {
+  dependencies: Array<Klass<LexicalNode>>;
+  /**
+   * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
+   *
+   * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
+   */
+  export?: (
+    node: LexicalNode,
+    // eslint-disable-next-line no-shadow
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null;
+  /**
+   * This regex determines when to start matching
+   */
+  regExpStart: RegExp;
+  /**
+   * This regex determines when to stop matching. Anything in between regExpStart and regExpEnd will be matched
+   */
+  regExpEnd?:
+    | RegExp
+    | {
+        /**
+         * Whether the end match is optional. If true, the end match is not required to match for the transformer to be triggered.
+         * The entire text from regexpStart to the end of the document will then be matched.
+         */
+        optional?: true;
+        regExp: RegExp;
+      };
+  /**
+   * `replace` is called only when markdown is imported in the editor, not when it's typed
+   *
+   * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
+   */
+  replace: (
+    rootNode: ElementNode,
+    /**
+     * During markdown shortcut transforms, children nodes may be provided to the transformer. If this is the case, no `linesInBetween` will be provided and
+     * the children nodes should be used instead of the `linesInBetween` to create the new node.
+     */
+    children: Array<LexicalNode> | null,
+    startMatch: Array<string>,
+    endMatch: Array<string> | null,
+    /**
+     * linesInBetween includes the text between the start & end matches, split up by lines, not including the matches themselves.
+     * This is null when the transformer is triggered through markdown shortcuts (by typing in the editor)
+     */
+    linesInBetween: Array<string> | null,
+    /**
+     * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
+     */
+    isImport: boolean,
+  ) => boolean | void;
+  type: 'multilineElement';
 };
 
 export type TextFormatTransformer = Readonly<{
@@ -241,7 +311,7 @@ export const QUOTE: ElementTransformer = {
   type: 'element',
 };
 
-export const CODE: ElementTransformer = {
+export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
@@ -256,11 +326,72 @@ export const CODE: ElementTransformer = {
       '```'
     );
   },
-  regExp: /^[ \t]*```(\w{1,10})?\s/,
-  replace: createBlockNode((match) => {
-    return $createCodeNode(match ? match[1] : undefined);
-  }),
-  type: 'element',
+  regExpEnd: {
+    optional: true,
+    regExp: /[ \t]*```$/,
+  },
+  regExpStart: /^[ \t]*```(\w+)?/,
+  replace: (
+    rootNode,
+    children,
+    startMatch,
+    endMatch,
+    linesInBetween,
+    isImport,
+  ) => {
+    let codeBlockNode: CodeNode;
+    let code: string;
+
+    if (!children && linesInBetween) {
+      if (linesInBetween.length === 1) {
+        // Single-line code blocks
+        if (endMatch) {
+          // End match on same line. Example: ```markdown hello```. markdown should not be considered the language here.
+          codeBlockNode = $createCodeNode();
+          code = startMatch[1] + linesInBetween[0];
+        } else {
+          // No end match. We should assume the language is next to the backticks and that code will be typed on the next line in the future
+          codeBlockNode = $createCodeNode(startMatch[1]);
+          code = linesInBetween[0].startsWith(' ')
+            ? linesInBetween[0].slice(1)
+            : linesInBetween[0];
+        }
+      } else {
+        // Treat multi-line code blocks as if they always have an end match
+        codeBlockNode = $createCodeNode(startMatch[1]);
+
+        if (linesInBetween[0].trim().length === 0) {
+          // Filter out all start and end lines that are length 0 until we find the first line with content
+          while (linesInBetween.length > 0 && !linesInBetween[0].length) {
+            linesInBetween.shift();
+          }
+        } else {
+          // The first line already has content => Remove the first space of the line if it exists
+          linesInBetween[0] = linesInBetween[0].startsWith(' ')
+            ? linesInBetween[0].slice(1)
+            : linesInBetween[0];
+        }
+
+        // Filter out all end lines that are length 0 until we find the last line with content
+        while (
+          linesInBetween.length > 0 &&
+          !linesInBetween[linesInBetween.length - 1].length
+        ) {
+          linesInBetween.pop();
+        }
+
+        code = linesInBetween.join('\n');
+      }
+      const textNode = $createTextNode(code);
+      codeBlockNode.append(textNode);
+      rootNode.append(codeBlockNode);
+    } else if (children) {
+      createBlockNode((match) => {
+        return $createCodeNode(match ? match[1] : undefined);
+      })(rootNode, children, startMatch, isImport);
+    }
+  },
+  type: 'multilineElement',
 };
 
 export const UNORDERED_LIST: ElementTransformer = {

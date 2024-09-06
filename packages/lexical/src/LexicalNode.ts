@@ -15,10 +15,11 @@ import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $isDecoratorNode,
   $isElementNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
+  type DecoratorNode,
   ElementNode,
 } from '.';
 import {
@@ -35,6 +36,7 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
   $isRootOrShadowRoot,
@@ -146,6 +148,11 @@ export type DOMConversionOutput = {
   node: null | LexicalNode | Array<LexicalNode>;
 };
 
+export type DOMExportOutputMap = Map<
+  Klass<LexicalNode>,
+  (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+>;
+
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | Text | null | undefined,
@@ -201,6 +208,62 @@ export class LexicalNode {
       'LexicalNode: Node %s does not implement .clone().',
       this.name,
     );
+  }
+
+  /**
+   * Perform any state updates on the clone of prevNode that are not already
+   * handled by the constructor call in the static clone method. If you have
+   * state to update in your clone that is not handled directly by the
+   * constructor, it is advisable to override this method but it is required
+   * to include a call to `super.afterCloneFrom(prevNode)` in your
+   * implementation. This is only intended to be called by
+   * {@link $cloneWithProperties} function or via a super call.
+   *
+   * @example
+   * ```ts
+   * class ClassesTextNode extends TextNode {
+   *   // Not shown: static getType, static importJSON, exportJSON, createDOM, updateDOM
+   *   __classes = new Set<string>();
+   *   static clone(node: ClassesTextNode): ClassesTextNode {
+   *     // The inherited TextNode constructor is used here, so
+   *     // classes is not set by this method.
+   *     return new ClassesTextNode(node.__text, node.__key);
+   *   }
+   *   afterCloneFrom(node: this): void {
+   *     // This calls TextNode.afterCloneFrom and LexicalNode.afterCloneFrom
+   *     // for necessary state updates
+   *     super.afterCloneFrom(node);
+   *     this.__addClasses(node.__classes);
+   *   }
+   *   // This method is a private implementation detail, it is not
+   *   // suitable for the public API because it does not call getWritable
+   *   __addClasses(classNames: Iterable<string>): this {
+   *     for (const className of classNames) {
+   *       this.__classes.add(className);
+   *     }
+   *     return this;
+   *   }
+   *   addClass(...classNames: string[]): this {
+   *     return this.getWritable().__addClasses(classNames);
+   *   }
+   *   removeClass(...classNames: string[]): this {
+   *     const node = this.getWritable();
+   *     for (const className of classNames) {
+   *       this.__classes.delete(className);
+   *     }
+   *     return this;
+   *   }
+   *   getClasses(): Set<string> {
+   *     return this.getLatest().__classes;
+   *   }
+   * }
+   * ```
+   *
+   */
+  afterCloneFrom(prevNode: this) {
+    this.__parent = prevNode.__parent;
+    this.__next = prevNode.__next;
+    this.__prev = prevNode.__prev;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,14 +344,30 @@ export class LexicalNode {
     }
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
-    if (
+    const isElementRangeSelection =
       $isRangeSelection(targetSelection) &&
       targetSelection.anchor.type === 'element' &&
-      targetSelection.focus.type === 'element' &&
-      targetSelection.anchor.key === targetSelection.focus.key &&
-      targetSelection.anchor.offset === targetSelection.focus.offset
-    ) {
-      return false;
+      targetSelection.focus.type === 'element';
+
+    if (isElementRangeSelection) {
+      if (targetSelection.isCollapsed()) {
+        return false;
+      }
+
+      const parentNode = this.getParent();
+      if ($isDecoratorNode(this) && this.isInline() && parentNode) {
+        const firstPoint = targetSelection.isBackward()
+          ? targetSelection.focus
+          : targetSelection.anchor;
+        const firstElement = firstPoint.getNode() as ElementNode;
+        if (
+          firstPoint.offset === firstElement.getChildrenSize() &&
+          firstElement.is(parentNode) &&
+          firstElement.getLastChildOrThrow().is(this)
+        ) {
+          return false;
+        }
+      }
     }
     return isSelected;
   }
@@ -348,14 +427,14 @@ export class LexicalNode {
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElement(): ElementNode | null {
+  getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
         invariant(
-          $isElementNode(node),
-          'Children of root nodes must be elements',
+          $isElementNode(node) || (node === this && $isDecoratorNode(node)),
+          'Children of root nodes must be elements or decorators',
         );
         return node;
       }
@@ -369,7 +448,7 @@ export class LexicalNode {
    * non-root ancestor of this node, or throws if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElementOrThrow(): ElementNode {
+  getTopLevelElementOrThrow(): ElementNode | DecoratorNode<unknown> {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(
@@ -674,8 +753,9 @@ export class LexicalNode {
   }
 
   /**
-   * Returns a mutable version of the node. Will throw an error if
-   * called outside of a Lexical Editor {@link LexicalEditor.update} callback.
+   * Returns a mutable version of the node using {@link $cloneWithProperties}
+   * if necessary. Will throw an error if called outside of a Lexical Editor
+   * {@link LexicalEditor.update} callback.
    *
    */
   getWritable(): this {
@@ -686,7 +766,6 @@ export class LexicalNode {
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
-    const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
@@ -697,34 +776,12 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const constructor = latestNode.constructor;
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
-        mutableNode.__textFormat = latestNode.__textFormat;
-      }
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
+    const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.add(key);
-    mutableNode.__key = key;
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
 
-    // @ts-expect-error
     return mutableNode;
   }
 

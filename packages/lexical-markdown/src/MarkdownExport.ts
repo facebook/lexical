@@ -6,12 +6,6 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
 import {
@@ -22,6 +16,13 @@ import {
   $isTextNode,
 } from 'lexical';
 
+import {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
 /**
@@ -32,6 +33,7 @@ export function createMarkdownExport(
   shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
+  const elementTransformers = [...byType.multilineElement, ...byType.element];
   const isNewlineDelimited = !shouldPreserveNewLines;
 
   // Export only uses text formats that are responsible for single format
@@ -48,14 +50,14 @@ export function createMarkdownExport(
       const child = children[i];
       const result = exportTopLevelElements(
         child,
-        byType.element,
+        elementTransformers,
         textFormatTransformers,
         byType.textMatch,
       );
 
       if (result != null) {
         output.push(
-          // seperate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
+          // separate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
           isNewlineDelimited &&
             i > 0 &&
             !isEmptyParagraph(child) &&
@@ -65,7 +67,7 @@ export function createMarkdownExport(
         );
       }
     }
-    // Ensure consecutive groups of texts are atleast \n\n apart while each empty paragraph render as a newline.
+    // Ensure consecutive groups of texts are at least \n\n apart while each empty paragraph render as a newline.
     // Eg. ["hello", "", "", "hi", "\nworld"] -> "hello\n\n\nhi\n\nworld"
     return output.join('\n');
   };
@@ -73,11 +75,14 @@ export function createMarkdownExport(
 
 function exportTopLevelElements(
   node: LexicalNode,
-  elementTransformers: Array<ElementTransformer>,
+  elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
 ): string | null {
   for (const transformer of elementTransformers) {
+    if (!transformer.export) {
+      continue;
+    }
     const result = transformer.export(node, (_node) =>
       exportChildren(_node, textTransformersIndex, textMatchTransformers),
     );

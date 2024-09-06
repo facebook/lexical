@@ -6,7 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -16,30 +15,62 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
+import {
+  addClassNamesToElement,
+  isHTMLElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getNearestNodeFromDOMNode,
   ElementNode,
 } from 'lexical';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
 
-export type SerializedTableNode = SerializedElementNode;
+export type SerializedTableNode = Spread<
+  {
+    rowStriping?: boolean;
+  },
+  SerializedElementNode
+>;
+
+function setRowStriping(
+  dom: HTMLElement,
+  config: EditorConfig,
+  rowStriping: boolean,
+) {
+  if (rowStriping) {
+    addClassNamesToElement(dom, config.theme.tableRowStriping);
+    dom.setAttribute('data-lexical-row-striping', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableRowStriping);
+    dom.removeAttribute('data-lexical-row-striping');
+  }
+}
 
 /** @noInheritDoc */
 export class TableNode extends ElementNode {
+  /** @internal */
+  __rowStriping: boolean;
+
   static getType(): string {
     return 'table';
   }
 
   static clone(node: TableNode): TableNode {
     return new TableNode(node.__key);
+  }
+
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__rowStriping = prevNode.__rowStriping;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -51,17 +82,21 @@ export class TableNode extends ElementNode {
     };
   }
 
-  static importJSON(_serializedNode: SerializedTableNode): TableNode {
-    return $createTableNode();
+  static importJSON(serializedNode: SerializedTableNode): TableNode {
+    const tableNode = $createTableNode();
+    tableNode.__rowStriping = serializedNode.rowStriping || false;
+    return tableNode;
   }
 
   constructor(key?: NodeKey) {
     super(key);
+    this.__rowStriping = false;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
+      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
       type: 'table',
       version: 1,
     };
@@ -71,11 +106,21 @@ export class TableNode extends ElementNode {
     const tableElement = document.createElement('table');
 
     addClassNamesToElement(tableElement, config.theme.table);
+    if (this.__rowStriping) {
+      setRowStriping(tableElement, config, true);
+    }
 
     return tableElement;
   }
 
-  updateDOM(): boolean {
+  updateDOM(
+    prevNode: TableNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    if (prevNode.__rowStriping !== this.__rowStriping) {
+      setRowStriping(dom, config, this.__rowStriping);
+    }
     return false;
   }
 
@@ -162,7 +207,9 @@ export class TableNode extends ElementNode {
       return null;
     }
 
-    const cell = row[x];
+    const index = x < row.length ? x : row.length - 1;
+
+    const cell = row[index];
 
     if (cell == null) {
       return null;
@@ -219,6 +266,14 @@ export class TableNode extends ElementNode {
     return node;
   }
 
+  getRowStriping(): boolean {
+    return Boolean(this.getLatest().__rowStriping);
+  }
+
+  setRowStriping(newRowStriping: boolean): void {
+    this.getWritable().__rowStriping = newRowStriping;
+  }
+
   canSelectBefore(): true {
     return true;
   }
@@ -241,8 +296,14 @@ export function $getElementForTableNode(
   return getTable(tableElement);
 }
 
-export function $convertTableElement(_domNode: Node): DOMConversionOutput {
-  return {node: $createTableNode()};
+export function $convertTableElement(
+  domNode: HTMLElement,
+): DOMConversionOutput {
+  const tableNode = $createTableNode();
+  if (domNode.hasAttribute('data-lexical-row-striping')) {
+    tableNode.setRowStriping(true);
+  }
+  return {node: tableNode};
 }
 
 export function $createTableNode(): TableNode {

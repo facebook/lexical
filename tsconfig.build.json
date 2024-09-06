@@ -73,6 +73,9 @@
       "@lexical/react/LexicalDecoratorBlockNode": [
         "./packages/lexical-react/src/LexicalDecoratorBlockNode.ts"
       ],
+      "@lexical/react/LexicalDraggableBlockPlugin": [
+        "./packages/lexical-react/src/LexicalDraggableBlockPlugin.tsx"
+      ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "./packages/lexical-react/src/LexicalEditorRefPlugin.tsx"
       ],
@@ -165,6 +168,7 @@
         "./packages/shared/src/normalizeClassNames.ts"
       ],
       "shared/react-test-utils": ["./packages/shared/src/react-test-utils.ts"],
+      "shared/reactPatches": ["./packages/shared/src/reactPatches.ts"],
       "shared/simpleDiffWithCursor": [
         "./packages/shared/src/simpleDiffWithCursor.ts"
       ],

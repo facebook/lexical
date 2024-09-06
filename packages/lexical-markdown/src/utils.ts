@@ -7,12 +7,6 @@
  */
 
 import type {ListNode} from '@lexical/list';
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
 
 import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
@@ -24,6 +18,14 @@ import {
   type LexicalNode,
   type TextFormatType,
 } from 'lexical';
+
+import {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 
 type MarkdownFormatKind =
   | 'noTransformation'
@@ -422,6 +424,7 @@ export function indexBy<T>(
 
 export function transformersByType(transformers: Array<Transformer>): Readonly<{
   element: Array<ElementTransformer>;
+  multilineElement: Array<MultilineElementTransformer>;
   textFormat: Array<TextFormatTransformer>;
   textMatch: Array<TextMatchTransformer>;
 }> {
@@ -429,6 +432,8 @@ export function transformersByType(transformers: Array<Transformer>): Readonly<{
 
   return {
     element: (byType.element || []) as Array<ElementTransformer>,
+    multilineElement: (byType.multilineElement ||
+      []) as Array<MultilineElementTransformer>,
     textFormat: (byType['text-format'] || []) as Array<TextFormatTransformer>,
     textMatch: (byType['text-match'] || []) as Array<TextMatchTransformer>,
   };

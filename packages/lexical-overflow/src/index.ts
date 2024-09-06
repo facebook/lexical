@@ -15,6 +15,7 @@ import type {
 } from 'lexical';
 
 import {$applyNodeReplacement, ElementNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
@@ -71,6 +72,15 @@ export class OverflowNode extends ElementNode {
 
   excludeFromCopy(): boolean {
     return true;
+  }
+
+  static transform(): (node: LexicalNode) => void {
+    return (node: LexicalNode) => {
+      invariant($isOverflowNode(node), 'node is not a OverflowNode');
+      if (node.isEmpty()) {
+        node.remove();
+      }
+    };
   }
 }
 

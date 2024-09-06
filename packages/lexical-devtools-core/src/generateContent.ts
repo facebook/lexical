@@ -161,8 +161,8 @@ export function generateContent(
   } else {
     res += '\n  └ None dispatched.';
   }
-
-  res += '\n\n editor:';
+  const {version} = editor.constructor;
+  res += `\n\n editor${version ? ` (v${version})` : ''}:`;
   res += `\n  └ namespace ${editorConfig.namespace}`;
   if (compositionKey !== null) {
     res += `\n  └ compositionKey ${compositionKey}`;
@@ -284,7 +284,9 @@ function printNode(
     return `ids: [ ${node.getIDs().join(', ')} ]`;
   } else if ($isParagraphNode(node)) {
     const formatText = printTextFormatProperties(node);
-    return formatText !== '' ? `{ ${formatText} }` : '';
+    let paragraphData = formatText !== '' ? `{ ${formatText} }` : '';
+    paragraphData += node.__style ? `(${node.__style})` : '';
+    return paragraphData;
   } else {
     return '';
   }

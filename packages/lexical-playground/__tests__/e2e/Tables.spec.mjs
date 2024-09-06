@@ -665,91 +665,93 @@ test.describe.parallel('Tables', () => {
     });
   });
 
-  test(`Can select cells using Table selection`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    await initialize({isCollab, page});
-    test.skip(isPlainText);
+  test(
+    `Can select cells using Table selection`,
+    {
+      tag: '@flaky',
+    },
+    async ({page, isPlainText, isCollab}) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
 
-    await focusEditor(page);
-    await insertTable(page, 2, 3);
+      await focusEditor(page);
+      await insertTable(page, 2, 3);
 
-    await fillTablePartiallyWithText(page);
-    await selectCellsFromTableCords(
-      page,
-      {x: 0, y: 0},
-      {x: 1, y: 1},
-      true,
-      false,
-    );
+      await fillTablePartiallyWithText(page);
+      await selectCellsFromTableCords(
+        page,
+        {x: 0, y: 0},
+        {x: 1, y: 1},
+        true,
+        false,
+      );
 
-    await assertHTML(
-      page,
-      html`
-        <p><br /></p>
-        <table>
-          <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p dir="ltr"><span data-lexical-text="true">a</span></p>
-            </th>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p dir="ltr"><span data-lexical-text="true">d</span></p>
-            </th>
-            <td
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p dir="ltr"><span data-lexical-text="true">e</span></p>
-            </td>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
-            </td>
-          </tr>
-        </table>
-        <p><br /></p>
-      `,
-      html`
-        <p><br /></p>
-        <table>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">a</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">d</span></p>
-            </th>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">e</span></p>
-            </td>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
-            </td>
-          </tr>
-        </table>
-        <p><br /></p>
-      `,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <table>
+            <tr>
+              <th
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        html`
+          <p><br /></p>
+          <table>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
   test(`Can select cells using Table selection via keyboard`, async ({
     page,

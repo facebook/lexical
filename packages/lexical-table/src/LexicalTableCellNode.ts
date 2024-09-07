@@ -69,15 +69,18 @@ export class TableCellNode extends ElementNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    const cellNode = new TableCellNode(
+    return new TableCellNode(
       node.__headerState,
       node.__colSpan,
       node.__width,
       node.__key,
     );
-    cellNode.__rowSpan = node.__rowSpan;
-    cellNode.__backgroundColor = node.__backgroundColor;
-    return cellNode;
+  }
+
+  afterCloneFrom(node: this): void {
+    super.afterCloneFrom(node);
+    this.__rowSpan = node.__rowSpan;
+    this.__backgroundColor = node.__backgroundColor;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -96,14 +99,13 @@ export class TableCellNode extends ElementNode {
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
     const colSpan = serializedNode.colSpan || 1;
     const rowSpan = serializedNode.rowSpan || 1;
-    const cellNode = $createTableCellNode(
+    return $createTableCellNode(
       serializedNode.headerState,
       colSpan,
       serializedNode.width || undefined,
-    );
-    cellNode.__rowSpan = rowSpan;
-    cellNode.__backgroundColor = serializedNode.backgroundColor || null;
-    return cellNode;
+    )
+      .setRowSpan(rowSpan)
+      .setBackgroundColor(serializedNode.backgroundColor || null);
   }
 
   constructor(
@@ -190,41 +192,46 @@ export class TableCellNode extends ElementNode {
   }
 
   getColSpan(): number {
-    return this.__colSpan;
+    return this.getLatest().__colSpan;
   }
 
   setColSpan(colSpan: number): this {
-    this.getWritable().__colSpan = colSpan;
-    return this;
+    const self = this.getWritable();
+    self.__colSpan = colSpan;
+    return self;
   }
 
   getRowSpan(): number {
-    return this.__rowSpan;
+    return this.getLatest().__rowSpan;
   }
 
   setRowSpan(rowSpan: number): this {
-    this.getWritable().__rowSpan = rowSpan;
-    return this;
+    const self = this.getWritable();
+    self.__rowSpan = rowSpan;
+    return self;
   }
 
   getTag(): string {
     return this.hasHeader() ? 'th' : 'td';
   }
 
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState {
+  setHeaderStyles(
+    headerState: TableCellHeaderState,
+    mask: TableCellHeaderState = TableCellHeaderStates.BOTH,
+  ): this {
     const self = this.getWritable();
-    self.__headerState = headerState;
-    return this.__headerState;
+    self.__headerState = (headerState & mask) | (self.__headerState & ~mask);
+    return self;
   }
 
   getHeaderStyles(): TableCellHeaderState {
     return this.getLatest().__headerState;
   }
 
-  setWidth(width: number): number | null | undefined {
+  setWidth(width: number): this {
     const self = this.getWritable();
     self.__width = width;
-    return this.__width;
+    return self;
   }
 
   getWidth(): number | undefined {
@@ -235,11 +242,13 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__backgroundColor;
   }
 
-  setBackgroundColor(newBackgroundColor: null | string): void {
-    this.getWritable().__backgroundColor = newBackgroundColor;
+  setBackgroundColor(newBackgroundColor: null | string): this {
+    const self = this.getWritable();
+    self.__backgroundColor = newBackgroundColor;
+    return self;
   }
 
-  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
+  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
     if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {

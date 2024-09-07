@@ -244,18 +244,6 @@ describe('Markdown', () => {
       md: '```javascript\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">A[B\nC](https://www.google.com)</span></pre>',
-      md: ['```javascript', 'A[B', 'C](https://www.google.com)', '```'].join(
-        '\n',
-      ),
-      skipExport: true,
-    },
-    {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">A[B\nC](https://www.google.com)</span></pre>',
-      md: ['```javascript', 'A[BC](https://www.google.com)', '```'].join('\n'),
-      skipImport: true,
-    },
-    {
       // Should always preserve language in md but keep data-highlight-language only for supported languages
       html: '<pre spellcheck="false" data-language="unknown"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```unknown\nCode\n```',

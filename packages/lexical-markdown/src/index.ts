@@ -36,6 +36,7 @@ import {
   STRIKETHROUGH,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
+import {sanitizeMarkdown} from './utils';
 
 const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   HEADING,
@@ -82,11 +83,12 @@ function $convertFromMarkdownString(
   node?: ElementNode,
   shouldPreserveNewLines = false,
 ): void {
+  const sanitizedMarkdown = sanitizeMarkdown(markdown);
   const importMarkdown = createMarkdownImport(
     transformers,
     shouldPreserveNewLines,
   );
-  return importMarkdown(markdown, node);
+  return importMarkdown(sanitizedMarkdown, node);
 }
 
 /**

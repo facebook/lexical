@@ -318,11 +318,10 @@ export const CODE: MultilineElementTransformer = {
       return null;
     }
     const textContent = node.getTextContent();
-    const removeSingleNewLine = textContent.replace(/(?<!\n)\n(?!\n)/g, '');
     return (
       '```' +
       (node.getLanguage() || '') +
-      (removeSingleNewLine ? '\n' + removeSingleNewLine : '') +
+      (textContent ? '\n' + textContent : '') +
       '\n' +
       '```'
     );

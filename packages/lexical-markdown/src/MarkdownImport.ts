@@ -6,16 +6,15 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
 import type {
   ElementTransformer,
+  MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '@lexical/markdown';
+} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
@@ -36,7 +35,6 @@ import {
   transformersByType,
 } from './utils';
 
-const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
   openTagsRegExp: RegExp;
@@ -63,14 +61,20 @@ export function createMarkdownImport(
 
     for (let i = 0; i < linesLength; i++) {
       const lineText = lines[i];
-      // Codeblocks are processed first as anything inside such block
-      // is ignored for further processing
-      // TODO:
-      // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = $importCodeBlock(lines, i, root);
 
-      if (codeBlockNode != null) {
-        i = shiftedIndex;
+      const [imported, shiftedIndex] = $importMultiline(
+        lines,
+        i,
+        byType.multilineElement,
+        root,
+      );
+
+      if (imported) {
+        // If a multiline markdown element was imported, we don't want to process the lines that were part of it anymore.
+        // There could be other sub-markdown elements (both multiline and normal ones) matching within this matched multiline element's children.
+        // However, it would be the responsibility of the matched multiline transformer to decide how it wants to handle them.
+        // We cannot handle those, as there is no way for us to know how to maintain the correct order of generated lexical nodes for possible children.
+        i = shiftedIndex; // Next loop will start from the line after the last line of the multiline element
         continue;
       }
 
@@ -103,6 +107,108 @@ export function createMarkdownImport(
   };
 }
 
+/**
+ *
+ * @returns first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed.
+ */
+function $importMultiline(
+  lines: Array<string>,
+  startLineIndex: number,
+  multilineElementTransformers: Array<MultilineElementTransformer>,
+  rootNode: ElementNode,
+): [boolean, number] {
+  for (const {
+    regExpStart,
+    regExpEnd,
+    replace,
+  } of multilineElementTransformers) {
+    const startMatch = lines[startLineIndex].match(regExpStart);
+    if (!startMatch) {
+      continue; // Try next transformer
+    }
+
+    const regexpEndRegex: RegExp | undefined =
+      typeof regExpEnd === 'object' && 'regExp' in regExpEnd
+        ? regExpEnd.regExp
+        : regExpEnd;
+
+    const isEndOptional =
+      regExpEnd && typeof regExpEnd === 'object' && 'optional' in regExpEnd
+        ? regExpEnd.optional
+        : !regExpEnd;
+
+    let endLineIndex = startLineIndex;
+    const linesLength = lines.length;
+
+    // check every single line for the closing match. It could also be on the same line as the opening match.
+    while (endLineIndex < linesLength) {
+      const endMatch = regexpEndRegex
+        ? lines[endLineIndex].match(regexpEndRegex)
+        : null;
+      if (!endMatch) {
+        if (
+          !isEndOptional ||
+          (isEndOptional && endLineIndex < linesLength - 1) // Optional end, but didn't reach the end of the document yet => continue searching for potential closing match
+        ) {
+          endLineIndex++;
+          continue; // Search next line for closing match
+        }
+      }
+
+      // Now, check if the closing match matched is the same as the opening match.
+      // If it is, we need to continue searching for the actual closing match.
+      if (
+        endMatch &&
+        startLineIndex === endLineIndex &&
+        endMatch.index === startMatch.index
+      ) {
+        endLineIndex++;
+        continue; // Search next line for closing match
+      }
+
+      // At this point, we have found the closing match. Next: calculate the lines in between open and closing match
+      // This should not include the matches themselves, and be split up by lines
+      const linesInBetween = [];
+
+      if (endMatch && startLineIndex === endLineIndex) {
+        linesInBetween.push(
+          lines[startLineIndex].slice(
+            startMatch[0].length,
+            -endMatch[0].length,
+          ),
+        );
+      } else {
+        for (let i = startLineIndex; i <= endLineIndex; i++) {
+          if (i === startLineIndex) {
+            const text = lines[i].slice(startMatch[0].length);
+            linesInBetween.push(text); // Also include empty text
+          } else if (i === endLineIndex && endMatch) {
+            const text = lines[i].slice(0, -endMatch[0].length);
+            linesInBetween.push(text); // Also include empty text
+          } else {
+            linesInBetween.push(lines[i]);
+          }
+        }
+      }
+
+      if (
+        replace(rootNode, null, startMatch, endMatch, linesInBetween, true) !==
+        false
+      ) {
+        // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
+        return [true, endLineIndex];
+      }
+
+      // The replace function returned false, despite finding the matching open and close tags => this transformer does not want to handle it.
+      // Thus, we continue letting the remaining transformers handle the passed lines of text from the beginning
+      break;
+    }
+  }
+
+  // No multiline transformer handled this line successfully
+  return [false, startLineIndex];
+}
+
 function $importBlocks(
   lineText: string,
   rootNode: ElementNode,
@@ -120,8 +226,9 @@ function $importBlocks(
 
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));
-      replace(elementNode, [textNode], match, true);
-      break;
+      if (replace(elementNode, [textNode], match, true) !== false) {
+        break;
+      }
     }
   }
 
@@ -161,35 +268,6 @@ function $importBlocks(
       }
     }
   }
-}
-
-function $importCodeBlock(
-  lines: Array<string>,
-  startLineIndex: number,
-  rootNode: ElementNode,
-): [CodeNode | null, number] {
-  const openMatch = lines[startLineIndex].match(CODE_BLOCK_REG_EXP);
-
-  if (openMatch) {
-    let endLineIndex = startLineIndex;
-    const linesLength = lines.length;
-
-    while (++endLineIndex < linesLength) {
-      const closeMatch = lines[endLineIndex].match(CODE_BLOCK_REG_EXP);
-
-      if (closeMatch) {
-        const codeBlockNode = $createCodeNode(openMatch[1]);
-        const textNode = $createTextNode(
-          lines.slice(startLineIndex + 1, endLineIndex).join('\n'),
-        );
-        codeBlockNode.append(textNode);
-        rootNode.append(codeBlockNode);
-        return [codeBlockNode, endLineIndex];
-      }
-    }
-  }
-
-  return [null, startLineIndex];
 }
 
 // Processing text content and replaces text format tags.

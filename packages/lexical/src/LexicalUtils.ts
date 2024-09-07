@@ -1678,7 +1678,7 @@ export function isBlockDomNode(node: Node) {
 export function INTERNAL_$isBlock(
   node: LexicalNode,
 ): node is ElementNode | DecoratorNode<unknown> {
-  if ($isRootNode(node) || ($isDecoratorNode(node) && !node.isInline())) {
+  if ($isDecoratorNode(node) && !node.isInline()) {
     return true;
   }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {

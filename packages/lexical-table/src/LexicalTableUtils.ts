@@ -776,52 +776,62 @@ export function $computeTableMapSkipCellCheck(
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
-  function write(startRow: number, startColumn: number, cell: TableCellNode) {
-    const value = {
-      cell,
-      startColumn,
-      startRow,
-    };
-    const rowSpan = cell.__rowSpan;
-    const colSpan = cell.__colSpan;
-    for (let i = 0; i < rowSpan; i++) {
-      if (tableMap[startRow + i] === undefined) {
-        tableMap[startRow + i] = [];
-      }
-      for (let j = 0; j < colSpan; j++) {
-        tableMap[startRow + i][startColumn + j] = value;
-      }
+  function getMapRow(i: number) {
+    let row = tableMap[i];
+    if (row === undefined) {
+      tableMap[i] = row = [];
     }
-    if (cellA !== null && cellA.is(cell)) {
-      cellAValue = value;
-    }
-    if (cellB !== null && cellB.is(cell)) {
-      cellBValue = value;
-    }
+    return row;
   }
-  function isEmpty(row: number, column: number) {
-    return tableMap[row] === undefined || tableMap[row][column] === undefined;
-  }
-
   const gridChildren = grid.getChildren();
-  for (let i = 0; i < gridChildren.length; i++) {
-    const row = gridChildren[i];
+  for (let rowIdx = 0; rowIdx < gridChildren.length; rowIdx++) {
+    const row = gridChildren[rowIdx];
     invariant(
       $isTableRowNode(row),
       'Expected TableNode children to be TableRowNode',
     );
-    const rowChildren = row.getChildren();
-    let j = 0;
-    for (const cell of rowChildren) {
+    for (
+      let cell = row.getFirstChild(), colIdx = 0;
+      cell != null;
+      cell = cell.getNextSibling()
+    ) {
       invariant(
         $isTableCellNode(cell),
         'Expected TableRowNode children to be TableCellNode',
       );
-      while (!isEmpty(i, j)) {
-        j++;
+      // Skip past any columns that were merged from a higher row
+      const startMapRow = getMapRow(rowIdx);
+      while (startMapRow[colIdx] !== undefined) {
+        colIdx++;
       }
-      write(i, j, cell);
-      j += cell.__colSpan;
+      const value: TableMapValueType = {
+        cell,
+        startColumn: colIdx,
+        startRow: rowIdx,
+      };
+      const {__rowSpan: rowSpan, __colSpan: colSpan} = cell;
+      for (let j = 0; j < rowSpan; j++) {
+        if (rowIdx + j >= gridChildren.length) {
+          // The table is non-rectangular with a rowSpan
+          // below the last <tr> in the table.
+          // We should probably handle this with a node transform
+          // to ensure that tables are always rectangular but this
+          // will avoid crashes such as #6584
+          // Note that there are probably still latent bugs
+          // regarding colSpan or general cell count mismatches.
+          break;
+        }
+        const mapRow = getMapRow(rowIdx + j);
+        for (let i = 0; i < colSpan; i++) {
+          mapRow[colIdx + i] = value;
+        }
+      }
+      if (cellA !== null && cellAValue === null && cellA.is(cell)) {
+        cellAValue = value;
+      }
+      if (cellB !== null && cellBValue === null && cellB.is(cell)) {
+        cellBValue = value;
+      }
     }
   }
   return [tableMap, cellAValue, cellBValue];

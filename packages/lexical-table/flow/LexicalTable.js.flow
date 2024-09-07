@@ -62,12 +62,12 @@ declare export class TableCellNode extends ElementNode {
   getRowSpan(): number;
   setRowSpan(rowSpan: number): this;
   getTag(): string;
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
+  setHeaderStyles(headerState: TableCellHeaderState, mask?: TableCellHeaderState): TableCellNode;
   getHeaderStyles(): TableCellHeaderState;
-  setWidth(width: number): ?number;
+  setWidth(width: number): TableCellNode;
   getWidth(): ?number;
   getBackgroundColor(): null | string;
-  setBackgroundColor(newBackgroundColor: null | string): void;
+  setBackgroundColor(newBackgroundColor: null | string): TableCellNode;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;

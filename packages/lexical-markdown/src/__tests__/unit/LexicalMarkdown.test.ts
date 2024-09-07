@@ -23,6 +23,7 @@ import {
   TRANSFORMERS,
 } from '../..';
 import {MultilineElementTransformer} from '../../MarkdownTransformers';
+import {sanitizeMarkdown} from '../../utils';
 
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
@@ -418,4 +419,48 @@ describe('Markdown', () => {
       ).toBe(md);
     });
   }
+});
+
+describe('sanitizeMarkdown', () => {
+  it('should combine lines separated by a single \n unless they are in a codeblock', () => {
+    const markdown = `
+1
+2
+
+3
+
+\`\`\`md
+1
+2
+
+3
+\`\`\`
+
+\`\`\`js
+1
+2
+
+3
+\`\`\`
+`;
+    expect(sanitizeMarkdown(markdown)).toBe(`
+12
+
+3
+
+\`\`\`md
+1
+2
+
+3
+\`\`\`
+
+\`\`\`js
+1
+2
+
+3
+\`\`\`
+`);
+  });
 });

@@ -24,7 +24,7 @@ jobs:
       E2E_EVENTS_MODE: ${{ inputs.events-mode }}
       OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
       cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
-      test_results_path: ${{ inputs.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
+      test_results_path: 'test-results/'
       test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }} ${{ inputs.flaky && '-- -- --grep "@flaky"' || '-- -- --grep-invert "@flaky"' }}
     steps:
       - uses: actions/checkout@v4

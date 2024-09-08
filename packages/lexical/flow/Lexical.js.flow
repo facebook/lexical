@@ -215,7 +215,7 @@ type EditorReadOptions = {
 };
 type EditorUpdateOptions = {
   onUpdate?: () => void,
-  tag?: string,
+  tag?: string | Array<string>,
   skipTransforms?: true,
   discrete?: true,
 };

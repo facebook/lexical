@@ -773,7 +773,9 @@ function $handleMoveTo(
   const focusNode = focus.getNode();
   const isMoveToStart = type === MOVE_TO_START;
 
+  // Ensure the selection is within the codeblock
   if (
+    !$isSelectionInCode(selection) ||
     !($isCodeHighlightNode(anchorNode) || $isTabNode(anchorNode)) ||
     !($isCodeHighlightNode(focusNode) || $isTabNode(focusNode))
   ) {

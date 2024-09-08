@@ -219,6 +219,20 @@ function $normalizeAllDirtyTextNodes(
   }
 }
 
+function addTags(editor: LexicalEditor, tags: undefined | string | string[]) {
+  if (!tags) {
+    return;
+  }
+  const updateTags = editor._updateTags;
+  let tags_ = tags;
+  if (!Array.isArray(tags)) {
+    tags_ = [tags];
+  }
+  for (const tag of tags_) {
+    updateTags.add(tag);
+  }
+}
+
 /**
  * Transform heuristic:
  * 1. We transform leaves first. If transforms generate additional dirty nodes we repeat step 1.
@@ -829,11 +843,9 @@ function processNestedUpdates(
       const [nextUpdateFn, options] = queuedUpdate;
 
       let onUpdate;
-      let tag;
 
       if (options !== undefined) {
         onUpdate = options.onUpdate;
-        tag = options.tag;
 
         if (options.skipTransforms) {
           skipTransforms = true;
@@ -851,9 +863,7 @@ function processNestedUpdates(
           editor._deferred.push(onUpdate);
         }
 
-        if (tag) {
-          editor._updateTags.add(tag);
-        }
+        addTags(editor, options.tag);
       }
 
       nextUpdateFn();
@@ -870,17 +880,12 @@ function $beginUpdate(
 ): void {
   const updateTags = editor._updateTags;
   let onUpdate;
-  let tag;
   let skipTransforms = false;
   let discrete = false;
 
   if (options !== undefined) {
     onUpdate = options.onUpdate;
-    tag = options.tag;
-
-    if (tag != null) {
-      updateTags.add(tag);
-    }
+    addTags(editor, options.tag);
 
     skipTransforms = options.skipTransforms || false;
     discrete = options.discrete || false;

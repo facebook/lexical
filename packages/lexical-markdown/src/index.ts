@@ -33,10 +33,10 @@ import {
   LINK,
   ORDERED_LIST,
   QUOTE,
+  sanitizeMarkdown,
   STRIKETHROUGH,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
-import {sanitizeMarkdown} from './utils';
 
 const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   HEADING,

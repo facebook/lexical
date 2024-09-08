@@ -456,37 +456,3 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
       MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
   );
 }
-
-export function sanitizeMarkdown(input: string): string {
-  const lines = input.split('\n');
-  let inCodeBlock = false;
-  const sanitizedLines: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // If we are inside a code block, keep the line unchanged
-    if (inCodeBlock) {
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // Detect the start or end of a markdown code block
-    if (line.startsWith('```')) {
-      inCodeBlock = !inCodeBlock;
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // In markdown the concept of "empty paragraphs" does not exist.
-    // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
-    const lastLine = sanitizedLines[sanitizedLines.length - 1];
-    if (line === '' || lastLine === '' || !lastLine) {
-      sanitizedLines.push(line);
-    } else {
-      sanitizedLines[sanitizedLines.length - 1] = lastLine + line;
-    }
-  }
-
-  return sanitizedLines.join('\n');
-}

@@ -153,6 +153,12 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
+const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
+const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
+const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
+const HEADING_REGEX = /^(#{1,6})\s/;
+const QUOTE_REGEX = /^>\s/;
+
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -266,7 +272,7 @@ export const HEADING: ElementTransformer = {
     const level = Number(node.getTag().slice(1));
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
-  regExp: /^(#{1,6})\s/,
+  regExp: HEADING_REGEX,
   replace: createBlockNode((match) => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
@@ -288,7 +294,7 @@ export const QUOTE: ElementTransformer = {
     }
     return output.join('\n');
   },
-  regExp: /^>\s/,
+  regExp: QUOTE_REGEX,
   replace: (parentNode, children, _match, isImport) => {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
@@ -399,7 +405,7 @@ export const UNORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)[-*+]\s/,
+  regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
   type: 'element',
 };
@@ -409,7 +415,7 @@ export const CHECK_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i,
+  regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
   type: 'element',
 };
@@ -419,7 +425,7 @@ export const ORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)(\d{1,})\.\s/,
+  regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),
   type: 'element',
 };
@@ -519,3 +525,47 @@ export const LINK: TextMatchTransformer = {
   trigger: ')',
   type: 'text-match',
 };
+
+export function sanitizeMarkdown(input: string): string {
+  const lines = input.split('\n');
+  let inCodeBlock = false;
+  const sanitizedLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lastLine = sanitizedLines[sanitizedLines.length - 1];
+
+    // Detect the start or end of a markdown code block
+    if (line.includes('```')) {
+      inCodeBlock = !inCodeBlock;
+      sanitizedLines.push(line);
+      continue;
+    }
+
+    // If we are inside a code block, keep the line unchanged
+    if (inCodeBlock) {
+      sanitizedLines.push(line);
+      continue;
+    }
+
+    // In markdown the concept of "empty paragraphs" does not exist.
+    // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
+    if (
+      line === '' ||
+      lastLine === '' ||
+      !lastLine ||
+      HEADING_REGEX.test(lastLine) ||
+      HEADING_REGEX.test(line) ||
+      QUOTE_REGEX.test(line) ||
+      ORDERED_LIST_REGEX.test(line) ||
+      UNORDERED_LIST_REGEX.test(line) ||
+      CHECK_LIST_REGEX.test(line)
+    ) {
+      sanitizedLines.push(line);
+    } else {
+      sanitizedLines[sanitizedLines.length - 1] = lastLine + line;
+    }
+  }
+
+  return sanitizedLines.join('\n');
+}

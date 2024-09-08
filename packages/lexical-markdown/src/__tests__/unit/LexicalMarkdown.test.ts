@@ -94,18 +94,35 @@ describe('Markdown', () => {
       md: '###### Hello world',
     },
     {
-      // Multiline paragraphs
-      html: '<p><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></p>',
+      // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
+      html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
+      skipExport: true,
+    },
+    {
+      // Multiline paragraphs
+      // TO-DO: It would be nice to support also hard line breaks (<br>) as \ or double spaces
+      // See https://spec.commonmark.org/0.31.2/#hard-line-breaks.
+      // Example: '<p><span style="white-space: pre-wrap;">Hello\\\nworld\\\n!</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello<br>world<br>!</span></p>',
+      md: ['Hello', 'world', '!'].join('\n'),
+      skipImport: true,
     },
     {
       html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world!</span></blockquote>',
       md: '> Hello\n> world!',
     },
+    // TO-DO: <br> should be preserved
+    // {
+    //   html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world<br>!<br>!</span></li></ul>',
+    //   md: '- Hello\n- world<br>!<br>!',
+    //   skipImport: true,
+    // },
     {
-      // Multiline list items
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span><br><span style="white-space: pre-wrap;">!</span></li></ul>',
+      // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
+      skipExport: true,
     },
     {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span></li></ul>',
@@ -275,8 +292,8 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      // Import only: multiline quote will be prefixed with ">" on each line during export
-      html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></blockquote>',
+      // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
+      html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
       md: '> Hello\nworld\n!',
       skipExport: true,
     },
@@ -299,8 +316,9 @@ describe('Markdown', () => {
     },
     {
       customTransformers: [MDX_HTML_TRANSFORMER],
-      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1\nSome Text</span></pre>',
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
+      skipExport: true,
     },
   ];
 

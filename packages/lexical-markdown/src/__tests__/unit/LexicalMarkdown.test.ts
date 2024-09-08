@@ -22,8 +22,10 @@ import {
   Transformer,
   TRANSFORMERS,
 } from '../..';
-import {MultilineElementTransformer} from '../../MarkdownTransformers';
-import {sanitizeMarkdown} from '../../utils';
+import {
+  MultilineElementTransformer,
+  sanitizeMarkdown,
+} from '../../MarkdownTransformers';
 
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {

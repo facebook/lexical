@@ -535,7 +535,7 @@ export function sanitizeMarkdown(input: string): string {
     const line = lines[i];
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
 
-    // Detect the start or end of a markdown code block
+    // Detect the start or end of a code block
     if (line.includes('```')) {
       inCodeBlock = !inCodeBlock;
       sanitizedLines.push(line);

@@ -20,7 +20,7 @@ declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
 };
-declare export funciton getCSSFromStyleObject(styles: Record<string, string>): string;
+declare export function getCSSFromStyleObject(styles: Record<string, string>): string;
 declare export function $patchStyleText(
   selection: BaseSelection,
   patch: {

@@ -27,7 +27,7 @@ import {
   createDOMRange,
   createRectsFromDOMRange,
   getCSSFromStyleObject,
-  getStyleObjectFromCSS
+  getStyleObjectFromCSS,
 } from './utils';
 
 export {
@@ -54,4 +54,9 @@ export {
   $wrapNodes,
 };
 
-export {createDOMRange, createRectsFromDOMRange, getCSSFromStyleObject, getStyleObjectFromCSS};
+export {
+  createDOMRange,
+  createRectsFromDOMRange,
+  getCSSFromStyleObject,
+  getStyleObjectFromCSS,
+};

@@ -158,6 +158,8 @@ const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
 const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
+const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
+const CODE_END_REGEX = /^[ \t]*```$/;
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -334,9 +336,9 @@ export const CODE: MultilineElementTransformer = {
   },
   regExpEnd: {
     optional: true,
-    regExp: /[ \t]*```$/,
+    regExp: CODE_END_REGEX,
   },
-  regExpStart: /^[ \t]*```(\w+)?/,
+  regExpStart: CODE_START_REGEX,
   replace: (
     rootNode,
     children,
@@ -536,7 +538,7 @@ export function normalizeMarkdown(input: string): string {
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
 
     // Detect the start or end of a code block
-    if (line.includes('```')) {
+    if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
       inCodeBlock = !inCodeBlock;
       sanitizedLines.push(line);
       continue;

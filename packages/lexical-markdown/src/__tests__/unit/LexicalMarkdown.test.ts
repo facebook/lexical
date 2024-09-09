@@ -24,7 +24,7 @@ import {
 } from '../..';
 import {
   MultilineElementTransformer,
-  sanitizeMarkdown,
+  normalizeMarkdown,
 } from '../../MarkdownTransformers';
 
 // Matches html within a mdx file
@@ -429,7 +429,7 @@ describe('Markdown', () => {
   }
 });
 
-describe('sanitizeMarkdown', () => {
+describe('normalizeMarkdown', () => {
   it('should combine lines separated by a single \n unless they are in a codeblock', () => {
     const markdown = `
 1
@@ -451,7 +451,7 @@ describe('sanitizeMarkdown', () => {
 3
 \`\`\`
 `;
-    expect(sanitizeMarkdown(markdown)).toBe(`
+    expect(normalizeMarkdown(markdown)).toBe(`
 12
 
 3

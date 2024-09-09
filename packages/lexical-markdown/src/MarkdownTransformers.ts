@@ -526,7 +526,7 @@ export const LINK: TextMatchTransformer = {
   type: 'text-match',
 };
 
-export function sanitizeMarkdown(input: string): string {
+export function normalizeMarkdown(input: string): string {
   const lines = input.split('\n');
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];

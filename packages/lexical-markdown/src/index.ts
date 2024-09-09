@@ -31,9 +31,9 @@ import {
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  normalizeMarkdown,
   ORDERED_LIST,
   QUOTE,
-  sanitizeMarkdown,
   STRIKETHROUGH,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
@@ -83,7 +83,7 @@ function $convertFromMarkdownString(
   node?: ElementNode,
   shouldPreserveNewLines = false,
 ): void {
-  const sanitizedMarkdown = sanitizeMarkdown(markdown);
+  const sanitizedMarkdown = normalizeMarkdown(markdown);
   const importMarkdown = createMarkdownImport(
     transformers,
     shouldPreserveNewLines,

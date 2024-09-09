@@ -159,7 +159,7 @@ const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
-const CODE_END_REGEX = /^[ \t]*```$/;
+const CODE_END_REGEX = /[ \t]*```$/;
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,

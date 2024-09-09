@@ -31,15 +31,38 @@ import {
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
-import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
+import {TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
 
 export type SerializedTableNode = Spread<
   {
+    colWidths?: number[];
     rowStriping?: boolean;
   },
   SerializedElementNode
 >;
+
+function updateColgroup(
+  dom: HTMLElement,
+  config: EditorConfig,
+  colCount: number,
+  colWidths?: number[],
+) {
+  const colGroup = dom.querySelector('colgroup');
+  if (!colGroup) {
+    return;
+  }
+  const cols = [];
+  for (let i = 0; i < colCount; i++) {
+    const col = document.createElement('col');
+    const width = colWidths && colWidths[i];
+    if (width) {
+      col.style.width = `${width}px`;
+    }
+    cols.push(col);
+  }
+  colGroup.replaceChildren(...cols);
+}
 
 function setRowStriping(
   dom: HTMLElement,
@@ -59,13 +82,24 @@ function setRowStriping(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
+  __colWidths?: number[];
 
   static getType(): string {
     return 'table';
   }
 
+  getColWidths() {
+    const self = this.getLatest();
+    return self.__colWidths;
+  }
+
+  setColWidths(colWidths: number[]) {
+    const self = this.getWritable();
+    self.__colWidths = colWidths;
+  }
+
   static clone(node: TableNode): TableNode {
-    return new TableNode(node.__key);
+    return new TableNode(node.__colWidths, node.__key);
   }
 
   afterCloneFrom(prevNode: this) {
@@ -83,19 +117,21 @@ export class TableNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableNode): TableNode {
-    const tableNode = $createTableNode();
+    const tableNode = $createTableNode(serializedNode.colWidths);
     tableNode.__rowStriping = serializedNode.rowStriping || false;
     return tableNode;
   }
 
-  constructor(key?: NodeKey) {
+  constructor(colWidths?: number[], key?: NodeKey) {
     super(key);
     this.__rowStriping = false;
+    this.__colWidths = colWidths;
   }
 
   exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
+      colWidths: this.getColWidths(),
       rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
       type: 'table',
       version: 1,
@@ -104,6 +140,14 @@ export class TableNode extends ElementNode {
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
+    const colGroup = document.createElement('colgroup');
+    tableElement.appendChild(colGroup);
+    updateColgroup(
+      tableElement,
+      config,
+      this.getColumnCount(),
+      this.getColWidths(),
+    );
 
     addClassNamesToElement(tableElement, config.theme.table);
     if (this.__rowStriping) {
@@ -121,6 +165,7 @@ export class TableNode extends ElementNode {
     if (prevNode.__rowStriping !== this.__rowStriping) {
       setRowStriping(dom, config, this.__rowStriping);
     }
+    updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
     return false;
   }
 
@@ -133,19 +178,10 @@ export class TableNode extends ElementNode {
           const colGroup = document.createElement('colgroup');
           const tBody = document.createElement('tbody');
           if (isHTMLElement(tableElement)) {
-            tBody.append(...tableElement.children);
-          }
-          const firstRow = this.getFirstChildOrThrow<TableRowNode>();
-
-          if (!$isTableRowNode(firstRow)) {
-            throw new Error('Expected to find row node.');
-          }
-
-          const colCount = firstRow.getChildrenSize();
-
-          for (let i = 0; i < colCount; i++) {
-            const col = document.createElement('col');
-            colGroup.append(col);
+            const cols = tableElement.querySelectorAll('col');
+            colGroup.append(...cols);
+            const rows = tableElement.querySelectorAll('tr');
+            tBody.append(...rows);
           }
 
           newElement.replaceChildren(colGroup, tBody);
@@ -281,6 +317,22 @@ export class TableNode extends ElementNode {
   canIndent(): false {
     return false;
   }
+
+  getColumnCount(): number {
+    const firstRow = this.getFirstChild<TableRowNode>();
+    if (!firstRow) {
+      return 0;
+    }
+
+    let columnCount = 0;
+    firstRow.getChildren().forEach((cell) => {
+      if ($isTableCellNode(cell)) {
+        columnCount += cell.getColSpan();
+      }
+    });
+
+    return columnCount;
+  }
 }
 
 export function $getElementForTableNode(
@@ -306,8 +358,8 @@ export function $convertTableElement(
   return {node: tableNode};
 }
 
-export function $createTableNode(): TableNode {
-  return $applyNodeReplacement(new TableNode());
+export function $createTableNode(colWidths?: number[]): TableNode {
+  return $applyNodeReplacement(new TableNode(colWidths));
 }
 
 export function $isTableNode(

@@ -58,7 +58,7 @@ export type MultilineElementTransformer = {
     linesInBetween: Array<string> | null,
     isImport: boolean,
   ) => boolean | void;
-  type: 'multilineElement';
+  type: 'multiline-element';
 };
 
 export type TextFormatTransformer = $ReadOnly<{

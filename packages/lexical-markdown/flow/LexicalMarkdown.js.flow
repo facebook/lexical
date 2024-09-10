@@ -15,7 +15,7 @@ import type {
   ElementNode,
   TextFormatType,
   TextNode,
-} from 'Lexical';
+} from 'lexical';
 
 export type Transformer =
   | ElementTransformer

@@ -61,6 +61,7 @@ import {createRoot, Root} from 'react-dom/client';
 import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
+import {emptyFunction} from '../../LexicalUtils';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -2039,6 +2040,28 @@ describe('LexicalEditor tests', () => {
     expect([...textNodeMutationB1[1].updateTags]).toEqual([
       'registerMutationListener',
     ]);
+  });
+
+  it('multiple update tags', async () => {
+    init();
+    const $mutateSomething = $createTextNode;
+
+    editor.update($mutateSomething, {
+      tag: ['a', 'b'],
+    });
+    expect(editor._updateTags).toEqual(new Set(['a', 'b']));
+    editor.update(
+      () => {
+        editor.update(emptyFunction, {tag: ['e', 'f']});
+      },
+      {
+        tag: ['c', 'd'],
+      },
+    );
+    expect(editor._updateTags).toEqual(new Set(['a', 'b', 'c', 'd', 'e', 'f']));
+
+    await Promise.resolve();
+    expect(editor._updateTags).toEqual(new Set([]));
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {

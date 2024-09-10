@@ -1405,30 +1405,53 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
   return copy;
 }
 
-export function $applyNodeReplacement<N extends LexicalNode>(
-  node: LexicalNode,
-): N {
+export function $applyNodeReplacement<N extends LexicalNode>(node: N): N {
   const editor = getActiveEditor();
   const nodeType = node.constructor.getType();
   const registeredNode = editor._nodes.get(nodeType);
-  if (registeredNode === undefined) {
-    invariant(
-      false,
-      '$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
-    );
-  }
-  const replaceFunc = registeredNode.replace;
-  if (replaceFunc !== null) {
-    const replacementNode = replaceFunc(node) as N;
-    if (!(replacementNode instanceof node.constructor)) {
+  invariant(
+    registeredNode !== undefined,
+    '$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
+    node.constructor.name,
+    nodeType,
+  );
+  const {replace, replaceWithKlass} = registeredNode;
+  if (replace !== null) {
+    const replacementNode = replace(node);
+    const replacementNodeKlass = replacementNode.constructor;
+    if (replaceWithKlass !== null) {
       invariant(
-        false,
-        '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
+        replacementNode instanceof replaceWithKlass,
+        '$applyNodeReplacement failed. Expected replacement node to be an instance of %s with type %s but returned %s with type %s from original node %s with type %s',
+        replaceWithKlass.name,
+        replaceWithKlass.getType(),
+        replacementNodeKlass.name,
+        replacementNodeKlass.getType(),
+        node.constructor.name,
+        nodeType,
+      );
+    } else {
+      invariant(
+        replacementNode instanceof node.constructor &&
+          replacementNodeKlass !== node.constructor,
+        '$applyNodeReplacement failed. Ensure replacement node %s with type %s is a subclass of the original node %s with type %s.',
+        replacementNodeKlass.name,
+        replacementNodeKlass.getType(),
+        node.constructor.name,
+        nodeType,
       );
     }
-    return replacementNode;
+    invariant(
+      replacementNode.__key !== node.__key,
+      '$applyNodeReplacement failed. Ensure that the key argument is *not* used in your replace function (from node %s with type %s to node %s with type %s), Node keys must never be re-used except by the static clone method.',
+      node.constructor.name,
+      nodeType,
+      replacementNodeKlass.name,
+      replacementNodeKlass.getType(),
+    );
+    return replacementNode as N;
   }
-  return node as N;
+  return node;
 }
 
 export function errorOnInsertTextNodeOnRoot(

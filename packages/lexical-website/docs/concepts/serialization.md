@@ -295,7 +295,11 @@ const initialConfig: InitialConfigType = {
     onError: (error: any) => console.log(error),
     nodes: [
       ExtendedTextNode,
-      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text) },
+      {
+        replace: TextNode,
+        with: (node: TextNode) => new ExtendedTextNode(node.__text),
+        withKlass: ExtendedTextNode,
+      },
       ListNode,
       ListItemNode,
     ]
@@ -306,6 +310,7 @@ and create a new Extended Text Node plugin
 
 ```js
 import {
+  $applyNodeReplacement,
   $isTextNode,
   DOMConversion,
   DOMConversionMap,
@@ -378,7 +383,7 @@ export class ExtendedTextNode extends TextNode {
 }
 
 export function $createExtendedTextNode(text: string): ExtendedTextNode {
-	return new ExtendedTextNode(text);
+  return $applyNodeReplacement(new ExtendedTextNode(text));
 }
 
 export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {

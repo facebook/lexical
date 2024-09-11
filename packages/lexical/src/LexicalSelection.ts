@@ -1704,6 +1704,7 @@ export class RangeSelection implements BaseSelection {
         return;
       }
       if (
+        isBackward &&
         anchor.offset === 0 &&
         $isElementNode(anchorNode) &&
         $isDecoratorNode(anchorNode.getFirstChild())

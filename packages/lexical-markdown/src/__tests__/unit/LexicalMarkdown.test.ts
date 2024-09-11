@@ -55,7 +55,7 @@ const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
     }
     return false; // Run next transformer
   },
-  type: 'multilineElement',
+  type: 'multiline-element',
 };
 
 describe('Markdown', () => {

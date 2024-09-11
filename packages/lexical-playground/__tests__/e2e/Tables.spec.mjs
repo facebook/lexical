@@ -1319,7 +1319,7 @@ test.describe.parallel('Tables', () => {
 
     await insertTable(page, 2, 2);
 
-    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
     await page.keyboard.type('Hello');
 
     await page.keyboard.down('Shift');
@@ -1334,8 +1334,7 @@ test.describe.parallel('Tables', () => {
     await insertSampleImage(page);
     await page.keyboard.type(' <- it works!');
 
-    // Wait for Decorator to mount.
-    await page.waitForTimeout(3000);
+    await waitForSelector(page, '.editor-image img');
 
     await assertHTML(
       page,

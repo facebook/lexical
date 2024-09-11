@@ -57,9 +57,7 @@ export function useYjsCollaboration(
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
-  const connect = useCallback(() => {
-    provider.connect();
-  }, [provider]);
+  const connect = useCallback(() => provider.connect(), [provider]);
 
   const disconnect = useCallback(() => {
     try {
@@ -152,11 +150,14 @@ export function useYjsCollaboration(
         }
       },
     );
-    connect();
+
+    const connectionPromise = connect();
 
     return () => {
       if (isReloadingDoc.current === false) {
-        disconnect();
+        Promise.resolve(connectionPromise).then(() => {
+          disconnect();
+        });
       }
 
       provider.off('sync', onSync);

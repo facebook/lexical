@@ -127,7 +127,7 @@ export type MultilineElementTransformer = {
      */
     isImport: boolean,
   ) => boolean | void;
-  type: 'multilineElement';
+  type: 'multiline-element';
 };
 
 export type TextFormatTransformer = Readonly<{
@@ -399,7 +399,7 @@ export const CODE: MultilineElementTransformer = {
       })(rootNode, children, startMatch, isImport);
     }
   },
-  type: 'multilineElement',
+  type: 'multiline-element',
 };
 
 export const UNORDERED_LIST: ElementTransformer = {

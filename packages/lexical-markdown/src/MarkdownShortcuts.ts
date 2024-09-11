@@ -403,7 +403,7 @@ export function registerMarkdownShortcuts(
     if (
       type === 'element' ||
       type === 'text-match' ||
-      type === 'multilineElement'
+      type === 'multiline-element'
     ) {
       const dependencies = transformer.dependencies;
       for (const node of dependencies) {

@@ -22,10 +22,7 @@ import {
   Transformer,
   TRANSFORMERS,
 } from '../..';
-import {
-  MultilineElementTransformer,
-  normalizeMarkdown,
-} from '../../MarkdownTransformers';
+import {MultilineElementTransformer} from '../../MarkdownTransformers';
 
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
@@ -96,35 +93,18 @@ describe('Markdown', () => {
       md: '###### Hello world',
     },
     {
-      // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
-      html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
-      md: ['Hello', 'world', '!'].join('\n'),
-      skipExport: true,
-    },
-    {
       // Multiline paragraphs
-      // TO-DO: It would be nice to support also hard line breaks (<br>) as \ or double spaces
-      // See https://spec.commonmark.org/0.31.2/#hard-line-breaks.
-      // Example: '<p><span style="white-space: pre-wrap;">Hello\\\nworld\\\n!</span></p>',
-      html: '<p><span style="white-space: pre-wrap;">Hello<br>world<br>!</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
-      skipImport: true,
     },
     {
       html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world!</span></blockquote>',
       md: '> Hello\n> world!',
     },
-    // TO-DO: <br> should be preserved
-    // {
-    //   html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world<br>!<br>!</span></li></ul>',
-    //   md: '- Hello\n- world<br>!<br>!',
-    //   skipImport: true,
-    // },
     {
-      // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
+      // Multiline list items
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span><br><span style="white-space: pre-wrap;">!</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
-      skipExport: true,
     },
     {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span></li></ul>',
@@ -294,8 +274,8 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
-      html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
+      // Import only: multiline quote will be prefixed with ">" on each line during export
+      html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></blockquote>',
       md: '> Hello\nworld\n!',
       skipExport: true,
     },
@@ -318,9 +298,8 @@ describe('Markdown', () => {
     },
     {
       customTransformers: [MDX_HTML_TRANSFORMER],
-      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1Some Text</span></pre>',
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1\nSome Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
-      skipExport: true,
     },
   ];
 
@@ -427,48 +406,4 @@ describe('Markdown', () => {
       ).toBe(md);
     });
   }
-});
-
-describe('normalizeMarkdown', () => {
-  it('should combine lines separated by a single \n unless they are in a codeblock', () => {
-    const markdown = `
-1
-2
-
-3
-
-\`\`\`md
-1
-2
-
-3
-\`\`\`
-
-\`\`\`js
-1
-2
-
-3
-\`\`\`
-`;
-    expect(normalizeMarkdown(markdown)).toBe(`
-12
-
-3
-
-\`\`\`md
-1
-2
-
-3
-\`\`\`
-
-\`\`\`js
-1
-2
-
-3
-\`\`\`
-`);
-  });
 });

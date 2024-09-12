@@ -153,14 +153,6 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
-const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
-const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
-const HEADING_REGEX = /^(#{1,6})\s/;
-const QUOTE_REGEX = /^>\s/;
-const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
-const CODE_END_REGEX = /[ \t]*```$/;
-
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -274,7 +266,7 @@ export const HEADING: ElementTransformer = {
     const level = Number(node.getTag().slice(1));
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
-  regExp: HEADING_REGEX,
+  regExp: /^(#{1,6})\s/,
   replace: createBlockNode((match) => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
@@ -296,7 +288,7 @@ export const QUOTE: ElementTransformer = {
     }
     return output.join('\n');
   },
-  regExp: QUOTE_REGEX,
+  regExp: /^>\s/,
   replace: (parentNode, children, _match, isImport) => {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
@@ -336,9 +328,9 @@ export const CODE: MultilineElementTransformer = {
   },
   regExpEnd: {
     optional: true,
-    regExp: CODE_END_REGEX,
+    regExp: /[ \t]*```$/,
   },
-  regExpStart: CODE_START_REGEX,
+  regExpStart: /^[ \t]*```(\w+)?/,
   replace: (
     rootNode,
     children,
@@ -407,7 +399,7 @@ export const UNORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: UNORDERED_LIST_REGEX,
+  regExp: /^(\s*)[-*+]\s/,
   replace: listReplace('bullet'),
   type: 'element',
 };
@@ -417,7 +409,7 @@ export const CHECK_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: CHECK_LIST_REGEX,
+  regExp: /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i,
   replace: listReplace('check'),
   type: 'element',
 };
@@ -427,7 +419,7 @@ export const ORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: ORDERED_LIST_REGEX,
+  regExp: /^(\s*)(\d{1,})\.\s/,
   replace: listReplace('number'),
   type: 'element',
 };
@@ -527,47 +519,3 @@ export const LINK: TextMatchTransformer = {
   trigger: ')',
   type: 'text-match',
 };
-
-export function normalizeMarkdown(input: string): string {
-  const lines = input.split('\n');
-  let inCodeBlock = false;
-  const sanitizedLines: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const lastLine = sanitizedLines[sanitizedLines.length - 1];
-
-    // Detect the start or end of a code block
-    if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
-      inCodeBlock = !inCodeBlock;
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // If we are inside a code block, keep the line unchanged
-    if (inCodeBlock) {
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // In markdown the concept of "empty paragraphs" does not exist.
-    // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
-    if (
-      line === '' ||
-      lastLine === '' ||
-      !lastLine ||
-      HEADING_REGEX.test(lastLine) ||
-      HEADING_REGEX.test(line) ||
-      QUOTE_REGEX.test(line) ||
-      ORDERED_LIST_REGEX.test(line) ||
-      UNORDERED_LIST_REGEX.test(line) ||
-      CHECK_LIST_REGEX.test(line)
-    ) {
-      sanitizedLines.push(line);
-    } else {
-      sanitizedLines[sanitizedLines.length - 1] = lastLine + line;
-    }
-  }
-
-  return sanitizedLines.join('\n');
-}

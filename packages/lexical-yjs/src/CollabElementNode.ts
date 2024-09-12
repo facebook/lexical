@@ -452,6 +452,15 @@ export class CollabElementNode {
       const nextKey = nextChildren[nextIndex];
 
       if (prevKey === nextKey) {
+        if (collabNodeMap.size === 0) {
+          const collabNode = $createCollabNodeFromLexicalNode(
+            binding,
+            $getNodeByKeyOrThrow(prevKey),
+            this,
+          );
+          this.append(collabNode);
+          collabNodeMap.set(prevKey, collabNode);
+        }
         // Nove move, create or remove
         this._syncChildFromLexical(
           binding,

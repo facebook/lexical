@@ -432,43 +432,65 @@ describe('Markdown', () => {
 describe('normalizeMarkdown', () => {
   it('should combine lines separated by a single \n unless they are in a codeblock', () => {
     const markdown = `
-1
-2
+A1
+A2
 
-3
+A3
 
 \`\`\`md
-1
-2
+B1
+B2
 
-3
+B3
 \`\`\`
+
+C1
+C2
+
+C3
 
 \`\`\`js
-1
-2
+D1
+D2
 
-3
+D3
 \`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
 `;
     expect(normalizeMarkdown(markdown)).toBe(`
-12
+A1A2
 
-3
+A3
 
 \`\`\`md
-1
-2
+B1
+B2
 
-3
+B3
 \`\`\`
+
+C1C2
+
+C3
 
 \`\`\`js
-1
-2
+D1
+D2
 
-3
+D3
 \`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1E2
+
+E3
 `);
   });
 });

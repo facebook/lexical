@@ -173,7 +173,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
           const tableRowIndex =
-            $getTableRowIndexFromTableCellNode(tableCellNode);
+            $getTableRowIndexFromTableCellNode(tableCellNode) +
+            tableCellNode.getRowSpan() -
+            1;
 
           const tableRows = tableNode.getChildren();
 

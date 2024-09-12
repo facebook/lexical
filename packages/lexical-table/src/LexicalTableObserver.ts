@@ -357,7 +357,7 @@ export class TableObserver {
       const focus = formatSelection.focus;
 
       selection.getNodes().forEach((cellNode) => {
-        if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
+        if ($isTableCellNode(cellNode)) {
           anchor.set(cellNode.getKey(), 0, 'element');
           focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
           formatSelection.formatText(type);

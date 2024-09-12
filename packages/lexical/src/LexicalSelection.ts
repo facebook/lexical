@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
@@ -1189,6 +1190,13 @@ export class RangeSelection implements BaseSelection {
         selectedTextNodes.push(selectedNode);
       }
     }
+
+    selectedNodes.forEach((node) => {
+      if ($isParagraphNode(node)) {
+        const newFormat = node.getFormatFlags(formatType, null);
+        node.setTextFormat(newFormat);
+      }
+    });
 
     const selectedTextNodesLength = selectedTextNodes.length;
     if (selectedTextNodesLength === 0) {

@@ -493,4 +493,13 @@ E1E2
 E3
 `);
   });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown)).toBe(markdown);
+  });
 });

@@ -161,6 +161,8 @@ const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
 const CODE_END_REGEX = /[ \t]*```$/;
 const CODE_SINGLE_LINE_REGEX = /^[ \t]*```(\w+)?[^`]*```/;
+const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
+const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -568,7 +570,9 @@ export function normalizeMarkdown(input: string): string {
       QUOTE_REGEX.test(line) ||
       ORDERED_LIST_REGEX.test(line) ||
       UNORDERED_LIST_REGEX.test(line) ||
-      CHECK_LIST_REGEX.test(line)
+      CHECK_LIST_REGEX.test(line) ||
+      TABLE_ROW_REG_EXP.test(line) ||
+      TABLE_ROW_DIVIDER_REG_EXP.test(line)
     ) {
       sanitizedLines.push(line);
     } else {

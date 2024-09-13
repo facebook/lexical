@@ -96,14 +96,16 @@ export class TableNode extends ElementNode {
   setColWidths(colWidths: number[]) {
     const self = this.getWritable();
     self.__colWidths = colWidths;
+    return self;
   }
 
   static clone(node: TableNode): TableNode {
-    return new TableNode(node.__colWidths, node.__key);
+    return new TableNode(node.__key);
   }
 
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
+    this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
   }
 
@@ -117,15 +119,14 @@ export class TableNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableNode): TableNode {
-    const tableNode = $createTableNode(serializedNode.colWidths);
+    const tableNode = $createTableNode();
     tableNode.__rowStriping = serializedNode.rowStriping || false;
     return tableNode;
   }
 
-  constructor(colWidths?: number[], key?: NodeKey) {
+  constructor(key?: NodeKey) {
     super(key);
     this.__rowStriping = false;
-    this.__colWidths = colWidths;
   }
 
   exportJSON(): SerializedTableNode {
@@ -358,8 +359,8 @@ export function $convertTableElement(
   return {node: tableNode};
 }
 
-export function $createTableNode(colWidths?: number[]): TableNode {
-  return $applyNodeReplacement(new TableNode(colWidths));
+export function $createTableNode(): TableNode {
+  return $applyNodeReplacement(new TableNode());
 }
 
 export function $isTableNode(

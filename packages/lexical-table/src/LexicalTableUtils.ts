@@ -473,10 +473,11 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   }
   const colWidths = grid.getColWidths();
   if (colWidths) {
+    const newColWidths = [...colWidths];
     const columnIndex = insertAfterColumn < 0 ? 0 : insertAfterColumn;
-    const newWidth = colWidths[columnIndex];
-    colWidths.splice(columnIndex, 0, newWidth);
-    grid.setColWidths(colWidths);
+    const newWidth = newColWidths[columnIndex];
+    newColWidths.splice(columnIndex, 0, newWidth);
+    grid.setColWidths(newColWidths);
   }
 }
 
@@ -652,8 +653,9 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   }
   const colWidths = grid.getColWidths();
   if (colWidths) {
-    colWidths.splice(startColumn, selectedColumnCount);
-    grid.setColWidths(colWidths);
+    const newColWidths = [...colWidths];
+    newColWidths.splice(startColumn, selectedColumnCount);
+    grid.setColWidths(newColWidths);
   }
 }
 

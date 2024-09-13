@@ -357,12 +357,7 @@ export class TableObserver {
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
 
-      const cellNodes: Array<TableCellNode> = [];
-      for (const node of selection.getNodes()) {
-        if ($isTableCellNode(node)) {
-          cellNodes.push(node);
-        }
-      }
+      const cellNodes = selection.getNodes().filter($isTableCellNode);
       const paragraph = cellNodes[0].getFirstChild();
       const alignFormatWith = $isParagraphNode(paragraph)
         ? paragraph.getFormatFlags(type, null)

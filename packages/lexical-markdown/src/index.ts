@@ -83,7 +83,7 @@ function $convertFromMarkdownString(
   node?: ElementNode,
   shouldPreserveNewLines = false,
 ): void {
-  const sanitizedMarkdown = normalizeMarkdown(markdown);
+  const sanitizedMarkdown = shouldPreserveNewLines ? markdown : normalizeMarkdown(markdown);
   const importMarkdown = createMarkdownImport(
     transformers,
     shouldPreserveNewLines,

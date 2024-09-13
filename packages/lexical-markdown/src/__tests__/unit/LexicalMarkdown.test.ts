@@ -203,6 +203,11 @@ describe('Markdown', () => {
       md: '*Hello **world**!*',
     },
     {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldPreserveNewLines: true,
+    },
+    {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
       md: '# Hello\n\n\n\n**world**!',
       shouldPreserveNewLines: true,

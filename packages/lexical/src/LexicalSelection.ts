@@ -1356,7 +1356,7 @@ export class RangeSelection implements BaseSelection {
       if (rightPart) {
         const rightPartParent = rightPart.getParentOrThrow();
         last.insertAfter(rightPart);
-        // Remove redudant paragraph
+        // Remove redundant paragraph
         rightPartParent.getParentOrThrow().remove();
         rightPart.selectStart();
       }
@@ -1439,7 +1439,7 @@ export class RangeSelection implements BaseSelection {
       if (rightPart) {
         const rightPartParent = rightPart.getParentOrThrow();
         newBlock.append(rightPart);
-        // Remove redudant paragraph
+        // Remove redundant paragraph
         rightPartParent.getParentOrThrow().remove();
       }
       newBlock.append(...nodesToInsert);

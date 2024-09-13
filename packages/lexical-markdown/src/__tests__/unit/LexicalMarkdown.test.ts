@@ -203,6 +203,11 @@ describe('Markdown', () => {
       md: '*Hello **world**!*',
     },
     {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldPreserveNewLines: true,
+    },
+    {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
       md: '# Hello\n\n\n\n**world**!',
       shouldPreserveNewLines: true,
@@ -432,43 +437,74 @@ describe('Markdown', () => {
 describe('normalizeMarkdown', () => {
   it('should combine lines separated by a single \n unless they are in a codeblock', () => {
     const markdown = `
-1
-2
+A1
+A2
 
-3
+A3
 
 \`\`\`md
-1
-2
+B1
+B2
 
-3
+B3
 \`\`\`
+
+C1
+C2
+
+C3
 
 \`\`\`js
-1
-2
+D1
+D2
 
-3
+D3
 \`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
 `;
     expect(normalizeMarkdown(markdown)).toBe(`
-12
+A1A2
 
-3
+A3
 
 \`\`\`md
-1
-2
+B1
+B2
 
-3
+B3
 \`\`\`
+
+C1C2
+
+C3
 
 \`\`\`js
-1
-2
+D1
+D2
 
-3
+D3
 \`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1E2
+
+E3
 `);
+  });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown)).toBe(markdown);
   });
 });

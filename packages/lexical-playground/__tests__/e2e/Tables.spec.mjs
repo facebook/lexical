@@ -1690,7 +1690,8 @@ test.describe.parallel('Tables', () => {
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
                 colspan="2"
-                rowspan="2">
+                rowspan="2"
+                style="width: 217px">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </th>
               <th
@@ -1705,11 +1706,10 @@ test.describe.parallel('Tables', () => {
             </tr>
             <tr>
               <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                style="width: 125px">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </th>
-              <td class="PlaygroundEditorTheme__tableCell">
+              <td class="PlaygroundEditorTheme__tableCell" style="width: 125px">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </td>
               <td class="PlaygroundEditorTheme__tableCell">
@@ -1766,7 +1766,7 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
-          <tr style="height: 87px">
+          <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="2"
@@ -1778,7 +1778,7 @@ test.describe.parallel('Tables', () => {
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
-          <tr>
+          <tr style="height: 87px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>

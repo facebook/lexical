@@ -270,9 +270,10 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           if (width === undefined) {
             return;
           }
+          const newColWidths = [...colWidths];
           const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);
-          colWidths[columnIndex] = newWidth;
-          tableNode.setColWidths(colWidths);
+          newColWidths[columnIndex] = newWidth;
+          tableNode.setColWidths(newColWidths);
         },
         {tag: 'skip-scroll-into-view'},
       );

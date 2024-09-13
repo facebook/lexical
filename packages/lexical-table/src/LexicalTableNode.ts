@@ -36,7 +36,7 @@ import {getTable} from './LexicalTableSelectionHelpers';
 
 export type SerializedTableNode = Spread<
   {
-    colWidths?: number[];
+    colWidths?: readonly number[];
     rowStriping?: boolean;
   },
   SerializedElementNode
@@ -82,7 +82,7 @@ function setRowStriping(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
-  __colWidths?: number[];
+  __colWidths?: readonly number[];
 
   static getType(): string {
     return 'table';
@@ -95,7 +95,7 @@ export class TableNode extends ElementNode {
 
   setColWidths(colWidths: number[]) {
     const self = this.getWritable();
-    self.__colWidths = colWidths;
+    self.__colWidths = Object.freeze(colWidths);
     return self;
   }
 
@@ -121,6 +121,7 @@ export class TableNode extends ElementNode {
   static importJSON(serializedNode: SerializedTableNode): TableNode {
     const tableNode = $createTableNode();
     tableNode.__rowStriping = serializedNode.rowStriping || false;
+    tableNode.__colWidths = Object.freeze(serializedNode.colWidths);
     return tableNode;
   }
 

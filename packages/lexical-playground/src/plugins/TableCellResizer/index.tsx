@@ -43,7 +43,7 @@ type MousePosition = {
 type MouseDraggingDirection = 'right' | 'bottom';
 
 const MIN_ROW_HEIGHT = 33;
-const MIN_COLUMN_WIDTH = 75;
+const MIN_COLUMN_WIDTH = 92;
 
 function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);

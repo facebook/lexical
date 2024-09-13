@@ -1174,8 +1174,12 @@ export class RangeSelection implements BaseSelection {
    * merging nodes as necessary.
    *
    * @param formatType the format type to apply to the nodes in the Selection.
+   * @param alignWithFormat a 32-bit integer representing formatting flags to align with.
    */
-  formatText(formatType: TextFormatType): void {
+  formatText(
+    formatType: TextFormatType,
+    alignWithFormat: number | null = null,
+  ): void {
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
@@ -1230,7 +1234,10 @@ export class RangeSelection implements BaseSelection {
       return;
     }
 
-    const firstNextFormat = firstNode.getFormatFlags(formatType, null);
+    const firstNextFormat = firstNode.getFormatFlags(
+      formatType,
+      alignWithFormat,
+    );
 
     const lastIndex = selectedTextNodesLength - 1;
     let lastNode = selectedTextNodes[lastIndex];

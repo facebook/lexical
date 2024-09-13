@@ -21,12 +21,13 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $setSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {
   $createTableSelection,
@@ -356,12 +357,21 @@ export class TableObserver {
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
 
-      selection.getNodes().forEach((cellNode) => {
-        if ($isTableCellNode(cellNode)) {
-          anchor.set(cellNode.getKey(), 0, 'element');
-          focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
-          formatSelection.formatText(type);
+      const cellNodes: Array<TableCellNode> = [];
+      for (const node of selection.getNodes()) {
+        if ($isTableCellNode(node)) {
+          cellNodes.push(node);
         }
+      }
+      const paragraph = cellNodes[0].getFirstChild();
+      const alignFormatWith = $isParagraphNode(paragraph)
+        ? paragraph.getFormatFlags(type, null)
+        : null;
+
+      cellNodes.forEach((cellNode: TableCellNode) => {
+        anchor.set(cellNode.getKey(), 0, 'element');
+        focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
+        formatSelection.formatText(type, alignFormatWith);
       });
 
       $setSelection(selection);

@@ -35,7 +35,7 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertExcalidrawElement(
+function $convertExcalidrawElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
@@ -48,7 +48,7 @@ function convertExcalidrawElement(
     !widthStr || widthStr === 'inherit' ? 'inherit' : parseInt(widthStr, 10);
 
   if (excalidrawData) {
-    const node = new ExcalidrawNode(excalidrawData, width, height);
+    const node = $createExcalidrawNode(excalidrawData, width, height);
     return {
       node,
     };
@@ -139,7 +139,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
           return null;
         }
         return {
-          conversion: convertExcalidrawElement,
+          conversion: $convertExcalidrawElement,
           priority: 1,
         };
       },
@@ -174,7 +174,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   }
 
   getWidth(): Dimension {
-    return this.__width;
+    return this.getLatest().__width;
   }
 
   setWidth(width: Dimension): void {
@@ -183,7 +183,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   }
 
   getHeight(): Dimension {
-    return this.__height;
+    return this.getLatest().__height;
   }
 
   setHeight(height: Dimension): void {

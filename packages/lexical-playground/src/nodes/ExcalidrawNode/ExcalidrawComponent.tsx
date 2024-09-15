@@ -15,8 +15,6 @@ import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
-  $getSelection,
-  $isNodeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   KEY_BACKSPACE_COMMAND,
@@ -48,13 +46,13 @@ export default function ExcalidrawComponent({
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      if (isSelected) {
         event.preventDefault();
         editor.update(() => {
           const node = $getNodeByKey(nodeKey);
-          if ($isExcalidrawNode(node)) {
+          if (node) {
             node.remove();
           }
         });
@@ -102,22 +100,22 @@ export default function ExcalidrawComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, isResizing, $onDelete, setSelected]);
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
-      if ($isExcalidrawNode(node)) {
+      if (node) {
         node.remove();
       }
     });
@@ -182,15 +180,15 @@ export default function ExcalidrawComponent({
     appState = {},
   } = useMemo(() => JSON.parse(data), [data]);
 
-  const [width, height] = useMemo(() => {
+  const [initialWidth, initialHeight] = useMemo(() => {
     let nodeWidth: 'inherit' | number = 'inherit';
     let nodeHeight: 'inherit' | number = 'inherit';
 
     editor.getEditorState().read(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
-        nodeWidth = node.getWidth(); // Now exists
-        nodeHeight = node.getHeight(); // Now exists
+        nodeWidth = node.getWidth();
+        nodeHeight = node.getHeight();
       }
     });
 
@@ -223,8 +221,8 @@ export default function ExcalidrawComponent({
             elements={elements}
             files={files}
             appState={appState}
-            width={width}
-            height={height}
+            width={initialWidth}
+            height={initialHeight}
           />
           {isSelected && (
             <div

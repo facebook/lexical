@@ -90,6 +90,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><br /></p>
@@ -132,6 +136,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p dir="ltr"><span data-lexical-text="true">abc</span></p>
@@ -344,6 +352,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><br /></p>
@@ -389,6 +401,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><br /></p>
@@ -446,6 +462,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><br /></p>
@@ -515,6 +535,10 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p><br /></p>
@@ -691,6 +715,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 style="background-color: rgb(172, 206, 247); caret-color: transparent">
@@ -723,6 +752,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p dir="ltr"><span data-lexical-text="true">a</span></p>
@@ -775,7 +809,7 @@ test.describe.parallel('Tables', () => {
     }
 
     const firstRowFirstColumnCellBoundingBox = await p.locator(
-      'table:first-of-type > tr:nth-child(1) > th:nth-child(1)',
+      'table:first-of-type > :nth-match(tr, 1) > th:nth-child(1)',
     );
 
     // Focus on inside the iFrame or the boundingBox() below returns null.
@@ -795,6 +829,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
@@ -838,6 +877,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p dir="ltr"><span data-lexical-text="true">a</span></p>
@@ -909,6 +953,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 style="background-color: rgb(172, 206, 247); caret-color: transparent">
@@ -941,6 +990,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
@@ -1006,6 +1060,10 @@ test.describe.parallel('Tables', () => {
         page,
         html`
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p dir="ltr"><span data-lexical-text="true">a</span></p>
@@ -1024,6 +1082,11 @@ test.describe.parallel('Tables', () => {
             </tr>
           </table>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p dir="ltr"><span data-lexical-text="true">a</span></p>
@@ -1084,6 +1147,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p><br /></p>
@@ -1136,6 +1204,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
@@ -1152,6 +1224,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><br /></p>
@@ -1187,6 +1263,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p dir="ltr"><span data-lexical-text="true">Hello World</span></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
@@ -1221,6 +1302,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p dir="ltr"><span data-lexical-text="true">Hello World</span></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><br /></p>
@@ -1288,6 +1374,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p><br /></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p><span data-lexical-text="true">123</span></p>
@@ -1341,6 +1431,10 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1411,6 +1505,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1445,6 +1543,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1498,6 +1600,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1535,6 +1641,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1608,6 +1718,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 142px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -1616,13 +1731,12 @@ test.describe.parallel('Tables', () => {
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="width: 125px">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
           <tr>
-            <td class="PlaygroundEditorTheme__tableCell" style="width: 125px">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>
@@ -1634,7 +1748,7 @@ test.describe.parallel('Tables', () => {
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell" style="width: 125px">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>
@@ -1686,12 +1800,16 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 142px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
                 colspan="2"
-                rowspan="2"
-                style="width: 217px">
+                rowspan="2">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </th>
               <th
@@ -1709,7 +1827,7 @@ test.describe.parallel('Tables', () => {
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </th>
-              <td class="PlaygroundEditorTheme__tableCell" style="width: 125px">
+              <td class="PlaygroundEditorTheme__tableCell">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </td>
               <td class="PlaygroundEditorTheme__tableCell">
@@ -1766,6 +1884,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -1842,6 +1965,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1873,6 +2001,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1932,6 +2065,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1983,6 +2121,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2069,6 +2212,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2174,6 +2322,11 @@ test.describe.parallel('Tables', () => {
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table
             class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2305,6 +2458,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2345,6 +2503,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2426,6 +2589,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2490,6 +2657,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2547,6 +2719,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2601,6 +2777,12 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2681,6 +2863,10 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2743,6 +2929,10 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2796,6 +2986,9 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2846,6 +3039,9 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -2912,6 +3108,9 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2969,6 +3168,11 @@ test.describe.parallel('Tables', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
@@ -3054,6 +3258,9 @@ test.describe.parallel('Tables', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
@@ -3104,6 +3311,12 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -3190,6 +3403,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 style="background-color: rgb(172, 206, 247); caret-color: transparent; text-align: center">
@@ -3297,6 +3515,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -3374,6 +3597,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">

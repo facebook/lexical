@@ -399,6 +399,10 @@ test.describe.parallel('Selection', () => {
           <span data-lexical-text="true">abc</span>
         </p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">

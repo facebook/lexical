@@ -46,7 +46,7 @@ function updateColgroup(
   dom: HTMLElement,
   config: EditorConfig,
   colCount: number,
-  colWidths?: number[],
+  colWidths?: number[] | readonly number[],
 ) {
   const colGroup = dom.querySelector('colgroup');
   if (!colGroup) {
@@ -82,20 +82,21 @@ function setRowStriping(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
-  __colWidths?: readonly number[];
+  __colWidths?: number[] | readonly number[];
 
   static getType(): string {
     return 'table';
   }
 
-  getColWidths() {
+  getColWidths(): number[] | readonly number[] | undefined {
     const self = this.getLatest();
     return self.__colWidths;
   }
 
-  setColWidths(colWidths: number[]) {
+  setColWidths(colWidths: readonly number[]): this {
     const self = this.getWritable();
-    self.__colWidths = Object.freeze(colWidths);
+    // NOTE: Node properties should be immutable. Freeze to prevent accidental mutation.
+    self.__colWidths = __DEV__ ? Object.freeze(colWidths) : colWidths;
     return self;
   }
 
@@ -121,7 +122,7 @@ export class TableNode extends ElementNode {
   static importJSON(serializedNode: SerializedTableNode): TableNode {
     const tableNode = $createTableNode();
     tableNode.__rowStriping = serializedNode.rowStriping || false;
-    tableNode.__colWidths = Object.freeze(serializedNode.colWidths);
+    tableNode.__colWidths = serializedNode.colWidths;
     return tableNode;
   }
 

@@ -1347,7 +1347,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = $removeTextAndSplitBlock(this);
+        const [index] = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         last.selectEnd();
       }
@@ -1363,9 +1363,19 @@ export class RangeSelection implements BaseSelection {
         $isElementNode(firstBlock),
         "Expected 'firstBlock' to be an ElementNode",
       );
-      const index = $removeTextAndSplitBlock(this);
+      const [index, rightPart] = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       last.selectEnd();
+
+      if (rightPart) {
+        const rightPartParent = rightPart.getParentOrThrow();
+        last.insertAfter(rightPart);
+        if (!$isRootNode(rightPartParent.getParentOrThrow())) {
+          // Remove redundant paragraph
+          rightPartParent.getParentOrThrow().remove();
+        }
+        rightPart.selectStart();
+      }
       return;
     }
 
@@ -1432,7 +1442,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = $removeTextAndSplitBlock(this);
+    const [index, rightPart] = $removeTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
     const firstToAppend = block.getChildAtIndex(index);
@@ -1440,7 +1450,16 @@ export class RangeSelection implements BaseSelection {
       ? [firstToAppend, ...firstToAppend.getNextSiblings()]
       : [];
     const newBlock = block.insertNewAfter(this, false) as ElementNode | null;
+
     if (newBlock) {
+      if (rightPart) {
+        const rightPartParent = rightPart.getParentOrThrow();
+        newBlock.append(rightPart);
+        if (!$isRootNode(rightPartParent.getParentOrThrow())) {
+          // Remove redundant paragraph
+          rightPartParent.getParentOrThrow().remove();
+        }
+      }
       newBlock.append(...nodesToInsert);
       newBlock.selectStart();
       return newBlock;
@@ -1456,6 +1475,7 @@ export class RangeSelection implements BaseSelection {
   insertLineBreak(selectStart?: boolean): void {
     const lineBreak = $createLineBreakNode();
     this.insertNodes([lineBreak]);
+
     // this is used in MacOS with the command 'ctrl-O' (openLineBreak)
     if (selectStart) {
       const parent = lineBreak.getParentOrThrow();
@@ -2841,7 +2861,9 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
-function $removeTextAndSplitBlock(selection: RangeSelection): number {
+function $removeTextAndSplitBlock(
+  selection: RangeSelection,
+): [number, LexicalNode | null] {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
     selection_.removeText();
@@ -2861,39 +2883,44 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   const anchor = selection_.anchor;
   let node = anchor.getNode();
   let offset = anchor.offset;
+  let split;
+  let splitNodes: LexicalNode[] | undefined;
 
   while (!INTERNAL_$isBlock(node)) {
-    [node, offset] = $splitNodeAtPoint(node, offset);
+    [node, offset, split] = $splitNodeAtPoint(node, offset);
+    if (split) {
+      splitNodes = split;
+    }
   }
 
-  return offset;
+  return [offset, splitNodes ? splitNodes[1] : null];
 }
 
 function $splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
-): [parent: ElementNode, offset: number] {
+): [parent: ElementNode, offset: number, split: LexicalNode[] | null] {
   const parent = node.getParent();
   if (!parent) {
     const paragraph = $createParagraphNode();
     $getRoot().append(paragraph);
     paragraph.select();
-    return [$getRoot(), 0];
+    return [$getRoot(), 0, null];
   }
 
   if ($isTextNode(node)) {
     const split = node.splitText(offset);
     if (split.length === 0) {
-      return [parent, node.getIndexWithinParent()];
+      return [parent, node.getIndexWithinParent(), null];
     }
     const x = offset === 0 ? 0 : 1;
     const index = split[0].getIndexWithinParent() + x;
 
-    return [parent, index];
+    return [parent, index, split];
   }
 
   if (!$isElementNode(node) || offset === 0) {
-    return [parent, node.getIndexWithinParent()];
+    return [parent, node.getIndexWithinParent(), null];
   }
 
   const firstToAppend = node.getChildAtIndex(offset);
@@ -2909,7 +2936,7 @@ function $splitNodeAtPoint(
       newElement.append(firstToAppend, ...firstToAppend.getNextSiblings());
     }
   }
-  return [parent, node.getIndexWithinParent() + 1];
+  return [parent, node.getIndexWithinParent() + 1, null];
 }
 
 function $wrapInlineNodes(nodes: LexicalNode[]) {

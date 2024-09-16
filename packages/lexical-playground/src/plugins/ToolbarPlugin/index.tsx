@@ -547,6 +547,7 @@ export default function ToolbarPlugin({
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const [isImageCaption, setIsImageCaption] = useState(false);
+  const [isLocatedTable, setIsLocatedTable] = useState<boolean>(false);
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -599,8 +600,10 @@ export default function ToolbarPlugin({
 
       const tableNode = $findMatchingParent(node, $isTableNode);
       if ($isTableNode(tableNode)) {
+        setIsLocatedTable(true);
         setRootType('table');
       } else {
+        setIsLocatedTable(false);
         setRootType('root');
       }
 
@@ -1137,19 +1140,21 @@ export default function ToolbarPlugin({
                   <i className="icon diagram-2" />
                   <span className="text">Excalidraw</span>
                 </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Table', (onClose) => (
-                      <InsertTableDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon table" />
-                  <span className="text">Table</span>
-                </DropDownItem>
+                {!isLocatedTable && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Table', (onClose) => (
+                        <InsertTableDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon table" />
+                    <span className="text">Table</span>
+                  </DropDownItem>
+                )}
                 <DropDownItem
                   onClick={() => {
                     showModal('Insert Poll', (onClose) => (

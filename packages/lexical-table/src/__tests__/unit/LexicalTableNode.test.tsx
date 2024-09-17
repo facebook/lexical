@@ -12,6 +12,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableSelection,
+  $insertTableColumn__EXPERIMENTAL,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -384,6 +385,65 @@ describe('LexicalTableNode tests', () => {
           expect(table!.createDOM(editorConfig).outerHTML).toBe(
             `<table class="${editorConfig.theme.table}"><colgroup><col><col><col><col></colgroup></table>`,
           );
+        });
+      });
+
+      test('Update column widths', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = $createTableNodeWithDimensions(4, 2, true);
+          root.append(table);
+        });
+
+        // Set widths
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          table!.setColWidths([50, 50]);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          expect(table!.createDOM(editorConfig).outerHTML).toBe(
+            `<table class="${editorConfig.theme.table}"><colgroup><col style="width: 50px;"><col style="width: 50px;"></colgroup></table>`,
+          );
+          const colWidths = table!.getColWidths();
+
+          // colwidths should be immutable in DEV
+          expect(() => {
+            (colWidths as number[]).push(100);
+          }).toThrow();
+          expect(table!.getColWidths()).toStrictEqual([50, 50]);
+          expect(table!.getColumnCount()).toBe(2);
+        });
+
+        // Add a column
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          const DOMTable = $getElementForTableNode(editor, table!);
+          const selection = $createTableSelection();
+          selection.set(
+            table!.__key,
+            table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+            table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+          );
+          $setSelection(selection);
+          $insertTableColumn__EXPERIMENTAL();
+          table!.setColWidths([50, 50, 100]);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          expect(table!.createDOM(editorConfig).outerHTML).toBe(
+            `<table class="${editorConfig.theme.table}"><colgroup><col style="width: 50px;"><col style="width: 50px;"><col style="width: 100px;"></colgroup></table>`,
+          );
+          expect(table!.getColWidths()).toStrictEqual([50, 50, 100]);
+          expect(table!.getColumnCount()).toBe(3);
         });
       });
     },

@@ -12,6 +12,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableSelection,
+  $insertTableColumn__EXPERIMENTAL,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -102,7 +103,7 @@ describe('LexicalTableNode tests', () => {
           const tableNode = $createTableNode();
 
           expect(tableNode.createDOM(editorConfig).outerHTML).toBe(
-            `<table class="${editorConfig.theme.table}"></table>`,
+            `<table class="${editorConfig.theme.table}"><colgroup></colgroup></table>`,
           );
         });
       });
@@ -126,7 +127,7 @@ describe('LexicalTableNode tests', () => {
         // Make sure paragraph is inserted inside empty cells
         const emptyCell = '<td><p><br></p></td>';
         expect(testEnv.innerHTML).toBe(
-          `<table><tr><td><p dir="ltr"><span data-lexical-text="true">Hello there</span></p></td><td><p dir="ltr"><span data-lexical-text="true">General Kenobi!</span></p></td></tr><tr><td><p dir="ltr"><span data-lexical-text="true">Lexical is nice</span></p></td>${emptyCell}</tr></table>`,
+          `<table><colgroup><col><col></colgroup><tr><td><p dir="ltr"><span data-lexical-text="true">Hello there</span></p></td><td><p dir="ltr"><span data-lexical-text="true">General Kenobi!</span></p></td></tr><tr><td><p dir="ltr"><span data-lexical-text="true">Lexical is nice</span></p></td>${emptyCell}</tr></table>`,
         );
       });
 
@@ -147,7 +148,7 @@ describe('LexicalTableNode tests', () => {
           $insertDataTransferForRichText(dataTransfer, selection, editor);
         });
         expect(testEnv.innerHTML).toBe(
-          `<table><tr style="height: 21px;"><td><p dir="ltr"><strong data-lexical-text="true">Surface</strong></p></td><td><p dir="ltr"><em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em></p></td><td><p style="text-align: right;"><span data-lexical-text="true">77349</span></p></td></tr><tr style="height: 21px;"><td><p dir="ltr"><span data-lexical-text="true">Lexical</span></p></td><td><p dir="ltr"><span data-lexical-text="true">XDS_RICH_TEXT_AREA</span></p></td><td><p dir="ltr"><span data-lexical-text="true">sdvd </span><strong data-lexical-text="true">sdfvsfs</strong></p></td></tr></table>`,
+          `<table><colgroup><col><col><col></colgroup><tr style="height: 21px;"><td><p dir="ltr"><strong data-lexical-text="true">Surface</strong></p></td><td><p dir="ltr"><em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em></p></td><td><p style="text-align: right;"><span data-lexical-text="true">77349</span></p></td></tr><tr style="height: 21px;"><td><p dir="ltr"><span data-lexical-text="true">Lexical</span></p></td><td><p dir="ltr"><span data-lexical-text="true">XDS_RICH_TEXT_AREA</span></p></td><td><p dir="ltr"><span data-lexical-text="true">sdvd </span><strong data-lexical-text="true">sdfvsfs</strong></p></td></tr></table>`,
         );
       });
 
@@ -292,7 +293,7 @@ describe('LexicalTableNode tests', () => {
         });
 
         expect(testEnv.innerHTML).toBe(
-          `<p><br></p><table><tr><th><p><br></p></th><th><p><br></p></th><th><p><br></p></th><th><p><br></p></th></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr></table>`,
+          `<p><br></p><table><colgroup><col><col><col><col></colgroup><tr><th><p><br></p></th><th><p><br></p></th><th><p><br></p></th><th><p><br></p></th></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr><tr><th><p><br></p></th><td><p><br></p></td><td><p><br></p></td><td><p><br></p></td></tr></table>`,
         );
       });
 
@@ -366,7 +367,7 @@ describe('LexicalTableNode tests', () => {
           const root = $getRoot();
           const table = root.getLastChild<TableNode>();
           expect(table!.createDOM(editorConfig).outerHTML).toBe(
-            `<table class="${editorConfig.theme.table} ${editorConfig.theme.tableRowStriping}" data-lexical-row-striping="true"></table>`,
+            `<table class="${editorConfig.theme.table} ${editorConfig.theme.tableRowStriping}" data-lexical-row-striping="true"><colgroup><col><col><col><col></colgroup></table>`,
           );
         });
 
@@ -382,8 +383,67 @@ describe('LexicalTableNode tests', () => {
           const root = $getRoot();
           const table = root.getLastChild<TableNode>();
           expect(table!.createDOM(editorConfig).outerHTML).toBe(
-            `<table class="${editorConfig.theme.table}"></table>`,
+            `<table class="${editorConfig.theme.table}"><colgroup><col><col><col><col></colgroup></table>`,
           );
+        });
+      });
+
+      test('Update column widths', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = $createTableNodeWithDimensions(4, 2, true);
+          root.append(table);
+        });
+
+        // Set widths
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          table!.setColWidths([50, 50]);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          expect(table!.createDOM(editorConfig).outerHTML).toBe(
+            `<table class="${editorConfig.theme.table}"><colgroup><col style="width: 50px;"><col style="width: 50px;"></colgroup></table>`,
+          );
+          const colWidths = table!.getColWidths();
+
+          // colwidths should be immutable in DEV
+          expect(() => {
+            (colWidths as number[]).push(100);
+          }).toThrow();
+          expect(table!.getColWidths()).toStrictEqual([50, 50]);
+          expect(table!.getColumnCount()).toBe(2);
+        });
+
+        // Add a column
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          const DOMTable = $getElementForTableNode(editor, table!);
+          const selection = $createTableSelection();
+          selection.set(
+            table!.__key,
+            table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+            table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+          );
+          $setSelection(selection);
+          $insertTableColumn__EXPERIMENTAL();
+          table!.setColWidths([50, 50, 100]);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const table = root.getLastChild<TableNode>();
+          expect(table!.createDOM(editorConfig).outerHTML).toBe(
+            `<table class="${editorConfig.theme.table}"><colgroup><col style="width: 50px;"><col style="width: 50px;"><col style="width: 100px;"></colgroup></table>`,
+          );
+          expect(table!.getColWidths()).toStrictEqual([50, 50, 100]);
+          expect(table!.getColumnCount()).toBe(3);
         });
       });
     },

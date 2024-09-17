@@ -826,12 +826,12 @@ export async function selectCellsFromTableCords(
   }
 
   const firstRowFirstColumnCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${firstCords.y + 1}) > ${
       isFirstHeader ? 'th' : 'td'
     }:nth-child(${firstCords.x + 1})`,
   );
   const secondRowSecondCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${secondCords.y + 1}) > ${
       isSecondHeader ? 'th' : 'td'
     }:nth-child(${secondCords.x + 1})`,
   );

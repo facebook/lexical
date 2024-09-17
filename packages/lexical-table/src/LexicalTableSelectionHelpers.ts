@@ -1014,7 +1014,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
     domRows,
     rows: 0,
   };
-  let currentNode = tableElement.firstChild;
+  let currentNode = tableElement.querySelector('tr') as ChildNode | null;
   let x = 0;
   let y = 0;
   domRows.length = 0;

@@ -471,6 +471,14 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   if (firstInsertedCell !== null) {
     $moveSelectionToCell(firstInsertedCell);
   }
+  const colWidths = grid.getColWidths();
+  if (colWidths) {
+    const newColWidths = [...colWidths];
+    const columnIndex = insertAfterColumn < 0 ? 0 : insertAfterColumn;
+    const newWidth = newColWidths[columnIndex];
+    newColWidths.splice(columnIndex, 0, newWidth);
+    grid.setColWidths(newColWidths);
+  }
 }
 
 export function $deleteTableColumn(
@@ -642,6 +650,12 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
         : focusRowMap[anchorStartColumn - 1];
     const {cell} = previousRow;
     $moveSelectionToCell(cell);
+  }
+  const colWidths = grid.getColWidths();
+  if (colWidths) {
+    const newColWidths = [...colWidths];
+    newColWidths.splice(startColumn, selectedColumnCount);
+    grid.setColWidths(newColWidths);
   }
 }
 

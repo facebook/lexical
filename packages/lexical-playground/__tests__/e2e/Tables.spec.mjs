@@ -2371,6 +2371,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -3448,6 +3453,11 @@ test.describe.parallel('Tables', () => {
         html`
           <p><br /></p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th style="text-align: center">
                 <p dir="ltr" style="text-align: center">

@@ -82,10 +82,16 @@ function $convertFromMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines = false,
+  /**
+   * By setting this to true, adjacent non empty lines will be merged
+   * according to commonmark spec: https://spec.commonmark.org/0.24/#example-177
+   */
+  shouldNormalizeMarkdown = true,
 ): void {
-  const sanitizedMarkdown = shouldPreserveNewLines
-    ? markdown
-    : normalizeMarkdown(markdown);
+  const sanitizedMarkdown =
+    shouldPreserveNewLines || !shouldNormalizeMarkdown
+      ? markdown
+      : normalizeMarkdown(markdown);
   const importMarkdown = createMarkdownImport(
     transformers,
     shouldPreserveNewLines,

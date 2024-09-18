@@ -95,6 +95,7 @@ declare export function $convertFromMarkdownString(
   transformers?: Array<Transformer>,
   node?: ElementNode,
   shouldPreserveNewLines?: boolean,
+  shouldNormalizeMarkdown?: boolean,
 ): void;
 
 // TODO:

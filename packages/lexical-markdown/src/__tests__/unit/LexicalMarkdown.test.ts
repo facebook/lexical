@@ -207,6 +207,7 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
       md: 'hello\nworld',
       shouldNormalizeMarkdown: true,
+      skipExport: true,
     },
     {
       html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
@@ -353,6 +354,7 @@ describe('Markdown', () => {
     md,
     skipImport,
     shouldPreserveNewLines,
+    shouldNormalizeMarkdown,
     customTransformers,
   } of IMPORT_AND_EXPORT) {
     if (skipImport) {
@@ -382,6 +384,7 @@ describe('Markdown', () => {
             ],
             undefined,
             shouldPreserveNewLines,
+            shouldNormalizeMarkdown,
           ),
         {
           discrete: true,

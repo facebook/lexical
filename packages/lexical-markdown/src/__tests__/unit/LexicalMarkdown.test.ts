@@ -65,6 +65,7 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
     shouldPreserveNewLines?: true;
+    shouldNormalizeMarkdown?: true | false;
     customTransformers?: Transformer[];
   }>;
 
@@ -201,6 +202,16 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">Hello </em></i><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',
       md: '*Hello **world**!*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
+      md: 'hello\nworld',
+      shouldNormalizeMarkdown: true,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldNormalizeMarkdown: false,
     },
     {
       html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',

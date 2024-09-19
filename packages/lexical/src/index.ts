@@ -179,6 +179,7 @@ export {
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
   isBlockDomNode,
+  isDocumentFragment,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,

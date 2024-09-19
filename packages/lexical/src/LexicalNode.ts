@@ -155,9 +155,9 @@ export type DOMExportOutputMap = Map<
 
 export type DOMExportOutput = {
   after?: (
-    generatedElement: HTMLElement | Text | null | undefined,
+    generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | Text | null | undefined;
-  element: HTMLElement | Text | null;
+  element: HTMLElement | DocumentFragment | Text | null;
 };
 
 export type NodeKey = string;

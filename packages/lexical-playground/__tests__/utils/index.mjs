@@ -826,12 +826,12 @@ export async function selectCellsFromTableCords(
   }
 
   const firstRowFirstColumnCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${firstCords.y + 1}) > ${
       isFirstHeader ? 'th' : 'td'
     }:nth-child(${firstCords.x + 1})`,
   );
   const secondRowSecondCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${secondCords.y + 1}) > ${
       isSecondHeader ? 'th' : 'td'
     }:nth-child(${secondCords.x + 1})`,
   );
@@ -960,4 +960,37 @@ export async function dragDraggableMenuTo(
 
 export async function pressInsertLinkButton(page) {
   await click(page, '.toolbar-item[aria-label="Insert link"]');
+}
+
+/**
+ * Creates a selection object to assert against that is human readable and self-describing.
+ *
+ * Selections are composed of an anchorPath (the start) and a focusPath (the end).
+ * Once you traverse each path, you use the respective offsets to find the exact location of the cursor.
+ * So offsets are relative to their path. For example, if the anchorPath is [0, 1, 2] and the anchorOffset is 3,
+ * then the cursor is at the 4th character of the 3rd element of the 2nd element of the 1st element.
+ *
+ * @example
+ * const expectedSelection = createHumanReadableSelection('the full text of the last cell', {
+ *   anchorOffset: {desc: 'beginning of cell', value: 0},
+ *   anchorPath: [
+ *     {desc: 'index of table in root', value: 1},
+ *     {desc: 'first table row', value: 0},
+ *     {desc: 'first cell', value: 0},
+ *   ],
+ *   focusOffset: {desc: 'full text length', value: 9},
+ *   focusPath: [
+ *     {desc: 'index of last paragraph', value: 2},
+ *     {desc: 'index of first span', value: 0},
+ *     {desc: 'index of text block', value: 0},
+ *   ],
+ * });
+ */
+export function createHumanReadableSelection(_overview, dto) {
+  return {
+    anchorOffset: dto.anchorOffset.value,
+    anchorPath: dto.anchorPath.map((p) => p.value),
+    focusOffset: dto.focusOffset.value,
+    focusPath: dto.focusPath.map((p) => p.value),
+  };
 }

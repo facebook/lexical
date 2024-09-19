@@ -24,9 +24,14 @@ import 'prismjs/components/prism-swift';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 declare global {
   interface Window {
     Prism: typeof import('prismjs');
   }
 }
+
+export const Prism: typeof import('prismjs') = CAN_USE_DOM
+  ? window.Prism
+  : (global as unknown as {Prism: typeof import('prismjs')}).Prism;

@@ -781,6 +781,25 @@ export function applyTableHandlers(
                   : lastCell.getChildrenSize(),
                 'element',
               );
+            } else if (isAnchorInside) {
+              const [tableMap] = $computeTableMap(
+                tableNode,
+                anchorCellNode,
+                anchorCellNode,
+              );
+              const firstCell = tableMap[0][0].cell;
+              const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+              /**
+               * If isBackward, set the anchor to be at the end of the table so that when the cursor moves outside of
+               * the table in the backward direction, the entire table will be selected from its end.
+               * Otherwise, if forward, set the anchor to be at the start of the table so that when the focus is dragged
+               * outside th end of the table, it will start from the beginning of the table.
+               */
+              newSelection.anchor.set(
+                isBackward ? lastCell.getKey() : firstCell.getKey(),
+                isBackward ? lastCell.getChildrenSize() : 0,
+                'element',
+              );
             }
             $setSelection(newSelection);
             $addHighlightStyleToTable(editor, tableObserver);
@@ -995,7 +1014,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
     domRows,
     rows: 0,
   };
-  let currentNode = tableElement.firstChild;
+  let currentNode = tableElement.querySelector('tr') as ChildNode | null;
   let x = 0;
   let y = 0;
   domRows.length = 0;

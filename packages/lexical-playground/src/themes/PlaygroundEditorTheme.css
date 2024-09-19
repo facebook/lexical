@@ -122,7 +122,7 @@
   overflow-y: scroll;
   overflow-x: scroll;
   table-layout: fixed;
-  width: max-content;
+  width: fit-content;
   margin: 0px 25px 30px 0px;
 }
 .PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
@@ -137,7 +137,6 @@
 .PlaygroundEditorTheme__tableCell {
   border: 1px solid #bbb;
   width: 75px;
-  min-width: 75px;
   vertical-align: top;
   text-align: start;
   padding: 6px 8px;

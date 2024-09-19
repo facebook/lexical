@@ -43,6 +43,11 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
@@ -113,6 +118,11 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
@@ -191,6 +201,11 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr style="height: 21px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p
@@ -277,6 +292,12 @@ test.describe('HTML Tables CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -388,6 +409,12 @@ test.describe('HTML Tables CopyAndPaste', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -531,6 +558,10 @@ test.describe('HTML Tables CopyAndPaste', () => {
           <span data-lexical-text="true">123</span>
         </p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph">
@@ -646,6 +677,13 @@ test.describe('HTML Tables CopyAndPaste', () => {
           <span data-lexical-text="true">123</span>
         </p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell" colspan="2">
               <p class="PlaygroundEditorTheme__paragraph">

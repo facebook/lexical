@@ -7,9 +7,14 @@
  */
 
 import type {Props as ElementProps} from './shared/LexicalContentEditableElement';
-import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {
+  $getRoot,
+  COMMAND_PRIORITY_LOW,
+  type LexicalEditor,
+  MOVE_TO_START,
+} from 'lexical';
 import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
@@ -37,6 +42,12 @@ function ContentEditableImpl(
 ): JSX.Element {
   const {placeholder, ...rest} = props;
   const [editor] = useLexicalComposerContext();
+
+  editor.registerCommand(
+    MOVE_TO_START,
+    (_payload): boolean => $getRoot().selectStart(),
+    COMMAND_PRIORITY_LOW,
+  );
 
   return (
     <>

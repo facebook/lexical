@@ -65,7 +65,7 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
     shouldPreserveNewLines?: true;
-    shouldNormalizeMarkdown?: true | false;
+    shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
   }>;
 
@@ -206,13 +206,13 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
       md: 'hello\nworld',
-      shouldNormalizeMarkdown: true,
+      shouldMergeAdjacentLines: true,
       skipExport: true,
     },
     {
       html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
       md: 'hello\nworld',
-      shouldNormalizeMarkdown: false,
+      shouldMergeAdjacentLines: false,
     },
     {
       html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
@@ -354,7 +354,7 @@ describe('Markdown', () => {
     md,
     skipImport,
     shouldPreserveNewLines,
-    shouldNormalizeMarkdown,
+    shouldMergeAdjacentLines,
     customTransformers,
   } of IMPORT_AND_EXPORT) {
     if (skipImport) {
@@ -384,7 +384,7 @@ describe('Markdown', () => {
             ],
             undefined,
             shouldPreserveNewLines,
-            shouldNormalizeMarkdown,
+            shouldMergeAdjacentLines,
           ),
         {
           discrete: true,

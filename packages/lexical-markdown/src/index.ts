@@ -78,19 +78,18 @@ const TRANSFORMERS: Array<Transformer> = [
  * Renders markdown from a string. The selection is moved to the start after the operation.
  *
  *  @param {boolean} [shouldPreserveNewLines] By setting this to true, new lines will be preserved between conversions
- *  @param {boolean} [shouldNormalizeMarkdown] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177
+ *  @param {boolean} [shouldMergeAdjacentLines] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177. Not applicable if shouldPreserveNewLines = true.
  */
 function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines = false,
-  shouldNormalizeMarkdown = true,
+  shouldMergeAdjacentLines = true,
 ): void {
-  const sanitizedMarkdown =
-    shouldPreserveNewLines || !shouldNormalizeMarkdown
-      ? markdown
-      : normalizeMarkdown(markdown);
+  const sanitizedMarkdown = shouldPreserveNewLines
+    ? markdown
+    : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
   const importMarkdown = createMarkdownImport(
     transformers,
     shouldPreserveNewLines,

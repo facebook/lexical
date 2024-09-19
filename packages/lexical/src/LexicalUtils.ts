@@ -966,6 +966,14 @@ function isArrowDown(key: string): boolean {
   return key === 'ArrowDown';
 }
 
+function isHomeKey(key: string): boolean {
+  return key === 'Home';
+}
+
+function isEndKey(key: string): boolean {
+  return key === 'End';
+}
+
 export function isMoveBackward(
   key: string,
   ctrlKey: boolean,
@@ -982,7 +990,12 @@ export function isMoveToStart(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowLeft(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return (
+    (isArrowLeft(key) || isHomeKey(key)) &&
+    !altKey &&
+    !shiftKey &&
+    (ctrlKey || metaKey)
+  );
 }
 
 export function isMoveForward(
@@ -1001,7 +1014,12 @@ export function isMoveToEnd(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowRight(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return (
+    (isArrowRight(key) || isEndKey(key)) &&
+    !altKey &&
+    !shiftKey &&
+    (ctrlKey || metaKey)
+  );
 }
 
 export function isMoveUp(
@@ -1666,17 +1684,6 @@ export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
   return x.nodeType === 1;
-}
-
-/**
- * @param x - The element being testing
- * @returns Returns true if x is a document fragment, false otherwise.
- */
-export function isDocumentFragment(
-  x: Node | EventTarget,
-): x is DocumentFragment {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 11;
 }
 
 /**

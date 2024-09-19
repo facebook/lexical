@@ -45,7 +45,10 @@ function ContentEditableImpl(
 
   editor.registerCommand(
     MOVE_TO_START,
-    (_payload): boolean => $getRoot().selectStart(),
+    (_payload): boolean => {
+      $getRoot().selectStart();
+      return false;
+    },
     COMMAND_PRIORITY_LOW,
   );
 

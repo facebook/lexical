@@ -25,7 +25,7 @@
     "@types/prismjs": "^1.26.0"
   },
   "module": "LexicalCode.mjs",
-  "sideEffects": false,
+  "sideEffects": true,
   "exports": {
     ".": {
       "import": {

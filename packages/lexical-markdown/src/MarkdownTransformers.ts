@@ -532,7 +532,10 @@ export const LINK: TextMatchTransformer = {
   type: 'text-match',
 };
 
-export function normalizeMarkdown(input: string): string {
+export function normalizeMarkdown(
+  input: string,
+  shouldMergeAdjacentLines = true,
+): string {
   const lines = input.split('\n');
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];
@@ -573,7 +576,8 @@ export function normalizeMarkdown(input: string): string {
       UNORDERED_LIST_REGEX.test(line) ||
       CHECK_LIST_REGEX.test(line) ||
       TABLE_ROW_REG_EXP.test(line) ||
-      TABLE_ROW_DIVIDER_REG_EXP.test(line)
+      TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      !shouldMergeAdjacentLines
     ) {
       sanitizedLines.push(line);
     } else {

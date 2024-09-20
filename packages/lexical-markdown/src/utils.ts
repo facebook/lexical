@@ -405,12 +405,16 @@ function codeBlockExport(node: LexicalNode) {
 
 export function indexBy<T>(
   list: Array<T>,
-  callback: (arg0: T) => string,
+  callback: (arg0: T) => string | undefined,
 ): Readonly<Record<string, Array<T>>> {
   const index: Record<string, Array<T>> = {};
 
   for (const item of list) {
     const key = callback(item);
+
+    if (!key) {
+      continue;
+    }
 
     if (index[key]) {
       index[key].push(item);

@@ -25,6 +25,7 @@ import {
   copyToClipboard,
   deleteTableColumns,
   deleteTableRows,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -1351,6 +1352,47 @@ test.describe.parallel('Tables', () => {
     await page.keyboard.type('Text after');
     await insertTable(page, 2, 3);
     await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can delete all with range selection anchored in table', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+    await insertTable(page, 1, 1);
+    // Remove paragraph before
+    await moveUp(page);
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup><col style="width: 92px" /></colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+    // Select all but from the table
+    const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+    await page.keyboard.press(`${modifier}+A`);
+    // The observer is active
+    await expect(page.locator('.table-cell-action-button')).toBeVisible();
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,

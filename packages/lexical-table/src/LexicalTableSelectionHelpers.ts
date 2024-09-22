@@ -1303,7 +1303,6 @@ function selectTableCellNode(tableCell: TableCellNode, fromStart: boolean) {
   }
 }
 
-const BROWSER_BLUE_RGB = '172,206,247';
 function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
   const element = cell.elem;
   const node = $getNearestNodeFromDOMNode(element);
@@ -1313,12 +1312,9 @@ function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
   );
   const backgroundColor = node.getBackgroundColor();
   if (backgroundColor === null) {
-    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
+    element.classList.add('PlaygroundEditorTheme__tableCellSelected');
   } else {
-    element.style.setProperty(
-      'background-image',
-      `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
-    );
+    element.classList.add('PlaygroundEditorTheme__tableCellSelectedOverwrite');
   }
   element.style.setProperty('caret-color', 'transparent');
 }

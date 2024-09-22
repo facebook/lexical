@@ -110,25 +110,13 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     const span = document.createElement('span');
     const theme = config.theme;
     const className = theme.image;
-
-    span.style.display = 'inline-block';
-
-    span.style.width =
-      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
-    span.style.height =
-      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
-
     if (className !== undefined) {
       span.className = className;
     }
     return span;
   }
 
-  updateDOM(prevNode: ExcalidrawNode, dom: HTMLElement): boolean {
-    dom.style.width =
-      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
-    dom.style.height =
-      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
+  updateDOM(): false {
     return false;
   }
 

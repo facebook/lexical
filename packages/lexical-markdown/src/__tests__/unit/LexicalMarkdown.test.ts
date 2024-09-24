@@ -453,7 +453,7 @@ describe('Markdown', () => {
   }
 });
 
-describe('normalizeMarkdown - shouldMergeAdjacentLines', () => {
+describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
   it('should combine lines separated by a single \n unless they are in a codeblock', () => {
     const markdown = `
 A1
@@ -513,6 +513,84 @@ D3
 \`\`\`single line code\`\`\`
 
 E1E2
+
+E3
+`);
+  });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown)).toBe(markdown);
+  });
+});
+
+describe('normalizeMarkdown - shouldMergeAdjacentLines = false', () => {
+  it('should not combine lines separated by a single \n', () => {
+    const markdown = `
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(`
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
 
 E3
 `);

@@ -129,22 +129,25 @@ export default function ExcalidrawComponent({
     if (!editor.isEditable()) {
       return;
     }
-    return editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isExcalidrawNode(node)) {
-        if ((els && els.length > 0) || Object.keys(fls).length > 0) {
-          node.setData(
-            JSON.stringify({
-              appState: aps,
-              elements: els,
-              files: fls,
-            }),
-          );
-        } else {
-          node.remove();
+    return editor.update(
+      () => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isExcalidrawNode(node)) {
+          if ((els && els.length > 0) || Object.keys(fls).length > 0) {
+            node.setData(
+              JSON.stringify({
+                appState: aps,
+                elements: els,
+                files: fls,
+              }),
+            );
+          } else {
+            node.remove();
+          }
         }
-      }
-    });
+      },
+      {tag: 'history-merge'},
+    );
   };
 
   const onResizeStart = () => {

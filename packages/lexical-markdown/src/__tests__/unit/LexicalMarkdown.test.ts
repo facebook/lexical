@@ -524,7 +524,7 @@ E3
 | --- | --- |
 | c | d |
 `;
-    expect(normalizeMarkdown(markdown)).toBe(markdown);
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
   });
 });
 
@@ -602,6 +602,6 @@ E3
 | --- | --- |
 | c | d |
 `;
-    expect(normalizeMarkdown(markdown)).toBe(markdown);
+    expect(normalizeMarkdown(markdown, false)).toBe(markdown);
   });
 });

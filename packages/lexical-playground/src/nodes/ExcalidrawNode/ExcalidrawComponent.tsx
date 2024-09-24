@@ -195,6 +195,13 @@ export default function ExcalidrawComponent({
     return [nodeWidth, nodeHeight];
   }, [editor, nodeKey]);
 
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    if (elements.length === 0) {
+      deleteNode();
+    }
+  }, [deleteNode, elements.length]);
+
   return (
     <>
       <ExcalidrawModal
@@ -203,7 +210,7 @@ export default function ExcalidrawComponent({
         initialAppState={appState}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
         onSave={(els, aps, fls) => {
           editor.setEditable(true);
           setData(els, aps, fls);

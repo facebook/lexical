@@ -171,13 +171,7 @@ export default function ExcalidrawModal({
   };
 
   const discard = () => {
-    if (elements && elements.filter((el) => !el.isDeleted).length === 0) {
-      // delete node if the scene is clear
-      onDelete();
-    } else {
-      //Otherwise, show confirmation dialog before closing
-      setDiscardModalOpen(true);
-    }
+    setDiscardModalOpen(true);
   };
 
   function ShowDiscardDialog(): JSX.Element {

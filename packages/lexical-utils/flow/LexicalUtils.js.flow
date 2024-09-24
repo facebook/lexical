@@ -12,10 +12,6 @@ import type {
   LexicalNode,
   ElementNode,
 } from 'lexical';
-export type DFSNode = $ReadOnly<{
-  depth: number,
-  node: LexicalNode,
-}>;
 declare export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
@@ -32,10 +28,25 @@ declare export function mediaFileReader(
   files: Array<File>,
   acceptableMimeTypes: Array<string>,
 ): Promise<Array<$ReadOnly<{file: File, result: string}>>>;
+export type DFSNode = $ReadOnly<{
+  depth: number,
+  node: LexicalNode,
+}>;
 declare export function $dfs(
-  startingNode?: LexicalNode,
-  endingNode?: LexicalNode,
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
 ): Array<DFSNode>;
+type DFSIterator = {
+  next: () => IteratorResult<DFSNode, void>;
+  @@iterator: () => DFSIterator;
+};
+declare export function $dfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator;
+declare export function $getNextSiblingOrParentSibling(
+  node: LexicalNode,
+): [null | LexicalNode, number];
 declare function $getDepth(node: LexicalNode): number;
 declare export function $getNearestNodeOfType<T: LexicalNode>(
   node: LexicalNode,

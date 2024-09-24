@@ -39,6 +39,7 @@ export default {
   tableCellPrimarySelected: 'ExampleEditorTheme__tableCellPrimarySelected',
   tableCellResizer: 'ExampleEditorTheme__tableCellResizer',
   tableCellSelected: 'ExampleEditorTheme__tableCellSelected',
+  tableCellSelectedOverwrite: 'ExampleEditorTheme__tableCellSelectedOverwrite',
   tableCellSortedIndicator: 'ExampleEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'ExampleEditorTheme__tableCellResizeRuler',
   tableSelected: 'ExampleEditorTheme__tableSelected',

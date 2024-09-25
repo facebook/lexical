@@ -46,7 +46,7 @@ declare export function $dfsIterator(
 ): DFSIterator;
 declare export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
-): [null | LexicalNode, number];
+): null | [LexicalNode, number];
 declare export function $getDepth(node: LexicalNode): number;
 declare export function $getNearestNodeOfType<T: LexicalNode>(
   node: LexicalNode,

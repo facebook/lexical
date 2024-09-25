@@ -231,7 +231,7 @@ export function $dfsIterator(
         depth++;
       } else {
         let depthDiff;
-        [node, depthDiff] = $getNextSiblingOrParentSibling(node);
+        [node, depthDiff] = $getNextSiblingOrParentSibling(node) || [null, 0];
         depth += depthDiff;
         if (end == null && depth <= startDepth) {
           node = null;
@@ -252,7 +252,7 @@ export function $dfsIterator(
 
 export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
-): [null | LexicalNode, number] {
+): null | [LexicalNode, number] {
   let node_: null | LexicalNode = node;
   // Find immediate sibling or nearest parent sibling
   let sibling = null;
@@ -269,6 +269,9 @@ export function $getNextSiblingOrParentSibling(
     }
   }
 
+  if (node_ === null) {
+    return null;
+  }
   return [node_, depthDiff];
 }
 

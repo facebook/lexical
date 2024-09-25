@@ -250,6 +250,14 @@ export function $dfsIterator(
   return iterator;
 }
 
+/**
+ * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
+ * R -> P -> T1, T2
+ *   -> P2
+ * returns T2 for node T1, P2 for node T2, and null for node P2.
+ * @param node LexicalNode.
+ * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
 export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number] {

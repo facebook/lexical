@@ -270,7 +270,7 @@ export function $getNextSiblingOrParentSibling(
   return [node_, depthDiff];
 }
 
-function $getDepth(node: LexicalNode): number {
+export function $getDepth(node: LexicalNode): number {
   let innerNode: LexicalNode | null = node;
   let depth = 0;
 

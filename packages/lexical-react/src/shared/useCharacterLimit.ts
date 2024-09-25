@@ -8,6 +8,7 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import {$isAutoLinkNode, $isLinkNode} from '@lexical/link';
 import {
   $createOverflowNode,
   $isOverflowNode,
@@ -200,13 +201,17 @@ function $wrapOverflowedNodes(offset: number): void {
         }
       } else if (previousLength < offset) {
         const descendant = node.getFirstDescendant();
+        const descendantParent =
+          descendant !== null ? descendant.getParent() : null;
         const descendantLength =
           descendant !== null ? descendant.getTextContentSize() : 0;
         const previousPlusDescendantLength = previousLength + descendantLength;
         // For simple text we can redimension the overflow into a smaller and more accurate
         // container
         const firstDescendantIsSimpleText =
-          $isTextNode(descendant) && descendant.isSimpleText();
+          $isTextNode(descendant) &&
+          descendant.isSimpleText() &&
+          !($isAutoLinkNode(descendantParent) || $isLinkNode(descendantParent));
         const firstDescendantDoesNotOverflow =
           previousPlusDescendantLength <= offset;
 
@@ -217,14 +222,21 @@ function $wrapOverflowedNodes(offset: number): void {
     } else if ($isLeafNode(node)) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
+      const parentNode = node.getParent();
 
-      if (accumulatedLength > offset && !$isOverflowNode(node.getParent())) {
+      if (
+        accumulatedLength > offset &&
+        !$isOverflowNode(parentNode) &&
+        !$isOverflowNode(parentNode ? parentNode.getParent() : null)
+      ) {
         const previousSelection = $getSelection();
         let overflowNode;
 
         // For simple text we can improve the limit accuracy by splitting the TextNode
         // on the split point
-        if (
+        if ($isAutoLinkNode(parentNode) || $isLinkNode(parentNode)) {
+          overflowNode = $wrapNode(parentNode);
+        } else if (
           previousAccumulatedLength < offset &&
           $isTextNode(node) &&
           node.isSimpleText()

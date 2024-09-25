@@ -113,12 +113,15 @@ export default function ExcalidrawComponent({
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);
-    return editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if (node) {
-        node.remove();
-      }
-    });
+    return editor.update(
+      () => {
+        const node = $getNodeByKey(nodeKey);
+        if (node) {
+          node.remove();
+        }
+      },
+      {tag: 'history-merge'},
+    );
   }, [editor, nodeKey]);
 
   const setData = (
@@ -201,9 +204,17 @@ export default function ExcalidrawComponent({
   const closeModal = useCallback(() => {
     setModalOpen(false);
     if (elements.length === 0) {
-      deleteNode();
+      editor.update(
+        () => {
+          const node = $getNodeByKey(nodeKey);
+          if (node) {
+            node.remove();
+          }
+        },
+        {tag: 'history-merge'},
+      );
     }
-  }, [deleteNode, elements.length]);
+  }, [editor, nodeKey, elements.length]);
 
   return (
     <>

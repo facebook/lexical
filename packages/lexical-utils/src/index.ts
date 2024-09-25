@@ -171,8 +171,8 @@ export type DFSNode = Readonly<{
  * before backtracking and finding a new path. Consider solving a maze by hugging either wall, moving down a
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
- * @param startNode - The node to start the search, if ommitted, it will start at the root node.
- * @param endNode - The node to end the search, if ommitted, it will find all descendants of the startingNode.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
  * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
@@ -198,8 +198,8 @@ const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
 
 /**
  * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if ommitted, it will start at the root node.
- * @param endNode - The node to end the search, if ommitted, it will find all descendants of the startingNode.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function $dfsIterator(
@@ -207,11 +207,10 @@ export function $dfsIterator(
   endNode?: LexicalNode,
 ): DFSIterator {
   const start = (startNode || $getRoot()).getLatest();
-  const end =
-    endNode ||
-    ($isElementNode(start) ? start.getLastDescendant() || start : start);
+  const startDepth = $getDepth(start);
+  const end = endNode;
   let node: null | LexicalNode = start;
-  let depth = $getDepth(start);
+  let depth = startDepth;
   let isFirstNext = true;
 
   const iterator: DFSIterator = {
@@ -234,6 +233,9 @@ export function $dfsIterator(
         let depthDiff;
         [node, depthDiff] = $getNextSiblingOrParentSibling(node);
         depth += depthDiff;
+        if (end == null && depth <= startDepth) {
+          node = null;
+        }
       }
 
       if (node === null) {

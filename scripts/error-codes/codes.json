@@ -198,5 +198,16 @@
   "196": "Unable to find an active editor. This method can only be used synchronously during the callback of editor.update() or editor.read().%s",
   "197": "$cloneWithProperties: %s.clone(node) (with type '%s') overrided afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
   "198": "Attempted to remove event handlers from a node that does not belong to this build of Lexical",
-  "199": "Indent value must be non-negative."
+  "199": "Indent value must be non-negative.",
+  "200": "$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the \"nodes\" array in the editor config.",
+  "201": "$applyNodeReplacement failed. Expected replacement node to be an instance of %s with type %s but returned %s with type %s from original node %s with type %s",
+  "202": "$applyNodeReplacement failed. Ensure replacement node %s with type %s is a subclass of the original node %s with type %s.",
+  "203": "$applyNodeReplacement failed. Ensure that the key argument is *not* used in your replace function (from node %s with type %s to node %s with type %s), Node keys must never be re-used except by the static clone method.",
+  "204": "node is not a OverflowNode",
+  "205": "tableElement already has an attached TableObserver",
+  "206": "Expected TableNode childAtIndex(%s) to be RowNode",
+  "207": "Anchor not found in Table",
+  "208": "Focus not found in Table",
+  "209": "Expected TableNode children to be TableRowNode",
+  "210": "Expected TableRowNode to have a parent TableNode"
 }

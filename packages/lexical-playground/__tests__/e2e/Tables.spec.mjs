@@ -1054,6 +1054,11 @@ test.describe.parallel('Tables', () => {
       html`
         <p dir="ltr"><strong data-lexical-text="true">abc</strong></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p dir="ltr"><strong data-lexical-text="true">a</strong></p>

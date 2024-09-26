@@ -1,3 +1,49 @@
+## v0.18.0 (2024-09-26)
+
+- lexical-link Bug Fix Removing a link from descendants (#6656) Sergey Gorbachev
+- lexical-playground Bug Fix Correct ExcalidrawNode DOM handling for proper resizing (#6657) neysanfoo
+- lexical-markdown Refactor allows omitting certain properties from TextMatchTransformers, adds jsdocs (#6651) Alessio Gravili
+- lexical-table Bug Fix Fix crash in deleteCellHandler (#6650) Bob Ippolito
+- lexical-playground Bug Fix empty code block not focused (#6649) Sherry
+- lexical-markdown shouldMergeAdjacentLines as an option (#6642) Sherry
+- lexical-code Bug Fix Annotate lexicalcode as having side-effects for Prism (#6652) Bob Ippolito
+- lexical-reactlexical-playground Bug Fix Workaround for yjs disconnect race in React StrictMode (#6644) Bob Ippolito
+- Allow exporting a document fragment from the exportDOM function (#6641) Tom Kubt
+- Grammar Issue - Repeated Word (#6643) Adam Pugh
+- lexical-tablelexical-playground Feature Add column widths to TableNode (#6625) Patrick Moody
+- lexical-playgroundExcalidrawNode Bug Fix Preserve Excalidraw image dimensions after resizing (#6634) neysanfoo
+- lexical-table  Bug Table formatting and styling not persisting for empty cells (#6626) Katsia
+- lexical-markdown Fix normalize markdown in convertFromMarkdownString to comply with CommonMark spec (2nd try) (#6629) Germn Jabloski
+- lexical-playground Bug Fix Fix table rowcolumn index when resizing merged cells (#6630) Patrick Moody
+- Revert lexical-markdown Fix normalize markdown in convertFromMarkdownString to comply with CommonMark spec (#6608) (#6627) Sherry
+- lexical-react Refactor Ensure disconnect is called after connection is established in useYjsCollaboration (#6619) smworld01
+- CI tag flaky test (#6620) Sherry
+- address micromatch vulnerability (#6616) Sherry
+- Bug Fix Fix issue where selecting a cell then dragging outside of table would not select entire table (#6579) Mo
+- lexical-markdown Breaking Change rename multilineElement to multiline-element (#6617) Sherry
+- lexical Chore Add more helpful invariants to applyNodeReplacement (#6567) Bob Ippolito
+- lexical-markdown Fix normalize markdown in convertFromMarkdownString to comply with CommonMark spec (#6608) Germn Jabloski
+- Expose getStyleObjectFromCss in lexicalselection (#6612) Melissa Freiser
+- lexical-markdown update markdown flow api (#6615) Sherry
+- lexical-playground Fix Poll Option not clickable at some place after checked state (#6609) Vinay Kushwaha
+- Multiple update tags (#6507) Gerard Rovira
+- lexical-codebreaking change Bug Fix explicitly import instead of window. to support code nodes in nodejs (#6562) Nadine Nguyen
+- lexical-tablelexical-playground Bug Fix Fix merged cell related edge cases (#6607) Bob Ippolito
+- Fix issue where cmdctrl  left arrow after a tab character would cause exception (#6588) Mo
+- Address svelte vulnerability (#6603) Sherry
+- lexical-markdownbreaking change Feature multiline markdown transformers  mdx support (#6530) Alessio Gravili
+- lexical-table Fix Table Cut Event Handling (#6596) Ivaylo Pavlov
+- lexicallexical-overflow Refactor simplified removeText and insertText rewrite (part 1) (#6456) Germn Jabloski
+- Fix test results CI path on Windows (#6585) Mo
+- lexical-listlexical-react Refactor Create registerList Function Separate from React Shared Utils (#6560) River
+- lexical-react Fix incorrect addition of empty cells on table paste (#6578) Shubhanker Srivastava
+- lexical-table feat Add row striping (#6547) Ivaylo Pavlov
+-  Feature Check undeclared dependencies in build (#6574) Bob Ippolito
+- lexical-react menu positioning Unrevert PR6510 but with gating (#6566) Sherry
+- lexical-table Bug Fix Add lexicalclipboard as a direct dependency of lexicaltable (#6571) Bob Ippolito
+- v0.17.1 (#6559) Ivaylo Pavlov
+- v0.17.1 Lexical GitHub Actions Bot
+
 ## v0.17.1 (2024-08-26)
 
 - lexical-playground Bug Fix fix comment timestamps (#6555) Ira Hopkinson

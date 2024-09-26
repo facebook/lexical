@@ -113,15 +113,12 @@ export default function ExcalidrawComponent({
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);
-    return editor.update(
-      () => {
-        const node = $getNodeByKey(nodeKey);
-        if (node) {
-          node.remove();
-        }
-      },
-      {tag: 'history-merge'},
-    );
+    return editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if (node) {
+        node.remove();
+      }
+    });
   }, [editor, nodeKey]);
 
   const setData = (
@@ -132,25 +129,22 @@ export default function ExcalidrawComponent({
     if (!editor.isEditable()) {
       return;
     }
-    return editor.update(
-      () => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isExcalidrawNode(node)) {
-          if ((els && els.length > 0) || Object.keys(fls).length > 0) {
-            node.setData(
-              JSON.stringify({
-                appState: aps,
-                elements: els,
-                files: fls,
-              }),
-            );
-          } else {
-            node.remove();
-          }
+    return editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isExcalidrawNode(node)) {
+        if ((els && els.length > 0) || Object.keys(fls).length > 0) {
+          node.setData(
+            JSON.stringify({
+              appState: aps,
+              elements: els,
+              files: fls,
+            }),
+          );
+        } else {
+          node.remove();
         }
-      },
-      {tag: 'history-merge'},
-    );
+      }
+    });
   };
 
   const onResizeStart = () => {
@@ -204,15 +198,12 @@ export default function ExcalidrawComponent({
   const closeModal = useCallback(() => {
     setModalOpen(false);
     if (elements.length === 0) {
-      editor.update(
-        () => {
-          const node = $getNodeByKey(nodeKey);
-          if (node) {
-            node.remove();
-          }
-        },
-        {tag: 'history-merge'},
-      );
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if (node) {
+          node.remove();
+        }
+      });
     }
   }, [editor, nodeKey, elements.length]);
 

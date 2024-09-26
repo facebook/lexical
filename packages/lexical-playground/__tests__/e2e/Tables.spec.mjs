@@ -1026,7 +1026,7 @@ test.describe.parallel('Tables', () => {
     },
   );
 
-  test(`Can style on empty table cells and paragraphs`, async ({
+  test(`Can style on empty table cells and paragraphs with no text`, async ({
     page,
     isPlainText,
     isCollab,
@@ -1099,6 +1099,105 @@ test.describe.parallel('Tables', () => {
             </th>
             <td>
               <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
+            </td>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Align selection style for table cells`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await insertTable(page, 2, 3);
+
+    // Add text in bold to first cell
+    await click(page, 'th p:first-of-type');
+    await page.keyboard.type('a');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.up('Shift');
+    await clickSelectors(page, ['.bold']);
+
+    // Apply bold style to whole table
+    // Bold style shouldn't be applied to any paragraphs and removed from all cells
+    await selectAll(page);
+    await clickSelectors(page, ['.bold']);
+
+    // Add text after applying styles
+    await click(page, 'div[contenteditable="true"] p:first-of-type');
+    await page.keyboard.type('abc');
+
+    await click(page, 'th p:first-of-type');
+    await fillTablePartiallyWithText(page);
+
+    // None of the paragraphs have style applied
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr"><span data-lexical-text="true">abc</span></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">aa</span></p>
+            </th>
+            <th>
+              <p><span data-lexical-text="true">bb</span></p>
+            </th>
+            <th>
+              <p><span data-lexical-text="true">cc</span></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><span data-lexical-text="true">d</span></p>
+            </th>
+            <td>
+              <p><span data-lexical-text="true">e</span></p>
+            </td>
+            <td>
+              <p><span data-lexical-text="true">f</span></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><span data-lexical-text="true">a</span></p>
+            </th>
+            <th>
+              <p><span data-lexical-text="true">bb</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><span data-lexical-text="true">d</span></p>
+            </th>
+            <td>
+              <p dir="ltr"><strong data-lexical-text="true">e</span></p>
             </td>
             <td>
               <p dir="ltr"><span data-lexical-text="true">f</span></p>

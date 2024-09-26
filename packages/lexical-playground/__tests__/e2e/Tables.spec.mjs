@@ -1026,6 +1026,91 @@ test.describe.parallel('Tables', () => {
     },
   );
 
+  test(`Can style on empty table cells and paragraphs`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await insertTable(page, 2, 3);
+    await selectAll(page);
+
+    // Apply style on empty table
+    await clickSelectors(page, ['.bold']);
+
+    // Add text after applying styles
+    await click(page, 'div[contenteditable="true"] p:first-of-type');
+    await page.keyboard.type('abc');
+
+    await click(page, 'th p:first-of-type');
+    await fillTablePartiallyWithText(page);
+
+    // Check that the character styles are applied.
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr"><strong data-lexical-text="true">abc</strong></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
+            </th>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
+            </th>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">cc</strong></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
+            </th>
+            <td>
+              <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
+            </td>
+            <td>
+              <p dir="ltr"><strong data-lexical-text="true">f</strong></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
+            </th>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
+            </th>
+            <td>
+              <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
+            </td>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
+
   test(
     `Can copy + paste (internal) using Table selection`,
     {

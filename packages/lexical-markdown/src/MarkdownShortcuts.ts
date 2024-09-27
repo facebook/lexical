@@ -158,6 +158,9 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
+    if (!transformer.replace || !transformer.regExp) {
+      continue;
+    }
     const match = textContent.match(transformer.regExp);
 
     if (match === null) {
@@ -389,11 +392,11 @@ export function registerMarkdownShortcuts(
   transformers: Array<Transformer> = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
-  const textFormatTransformersIndex = indexBy(
+  const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,
     ({tag}) => tag[tag.length - 1],
   );
-  const textMatchTransformersIndex = indexBy(
+  const textMatchTransformersByTrigger = indexBy(
     byType.textMatch,
     ({trigger}) => trigger,
   );
@@ -449,7 +452,7 @@ export function registerMarkdownShortcuts(
       runTextMatchTransformers(
         anchorNode,
         anchorOffset,
-        textMatchTransformersIndex,
+        textMatchTransformersByTrigger,
       )
     ) {
       return;
@@ -458,7 +461,7 @@ export function registerMarkdownShortcuts(
     $runTextFormatTransformers(
       anchorNode,
       anchorOffset,
-      textFormatTransformersIndex,
+      textFormatTransformersByTrigger,
     );
   };
 

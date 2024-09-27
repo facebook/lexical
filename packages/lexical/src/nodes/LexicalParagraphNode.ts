@@ -30,6 +30,7 @@ import {
   $applyNodeReplacement,
   getCachedClassNameArray,
   isHTMLElement,
+  toggleTextFormatType,
 } from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode, TextFormatType} from './LexicalTextNode';
@@ -73,6 +74,17 @@ export class ParagraphNode extends ElementNode {
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getTextFormat() & formatFlag) !== 0;
+  }
+
+  /**
+   * Returns the format flags applied to the node as a 32-bit integer.
+   *
+   * @returns a number representing the TextFormatTypes applied to the node.
+   */
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+    const self = this.getLatest();
+    const format = self.__textFormat;
+    return toggleTextFormatType(format, type, alignWithFormat);
   }
 
   getTextStyle(): string {

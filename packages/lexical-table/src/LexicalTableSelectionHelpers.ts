@@ -336,22 +336,30 @@ export function applyTableHandlers(
     event: KeyboardEvent | ClipboardEvent | null,
   ): boolean => {
     const selection = $getSelection();
+    if (!($isTableSelection(selection) || $isRangeSelection(selection))) {
+      return false;
+    }
 
-    if (!$isSelectionInTable(selection, tableNode)) {
-      const nodes = selection ? selection.getNodes() : null;
-      if (nodes) {
-        const table = nodes.find(
-          (node) =>
-            $isTableNode(node) && node.getKey() === tableObserver.tableNodeKey,
-        );
-        if ($isTableNode(table)) {
-          const parentNode = table.getParent();
-          if (!parentNode) {
-            return false;
-          }
-          table.remove();
-        }
-      }
+    // If the selection is inside the table but should remove the whole table
+    // we expand the selection so that both the anchor and focus are outside
+    // the table and the editor's command listener will handle the delete
+    const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
+    const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
+    if (isAnchorInside !== isFocusInside) {
+      const tablePoint = isAnchorInside ? 'anchor' : 'focus';
+      const outerPoint = isAnchorInside ? 'focus' : 'anchor';
+      // Preserve the outer point
+      const {key, offset, type} = selection[outerPoint];
+      // Expand the selection around the table
+      const newSelection =
+        tableNode[
+          selection[tablePoint].isBefore(selection[outerPoint])
+            ? 'selectPrevious'
+            : 'selectNext'
+        ]();
+      // Restore the outer point of the selection
+      newSelection[outerPoint].set(key, offset, type);
+      // Let the base implementation handle the rest
       return false;
     }
 
@@ -363,15 +371,6 @@ export function applyTableHandlers(
       tableObserver.clearText();
 
       return true;
-    } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findMatchingParent(
-        selection.anchor.getNode(),
-        (n) => $isTableCellNode(n),
-      );
-
-      if (!$isTableCellNode(tableCellNode)) {
-        return false;
-      }
     }
 
     return false;
@@ -1014,7 +1013,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
     domRows,
     rows: 0,
   };
-  let currentNode = tableElement.firstChild;
+  let currentNode = tableElement.querySelector('tr') as ChildNode | null;
   let x = 0;
   let y = 0;
   domRows.length = 0;

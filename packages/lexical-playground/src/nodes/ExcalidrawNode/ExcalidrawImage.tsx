@@ -17,6 +17,8 @@ import {useEffect, useState} from 'react';
 
 type ImageType = 'svg' | 'canvas';
 
+type Dimension = 'inherit' | number;
+
 type Props = {
   /**
    * Configures the export setting for SVG/Canvas
@@ -31,17 +33,17 @@ type Props = {
    */
   elements: NonDeleted<ExcalidrawElement>[];
   /**
-   * The Excalidraw elements to be rendered as an image
+   * The Excalidraw files associated with the elements
    */
   files: BinaryFiles;
   /**
    * The height of the image to be rendered
    */
-  height?: number | null;
+  height?: Dimension;
   /**
    * The ref object to be used to render the image
    */
-  imageContainerRef: {current: null | HTMLDivElement};
+  imageContainerRef: React.MutableRefObject<HTMLDivElement | null>;
   /**
    * The type of image to be rendered
    */
@@ -53,7 +55,7 @@ type Props = {
   /**
    * The width of the image to be rendered
    */
-  width?: number | null;
+  width?: Dimension;
 };
 
 // exportToSvg has fonts from excalidraw.com
@@ -85,6 +87,8 @@ export default function ExcalidrawImage({
   imageContainerRef,
   appState,
   rootClassName = null,
+  width = 'inherit',
+  height = 'inherit',
 }: Props): JSX.Element {
   const [Svg, setSvg] = useState<SVGElement | null>(null);
 
@@ -106,10 +110,25 @@ export default function ExcalidrawImage({
     setContent();
   }, [elements, files, appState]);
 
+  const containerStyle: React.CSSProperties = {};
+  if (width !== 'inherit') {
+    containerStyle.width = `${width}px`;
+  }
+  if (height !== 'inherit') {
+    containerStyle.height = `${height}px`;
+  }
+
   return (
     <div
-      ref={imageContainerRef}
+      ref={(node) => {
+        if (node) {
+          if (imageContainerRef) {
+            imageContainerRef.current = node;
+          }
+        }
+      }}
       className={rootClassName ?? ''}
+      style={containerStyle}
       dangerouslySetInnerHTML={{__html: Svg?.outerHTML ?? ''}}
     />
   );

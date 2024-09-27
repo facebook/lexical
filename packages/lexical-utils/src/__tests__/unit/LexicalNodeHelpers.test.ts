@@ -21,7 +21,7 @@ import {
   invariant,
 } from 'lexical/src/__tests__/utils';
 
-import {$dfs} from '../..';
+import {$dfs, $getNextSiblingOrParentSibling} from '../..';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
@@ -230,6 +230,33 @@ describe('LexicalNodeHelpers tests', () => {
             node: paragraph?.getLatest(),
           },
         ]);
+      });
+    });
+
+    test('$getNextSiblingOrParentSibling', async () => {
+      const editor: LexicalEditor = testEnv.editor;
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        const text1 = $createTextNode('text1');
+        const text2 = $createTextNode('text2').toggleUnmergeable();
+        paragraph.append(text1, text2);
+        root.append(paragraph, paragraph2);
+
+        // Sibling
+        expect($getNextSiblingOrParentSibling(paragraph)).toEqual([
+          paragraph2,
+          0,
+        ]);
+        expect($getNextSiblingOrParentSibling(text1)).toEqual([text2, 0]);
+
+        // Parent
+        expect($getNextSiblingOrParentSibling(text2)).toEqual([paragraph2, -1]);
+
+        // Null (end of the tree)
+        expect($getNextSiblingOrParentSibling(paragraph2)).toBe(null);
       });
     });
   });

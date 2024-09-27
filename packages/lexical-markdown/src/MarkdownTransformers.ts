@@ -139,17 +139,33 @@ export type TextFormatTransformer = Readonly<{
 
 export type TextMatchTransformer = Readonly<{
   dependencies: Array<Klass<LexicalNode>>;
-  export: (
+  /**
+   * Determines how a node should be exported to markdown
+   */
+  export?: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     exportChildren: (node: ElementNode) => string,
     // eslint-disable-next-line no-shadow
     exportFormat: (node: TextNode, textContent: string) => string,
   ) => string | null;
-  importRegExp: RegExp;
+  /**
+   * This regex determines what text is matched during markdown imports
+   */
+  importRegExp?: RegExp;
+  /**
+   * This regex determines what text is matched for markdown shortcuts while typing in the editor
+   */
   regExp: RegExp;
-  replace: (node: TextNode, match: RegExpMatchArray) => void;
-  trigger: string;
+  /**
+   * Determines how the matched markdown text should be transformed into a node during the markdown import process
+   */
+  replace?: (node: TextNode, match: RegExpMatchArray) => void;
+  /**
+   * Single character that allows the transformer to trigger when typed in the editor. This does not affect markdown imports outside of the markdown shortcut plugin.
+   * If the trigger is matched, the `regExp` will be used to match the text in the second step.
+   */
+  trigger?: string;
   type: 'text-match';
 }>;
 
@@ -160,6 +176,10 @@ const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
 const CODE_END_REGEX = /[ \t]*```$/;
+const CODE_SINGLE_LINE_REGEX =
+  /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
+const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
+const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -528,7 +548,10 @@ export const LINK: TextMatchTransformer = {
   type: 'text-match',
 };
 
-export function normalizeMarkdown(input: string): string {
+export function normalizeMarkdown(
+  input: string,
+  shouldMergeAdjacentLines = false,
+): string {
   const lines = input.split('\n');
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];
@@ -536,6 +559,12 @@ export function normalizeMarkdown(input: string): string {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
+
+    // Code blocks of ```single line``` don't toggle the inCodeBlock flag
+    if (CODE_SINGLE_LINE_REGEX.test(line)) {
+      sanitizedLines.push(line);
+      continue;
+    }
 
     // Detect the start or end of a code block
     if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
@@ -561,7 +590,10 @@ export function normalizeMarkdown(input: string): string {
       QUOTE_REGEX.test(line) ||
       ORDERED_LIST_REGEX.test(line) ||
       UNORDERED_LIST_REGEX.test(line) ||
-      CHECK_LIST_REGEX.test(line)
+      CHECK_LIST_REGEX.test(line) ||
+      TABLE_ROW_REG_EXP.test(line) ||
+      TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      !shouldMergeAdjacentLines
     ) {
       sanitizedLines.push(line);
     } else {

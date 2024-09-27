@@ -29,6 +29,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  isDocumentFragment,
   isInlineDomNode,
 } from 'lexical';
 
@@ -147,7 +148,7 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    if (isHTMLElement(element)) {
+    if (isHTMLElement(element) || isDocumentFragment(element)) {
       element.append(fragment);
     }
     parentElement.append(element);
@@ -155,7 +156,11 @@ function $appendNodesToHTML(
     if (after) {
       const newElement = after.call(target, element);
       if (newElement) {
-        element.replaceWith(newElement);
+        if (isDocumentFragment(element)) {
+          element.replaceChildren(newElement);
+        } else {
+          element.replaceWith(newElement);
+        }
       }
     }
   } else {

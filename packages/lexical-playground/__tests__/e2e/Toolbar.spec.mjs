@@ -157,6 +157,13 @@ test.describe('Toolbar', () => {
             <br />
           </p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p><br /></p>

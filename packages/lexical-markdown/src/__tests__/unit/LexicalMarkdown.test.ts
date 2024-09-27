@@ -65,6 +65,7 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
     shouldPreserveNewLines?: true;
+    shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
   }>;
 
@@ -99,6 +100,7 @@ describe('Markdown', () => {
       // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
       html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
+      shouldMergeAdjacentLines: true,
       skipExport: true,
     },
     {
@@ -124,6 +126,7 @@ describe('Markdown', () => {
       // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
+      shouldMergeAdjacentLines: true,
       skipExport: true,
     },
     {
@@ -201,6 +204,22 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">Hello </em></i><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',
       md: '*Hello **world**!*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
+      md: 'hello\nworld',
+      shouldMergeAdjacentLines: true,
+      skipExport: true,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldMergeAdjacentLines: false,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldPreserveNewLines: true,
     },
     {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
@@ -297,6 +316,7 @@ describe('Markdown', () => {
       // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
       html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
       md: '> Hello\nworld\n!',
+      shouldMergeAdjacentLines: true,
       skipExport: true,
     },
     {
@@ -315,11 +335,13 @@ describe('Markdown', () => {
       customTransformers: [MDX_HTML_TRANSFORMER],
       html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Some Text</MyComponent>',
+      shouldMergeAdjacentLines: true,
     },
     {
       customTransformers: [MDX_HTML_TRANSFORMER],
       html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
+      shouldMergeAdjacentLines: true,
       skipExport: true,
     },
   ];
@@ -337,6 +359,7 @@ describe('Markdown', () => {
     md,
     skipImport,
     shouldPreserveNewLines,
+    shouldMergeAdjacentLines,
     customTransformers,
   } of IMPORT_AND_EXPORT) {
     if (skipImport) {
@@ -366,6 +389,7 @@ describe('Markdown', () => {
             ],
             undefined,
             shouldPreserveNewLines,
+            shouldMergeAdjacentLines,
           ),
         {
           discrete: true,
@@ -429,46 +453,155 @@ describe('Markdown', () => {
   }
 });
 
-describe('normalizeMarkdown', () => {
+describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
   it('should combine lines separated by a single \n unless they are in a codeblock', () => {
     const markdown = `
-1
-2
+A1
+A2
 
-3
+A3
 
 \`\`\`md
-1
-2
+B1
+B2
 
-3
+B3
 \`\`\`
+
+C1
+C2
+
+C3
 
 \`\`\`js
-1
-2
+D1
+D2
 
-3
+D3
 \`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
 `;
-    expect(normalizeMarkdown(markdown)).toBe(`
-12
+    expect(normalizeMarkdown(markdown, true)).toBe(`
+A1A2
 
-3
+A3
 
 \`\`\`md
-1
-2
+B1
+B2
 
-3
+B3
 \`\`\`
+
+C1C2
+
+C3
 
 \`\`\`js
-1
-2
+D1
+D2
 
-3
+D3
 \`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1E2
+
+E3
 `);
+  });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+});
+
+describe('normalizeMarkdown - shouldMergeAdjacentLines = false', () => {
+  it('should not combine lines separated by a single \n', () => {
+    const markdown = `
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(`
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
+`);
+  });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(markdown);
   });
 });

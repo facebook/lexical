@@ -510,8 +510,9 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
     $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or TableSelection',
   );
-  const anchor = selection.anchor.getNode();
-  const focus = selection.focus.getNode();
+  const [anchor, focus] = selection.isBackward()
+    ? [selection.focus.getNode(), selection.anchor.getNode()]
+    : [selection.anchor.getNode(), selection.focus.getNode()];
   const [anchorCell, , grid] = $getNodeTriplet(anchor);
   const [focusCell] = $getNodeTriplet(focus);
   const [gridMap, anchorCellMap, focusCellMap] = $computeTableMap(

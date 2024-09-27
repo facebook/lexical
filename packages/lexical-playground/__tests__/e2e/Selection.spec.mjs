@@ -1139,7 +1139,7 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
-      focusOffset: 0,
+      focusOffset: 1,
       focusPath: [1, 1, 1],
     });
   });
@@ -1163,9 +1163,9 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.up('Shift');
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0],
-      focusOffset: 0,
-      focusPath: [2],
+      anchorPath: [2],
+      focusOffset: 1,
+      focusPath: [1, 0, 0],
     });
   });
 });

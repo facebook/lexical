@@ -162,6 +162,14 @@ export type TextMatchTransformer = Readonly<{
    */
   replace?: (node: TextNode, match: RegExpMatchArray) => void;
   /**
+   *
+   * For import operations, this function can be used to determine the end index of the match, after `importRegExp` has matched.
+   * Without this function, the end index will be determined by the length of the match from `importRegExp`. Manually determining the end index can be useful if
+   * the match from `importRegExp` is not the entire text content of the node. That way, `importRegExp` can be used to match only the start of the node, and `getEndIndex`
+   * can be used to match the end of the node.
+   */
+  getEndIndex?: (node: TextNode, match: RegExpMatchArray) => number;
+  /**
    * Single character that allows the transformer to trigger when typed in the editor. This does not affect markdown imports outside of the markdown shortcut plugin.
    * If the trigger is matched, the `regExp` will be used to match the text in the second step.
    */

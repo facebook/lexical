@@ -18,7 +18,7 @@ import {
   createCommand,
   LexicalCommand,
 } from 'lexical';
-import {useEffect,useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {
   $createExcalidrawNode,

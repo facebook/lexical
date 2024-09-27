@@ -1434,7 +1434,8 @@ function $handleArrowKey(
           let newFocusNode = sibling;
           if (direction === 'up') {
             if ($isElementNode(sibling)) {
-              newFocusNode = sibling.getLastChild() ?? sibling;
+              const lastCell = sibling.getLastChild();
+              newFocusNode = lastCell ? lastCell : sibling;
               newOffset = $isTextNode(newFocusNode)
                 ? newFocusNode.getTextContentSize()
                 : 0;
@@ -1711,7 +1712,8 @@ function $handleArrowKey(
 function getParentTable(focusParentNode: LexicalNode): TableNode | null {
   const tableRow = focusParentNode.getParent();
   if ($isTableRowNode(tableRow)) {
-    return tableRow.getParent() ?? null;
+    const tableNode: TableNode | null = tableRow.getParent();
+    return tableNode ? tableNode : null;
   }
 
   return null;

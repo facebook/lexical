@@ -1085,8 +1085,13 @@ test.describe.parallel('Tables', () => {
         <p><br /></p>
       `,
       html`
-        <p><br /></p>
+        <p dir="ltr"><strong data-lexical-text="true">abc</strong></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
               <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
@@ -1095,7 +1100,7 @@ test.describe.parallel('Tables', () => {
               <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
             </th>
             <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              <p dir="ltr"><strong data-lexical-text="true">cc</strong></p>
             </th>
           </tr>
           <tr>
@@ -1106,7 +1111,7 @@ test.describe.parallel('Tables', () => {
               <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
             </td>
             <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              <p dir="ltr"><strong data-lexical-text="true">f</strong></p>
             </td>
           </tr>
         </table>
@@ -1184,17 +1189,22 @@ test.describe.parallel('Tables', () => {
         <p><br /></p>
       `,
       html`
-        <p><br /></p>
+        <p dir="ltr"><span data-lexical-text="true">abc</span></p>
         <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th>
-              <p><span data-lexical-text="true">a</span></p>
+              <p dir="ltr"><span data-lexical-text="true">aa</span></p>
             </th>
             <th>
               <p><span data-lexical-text="true">bb</span></p>
             </th>
             <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              <p><span data-lexical-text="true">cc</span></p>
             </th>
           </tr>
           <tr>
@@ -1202,10 +1212,10 @@ test.describe.parallel('Tables', () => {
               <p><span data-lexical-text="true">d</span></p>
             </th>
             <td>
-              <p dir="ltr"><strong data-lexical-text="true">e</span></p>
+              <p><span data-lexical-text="true">e</span></p>
             </td>
             <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              <p><span data-lexical-text="true">f</span></p>
             </td>
           </tr>
         </table>

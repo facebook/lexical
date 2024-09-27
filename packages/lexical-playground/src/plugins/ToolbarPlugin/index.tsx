@@ -539,6 +539,7 @@ export default function ToolbarPlugin({
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isSubscript, setIsSubscript] = useState(false);
   const [isSuperscript, setIsSuperscript] = useState(false);
+  const [isHighlight, setIsHighlight] = useState(false);
   const [isCode, setIsCode] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
@@ -585,6 +586,7 @@ export default function ToolbarPlugin({
       setIsStrikethrough(selection.hasFormat('strikethrough'));
       setIsSubscript(selection.hasFormat('subscript'));
       setIsSuperscript(selection.hasFormat('superscript'));
+      setIsHighlight(selection.hasFormat('highlight'));
       setIsCode(selection.hasFormat('code'));
       setIsRTL($isParentElementRTL(selection));
 
@@ -1051,6 +1053,16 @@ export default function ToolbarPlugin({
               aria-label="Format text with a superscript">
               <i className="icon superscript" />
               <span className="text">Superscript</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'highlight');
+              }}
+              className={'item ' + dropDownActiveClass(isHighlight)}
+              title="Highlight"
+              aria-label="Format text with a highlight">
+              <i className="icon highlight" />
+              <span className="text">Highlight</span>
             </DropDownItem>
             <DropDownItem
               onClick={clearFormatting}

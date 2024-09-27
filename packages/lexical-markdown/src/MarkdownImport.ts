@@ -369,10 +369,10 @@ function importTextMatchTransformers(
       }
 
       const startIndex = match.index || 0;
-      const endIndex =
-        transformer && transformer.getEndIndex
-          ? transformer.getEndIndex(textNode, match)
-          : startIndex + match[0].length;
+      const endIndex = transformer.getEndIndex
+        ? transformer.getEndIndex(textNode, match)
+        : startIndex + match[0].length;
+
       let replaceNode, newTextNode;
 
       if (startIndex === 0) {

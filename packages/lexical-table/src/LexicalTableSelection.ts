@@ -11,12 +11,15 @@ import {
   $createPoint,
   $getNodeByKey,
   $isElementNode,
+  $isParagraphNode,
   $normalizeSelection__EXPERIMENTAL,
   BaseSelection,
   isCurrentlyReadOnlyMode,
   LexicalNode,
   NodeKey,
   PointType,
+  TEXT_TYPE_TO_FORMAT,
+  TextFormatType,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -114,6 +117,28 @@ export class TableSelection implements BaseSelection {
 
   insertText(): void {
     // Do nothing?
+  }
+
+  /**
+   * Returns whether the provided TextFormatType is present on the Selection.
+   * This will be true if any paragraph in table cells has the specified format.
+   *
+   * @param type the TextFormatType to check for.
+   * @returns true if the provided format is currently toggled on on the Selection, false otherwise.
+   */
+  hasFormat(type: TextFormatType): boolean {
+    let format = 0;
+
+    const cellNodes = this.getNodes().filter($isTableCellNode);
+    cellNodes.forEach((cellNode: TableCellNode) => {
+      const paragraph = cellNode.getFirstChild();
+      if ($isParagraphNode(paragraph)) {
+        format |= paragraph.getTextFormat();
+      }
+    });
+
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (format & formatFlag) !== 0;
   }
 
   insertNodes(nodes: Array<LexicalNode>) {

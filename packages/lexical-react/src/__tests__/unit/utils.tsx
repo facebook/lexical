@@ -97,11 +97,8 @@ export class Client implements Provider {
 
     this.awareness = {
       getLocalState: () => this._awarenessState,
-      getStates: <T extends Record<string, unknown>>() => {
-        const baseState = this._awarenessState ?? {};
-        const extendedState = {...baseState} as UserState & T;
-        return new Map([[0, extendedState]]);
-      },
+      getStates: <T extends Record<string, unknown>>() =>
+        new Map([[0, this._awarenessState!]]) as Map<number, UserState & T>,
       off: () => {
         // TODO
       },

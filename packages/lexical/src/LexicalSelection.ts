@@ -1194,12 +1194,21 @@ export class RangeSelection implements BaseSelection {
         selectedTextNodes.push(selectedNode);
       }
     }
+    const applyFormatToParagraphs = (alignWith: number | null) => {
+      selectedNodes.forEach((node) => {
+        if ($isParagraphNode(node)) {
+          const newFormat = node.getFormatFlags(formatType, alignWith);
+          node.setTextFormat(newFormat);
+        }
+      });
+    };
 
     const selectedTextNodesLength = selectedTextNodes.length;
     if (selectedTextNodesLength === 0) {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
+      applyFormatToParagraphs(alignWithFormat);
       return;
     }
 
@@ -1231,12 +1240,7 @@ export class RangeSelection implements BaseSelection {
       formatType,
       alignWithFormat,
     );
-    selectedNodes.forEach((node) => {
-      if ($isParagraphNode(node)) {
-        const newFormat = node.getFormatFlags(formatType, firstNextFormat);
-        node.setTextFormat(newFormat);
-      }
-    });
+    applyFormatToParagraphs(firstNextFormat);
 
     const lastIndex = selectedTextNodesLength - 1;
     let lastNode = selectedTextNodes[lastIndex];

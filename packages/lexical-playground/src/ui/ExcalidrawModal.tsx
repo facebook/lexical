@@ -33,7 +33,7 @@ type Props = {
   /**
    * The initial set of elements to draw into the scene
    */
-  initialAppState: Partial<AppState>;
+  initialAppState: AppState;
   /**
    * The initial set of elements to draw into the scene
    */

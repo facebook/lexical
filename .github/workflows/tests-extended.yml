@@ -2,7 +2,6 @@ name: Lexical Tests (Extended)
 
 on:
   pull_request:
-    types: [labeled, synchronize, reopened]
     paths-ignore:
       - 'examples/**'
       - 'packages/lexical-website/**'
@@ -15,9 +14,7 @@ concurrency:
 
 jobs:
   e2e-tests:
-    if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
     uses: ./.github/workflows/call-e2e-all-tests.yml
 
   integration-tests:
-    if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
     uses: ./.github/workflows/call-integration-tests.yml

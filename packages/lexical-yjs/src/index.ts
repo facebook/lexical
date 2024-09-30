@@ -28,7 +28,10 @@ export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
 );
 export type ProviderAwareness = {
   getLocalState: () => UserState | null;
-  getStates: () => Map<number, UserState>;
+  getStates: <T extends Record<string, unknown>>() => Map<
+    number,
+    UserState & T
+  >;
   off: (type: 'update', cb: () => void) => void;
   on: (type: 'update', cb: () => void) => void;
   setLocalState: (arg0: UserState) => void;

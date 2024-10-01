@@ -1117,6 +1117,17 @@ export class RangeSelection implements BaseSelection {
     let lastNode = lastPoint.getNode();
     const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
     const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
+    // If a token is partially selected then move the selection to cover the whole selection
+    if (
+      $isTextNode(firstNode) &&
+      firstNode.isToken() &&
+      firstPoint.offset < firstNode.getTextContentSize()
+    ) {
+      firstPoint.offset = 0;
+    }
+    if (lastPoint.offset > 0 && $isTextNode(lastNode) && lastNode.isToken()) {
+      lastPoint.offset = lastNode.getTextContentSize();
+    }
 
     selectedNodes.forEach((node) => {
       if (

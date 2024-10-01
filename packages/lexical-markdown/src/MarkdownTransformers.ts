@@ -550,7 +550,7 @@ export const LINK: TextMatchTransformer = {
 
 export function normalizeMarkdown(
   input: string,
-  shouldMergeAdjacentLines = true,
+  shouldMergeAdjacentLines = false,
 ): string {
   const lines = input.split('\n');
   let inCodeBlock = false;

@@ -344,6 +344,157 @@ describe('LexicalSelection tests', () => {
       });
     });
     describe('removeText', () => {
+      describe('with a leading TextNode and a trailing token TextNode', () => {
+        let leadingText: TextNode;
+        let trailingTokenText: TextNode;
+        let paragraph: ParagraphNode;
+        beforeEach(() => {
+          testEnv.editor.update(
+            () => {
+              leadingText = $createTextNode('leading text');
+              trailingTokenText =
+                $createTextNode('token text').setMode('token');
+              paragraph = $createParagraphNode().append(
+                leadingText,
+                trailingTokenText,
+              );
+              $getRoot().clear().append(paragraph);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove all text', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingTokenText.getKey(),
+                trailingTokenText.getTextContentSize(),
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(false);
+              expect(trailingTokenText.isAttached()).toBe(false);
+              expect($getRoot().getAllTextNodes()).toHaveLength(0);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(paragraph.getKey());
+              expect(selection.anchor.offset).toBe(0);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove initial TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                leadingText.getKey(),
+                leadingText.getTextContentSize(),
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(false);
+              expect(trailingTokenText.isAttached()).toBe(true);
+              expect($getRoot().getAllTextNodes()).toHaveLength(1);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(trailingTokenText.getKey());
+              expect(selection.anchor.offset).toBe(0);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove trailing token TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(trailingTokenText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingTokenText.getKey(),
+                trailingTokenText.getTextContentSize(),
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(true);
+              expect(trailingTokenText.isAttached()).toBe(false);
+              expect($getRoot().getAllTextNodes()).toHaveLength(1);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(leadingText.getKey());
+              expect(selection.anchor.offset).toBe(
+                leadingText.getTextContentSize(),
+              );
+            },
+            {discrete: true},
+          );
+        });
+        test('remove initial TextNode and partial token TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingTokenText.getKey(),
+                'token '.length,
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(false);
+              // expecting no node since it was token
+              expect(trailingTokenText.isAttached()).toBe(false);
+              const allTextNodes = $getRoot().getAllTextNodes();
+              expect(allTextNodes).toHaveLength(0);
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(paragraph.getKey());
+              expect(selection.anchor.offset).toBe(0);
+            },
+            {discrete: true},
+          );
+        });
+        test('remove partial initial TextNode and partial token TextNode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              sel.anchor.set(leadingText.getKey(), 'lead'.length, 'text');
+              sel.focus.set(
+                trailingTokenText.getKey(),
+                'token '.length,
+                'text',
+              );
+              $setSelection(sel);
+              sel.removeText();
+              expect(leadingText.isAttached()).toBe(true);
+              expect(trailingTokenText.isAttached()).toBe(false);
+              const allTextNodes = $getRoot().getAllTextNodes();
+              // The token node will be completely removed
+              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
+                ['lead'],
+              );
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(leadingText.getKey());
+              expect(selection.anchor.offset).toBe('lead'.length);
+            },
+            {discrete: true},
+          );
+          testEnv.editor.getEditorState().read(() => {
+            const allTextNodes = $getRoot().getAllTextNodes();
+            // These should get merged in reconciliation
+            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+              'leadtext',
+            ]);
+            expect(leadingText.isAttached()).toBe(true);
+          });
+        });
+      });
       describe('with a leading TextNode and a trailing segmented TextNode', () => {
         let leadingText: TextNode;
         let trailingSegmentedText: TextNode;

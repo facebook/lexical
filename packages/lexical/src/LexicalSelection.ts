@@ -1130,14 +1130,15 @@ export class RangeSelection implements BaseSelection {
     });
 
     const fixText = (node: TextNode, del: number) => {
-      if (node.getTextContent() === '') {
+      if (node.getTextContent() === '' || (del !== 0 && node.isToken())) {
         node.remove();
-      } else if (del !== 0 && $isTokenOrSegmented(node)) {
+      } else if (del !== 0 && node.isSegmented()) {
         const textNode = $createTextNode(node.getTextContent());
         textNode.setFormat(node.getFormat());
         textNode.setStyle(node.getStyle());
         return node.replace(textNode);
       }
+      return node;
     };
     if (firstNode === lastNode && $isTextNode(firstNode)) {
       const del = Math.abs(focus.offset - anchor.offset);
@@ -1148,11 +1149,11 @@ export class RangeSelection implements BaseSelection {
     if ($isTextNode(firstNode)) {
       const del = firstNode.getTextContentSize() - firstPoint.offset;
       firstNode.spliceText(firstPoint.offset, del, '');
-      firstNode = fixText(firstNode, del) || firstNode;
+      firstNode = fixText(firstNode, del);
     }
     if ($isTextNode(lastNode)) {
       lastNode.spliceText(0, lastPoint.offset, '');
-      lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
+      lastNode = fixText(lastNode, lastPoint.offset);
     }
     if (firstNode.isAttached() && $isTextNode(firstNode)) {
       firstNode.selectEnd();

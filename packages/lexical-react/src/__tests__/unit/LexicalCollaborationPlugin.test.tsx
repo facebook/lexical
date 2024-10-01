@@ -53,6 +53,7 @@ describe(`LexicalCollaborationPlugin`, () => {
             off: () => {},
             on: () => {},
             setLocalState: () => {},
+            setLocalStateField: () => {},
           },
           connect: () => {},
           disconnect: () => {},

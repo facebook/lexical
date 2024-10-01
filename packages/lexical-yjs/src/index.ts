@@ -32,6 +32,7 @@ export type ProviderAwareness = {
   off: (type: 'update', cb: () => void) => void;
   on: (type: 'update', cb: () => void) => void;
   setLocalState: (arg0: UserState) => void;
+  setLocalStateField: (field: string, value: unknown) => void;
 };
 declare interface Provider {
   awareness: ProviderAwareness;

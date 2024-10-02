@@ -21,6 +21,7 @@ import {SharedHistoryContext} from './context/SharedHistoryContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {$createReadOnlyNode} from './nodes/ReadOnlyNode';
 import DocsPlugin from './plugins/DocsPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
@@ -48,6 +49,8 @@ function $prepopulatedRichText() {
     );
     root.append(quote);
     const paragraph = $createParagraphNode();
+    const readOnlyNode = $createReadOnlyNode();
+    readOnlyNode.append($createTextNode('===== SOME UNEDITABLE TEXT ====='));
     paragraph.append(
       $createTextNode('The playground is a demo environment built with '),
       $createTextNode('@lexical/react').toggleFormat('code'),
@@ -57,6 +60,7 @@ function $prepopulatedRichText() {
       $createTextNode(' with '),
       $createTextNode('different').toggleFormat('italic'),
       $createTextNode(' formats.'),
+      readOnlyNode,
     );
     root.append(paragraph);
     const paragraph2 = $createParagraphNode();
@@ -115,15 +119,11 @@ function $prepopulatedRichText() {
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, measureTypingPerf},
+    settings: {isCollab, measureTypingPerf},
   } = useSettings();
 
   const initialConfig = {
-    editorState: isCollab
-      ? null
-      : emptyEditor
-      ? undefined
-      : $prepopulatedRichText,
+    editorState: isCollab ? null : $prepopulatedRichText,
     namespace: 'Playground',
     nodes: [...PlaygroundNodes],
     onError: (error: Error) => {

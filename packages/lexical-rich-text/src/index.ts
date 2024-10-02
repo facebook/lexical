@@ -92,6 +92,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  setNodeIndentFromDOM,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -415,6 +416,7 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   ) {
     node = $createHeadingNode(nodeName);
     if (element.style !== null) {
+      setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
   }
@@ -425,6 +427,7 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
+    setNodeIndentFromDOM(element, node);
   }
   return {node};
 }

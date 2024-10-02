@@ -49,8 +49,6 @@ function $prepopulatedRichText() {
     );
     root.append(quote);
     const paragraph = $createParagraphNode();
-    const readOnlyNode = $createReadOnlyNode();
-    readOnlyNode.append($createTextNode('===== SOME UNEDITABLE TEXT ====='));
     paragraph.append(
       $createTextNode('The playground is a demo environment built with '),
       $createTextNode('@lexical/react').toggleFormat('code'),
@@ -60,9 +58,13 @@ function $prepopulatedRichText() {
       $createTextNode(' with '),
       $createTextNode('different').toggleFormat('italic'),
       $createTextNode(' formats.'),
-      readOnlyNode,
     );
     root.append(paragraph);
+
+    const readOnlyNode = $createReadOnlyNode();
+    readOnlyNode.append($createTextNode('===== SOME UNEDITABLE TEXT ====='));
+    root.append(readOnlyNode);
+
     const paragraph2 = $createParagraphNode();
     paragraph2.append(
       $createTextNode(

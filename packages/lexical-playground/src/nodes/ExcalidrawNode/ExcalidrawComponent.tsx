@@ -184,10 +184,6 @@ export default function ExcalidrawComponent({
     appState = {},
   } = useMemo(() => JSON.parse(data), [data]);
 
-  const [currentWidth, currentHeight] = useMemo(() => {
-    return [width, height];
-  }, [width, height]);
-
   const closeModal = useCallback(() => {
     setModalOpen(false);
     if (elements.length === 0) {
@@ -226,8 +222,8 @@ export default function ExcalidrawComponent({
             elements={elements}
             files={files}
             appState={appState}
-            width={currentWidth}
-            height={currentHeight}
+            width={width}
+            height={height}
           />
           {isSelected && (
             <div

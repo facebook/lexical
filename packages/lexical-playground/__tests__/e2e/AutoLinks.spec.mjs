@@ -760,4 +760,63 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
   });
+
+  test('Can handle new lines in the middle of a URL for rich text', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello http://www.example.com test');
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('ArrowLeft');
+    }
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello http://www.example.</span>
+        </p>
+        <p dir="ltr">
+          <span data-lexical-text="true">com test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+});
+
+test.describe('Auto Links - Plain Text', () => {
+  test('Can handle new lines in the middle of a URL for plain text', async ({
+    page,
+    isPlainText,
+  }) => {
+    initialize({isCollab: false, isPlainText: true, page});
+    test.skip(!isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello http://www.example.com test');
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('ArrowLeft');
+    }
+    await page.keyboard.press('Enter');
+    await page.pause();
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello http://www.example.</span>
+          <br />
+          <span data-lexical-text="true">com test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 });

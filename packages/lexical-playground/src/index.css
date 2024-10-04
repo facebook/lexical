@@ -1462,6 +1462,7 @@ button.toolbar-item {
   justify-content: space-between;
 }
 
+input.toolbar-item:disabled,
 button.toolbar-item:disabled {
   cursor: not-allowed;
 }
@@ -1480,6 +1481,7 @@ button.toolbar-item i.format {
   opacity: 0.6;
 }
 
+input.toolbar-item:disabled,
 button.toolbar-item:disabled .icon,
 button.toolbar-item:disabled .text,
 button.toolbar-item:disabled i.format,

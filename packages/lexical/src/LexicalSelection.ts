@@ -1334,7 +1334,7 @@ export class RangeSelection implements BaseSelection {
   /**
    * Attempts to "intelligently" insert an arbitrary list of Lexical nodes into the EditorState at the
    * current Selection according to a set of heuristics that determine how surrounding nodes
-   * should be changed, replaced, or moved to accomodate the incoming ones.
+   * should be changed, replaced, or moved to accommodate the incoming ones.
    *
    * @param nodes - the nodes to insert
    */
@@ -1353,12 +1353,13 @@ export class RangeSelection implements BaseSelection {
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
-    const firstBlock = $getAncestor(firstPoint.getNode(), INTERNAL_$isBlock)!;
+    const firstNode = firstPoint.getNode();
+    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
 
     const last = nodes[nodes.length - 1]!;
 
     // CASE 1: insert inside a code block
-    if ('__language' in firstBlock && $isElementNode(firstBlock)) {
+    if ($isElementNode(firstBlock) && '__language' in firstBlock) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
@@ -1397,8 +1398,8 @@ export class RangeSelection implements BaseSelection {
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-    const lastToInsert = blocks[blocks.length - 1];
-    let firstToInsert = blocks[0];
+    const lastToInsert: LexicalNode | undefined = blocks[blocks.length - 1];
+    let firstToInsert: LexicalNode | undefined = blocks[0];
     if (isMergeable(firstToInsert)) {
       invariant(
         $isElementNode(firstBlock),
@@ -1408,9 +1409,15 @@ export class RangeSelection implements BaseSelection {
       firstToInsert = blocks[1];
     }
     if (firstToInsert) {
+      invariant(
+        firstBlock !== null,
+        'Expected node %s of type %s to have a block ElementNode ancestor',
+        firstNode.constructor.name,
+        firstNode.getType(),
+      );
       insertRangeAfter(firstBlock, firstToInsert);
     }
-    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
+    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock);
 
     if (
       insertedParagraph &&

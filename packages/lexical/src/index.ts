@@ -204,6 +204,11 @@ export {
   ParagraphNode,
 } from './nodes/LexicalParagraphNode';
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
+export {
+  $createScrollableNode,
+  $isScrollableNode,
+  ScrollableNode,
+} from './nodes/LexicalScrollableNode';
 export type {SerializedTabNode} from './nodes/LexicalTabNode';
 export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';

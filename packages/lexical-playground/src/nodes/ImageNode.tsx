@@ -19,7 +19,13 @@ import type {
   Spread,
 } from 'lexical';
 
-import {$applyNodeReplacement, createEditor, DecoratorNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $createScrollableNode,
+  $isScrollableNode,
+  createEditor,
+  DecoratorNode,
+} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
@@ -172,6 +178,17 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       type: 'image',
       version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
+    };
+  }
+
+  static transform(): (node: LexicalNode) => void {
+    return (node: LexicalNode) => {
+      const parent = node.getParent();
+      if (!$isScrollableNode(parent)) {
+        const scrollable = $createScrollableNode();
+        node.insertBefore(scrollable);
+        scrollable.append(node);
+      }
     };
   }
 

@@ -1377,7 +1377,9 @@ export class RangeSelection implements BaseSelection {
     if (!nodes.some(notInline)) {
       invariant(
         $isElementNode(firstBlock),
-        "Expected 'firstBlock' to be an ElementNode",
+        'Expected node %s of type %s to have a block ElementNode ancestor',
+        firstNode.constructor.name,
+        firstNode.getType(),
       );
       const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
@@ -1403,7 +1405,9 @@ export class RangeSelection implements BaseSelection {
     if (isMergeable(firstToInsert)) {
       invariant(
         $isElementNode(firstBlock),
-        "Expected 'firstBlock' to be an ElementNode",
+        'Expected node %s of type %s to have a block ElementNode ancestor',
+        firstNode.constructor.name,
+        firstNode.getType(),
       );
       firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
@@ -1411,7 +1415,7 @@ export class RangeSelection implements BaseSelection {
     if (firstToInsert) {
       invariant(
         firstBlock !== null,
-        'Expected node %s of type %s to have a block ElementNode ancestor',
+        'Expected node %s of type %s to have a block ancestor',
         firstNode.constructor.name,
         firstNode.getType(),
       );
@@ -1455,8 +1459,11 @@ export class RangeSelection implements BaseSelection {
       return paragraph;
     }
     const index = $removeTextAndSplitBlock(this);
-    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
+    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock);
+    invariant(
+      $isElementNode(block),
+      'Expected ancestor to be a block ElementNode',
+    );
     const firstToAppend = block.getChildAtIndex(index);
     const nodesToInsert = firstToAppend
       ? [firstToAppend, ...firstToAppend.getNextSiblings()]

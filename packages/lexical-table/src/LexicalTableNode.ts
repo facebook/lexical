@@ -25,12 +25,14 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $createScrollableNode,
   $getNearestNodeFromDOMNode,
-  $isScrollableNode,
   ElementNode,
 } from 'lexical';
 
+import {
+  $createScrollableNode,
+  $isScrollableNode,
+} from './LexicalScrollableNode';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {TableRowNode} from './LexicalTableRowNode';

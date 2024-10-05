@@ -7,15 +7,14 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$createTableNode, $isTableNode} from '@lexical/table';
 import {
-  $getRoot,
-  $insertNodes,
+  $createTableNode,
   $isScrollableNode,
+  $isTableNode,
   ScrollableNode,
-} from 'lexical';
-
-import {initializeUnitTest} from '../utils';
+} from '@lexical/table';
+import {$getRoot, $insertNodes} from 'lexical';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 describe('LexicalScrollableNode tests', () => {
   initializeUnitTest((testEnv) => {

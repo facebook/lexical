@@ -16,8 +16,12 @@ import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {ScrollableNode} from 'lexical';
+import {
+  ScrollableNode,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
 
 import {CollapsibleContainerNode} from '../plugins/CollapsiblePlugin/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsiblePlugin/CollapsibleContentNode';

@@ -25,6 +25,7 @@ import {
   $isTableRowNode,
   applyTableHandlers,
   INSERT_TABLE_COMMAND,
+  ScrollableNode,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -55,10 +56,12 @@ export function TablePlugin({
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
+    if (
+      !editor.hasNodes([TableNode, TableCellNode, TableRowNode, ScrollableNode])
+    ) {
       invariant(
         false,
-        'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
+        'TablePlugin: TableNode, TableCellNode, TableRowNode or ScrollableNode not registered on editor',
       );
     }
 

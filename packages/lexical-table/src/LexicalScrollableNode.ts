@@ -20,7 +20,7 @@ import {
 /**
  * This node allows the nodes it wraps to have a width greater than that of the editor,
  * encapsulating only its content in a horizontal scroll. You'll want to use it to wrap
- * nodes that have a "width" property via a transform. See ImageNode or TableNode for examples.
+ * nodes that have a "width" property and are NOT decoratorNodes. See TableNode as an example.
  */
 export class ScrollableNode extends ElementNode {
   static getType() {

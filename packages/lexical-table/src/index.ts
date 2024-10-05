@@ -6,6 +6,11 @@
  *
  */
 
+export {
+  $createScrollableNode,
+  $isScrollableNode,
+  ScrollableNode,
+} from './LexicalScrollableNode';
 export type {SerializedTableCellNode} from './LexicalTableCellNode';
 export {
   $createTableCellNode,

@@ -117,14 +117,28 @@ function $importMultiline(
   multilineElementTransformers: Array<MultilineElementTransformer>,
   rootNode: ElementNode,
 ): [boolean, number] {
-  for (const {
-    regExpStart,
-    regExpEnd,
-    replace,
-  } of multilineElementTransformers) {
+  for (const transformer of multilineElementTransformers) {
+    const {handleImportAfterStartMatch, regExpEnd, regExpStart, replace} =
+      transformer;
+
     const startMatch = lines[startLineIndex].match(regExpStart);
     if (!startMatch) {
       continue; // Try next transformer
+    }
+
+    if (handleImportAfterStartMatch) {
+      const result = handleImportAfterStartMatch({
+        lines,
+        rootNode,
+        startLineIndex,
+        startMatch,
+        transformer,
+      });
+      if (result === null) {
+        continue;
+      } else if (result) {
+        return result;
+      }
     }
 
     const regexpEndRegex: RegExp | undefined =

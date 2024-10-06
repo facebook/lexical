@@ -104,23 +104,25 @@ test.describe('Identation', () => {
           <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
+        <div class="lexical-scrollable" style="overflow-x: auto">
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                  dir="ltr">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+        </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
@@ -189,24 +191,26 @@ test.describe('Identation', () => {
           style="padding-inline-start: calc(40px)">
           <br />
         </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-                dir="ltr"
-                style="padding-inline-start: calc(40px)">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
+        <div class="lexical-scrollable" style="overflow-x: auto">
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
+                  dir="ltr"
+                  style="padding-inline-start: calc(40px)">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+        </div>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           style="padding-inline-start: calc(40px)">
@@ -285,24 +289,26 @@ test.describe('Identation', () => {
           style="padding-inline-start: calc(80px)">
           <br />
         </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-                dir="ltr"
-                style="padding-inline-start: calc(80px)">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
+        <div class="lexical-scrollable" style="overflow-x: auto">
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
+                  dir="ltr"
+                  style="padding-inline-start: calc(80px)">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+        </div>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           style="padding-inline-start: calc(80px)">
@@ -375,24 +381,26 @@ test.describe('Identation', () => {
           style="padding-inline-start: calc(40px)">
           <br />
         </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-                dir="ltr"
-                style="padding-inline-start: calc(40px)">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
+        <div class="lexical-scrollable" style="overflow-x: auto">
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
+                  dir="ltr"
+                  style="padding-inline-start: calc(40px)">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+        </div>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           style="padding-inline-start: calc(40px)">
@@ -455,24 +463,26 @@ test.describe('Identation', () => {
           <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr"
-                style="">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
+        <div class="lexical-scrollable" style="overflow-x: auto">
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                  dir="ltr"
+                  style="">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+        </div>
         <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
       `,
     );

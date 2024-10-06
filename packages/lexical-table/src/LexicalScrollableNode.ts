@@ -46,6 +46,10 @@ export class ScrollableNode extends ElementNode {
     return false;
   }
 
+  canIndent() {
+    return false;
+  }
+
   exportJSON() {
     return {
       ...super.exportJSON(),

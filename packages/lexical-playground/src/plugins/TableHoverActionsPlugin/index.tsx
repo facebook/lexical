@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
   $getTableColumnIndexFromTableCellNode,
   $getTableRowIndexFromTableCellNode,
@@ -32,8 +33,9 @@ function TableHoverActionsContainer({
   anchorElem,
 }: {
   anchorElem: HTMLElement;
-}): JSX.Element {
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
   const [isShownRow, setShownRow] = useState<boolean>(false);
   const [isShownColumn, setShownColumn] = useState<boolean>(false);
   const [shouldListenMouseMove, setShouldListenMouseMove] =
@@ -44,6 +46,9 @@ function TableHoverActionsContainer({
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
+      if (!isEditable) {
+        return;
+      }
       const {isOutside, tableDOMNode} = getMouseInfo(event);
 
       if (isOutside) {
@@ -151,6 +156,9 @@ function TableHoverActionsContainer({
       editor.registerMutationListener(
         TableNode,
         (mutations) => {
+          if (!isEditable) {
+            return;
+          }
           editor.getEditorState().read(() => {
             for (const [key, type] of mutations) {
               switch (type) {
@@ -173,9 +181,12 @@ function TableHoverActionsContainer({
         {skipInitialization: false},
       ),
     );
-  }, [editor]);
+  }, [editor, isEditable]);
 
   const insertAction = (insertRow: boolean) => {
+    if (!isEditable) {
+      return;
+    }
     editor.update(() => {
       if (tableDOMNodeRef.current) {
         const maybeTableNode = $getNearestNodeFromDOMNode(
@@ -192,6 +203,10 @@ function TableHoverActionsContainer({
       }
     });
   };
+
+  if (!isEditable) {
+    return null;
+  }
 
   return (
     <>
@@ -246,8 +261,12 @@ export default function TableHoverActionsPlugin({
 }: {
   anchorElem?: HTMLElement;
 }): React.ReactPortal | null {
-  return createPortal(
-    <TableHoverActionsContainer anchorElem={anchorElem} />,
-    anchorElem,
-  );
+  const isEditable = useLexicalEditable();
+
+  return isEditable
+    ? createPortal(
+        <TableHoverActionsContainer anchorElem={anchorElem} />,
+        anchorElem,
+      )
+    : null;
 }

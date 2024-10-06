@@ -11,6 +11,7 @@ import type {LexicalEditor} from './LexicalEditor';
 import type {BaseSelection} from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {
   $getSelection,
@@ -116,7 +117,10 @@ export function $flushMutations(
   isProcessingMutations = true;
   const shouldFlushTextMutations =
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
-
+  if (editor._disableFlushMutations) {
+    warnOnlyOnce('flush mutation disabled');
+    return;
+  }
   try {
     updateEditor(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);

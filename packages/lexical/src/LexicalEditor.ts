@@ -620,6 +620,8 @@ export class LexicalEditor {
   /** @internal */
   _editable: boolean;
   /** @internal */
+  _disableFlushMutations: boolean = false;
+  /** @internal */
   _blockCursorElement: null | HTMLDivElement;
 
   /** @internal */

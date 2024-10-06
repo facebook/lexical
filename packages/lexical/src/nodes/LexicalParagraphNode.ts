@@ -30,6 +30,7 @@ import {
   $applyNodeReplacement,
   getCachedClassNameArray,
   isHTMLElement,
+  setNodeIndentFromDOM,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
@@ -151,12 +152,6 @@ export class ParagraphNode extends ElementNode {
       if (direction) {
         element.dir = direction;
       }
-      const indent = this.getIndent();
-      if (indent > 0) {
-        // padding-inline-start is not widely supported in email HTML, but
-        // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
-        element.style.textIndent = `${indent * 20}px`;
-      }
     }
 
     return {
@@ -229,10 +224,7 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);
-    const indent = parseInt(element.style.textIndent, 10) / 20;
-    if (indent > 0) {
-      node.setIndent(indent);
-    }
+    setNodeIndentFromDOM(element, node);
   }
   return {node};
 }

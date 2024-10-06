@@ -1820,3 +1820,12 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   }
   return mutableNode;
 }
+
+export function setNodeIndentFromDOM(
+  elementDom: HTMLElement,
+  elementNode: ElementNode,
+) {
+  const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
+  const indent = indentSize / 40;
+  elementNode.setIndent(indent);
+}

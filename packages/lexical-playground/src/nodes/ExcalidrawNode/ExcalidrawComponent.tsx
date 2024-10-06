@@ -31,9 +31,13 @@ import ExcalidrawImage from './ExcalidrawImage';
 export default function ExcalidrawComponent({
   nodeKey,
   data,
+  width,
+  height,
 }: {
   data: string;
   nodeKey: NodeKey;
+  width: 'inherit' | number;
+  height: 'inherit' | number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isModalOpen, setModalOpen] = useState<boolean>(
@@ -180,21 +184,6 @@ export default function ExcalidrawComponent({
     appState = {},
   } = useMemo(() => JSON.parse(data), [data]);
 
-  const [initialWidth, initialHeight] = useMemo(() => {
-    let nodeWidth: 'inherit' | number = 'inherit';
-    let nodeHeight: 'inherit' | number = 'inherit';
-
-    editor.getEditorState().read(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isExcalidrawNode(node)) {
-        nodeWidth = node.getWidth();
-        nodeHeight = node.getHeight();
-      }
-    });
-
-    return [nodeWidth, nodeHeight];
-  }, [editor, nodeKey]);
-
   const closeModal = useCallback(() => {
     setModalOpen(false);
     if (elements.length === 0) {
@@ -233,8 +222,8 @@ export default function ExcalidrawComponent({
             elements={elements}
             files={files}
             appState={appState}
-            width={initialWidth}
-            height={initialHeight}
+            width={width}
+            height={height}
           />
           {isSelected && (
             <div

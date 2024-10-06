@@ -1732,7 +1732,7 @@ export function INTERNAL_$isBlock(
 export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,
   predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
+): NodeType | null {
   let parent = node;
   while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
     parent = parent.getParentOrThrow();

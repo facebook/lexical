@@ -7,6 +7,8 @@
  */
 import {
   $applyNodeReplacement,
+  $getSelection,
+  $isRangeSelection,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -16,6 +18,8 @@ import {
   LexicalNode,
   SerializedElementNode,
 } from 'lexical';
+
+import {$isTableNode} from './LexicalTableNode';
 
 /**
  * This node allows the nodes it wraps to have a width greater than that of the editor,
@@ -75,8 +79,27 @@ export class ScrollableNode extends ElementNode {
 
   static transform(): ((node: LexicalNode) => void) | null {
     return (node: LexicalNode) => {
+      const selection = $getSelection();
       if ((node as ScrollableNode).isEmpty()) {
         node.remove();
+        return;
+      }
+      const firstChild: ElementNode = (node as ScrollableNode).getFirstChild()!;
+      if (firstChild && !$isTableNode(firstChild)) {
+        firstChild.remove();
+      }
+      if (
+        $isRangeSelection(selection) &&
+        selection.anchor.key === node.getKey()
+      ) {
+        const row = firstChild.getFirstChild<ElementNode>()!;
+        const cell = row.getFirstChild<ElementNode>()!;
+        const cellChild = cell.getFirstChild()!;
+        if (cellChild) {
+          cellChild.selectStart();
+        } else {
+          cell.selectEnd();
+        }
       }
     };
   }

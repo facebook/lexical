@@ -67,6 +67,8 @@ import {
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
+import {TableRowNode} from '../dist/LexicalTable.dev';
+import {$isScrollableNode} from './LexicalScrollableNode';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
@@ -1197,9 +1199,9 @@ const selectTableNodeInDirection = (
             isForward,
           );
         } else if (!isForward) {
-          tableNode.selectPrevious();
+          tableNode.getParentOrThrow().selectPrevious();
         } else {
-          tableNode.selectNext();
+          tableNode.getParentOrThrow().selectNext();
         }
       }
 
@@ -1212,7 +1214,7 @@ const selectTableNodeInDirection = (
           false,
         );
       } else {
-        tableNode.selectPrevious();
+        tableNode.getParentOrThrow().selectPrevious();
       }
 
       return true;
@@ -1224,7 +1226,7 @@ const selectTableNodeInDirection = (
           true,
         );
       } else {
-        tableNode.selectNext();
+        tableNode.getParentOrThrow().selectNext();
       }
 
       return true;
@@ -1369,7 +1371,10 @@ function $handleArrowKey(
 
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
-      if (selection.isCollapsed() && direction === 'backward') {
+      if (selection.isCollapsed()) {
+        if (event.shiftKey) {
+          return false;
+        }
         const anchorType = selection.anchor.type;
         const anchorOffset = selection.anchor.offset;
         if (
@@ -1389,12 +1394,29 @@ function $handleArrowKey(
         if (!parentNode) {
           return false;
         }
-        const siblingNode = parentNode.getPreviousSibling();
+        const siblingNode0 =
+          direction === 'backward'
+            ? parentNode.getPreviousSibling()
+            : parentNode.getNextSibling();
+        const siblingNode = $isScrollableNode(siblingNode0)
+          ? siblingNode0.getFirstChild()
+          : siblingNode0;
         if (!siblingNode || !$isTableNode(siblingNode)) {
           return false;
         }
         stopEvent(event);
-        siblingNode.selectEnd();
+        if (direction === 'backward') {
+          siblingNode.selectEnd();
+        } else {
+          const row = siblingNode.getFirstChild() as TableRowNode;
+          const cell = row.getFirstChild() as TableCellNode;
+          const firstChild = cell.getFirstChild();
+          if (firstChild) {
+            firstChild.selectStart();
+          } else {
+            cell.selectEnd();
+          }
+        }
         return true;
       } else if (
         event.shiftKey &&
@@ -1790,8 +1812,8 @@ function $getExitingToNode(
   return anchorSibling && $isTableNode(anchorSibling)
     ? anchorSibling
     : direction === 'backward'
-    ? tableNode.getPreviousSibling()
-    : tableNode.getNextSibling();
+    ? tableNode.getParentOrThrow().getPreviousSibling()
+    : tableNode.getParentOrThrow().getNextSibling();
 }
 
 function $insertParagraphAtTableEdge(
@@ -1801,9 +1823,9 @@ function $insertParagraphAtTableEdge(
 ) {
   const paragraphNode = $createParagraphNode();
   if (edgePosition === 'first') {
-    tableNode.insertBefore(paragraphNode);
+    tableNode.getParentOrThrow().insertBefore(paragraphNode);
   } else {
-    tableNode.insertAfter(paragraphNode);
+    tableNode.getParentOrThrow().insertAfter(paragraphNode);
   }
   paragraphNode.append(...(children || []));
   paragraphNode.selectEnd();
@@ -1814,7 +1836,7 @@ function $getTableEdgeCursorPosition(
   selection: RangeSelection,
   tableNode: TableNode,
 ) {
-  const tableNodeParent = tableNode.getParent();
+  const tableNodeParent = tableNode.getParent(); // Should I change this to getParentOrThrow().getParent()?
   if (!tableNodeParent) {
     return undefined;
   }

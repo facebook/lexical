@@ -78,7 +78,10 @@ export class Client implements Provider {
   _awarenessState: UserState | null = null;
   awareness: {
     getLocalState: () => UserState | null;
-    getStates: () => Map<number, UserState>;
+    getStates: <T extends Record<string, unknown>>() => Map<
+      number,
+      UserState & T
+    >;
     off(): void;
     on(): void;
     setLocalState: (state: UserState) => void;
@@ -94,7 +97,8 @@ export class Client implements Provider {
 
     this.awareness = {
       getLocalState: () => this._awarenessState,
-      getStates: () => new Map([[0, this._awarenessState!]]),
+      getStates: <T extends Record<string, unknown>>() =>
+        new Map([[0, this._awarenessState!]]) as Map<number, UserState & T>,
       off: () => {
         // TODO
       },

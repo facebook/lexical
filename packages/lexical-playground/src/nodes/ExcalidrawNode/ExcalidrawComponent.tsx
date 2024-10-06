@@ -11,6 +11,7 @@ import type {NodeKey} from 'lexical';
 
 import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -40,8 +41,9 @@ export default function ExcalidrawComponent({
   height: 'inherit' | number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
   const [isModalOpen, setModalOpen] = useState<boolean>(
-    data === '[]' && editor.isEditable(),
+    data === '[]' && isEditable,
   );
   const imageContainerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -66,16 +68,16 @@ export default function ExcalidrawComponent({
     [editor, isSelected, nodeKey],
   );
 
-  // Set editor to readOnly if Excalidraw is open to prevent unwanted changes
   useEffect(() => {
-    if (isModalOpen) {
-      editor.setEditable(false);
-    } else {
-      editor.setEditable(true);
+    if (!isEditable && isSelected) {
+      clearSelection();
     }
-  }, [isModalOpen, editor]);
+  }, [isEditable]);
 
   useEffect(() => {
+    if (!isEditable) {
+      return;
+    }
     return mergeRegister(
       editor.registerCommand(
         CLICK_COMMAND,
@@ -113,7 +115,15 @@ export default function ExcalidrawComponent({
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, isResizing, $onDelete, setSelected]);
+  }, [
+    clearSelection,
+    editor,
+    isSelected,
+    isResizing,
+    $onDelete,
+    setSelected,
+    isEditable,
+  ]);
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);
@@ -130,7 +140,7 @@ export default function ExcalidrawComponent({
     aps: Partial<AppState>,
     fls: BinaryFiles,
   ) => {
-    if (!editor.isEditable()) {
+    if (!isEditable) {
       return;
     }
     return editor.update(() => {
@@ -175,8 +185,10 @@ export default function ExcalidrawComponent({
   };
 
   const openModal = useCallback(() => {
-    setModalOpen(true);
-  }, []);
+    if (isEditable) {
+      setModalOpen(true);
+    }
+  }, [isEditable]);
 
   const {
     elements = [],
@@ -198,20 +210,22 @@ export default function ExcalidrawComponent({
 
   return (
     <>
-      <ExcalidrawModal
-        initialElements={elements}
-        initialFiles={files}
-        initialAppState={appState}
-        isShown={isModalOpen}
-        onDelete={deleteNode}
-        onClose={closeModal}
-        onSave={(els, aps, fls) => {
-          editor.setEditable(true);
-          setData(els, aps, fls);
-          setModalOpen(false);
-        }}
-        closeOnClickOutside={false}
-      />
+      {isEditable && isModalOpen && (
+        <ExcalidrawModal
+          initialElements={elements}
+          initialFiles={files}
+          initialAppState={appState}
+          isShown={isModalOpen}
+          onDelete={deleteNode}
+          onClose={closeModal}
+          onSave={(els, aps, fls) => {
+            editor.setEditable(true);
+            setData(els, aps, fls);
+            setModalOpen(false);
+          }}
+          closeOnClickOutside={false}
+        />
+      )}
       {elements.length > 0 && (
         <button
           ref={buttonRef}
@@ -225,7 +239,7 @@ export default function ExcalidrawComponent({
             width={width}
             height={height}
           />
-          {isSelected && (
+          {isSelected && isEditable && (
             <div
               className="image-edit-button"
               role="button"
@@ -234,7 +248,7 @@ export default function ExcalidrawComponent({
               onClick={openModal}
             />
           )}
-          {(isSelected || isResizing) && (
+          {(isSelected || isResizing) && isEditable && (
             <ImageResizer
               buttonRef={captionButtonRef}
               showCaption={true}

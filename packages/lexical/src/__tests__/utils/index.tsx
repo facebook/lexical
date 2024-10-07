@@ -21,7 +21,12 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {
+  ScrollableNode,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
 import {expect} from '@playwright/test';
 import {
   $isRangeSelection,
@@ -471,6 +476,7 @@ const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   ListItemNode,
   QuoteNode,
   CodeNode,
+  ScrollableNode,
   TableNode,
   TableCellNode,
   TableRowNode,

@@ -156,100 +156,102 @@ test.describe('Toolbar', () => {
           <p>
             <br />
           </p>
-          <table>
-            <colgroup>
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-            </colgroup>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-          </table>
+          <div>
+            <table>
+              <colgroup>
+                <col style="width: 92px" />
+                <col style="width: 92px" />
+                <col style="width: 92px" />
+                <col style="width: 92px" />
+                <col style="width: 92px" />
+              </colgroup>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+            </table>
+          </div>
           <p><br /></p>
         `,
         undefined,

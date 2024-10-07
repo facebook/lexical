@@ -398,22 +398,24 @@ test.describe.parallel('Selection', () => {
           dir="ltr">
           <span data-lexical-text="true">abc</span>
         </p>
-        <table class="PlaygroundEditorTheme__table">
-          <colgroup>
-            <col style="width: 92px" />
-            <col style="width: 92px" />
-          </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-          </tr>
-        </table>
+        <div class="lexical-scrollable" style="overflow-x: auto">
+          <table class="PlaygroundEditorTheme__table">
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+            </tr>
+          </table>
+        </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
@@ -684,7 +686,8 @@ test.describe.parallel('Selection', () => {
         {
           anchorOffset: {desc: 'beginning of cell', value: 0},
           anchorPath: [
-            {desc: 'index of table in root', value: 1},
+            {desc: 'index of scrollable in root', value: 1},
+            {desc: 'table is firstChild of scrollable', value: 0},
             {desc: 'first table row', value: 1},
             {desc: 'second cell', value: 1},
             {desc: 'first paragraph', value: 0},
@@ -693,7 +696,8 @@ test.describe.parallel('Selection', () => {
           ],
           focusOffset: {desc: 'full text length', value: cellText.length},
           focusPath: [
-            {desc: 'index of table in root', value: 1},
+            {desc: 'index of scrollable in root', value: 1},
+            {desc: 'table is firstChild of scrollable', value: 0},
             {desc: 'first table row', value: 1},
             {desc: 'second cell', value: 1},
             {desc: 'first paragraph', value: 0},
@@ -714,14 +718,16 @@ test.describe.parallel('Selection', () => {
         {
           anchorOffset: {desc: 'beginning of cell', value: 0},
           anchorPath: [
-            {desc: 'index of table in root', value: 1},
+            {desc: 'index of scrollable in root', value: 1},
+            {desc: 'table is firstChild of scrollable', value: 0},
             {desc: 'first table row', value: 1},
             {desc: 'first cell', value: 0},
             {desc: 'beginning of text', value: 0},
           ],
           focusOffset: {desc: 'beginning of text', value: 0},
           focusPath: [
-            {desc: 'index of table in root', value: 1},
+            {desc: 'index of scrollable in root', value: 1},
+            {desc: 'table is firstChild of scrollable', value: 0},
             {desc: 'first table row', value: 1},
             {desc: 'first cell', value: 0},
             {desc: 'beginning of text', value: 0},
@@ -770,7 +776,8 @@ test.describe.parallel('Selection', () => {
       {
         anchorOffset: {desc: 'beginning of cell', value: 0},
         anchorPath: [
-          {desc: 'index of table in root', value: 1},
+          {desc: 'index of scrollable in root', value: 1},
+          {desc: 'table is firstChild of scrollable', value: 0},
           {desc: 'first table row', value: 1},
           {desc: 'first cell', value: 0},
         ],
@@ -981,8 +988,8 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
-      focusOffset: 0,
-      focusPath: [2],
+      focusOffset: 1,
+      focusPath: [1, 0, 2, 1],
     });
   });
 
@@ -1006,8 +1013,8 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [2],
-      focusOffset: 0,
-      focusPath: [0],
+      focusOffset: 1,
+      focusPath: [1, 0, 1, 0],
     });
   });
 
@@ -1029,7 +1036,7 @@ test.describe.parallel('Selection', () => {
         anchorOffset: 0,
         anchorPath: [0],
         focusOffset: 1,
-        focusPath: [1, 2, 1],
+        focusPath: [1, 0, 2, 1],
       });
     },
   );
@@ -1052,7 +1059,7 @@ test.describe.parallel('Selection', () => {
         anchorOffset: 0,
         anchorPath: [1],
         focusOffset: 1,
-        focusPath: [0, 1, 0],
+        focusPath: [0, 0, 1, 0],
       });
     },
   );

@@ -7,6 +7,8 @@
  */
 import {
   $applyNodeReplacement,
+  $createParagraphNode,
+  $getRoot,
   $getSelection,
   $isRangeSelection,
   DOMConversionMap,
@@ -85,7 +87,13 @@ export class ScrollableNode extends ElementNode {
     return (node: LexicalNode) => {
       const selection = $getSelection();
       if ((node as ScrollableNode).isEmpty()) {
-        node.remove();
+        const root = $getRoot();
+        if (root.__first === node.getKey() && root.getChildrenSize() === 1) {
+          root.append($createParagraphNode());
+          node.remove();
+        } else {
+          node.remove();
+        }
         return;
       }
       const firstChild: ElementNode = (node as ScrollableNode).getFirstChild()!;
@@ -96,14 +104,7 @@ export class ScrollableNode extends ElementNode {
         $isRangeSelection(selection) &&
         selection.anchor.key === node.getKey()
       ) {
-        const row = firstChild.getFirstChild<ElementNode>()!;
-        const cell = row.getFirstChild<ElementNode>()!;
-        const cellChild = cell.getFirstChild()!;
-        if (cellChild) {
-          cellChild.selectStart();
-        } else {
-          cell.selectEnd();
-        }
+        firstChild.getFirstDescendant()!.selectStart();
       }
     };
   }

@@ -67,7 +67,6 @@ import {
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
-import {TableRowNode} from '../dist/LexicalTable.dev';
 import {$isScrollableNode} from './LexicalScrollableNode';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
@@ -1371,7 +1370,10 @@ function $handleArrowKey(
 
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
-      if (selection.isCollapsed()) {
+      if (
+        selection.isCollapsed() &&
+        (direction === 'forward' || direction === 'backward')
+      ) {
         if (event.shiftKey) {
           return false;
         }
@@ -1408,13 +1410,11 @@ function $handleArrowKey(
         if (direction === 'backward') {
           siblingNode.selectEnd();
         } else {
-          const row = siblingNode.getFirstChild() as TableRowNode;
-          const cell = row.getFirstChild() as TableCellNode;
-          const firstChild = cell.getFirstChild();
-          if (firstChild) {
-            firstChild.selectStart();
+          const firstDescendant = siblingNode.getFirstDescendant()!;
+          if ($isTableCellNode(firstDescendant)) {
+            firstDescendant.selectEnd();
           } else {
-            cell.selectEnd();
+            firstDescendant.selectStart();
           }
         }
         return true;
@@ -1423,6 +1423,20 @@ function $handleArrowKey(
         (direction === 'up' || direction === 'down')
       ) {
         const focusNode = selection.focus.getNode();
+        const tableNode2 = $findMatchingParent(focusNode, $isTableNode);
+        if (tableNode2 && direction === 'up') {
+          const newFocus = tableNode2.getParentOrThrow().getPreviousSibling();
+          if (newFocus) {
+            selection.focus.set(newFocus.getKey(), 0, 'element');
+          }
+          return true;
+        } else if (tableNode2 && direction === 'down') {
+          const newFocus = tableNode2.getParentOrThrow().getNextSibling();
+          if (newFocus) {
+            selection.focus.set(newFocus.getKey(), 0, 'element');
+          }
+          return true;
+        }
         if ($isRootOrShadowRoot(focusNode)) {
           const selectedNode = selection.getNodes()[0];
           if (selectedNode) {

@@ -49,7 +49,7 @@ describe('LexicalScrollableNode tests', () => {
         expect($isTableNode(table)).toBe(true);
         table.remove();
       });
-      expect(testEnv.innerHTML).toBe('');
+      expect(testEnv.innerHTML).toBe('<p><br></p>');
 
       // scrollableNode.importDOM
       await editor.update(() => {
@@ -60,7 +60,7 @@ describe('LexicalScrollableNode tests', () => {
         $insertNodes(nodes);
       });
       expect(testEnv.innerHTML).toBe(
-        '<div class="lexical-scrollable" style="overflow-x: auto;"><table><colgroup></colgroup><br></table></div>',
+        '<p><br></p><div class="lexical-scrollable" style="overflow-x: auto;"><table><colgroup></colgroup><br></table></div>',
       );
     });
   });

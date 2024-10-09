@@ -16,6 +16,7 @@ import {
   $isRangeSelection,
   COMMAND_PRIORITY_CRITICAL,
   INDENT_CONTENT_COMMAND,
+  PASTE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -77,6 +78,14 @@ export default function ListMaxIndentLevelPlugin({
   useEffect(() => {
     return editor.registerCommand(
       INDENT_CONTENT_COMMAND,
+      () => $shouldPreventIndent(maxDepth),
+      COMMAND_PRIORITY_CRITICAL,
+    );
+  }, [editor, maxDepth]);
+
+  useEffect(() => {
+    return editor.registerCommand(
+      PASTE_COMMAND,
       () => $shouldPreventIndent(maxDepth),
       COMMAND_PRIORITY_CRITICAL,
     );

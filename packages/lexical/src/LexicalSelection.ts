@@ -1117,6 +1117,17 @@ export class RangeSelection implements BaseSelection {
     let lastNode = lastPoint.getNode();
     const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
     const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
+    // If a token is partially selected then move the selection to cover the whole selection
+    if (
+      $isTextNode(firstNode) &&
+      firstNode.isToken() &&
+      firstPoint.offset < firstNode.getTextContentSize()
+    ) {
+      firstPoint.offset = 0;
+    }
+    if (lastPoint.offset > 0 && $isTextNode(lastNode) && lastNode.isToken()) {
+      lastPoint.offset = lastNode.getTextContentSize();
+    }
 
     selectedNodes.forEach((node) => {
       if (
@@ -1323,7 +1334,7 @@ export class RangeSelection implements BaseSelection {
   /**
    * Attempts to "intelligently" insert an arbitrary list of Lexical nodes into the EditorState at the
    * current Selection according to a set of heuristics that determine how surrounding nodes
-   * should be changed, replaced, or moved to accomodate the incoming ones.
+   * should be changed, replaced, or moved to accommodate the incoming ones.
    *
    * @param nodes - the nodes to insert
    */
@@ -1342,12 +1353,13 @@ export class RangeSelection implements BaseSelection {
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
-    const firstBlock = $getAncestor(firstPoint.getNode(), INTERNAL_$isBlock)!;
+    const firstNode = firstPoint.getNode();
+    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
 
     const last = nodes[nodes.length - 1]!;
 
     // CASE 1: insert inside a code block
-    if ('__language' in firstBlock && $isElementNode(firstBlock)) {
+    if ($isElementNode(firstBlock) && '__language' in firstBlock) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
@@ -1365,7 +1377,9 @@ export class RangeSelection implements BaseSelection {
     if (!nodes.some(notInline)) {
       invariant(
         $isElementNode(firstBlock),
-        "Expected 'firstBlock' to be an ElementNode",
+        'Expected node %s of type %s to have a block ElementNode ancestor',
+        firstNode.constructor.name,
+        firstNode.getType(),
       );
       const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
@@ -1386,20 +1400,28 @@ export class RangeSelection implements BaseSelection {
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-    const lastToInsert = blocks[blocks.length - 1];
-    let firstToInsert = blocks[0];
+    const lastToInsert: LexicalNode | undefined = blocks[blocks.length - 1];
+    let firstToInsert: LexicalNode | undefined = blocks[0];
     if (isMergeable(firstToInsert)) {
       invariant(
         $isElementNode(firstBlock),
-        "Expected 'firstBlock' to be an ElementNode",
+        'Expected node %s of type %s to have a block ElementNode ancestor',
+        firstNode.constructor.name,
+        firstNode.getType(),
       );
       firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
     }
     if (firstToInsert) {
+      invariant(
+        firstBlock !== null,
+        'Expected node %s of type %s to have a block ancestor',
+        firstNode.constructor.name,
+        firstNode.getType(),
+      );
       insertRangeAfter(firstBlock, firstToInsert);
     }
-    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
+    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock);
 
     if (
       insertedParagraph &&
@@ -1437,8 +1459,11 @@ export class RangeSelection implements BaseSelection {
       return paragraph;
     }
     const index = $removeTextAndSplitBlock(this);
-    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
+    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock);
+    invariant(
+      $isElementNode(block),
+      'Expected ancestor to be a block ElementNode',
+    );
     const firstToAppend = block.getChildAtIndex(index);
     const nodesToInsert = firstToAppend
       ? [firstToAppend, ...firstToAppend.getNextSiblings()]

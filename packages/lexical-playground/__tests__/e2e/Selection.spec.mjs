@@ -982,7 +982,7 @@ test.describe.parallel('Selection', () => {
       anchorOffset: 0,
       anchorPath: [0],
       focusOffset: 0,
-      focusPath: [2],
+      focusPath: [1, 2, 1],
     });
   });
 
@@ -1007,7 +1007,7 @@ test.describe.parallel('Selection', () => {
       anchorOffset: 0,
       anchorPath: [2],
       focusOffset: 0,
-      focusPath: [0],
+      focusPath: [1, 1, 0],
     });
   });
 
@@ -1115,6 +1115,57 @@ test.describe.parallel('Selection', () => {
     await assertTableSelectionCoordinates(page, {
       anchor: {x: 0, y: 0},
       focus: {x: 1, y: 1},
+    });
+  });
+
+  test('shift+arrowdown into a table does not select element after', async ({
+    page,
+    isPlainText,
+    isCollab,
+    legacyEvents,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    await moveToEditorEnd(page);
+    await page.keyboard.type('def');
+
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: 1,
+      focusPath: [1, 2, 1],
+    });
+  });
+
+  test('shift+arrowup into a table does not select element before', async ({
+    page,
+    isPlainText,
+    isCollab,
+    legacyEvents,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await page.keyboard.type('abc');
+
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 1,
+      focusPath: [1, 1, 0],
     });
   });
 });

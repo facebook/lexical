@@ -1410,7 +1410,10 @@ function $handleArrowKey(
             $isTableNode(n),
           );
           if ($isTableCellNode(focusParentNode)) {
-            focusParentNode = getParentTable(focusParentNode);
+            focusParentNode = $findMatchingParent(
+              focusParentNode,
+              $isTableNode,
+            );
           }
           if (focusParentNode !== tableNode) {
             return false;
@@ -1496,7 +1499,10 @@ function $handleArrowKey(
             (n) => $isElementNode(n) && !n.isInline(),
           );
           if ($isTableCellNode(focusParentNode)) {
-            focusParentNode = getParentTable(focusParentNode);
+            focusParentNode = $findMatchingParent(
+              focusParentNode,
+              $isTableNode,
+            );
           }
           if (!focusParentNode) {
             return false;
@@ -1707,16 +1713,6 @@ function $handleArrowKey(
   }
 
   return false;
-}
-
-function getParentTable(focusParentNode: LexicalNode): TableNode | null {
-  const tableRow = focusParentNode.getParent();
-  if ($isTableRowNode(tableRow)) {
-    const tableNode: TableNode | null = tableRow.getParent();
-    return tableNode ? tableNode : null;
-  }
-
-  return null;
 }
 
 function stopEvent(event: Event) {

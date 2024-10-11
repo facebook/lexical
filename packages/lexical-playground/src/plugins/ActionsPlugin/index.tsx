@@ -24,6 +24,7 @@ import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContex
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
+import html2canvas from 'html2canvas';
 import {
   $createTextNode,
   $getRoot,
@@ -222,11 +223,45 @@ export default function ActionsPlugin({
 
       <button
         className="action-button export"
-        onClick={() =>
-          exportFile(editor, {
-            fileName: `Playground ${new Date().toISOString()}`,
-            source: 'Playground',
-          })
+        onClick={
+          () => {
+            const element = document.querySelector('[contenteditable="true"]');
+
+            // Capture the element using html2canvas
+            html2canvas(element).then(function (canvas) {
+              const ctx = canvas.getContext('2d');
+              const width = canvas.width;
+              const height = canvas.height;
+
+              // Ensure the image is rectangular (width >= height)
+              if (height < width) {
+                // Create a new canvas with equal width and height
+                const newCanvas = document.createElement('canvas');
+                newCanvas.width = width;
+                newCanvas.height = width; // Square canvas (rectangular where width >= height)
+
+                const newCtx = newCanvas.getContext('2d');
+
+                // Fill the new canvas with the background color
+                newCtx.fillStyle =
+                  getComputedStyle(element).backgroundColor || 'white';
+                newCtx.fillRect(0, 0, width, width);
+
+                // Draw the original canvas content onto the new one, centered vertically
+                newCtx.drawImage(canvas, 0, (width - height) / 2);
+
+                // Append the new rectangular canvas to the result div
+                document.querySelector('#result').appendChild(newCanvas);
+              } else {
+                // If height >= width, append the original canvas
+                document.querySelector('#result').appendChild(canvas);
+              }
+            });
+          }
+          // exportFile(editor, {
+          //   fileName: `Playground ${new Date().toISOString()}`,
+          //   source: 'Playground',
+          // })
         }
         title="Export"
         aria-label="Export editor state to JSON">

@@ -26,6 +26,7 @@
     "@lexical/selection": "0.18.0",
     "@lexical/table": "0.18.0",
     "@lexical/utils": "0.18.0",
+    "html2canvas": "^1.4.1",
     "katex": "^0.16.10",
     "lexical": "0.18.0",
     "lodash-es": "^4.17.21",

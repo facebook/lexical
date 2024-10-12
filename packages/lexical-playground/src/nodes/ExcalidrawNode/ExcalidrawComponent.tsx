@@ -6,7 +6,7 @@
  *
  */
 
-import type {ExcalidrawInitialElements} from './ExcalidrawModal';
+import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
 import type {NodeKey} from 'lexical';
 
 import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
@@ -23,17 +23,21 @@ import {
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
+import ExcalidrawModal from '../../ui/ExcalidrawModal';
 import ImageResizer from '../../ui/ImageResizer';
 import {$isExcalidrawNode} from '.';
 import ExcalidrawImage from './ExcalidrawImage';
-import ExcalidrawModal from './ExcalidrawModal';
 
 export default function ExcalidrawComponent({
   nodeKey,
   data,
+  width,
+  height,
 }: {
   data: string;
   nodeKey: NodeKey;
+  width: 'inherit' | number;
+  height: 'inherit' | number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isModalOpen, setModalOpen] = useState<boolean>(
@@ -180,20 +184,17 @@ export default function ExcalidrawComponent({
     appState = {},
   } = useMemo(() => JSON.parse(data), [data]);
 
-  const [initialWidth, initialHeight] = useMemo(() => {
-    let nodeWidth: 'inherit' | number = 'inherit';
-    let nodeHeight: 'inherit' | number = 'inherit';
-
-    editor.getEditorState().read(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isExcalidrawNode(node)) {
-        nodeWidth = node.getWidth();
-        nodeHeight = node.getHeight();
-      }
-    });
-
-    return [nodeWidth, nodeHeight];
-  }, [editor, nodeKey]);
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    if (elements.length === 0) {
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if (node) {
+          node.remove();
+        }
+      });
+    }
+  }, [editor, nodeKey, elements.length]);
 
   return (
     <>
@@ -203,7 +204,7 @@ export default function ExcalidrawComponent({
         initialAppState={appState}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
         onSave={(els, aps, fls) => {
           editor.setEditable(true);
           setData(els, aps, fls);
@@ -221,8 +222,8 @@ export default function ExcalidrawComponent({
             elements={elements}
             files={files}
             appState={appState}
-            width={initialWidth}
-            height={initialHeight}
+            width={width}
+            height={height}
           />
           {isSelected && (
             <div

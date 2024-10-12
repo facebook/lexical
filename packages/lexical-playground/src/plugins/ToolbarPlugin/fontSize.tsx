@@ -136,13 +136,16 @@ export default function FontSize({
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const inputValueNumber = Number(inputValue);
 
+    if (e.key === 'Tab') {
+      return;
+    }
     if (['e', 'E', '+', '-'].includes(e.key) || isNaN(inputValueNumber)) {
       e.preventDefault();
       setInputValue('');
       return;
     }
     setInputChangeFlag(true);
-    if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape') {
+    if (e.key === 'Enter' || e.key === 'Escape') {
       e.preventDefault();
 
       updateFontSizeByInputValue(inputValueNumber);

@@ -177,9 +177,9 @@ function TableHoverActionsContainer({
                   // Reset resize observers
                   tableResizeObserver.disconnect();
                   tableSetRef.current.forEach((tableKey: NodeKey) => {
-                    const tableDOMEl = editor.getElementByKey(tableKey);
-                    if (tableDOMEl) {
-                      tableResizeObserver.observe(tableDOMEl);
+                    const tableElement = editor.getElementByKey(tableKey);
+                    if (tableElement) {
+                      tableResizeObserver.observe(tableElement);
                     }
                   });
                   break;

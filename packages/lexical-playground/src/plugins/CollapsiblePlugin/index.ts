@@ -28,7 +28,6 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   LexicalNode,
-  NodeKey,
 } from 'lexical';
 import {useEffect} from 'react';
 

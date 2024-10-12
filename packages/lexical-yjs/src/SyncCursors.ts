@@ -502,6 +502,7 @@ export function syncLexicalSelectionToYjs(
     color,
     focusing,
     awarenessData,
+    ...customFields
   } = localState;
   let anchorPos = null;
   let focusPos = null;
@@ -531,6 +532,7 @@ export function syncLexicalSelectionToYjs(
       focusPos,
       focusing,
       name,
+      ...customFields,
     });
   }
 }

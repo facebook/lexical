@@ -46,9 +46,6 @@ function TableHoverActionsContainer({
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
-      if (!isEditable) {
-        return;
-      }
       const {isOutside, tableDOMNode} = getMouseInfo(event);
 
       if (isOutside) {
@@ -156,9 +153,6 @@ function TableHoverActionsContainer({
       editor.registerMutationListener(
         TableNode,
         (mutations) => {
-          if (!isEditable) {
-            return;
-          }
           editor.getEditorState().read(() => {
             for (const [key, type] of mutations) {
               switch (type) {
@@ -181,12 +175,9 @@ function TableHoverActionsContainer({
         {skipInitialization: false},
       ),
     );
-  }, [editor, isEditable]);
+  }, [editor]);
 
   const insertAction = (insertRow: boolean) => {
-    if (!isEditable) {
-      return;
-    }
     editor.update(() => {
       if (tableDOMNodeRef.current) {
         const maybeTableNode = $getNearestNodeFromDOMNode(

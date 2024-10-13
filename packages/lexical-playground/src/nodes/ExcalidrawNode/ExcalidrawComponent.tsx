@@ -43,7 +43,7 @@ export default function ExcalidrawComponent({
   const [editor] = useLexicalComposerContext();
   const isEditable = useLexicalEditable();
   const [isModalOpen, setModalOpen] = useState<boolean>(
-    data === '[]' && isEditable,
+    data === '[]' && editor.isEditable(),
   );
   const imageContainerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -69,13 +69,10 @@ export default function ExcalidrawComponent({
   );
 
   useEffect(() => {
-    if (!isEditable && isSelected) {
-      clearSelection();
-    }
-  }, [isEditable]);
-
-  useEffect(() => {
     if (!isEditable) {
+      if (isSelected) {
+        clearSelection();
+      }
       return;
     }
     return mergeRegister(
@@ -140,9 +137,6 @@ export default function ExcalidrawComponent({
     aps: Partial<AppState>,
     fls: BinaryFiles,
   ) => {
-    if (!isEditable) {
-      return;
-    }
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
@@ -185,9 +179,7 @@ export default function ExcalidrawComponent({
   };
 
   const openModal = useCallback(() => {
-    if (isEditable) {
-      setModalOpen(true);
-    }
+    setModalOpen(true);
   }, [isEditable]);
 
   const {
@@ -219,7 +211,6 @@ export default function ExcalidrawComponent({
           onDelete={deleteNode}
           onClose={closeModal}
           onSave={(els, aps, fls) => {
-            editor.setEditable(true);
             setData(els, aps, fls);
             setModalOpen(false);
           }}

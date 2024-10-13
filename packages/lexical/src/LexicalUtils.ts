@@ -966,6 +966,14 @@ function isArrowDown(key: string): boolean {
   return key === 'ArrowDown';
 }
 
+function isHomeKey(key: string): boolean {
+  return key === 'Home';
+}
+
+function isEndKey(key: string): boolean {
+  return key === 'End';
+}
+
 export function isMoveBackward(
   key: string,
   ctrlKey: boolean,
@@ -982,7 +990,12 @@ export function isMoveToStart(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowLeft(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return (
+    (isArrowLeft(key) || isHomeKey(key)) &&
+    !altKey &&
+    !shiftKey &&
+    (ctrlKey || metaKey)
+  );
 }
 
 export function isMoveForward(
@@ -1001,7 +1014,12 @@ export function isMoveToEnd(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowRight(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return (
+    (isArrowRight(key) || isEndKey(key)) &&
+    !altKey &&
+    !shiftKey &&
+    (ctrlKey || metaKey)
+  );
 }
 
 export function isMoveUp(

@@ -448,6 +448,391 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
+  test(`Can toggle format for multi-line list of each type without losing indentation state.`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    // Standard assertion
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await toggleBulletList(page);
+
+    await page.keyboard.type('Hello');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('from');
+    await clickIndentButton(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('the');
+    await clickIndentButton(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('other');
+    await clickOutdentButton(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('side');
+    await clickOutdentButton(page);
+
+    // Before toggle off/on unordered list
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">from</span>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                value="2">
+                <ul class="PlaygroundEditorTheme__ul">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                    dir="ltr"
+                    value="1">
+                    <span data-lexical-text="true">the</span>
+                  </li>
+                </ul>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="2">
+                <span data-lexical-text="true">other</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">side</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await selectAll(page);
+
+    await toggleBulletList(page);
+    await toggleBulletList(page);
+
+    // After toggle off/on unordered list
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">from</span>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                value="2">
+                <ul class="PlaygroundEditorTheme__ul">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                    dir="ltr"
+                    value="1">
+                    <span data-lexical-text="true">the</span>
+                  </li>
+                </ul>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="2">
+                <span data-lexical-text="true">other</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">side</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await toggleNumberedList(page);
+
+    // Before toggle off/on ordered list
+    await assertHTML(
+      page,
+      html`
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ol class="PlaygroundEditorTheme__ol2">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">from</span>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                value="2">
+                <ol class="PlaygroundEditorTheme__ol3">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                    dir="ltr"
+                    value="1">
+                    <span data-lexical-text="true">the</span>
+                  </li>
+                </ol>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="2">
+                <span data-lexical-text="true">other</span>
+              </li>
+            </ol>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">side</span>
+          </li>
+        </ol>
+      `,
+    );
+
+    await toggleNumberedList(page);
+    await toggleNumberedList(page);
+
+    // After toggle off/on ordered list
+    await assertHTML(
+      page,
+      html`
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ol class="PlaygroundEditorTheme__ol2">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">from</span>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                value="2">
+                <ol class="PlaygroundEditorTheme__ol3">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                    dir="ltr"
+                    value="1">
+                    <span data-lexical-text="true">the</span>
+                  </li>
+                </ol>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="2">
+                <span data-lexical-text="true">other</span>
+              </li>
+            </ol>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">side</span>
+          </li>
+        </ol>
+      `,
+    );
+
+    await toggleCheckList(page);
+
+    // Before toggle off/on checklist
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            role="checkbox"
+            tabindex="-1"
+            value="1"
+            aria-checked="false">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                role="checkbox"
+                tabindex="-1"
+                value="1"
+                aria-checked="false">
+                <span data-lexical-text="true">from</span>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
+                value="2">
+                <ul
+                  class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                    dir="ltr"
+                    role="checkbox"
+                    tabindex="-1"
+                    value="1"
+                    aria-checked="false">
+                    <span data-lexical-text="true">the</span>
+                  </li>
+                </ul>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                role="checkbox"
+                tabindex="-1"
+                value="2"
+                aria-checked="false">
+                <span data-lexical-text="true">other</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            role="checkbox"
+            tabindex="-1"
+            value="2"
+            aria-checked="false">
+            <span data-lexical-text="true">side</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await toggleCheckList(page);
+    await toggleCheckList(page);
+
+    // After toggle off/on checklist
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            role="checkbox"
+            tabindex="-1"
+            value="1"
+            aria-checked="false">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                role="checkbox"
+                tabindex="-1"
+                value="1"
+                aria-checked="false">
+                <span data-lexical-text="true">from</span>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
+                value="2">
+                <ul
+                  class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                    dir="ltr"
+                    role="checkbox"
+                    tabindex="-1"
+                    value="1"
+                    aria-checked="false">
+                    <span data-lexical-text="true">the</span>
+                  </li>
+                </ul>
+              </li>
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                role="checkbox"
+                tabindex="-1"
+                value="2"
+                aria-checked="false">
+                <span data-lexical-text="true">other</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            role="checkbox"
+            tabindex="-1"
+            value="2"
+            aria-checked="false">
+            <span data-lexical-text="true">side</span>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
   test(`Can create a list containing inline blocks and then toggle it back to original state.`, async ({
     page,
   }) => {

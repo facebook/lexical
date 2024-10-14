@@ -1411,6 +1411,7 @@ function $handleArrowKey(
           siblingNode.selectEnd();
         } else {
           const firstDescendant = siblingNode.getFirstDescendant()!;
+          invariant(firstDescendant !== null, 'TableNode is empty');
           if ($isTableCellNode(firstDescendant)) {
             firstDescendant.selectEnd();
           } else {

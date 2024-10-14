@@ -23,11 +23,6 @@ import {
 
 import {$isTableNode} from './LexicalTableNode';
 
-/**
- * This node allows the nodes it wraps to have a width greater than that of the editor,
- * encapsulating only its content in a horizontal scroll. You'll want to use it to wrap
- * nodes that have a "width" property and are NOT decoratorNodes. See TableNode as an example.
- */
 export class ScrollableNode extends ElementNode {
   static getType() {
     return 'scrollable';
@@ -86,6 +81,10 @@ export class ScrollableNode extends ElementNode {
   static transform(): ((node: LexicalNode) => void) | null {
     return (node: LexicalNode) => {
       const selection = $getSelection();
+      const firstChild: ElementNode = (node as ScrollableNode).getFirstChild()!;
+      if (firstChild && !$isTableNode(firstChild)) {
+        firstChild.remove();
+      }
       if ((node as ScrollableNode).isEmpty()) {
         const root = $getRoot();
         if (root.__first === node.getKey() && root.getChildrenSize() === 1) {
@@ -95,10 +94,6 @@ export class ScrollableNode extends ElementNode {
           node.remove();
         }
         return;
-      }
-      const firstChild: ElementNode = (node as ScrollableNode).getFirstChild()!;
-      if (firstChild && !$isTableNode(firstChild)) {
-        firstChild.remove();
       }
       if (
         $isRangeSelection(selection) &&

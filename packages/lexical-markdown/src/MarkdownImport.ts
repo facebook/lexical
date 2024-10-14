@@ -373,6 +373,10 @@ function importTextMatchTransformers(
         ? transformer.getEndIndex(textNode, match)
         : startIndex + match[0].length;
 
+      if (endIndex === false) {
+        continue;
+      }
+
       let replaceNode, newTextNode;
 
       if (startIndex === 0) {

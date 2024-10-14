@@ -359,10 +359,10 @@ export function $convertTableElement(
   if (domNode.hasAttribute('data-lexical-row-striping')) {
     tableNode.setRowStriping(true);
   }
-  const colGroup = domNode.querySelector(":scope > colgroup");
+  const colGroup = domNode.querySelector(':scope > colgroup');
   if (colGroup) {
     let columns: number[] | undefined = [];
-    for (const col of colGroup.querySelectorAll(":scope > col")) {
+    for (const col of colGroup.querySelectorAll(':scope > col')) {
       const width = (col as HTMLElement).style.width;
       if (!width || !PIXEL_VALUE_REG_EXP.test(width)) {
         columns = undefined;

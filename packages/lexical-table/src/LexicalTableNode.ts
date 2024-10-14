@@ -33,6 +33,7 @@ import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
+import {PIXEL_VALUE_REG_EXP} from './constants'
 
 export type SerializedTableNode = Spread<
   {
@@ -357,6 +358,19 @@ export function $convertTableElement(
   const tableNode = $createTableNode();
   if (domNode.hasAttribute('data-lexical-row-striping')) {
     tableNode.setRowStriping(true);
+  }
+  const colGroup = domNode.querySelector(":scope > colgroup");
+  if (colGroup) {
+    let columns: number[] | undefined = [];
+    for (const col of colGroup.querySelectorAll(":scope > col")) {
+      const width = (col as HTMLElement).style.width;
+      if (!width || !PIXEL_VALUE_REG_EXP.test(width)) {
+        columns = undefined;
+        break;
+      }
+      columns.push(parseFloat(width))
+    }
+    if (columns) tableNode.setColWidths(columns);
   }
   return {node: tableNode};
 }

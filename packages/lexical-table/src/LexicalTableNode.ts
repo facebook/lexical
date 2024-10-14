@@ -29,11 +29,11 @@ import {
   ElementNode,
 } from 'lexical';
 
+import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
-import {PIXEL_VALUE_REG_EXP} from './constants'
 
 export type SerializedTableNode = Spread<
   {
@@ -368,9 +368,9 @@ export function $convertTableElement(
         columns = undefined;
         break;
       }
-      columns.push(parseFloat(width))
+      columns.push(parseFloat(width));
     }
-    if (columns) tableNode.setColWidths(columns);
+    if (columns) {tableNode.setColWidths(columns);}
   }
   return {node: tableNode};
 }

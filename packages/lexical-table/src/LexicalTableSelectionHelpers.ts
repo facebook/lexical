@@ -39,7 +39,6 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -1454,45 +1453,6 @@ function $handleArrowKey(
           $setSelection(newSelection);
           stopEvent(event);
           return true;
-        } else if ($isRootOrShadowRoot(focusNode)) {
-          const selectedNode = selection.getNodes()[0];
-          if (selectedNode) {
-            const tableCellNode = $findMatchingParent(
-              selectedNode,
-              $isTableCellNode,
-            );
-            if (tableCellNode && tableNode.isParentOf(tableCellNode)) {
-              const firstDescendant = tableNode.getFirstDescendant();
-              const lastDescendant = tableNode.getLastDescendant();
-              if (!firstDescendant || !lastDescendant) {
-                return false;
-              }
-              const [firstCellNode] = $getNodeTriplet(firstDescendant);
-              const [lastCellNode] = $getNodeTriplet(lastDescendant);
-              const firstCellCoords = tableNode.getCordsFromCellNode(
-                firstCellNode,
-                tableObserver.table,
-              );
-              const lastCellCoords = tableNode.getCordsFromCellNode(
-                lastCellNode,
-                tableObserver.table,
-              );
-              const firstCellDOM = tableNode.getDOMCellFromCordsOrThrow(
-                firstCellCoords.x,
-                firstCellCoords.y,
-                tableObserver.table,
-              );
-              const lastCellDOM = tableNode.getDOMCellFromCordsOrThrow(
-                lastCellCoords.x,
-                lastCellCoords.y,
-                tableObserver.table,
-              );
-              tableObserver.setAnchorCellForSelection(firstCellDOM);
-              tableObserver.setFocusCellForSelection(lastCellDOM, true);
-              return true;
-            }
-          }
-          return false;
         } else {
           let focusParentNode = $findMatchingParent(
             focusNode,

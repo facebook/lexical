@@ -208,20 +208,20 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     ];
+    const empty = html`
+      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+    `;
 
     await deleteLine();
-    await assertHTML(page, lines.slice(0, 3).join(''));
+    await assertHTML(page, [lines[0], lines[1], lines[2], empty].join(''));
+    await page.keyboard.press('Backspace');
     await deleteLine();
-    await assertHTML(page, lines.slice(0, 2).join(''));
+    await assertHTML(page, [lines[0], lines[1]].join(''));
     await deleteLine();
-    await assertHTML(page, lines.slice(0, 1).join(''));
+    await assertHTML(page, [lines[0], empty].join(''));
+    await page.keyboard.press('Backspace');
     await deleteLine();
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-    );
+    await assertHTML(page, empty);
   });
 
   test('can delete line which ends with element with CMD+delete', async ({

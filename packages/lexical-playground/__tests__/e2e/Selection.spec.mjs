@@ -251,6 +251,7 @@ test.describe.parallel('Selection', () => {
     };
 
     await deleteLine();
+    await page.keyboard.press('Backspace');
     await assertHTML(
       page,
       html`
@@ -261,6 +262,7 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     );
+    await page.keyboard.press('Backspace');
     await deleteLine();
     await assertHTML(
       page,

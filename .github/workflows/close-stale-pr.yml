@@ -1,0 +1,18 @@
+name: Close stale PR
+on:
+  pull_request:
+    types: labeled
+jobs:
+  test-action:
+    if: github.event.label.name == 'stale-pr'
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh pr close "$NUMBER" --comment "$COMMENT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.number }}
+          COMMENT: >
+            Closing this PR due to staleness! If there are new updates, please reopen the PR.

@@ -134,10 +134,12 @@ function TableHoverActionsContainer({
 
   // Hide the buttons on any table dimensions change to prevent last row cells
   // overlap behind the 'Add Row' button when text entry changes cell height
-  const tableResizeObserver = new ResizeObserver((entries) => {
-    setShownRow(false);
-    setShownColumn(false);
-  });
+  const tableResizeObserver = React.useMemo(() => {
+    return new ResizeObserver(() => {
+      setShownRow(false);
+      setShownColumn(false);
+    });
+  }, []);
 
   useEffect(() => {
     if (!shouldListenMouseMove) {
@@ -193,7 +195,7 @@ function TableHoverActionsContainer({
         {skipInitialization: false},
       ),
     );
-  }, [editor]);
+  }, [editor, tableResizeObserver]);
 
   const insertAction = (insertRow: boolean) => {
     editor.update(() => {

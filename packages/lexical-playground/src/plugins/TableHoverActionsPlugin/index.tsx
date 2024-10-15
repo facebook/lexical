@@ -20,7 +20,7 @@ import {
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
@@ -134,7 +134,7 @@ function TableHoverActionsContainer({
 
   // Hide the buttons on any table dimensions change to prevent last row cells
   // overlap behind the 'Add Row' button when text entry changes cell height
-  const tableResizeObserver = React.useMemo(() => {
+  const tableResizeObserver = useMemo(() => {
     return new ResizeObserver(() => {
       setShownRow(false);
       setShownColumn(false);

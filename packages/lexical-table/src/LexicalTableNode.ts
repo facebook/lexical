@@ -370,7 +370,9 @@ export function $convertTableElement(
       }
       columns.push(parseFloat(width));
     }
-    if (columns) {tableNode.setColWidths(columns);}
+    if (columns) {
+      tableNode.setColWidths(columns);
+    }
   }
   return {node: tableNode};
 }

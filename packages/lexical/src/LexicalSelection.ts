@@ -1860,7 +1860,7 @@ export class RangeSelection implements BaseSelection {
       // extend the selection by one character in the specified direction.
       // This ensures that the parent element is deleted along with its content.
       // Otherwise, only the text content will be deleted, leaving an empty parent node.
-      if (this.anchor.offset === 0) {
+      if (this.isCollapsed() && this.anchor.offset === 0) {
         this.modify('extend', isBackward, 'character');
       }
 

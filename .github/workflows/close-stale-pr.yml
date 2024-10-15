@@ -1,5 +1,8 @@
 name: Close stale PR
 on:
+  pull_request_target:
+    branches:
+      - main
   pull_request:
     types: labeled
 jobs:

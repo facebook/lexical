@@ -270,6 +270,34 @@ test.describe.parallel('Selection', () => {
     );
   });
 
+  test('can delete line by collapse', async ({page, isPlainText}) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await insertCollapsible(page);
+    await page.keyboard.type('text');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('ArrowUp');
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
   test('Can insert inline element within text and put selection after it', async ({
     page,
     isPlainText,

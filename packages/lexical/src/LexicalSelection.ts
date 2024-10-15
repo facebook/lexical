@@ -1156,6 +1156,16 @@ export class RangeSelection implements BaseSelection {
       fixText(firstNode, del);
       return;
     }
+    if ($getRoot().getChildrenSize() > 1) {
+      const firstEmpty = $isElementNode(firstBlock) && firstBlock.isEmpty();
+      const lastEmpty = $isElementNode(lastBlock) && lastBlock.isEmpty();
+      if (firstEmpty && (!lastBlock || !lastBlock.isAttached())) {
+        firstBlock.remove();
+      }
+      if (lastEmpty && (!firstBlock || !firstBlock.isAttached())) {
+        lastBlock.remove();
+      }
+    }
     if ($isTextNode(firstNode)) {
       const del = firstNode.getTextContentSize() - firstPoint.offset;
       firstNode.spliceText(firstPoint.offset, del, '');

@@ -28,7 +28,6 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   LexicalNode,
-  NodeKey,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -49,7 +48,6 @@ import {
 } from './CollapsibleTitleNode';
 
 export const INSERT_COLLAPSIBLE_COMMAND = createCommand<void>();
-export const TOGGLE_COLLAPSIBLE_COMMAND = createCommand<NodeKey>();
 
 export default function CollapsiblePlugin(): null {
   const [editor] = useLexicalComposerContext();

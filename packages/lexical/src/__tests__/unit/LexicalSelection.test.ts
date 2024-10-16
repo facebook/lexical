@@ -16,6 +16,8 @@ import {
   $isParagraphNode,
   $isTextNode,
   $setSelection,
+  createEditor,
+  ElementNode,
   LexicalEditor,
   ParagraphNode,
   RangeSelection,
@@ -787,5 +789,51 @@ describe('LexicalSelection tests', () => {
         });
       });
     });
+  });
+});
+
+describe('Regression tests for #6701', () => {
+  test('insertNodes fails an invariant when there is no Block ancestor', async () => {
+    class InlineElementNode extends ElementNode {
+      static clone(prevNode: InlineElementNode): InlineElementNode {
+        return new InlineElementNode(prevNode.__key);
+      }
+      static getType() {
+        return 'inline-element-node';
+      }
+      static importJSON() {
+        return new InlineElementNode();
+      }
+      isInline() {
+        return true;
+      }
+      exportJSON() {
+        return {...super.exportJSON(), type: this.getType()};
+      }
+      createDOM() {
+        return document.createElement('span');
+      }
+      updateDOM() {
+        return false;
+      }
+    }
+    const editor = createEditor({
+      nodes: [InlineElementNode],
+      onError: (err) => {
+        throw err;
+      },
+    });
+    expect(() =>
+      editor.update(
+        () => {
+          const textNode = $createTextNode('test');
+          $getRoot().clear().append(new InlineElementNode().append(textNode));
+          textNode.select().insertNodes([$createTextNode('more text')]);
+        },
+        {discrete: true},
+      ),
+    ).toThrow(
+      /Expected node TextNode of type text to have a block ElementNode ancestor/,
+    );
   });
 });

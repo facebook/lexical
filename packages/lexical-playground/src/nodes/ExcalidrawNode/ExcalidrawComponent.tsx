@@ -180,7 +180,7 @@ export default function ExcalidrawComponent({
 
   const openModal = useCallback(() => {
     setModalOpen(true);
-  }, [isEditable]);
+  }, []);
 
   const {
     elements = [],

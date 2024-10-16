@@ -245,7 +245,14 @@ const getHeaderState = (
   return TableCellHeaderStates.NO_STATUS;
 };
 
-export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
+/**
+ * Inserts a table row before or after the current focus cell node,
+ * taking into account any spans. If successful, returns the
+ * inserted table row node.
+ */
+export function $insertTableRow__EXPERIMENTAL(
+  insertAfter = true,
+): TableRowNode | undefined {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -256,6 +263,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const [gridMap, focusCellMap] = $computeTableMap(grid, focusCell, focusCell);
   const columnCount = gridMap[0].length;
   const {startRow: focusStartRow} = focusCellMap;
+  let insertedRow: TableRowNode | undefined = undefined;
   if (insertAfter) {
     const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
     const focusEndRowMap = gridMap[focusEndRow];
@@ -284,6 +292,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
       'focusEndRow is not a TableRowNode',
     );
     focusEndRowNode.insertAfter(newRow);
+    insertedRow = newRow;
   } else {
     const focusStartRowMap = gridMap[focusStartRow];
     const newRow = $createTableRowNode();
@@ -311,7 +320,9 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
       'focusEndRow is not a TableRowNode',
     );
     focusStartRowNode.insertBefore(newRow);
+    insertedRow = newRow;
   }
+  return insertedRow;
 }
 
 export function $insertTableColumn(

@@ -1455,7 +1455,10 @@ function $handleArrowKey(
           stopEvent(event);
           return true;
         } else if ($isRootOrShadowRoot(focusNode)) {
-          const selectedNode = selection.getNodes()[0];
+          const selectedNode =
+            direction === 'up'
+              ? selection.getNodes()[selection.getNodes().length - 1]
+              : selection.getNodes()[0];
           if (selectedNode) {
             const tableCellNode = $findMatchingParent(
               selectedNode,

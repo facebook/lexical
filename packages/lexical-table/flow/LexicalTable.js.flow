@@ -237,7 +237,7 @@ declare export function $deleteTableColumn(
 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
-): TableRowNode | undefined;
+): TableRowNode | void;
 
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,

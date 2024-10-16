@@ -140,22 +140,23 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
 
-  react-beta:
-    strategy:
-      matrix:
-        # Currently using a single combination for every-patch e2e tests of
-        # react beta to reduce cost impact
-        editor-mode: ['rich-text']
-        prod: [false]
-    uses: ./.github/workflows/call-e2e-test.yml
-    with:
-      os: 'ubuntu-latest'
-      browser: 'chromium'
-      node-version: 18.18.0
-      events-mode: 'modern-events'
-      editor-mode: ${{ matrix.editor-mode }}
-      prod: ${{ matrix.prod }}
-      override-react-version: beta
+  # This has been stalling in GitHub CI for unknown reasons, disable for now
+  # react-beta:
+  #   strategy:
+  #     matrix:
+  #       # Currently using a single combination for every-patch e2e tests of
+  #       # react beta to reduce cost impact
+  #       editor-mode: ['rich-text']
+  #       prod: [false]
+  #   uses: ./.github/workflows/call-e2e-test.yml
+  #   with:
+  #     os: 'ubuntu-latest'
+  #     browser: 'chromium'
+  #     node-version: 18.18.0
+  #     events-mode: 'modern-events'
+  #     editor-mode: ${{ matrix.editor-mode }}
+  #     prod: ${{ matrix.prod }}
+  #     override-react-version: beta
 
   flaky:
     strategy:

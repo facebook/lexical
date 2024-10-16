@@ -119,9 +119,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
       html`
         <table class="PlaygroundEditorTheme__table">
           <colgroup>
-            <col style="width: 92px" />
-            <col style="width: 92px" />
-            <col style="width: 92px" />
+            <col style="width: 90px" />
+            <col style="width: 90px" />
+            <col style="width: 90px" />
           </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">

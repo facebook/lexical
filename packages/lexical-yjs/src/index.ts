@@ -20,6 +20,7 @@ export type UserState = {
   focusPos: null | RelativePosition;
   name: string;
   awarenessData: object;
+  [key: string]: unknown;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
   createCommand('CONNECTED_COMMAND');
@@ -32,6 +33,7 @@ export type ProviderAwareness = {
   off: (type: 'update', cb: () => void) => void;
   on: (type: 'update', cb: () => void) => void;
   setLocalState: (arg0: UserState) => void;
+  setLocalStateField: (field: string, value: unknown) => void;
 };
 declare interface Provider {
   awareness: ProviderAwareness;

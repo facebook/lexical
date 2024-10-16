@@ -1732,7 +1732,7 @@ export function INTERNAL_$isBlock(
 export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,
   predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
+): NodeType | null {
   let parent = node;
   while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
     parent = parent.getParentOrThrow();
@@ -1819,4 +1819,13 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
     );
   }
   return mutableNode;
+}
+
+export function setNodeIndentFromDOM(
+  elementDom: HTMLElement,
+  elementNode: ElementNode,
+) {
+  const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
+  const indent = indentSize / 40;
+  elementNode.setIndent(indent);
 }

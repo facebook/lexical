@@ -75,6 +75,19 @@ export type ElementTransformer = {
 };
 
 export type MultilineElementTransformer = {
+  /**
+   * Use this function to manually handle the import process, once the `regExpStart` has matched successfully.
+   * Without providing this function, the default behavior is to match until `regExpEnd` is found, or until the end of the document if `regExpEnd.optional` is true.
+   *
+   * @returns a tuple or null. The first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed. If null is returned, the next multilineElementTransformer will be tried. If undefined is returned, the default behavior will be used.
+   */
+  handleImportAfterStartMatch?: (args: {
+    lines: Array<string>;
+    rootNode: ElementNode;
+    startLineIndex: number;
+    startMatch: RegExpMatchArray;
+    transformer: MultilineElementTransformer;
+  }) => [boolean, number] | null | undefined;
   dependencies: Array<Klass<LexicalNode>>;
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
@@ -550,7 +563,7 @@ export const LINK: TextMatchTransformer = {
 
 export function normalizeMarkdown(
   input: string,
-  shouldMergeAdjacentLines = true,
+  shouldMergeAdjacentLines = false,
 ): string {
   const lines = input.split('\n');
   let inCodeBlock = false;

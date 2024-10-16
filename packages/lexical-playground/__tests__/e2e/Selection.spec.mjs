@@ -39,7 +39,6 @@ import {
   insertTable,
   insertYouTubeEmbed,
   IS_LINUX,
-  IS_MAC,
   IS_WINDOWS,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
@@ -167,7 +166,7 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText || !IS_MAC);
+    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('One');
     await page.keyboard.press('Enter');
@@ -228,7 +227,7 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText || !IS_MAC);
+    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('One');
     await page.keyboard.press('Enter');
@@ -273,7 +272,7 @@ test.describe.parallel('Selection', () => {
   });
 
   test('can delete line by collapse', async ({page, isPlainText}) => {
-    test.skip(isPlainText || !IS_MAC);
+    test.skip(isPlainText);
     await focusEditor(page);
     await insertCollapsible(page);
     await page.keyboard.type('text');
@@ -380,10 +379,6 @@ test.describe.parallel('Selection', () => {
 
   test('Can delete forward a Collapsible', async ({page, isPlainText}) => {
     test.skip(isPlainText);
-    if (!IS_MAC) {
-      // Do Windows/Linux have equivalent shortcuts?
-      return;
-    }
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertCollapsible(page);
@@ -409,10 +404,6 @@ test.describe.parallel('Selection', () => {
   // even further
   test('Can delete forward a Table', async ({page, isPlainText}) => {
     test.skip(isPlainText);
-    if (!IS_MAC) {
-      // Do Windows/Linux have equivalent shortcuts?
-      return;
-    }
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertTable(page, 1, 2);

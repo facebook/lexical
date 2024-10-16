@@ -252,7 +252,7 @@ const getHeaderState = (
  */
 export function $insertTableRow__EXPERIMENTAL(
   insertAfter = true,
-): TableRowNode | undefined {
+): TableRowNode | null {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -263,7 +263,7 @@ export function $insertTableRow__EXPERIMENTAL(
   const [gridMap, focusCellMap] = $computeTableMap(grid, focusCell, focusCell);
   const columnCount = gridMap[0].length;
   const {startRow: focusStartRow} = focusCellMap;
-  let insertedRow: TableRowNode | undefined = undefined;
+  let insertedRow: TableRowNode | null = null;
   if (insertAfter) {
     const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
     const focusEndRowMap = gridMap[focusEndRow];
@@ -384,7 +384,14 @@ export function $insertTableColumn(
   return tableNode;
 }
 
-export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
+/**
+ * Inserts a column before or after the current focus cell node,
+ * taking into account any spans. If successful, returns the
+ * first inserted cell node.
+ */
+export function $insertTableColumn__EXPERIMENTAL(
+  insertAfter = true,
+): TableCellNode | null {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -490,6 +497,7 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     newColWidths.splice(columnIndex, 0, newWidth);
     grid.setColWidths(newColWidths);
   }
+  return firstInsertedCell;
 }
 
 export function $deleteTableColumn(

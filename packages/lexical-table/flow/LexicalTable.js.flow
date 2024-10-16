@@ -237,11 +237,11 @@ declare export function $deleteTableColumn(
 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
-): TableRowNode | void;
+): TableRowNode | null;
 
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableCellNode | null;
 
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
 

@@ -230,4 +230,92 @@ test.describe('Collaboration', () => {
       focusPath: [1, 1, 0],
     });
   });
+
+  test('Undo with two collaborators editing same paragraph', async ({
+    isRichText,
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    // test.skip(!isCollab || IS_MAC);
+    test.skip(!isCollab);
+
+    // Left collaborator types two paragraphs of text
+    await focusEditor(page);
+    await page.keyboard.type('Line 1');
+    await page.keyboard.press('Enter');
+    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+    await page.keyboard.type('This is a test. ');
+
+    // Right collaborator types at the end of paragraph 2
+    await sleep(1050);
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('ArrowDown'); // Move caret to end of paragraph 2
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.type('Word');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line 1</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">This is a test. Word</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator undoes their second paragraph
+    await sleep(1050);
+    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+
+    // Only left collaborator's text should have been undone
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line 1</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Word</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator refreshes their page
+    await page.evaluate(() => {
+      document
+        .querySelector('iframe[name="left"]')
+        .contentDocument.location.reload();
+    });
+
+    // Page content should be the same as before the refresh
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line 1</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Word</span>
+        </p>
+      `,
+    );
+  });
 });

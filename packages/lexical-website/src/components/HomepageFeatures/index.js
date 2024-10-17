@@ -20,7 +20,7 @@ const FeatureList = [
         and pending states of the editor at any given time.
       </Translate>
     ),
-    title: 'Reliable',
+    title: <Translate id="page.home.features.title.reliable" description="title for the reliable feature">Reliable</Translate>,
   },
   {
     Svg: require('@site/static/img/feature-accessible.svg').default,
@@ -33,7 +33,7 @@ const FeatureList = [
         technologies.
       </Translate>
     ),
-    title: 'Accessible',
+    title: <Translate id="page.home.features.title.accessible" description="title for the accessible feature">Accessible</Translate>,
   },
   {
     Svg: require('@site/static/img/feature-fast.svg').default,
@@ -46,7 +46,7 @@ const FeatureList = [
         these features can be included via a plugin interface.
       </Translate>
     ),
-    title: 'Fast',
+    title: <Translate id="page.home.features.title.fast" description="title for the fast feature">Fast</Translate>,
   },
   {
     Svg: require('@site/static/img/feature-cross-platform.svg').default,
@@ -58,7 +58,7 @@ const FeatureList = [
         as well as a Swift framework for native iOS development.
       </Translate>
     ),
-    title: 'Cross Platform',
+    title: <Translate id="page.home.features.title.crossplatform" description="title for the cross platform feature">Cross Platform</Translate>,
   },
 ];
 

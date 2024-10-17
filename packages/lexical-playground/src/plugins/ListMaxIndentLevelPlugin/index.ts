@@ -10,12 +10,14 @@ import type {ElementNode, RangeSelection} from 'lexical';
 
 import {$getListDepth, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_CRITICAL,
   INDENT_CONTENT_COMMAND,
+  PASTE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -75,11 +77,19 @@ export default function ListMaxIndentLevelPlugin({
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerCommand(
-      INDENT_CONTENT_COMMAND,
-      () => $shouldPreventIndent(maxDepth),
-      COMMAND_PRIORITY_CRITICAL,
+    return mergeRegister(
+      editor.registerCommand(
+        INDENT_CONTENT_COMMAND,
+        () => $shouldPreventIndent(maxDepth),
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+      editor.registerCommand(
+        PASTE_COMMAND,
+        () => $shouldPreventIndent(maxDepth),
+        COMMAND_PRIORITY_CRITICAL,
+      ),
     );
   }, [editor, maxDepth]);
+
   return null;
 }

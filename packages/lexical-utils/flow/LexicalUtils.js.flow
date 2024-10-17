@@ -11,6 +11,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   ElementNode,
+  NodeKey,
 } from 'lexical';
 declare export function addClassNamesToElement(
   element: HTMLElement,
@@ -94,3 +95,10 @@ declare export function $splitNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode | null, ElementNode];
+
+declare export function registerNodesOfTypeListener(
+  editor: LexicalEditor,
+  klass: Class<LexicalNode>,
+  listener: (nodes: Set<NodeKey>) => void,
+  fireImmediately: ?boolean,
+): () => void;

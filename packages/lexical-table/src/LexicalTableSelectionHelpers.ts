@@ -16,6 +16,7 @@ import type {
 } from './LexicalTableSelection';
 import type {
   BaseSelection,
+  EditorThemeClasses,
   ElementFormatType,
   LexicalCommand,
   LexicalEditor,
@@ -1089,7 +1090,7 @@ export function $updateDOMForSelection(
 
     if (selectedCellNodes.has(lexicalNode)) {
       cell.highlighted = true;
-      $addHighlightToDOM(editor, cell);
+      $addHighlightToDOM(editor, cell, editor._config.theme);
     } else {
       cell.highlighted = false;
       $removeHighlightFromDOM(editor, cell);
@@ -1143,7 +1144,7 @@ export function $addHighlightStyleToTable(
   tableSelection.disableHighlightStyle();
   $forEachTableCell(tableSelection.table, (cell) => {
     cell.highlighted = true;
-    $addHighlightToDOM(editor, cell);
+    $addHighlightToDOM(editor, cell, editor._config.theme);
   });
 }
 
@@ -1304,7 +1305,11 @@ function selectTableCellNode(tableCell: TableCellNode, fromStart: boolean) {
 }
 
 const BROWSER_BLUE_RGB = '172,206,247';
-function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
+function $addHighlightToDOM(
+  editor: LexicalEditor,
+  cell: TableDOMCell,
+  editorThemeClasses: EditorThemeClasses,
+): void {
   const element = cell.elem;
   const node = $getNearestNodeFromDOMNode(element);
   invariant(
@@ -1312,13 +1317,22 @@ function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
   const backgroundColor = node.getBackgroundColor();
+  const {tableCellSelected, tableCellSelectedOverwrite} = editorThemeClasses;
   if (backgroundColor === null) {
-    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
+    if (tableCellSelected) {
+      element.classList.add(tableCellSelected);
+    } else {
+      element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
+    }
   } else {
-    element.style.setProperty(
-      'background-image',
-      `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
-    );
+    if (tableCellSelectedOverwrite) {
+      element.classList.add(tableCellSelectedOverwrite);
+    } else {
+      element.style.setProperty(
+        'background-image',
+        `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
+      );
+    }
   }
   element.style.setProperty('caret-color', 'transparent');
 }

@@ -213,58 +213,61 @@ function BlockFormatDropDown({
   editor: LexicalEditor;
   disabled?: boolean;
 }): JSX.Element {
-  const formatParagraph = () => {
+  const formatParagraph = useCallback(() => {
     editor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         $setBlocksType(selection, () => $createParagraphNode());
       }
     });
-  };
+  }, [editor]);
 
-  const formatHeading = (headingSize: HeadingTagType) => {
-    if (blockType !== headingSize) {
-      editor.update(() => {
-        const selection = $getSelection();
-        $setBlocksType(selection, () => $createHeadingNode(headingSize));
-      });
-    }
-  };
+  const formatHeading = useCallback(
+    (headingSize: HeadingTagType) => {
+      if (blockType !== headingSize) {
+        editor.update(() => {
+          const selection = $getSelection();
+          $setBlocksType(selection, () => $createHeadingNode(headingSize));
+        });
+      }
+    },
+    [blockType, editor],
+  );
 
-  const formatBulletList = () => {
+  const formatBulletList = useCallback(() => {
     if (blockType !== 'bullet') {
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
     } else {
       formatParagraph();
     }
-  };
+  }, [blockType, editor, formatParagraph]);
 
-  const formatCheckList = () => {
+  const formatCheckList = useCallback(() => {
     if (blockType !== 'check') {
       editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
     } else {
       formatParagraph();
     }
-  };
+  }, [blockType, editor, formatParagraph]);
 
-  const formatNumberedList = () => {
+  const formatNumberedList = useCallback(() => {
     if (blockType !== 'number') {
       editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
     } else {
       formatParagraph();
     }
-  };
+  }, [blockType, editor, formatParagraph]);
 
-  const formatQuote = () => {
+  const formatQuote = useCallback(() => {
     if (blockType !== 'quote') {
       editor.update(() => {
         const selection = $getSelection();
         $setBlocksType(selection, () => $createQuoteNode());
       });
     }
-  };
+  }, [blockType, editor]);
 
-  const formatCode = () => {
+  const formatCode = useCallback(() => {
     if (blockType !== 'code') {
       editor.update(() => {
         let selection = $getSelection();
@@ -284,7 +287,49 @@ function BlockFormatDropDown({
         }
       });
     }
-  };
+  }, [blockType, editor]);
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_MODIFIER_COMMAND,
+      (payload: KeyboardEvent) => {
+        const event: KeyboardEvent = payload;
+        const {key, ctrlKey, altKey, metaKey} = event;
+
+        if (altKey && (ctrlKey || metaKey)) {
+          event.preventDefault();
+          const formatMap: Record<string, () => void> = {
+            '0': formatParagraph,
+            '1': () => formatHeading('h1'),
+            '2': () => formatHeading('h2'),
+            '3': () => formatHeading('h3'),
+            '4': formatBulletList,
+            '5': formatNumberedList,
+            '6': formatCheckList,
+            c: formatCode,
+            q: formatQuote,
+          };
+
+          const lowerCaseKey = key.toLowerCase();
+          if (lowerCaseKey in formatMap) {
+            formatMap[lowerCaseKey]();
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_NORMAL,
+    );
+  }, [
+    editor,
+    formatParagraph,
+    formatHeading,
+    formatBulletList,
+    formatNumberedList,
+    formatCheckList,
+    formatCode,
+    formatQuote,
+  ]);
 
   return (
     <DropDown
@@ -719,46 +764,6 @@ export default function ToolbarPlugin({
     );
   }, [$updateToolbar, activeEditor, editor]);
 
-  useEffect(() => {
-    return activeEditor.registerCommand(
-      KEY_MODIFIER_COMMAND,
-      (payload) => {
-        const event: KeyboardEvent = payload;
-        const {code, ctrlKey, metaKey} = event;
-
-        if (code === 'KeyK' && (ctrlKey || metaKey)) {
-          event.preventDefault();
-          let url: string | null;
-          if (!isLink) {
-            setIsLinkEditMode(true);
-            url = sanitizeUrl('https://');
-          } else {
-            setIsLinkEditMode(false);
-            url = null;
-          }
-          return activeEditor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
-        }
-        return false;
-      },
-      COMMAND_PRIORITY_NORMAL,
-    );
-  }, [activeEditor, isLink, setIsLinkEditMode]);
-
-  const applyStyleText = useCallback(
-    (styles: Record<string, string>, skipHistoryStack?: boolean) => {
-      activeEditor.update(
-        () => {
-          const selection = $getSelection();
-          if (selection !== null) {
-            $patchStyleText(selection, styles);
-          }
-        },
-        skipHistoryStack ? {tag: 'historic'} : {},
-      );
-    },
-    [activeEditor],
-  );
-
   const clearFormatting = useCallback(() => {
     activeEditor.update(() => {
       const selection = $getSelection();
@@ -814,6 +819,49 @@ export default function ToolbarPlugin({
       }
     });
   }, [activeEditor]);
+
+  useEffect(() => {
+    return activeEditor.registerCommand(
+      KEY_MODIFIER_COMMAND,
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        const {code, ctrlKey, metaKey} = event;
+
+        if (code === 'KeyK' && (ctrlKey || metaKey)) {
+          event.preventDefault();
+          let url: string | null;
+          if (!isLink) {
+            setIsLinkEditMode(true);
+            url = sanitizeUrl('https://');
+          } else {
+            setIsLinkEditMode(false);
+            url = null;
+          }
+          return activeEditor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+        } else if (code === 'KeyQ' && (ctrlKey || metaKey)) {
+          event.preventDefault();
+          clearFormatting();
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_NORMAL,
+    );
+  }, [activeEditor, isLink, setIsLinkEditMode, clearFormatting]);
+
+  const applyStyleText = useCallback(
+    (styles: Record<string, string>, skipHistoryStack?: boolean) => {
+      activeEditor.update(
+        () => {
+          const selection = $getSelection();
+          if (selection !== null) {
+            $patchStyleText(selection, styles);
+          }
+        },
+        skipHistoryStack ? {tag: 'historic'} : {},
+      );
+    },
+    [activeEditor],
+  );
 
   const onFontColorSelect = useCallback(
     (value: string, skipHistoryStack: boolean) => {

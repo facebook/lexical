@@ -9,7 +9,12 @@
 import './fontSize.css';
 
 import {$patchStyleText} from '@lexical/selection';
-import {$getSelection, LexicalEditor} from 'lexical';
+import {
+  $getSelection,
+  COMMAND_PRIORITY_NORMAL,
+  KEY_MODIFIER_COMMAND,
+  LexicalEditor,
+} from 'lexical';
 import * as React from 'react';
 
 const MIN_ALLOWED_FONT_SIZE = 8;
@@ -159,17 +164,20 @@ export default function FontSize({
     }
   };
 
-  const handleButtonClick = (updateType: updateFontSizeType) => {
-    if (inputValue !== '') {
-      const nextFontSize = calculateNextFontSize(
-        Number(inputValue),
-        updateType,
-      );
-      updateFontSizeInSelection(String(nextFontSize) + 'px', null);
-    } else {
-      updateFontSizeInSelection(null, updateType);
-    }
-  };
+  const handleButtonClick = React.useCallback(
+    (updateType: updateFontSizeType) => {
+      if (inputValue !== '') {
+        const nextFontSize = calculateNextFontSize(
+          Number(inputValue),
+          updateType,
+        );
+        updateFontSizeInSelection(String(nextFontSize) + 'px', null);
+      } else {
+        updateFontSizeInSelection(null, updateType);
+      }
+    },
+    [inputValue, updateFontSizeInSelection],
+  );
 
   const updateFontSizeByInputValue = (inputValueNumber: number) => {
     let updatedFontSize = inputValueNumber;
@@ -187,6 +195,24 @@ export default function FontSize({
   React.useEffect(() => {
     setInputValue(selectionFontSize);
   }, [selectionFontSize]);
+
+  React.useEffect(() => {
+    return editor.registerCommand(
+      KEY_MODIFIER_COMMAND,
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        const {key, ctrlKey, shiftKey, altKey, metaKey} = event;
+
+        if (key === '<' && shiftKey && !altKey && (ctrlKey || metaKey)) {
+          handleButtonClick(updateFontSizeType.decrement);
+        } else if (key === '>' && shiftKey && !altKey && (ctrlKey || metaKey)) {
+          handleButtonClick(updateFontSizeType.increment);
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_NORMAL,
+    );
+  }, [editor, handleButtonClick]);
 
   return (
     <>

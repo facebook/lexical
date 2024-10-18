@@ -290,34 +290,36 @@ function BlockFormatDropDown({
   }, [blockType, editor]);
 
   useEffect(() => {
+    const keyboardShortcutsListenter = (payload: KeyboardEvent) => {
+      const event: KeyboardEvent = payload;
+      const {key, ctrlKey, altKey, metaKey} = event;
+
+      if (altKey && (ctrlKey || metaKey)) {
+        event.preventDefault();
+        const formatMap: Record<string, () => void> = {
+          '0': formatParagraph,
+          '1': () => formatHeading('h1'),
+          '2': () => formatHeading('h2'),
+          '3': () => formatHeading('h3'),
+          '4': formatBulletList,
+          '5': formatNumberedList,
+          '6': formatCheckList,
+          c: formatCode,
+          q: formatQuote,
+        };
+
+        const lowerCaseKey = key.toLowerCase();
+        if (lowerCaseKey in formatMap) {
+          formatMap[lowerCaseKey]();
+        }
+      }
+
+      return false;
+    };
+
     return editor.registerCommand(
       KEY_MODIFIER_COMMAND,
-      (payload: KeyboardEvent) => {
-        const event: KeyboardEvent = payload;
-        const {key, ctrlKey, altKey, metaKey} = event;
-
-        if (altKey && (ctrlKey || metaKey)) {
-          event.preventDefault();
-          const formatMap: Record<string, () => void> = {
-            '0': formatParagraph,
-            '1': () => formatHeading('h1'),
-            '2': () => formatHeading('h2'),
-            '3': () => formatHeading('h3'),
-            '4': formatBulletList,
-            '5': formatNumberedList,
-            '6': formatCheckList,
-            c: formatCode,
-            q: formatQuote,
-          };
-
-          const lowerCaseKey = key.toLowerCase();
-          if (lowerCaseKey in formatMap) {
-            formatMap[lowerCaseKey]();
-          }
-        }
-
-        return false;
-      },
+      keyboardShortcutsListenter,
       COMMAND_PRIORITY_NORMAL,
     );
   }, [
@@ -339,58 +341,104 @@ function BlockFormatDropDown({
       buttonLabel={blockTypeToBlockName[blockType]}
       buttonAriaLabel="Formatting options for text style">
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'paragraph')}
+        className={
+          'item flex-container ' +
+          dropDownActiveClass(blockType === 'paragraph')
+        }
         onClick={formatParagraph}>
-        <i className="icon paragraph" />
-        <span className="text">Normal</span>
+        <div className="icon-text-container">
+          <i className="icon paragraph" />
+          <span className="text">Normal</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+0' : 'Ctrl+Alt+0'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'h1')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'h1')
+        }
         onClick={() => formatHeading('h1')}>
-        <i className="icon h1" />
-        <span className="text">Heading 1</span>
+        <div className="icon-text-container">
+          <i className="icon h1" />
+          <span className="text">Heading 1</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+1' : 'Ctrl+Alt+1'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'h2')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'h2')
+        }
         onClick={() => formatHeading('h2')}>
-        <i className="icon h2" />
-        <span className="text">Heading 2</span>
+        <div className="icon-text-container">
+          <i className="icon h2" />
+          <span className="text">Heading 2</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+2' : 'Ctrl+Alt+2'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'h3')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'h3')
+        }
         onClick={() => formatHeading('h3')}>
-        <i className="icon h3" />
-        <span className="text">Heading 3</span>
+        <div className="icon-text-container">
+          <i className="icon h3" />
+          <span className="text">Heading 3</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+3' : 'Ctrl+Alt+3'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'bullet')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'bullet')
+        }
         onClick={formatBulletList}>
-        <i className="icon bullet-list" />
-        <span className="text">Bullet List</span>
+        <div className="icon-text-container">
+          <i className="icon bullet-list" />
+          <span className="text">Bullet List</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+4' : 'Ctrl+Alt+4'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'number')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'number')
+        }
         onClick={formatNumberedList}>
-        <i className="icon numbered-list" />
-        <span className="text">Numbered List</span>
+        <div className="icon-text-container">
+          <i className="icon numbered-list" />
+          <span className="text">Numbered List</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+5' : 'Ctrl+Alt+5'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'check')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'check')
+        }
         onClick={formatCheckList}>
-        <i className="icon check-list" />
-        <span className="text">Check List</span>
+        <div className="icon-text-container">
+          <i className="icon check-list" />
+          <span className="text">Check List</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+6' : 'Ctrl+Alt+6'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'quote')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'quote')
+        }
         onClick={formatQuote}>
-        <i className="icon quote" />
-        <span className="text">Quote</span>
+        <div className="icon-text-container">
+          <i className="icon quote" />
+          <span className="text">Quote</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+Q' : 'Ctrl+Alt+Q'}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item ' + dropDownActiveClass(blockType === 'code')}
+        className={
+          'item flex-container ' + dropDownActiveClass(blockType === 'code')
+        }
         onClick={formatCode}>
-        <i className="icon code" />
-        <span className="text">Code Block</span>
+        <div className="icon-text-container">
+          <i className="icon code" />
+          <span className="text">Code Block</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+Alt+C' : 'Ctrl+Alt+C'}</span>
       </DropDownItem>
     </DropDown>
   );
@@ -481,39 +529,59 @@ function ElementFormatDropdown({
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
         }}
-        className="item">
-        <i className="icon left-align" />
-        <span className="text">Left Align</span>
+        className="item flex-container">
+        <div className="icon-text-container">
+          <i className="icon left-align" />
+          <span className="text">Left Align</span>
+        </div>
+        <span className="shortcut">
+          {IS_APPLE ? '⌘+Shift+L' : 'Ctrl+Shift+L'}
+        </span>
       </DropDownItem>
       <DropDownItem
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
         }}
-        className="item">
-        <i className="icon center-align" />
-        <span className="text">Center Align</span>
+        className="item flex-container">
+        <div className="icon-text-container">
+          <i className="icon center-align" />
+          <span className="text">Center Align</span>
+        </div>
+        <span className="shortcut">
+          {IS_APPLE ? '⌘+Shift+E' : 'Ctrl+Shift+E'}
+        </span>
       </DropDownItem>
       <DropDownItem
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
         }}
-        className="item">
-        <i className="icon right-align" />
-        <span className="text">Right Align</span>
+        className="item flex-container">
+        <div className="icon-text-container">
+          <i className="icon right-align" />
+          <span className="text">Right Align</span>
+        </div>
+        <span className="shortcut">
+          {IS_APPLE ? '⌘+Shift+R' : 'Ctrl+Shift+R'}
+        </span>
       </DropDownItem>
       <DropDownItem
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
         }}
-        className="item">
-        <i className="icon justify-align" />
-        <span className="text">Justify Align</span>
+        className="item flex-container">
+        <div className="icon-text-container">
+          <i className="icon justify-align" />
+          <span className="text">Justify Align</span>
+        </div>
+        <span className="shortcut">
+          {IS_APPLE ? '⌘+Shift+J' : 'Ctrl+Shift+J'}
+        </span>
       </DropDownItem>
       <DropDownItem
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'start');
         }}
-        className="item">
+        className="item flex-container">
         <i
           className={`icon ${
             isRTL
@@ -527,7 +595,7 @@ function ElementFormatDropdown({
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'end');
         }}
-        className="item">
+        className="item flex-container">
         <i
           className={`icon ${
             isRTL
@@ -542,17 +610,23 @@ function ElementFormatDropdown({
         onClick={() => {
           editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
         }}
-        className="item">
-        <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
-        <span className="text">Outdent</span>
+        className="item flex-container">
+        <div className="icon-text-container">
+          <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
+          <span className="text">Outdent</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+[' : 'Ctrl+['}</span>
       </DropDownItem>
       <DropDownItem
         onClick={() => {
           editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
         }}
-        className="item">
-        <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
-        <span className="text">Indent</span>
+        className="item flex-container">
+        <div className="icon-text-container">
+          <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
+          <span className="text">Indent</span>
+        </div>
+        <span className="shortcut">{IS_APPLE ? '⌘+]' : 'Ctrl+]'}</span>
       </DropDownItem>
     </DropDown>
   );
@@ -1026,9 +1100,13 @@ export default function ToolbarPlugin({
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
               }}
               className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-              title="Insert code block"
+              title={`Insert code block (${
+                IS_APPLE ? '⌘+Shift+C' : 'Ctrl+Shift+C'
+              })`}
               type="button"
-              aria-label="Insert code block">
+              aria-label={`Insert code block. Shortcut: ${
+                IS_APPLE ? '⌘+Shift+C' : 'Ctrl+Shift+C'
+              }`}>
               <i className="format code" />
             </button>
           )}
@@ -1036,8 +1114,10 @@ export default function ToolbarPlugin({
             disabled={!isEditable}
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-            aria-label="Insert link"
-            title="Insert link"
+            aria-label={`Insert Link. Shortcut: (${
+              IS_APPLE ? '⌘+K' : 'Ctrl+K'
+            })`}
+            title={IS_APPLE ? 'Insert Link (⌘+K)' : 'Insert Link (Ctrl+K)'}
             type="button">
             <i className="format link" />
           </button>
@@ -1072,21 +1152,35 @@ export default function ToolbarPlugin({
                   'strikethrough',
                 );
               }}
-              className={'item ' + dropDownActiveClass(isStrikethrough)}
+              className={
+                'item flex-container ' + dropDownActiveClass(isStrikethrough)
+              }
               title="Strikethrough"
               aria-label="Format text with a strikethrough">
-              <i className="icon strikethrough" />
-              <span className="text">Strikethrough</span>
+              <div className="icon-text-container">
+                <i className="icon strikethrough" />
+                <span className="text">Strikethrough</span>
+              </div>
+              <span className="shortcut">
+                {IS_APPLE ? '⌘+Shift+X' : 'Ctrl+Shift+X'}
+              </span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
               }}
-              className={'item ' + dropDownActiveClass(isSubscript)}
+              className={
+                'item flex-container ' + dropDownActiveClass(isSubscript)
+              }
               title="Subscript"
               aria-label="Format text with a subscript">
-              <i className="icon subscript" />
-              <span className="text">Subscript</span>
+              <div className="icon-text-container">
+                <i className="icon subscript" />
+                <span className="text">Subscript</span>
+              </div>
+              <span className="shortcut">
+                {IS_APPLE ? '⌘+Shift+_' : 'Ctrl+Shift+_'}
+              </span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {
@@ -1095,19 +1189,29 @@ export default function ToolbarPlugin({
                   'superscript',
                 );
               }}
-              className={'item ' + dropDownActiveClass(isSuperscript)}
+              className={
+                'item flex-container ' + dropDownActiveClass(isSuperscript)
+              }
               title="Superscript"
               aria-label="Format text with a superscript">
-              <i className="icon superscript" />
-              <span className="text">Superscript</span>
+              <div className="icon-text-container">
+                <i className="icon superscript" />
+                <span className="text">Superscript</span>
+              </div>
+              <span className="shortcut">
+                {IS_APPLE ? '⌘+Shift++' : 'Ctrl+Shift++'}
+              </span>
             </DropDownItem>
             <DropDownItem
               onClick={clearFormatting}
-              className="item"
+              className="item flex-container "
               title="Clear text formatting"
               aria-label="Clear all text formatting">
-              <i className="icon clear" />
-              <span className="text">Clear Formatting</span>
+              <div className="icon-text-container">
+                <i className="icon clear" />
+                <span className="text">Clear Formatting</span>
+              </div>
+              <span className="shortcut">{IS_APPLE ? '⌘+Q' : 'Ctrl+Q'}</span>
             </DropDownItem>
           </DropDown>
           {canViewerSeeInsertDropdown && (

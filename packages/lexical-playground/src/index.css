@@ -747,13 +747,27 @@ i.page-break,
   background-color: #fff;
   border-radius: 8px;
   border: 0;
-  max-width: 250px;
   min-width: 100px;
 }
 
-.dropdown .item.fontsize-item,
-.dropdown .item.fontsize-item .text {
-  min-width: unset;
+.dropdown .item.flex-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 248px;
+}
+
+.dropdown .item.flex-container .icon-text-container {
+  display: flex;
+
+  .text {
+    min-width: 120px;
+  }
+}
+
+.dropdown .item .shortcut {
+  color: #939393;
+  self-align: flex-end;
 }
 
 .dropdown .item .active {

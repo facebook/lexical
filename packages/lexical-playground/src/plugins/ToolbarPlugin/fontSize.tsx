@@ -16,6 +16,7 @@ import {
   LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
+import {IS_APPLE} from 'shared/environment';
 
 const MIN_ALLOWED_FONT_SIZE = 8;
 const MAX_ALLOWED_FONT_SIZE = 72;
@@ -218,6 +219,10 @@ export default function FontSize({
     <>
       <button
         type="button"
+        title={`Decrease font size (${IS_APPLE ? '⌘' : 'Ctrl'}+Shift+<)`}
+        aria-label={`Decrease font size. Shortcut: ${
+          IS_APPLE ? '⌘+Shift+<' : 'Ctrl+Shift+<'
+        }`}
         disabled={
           disabled ||
           (selectionFontSize !== '' &&
@@ -230,6 +235,7 @@ export default function FontSize({
 
       <input
         type="number"
+        title="Font size"
         value={inputValue}
         disabled={disabled}
         className="toolbar-item font-size-input"
@@ -242,6 +248,10 @@ export default function FontSize({
 
       <button
         type="button"
+        title={`Increase font size (${IS_APPLE ? '⌘' : 'Ctrl'}+Shift+>)`}
+        aria-label={`Increase font size. Shortcut: ${
+          IS_APPLE ? '⌘+Shift+>' : 'Ctrl+Shift+>'
+        }`}
         disabled={
           disabled ||
           (selectionFontSize !== '' &&

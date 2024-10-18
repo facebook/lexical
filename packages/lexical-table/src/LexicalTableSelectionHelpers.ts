@@ -1316,23 +1316,11 @@ function $addHighlightToDOM(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const backgroundColor = node.getBackgroundColor();
-  const {tableCellSelected, tableCellSelectedOverwrite} = editorThemeClasses;
-  if (backgroundColor === null) {
-    if (tableCellSelected) {
-      element.classList.add(tableCellSelected);
-    } else {
-      element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
-    }
+  const {tableCellSelected} = editorThemeClasses;
+  if (tableCellSelected) {
+    element.classList.add(tableCellSelected);
   } else {
-    if (tableCellSelectedOverwrite) {
-      element.classList.add(tableCellSelectedOverwrite);
-    } else {
-      element.style.setProperty(
-        'background-image',
-        `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
-      );
-    }
+    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
   }
   element.style.setProperty('caret-color', 'transparent');
 }

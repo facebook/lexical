@@ -137,7 +137,6 @@ export type EditorThemeClasses = {
   tableCellActionButtonContainer?: EditorThemeClassName;
   tableCellPrimarySelected?: EditorThemeClassName;
   tableCellSelected?: EditorThemeClassName;
-  tableCellSelectedOverwrite?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
   tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;

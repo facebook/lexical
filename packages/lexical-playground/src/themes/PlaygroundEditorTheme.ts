@@ -100,8 +100,6 @@ const theme: EditorThemeClasses = {
   tableCellPrimarySelected: 'PlaygroundEditorTheme__tableCellPrimarySelected',
   tableCellResizer: 'PlaygroundEditorTheme__tableCellResizer',
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
-  tableCellSelectedOverwrite:
-    'PlaygroundEditorTheme__tableCellSelectedOverwrite',
   tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
   tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',

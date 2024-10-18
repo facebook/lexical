@@ -93,11 +93,15 @@ function ContentEditableElementImpl(
       aria-autocomplete={isEditable ? ariaAutoComplete : 'none'}
       aria-controls={isEditable ? ariaControls : undefined}
       aria-describedby={ariaDescribedBy}
-      aria-errormessage={ariaErrorMessage}
+      // for compat, only override aria-errormessage if ariaErrorMessage is defined
+      {...(ariaErrorMessage != null
+        ? {'aria-errormessage': ariaErrorMessage}
+        : {})}
       aria-expanded={
         isEditable && role === 'combobox' ? !!ariaExpanded : undefined
       }
-      aria-invalid={ariaInvalid}
+      // for compat, only override aria-invalid if ariaInvalid is defined
+      {...(ariaInvalid != null ? {'aria-invalid': ariaInvalid} : {})}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}

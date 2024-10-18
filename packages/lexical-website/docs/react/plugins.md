@@ -107,6 +107,14 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 <CheckListPlugin />
 ```
 
+### `LexicalScrollableNodePlugin`
+
+React wrapper for `@lexical/table` that adds horizontal scrolling support for tables
+
+```jsx
+<ScrollableNodePlugin />
+```
+
 ### `LexicalTablePlugin`
 
 React wrapper for `@lexical/table` that adds support for tables

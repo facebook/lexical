@@ -7,6 +7,7 @@
  */
 
 import {$insertDataTransferForRichText} from '@lexical/clipboard';
+import {ScrollableNodePlugin} from '@lexical/react/LexicalScrollableNodePlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
   $createTableNode,
@@ -470,6 +471,9 @@ describe('LexicalTableNode tests', () => {
       });
     },
     undefined,
-    <TablePlugin />,
+    <>
+      <TablePlugin />
+      <ScrollableNodePlugin />
+    </>,
   );
 });

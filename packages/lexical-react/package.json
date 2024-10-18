@@ -971,6 +971,36 @@
         "default": "./LexicalRichTextPlugin.js"
       }
     },
+    "./LexicalScrollableNodePlugin": {
+      "import": {
+        "types": "./LexicalScrollableNodePlugin.d.ts",
+        "development": "./LexicalScrollableNodePlugin.dev.mjs",
+        "production": "./LexicalScrollableNodePlugin.prod.mjs",
+        "node": "./LexicalScrollableNodePlugin.node.mjs",
+        "default": "./LexicalScrollableNodePlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalScrollableNodePlugin.d.ts",
+        "development": "./LexicalScrollableNodePlugin.dev.js",
+        "production": "./LexicalScrollableNodePlugin.prod.js",
+        "default": "./LexicalScrollableNodePlugin.js"
+      }
+    },
+    "./LexicalScrollableNodePlugin.js": {
+      "import": {
+        "types": "./LexicalScrollableNodePlugin.d.ts",
+        "development": "./LexicalScrollableNodePlugin.dev.mjs",
+        "production": "./LexicalScrollableNodePlugin.prod.mjs",
+        "node": "./LexicalScrollableNodePlugin.node.mjs",
+        "default": "./LexicalScrollableNodePlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalScrollableNodePlugin.d.ts",
+        "development": "./LexicalScrollableNodePlugin.dev.js",
+        "production": "./LexicalScrollableNodePlugin.prod.js",
+        "default": "./LexicalScrollableNodePlugin.js"
+      }
+    },
     "./LexicalTabIndentationPlugin": {
       "import": {
         "types": "./LexicalTabIndentationPlugin.d.ts",

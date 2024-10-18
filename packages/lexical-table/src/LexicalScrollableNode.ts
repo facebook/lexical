@@ -5,23 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {mergeRegister} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
   $getRoot,
   $getSelection,
-  $isRangeSelection,
+  $normalizePoint__EXPERIMENTAL,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  Klass,
   LexicalEditor,
   LexicalNode,
   SerializedElementNode,
 } from 'lexical';
-
-import {$isTableNode} from './LexicalTableNode';
+import invariant from 'shared/invariant';
 
 export class ScrollableNode extends ElementNode {
   static getType() {
@@ -77,32 +78,6 @@ export class ScrollableNode extends ElementNode {
       },
     };
   }
-
-  static transform(): ((node: LexicalNode) => void) | null {
-    return (node: LexicalNode) => {
-      const selection = $getSelection();
-      const firstChild: ElementNode = (node as ScrollableNode).getFirstChild()!;
-      if (firstChild && !$isTableNode(firstChild)) {
-        firstChild.remove();
-      }
-      if ((node as ScrollableNode).isEmpty()) {
-        const root = $getRoot();
-        if (root.__first === node.getKey() && root.getChildrenSize() === 1) {
-          root.append($createParagraphNode());
-          node.remove();
-        } else {
-          node.remove();
-        }
-        return;
-      }
-      if (
-        $isRangeSelection(selection) &&
-        selection.anchor.key === node.getKey()
-      ) {
-        firstChild.getFirstDescendant()!.selectStart();
-      }
-    };
-  }
 }
 
 export function $isScrollableNode(
@@ -113,6 +88,67 @@ export function $isScrollableNode(
 
 export function $createScrollableNode(): ScrollableNode {
   return $applyNodeReplacement(new ScrollableNode());
+}
+
+export interface ScrollableNodeConfig {
+  scrollableChildNodes: readonly Klass<ElementNode>[];
+  $isScrollableChild?: (node: LexicalNode | null) => boolean;
+}
+
+export function registerScrollableNodeTransform(
+  editor: LexicalEditor,
+  config: ScrollableNodeConfig,
+): () => void {
+  invariant(
+    editor.hasNodes([ScrollableNode]),
+    'TablePlugin: ScrollableNode not registered on editor',
+  );
+  const {
+    scrollableChildNodes,
+    $isScrollableChild = (node) =>
+      node !== null &&
+      scrollableChildNodes.some((klass) => node instanceof klass),
+  } = config;
+  return mergeRegister(
+    editor.registerNodeTransform(ScrollableNode, (node) => {
+      let onlyScrollableChild: LexicalNode | null = null;
+      for (const child of node.getChildren()) {
+        if (onlyScrollableChild === null && $isScrollableChild(child)) {
+          onlyScrollableChild = child;
+        } else {
+          child.remove();
+        }
+      }
+      if (onlyScrollableChild === null) {
+        node.remove();
+        const root = $getRoot();
+        if (root.isEmpty()) {
+          root.append($createParagraphNode());
+        }
+        return;
+      }
+      const selection = $getSelection();
+      if (!selection) {
+        return;
+      }
+      const nodeKey = node.getKey();
+      for (const point of selection.getStartEndPoints() || []) {
+        if (point.key === nodeKey) {
+          $normalizePoint__EXPERIMENTAL(point);
+        }
+      }
+    }),
+    ...scrollableChildNodes.map((klass) =>
+      editor.registerNodeTransform(klass, (node) => {
+        const parent = node.getParent();
+        if (!$isScrollableNode(parent)) {
+          const scrollable = $createScrollableNode();
+          node.insertBefore(scrollable);
+          scrollable.append(node);
+        }
+      }),
+    ),
+  );
 }
 
 function $convertScrollableElement(domNode: HTMLElement): DOMConversionOutput {

@@ -9,7 +9,9 @@
 export {
   $createScrollableNode,
   $isScrollableNode,
+  registerScrollableNodeTransform,
   ScrollableNode,
+  type ScrollableNodeConfig,
 } from './LexicalScrollableNode';
 export type {SerializedTableCellNode} from './LexicalTableCellNode';
 export {

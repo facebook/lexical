@@ -29,10 +29,6 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {
-  $createScrollableNode,
-  $isScrollableNode,
-} from './LexicalScrollableNode';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {TableRowNode} from './LexicalTableRowNode';
@@ -112,17 +108,6 @@ export class TableNode extends ElementNode {
     super.afterCloneFrom(prevNode);
     this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
-  }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      const parent = node.getParent();
-      if (!$isScrollableNode(parent)) {
-        const scrollable = $createScrollableNode();
-        node.insertBefore(scrollable);
-        scrollable.append(node);
-      }
-    };
   }
 
   static importDOM(): DOMConversionMap | null {

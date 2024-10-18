@@ -12,6 +12,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {ScrollableNodePlugin} from '@lexical/react/LexicalScrollableNodePlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
   INSERT_TABLE_COMMAND,
@@ -87,6 +88,7 @@ export default function App() {
           <AutoFocusPlugin />
           <TreeViewPlugin />
           <TablePlugin />
+          <ScrollableNodePlugin />
           <InsertTable showTable={showTable} setShowTable={setShowTable} />
         </div>
       </div>

@@ -167,7 +167,7 @@
   text-align: start;
 }
 .PlaygroundEditorTheme__tableCellSelected {
-  background-color: #c9dbf0;
+  background-color: rgb(172, 206, 247);
 }
 .PlaygroundEditorTheme__tableCellPrimarySelected {
   border: 2px solid rgb(60, 132, 244);

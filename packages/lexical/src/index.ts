@@ -137,7 +137,10 @@ export {
   createEditor,
 } from './LexicalEditor';
 export type {EventHandler} from './LexicalEvents';
-export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
+export {
+  $normalizePoint as $normalizePoint__EXPERIMENTAL,
+  $normalizeSelection as $normalizeSelection__EXPERIMENTAL,
+} from './LexicalNormalization';
 export {
   $createNodeSelection,
   $createPoint,

@@ -885,6 +885,10 @@ declare export function $normalizeSelection__EXPERIMENTAL(
   selection: RangeSelection,
 ): RangeSelection;
 
+declare export function $normalizePoint__EXPERIMENTAL(
+  point: Point,
+): void;
+
 /**
  * Serialization/Deserialization
  * */

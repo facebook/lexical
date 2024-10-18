@@ -120,6 +120,9 @@
       "@lexical/react/LexicalRichTextPlugin": [
         "../lexical-react/src/LexicalRichTextPlugin.tsx"
       ],
+      "@lexical/react/LexicalScrollableNodePlugin": [
+        "../lexical-react/src/LexicalScrollableNodePlugin.ts"
+      ],
       "@lexical/react/LexicalTabIndentationPlugin": [
         "../lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],

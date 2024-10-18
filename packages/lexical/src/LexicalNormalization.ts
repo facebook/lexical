@@ -92,7 +92,7 @@ export function $normalizeSelection(selection: RangeSelection): RangeSelection {
   return selection;
 }
 
-function $normalizePoint(point: PointType): void {
+export function $normalizePoint(point: PointType): void {
   while (point.type === 'element') {
     const node = point.getNode();
     const offset = point.offset;

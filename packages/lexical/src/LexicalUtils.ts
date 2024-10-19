@@ -663,7 +663,7 @@ export function $updateTextNodeFromDOMContent(
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
         $setCompositionKey(null);
-        if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
+        if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT && !isGoogleIMEExists()) {
           // For composition (mainly Android), we have to remove the node on a later update
           const editor = getActiveEditor();
           setTimeout(() => {
@@ -729,6 +729,10 @@ export function $updateTextNodeFromDOMContent(
     }
   }
 }
+
+// detect if the google IME extension is loaded, by checking if the floating toolbar is present
+const isGoogleIMEExists = () =>
+  CAN_USE_DOM && !!document.getElementById('GOOGLE_INPUT_CHEXT_FLAG');
 
 function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
   const previousSibling = node.getPreviousSibling();

@@ -648,12 +648,19 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 }
 
 /**
- * Calculates the zoom level of an element as a result of using
- * css zoom property.
+ * Adjusts the zoom level of an element as a result of using
+ * CSS zoom property. Browsers fixed CSS Zoom in June 2024.
+ * https://chromestatus.com/feature/5198254868529152
+ * https://caniuse.com/css-zoom
+ * This method is now only useful for pre-128 Chromium versions
  * @param element
+ * @param {boolean} [disable=false]
  */
-export function calculateZoomLevel(element: Element | null): number {
-  if (IS_FIREFOX) {
+export function calculateZoomLevel(
+  element: Element | null,
+  disable = false,
+): number {
+  if (IS_FIREFOX || disable) {
     return 1;
   }
   let zoom = 1;

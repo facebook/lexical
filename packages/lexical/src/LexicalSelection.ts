@@ -693,6 +693,9 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertRawText(text: string): void {
+    if (!text) {
+      return;
+    }
     const parts = text.split(/(\r?\n|\t)/);
     const nodes = [];
     const length = parts.length;

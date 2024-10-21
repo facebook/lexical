@@ -58,7 +58,7 @@ export function TablePlugin({
     if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
       invariant(
         false,
-        'TablePlugin: TableNode, TableCellNode, TableRowNode or ScrollableNode not registered on editor',
+        'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
       );
     }
 

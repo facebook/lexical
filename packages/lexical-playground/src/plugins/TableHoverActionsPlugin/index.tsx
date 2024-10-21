@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
   $getTableColumnIndexFromTableCellNode,
   $getTableRowIndexFromTableCellNode,
@@ -32,8 +33,9 @@ function TableHoverActionsContainer({
   anchorElem,
 }: {
   anchorElem: HTMLElement;
-}): JSX.Element {
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
   const [isShownRow, setShownRow] = useState<boolean>(false);
   const [isShownColumn, setShownColumn] = useState<boolean>(false);
   const [shouldListenMouseMove, setShouldListenMouseMove] =
@@ -215,6 +217,10 @@ function TableHoverActionsContainer({
     });
   };
 
+  if (!isEditable) {
+    return null;
+  }
+
   return (
     <>
       {isShownRow && (
@@ -268,8 +274,12 @@ export default function TableHoverActionsPlugin({
 }: {
   anchorElem?: HTMLElement;
 }): React.ReactPortal | null {
-  return createPortal(
-    <TableHoverActionsContainer anchorElem={anchorElem} />,
-    anchorElem,
-  );
+  const isEditable = useLexicalEditable();
+
+  return isEditable
+    ? createPortal(
+        <TableHoverActionsContainer anchorElem={anchorElem} />,
+        anchorElem,
+      )
+    : null;
 }

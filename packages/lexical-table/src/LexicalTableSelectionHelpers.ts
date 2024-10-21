@@ -1835,8 +1835,8 @@ function $getExitingToNode(
   return anchorSibling && $isTableNode(anchorSibling)
     ? anchorSibling
     : direction === 'backward'
-    ? tableNode.getParentOrThrow().getPreviousSibling()
-    : tableNode.getParentOrThrow().getNextSibling();
+    ? $getScrollableOrTable(tableNode).getPreviousSibling()
+    : $getScrollableOrTable(tableNode).getNextSibling();
 }
 
 function $insertParagraphAtTableEdge(

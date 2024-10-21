@@ -33,6 +33,7 @@ import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
   $createTextNode,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -67,7 +68,7 @@ import {
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
-import {$isScrollableNode} from './LexicalScrollableNode';
+import {$isScrollableNode, ScrollableNode} from './LexicalScrollableNode';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
@@ -76,6 +77,12 @@ import {$isTableSelection} from './LexicalTableSelection';
 import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
+
+function $getScrollableOrTable(tableNode: TableNode) {
+  return $getEditor().hasNode(ScrollableNode)
+    ? (tableNode.getParentOrThrow() as ScrollableNode)
+    : tableNode;
+}
 
 export const getDOMSelection = (
   targetWindow: Window | null,
@@ -579,7 +586,7 @@ export function applyTableHandlers(
             tableObserver.table,
           );
 
-          selectTableNodeInDirection(
+          $selectTableNodeInDirection(
             tableObserver,
             tableNode,
             currentCords.x,
@@ -1166,7 +1173,7 @@ export function $removeHighlightStyleToTable(
 
 type Direction = 'backward' | 'forward' | 'up' | 'down';
 
-const selectTableNodeInDirection = (
+const $selectTableNodeInDirection = (
   tableObserver: TableObserver,
   tableNode: TableNode,
   x: number,
@@ -1198,9 +1205,9 @@ const selectTableNodeInDirection = (
             isForward,
           );
         } else if (!isForward) {
-          tableNode.getParentOrThrow().selectPrevious();
+          $getScrollableOrTable(tableNode).selectPrevious();
         } else {
-          tableNode.getParentOrThrow().selectNext();
+          $getScrollableOrTable(tableNode).selectNext();
         }
       }
 
@@ -1213,7 +1220,7 @@ const selectTableNodeInDirection = (
           false,
         );
       } else {
-        tableNode.getParentOrThrow().selectPrevious();
+        $getScrollableOrTable(tableNode).selectPrevious();
       }
 
       return true;
@@ -1225,7 +1232,7 @@ const selectTableNodeInDirection = (
           true,
         );
       } else {
-        tableNode.getParentOrThrow().selectNext();
+        $getScrollableOrTable(tableNode).selectNext();
       }
 
       return true;
@@ -1426,13 +1433,14 @@ function $handleArrowKey(
         const focusNode = selection.focus.getNode();
         const tableNode2 = $findMatchingParent(focusNode, $isTableNode);
         if (tableNode2 && direction === 'up') {
-          const newFocus = tableNode2.getParentOrThrow().getPreviousSibling();
+          const newFocus =
+            $getScrollableOrTable(tableNode2).getPreviousSibling();
           if (newFocus) {
             selection.focus.set(newFocus.getKey(), 0, 'element');
           }
           return true;
         } else if (tableNode2 && direction === 'down') {
-          const newFocus = tableNode2.getParentOrThrow().getNextSibling();
+          const newFocus = $getScrollableOrTable(tableNode2).getNextSibling();
           if (newFocus) {
             selection.focus.set(newFocus.getKey(), 0, 'element');
           }
@@ -1626,7 +1634,7 @@ function $handleArrowKey(
         tableObserver.setAnchorCellForSelection(cell);
         tableObserver.setFocusCellForSelection(cell, true);
       } else {
-        return selectTableNodeInDirection(
+        return $selectTableNodeInDirection(
           tableObserver,
           tableNode,
           cords.x,
@@ -1838,9 +1846,9 @@ function $insertParagraphAtTableEdge(
 ) {
   const paragraphNode = $createParagraphNode();
   if (edgePosition === 'first') {
-    tableNode.getParentOrThrow().insertBefore(paragraphNode);
+    $getScrollableOrTable(tableNode).insertBefore(paragraphNode);
   } else {
-    tableNode.getParentOrThrow().insertAfter(paragraphNode);
+    $getScrollableOrTable(tableNode).insertAfter(paragraphNode);
   }
   paragraphNode.append(...(children || []));
   paragraphNode.selectEnd();
@@ -1851,7 +1859,7 @@ function $getTableEdgeCursorPosition(
   selection: RangeSelection,
   tableNode: TableNode,
 ) {
-  const tableNodeParent = tableNode.getParent(); // Should I change this to getParentOrThrow().getParent()?
+  const tableNodeParent = tableNode.getParent();
   if (!tableNodeParent) {
     return undefined;
   }

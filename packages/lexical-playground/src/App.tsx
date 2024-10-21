@@ -10,6 +10,7 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {ScrollableNode} from '@lexical/table';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
 
@@ -115,7 +116,7 @@ function $prepopulatedRichText() {
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, measureTypingPerf},
+    settings: {isCollab, emptyEditor, measureTypingPerf, scrollableTable},
   } = useSettings();
 
   const initialConfig = {
@@ -125,7 +126,9 @@ function App(): JSX.Element {
       ? undefined
       : $prepopulatedRichText,
     namespace: 'Playground',
-    nodes: [...PlaygroundNodes],
+    nodes: scrollableTable
+      ? [ScrollableNode, ...PlaygroundNodes]
+      : PlaygroundNodes,
     onError: (error: Error) => {
       throw error;
     },

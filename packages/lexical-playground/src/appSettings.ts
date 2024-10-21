@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS = {
   isMaxLength: false,
   isRichText: true,
   measureTypingPerf: false,
+  scrollableTable: true,
   shouldPreserveNewLinesInMarkdown: false,
   shouldUseLexicalContextMenu: false,
   showNestedEditorTreeView: false,

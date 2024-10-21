@@ -16,12 +16,7 @@ import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {
-  ScrollableNode,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
-} from '@lexical/table';
+import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 
 import {CollapsibleContainerNode} from '../plugins/CollapsiblePlugin/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsiblePlugin/CollapsibleContentNode';
@@ -44,12 +39,12 @@ import {TweetNode} from './TweetNode';
 import {YouTubeNode} from './YouTubeNode';
 
 const PlaygroundNodes: Array<Klass<LexicalNode>> = [
+  // ScrollableNode, it is added based on the configuration
   HeadingNode,
   ListNode,
   ListItemNode,
   QuoteNode,
   CodeNode,
-  ScrollableNode,
   TableNode,
   TableCellNode,
   TableRowNode,

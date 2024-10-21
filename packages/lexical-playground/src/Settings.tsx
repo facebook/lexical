@@ -28,6 +28,7 @@ export default function Settings(): JSX.Element {
       showTreeView,
       showNestedEditorTreeView,
       disableBeforeInput,
+      scrollableTable,
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
@@ -160,6 +161,14 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
+          />
+          <Switch
+            onClick={() => {
+              setOption('scrollableTable', !scrollableTable);
+              window.location.reload();
+            }}
+            checked={scrollableTable}
+            text="Scrollable Table"
           />
         </div>
       ) : null}

@@ -90,6 +90,7 @@ export default function Editor(): JSX.Element {
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
+      scrollableTable,
       tableCellMerge,
       tableCellBackgroundColor,
     },
@@ -183,7 +184,7 @@ export default function Editor(): JSX.Element {
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
             />
-            <ScrollableNodePlugin />
+            {scrollableTable && <ScrollableNodePlugin />}
             <TableCellResizer />
             <TableHoverActionsPlugin />
             <ImagesPlugin />

@@ -44,7 +44,9 @@ import {
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   FOCUS_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -60,6 +62,7 @@ import {
   KEY_TAB_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
+  OUTDENT_CONTENT_COMMAND,
   ParagraphNode,
   PASTE_COMMAND,
   REDO_COMMAND,
@@ -100,6 +103,7 @@ import {
   getWindow,
   isBackspace,
   isBold,
+  isCenterAlign,
   isCopy,
   isCut,
   isDelete,
@@ -111,7 +115,11 @@ import {
   isDeleteWordForward,
   isEscape,
   isFirefoxClipboardEvents,
+  isIndent,
+  isInsertCodeBlock,
   isItalic,
+  isJustifyAlign,
+  isLeftAlign,
   isLexicalEditor,
   isLineBreak,
   isModifier,
@@ -122,11 +130,16 @@ import {
   isMoveToStart,
   isMoveUp,
   isOpenLineBreak,
+  isOutdent,
   isParagraph,
   isRedo,
+  isRightAlign,
   isSelectAll,
   isSelectionWithinEditor,
   isSpace,
+  isStrikeThrough,
+  isSubscript,
+  isSuperscript,
   isTab,
   isUnderline,
   isUndo,
@@ -1073,6 +1086,9 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isItalic(key, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
+  } else if (isStrikeThrough(key, shiftKey, metaKey, ctrlKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'strikethrough');
   } else if (isTab(key, altKey, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
   } else if (isUndo(key, shiftKey, metaKey, ctrlKey)) {
@@ -1081,6 +1097,33 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isRedo(key, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
+  } else if (isIndent(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, INDENT_CONTENT_COMMAND, undefined);
+  } else if (isOutdent(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, OUTDENT_CONTENT_COMMAND, undefined);
+  } else if (isCenterAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_ELEMENT_COMMAND, 'center');
+  } else if (isLeftAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_ELEMENT_COMMAND, 'left');
+  } else if (isRightAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_ELEMENT_COMMAND, 'right');
+  } else if (isJustifyAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_ELEMENT_COMMAND, 'justify');
+  } else if (isSubscript(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'subscript');
+  } else if (isSuperscript(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'superscript');
+  } else if (isInsertCodeBlock(key, ctrlKey, shiftKey, altKey, metaKey)) {
+    event.preventDefault();
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'code');
   } else {
     const prevSelection = editor._editorState._selection;
     if ($isNodeSelection(prevSelection)) {

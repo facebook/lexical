@@ -498,7 +498,7 @@ i.justify-align {
   text-align: start;
 }
 .ExampleEditorTheme__tableCellSelected {
-  background-color: #c9dbf0;
+  background-color: rgb(172, 206, 247);
 }
 .ExampleEditorTheme__tableCellPrimarySelected {
   border: 2px solid rgb(60, 132, 244);

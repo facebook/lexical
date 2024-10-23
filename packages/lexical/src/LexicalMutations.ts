@@ -6,8 +6,9 @@
  *
  */
 
-import type {TextNode} from '.';
+import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
+import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
@@ -27,6 +28,7 @@ import {
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
+  getNodeKeyFromDOMNode,
   getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
@@ -53,14 +55,12 @@ function initTextEntryListener(editor: LexicalEditor): void {
 
 function isManagedLineBreak(
   dom: Node,
-  target: Node,
+  target: Node & LexicalPrivateDOM,
   editor: LexicalEditor,
 ): boolean {
   return (
-    // @ts-expect-error: internal field
     target.__lexicalLineBreak === dom ||
-    // @ts-ignore We intentionally add this to the Node.
-    dom[`__lexicalKey_${editor._key}`] !== undefined
+    getNodeKeyFromDOMNode(dom, editor) !== undefined
   );
 }
 
@@ -120,7 +120,7 @@ export function $flushMutations(
   try {
     updateEditor(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
-      const badDOMTargets = new Map();
+      const badDOMTargets = new Map<Node, LexicalNode | null>();
       const rootElement = editor.getRootElement();
       // We use the current editor state, as that reflects what is
       // actually "on screen".
@@ -230,7 +230,8 @@ export function $flushMutations(
         for (const [targetDOM, targetNode] of badDOMTargets) {
           if ($isElementNode(targetNode)) {
             const childKeys = targetNode.getChildrenKeys();
-            let currentDOM = targetDOM.firstChild;
+            const slot = targetNode.getDOMSlot(targetDOM as HTMLElement);
+            let currentDOM = slot.getFirstChild();
 
             for (let s = 0; s < childKeys.length; s++) {
               const key = childKeys[s];
@@ -241,10 +242,10 @@ export function $flushMutations(
               }
 
               if (currentDOM == null) {
-                targetDOM.appendChild(correctDOM);
+                slot.insertChild(correctDOM);
                 currentDOM = correctDOM;
               } else if (currentDOM !== correctDOM) {
-                targetDOM.replaceChild(correctDOM, currentDOM);
+                slot.replaceChild(correctDOM, currentDOM);
               }
 
               currentDOM = currentDOM.nextSibling;

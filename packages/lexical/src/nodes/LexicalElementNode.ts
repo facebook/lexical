@@ -8,6 +8,7 @@
 
 import type {
   DOMExportOutput,
+  LexicalPrivateDOM,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
@@ -68,6 +69,62 @@ export interface ElementNode {
   getTopLevelElementOrThrow(): ElementNode;
 }
 
+export class ElementDOMSlot {
+  element: HTMLElement;
+  before: Node | null;
+  after: Node | null;
+  constructor(
+    element: HTMLElement,
+    before?: Node | undefined | null,
+    after?: Node | undefined | null,
+  ) {
+    this.element = element;
+    this.before = before || null;
+    this.after = after || null;
+  }
+  withBefore(before: Node | undefined | null): ElementDOMSlot {
+    return new ElementDOMSlot(this.element, before, this.after);
+  }
+  withAfter(after: Node | undefined | null): ElementDOMSlot {
+    return new ElementDOMSlot(this.element, this.before, after);
+  }
+  withElement(element: HTMLElement): ElementDOMSlot {
+    return new ElementDOMSlot(element, this.before, this.after);
+  }
+  insertChild(dom: Node): this {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const before = this.before || element.__lexicalLineBreak || null;
+    invariant(
+      before === null || before.parentElement === this.element,
+      'ElementDOMSlot.insertChild: before is not in element',
+    );
+    this.element.insertBefore(dom, before);
+    return this;
+  }
+  removeChild(dom: Node): this {
+    invariant(
+      dom.parentElement === this.element,
+      'ElementDOMSlot.removeChild: dom is not in element',
+    );
+    this.element.removeChild(dom);
+    return this;
+  }
+  replaceChild(dom: Node, prevDom: Node): this {
+    invariant(
+      prevDom.parentElement === this.element,
+      'ElementDOMSlot.replaceChild: prevDom is not in element',
+    );
+    this.element.replaceChild(dom, prevDom);
+    return this;
+  }
+  getFirstChild(): ChildNode | null {
+    const firstChild = this.after
+      ? this.after.nextSibling
+      : this.element.firstChild;
+    return firstChild === this.before ? null : firstChild;
+  }
+}
+
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
@@ -96,6 +153,14 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+  }
+
+  static buildDOMSlot(
+    element: HTMLElement,
+    before?: Node | undefined | null,
+    after?: Node | undefined | null,
+  ): ElementDOMSlot {
+    return new ElementDOMSlot(element, before, after);
   }
 
   afterCloneFrom(prevNode: this) {
@@ -527,6 +592,10 @@ export class ElementNode extends LexicalNode {
     }
 
     return writableSelf;
+  }
+  /** @internal */
+  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+    return ElementNode.buildDOMSlot(element);
   }
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);

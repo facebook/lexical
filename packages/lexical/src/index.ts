@@ -57,6 +57,7 @@ export type {
   TextPointType as TextPoint,
 } from './LexicalSelection';
 export type {
+  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';

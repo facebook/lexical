@@ -441,12 +441,28 @@ export function $getNodeFromDOMNode(
   editorState?: EditorState,
 ): LexicalNode | null {
   const editor = getActiveEditor();
-  // @ts-ignore We intentionally add this to the Node.
-  const key = dom[`__lexicalKey_${editor._key}`];
+  const key = getNodeKeyFromDOMNode(dom, editor);
   if (key !== undefined) {
     return $getNodeByKey(key, editorState);
   }
   return null;
+}
+
+export function setNodeKeyOnDOMNode(
+  dom: Node,
+  editor: LexicalEditor,
+  key: NodeKey,
+) {
+  const prop = `__lexicalKey_${editor._key}`;
+  (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop] = key;
+}
+
+export function getNodeKeyFromDOMNode(
+  dom: Node,
+  editor: LexicalEditor,
+): NodeKey | undefined {
+  const prop = `__lexicalKey_${editor._key}`;
+  return (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
 }
 
 export function $getNearestNodeFromDOMNode(
@@ -537,7 +553,7 @@ export function $flushMutations(): void {
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
-  const nodeKey = getNodeKeyFromDOM(dom, editor);
+  const nodeKey = getNodeKeyFromDOMTree(dom, editor);
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
@@ -555,15 +571,14 @@ export function getTextNodeOffset(
   return moveSelectionToEnd ? node.getTextContentSize() : 0;
 }
 
-function getNodeKeyFromDOM(
+function getNodeKeyFromDOMTree(
   // Note that node here refers to a DOM Node, not an Lexical Node
   dom: Node,
   editor: LexicalEditor,
 ): NodeKey | null {
   let node: Node | null = dom;
   while (node != null) {
-    // @ts-ignore We intentionally add this to the Node.
-    const key: NodeKey = node[`__lexicalKey_${editor._key}`];
+    const key = getNodeKeyFromDOMNode(node, editor);
     if (key !== undefined) {
       return key;
     }

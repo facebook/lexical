@@ -6,8 +6,10 @@
  *
  */
 
-import type {TextNode} from '.';
+import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
+import type {EditorState} from './LexicalEditorState';
+import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
@@ -23,10 +25,12 @@ import {
 import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
-  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
+  getNodeKeyFromDOMNode,
+  getParentElement,
   getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
@@ -53,14 +57,12 @@ function initTextEntryListener(editor: LexicalEditor): void {
 
 function isManagedLineBreak(
   dom: Node,
-  target: Node,
+  target: Node & LexicalPrivateDOM,
   editor: LexicalEditor,
 ): boolean {
   return (
-    // @ts-expect-error: internal field
     target.__lexicalLineBreak === dom ||
-    // @ts-ignore We intentionally add this to the Node.
-    dom[`__lexicalKey_${editor._key}`] !== undefined
+    getNodeKeyFromDOMNode(dom, editor) !== undefined
   );
 }
 
@@ -108,6 +110,23 @@ function shouldUpdateTextNodeFromMutation(
   return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
 }
 
+export function $getNearestNodePairFromDOMNode(
+  startingDOM: Node,
+  editor: LexicalEditor,
+  editorState: EditorState,
+): [Node, LexicalNode] | [null, null] {
+  for (let dom: Node | null = startingDOM; dom; dom = getParentElement(dom)) {
+    const key = getNodeKeyFromDOMNode(dom, editor);
+    if (key !== undefined) {
+      const node = $getNodeByKey(key, editorState);
+      if (node) {
+        return [dom, node];
+      }
+    }
+  }
+  return [null, null];
+}
+
 export function $flushMutations(
   editor: LexicalEditor,
   mutations: Array<MutationRecord>,
@@ -120,7 +139,7 @@ export function $flushMutations(
   try {
     updateEditor(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
-      const badDOMTargets = new Map();
+      const badDOMTargets = new Map<Node, LexicalNode | null>();
       const rootElement = editor.getRootElement();
       // We use the current editor state, as that reflects what is
       // actually "on screen".
@@ -133,10 +152,12 @@ export function $flushMutations(
         const mutation = mutations[i];
         const type = mutation.type;
         const targetDOM = mutation.target;
-        let targetNode = $getNearestNodeFromDOMNode(
+        const pair = $getNearestNodePairFromDOMNode(
           targetDOM,
+          editor,
           currentEditorState,
         );
+        let targetNode = pair[1];
 
         if (
           (targetNode === null && targetDOM !== rootElement) ||
@@ -216,7 +237,7 @@ export function $flushMutations(
                 targetNode = internalGetRoot(currentEditorState);
               }
 
-              badDOMTargets.set(targetDOM, targetNode);
+              badDOMTargets.set(pair[0] || targetDOM, targetNode);
             }
           }
         }
@@ -230,7 +251,8 @@ export function $flushMutations(
         for (const [targetDOM, targetNode] of badDOMTargets) {
           if ($isElementNode(targetNode)) {
             const childKeys = targetNode.getChildrenKeys();
-            let currentDOM = targetDOM.firstChild;
+            const slot = targetNode.getDOMSlot(targetDOM as HTMLElement);
+            let currentDOM = slot.getFirstChild();
 
             for (let s = 0; s < childKeys.length; s++) {
               const key = childKeys[s];
@@ -241,10 +263,10 @@ export function $flushMutations(
               }
 
               if (currentDOM == null) {
-                targetDOM.appendChild(correctDOM);
+                slot.insertChild(correctDOM);
                 currentDOM = correctDOM;
               } else if (currentDOM !== correctDOM) {
-                targetDOM.replaceChild(correctDOM, currentDOM);
+                slot.replaceChild(correctDOM, currentDOM);
               }
 
               currentDOM = currentDOM.nextSibling;

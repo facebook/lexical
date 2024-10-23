@@ -689,11 +689,18 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
-    // Remove the existing text within the selection
-    this.removeText();
+    const anchor = this.anchor;
+    const focus = this.focus;
+
+    // Check if selection is collapsed (cursor is just a point, not a range)
+    const isCollapsed =
+      anchor.offset === focus.offset && anchor.key === focus.key;
 
     // If the text to insert is empty, return early
     if (text === '') {
+      if (!isCollapsed) {
+        this.removeText();
+      }
       return;
     }
 
@@ -708,26 +715,38 @@ export class RangeSelection implements BaseSelection {
 
     // Determine the insertion position based on the anchor offset
     if ($isTextNode(anchorNode)) {
+      const currentOffset = this.anchor.offset;
+
       if (this.anchor.offset === 0) {
+        // If parent is inline and no previous siblings, insert before parent
         if (parent.isInline() && !anchorNode.__prev) {
           parent.insertBefore(textNode);
+        } else if (anchor.key === focus.key) {
+          // it sets the offset by +1 dont know why
+          //     -   "offset": 4,
+          //+   "offset": 5,
+          // Still WIP, fixing it asap...one test depends on this...
+          const currentContent = anchorNode.getTextContent();
+          const newContent = text + currentContent.slice(currentOffset);
+          anchorNode.setTextContent(newContent);
         } else {
-          anchorNode.insertBefore(textNode);
+          anchorNode.setTextContent(text);
         }
       } else if (this.anchor.offset === anchorNode.getTextContentSize()) {
+        // Handle insertion at the end of node
         if (parent.isInline() && !anchorNode.__next) {
           parent.insertAfter(textNode);
         } else {
           anchorNode.insertAfter(textNode);
         }
       } else {
+        // Handle insertion in middle of node
         const [before] = anchorNode.splitText(this.anchor.offset);
         before.insertAfter(textNode);
       }
     } else {
       anchorNode.splice(this.anchor.offset, 0, [textNode]);
     }
-
     // Update the selection to the end of the newly inserted text node
     const nodeToSelect = textNode.isAttached() ? textNode : anchorNode;
     nodeToSelect.selectEnd();

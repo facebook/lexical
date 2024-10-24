@@ -722,13 +722,34 @@ export class RangeSelection implements BaseSelection {
         if (parent.isInline() && !anchorNode.__prev) {
           parent.insertBefore(textNode);
         } else if (anchor.key === focus.key) {
-          // it sets the offset by +1 dont know why
-          //     -   "offset": 4,
-          //+   "offset": 5,
-          // Still WIP, fixing it asap...one test depends on this...
-          const currentContent = anchorNode.getTextContent();
-          const newContent = text + currentContent.slice(currentOffset);
-          anchorNode.setTextContent(newContent);
+          // Check if the format has been modified
+          const isFormatModified = this.format !== anchorNode.getFormat();
+
+          if (isFormatModified) {
+            // Create new node with the formatted text
+            const originalContent = anchorNode.getTextContent();
+
+            // Create a new text node with original content
+            const originalNode = $createTextNode(originalContent);
+            // Copy over any existing format/style from the original node
+            originalNode.setFormat(anchorNode.getFormat());
+            originalNode.setStyle(anchorNode.getStyle());
+
+            // Set new content to the formatted node
+            anchorNode.setTextContent(text);
+
+            // Insert the original content after the formatted text
+            anchorNode.insertAfter(originalNode);
+          } else {
+            // Original concatenation behavior
+            const currentContent = anchorNode.getTextContent();
+            const newContent = text + currentContent.slice(currentOffset);
+            anchorNode.setTextContent(newContent);
+          }
+
+          this.anchor.offset = text.length;
+          this.focus.offset = text.length;
+          return;
         } else {
           anchorNode.setTextContent(text);
         }

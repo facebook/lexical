@@ -47,48 +47,48 @@ import {
 const formatTestCases = [
   {
     applyShortcut: (page) => applyNormalFormat(page),
+    canToggle: false,
     format: 'Normal',
-    isRevertible: false,
   },
   {
     applyShortcut: (page) => applyHeading(page, 1),
+    canToggle: false,
     format: 'Heading 1',
-    isRevertible: false,
   },
   {
     applyShortcut: (page) => applyHeading(page, 2),
+    canToggle: false,
     format: 'Heading 2',
-    isRevertible: false,
   },
   {
     applyShortcut: (page) => applyHeading(page, 3),
+    canToggle: false,
     format: 'Heading 3',
-    isRevertible: false,
   },
   {
     applyShortcut: (page) => toggleBulletList(page),
+    canToggle: true,
     format: 'Bulleted List',
-    isRevertible: true,
   },
   {
     applyShortcut: (page) => toggleNumberedList(page),
+    canToggle: true,
     format: 'Numbered List',
-    isRevertible: true,
   },
   {
     applyShortcut: (page) => toggleChecklist(page),
+    canToggle: true,
     format: 'Check List',
-    isRevertible: true,
   },
   {
     applyShortcut: (page) => applyQuoteBlock(page),
+    canToggle: false,
     format: 'Quote',
-    isRevertible: false,
   },
   {
     applyShortcut: (page) => applyCodeBlock(page),
+    canToggle: false,
     format: 'Code Block',
-    isRevertible: false,
   },
 ];
 
@@ -162,14 +162,16 @@ const isDropdownItemActive = async (page, dropdownItemIndex) => {
 };
 
 test.describe('Keyboard shortcuts', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isPlainText, isCollab, page}) => {
+    test.skip(isPlainText);
+    return initialize({isCollab, page});
+  });
 
-  formatTestCases.forEach(({format, applyShortcut, isRevertible}) => {
+  formatTestCases.forEach(({format, applyShortcut, canToggle}) => {
     test(`Can use ${format} format with the shortcut`, async ({
       page,
       isPlainText,
     }) => {
-      test.skip(isPlainText);
       await focusEditor(page);
 
       if (format === DEFAULT_FORMAT) {
@@ -181,7 +183,7 @@ test.describe('Keyboard shortcuts', () => {
 
       expect(await getSelectedFormat(page)).toBe(format);
 
-      if (isRevertible) {
+      if (canToggle) {
         await applyShortcut(page);
 
         // Should revert back to the default format
@@ -195,7 +197,6 @@ test.describe('Keyboard shortcuts', () => {
       page,
       isPlainText,
     }) => {
-      test.skip(isPlainText);
       await focusEditor(page);
       await applyShortcut(page);
 
@@ -214,7 +215,6 @@ test.describe('Keyboard shortcuts', () => {
         page,
         isPlainText,
       }) => {
-        test.skip(isPlainText);
         await focusEditor(page);
         await applyShortcut(page);
 
@@ -232,7 +232,6 @@ test.describe('Keyboard shortcuts', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await increaseFontSize(page);
 
@@ -251,9 +250,8 @@ test.describe('Keyboard shortcuts', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
-
+    // Apply some formatting first
     await page.keyboard.type('abc');
     await selectCharacters(page, 'left', 3);
 
@@ -304,9 +302,7 @@ test.describe('Keyboard shortcuts', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
-    await toggleInsertCodeBlock(page);
 
     const isCodeBlockActive = async () => {
       return await evaluate(page, () => {
@@ -316,10 +312,11 @@ test.describe('Keyboard shortcuts', () => {
       });
     };
 
+    // Toggle the code block on
+    await toggleInsertCodeBlock(page);
     expect(await isCodeBlockActive()).toBe(true);
 
     // Toggle the code block off
-
     await toggleInsertCodeBlock(page);
     expect(await isCodeBlockActive()).toBe(false);
   });
@@ -328,9 +325,7 @@ test.describe('Keyboard shortcuts', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
-
     await page.keyboard.type('abc');
     await indent(page, 3);
 

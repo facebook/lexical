@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
- * @generated
- * @oncall lexical_web_text_editor
  */
 
-import type {LexicalEditor} from 'lexical';
+import type { LexicalEditor } from 'lexical';
 // $FlowFixMe - Not able to type this with a flow extension
 import type {TRefFor} from 'CoreTypes.flow';
 

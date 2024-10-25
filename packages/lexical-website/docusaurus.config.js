@@ -225,11 +225,9 @@ const config = {
 
   favicon: 'img/favicon.ico',
 
-  /*
   future: {
     experimental_faster: (process.env.DOCUSAURUS_FASTER ?? 'true') === 'true',
   },
-   */
 
   markdown: {
     preprocessor: ({fileContent}) =>

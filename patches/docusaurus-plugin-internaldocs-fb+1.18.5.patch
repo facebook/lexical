@@ -1,0 +1,31 @@
+diff --git a/packages/lexical-website/node_modules/docusaurus-plugin-internaldocs-fb/index.js b/packages/lexical-website/node_modules/docusaurus-plugin-internaldocs-fb/index.js
+index 9c3afcf..37a3d47 100644
+--- a/packages/lexical-website/node_modules/docusaurus-plugin-internaldocs-fb/index.js
++++ b/packages/lexical-website/node_modules/docusaurus-plugin-internaldocs-fb/index.js
+@@ -23,7 +23,7 @@ function plugin(context, opts) {
+         fs_extra_1.default.pathExistsSync(path_1.default.resolve(context.siteDir, 'node_modules', '.cache'));
+     return {
+         name: 'internaldocs-fb',
+-        configureWebpack: () => {
++        configureWebpack: (_config,_isServer,{currentBundler}) => {
+             return {
+                 resolve: {
+                     fallback: {
+@@ -35,7 +35,7 @@ function plugin(context, opts) {
+                     },
+                 },
+                 plugins: [
+-                    new webpack_1.default.EnvironmentPlugin({
++                    new (currentBundler.instance ?? webpack_1.default).EnvironmentPlugin({
+                         FB_INTERNAL: process.env.FB_INTERNAL || false,
+                         PHABRICATOR_DIFF_NUMBER: process.env.PHABRICATOR_DIFF_NUMBER || '',
+                     }),
+@@ -94,7 +94,7 @@ function plugin(context, opts) {
+                     .replace(/^\//, ''),
+             };
+             setGlobalData(globalData);
+-            setInterval(async () => await processReferencedFiles(opts, true), 5000);
++            // setInterval(async () => await processReferencedFiles(opts, true), 5000);
+         },
+     };
+ }

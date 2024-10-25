@@ -39,7 +39,7 @@ export interface LexicalClipboardData {
   'text/html'?: string | undefined;
   'application/x-lexical-editor'?: string | undefined;
   'text/plain': string;
-  'web application/x-lexical-editor'?: string | null;
+  'web application/x-lexical-editor'?: string | undefined;
 }
 
 /**

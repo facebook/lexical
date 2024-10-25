@@ -12,11 +12,10 @@ import type { LexicalEditor } from 'lexical';
 import type {TRefFor} from 'CoreTypes.flow';
 
 import * as React from 'react';
-import type { AbstractComponent } from "react";
 
 type InlineStyle = {
-  [key: string]: mixed;
-}
+  [key: string]: mixed,
+};
 
 // Due to Flow limitations, we prefer fixed types over the built-in inexact HTMLElement
 type HTMLDivElementDOMProps = $ReadOnly<{
@@ -29,7 +28,7 @@ type HTMLDivElementDOMProps = $ReadOnly<{
   'aria-invalid'?: void | boolean,
   'aria-owns'?: void | string,
   'title'?: void | string,
-  onClick?: void | (e: SyntheticEvent<HTMLDivElement>) => mixed,
+  onClick?: void | ((e: SyntheticEvent<HTMLDivElement>) => mixed),
   autoCapitalize?: void | boolean,
   autoComplete?: void | boolean,
   autoCorrect?: void | boolean,
@@ -72,11 +71,10 @@ export type Props = $ReadOnly<{
   ariaOwns?: string,
   ariaRequired?: string,
   autoCapitalize?: boolean,
-  ref?: TRefFor<HTMLDivElement>,
-  ...PlaceholderProps
-}>
+  ...PlaceholderProps,
+}>;
 
-declare export var ContentEditable: AbstractComponent<
-  Props,
-  HTMLDivElement,
->;
+declare export var ContentEditable: component(
+  ref: React.RefSetter<HTMLDivElement>,
+  ...Props
+);

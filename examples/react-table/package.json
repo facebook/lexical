@@ -1,7 +1,7 @@
 {
   "name": "@lexical/react-table-example",
   "private": true,
-  "version": "0.18.0",
+  "version": "0.18.1-nightly.20241025.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "0.18.0",
-    "lexical": "0.18.0",
+    "@lexical/react": "0.18.1-nightly.20241025.0",
+    "lexical": "0.18.1-nightly.20241025.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

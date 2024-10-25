@@ -523,13 +523,12 @@ const clipboardDataFunctions = [
  */
 export function $getClipboardDataFromSelection(
   selection: BaseSelection | null = $getSelection(),
-  editor: LexicalEditor = $getEditor(),
 ): LexicalClipboardData {
   const clipboardData: LexicalClipboardData = {
     'text/plain': selection ? selection.getTextContent() : '',
-    'web application/x-lexical-editor': $getLexicalContent(editor, selection),
   };
   if (selection) {
+    const editor = $getEditor();
     for (const [mimeType, $editorFn] of clipboardDataFunctions) {
       const v = $editorFn(editor, selection);
       if (v !== null) {

@@ -18,6 +18,7 @@ import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {SharedAutocompleteContext} from './context/SharedAutocompleteContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
+import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
@@ -137,20 +138,22 @@ function App(): JSX.Element {
       <SharedHistoryContext>
         <TableContext>
           <SharedAutocompleteContext>
-            <header>
-              <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                <img src={logo} alt="Lexical Logo" />
-              </a>
-            </header>
-            <div className="editor-shell">
-              <Editor />
-            </div>
-            <Settings />
-            {isDevPlayground ? <DocsPlugin /> : null}
-            {isDevPlayground ? <PasteLogPlugin /> : null}
-            {isDevPlayground ? <TestRecorderPlugin /> : null}
+            <ToolbarContext>
+              <header>
+                <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+                  <img src={logo} alt="Lexical Logo" />
+                </a>
+              </header>
+              <div className="editor-shell">
+                <Editor />
+              </div>
+              <Settings />
+              {isDevPlayground ? <DocsPlugin /> : null}
+              {isDevPlayground ? <PasteLogPlugin /> : null}
+              {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-            {measureTypingPerf ? <TypingPerfPlugin /> : null}
+              {measureTypingPerf ? <TypingPerfPlugin /> : null}
+            </ToolbarContext>
           </SharedAutocompleteContext>
         </TableContext>
       </SharedHistoryContext>

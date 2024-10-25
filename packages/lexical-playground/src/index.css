@@ -750,14 +750,12 @@ i.page-break,
   min-width: 100px;
 }
 
-.dropdown .item.flex-container {
-  display: flex;
+.dropdown .item.wide {
   align-items: center;
-  justify-content: space-between;
   width: 248px;
 }
 
-.dropdown .item.flex-container .icon-text-container {
+.dropdown .item.wide .icon-text-container {
   display: flex;
 
   .text {

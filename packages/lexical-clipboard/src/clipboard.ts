@@ -39,6 +39,7 @@ export interface LexicalClipboardData {
   'text/html'?: string | undefined;
   'application/x-lexical-editor'?: string | undefined;
   'text/plain': string;
+  'web application/x-lexical-editor'?: string | null;
 }
 
 /**
@@ -133,8 +134,9 @@ export function $insertDataTransferForRichText(
   selection: BaseSelection,
   editor: LexicalEditor,
 ): void {
-  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
-
+  const lexicalString =
+    dataTransfer.getData('application/x-lexical-editor') ||
+    dataTransfer.getData('application/x-lexical/editor');
   if (lexicalString) {
     try {
       const payload = JSON.parse(lexicalString);
@@ -500,6 +502,7 @@ function $copyToClipboardEvent(
   if (clipboardData === null) {
     return false;
   }
+
   setLexicalClipboardDataTransfer(clipboardData, data);
   return true;
 }
@@ -507,6 +510,7 @@ function $copyToClipboardEvent(
 const clipboardDataFunctions = [
   ['text/html', $getHtmlContent],
   ['application/x-lexical-editor', $getLexicalContent],
+  ['web application/x-lexical-editor', $getLexicalContent],
 ] as const;
 
 /**
@@ -519,12 +523,13 @@ const clipboardDataFunctions = [
  */
 export function $getClipboardDataFromSelection(
   selection: BaseSelection | null = $getSelection(),
+  editor: LexicalEditor = $getEditor(),
 ): LexicalClipboardData {
   const clipboardData: LexicalClipboardData = {
     'text/plain': selection ? selection.getTextContent() : '',
+    'web application/x-lexical-editor': $getLexicalContent(editor, selection),
   };
   if (selection) {
-    const editor = $getEditor();
     for (const [mimeType, $editorFn] of clipboardDataFunctions) {
       const v = $editorFn(editor, selection);
       if (v !== null) {

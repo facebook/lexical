@@ -184,6 +184,7 @@ test.describe('Keyboard shortcuts', () => {
       if (isRevertible) {
         await applyShortcut(page);
 
+        // Should revert back to the default format
         expect(await getSelectedFormat(page)).toBe(DEFAULT_FORMAT);
       }
     });
@@ -307,13 +308,20 @@ test.describe('Keyboard shortcuts', () => {
     await focusEditor(page);
     await toggleInsertCodeBlock(page);
 
-    const isCodeBlockActive = await evaluate(page, () => {
-      return document
-        .querySelector(`button[aria-label="Insert code block"]`)
-        .classList.contains('active');
-    });
+    const isCodeBlockActive = async () => {
+      return await evaluate(page, () => {
+        return document
+          .querySelector(`button[aria-label="Insert code block"]`)
+          .classList.contains('active');
+      });
+    };
 
-    expect(isCodeBlockActive).toBe(true);
+    expect(await isCodeBlockActive()).toBe(true);
+
+    // Toggle the code block off
+
+    await toggleInsertCodeBlock(page);
+    expect(await isCodeBlockActive()).toBe(false);
   });
 
   test('Can indent and outdent with the shortcuts', async ({

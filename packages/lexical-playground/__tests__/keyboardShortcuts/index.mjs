@@ -430,6 +430,7 @@ export async function applyCodeBlock(page) {
 export async function increaseFontSize(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.down('Shift');
+  // shift + '.' becomes '>' on US keyboard layout. See https://keycode.info/
   await page.keyboard.press('>');
   await keyUpCtrlOrMeta(page);
   await page.keyboard.up('Shift');
@@ -438,6 +439,7 @@ export async function increaseFontSize(page) {
 export async function decreaseFontSize(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.down('Shift');
+  // shift + ',' becomes '<' on US keyboard layout. See https://keycode.info/
   await page.keyboard.press('<');
   await keyUpCtrlOrMeta(page);
   await page.keyboard.up('Shift');

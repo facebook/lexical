@@ -805,17 +805,6 @@ export function isItalic(
   );
 }
 
-export function isStrikeThrough(
-  key: string,
-  shiftKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
-): boolean {
-  return (
-    key.toLowerCase() === 'x' && shiftKey && controlOrMeta(metaKey, ctrlKey)
-  );
-}
-
 export function isUnderline(
   key: string,
   altKey: boolean,
@@ -959,121 +948,6 @@ export function isCut(
   }
 
   return false;
-}
-
-export function isIndent(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return key === ']' && !shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey);
-}
-
-export function isOutdent(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return key === '[' && !shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey);
-}
-
-export function isCenterAlign(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return (
-    key.toLowerCase() === 'e' &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
-}
-
-export function isLeftAlign(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return (
-    key.toLowerCase() === 'l' &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
-}
-
-export function isRightAlign(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return (
-    key.toLowerCase() === 'r' &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
-}
-
-export function isJustifyAlign(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return (
-    key.toLowerCase() === 'j' &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
-}
-
-export function isSubscript(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return key === '_' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey);
-}
-
-export function isSuperscript(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return key === '+' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey);
-}
-
-export function isInsertCodeBlock(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
-): boolean {
-  return (
-    key.toLowerCase() === 'c' &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
 }
 
 function isArrowLeft(key: string): boolean {

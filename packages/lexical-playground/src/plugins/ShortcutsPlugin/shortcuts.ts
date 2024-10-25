@@ -272,7 +272,7 @@ export function isIncreaseFontSize(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  // shift + '.' becomes '>' on US keyboards. See https://keycode.info/
+  // shift + '.' becomes '>' on US keyboard layout. See https://keycode.info/
   return key === '>' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
@@ -283,7 +283,7 @@ export function isDecreaseFontSize(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  // shift + ',' becomes '<' on US keyboards. See https://keycode.info/
+  // shift + ',' becomes '<' on US keyboard layout. See https://keycode.info/
   return key === '<' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 

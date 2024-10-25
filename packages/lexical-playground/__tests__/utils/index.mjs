@@ -58,6 +58,7 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   isMaxLength,
+  hasLinkAttributes,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -85,6 +86,7 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  appSettings.hasLinkAttributes = !!hasLinkAttributes;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
@@ -143,6 +145,7 @@ export const test = base.extend({
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
+  hasLinkAttributes: false,
   isMaxLength: false,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,

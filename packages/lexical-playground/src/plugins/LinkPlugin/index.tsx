@@ -11,6 +11,24 @@ import * as React from 'react';
 
 import {validateUrl} from '../../utils/url';
 
-export default function LinkPlugin(): JSX.Element {
-  return <LexicalLinkPlugin validateUrl={validateUrl} />;
+type Props = {
+  hasLinkAttributes?: boolean;
+};
+
+export default function LinkPlugin({
+  hasLinkAttributes = false,
+}: Props): JSX.Element {
+  return (
+    <LexicalLinkPlugin
+      validateUrl={validateUrl}
+      attributes={
+        hasLinkAttributes
+          ? {
+              rel: 'noopener noreferrer',
+              target: '_blank',
+            }
+          : undefined
+      }
+    />
+  );
 }

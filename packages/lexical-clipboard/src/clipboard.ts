@@ -136,7 +136,7 @@ export function $insertDataTransferForRichText(
 ): void {
   const lexicalString =
     dataTransfer.getData('application/x-lexical-editor') ||
-    dataTransfer.getData('application/x-lexical/editor');
+    dataTransfer.getData('web application/x-lexical-editor');
   if (lexicalString) {
     try {
       const payload = JSON.parse(lexicalString);

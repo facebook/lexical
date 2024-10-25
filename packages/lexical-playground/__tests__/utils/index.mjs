@@ -142,10 +142,10 @@ async function exposeLexicalEditor(page) {
 }
 
 export const test = base.extend({
+  hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
-  hasLinkAttributes: false,
   isMaxLength: false,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,

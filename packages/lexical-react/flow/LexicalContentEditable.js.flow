@@ -27,7 +27,7 @@ type HTMLDivElementDOMProps = $ReadOnly<{
   'aria-errormessage'?: void | string,
   'aria-invalid'?: void | boolean,
   'aria-owns'?: void | string,
-  title?: void | string,
+  'title'?: void | string,
   onClick?: void | ((e: SyntheticEvent<HTMLDivElement>) => mixed),
   autoCapitalize?: void | boolean,
   autoComplete?: void | boolean,

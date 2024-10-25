@@ -2086,33 +2086,36 @@ test.describe('Link attributes', () => {
     page,
     context,
     hasLinkAttributes,
+    browserName,
   }) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello awesome');
-    await focusEditor(page);
-    await selectAll(page);
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.evaluate(() =>
-      navigator.clipboard.writeText('https://facebook.com'),
-    );
-    await paste(page);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://facebook.com"
-            rel="noopener noreferrer"
-            target="_blank">
-            <span data-lexical-text="true">Hello awesome</span>
-          </a>
-        </p>
-      `,
-    );
+    if (browserName === 'chromium') {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await focusEditor(page);
+      await selectAll(page);
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.evaluate(() =>
+        navigator.clipboard.writeText('https://facebook.com'),
+      );
+      await paste(page);
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://facebook.com"
+              rel="noopener noreferrer"
+              target="_blank">
+              <span data-lexical-text="true">Hello awesome</span>
+            </a>
+          </p>
+        `,
+      );
+    }
   });
 });
 

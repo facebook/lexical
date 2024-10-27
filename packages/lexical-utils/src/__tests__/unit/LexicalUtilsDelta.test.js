@@ -6,14 +6,13 @@
  *
  */
 
-import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateNodesFromDOM} from '@lexical/html';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {$createRangeSelection, LexicalEditor} from 'lexical';
+import {$getRoot, LexicalEditor} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import testMany from '../../../../lexical/src/__tests__/utils/testMany';
@@ -24,7 +23,7 @@ async function updateFromHTML(editor: LexicalEditor, html: string) {
   const dom = parser.parseFromString(html, 'text/html');
   await editor.update(() => {
     const nodes = $generateNodesFromDOM(editor, dom);
-    $insertGeneratedNodes(editor, nodes, $createRangeSelection());
+    $getRoot().append(...nodes);
   });
 }
 
@@ -52,18 +51,25 @@ describe('LexicalUtilsDelta tests', () => {
           b: '<p>1</p>',
           expectedDirtyElements: 3,
         },
+        {
+          a: '<h1>1</h1><p>2</p>',
+          b: '<h1>1</h1><p>2</p><h1>3</h1><p>4</p>',
+          expectedDirtyElements: 4,
+        },
       ],
       async ({a, b, expectedDirtyElements}) => {
         const {editor} = testEnv;
-        const tempEditor = createHeadlessEditor([
-          HeadingNode,
-          ListNode,
-          ListItemNode,
-          TableNode,
-          TableRowNode,
-          TableCellNode,
-          CodeNode,
-        ]);
+        const tempEditor = createHeadlessEditor({
+          nodes: [
+            HeadingNode,
+            ListNode,
+            ListItemNode,
+            TableNode,
+            TableRowNode,
+            TableCellNode,
+            CodeNode,
+          ],
+        });
         await updateFromHTML(editor, a);
         await updateFromHTML(tempEditor, b);
         let dirtyElementsCount = 0;

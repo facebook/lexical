@@ -7,9 +7,9 @@
  */
 import {
   $getEditor,
+  $getRoot,
   $isElementNode,
   DOMExportOutput,
-  EditorState,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -18,7 +18,6 @@ import {
   SerializedLexicalNode,
   Transform,
 } from 'lexical';
-import {$getRoot} from 'lexical';
 
 /**
  * A better setEditorState that looks into differences as opposed to a full replacement.
@@ -84,8 +83,9 @@ export function $applyDelta(serialized: SerializedEditorState): void {
         ? root.getFirstChild()
         : insertAfterNode.getNextSibling();
     if (nextChild === null) {
-      // const registeredNode = editor._nodes.get(newChild.type)!;
-      $insertAfterNode($parseSerializedNodeImpl(newChild, editor._nodes));
+      const node = $parseSerializedNodeImpl(newChild, editor._nodes);
+      $insertAfterNode(node);
+      insertAfterNode = node;
     } else {
       const matchingNodes = oldMatchers.get(equalityHeuristic(newChild));
       if (matchingNodes === undefined || matchingNodes.length === 0) {

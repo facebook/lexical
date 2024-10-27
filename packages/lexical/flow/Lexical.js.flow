@@ -65,6 +65,7 @@ declare export var SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
   nodes: Array<LexicalNode>;
   selection: BaseSelection;
 }>;
+
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**

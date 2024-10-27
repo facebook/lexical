@@ -22,6 +22,7 @@ export default function Settings(): JSX.Element {
       isCollab,
       isRichText,
       isMaxLength,
+      hasLinkAttributes,
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
@@ -115,6 +116,11 @@ export default function Settings(): JSX.Element {
             onClick={() => setOption('isCharLimitUtf8', !isCharLimitUtf8)}
             checked={isCharLimitUtf8}
             text="Char Limit (UTF-8)"
+          />
+          <Switch
+            onClick={() => setOption('hasLinkAttributes', !hasLinkAttributes)}
+            checked={hasLinkAttributes}
+            text="Link Attributes"
           />
           <Switch
             onClick={() => setOption('isMaxLength', !isMaxLength)}

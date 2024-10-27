@@ -437,3 +437,66 @@ function patchStyleConversion(
   };
 }
 ```
+
+### `html` Property for Import and Export Configuration
+
+The `html` property in `CreateEditorArgs` provides an alternate way to configure HTML import and export behavior in Lexical without subclassing or node replacement. It includes two properties:
+
+- `import` - Similar to `importDOM`, it controls how HTML elements are transformed into `LexicalNodes`. However, instead of defining conversions directly on each `LexicalNode`, `html.import` provides a configuration that can be overridden easily in the editor setup.
+  
+- `export` - Similar to `exportDOM`, this property customizes how `LexicalNodes` are serialized into HTML. With `html.export`, users can specify transformations for various nodes collectively, offering a flexible override mechanism that can adapt without needing to extend or replace specific `LexicalNodes`.
+
+#### Key Differences from `importDOM` and `exportDOM`
+
+While `importDOM` and `exportDOM` allow for highly customized, node-specific conversions by defining them directly within the `LexicalNode` class, the `html` property enables broader, editor-wide configurations. This setup benefits situations where:
+
+- **Consistent Transformations**: You want uniform import/export behavior across different nodes without adjusting each node individually.
+- **No Subclassing Required**: Overrides to import and export logic are applied at the editor configuration level, simplifying customization and reducing the need for extensive subclassing.
+
+#### Type Definitions
+
+```typescript
+type HTMLConfig = {
+  export?: DOMExportOutputMap;  // Optional map defining how nodes are exported to HTML.
+  import?: DOMConversionMap;     // Optional map defining how HTML is converted into nodes.
+};
+```
+
+#### Usage Example
+
+Below is a sample configuration using `html` to enable custom HTML serialization and deserialization:
+
+```typescript
+import {CreateEditorArgs} from 'lexical';
+
+const editorConfig: CreateEditorArgs = {
+  html: {
+    export: {
+      ParagraphNode: (node, editor) => ({
+        element: document.createElement('p'),
+        attributes: {class: 'custom-paragraph'},
+        children: node.getTextContent(),
+      }),
+    },
+    import: {
+      P: (node) => ({
+        type: 'ParagraphNode',
+        content: node.textContent,
+      }),
+    },
+  },
+  theme: {
+    paragraph: 'custom-paragraph-class',
+  },
+};
+
+// Initialize the editor with the configuration
+const editor = createEditor(editorConfig);
+```
+
+#### Type References in Context
+
+The `HTMLConfig` types interact with `EditorThemeClasses`, `RegisteredNodes`, and other configuration components, such as:
+
+- `CreateEditorArgs.theme`: Applies CSS classes to nodes for consistent styling across imported and exported HTML.
+- `RegisteredNode.exportDOM`: Registers custom `export` methods in a way that aligns with the `html.export` functionality, providing flexibility for advanced implementations.

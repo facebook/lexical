@@ -1401,8 +1401,64 @@ function $handleArrowKey(
         (direction === 'up' || direction === 'down')
       ) {
         const focusNode = selection.focus.getNode();
-        if ($isRootOrShadowRoot(focusNode)) {
-          const selectedNode = selection.getNodes()[0];
+        const isTableUnselect =
+          !selection.isCollapsed() &&
+          ((direction === 'up' && !selection.isBackward()) ||
+            (direction === 'down' && selection.isBackward()));
+        if (isTableUnselect) {
+          let focusParentNode = $findMatchingParent(focusNode, (n) =>
+            $isTableNode(n),
+          );
+          if ($isTableCellNode(focusParentNode)) {
+            focusParentNode = $findMatchingParent(
+              focusParentNode,
+              $isTableNode,
+            );
+          }
+          if (focusParentNode !== tableNode) {
+            return false;
+          }
+          if (!focusParentNode) {
+            return false;
+          }
+          const sibling =
+            direction === 'down'
+              ? focusParentNode.getNextSibling()
+              : focusParentNode.getPreviousSibling();
+          if (!sibling) {
+            return false;
+          }
+          let newOffset = 0;
+          if (direction === 'up') {
+            if ($isElementNode(sibling)) {
+              newOffset = sibling.getChildrenSize();
+            }
+          }
+          let newFocusNode = sibling;
+          if (direction === 'up') {
+            if ($isElementNode(sibling)) {
+              const lastCell = sibling.getLastChild();
+              newFocusNode = lastCell ? lastCell : sibling;
+              newOffset = $isTextNode(newFocusNode)
+                ? newFocusNode.getTextContentSize()
+                : 0;
+            }
+          }
+          const newSelection = selection.clone();
+
+          newSelection.focus.set(
+            newFocusNode.getKey(),
+            newOffset,
+            $isTextNode(newFocusNode) ? 'text' : 'element',
+          );
+          $setSelection(newSelection);
+          stopEvent(event);
+          return true;
+        } else if ($isRootOrShadowRoot(focusNode)) {
+          const selectedNode =
+            direction === 'up'
+              ? selection.getNodes()[selection.getNodes().length - 1]
+              : selection.getNodes()[0];
           if (selectedNode) {
             const tableCellNode = $findMatchingParent(
               selectedNode,
@@ -1441,10 +1497,16 @@ function $handleArrowKey(
           }
           return false;
         } else {
-          const focusParentNode = $findMatchingParent(
+          let focusParentNode = $findMatchingParent(
             focusNode,
             (n) => $isElementNode(n) && !n.isInline(),
           );
+          if ($isTableCellNode(focusParentNode)) {
+            focusParentNode = $findMatchingParent(
+              focusParentNode,
+              $isTableNode,
+            );
+          }
           if (!focusParentNode) {
             return false;
           }
@@ -1469,6 +1531,7 @@ function $handleArrowKey(
               direction === 'up' ? 0 : lastCellNode.getChildrenSize(),
               'element',
             );
+            stopEvent(event);
             $setSelection(newSelection);
             return true;
           }

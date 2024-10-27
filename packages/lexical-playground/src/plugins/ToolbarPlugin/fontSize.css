@@ -19,6 +19,11 @@
   width: 20px;
 }
 
+.font-size-input:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;

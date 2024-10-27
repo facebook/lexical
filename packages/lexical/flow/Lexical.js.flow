@@ -58,11 +58,17 @@ declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
 declare export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
 declare export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
 declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
-
+declare export var SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_END: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_START: LexicalCommand<KeyboardEvent>;
+declare export var SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
+  nodes: Array<LexicalNode>;
+  selection: BaseSelection;
+}>;
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**
- * LexicalConstnats
+ * LexicalConstants
  */
 
 declare export var IS_ALL_FORMATTING: number;

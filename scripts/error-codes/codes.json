@@ -209,5 +209,8 @@
   "207": "Anchor not found in Table",
   "208": "Focus not found in Table",
   "209": "Expected TableNode children to be TableRowNode",
-  "210": "Expected TableRowNode to have a parent TableNode"
+  "210": "Expected TableRowNode to have a parent TableNode",
+  "211": "Expected node %s of type %s to have a block ElementNode ancestor",
+  "212": "Expected node %s of type %s to have a block ancestor",
+  "213": "Expected ancestor to be a block ElementNode"
 }

@@ -16,16 +16,22 @@ import type {
   LexicalNode,
 } from 'lexical';
 
+import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
   $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $getRoot,
+  $getSelection,
   $isBlockElementNode,
   $isElementNode,
+  $isParagraphNode,
+  $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTabNode,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
@@ -378,4 +384,70 @@ function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
   return (
     isInlineDomNode(node.nextSibling) && isInlineDomNode(node.previousSibling)
   );
+}
+
+export function $convertHTMLtoLexicalJSON(
+  clipboardData: DataTransfer,
+  editor: LexicalEditor,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const html = clipboardData.getData('text/html');
+    if (!html) {
+      resolve(null);
+      return;
+    }
+
+    editor.update(() => {
+      const domParser = new DOMParser();
+      const dom = domParser.parseFromString(html, 'text/html');
+      const nodes = $generateNodesFromDOM(editor, dom);
+      const selection = $getSelection();
+      if (nodes.length === 0) {
+        resolve(null);
+        return;
+      }
+
+      const styles = getStylesFromHTML(html);
+      applyStylesToNodes(nodes, styles);
+
+      const rangeSelection = $isRangeSelection(selection)
+        ? selection.clone()
+        : $createRangeSelection();
+
+      rangeSelection.insertNodes(nodes);
+      const lexicalContent = JSON.stringify(
+        $generateJSONFromSelectedNodes(editor, selection),
+      );
+      resolve(lexicalContent);
+    });
+  });
+}
+
+function applyStylesToNodes(nodes: LexicalNode[], styles: string[]): void {
+  let styleIndex = 0;
+
+  nodes.forEach((node) => {
+    if (
+      $isElementNode(node) ||
+      $isParagraphNode(node) ||
+      $isTextNode(node) ||
+      $isTabNode(node)
+    ) {
+      const style = styles[styleIndex] || '';
+      node.setStyle(style);
+      styleIndex++;
+    }
+  });
+}
+
+function getStylesFromHTML(html: string): string[] {
+  const styleRegex = /style="([^"]*)"/g;
+  const styles: string[] = [];
+
+  let match;
+  while ((match = styleRegex.exec(html)) !== null) {
+    styles.push(match[1]);
+  }
+
+  return styles;
 }

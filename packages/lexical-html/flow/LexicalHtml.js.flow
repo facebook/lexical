@@ -30,3 +30,7 @@ declare export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
 ): Array<LexicalNode>;
+
+declare export function $convertHTMLtoLexicalJSON(
+  dataTransfer: DataTransfer,
+  editor:LexicalEditor,): string;

@@ -28,6 +28,7 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
@@ -240,7 +241,11 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   useEffect(() => {
     const updateListener = () => {
       editor.getEditorState().read(() => {
-        const editorWindow = editor._window || window;
+        const editorWindow = CAN_USE_DOM ? editor._window || window : null;
+        if (editorWindow === null) {
+          closeTypeahead();
+          return;
+        }
         const range = editorWindow.document.createRange();
         const selection = $getSelection();
         const text = getQueryTextForSearch(editor);

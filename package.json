@@ -179,7 +179,7 @@
     "prettier-plugin-organize-attributes": "^0.0.5",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "react-test-renderer": "^17.0.2",
-    "rollup": "^4.17.2",
+    "rollup": "^4.22.4",
     "size-limit": "^11.1.2",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",

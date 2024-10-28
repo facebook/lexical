@@ -242,10 +242,12 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     const updateListener = () => {
       editor.getEditorState().read(() => {
         const editorWindow = CAN_USE_DOM ? editor._window || window : null;
+
         if (editorWindow === null) {
           closeTypeahead();
           return;
         }
+
         const range = editorWindow.document.createRange();
         const selection = $getSelection();
         const text = getQueryTextForSearch(editor);

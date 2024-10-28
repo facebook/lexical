@@ -6,7 +6,11 @@
  *
  */
 
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {
+  $convertHTMLtoLexicalJSON,
+  $generateHtmlFromNodes,
+  $generateNodesFromDOM,
+} from '@lexical/html';
 import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
@@ -129,14 +133,18 @@ export function $insertDataTransferForPlainText(
  * @param selection the selection to use as the insertion point for the content in the DataTransfer object
  * @param editor the LexicalEditor the content is being inserted into.
  */
-export function $insertDataTransferForRichText(
+export async function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
   editor: LexicalEditor,
-): void {
-  const lexicalString =
-    dataTransfer.getData('application/x-lexical-editor') ||
-    dataTransfer.getData('web application/x-lexical-editor');
+): Promise<void> {
+  let lexicalString = dataTransfer.getData('application/x-lexical-editor');
+  //clibpoard API (used by contextmenu) does not support 'application/x-lexical-editor, meaning we need to manually create it
+  //TODO: a better alternative solution for this?
+  if (!lexicalString) {
+    lexicalString = await $convertHTMLtoLexicalJSON(dataTransfer, editor);
+  }
+
   if (lexicalString) {
     try {
       const payload = JSON.parse(lexicalString);

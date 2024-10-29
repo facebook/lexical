@@ -844,6 +844,7 @@ declare export function $isParagraphNode(
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 declare export function $hasUpdateTag(tag: string): boolean;
 declare export function $addUpdateTag(tag: string): void;
+declare export function $onUpdate(updateFn: () => void): void;
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;

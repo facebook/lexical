@@ -172,6 +172,7 @@ export {
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $nodesOfType,
+  $onUpdate,
   $selectAll,
   $setCompositionKey,
   $setSelection,

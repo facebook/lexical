@@ -231,7 +231,7 @@ test.describe('Collaboration', () => {
     });
   });
 
-  test('Undo with two collaborators editing same paragraph', async ({
+  test('Remove dangling text from YJS when there is no preceding text node', async ({
     isRichText,
     page,
     isCollab,
@@ -273,11 +273,12 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Left collaborator undoes their second paragraph
-    await sleep(1050);
+    // Left collaborator undoes their text in the second paragraph.
+    await sleep(50);
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
-    // Only left collaborator's text should have been undone
+    // The undo also removed the text node from YJS.
+    // Check that the dangling text from right user was also removed.
     await assertHTML(
       page,
       html`
@@ -286,11 +287,7 @@ test.describe('Collaboration', () => {
           dir="ltr">
           <span data-lexical-text="true">Line 1</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Word</span>
-        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
 
@@ -310,10 +307,84 @@ test.describe('Collaboration', () => {
           dir="ltr">
           <span data-lexical-text="true">Line 1</span>
         </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Merge dangling text into preceding text node', async ({
+    isRichText,
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    // test.skip(!isCollab || IS_MAC);
+    test.skip(!isCollab);
+
+    // Left collaborator types two pieces of text in the same paragraph, but with different styling.
+    await focusEditor(page);
+    await page.keyboard.type('normal');
+    await sleep(1050);
+    await toggleBold(page);
+    await page.keyboard.type('bold');
+
+    // Right collaborator types at the end of the paragraph.
+    await sleep(50);
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('ArrowDown'); // Move caret to end of paragraph
+    await page.keyboard.type('BOLD');
+
+    await assertHTML(
+      page,
+      html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Word</span>
+          <span data-lexical-text="true">normal</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            boldBOLD
+          </strong>
+        </p>
+      `,
+    );
+
+    // Left collaborator undoes their bold text.
+    await sleep(50);
+    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+
+    // The undo also removed bold the text node from YJS.
+    // Check that the dangling text from right user was merged into the preceding text node.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normalBOLD</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator refreshes their page
+    await page.evaluate(() => {
+      document
+        .querySelector('iframe[name="left"]')
+        .contentDocument.location.reload();
+    });
+
+    // Page content should be the same as before the refresh
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normalBOLD</span>
         </p>
       `,
     );

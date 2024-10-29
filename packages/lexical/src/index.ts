@@ -182,6 +182,7 @@ export {
   getNearestEditorFromDOMNode,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMUnmanaged,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
@@ -189,6 +190,7 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   resetRandomKey,
+  setDOMUnmanaged,
   setNodeIndentFromDOM,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';

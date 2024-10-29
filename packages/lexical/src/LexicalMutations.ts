@@ -17,7 +17,6 @@ import {IS_FIREFOX} from 'shared/environment';
 import {
   $getSelection,
   $isDecoratorNode,
-  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -33,6 +32,7 @@ import {
   getParentElement,
   getWindow,
   internalGetRoot,
+  isDOMUnmanaged,
   isFirefoxClipboardEvents,
 } from './LexicalUtils';
 // The time between a text entry event and the mutation observer firing.
@@ -110,21 +110,28 @@ function shouldUpdateTextNodeFromMutation(
   return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
 }
 
-export function $getNearestNodePairFromDOMNode(
+function $getNearestManagedNodePairFromDOMNode(
   startingDOM: Node,
   editor: LexicalEditor,
   editorState: EditorState,
-): [Node, LexicalNode] | [null, null] {
-  for (let dom: Node | null = startingDOM; dom; dom = getParentElement(dom)) {
+  rootElement: HTMLElement | null,
+): [HTMLElement, LexicalNode] | undefined {
+  for (
+    let dom: Node | null = startingDOM;
+    dom && !isDOMUnmanaged(dom);
+    dom = getParentElement(dom)
+  ) {
     const key = getNodeKeyFromDOMNode(dom, editor);
     if (key !== undefined) {
       const node = $getNodeByKey(key, editorState);
       if (node) {
-        return [dom, node];
+        // All decorator nodes are unmanaged
+        return $isDecoratorNode(node) ? undefined : [dom as HTMLElement, node];
       }
+    } else if (dom === rootElement) {
+      return [rootElement, internalGetRoot(editorState)];
     }
   }
-  return [null, null];
 }
 
 export function $flushMutations(
@@ -139,7 +146,7 @@ export function $flushMutations(
   try {
     updateEditor(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
-      const badDOMTargets = new Map<Node, LexicalNode | null>();
+      const badDOMTargets = new Map<HTMLElement, LexicalNode>();
       const rootElement = editor.getRootElement();
       // We use the current editor state, as that reflects what is
       // actually "on screen".
@@ -152,19 +159,16 @@ export function $flushMutations(
         const mutation = mutations[i];
         const type = mutation.type;
         const targetDOM = mutation.target;
-        const pair = $getNearestNodePairFromDOMNode(
+        const pair = $getNearestManagedNodePairFromDOMNode(
           targetDOM,
           editor,
           currentEditorState,
+          rootElement,
         );
-        let targetNode = pair[1];
-
-        if (
-          (targetNode === null && targetDOM !== rootElement) ||
-          $isDecoratorNode(targetNode)
-        ) {
+        if (!pair) {
           continue;
         }
+        const [nodeDOM, targetNode] = pair;
 
         if (type === 'characterData') {
           // Text mutations are deferred and passed to mutation listeners to be
@@ -233,11 +237,7 @@ export function $flushMutations(
             }
 
             if (removedDOMsLength !== unremovedBRs) {
-              if (targetDOM === rootElement) {
-                targetNode = internalGetRoot(currentEditorState);
-              }
-
-              badDOMTargets.set(pair[0] || targetDOM, targetNode);
+              badDOMTargets.set(nodeDOM, targetNode);
             }
           }
         }
@@ -248,32 +248,8 @@ export function $flushMutations(
       // is Lexical's "current" editor state. This is basically like
       // an internal revert on the DOM.
       if (badDOMTargets.size > 0) {
-        for (const [targetDOM, targetNode] of badDOMTargets) {
-          if ($isElementNode(targetNode)) {
-            const childKeys = targetNode.getChildrenKeys();
-            const slot = targetNode.getDOMSlot(targetDOM as HTMLElement);
-            let currentDOM = slot.getFirstChild();
-
-            for (let s = 0; s < childKeys.length; s++) {
-              const key = childKeys[s];
-              const correctDOM = editor.getElementByKey(key);
-
-              if (correctDOM === null) {
-                continue;
-              }
-
-              if (currentDOM == null) {
-                slot.insertChild(correctDOM);
-                currentDOM = correctDOM;
-              } else if (currentDOM !== correctDOM) {
-                slot.replaceChild(correctDOM, currentDOM);
-              }
-
-              currentDOM = currentDOM.nextSibling;
-            }
-          } else if ($isTextNode(targetNode)) {
-            targetNode.markDirty();
-          }
+        for (const [nodeDOM, targetNode] of badDOMTargets) {
+          targetNode.reconcileObservedMutation(nodeDOM, editor);
         }
       }
 

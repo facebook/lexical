@@ -702,6 +702,32 @@ export class ElementNode extends LexicalNode {
   canMergeWhenEmpty(): boolean {
     return false;
   }
+
+  /** @internal */
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
+    const slot = this.getDOMSlot(dom);
+    let currentDOM = slot.getFirstChild();
+    for (
+      let currentNode = this.getFirstChild();
+      currentNode;
+      currentNode = currentNode.getNextSibling()
+    ) {
+      const correctDOM = editor.getElementByKey(currentNode.getKey());
+
+      if (correctDOM === null) {
+        continue;
+      }
+
+      if (currentDOM == null) {
+        slot.insertChild(correctDOM);
+        currentDOM = correctDOM;
+      } else if (currentDOM !== correctDOM) {
+        slot.replaceChild(correctDOM, currentDOM);
+      }
+
+      currentDOM = currentDOM.nextSibling;
+    }
+  }
 }
 
 export function $isElementNode(

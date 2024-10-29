@@ -62,6 +62,7 @@ export interface LexicalPrivateDOM {
   __lexicalLineBreak?: HTMLBRElement | undefined | null;
   __lexicalDirTextContent?: string | undefined | null;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
+  __lexicalUnmanaged?: boolean | undefined;
 }
 
 export function $removeNode(
@@ -1167,6 +1168,11 @@ export class LexicalNode {
    * */
   markDirty(): void {
     this.getWritable();
+  }
+
+  /** @internal */
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
+    this.markDirty();
   }
 }
 

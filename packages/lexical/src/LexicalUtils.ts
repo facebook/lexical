@@ -20,7 +20,12 @@ import type {
   Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+import type {
+  LexicalNode,
+  LexicalPrivateDOM,
+  NodeKey,
+  NodeMap,
+} from './LexicalNode';
 import type {
   BaseSelection,
   PointType,
@@ -1856,4 +1861,15 @@ export function setNodeIndentFromDOM(
   const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
   const indent = indentSize / 40;
   elementNode.setIndent(indent);
+}
+
+/** @internal */
+export function setDOMUnmanaged(elementDom: HTMLElement): void {
+  const el: HTMLElement & LexicalPrivateDOM = elementDom;
+  el.__lexicalUnmanaged = true;
+}
+
+export function isDOMUnmanaged(elementDom: Node): boolean {
+  const el: Node & LexicalPrivateDOM = elementDom;
+  return el.__lexicalUnmanaged === true;
 }

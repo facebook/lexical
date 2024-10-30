@@ -51,6 +51,7 @@ const exportMap = new Map<
 
 const importMap: DOMConversionMap<HTMLElement> = {
   '*': (element) => ({
+    // conversions for other elements
     conversion: () => ({
       node: new TextNode(element.textContent || ''),
       priority: 0,

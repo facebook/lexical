@@ -1359,19 +1359,6 @@ function applyTextFormatFromStyle(
       lexicalNode.toggleFormat(shouldApply);
     }
 
-    let customStylesString = '';
-
-    if (style.cssText.includes('font-size')) {
-      customStylesString += `font-size: ${style.fontSize}; `;
-    }
-    if (style.cssText.includes('color')) {
-      customStylesString += `color: ${style.color}; `;
-    }
-    if (style.cssText.includes('background-color')) {
-      customStylesString += `background-color: ${style.backgroundColor}; `;
-    }
-
-    lexicalNode.setStyle(customStylesString.trim());
     return lexicalNode;
   };
 }

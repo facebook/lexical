@@ -14,9 +14,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-$isTextNode, DOMConversion,
+  $isTextNode,
+  DOMConversion,
   DOMConversionMap,
-  TextNode} from 'lexical';
+  TextNode,
+} from 'lexical';
 import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';
@@ -119,6 +121,55 @@ function $prepopulatedRichText() {
   }
 }
 
+function buildImportMap(): DOMConversionMap {
+  const importMap: DOMConversionMap = {};
+  // Create a conversion map that overrides every conversion from
+  // TextNode with a higher priority version that does the same thing
+  // and then adds extra styles to the node if applicable
+
+  for (const [tag, fn] of Object.entries(TextNode.importDOM()!)) {
+    importMap[tag] = (node) => {
+      const importer = fn(node);
+      if (!importer) {
+        return null;
+      }
+      return {
+        conversion: (element) => {
+          const output = importer.conversion(element);
+
+          if (
+            output &&
+            output.node &&
+            !Array.isArray(output.node) &&
+            $isTextNode(output.node)
+          ) {
+            let extraStyles = '';
+            // read extra styles from elmeent
+            if (element.style.cssText.includes('font-size')) {
+              extraStyles += `font-size: ${element.style.fontSize};`;
+            }
+            if (element.style.cssText.includes('background-color')) {
+              extraStyles += `background-color: ${element.style.backgroundColor};`;
+            }
+            if (element.style.cssText.includes('color')) {
+              extraStyles += `color: ${element.style.color};`;
+            }
+            if (extraStyles.length > 0) {
+              output.node.setStyle(output.node.getStyle() + extraStyles);
+            }
+          }
+          return output;
+        },
+        priority: Math.min(
+          4,
+          (importer.priority || 0) + 1,
+        ) as DOMConversion['priority'],
+      };
+    };
+  }
+  return importMap;
+}
+
 function App(): JSX.Element {
   const {
     settings: {isCollab, emptyEditor, measureTypingPerf},
@@ -138,54 +189,6 @@ function App(): JSX.Element {
     },
     theme: PlaygroundEditorTheme,
   };
-  function buildImportMap(): DOMConversionMap {
-    const importMap: DOMConversionMap = {};
-    // Create a conversion map that overrides every conversion from
-    // TextNode with a higher priority version that does the same thing
-    // and then adds extra styles to the node if applicable
-
-    for (const [tag, fn] of Object.entries(TextNode.importDOM()!)) {
-      importMap[tag] = (node) => {
-        const importer = fn(node);
-        if (!importer) {
-          return null;
-        }
-        return {
-          conversion: (element) => {
-            const output = importer.conversion(element);
-
-            if (
-              output &&
-              output.node &&
-              !Array.isArray(output.node) &&
-              $isTextNode(output.node)
-            ) {
-              let extraStyles = '';
-              // read extra styles from elmeent
-              if (element.style.cssText.includes('font-size')) {
-                extraStyles += `font-size: ${element.style.fontSize};`;
-              }
-              if (element.style.cssText.includes('background-color')) {
-                extraStyles += `background-color: ${element.style.backgroundColor};`;
-              }
-              if (element.style.cssText.includes('color')) {
-                extraStyles += `color: ${element.style.color};`;
-              }
-              if (extraStyles.length > 0) {
-                output.node.setStyle(output.node.getStyle() + extraStyles);
-              }
-            }
-            return output;
-          },
-          priority: Math.min(
-            4,
-            (importer.priority || 0) + 1,
-          ) as DOMConversion['priority'],
-        };
-      };
-    }
-    return importMap;
-  }
 
   return (
     <LexicalComposer initialConfig={initialConfig}>

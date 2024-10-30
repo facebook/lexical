@@ -644,6 +644,7 @@ declare module 'yjs' {
   };
 
   declare type StackItem = {
+    // $FlowFixMe: perhaps add generic typing instead of mixed
     meta: Map<mixed, mixed>,
     type: 'undo' | 'redo',
   };

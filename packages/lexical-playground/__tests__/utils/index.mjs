@@ -58,6 +58,7 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   isMaxLength,
+  hasLinkAttributes,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -85,6 +86,7 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  appSettings.hasLinkAttributes = !!hasLinkAttributes;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
@@ -140,6 +142,7 @@ async function exposeLexicalEditor(page) {
 }
 
 export const test = base.extend({
+  hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,

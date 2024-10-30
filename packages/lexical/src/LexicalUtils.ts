@@ -1314,6 +1314,19 @@ export function $addUpdateTag(tag: string): void {
   editor._updateTags.add(tag);
 }
 
+/**
+ * Add a function to run after the current update. This will run after any
+ * `onUpdate` function already supplied to `editor.update()`, as well as any
+ * functions added with previous calls to `$onUpdate`.
+ *
+ * @param updateFn The function to run after the current update.
+ */
+export function $onUpdate(updateFn: () => void): void {
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  editor._deferred.push(updateFn);
+}
+
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
 ): BaseSelection | null {

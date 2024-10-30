@@ -595,6 +595,16 @@ test.describe.parallel('Markdown', () => {
       `,
       text: 'hello [world](https://www.test.com)!',
     },
+    {
+      html: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">10:20:30😄</span>
+        </p>
+      `,
+      text: '10:20:30:smile:',
+    },
   ];
 
   const NESTED_TEXT_FORMAT_SHORTCUTS = [

@@ -83,6 +83,7 @@ export default function Editor(): JSX.Element {
       isAutocomplete,
       isMaxLength,
       isCharLimit,
+      hasLinkAttributes,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -185,7 +186,7 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <ImagesPlugin />
             <InlineImagePlugin />
-            <LinkPlugin />
+            <LinkPlugin hasLinkAttributes={hasLinkAttributes} />
             <PollPlugin />
             <TwitterPlugin />
             <YouTubePlugin />

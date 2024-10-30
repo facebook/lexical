@@ -1358,7 +1358,7 @@ function applyTextFormatFromStyle(
     if (shouldApply && !lexicalNode.hasFormat(shouldApply)) {
       lexicalNode.toggleFormat(shouldApply);
     }
-
+    lexicalNode.setStyle(style.cssText);
     return lexicalNode;
   };
 }

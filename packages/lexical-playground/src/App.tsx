@@ -123,9 +123,6 @@ function $prepopulatedRichText() {
 
 function buildImportMap(): DOMConversionMap {
   const importMap: DOMConversionMap = {};
-  // Create a conversion map that overrides every conversion from
-  // TextNode with a higher priority version that does the same thing
-  // and then adds extra styles to the node if applicable
 
   for (const [tag, fn] of Object.entries(TextNode.importDOM()!)) {
     importMap[tag] = (node) => {
@@ -137,14 +134,8 @@ function buildImportMap(): DOMConversionMap {
         conversion: (element) => {
           const output = importer.conversion(element);
 
-          if (
-            output &&
-            output.node &&
-            !Array.isArray(output.node) &&
-            $isTextNode(output.node)
-          ) {
+          const applyExtraStyles = (textNode: TextNode) => {
             let extraStyles = '';
-            // read extra styles from elmeent
             if (element.style.cssText.includes('font-size')) {
               extraStyles += `font-size: ${element.style.fontSize};`;
             }
@@ -155,7 +146,19 @@ function buildImportMap(): DOMConversionMap {
               extraStyles += `color: ${element.style.color};`;
             }
             if (extraStyles.length > 0) {
-              output.node.setStyle(output.node.getStyle() + extraStyles);
+              textNode.setStyle(textNode.getStyle() + extraStyles);
+            }
+          };
+
+          if (output && output.node) {
+            if (Array.isArray(output.node)) {
+              output.node.forEach((textNode) => {
+                if ($isTextNode(textNode)) {
+                  applyExtraStyles(textNode);
+                }
+              });
+            } else if ($isTextNode(output.node)) {
+              applyExtraStyles(output.node);
             }
           }
           return output;
@@ -167,6 +170,7 @@ function buildImportMap(): DOMConversionMap {
       };
     };
   }
+
   return importMap;
 }
 

@@ -52,42 +52,86 @@ test.describe('ContextMenuCopyAndPaste', () => {
       `,
     );
   });
-  test('Rich text Copy and Paste', async ({page, isRichText}) => {
-    test.skip(!isRichText);
+  test('Rich text Copy and Paste #6780', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await page
+      .context()
+      .grantPermissions(['clipboard-read', 'clipboard-write']);
+    await click(page, '.font-increment');
+    await click(page, '.font-color');
+    await click(
+      page,
+      '.color-picker-basic-color button[style="background-color: rgb(208, 2, 27);"]',
+    );
     await focusEditor(page);
     await page.keyboard.type('MLH Fellowship');
+    await focusEditor(page);
+    await click(
+      page,
+      '.color-picker-basic-color button[style="background-color: rgb(0, 0, 0);"]',
+    );
+    await click(page, '.font-color');
+    await focusEditor(page);
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.type('Fall 2024');
+    await page.keyboard.press('Enter');
+    await click(page, '.font-decrement');
+    await page.keyboard.type('---');
 
-    await selectAll();
-    await click(page, '.font-increment');
+    await selectAll(page);
     await click(page, '.lock');
 
-    await page.pause();
     await doubleClick(page, 'div[contenteditable="false"] span');
-    await page.pause();
     await click(page, 'div[contenteditable="false"] span', {button: 'right'});
     await click(page, '#typeahead-menu [role="option"] :text("Copy")');
 
     await click(page, '.unlock');
     await focusEditor(page);
 
-    await pasteFromClipboard(page);
+    await click(page, 'div[contenteditable="true"] > p:last-of-type', {
+      button: 'right',
+    });
+    await click(page, '#typeahead-menu [role="option"] :text("Paste")');
+    await page.pause();
 
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-          <span style="font-size: 17px; white-space: pre-wrap;">
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            style="font-size: 17px; color: rgb(208, 2, 27)"
+            data-lexical-text="true">
             MLH Fellowship
           </span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph">
           <br />
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-          <span style="font-size: 17px; white-space: pre-wrap;">Fall 2024</span>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            style="font-size: 17px; color: rgb(0, 0, 0)"
+            data-lexical-text="true">
+            Fall 2024
+          </span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            style="font-size: 15px; color: rgb(0, 0, 0)"
+            data-lexical-text="true">
+            ---
+          </span>
+          <span
+            style="font-size: 17px; color: rgb(208, 2, 27)"
+            data-lexical-text="true">
+            Fellowship
+          </span>
         </p>
       `,
     );

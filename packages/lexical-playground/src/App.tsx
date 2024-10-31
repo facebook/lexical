@@ -15,7 +15,6 @@ import {
   $createTextNode,
   $getRoot,
   $isTextNode,
-  DOMConversion,
   DOMConversionMap,
   TextNode,
 } from 'lexical';
@@ -121,52 +120,59 @@ function $prepopulatedRichText() {
   }
 }
 
+function getExtraStyles(element: HTMLElement): string {
+  let extraStyles = '';
+  if (element.style.fontSize !== '') {
+    extraStyles += `font-size: ${element.style.fontSize};`;
+  }
+  if (element.style.backgroundColor !== '') {
+    extraStyles += `background-color: ${element.style.backgroundColor};`;
+  }
+  if (element.style.color !== '') {
+    extraStyles += `color: ${element.style.color};`;
+  }
+  return extraStyles;
+}
+
 function buildImportMap(): DOMConversionMap {
   const importMap: DOMConversionMap = {};
 
-  for (const [tag, fn] of Object.entries(TextNode.importDOM()!)) {
-    importMap[tag] = (node) => {
-      const importer = fn(node);
+  // Wrap all TextNode importers with a function that also imports
+  // the custom styles implemented by the playground
+  for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
+    importMap[tag] = (importNode) => {
+      const importer = fn(importNode);
       if (!importer) {
         return null;
       }
       return {
+        ...importer,
         conversion: (element) => {
           const output = importer.conversion(element);
-
-          const applyExtraStyles = (textNode: TextNode) => {
-            let extraStyles = '';
-            if (element.style.fontSize !== '') {
-              extraStyles += `font-size: ${element.style.fontSize};`;
-            }
-            if (element.style.backgroundColor !== '') {
-              extraStyles += `background-color: ${element.style.backgroundColor};`;
-            }
-            if (element.style.color !== '') {
-              extraStyles += `color: ${element.style.color};`;
-            }
-            if (extraStyles.length > 0) {
-              textNode.setStyle(textNode.getStyle() + extraStyles);
-            }
-          };
-
-          if (output && output.node) {
-            if (Array.isArray(output.node)) {
-              output.node.forEach((textNode) => {
+          if (
+            output === null ||
+            output.forChild === undefined ||
+            output.after !== undefined ||
+            output.node !== null
+          ) {
+            return output;
+          }
+          const extraStyles = getExtraStyles(element);
+          if (extraStyles) {
+            const {forChild} = output;
+            return {
+              ...output,
+              forChild: (child, parent) => {
+                const textNode = forChild(child, parent);
                 if ($isTextNode(textNode)) {
-                  applyExtraStyles(textNode);
+                  textNode.setStyle(textNode.getStyle() + extraStyles);
                 }
-              });
-            } else if ($isTextNode(output.node)) {
-              applyExtraStyles(output.node);
-            }
+                return textNode;
+              },
+            };
           }
           return output;
         },
-        priority: Math.min(
-          4,
-          (importer.priority || 0) + 1,
-        ) as DOMConversion['priority'],
       };
     };
   }

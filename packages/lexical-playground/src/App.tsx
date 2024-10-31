@@ -18,7 +18,6 @@ import {
   DOMConversionMap,
   TextNode,
 } from 'lexical';
-import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {FlashMessageContext} from './context/FlashMessageContext';
@@ -32,9 +31,11 @@ import DocsPlugin from './plugins/DocsPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
+import {parseAllowedFontSize} from './plugins/ToolbarPlugin/fontSize';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import {parseAllowedColor} from './ui/ColorPicker';
 
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
@@ -121,15 +122,20 @@ function $prepopulatedRichText() {
 }
 
 function getExtraStyles(element: HTMLElement): string {
+  // Parse styles from pasted input, but only if they match exactly the
+  // sort of styles that would be produced by exportDOM
   let extraStyles = '';
-  if (element.style.fontSize !== '') {
-    extraStyles += `font-size: ${element.style.fontSize};`;
+  const fontSize = parseAllowedFontSize(element.style.fontSize);
+  const backgroundColor = parseAllowedColor(element.style.backgroundColor);
+  const color = parseAllowedColor(element.style.color);
+  if (fontSize !== '') {
+    extraStyles += `font-size: ${fontSize};`;
   }
-  if (element.style.backgroundColor !== '') {
-    extraStyles += `background-color: ${element.style.backgroundColor};`;
+  if (backgroundColor !== '') {
+    extraStyles += `background-color: ${backgroundColor};`;
   }
-  if (element.style.color !== '') {
-    extraStyles += `color: ${element.style.color};`;
+  if (color !== '') {
+    extraStyles += `color: ${color};`;
   }
   return extraStyles;
 }

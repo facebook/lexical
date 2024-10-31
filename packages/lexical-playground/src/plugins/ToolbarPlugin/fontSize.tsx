@@ -16,6 +16,17 @@ const MIN_ALLOWED_FONT_SIZE = 8;
 const MAX_ALLOWED_FONT_SIZE = 72;
 const DEFAULT_FONT_SIZE = 15;
 
+export function parseAllowedFontSize(input: string): string {
+  const match = input.match(/^(\d+(?:\.\d+))px$/);
+  if (match) {
+    const n = Number(match[1]);
+    if (n >= MIN_ALLOWED_FONT_SIZE && n <= MAX_ALLOWED_FONT_SIZE) {
+      return input;
+    }
+  }
+  return '';
+}
+
 // eslint-disable-next-line no-shadow
 enum updateFontSizeType {
   increment = 1,

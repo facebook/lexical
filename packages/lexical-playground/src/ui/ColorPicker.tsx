@@ -21,6 +21,10 @@ interface ColorPickerProps {
   onChange?: (value: string, skipHistoryStack: boolean) => void;
 }
 
+export function parseAllowedColor(input: string) {
+  return /^#[a-fA-F0-9]{6}$/.test(input) ? input : '';
+}
+
 const basicColors = [
   '#d0021b',
   '#f5a623',

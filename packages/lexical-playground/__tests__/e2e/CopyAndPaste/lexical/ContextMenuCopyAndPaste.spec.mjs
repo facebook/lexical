@@ -53,7 +53,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
     );
   });
   test('Rich text Copy and Paste', async ({page, isRichText}) => {
-    test.skip(isRichText);
+    test.skip(!isRichText);
     await focusEditor(page);
     await page.keyboard.type('MLH Fellowship');
     await page.keyboard.press('Enter');

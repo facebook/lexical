@@ -136,13 +136,13 @@ function buildImportMap(): DOMConversionMap {
 
           const applyExtraStyles = (textNode: TextNode) => {
             let extraStyles = '';
-            if (element.style.cssText.includes('font-size')) {
+            if (element.style.fontSize !== '') {
               extraStyles += `font-size: ${element.style.fontSize};`;
             }
-            if (element.style.cssText.includes('background-color')) {
+            if (element.style.backgroundColor !== '') {
               extraStyles += `background-color: ${element.style.backgroundColor};`;
             }
-            if (element.style.cssText.includes('color')) {
+            if (element.style.color !== '') {
               extraStyles += `color: ${element.style.color};`;
             }
             if (extraStyles.length > 0) {

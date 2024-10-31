@@ -22,7 +22,7 @@ interface ColorPickerProps {
 }
 
 export function parseAllowedColor(input: string) {
-  return /^#[a-fA-F0-9]{6}$/.test(input) ? input : '';
+  return /^rgb\(\d+, \d+, \d+\)$/.test(input) ? input : '';
 }
 
 const basicColors = [

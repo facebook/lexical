@@ -480,10 +480,13 @@ export function registerMarkdownShortcuts(
       const selection = editorState.read($getSelection);
       const prevSelection = prevEditorState.read($getSelection);
 
+      // We expect selection to be a collapsed range and not match previous one (as we want
+      // to trigger transforms only as user types)
       if (
         !$isRangeSelection(prevSelection) ||
         !$isRangeSelection(selection) ||
-        !selection.isCollapsed()
+        !selection.isCollapsed() ||
+        selection.is(prevSelection)
       ) {
         return;
       }

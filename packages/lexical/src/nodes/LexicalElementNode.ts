@@ -6,13 +6,17 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
+import type {
+  DOMExportOutput,
+  NodeKey,
+  SerializedLexicalNode,
+} from '../LexicalNode';
 import type {
   BaseSelection,
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {KlassConstructor, Spread} from 'lexical';
+import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -33,6 +37,7 @@ import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
   $isRootOrShadowRoot,
+  isHTMLElement,
   removeFromParent,
 } from '../LexicalUtils';
 
@@ -522,6 +527,24 @@ export class ElementNode extends LexicalNode {
     }
 
     return writableSelf;
+  }
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element && isHTMLElement(element)) {
+      const indent = this.getIndent();
+      if (indent > 0) {
+        // padding-inline-start is not widely supported in email HTML
+        // (see https://www.caniemail.com/features/css-padding-inline-start-end/),
+        // If you want to use HTML output for email, consider overriding the serialization
+        // to use `padding-right` in RTL languages, `padding-left` in `LTR` languages, or
+        // `text-indent` if you are ok with first-line indents.
+        // We recommend keeping multiples of 40px to maintain consistency with list-items
+        // (see https://github.com/facebook/lexical/pull/4025)
+        element.style.paddingInlineStart = `${indent * 40}px`;
+      }
+    }
+
+    return {element};
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {

@@ -154,7 +154,10 @@ export function $insertDataTransferForRichText(
   if (htmlString) {
     try {
       const parser = new DOMParser();
-      const dom = parser.parseFromString(htmlString, 'text/html');
+      const dom = parser.parseFromString(
+        trustHTML(htmlString) as string,
+        'text/html',
+      );
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {
@@ -190,6 +193,16 @@ export function $insertDataTransferForRichText(
       selection.insertRawText(text);
     }
   }
+}
+
+function trustHTML(html: string): string | TrustedHTML {
+  if (window.trustedTypes && window.trustedTypes.createPolicy) {
+    const policy = window.trustedTypes.createPolicy('lexical', {
+      createHTML: (input) => input,
+    });
+    return policy.createHTML(html);
+  }
+  return html;
 }
 
 /**

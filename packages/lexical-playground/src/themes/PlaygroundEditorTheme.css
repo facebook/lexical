@@ -183,7 +183,8 @@
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
   border-radius: 3px;
 }
-.PlaygroundEditorTheme__tableAddColumns {
+.PlaygroundEditorTheme__tableAddColumns,
+.PlaygroundEditorTheme__layoutAddColumns {
   position: absolute;
   background-color: #eee;
   height: 100%;
@@ -191,7 +192,8 @@
   border: 0;
   cursor: pointer;
 }
-.PlaygroundEditorTheme__tableAddColumns:after {
+.PlaygroundEditorTheme__tableAddColumns:after,
+.PlaygroundEditorTheme__layoutAddColumns:after {
   background-image: url(../images/icons/plus.svg);
   background-size: contain;
   background-position: center;

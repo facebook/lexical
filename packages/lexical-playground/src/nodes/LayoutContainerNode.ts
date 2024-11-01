@@ -17,8 +17,11 @@ import type {
   Spread,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {$findMatchingParent, addClassNamesToElement} from '@lexical/utils';
 import {ElementNode} from 'lexical';
+import {times} from 'lodash-es';
+
+import {LayoutItemNode} from './LayoutItemNode';
 
 export type SerializedLayoutContainerNode = Spread<
   {
@@ -122,6 +125,13 @@ export class LayoutContainerNode extends ElementNode {
   setTemplateColumns(templateColumns: string) {
     this.getWritable().__templateColumns = templateColumns;
   }
+
+  updateTemplateColumnWithIndex(index: number, value: string) {
+    const currentGridTemplateColumns = this.getTemplateColumns();
+    const newGridTemplateColumns = currentGridTemplateColumns.split(' ');
+    newGridTemplateColumns[index] = value;
+    return this.setTemplateColumns(newGridTemplateColumns.join(' '));
+  }
 }
 
 export function $createLayoutContainerNode(
@@ -134,4 +144,33 @@ export function $isLayoutContainerNode(
   node: LexicalNode | null | undefined,
 ): node is LayoutContainerNode {
   return node instanceof LayoutContainerNode;
+}
+
+export function $getLayoutContainerNodeIfLayoutItemNodeOrThrow(
+  layoutItemNode: LayoutItemNode,
+): LayoutContainerNode {
+  const node = $findMatchingParent(layoutItemNode, $isLayoutContainerNode);
+
+  if ($isLayoutContainerNode(node)) {
+    return node;
+  }
+
+  throw new Error(
+    'Expected LayoutItemNode to be inside of LayoutContainerNode.',
+  );
+}
+
+export function $findLayoutItemIndexGivenLayoutContainerNode(
+  layoutItemNode: LayoutItemNode,
+): number {
+  const layoutContainerNode =
+    $getLayoutContainerNodeIfLayoutItemNodeOrThrow(layoutItemNode);
+
+  return layoutContainerNode
+    .getChildren()
+    .findIndex((node) => node.is(layoutItemNode));
+}
+
+export function $getGridTemplateColumnsWithEqualWidth(count: number) {
+  return times(count, () => '1fr').join(' ');
 }

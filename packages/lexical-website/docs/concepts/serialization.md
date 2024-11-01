@@ -458,7 +458,7 @@ While `importDOM` and `exportDOM` allow for highly customized, node-specific con
 ```typescript
 type HTMLConfig = {
   export?: DOMExportOutputMap;  // Optional map defining how nodes are exported to HTML.
-  import?: DOMConversionMap;     // Optional map defining how HTML is converted into nodes.
+  import?: DOMConversionMap;     // Optional record defining how HTML is converted into nodes.
 };
 ```
 

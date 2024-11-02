@@ -131,10 +131,10 @@ function getExtraStyles(element: HTMLElement): string {
   if (fontSize !== '') {
     extraStyles += `font-size: ${fontSize};`;
   }
-  if (backgroundColor !== '') {
+  if (backgroundColor !== '' && backgroundColor !== 'rgb(255, 255, 255)') {
     extraStyles += `background-color: ${backgroundColor};`;
   }
-  if (color !== '') {
+  if (color !== '' && color !== 'rgb(0, 0, 0)') {
     extraStyles += `color: ${color};`;
   }
   return extraStyles;

@@ -121,14 +121,20 @@ test.describe('ContextMenuCopyAndPaste', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span style="font-size: 17px; )" data-lexical-text="true">
+          <span
+            style="font-size: 17px; color: rgb(0, 0, 0)"
+            data-lexical-text="true">
             Fall 2024
           </span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">---</span>
+          <span
+            style="font-size: 15px; color: rgb(0, 0, 0)"
+            data-lexical-text="true">
+            ---
+          </span>
         </p>
       `,
     );

@@ -57,7 +57,10 @@ test.describe('ContextMenuCopyAndPaste', () => {
     isPlainText,
     browserName,
   }) => {
-    test.skip(isPlainText || browserName === 'webkit');
+    //doesnt support firefox or webkit
+    test.skip(
+      isPlainText || browserName === 'webkit' || browserName === 'firefox',
+    );
 
     await page
       .context()

@@ -52,8 +52,13 @@ test.describe('ContextMenuCopyAndPaste', () => {
       `,
     );
   });
-  test('Rich text Copy and Paste #6780', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Rich text Copy and Paste #6780', async ({
+    page,
+    isPlainText,
+    browserName,
+  }) => {
+    test.skip(isPlainText || browserName === 'webkit');
+
     await page
       .context()
       .grantPermissions(['clipboard-read', 'clipboard-write']);

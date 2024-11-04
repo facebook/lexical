@@ -69,83 +69,78 @@ export default function ShortcutsPlugin({
   useEffect(() => {
     const keyboardShortcutsHandler = (payload: KeyboardEvent) => {
       const event: KeyboardEvent = payload;
-      const {key, ctrlKey, altKey, shiftKey, metaKey} = event;
 
-      if (isFormatParagraph(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      if (isFormatParagraph(event)) {
         event.preventDefault();
         formatParagraph(editor);
-      } else if (isFormatHeading(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isFormatHeading(event)) {
         event.preventDefault();
-        formatHeading(
-          editor,
-          toolbarState.blockType,
-          `h${key}` as HeadingTagType,
-        );
-      } else if (isFormatBulletList(key, ctrlKey, shiftKey, altKey, metaKey)) {
+        const {code} = event;
+        const headingSize = `h${code[code.length - 1]}` as HeadingTagType;
+        formatHeading(editor, toolbarState.blockType, headingSize);
+      } else if (isFormatBulletList(event)) {
         event.preventDefault();
         formatBulletList(editor, toolbarState.blockType);
-      } else if (
-        isFormatNumberedList(key, ctrlKey, shiftKey, altKey, metaKey)
-      ) {
+      } else if (isFormatNumberedList(event)) {
         event.preventDefault();
         formatNumberedList(editor, toolbarState.blockType);
-      } else if (isFormatCheckList(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isFormatCheckList(event)) {
         event.preventDefault();
         formatCheckList(editor, toolbarState.blockType);
-      } else if (isFormatCode(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isFormatCode(event)) {
         event.preventDefault();
         formatCode(editor, toolbarState.blockType);
-      } else if (isFormatQuote(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isFormatQuote(event)) {
         event.preventDefault();
         formatQuote(editor, toolbarState.blockType);
-      } else if (isStrikeThrough(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isStrikeThrough(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
-      } else if (isIndent(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isIndent(event)) {
         event.preventDefault();
         editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
-      } else if (isOutdent(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isOutdent(event)) {
         event.preventDefault();
         editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
-      } else if (isCenterAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isCenterAlign(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
-      } else if (isLeftAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isLeftAlign(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
-      } else if (isRightAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isRightAlign(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
-      } else if (isJustifyAlign(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isJustifyAlign(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
-      } else if (isSubscript(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isSubscript(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
-      } else if (isSuperscript(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isSuperscript(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
-      } else if (isInsertCodeBlock(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isInsertCodeBlock(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
-      } else if (isIncreaseFontSize(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isIncreaseFontSize(event)) {
         event.preventDefault();
         updateFontSize(
           editor,
           UpdateFontSizeType.increment,
           toolbarState.fontSizeInputValue,
         );
-      } else if (isDecreaseFontSize(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isDecreaseFontSize(event)) {
         event.preventDefault();
         updateFontSize(
           editor,
           UpdateFontSizeType.decrement,
           toolbarState.fontSizeInputValue,
         );
-      } else if (isClearFormatting(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isClearFormatting(event)) {
         event.preventDefault();
         clearFormatting(editor);
-      } else if (isInsertLink(key, ctrlKey, shiftKey, altKey, metaKey)) {
+      } else if (isInsertLink(event)) {
         event.preventDefault();
         const url = toolbarState.isLink ? null : sanitizeUrl('https://');
         setIsLinkEditMode(!toolbarState.isLink);

@@ -146,7 +146,6 @@
     "concurrently": "^8.2.2",
     "confusing-browser-globals": "^1.0.10",
     "cross-env": "^7.0.3",
-    "docusaurus-plugin-internaldocs-fb": "1.18.4",
     "eslint": "^8.57.0",
     "eslint-config-fbjs": "^4.0.0",
     "eslint-config-prettier": "^9.1.0",

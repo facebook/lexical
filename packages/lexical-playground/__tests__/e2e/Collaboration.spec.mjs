@@ -237,7 +237,6 @@ test.describe('Collaboration', () => {
     isCollab,
     browserName,
   }) => {
-    // test.skip(!isCollab || IS_MAC);
     test.skip(!isCollab);
 
     // Left collaborator types two paragraphs of text
@@ -318,7 +317,6 @@ test.describe('Collaboration', () => {
     isCollab,
     browserName,
   }) => {
-    // test.skip(!isCollab || IS_MAC);
     test.skip(!isCollab);
 
     // Left collaborator types two pieces of text in the same paragraph, but with different styling.

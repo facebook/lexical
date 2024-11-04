@@ -502,7 +502,6 @@ export function registerNestedElementResolver<N extends ElementNode>(
  * @param editor - The lexical editor
  * @param editorState - The editor's state
  */
-
 export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,

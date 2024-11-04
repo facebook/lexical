@@ -21,7 +21,7 @@
     "@mdx-js/react": "^3.0.1",
     "@radix-ui/react-tabs": "^1.0.4",
     "@vercel/analytics": "^1.0.1",
-    "docusaurus-plugin-internaldocs-fb": "1.18.5",
+    "docusaurus-plugin-internaldocs-fb": "1.19.0",
     "docusaurus-plugin-typedoc": "^0.22.0",
     "fs-extra": "^10.0.0",
     "prism-react-renderer": "^2.3.1",

@@ -13,8 +13,6 @@
   },
   "engineStrict": true,
   "scripts": {
-    "postinstall": "patch-package",
-    "patch-package": "patch-package",
     "start": "cross-env NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
     "start:website": "npm run start --prefix packages/lexical-website -- --port 3001",
     "start:playground": "npm run start-test-server",

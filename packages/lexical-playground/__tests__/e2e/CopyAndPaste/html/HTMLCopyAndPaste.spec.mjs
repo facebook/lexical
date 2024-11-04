@@ -22,7 +22,7 @@ import {
 test.describe('HTML CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Copy + paste multi line html with extra newlines', async ({
+  test('Handles pasting multi line HTML with extra newlines', async ({
     page,
     isPlainText,
     isCollab,
@@ -30,9 +30,12 @@ test.describe('HTML CopyAndPaste', () => {
     test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
+
+    const inputHTML =
+      '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>';
+
     await pasteFromClipboard(page, {
-      'text/html':
-        '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
+      'text/html': inputHTML,
     });
 
     const paragraphs = page.locator('div[contenteditable="true"] > p');
@@ -50,16 +53,19 @@ test.describe('HTML CopyAndPaste', () => {
     });
   });
 
-  test('Copy + paste a code block with BR', async ({page, isPlainText}) => {
+  test('Handles pasting code blocks with line breaks', async ({
+    page,
+    isPlainText,
+  }) => {
     test.skip(isPlainText);
 
     await focusEditor(page);
 
-    const clipboard = {
-      'text/html': `<meta charset='utf-8'><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="ltr"><span>Code block</span></p><code class="x1f6kntn x1fcty0u x16h55sf x1xmf6yo x1e56ztr x1q8sqs3 xeq4nuv x1lliihq xz9dl7a xn6708d xsag5q8 x1ye3gou" spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span class="xuc5kci">function</span><span> </span><span class="xu88d7e">foo</span><span class="x1noocy9">(</span><span class="x1noocy9">)</span><span> </span><span class="x1noocy9">{</span><br><span>  </span><span class="xuc5kci">return</span><span> </span><span class="x180nigk">'Hey there'</span><span class="x1noocy9">;</span><br><span class="x1noocy9">}</span></code><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="ltr"><span>--end--</span></p>`,
-    };
+    const inputHTML = `<meta charset='utf-8'><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="ltr"><span>Code block</span></p><code class="x1f6kntn x1fcty0u x16h55sf x1xmf6yo x1e56ztr x1q8sqs3 xeq4nuv x1lliihq xz9dl7a xn6708d xsag5q8 x1ye3gou" spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span class="xuc5kci">function</span><span> </span><span class="xu88d7e">foo</span><span class="x1noocy9">(</span><span class="x1noocy9">)</span><span> </span><span class="x1noocy9">{</span><br><span>  </span><span class="xuc5kci">return</span><span> </span><span class="x180nigk">'Hey there'</span><span class="x1noocy9">;</span><br><span class="x1noocy9">}</span></code><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="ltr"><span>--end--</span></p>`;
 
-    await pasteFromClipboard(page, clipboard);
+    await pasteFromClipboard(page, {
+      'text/html': inputHTML,
+    });
 
     await assertHTML(
       page,
@@ -136,7 +142,7 @@ test.describe('HTML CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste a paragraph element between horizontal rules', async ({
+  test('Handles pasting paragraph content between horizontal rules', async ({
     page,
     isPlainText,
     isCollab,
@@ -145,9 +151,9 @@ test.describe('HTML CopyAndPaste', () => {
 
     await focusEditor(page);
 
-    let clipboard = {'text/html': '<hr/><hr/>'};
-
-    await pasteFromClipboard(page, clipboard);
+    await pasteFromClipboard(page, {
+      'text/html': '<hr/><hr/>',
+    });
     // Collab doesn't process the cursor correctly
     if (!isCollab) {
       await assertHTML(
@@ -173,9 +179,10 @@ test.describe('HTML CopyAndPaste', () => {
     // sets focus between HRs
     await page.keyboard.press('ArrowRight');
 
-    clipboard = {'text/html': '<p>Text between HRs</p>'};
+    await pasteFromClipboard(page, {
+      'text/html': '<p>Text between HRs</p>',
+    });
 
-    await pasteFromClipboard(page, clipboard);
     await assertHTML(
       page,
       html`
@@ -202,15 +209,17 @@ test.describe('HTML CopyAndPaste', () => {
     });
   });
 
-  test('Paste top level element in the middle of paragraph', async ({
+  test('Handles pasting block elements within paragraphs', async ({
     page,
     isPlainText,
     isCollab,
   }) => {
     test.skip(isPlainText || isCollab);
+
     await focusEditor(page);
     await page.keyboard.type('Hello world');
     await moveToPrevWord(page);
+
     await pasteFromClipboard(page, {
       'text/html': `<hr />`,
     });

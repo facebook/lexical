@@ -22,7 +22,7 @@ import {
 test.describe('HTML CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Handles pasting multi line HTML with extra newlines', async ({
+  test('Handles copy + paste multi line HTML with extra newlines', async ({
     page,
     isPlainText,
     isCollab,
@@ -53,7 +53,7 @@ test.describe('HTML CopyAndPaste', () => {
     });
   });
 
-  test('Handles pasting code blocks with line breaks', async ({
+  test('Handles copy + paste code blocks with line breaks', async ({
     page,
     isPlainText,
   }) => {
@@ -142,7 +142,7 @@ test.describe('HTML CopyAndPaste', () => {
     );
   });
 
-  test('Handles pasting paragraph content between horizontal rules', async ({
+  test('Handles copy + paste paragraph content between horizontal rules', async ({
     page,
     isPlainText,
     isCollab,
@@ -209,7 +209,7 @@ test.describe('HTML CopyAndPaste', () => {
     });
   });
 
-  test('Handles pasting block elements within paragraphs', async ({
+  test('Handles pasting top-level elements within paragraphs', async ({
     page,
     isPlainText,
     isCollab,

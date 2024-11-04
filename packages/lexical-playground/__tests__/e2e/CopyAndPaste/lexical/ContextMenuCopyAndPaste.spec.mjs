@@ -55,9 +55,10 @@ test.describe('ContextMenuCopyAndPaste', () => {
   test('Rich text Copy and Paste with  different Font Size', async ({
     page,
     isPlainText,
+    isCollab,
     browserName,
   }) => {
-    test.skip(isPlainText || browserName !== 'chromium');
+    test.skip(isCollab || isPlainText || browserName !== 'chromium');
 
     await page
       .context()

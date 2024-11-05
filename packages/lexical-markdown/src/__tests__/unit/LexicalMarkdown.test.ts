@@ -9,7 +9,7 @@
 import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {LinkNode} from '@lexical/link';
+import {$createLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$createTextNode, $getRoot, $insertNodes} from 'lexical';
@@ -27,6 +27,51 @@ import {
   MultilineElementTransformer,
   normalizeMarkdown,
 } from '../../MarkdownTransformers';
+
+const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
+  dependencies: [LinkNode],
+  getEndIndex(node, match) {
+    // Find the closing tag. Count the number of opening and closing tags to find the correct closing tag.
+    // For simplicity, this will only count the opening and closing tags without checking for "MyTag" specifically.
+    let openedSubStartMatches = 0;
+    const start = (match.index ?? 0) + match[0].length;
+    let endIndex = start;
+    const line = node.getTextContent();
+
+    for (let i = start; i < line.length; i++) {
+      const char = line[i];
+      if (char === '<') {
+        const nextChar = line[i + 1];
+        if (nextChar === '/') {
+          if (openedSubStartMatches === 0) {
+            endIndex = i + '</MyTag>'.length;
+            break;
+          }
+          openedSubStartMatches--;
+        } else {
+          openedSubStartMatches++;
+        }
+      }
+    }
+    return endIndex;
+  },
+  importRegExp: /<(MyTag)\s*>/,
+  regExp: /__ignore__/,
+  replace: (textNode, match) => {
+    const linkNode = $createLinkNode('simple-jsx');
+
+    const textStart = match[0].length + (match.index ?? 0);
+    const textEnd =
+      (match.index ?? 0) + textNode.getTextContent().length - '</MyTag>'.length;
+    const text = match.input?.slice(textStart, textEnd);
+
+    const linkTextNode = $createTextNode(text);
+    linkTextNode.setFormat(textNode.getFormat());
+    linkNode.append(linkTextNode);
+    textNode.replace(linkNode);
+  },
+  type: 'text-match',
+};
 
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
@@ -459,6 +504,12 @@ describe('Markdown', () => {
       // Ensure special ``` code block supports nested code blocks
       html: '<pre spellcheck="false" data-language="ts" data-highlight-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
       md: '```ts\nCode\n```ts\nSub Code\n```\n```',
+      skipExport: true,
+    },
+    {
+      customTransformers: [SIMPLE_INLINE_JSX_MATCHER],
+      html: '<p><span style="white-space: pre-wrap;">Hello </span><a href="simple-jsx"><span style="white-space: pre-wrap;">One &lt;MyTag&gt;Two&lt;/MyTag&gt;</span></a><span style="white-space: pre-wrap;"> there</span></p>',
+      md: 'Hello <MyTag>One <MyTag>Two</MyTag></MyTag> there',
       skipExport: true,
     },
   ];

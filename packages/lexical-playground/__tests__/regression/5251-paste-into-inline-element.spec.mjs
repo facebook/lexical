@@ -23,6 +23,7 @@ import {
   pasteFromClipboard,
   pressToggleBold,
   test,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #5251', () => {
@@ -54,61 +55,63 @@ test.describe('Regression test #5251', () => {
     // Copy "Hello bold"
     await moveToLineBeginning(page);
     await selectCharacters(page, 'right', 'Hello bold'.length);
-    const clipboard = await copyToClipboard(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
 
-    // Drop "bold"
-    await page.keyboard.press('ArrowLeft');
-    await moveToNextWord(page);
-    await selectCharacters(page, 'right', 'bold '.length);
-    await page.keyboard.press('Delete');
+      // Drop "bold"
+      await page.keyboard.press('ArrowLeft');
+      await moveToNextWord(page);
+      await selectCharacters(page, 'right', 'bold '.length);
+      await page.keyboard.press('Delete');
 
-    // Check our current state
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">World</span>
-          </a>
-        </p>
-      `,
-    );
+      // Check our current state
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">World</span>
+            </a>
+          </p>
+        `,
+      );
 
-    // Replace "Wor" with the contents of the clipboard
-    if (!IS_WINDOWS) {
-      await page.keyboard.press('ArrowRight');
-    }
-    await selectCharacters(page, 'right', 'Wor'.length);
-    await pasteFromClipboard(page, clipboard);
+      // Replace "Wor" with the contents of the clipboard
+      if (!IS_WINDOWS) {
+        await page.keyboard.press('ArrowRight');
+      }
+      await selectCharacters(page, 'right', 'Wor'.length);
+      await pasteFromClipboard(page, clipboard);
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello Hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            bold
-          </strong>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">ld</span>
-          </a>
-        </p>
-      `,
-    );
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello Hello</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              bold
+            </strong>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">ld</span>
+            </a>
+          </p>
+        `,
+      );
+    });
   });
 });

@@ -462,7 +462,7 @@ type HTMLConfig = {
 };
 ```
 
-#### Example of a use case for the `html` Property for Import and Export Configurationl:
+#### Example of a use case for the `html` Property for Import and Export Configuration:
 
 [Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
 

@@ -17,6 +17,7 @@ untyped-type-import=error
 [options]
 server.max_workers=4
 exact_by_default=true
+component_syntax=true
 
 ;; [generated-start update-flowconfig]
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
@@ -106,4 +107,4 @@ nonstrict-import
 unclear-type
 
 [version]
-^0.226.0
+^0.250.0

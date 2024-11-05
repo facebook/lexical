@@ -10,6 +10,7 @@ import {expect, test as base} from '@playwright/test';
 import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
+import * as lockfile from 'proper-lockfile';
 import {URLSearchParams} from 'url';
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
@@ -58,6 +59,7 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   isMaxLength,
+  hasLinkAttributes,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -85,6 +87,7 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  appSettings.hasLinkAttributes = !!hasLinkAttributes;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
@@ -140,6 +143,7 @@ async function exposeLexicalEditor(page) {
 }
 
 export const test = base.extend({
+  hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
@@ -203,6 +207,24 @@ async function assertHTMLOnPageOrFrame(
       `innerHTML of contenteditable in ${frameName} did not match`,
     ).toEqual(expected);
   }).toPass({intervals: [100, 250, 500], timeout: 5000});
+}
+
+/**
+ * @function
+ * @template T
+ * @param {() => T | Promise<T>}
+ * @returns {Promise<T>}
+ */
+export async function withExclusiveClipboardAccess(f) {
+  const release = await lockfile.lock('.', {
+    lockfilePath: '.playwright-clipboard.lock',
+    retries: 5,
+  });
+  try {
+    return f();
+  } finally {
+    await release();
+  }
 }
 
 /**

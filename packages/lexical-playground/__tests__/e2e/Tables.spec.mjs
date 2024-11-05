@@ -51,6 +51,7 @@ import {
   toggleColumnHeader,
   unmergeTableCell,
   waitForSelector,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 async function fillTablePartiallyWithText(page) {
@@ -1277,14 +1278,16 @@ test.describe.parallel('Tables', () => {
         false,
       );
 
-      const clipboard = await copyToClipboard(page);
+      await withExclusiveClipboardAccess(async () => {
+        const clipboard = await copyToClipboard(page);
 
-      // For some reason you need to click the paragraph twice for this to pass
-      // on Collab Firefox.
-      await click(page, 'div.ContentEditable__root > p:first-of-type');
-      await click(page, 'div.ContentEditable__root > p:first-of-type');
+        // For some reason you need to click the paragraph twice for this to pass
+        // on Collab Firefox.
+        await click(page, 'div.ContentEditable__root > p:first-of-type');
+        await click(page, 'div.ContentEditable__root > p:first-of-type');
 
-      await pasteFromClipboard(page, clipboard);
+        await pasteFromClipboard(page, clipboard);
+      });
 
       // Check that the character styles are applied.
       await assertHTML(
@@ -3938,27 +3941,29 @@ test.describe.parallel('Tables', () => {
     await page.keyboard.type('Hello');
     await selectCharacters(page, 'left', 'Hello'.length);
 
-    const clipboard = await copyToClipboard(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
 
-    // move caret to the first position of the editor
-    await click(page, '.PlaygroundEditorTheme__paragraph');
+      // move caret to the first position of the editor
+      await click(page, '.PlaygroundEditorTheme__paragraph');
 
-    // move caret to the table cell (2,2)
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowRight');
+      // move caret to the table cell (2,2)
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
 
-    await pasteFromClipboard(page, clipboard);
-    await pasteFromClipboard(page, clipboard);
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+    });
 
     await assertHTML(
       page,

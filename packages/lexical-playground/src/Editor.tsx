@@ -84,6 +84,7 @@ export default function Editor(): JSX.Element {
       isAutocomplete,
       isMaxLength,
       isCharLimit,
+      hasLinkAttributes,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -186,10 +187,9 @@ export default function Editor(): JSX.Element {
             />
             {scrollableTable && <ScrollableNodePlugin />}
             <TableCellResizer />
-            <TableHoverActionsPlugin />
             <ImagesPlugin />
             <InlineImagePlugin />
-            <LinkPlugin />
+            <LinkPlugin hasLinkAttributes={hasLinkAttributes} />
             <PollPlugin />
             <TwitterPlugin />
             <YouTubePlugin />
@@ -216,6 +216,7 @@ export default function Editor(): JSX.Element {
                   anchorElem={floatingAnchorElem}
                   cellMerge={true}
                 />
+                <TableHoverActionsPlugin anchorElem={floatingAnchorElem} />
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                   setIsLinkEditMode={setIsLinkEditMode}

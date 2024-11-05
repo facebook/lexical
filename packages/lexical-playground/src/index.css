@@ -1448,6 +1448,7 @@ button.action-button:disabled {
   position: sticky;
   top: 0;
   z-index: 2;
+  overflow-y: hidden; /* disable vertical scroll*/
 }
 
 button.toolbar-item {

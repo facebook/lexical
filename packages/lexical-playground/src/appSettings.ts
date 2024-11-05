@@ -14,6 +14,7 @@ export const isDevPlayground: boolean =
 export const DEFAULT_SETTINGS = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
+  hasLinkAttributes: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,

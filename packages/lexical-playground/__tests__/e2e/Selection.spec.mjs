@@ -208,20 +208,20 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     ];
+    const empty = html`
+      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+    `;
 
     await deleteLine();
-    await assertHTML(page, lines.slice(0, 3).join(''));
+    await assertHTML(page, [lines[0], lines[1], lines[2], empty].join(''));
+    await page.keyboard.press('Backspace');
     await deleteLine();
-    await assertHTML(page, lines.slice(0, 2).join(''));
+    await assertHTML(page, [lines[0], lines[1]].join(''));
     await deleteLine();
-    await assertHTML(page, lines.slice(0, 1).join(''));
+    await assertHTML(page, [lines[0], empty].join(''));
+    await page.keyboard.press('Backspace');
     await deleteLine();
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-    );
+    await assertHTML(page, empty);
   });
 
   test('can delete line which ends with element with CMD+delete', async ({
@@ -251,6 +251,7 @@ test.describe.parallel('Selection', () => {
     };
 
     await deleteLine();
+    await page.keyboard.press('Backspace');
     await assertHTML(
       page,
       html`
@@ -261,10 +262,39 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     );
+    await page.keyboard.press('Backspace');
     await deleteLine();
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('can delete line by collapse', async ({page, isPlainText}) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await insertCollapsible(page);
+    await page.keyboard.type('text');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('ArrowUp');
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
@@ -1122,6 +1152,57 @@ test.describe.parallel('Selection', () => {
     await assertTableSelectionCoordinates(page, {
       anchor: {x: 0, y: 0},
       focus: {x: 1, y: 1},
+    });
+  });
+
+  test('shift+arrowdown into a table does not select element after', async ({
+    page,
+    isPlainText,
+    isCollab,
+    legacyEvents,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    await moveToEditorEnd(page);
+    await page.keyboard.type('def');
+
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: 1,
+      focusPath: [1, 2, 1],
+    });
+  });
+
+  test('shift+arrowup into a table does not select element before', async ({
+    page,
+    isPlainText,
+    isCollab,
+    legacyEvents,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await page.keyboard.type('abc');
+
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 1,
+      focusPath: [1, 1, 0],
     });
   });
 });

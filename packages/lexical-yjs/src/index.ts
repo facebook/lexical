@@ -20,6 +20,7 @@ export type UserState = {
   focusPos: null | RelativePosition;
   name: string;
   awarenessData: object;
+  [key: string]: unknown;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
   createCommand('CONNECTED_COMMAND');

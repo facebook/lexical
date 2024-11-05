@@ -35,6 +35,7 @@ import {
   selectFromFormatDropdown,
   test,
   waitForSelector,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 async function toggleBulletList(page) {
@@ -85,13 +86,15 @@ test.describe.parallel('Nested List', () => {
     await moveRight(page, 6);
     await selectCharacters(page, 'right', 11);
 
-    const clipboard = await copyToClipboard(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
 
-    await moveToEditorEnd(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
+      await moveToEditorEnd(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+    });
 
     await assertHTML(
       page,

@@ -15,6 +15,7 @@ npm
 .env.production.local
 .ts-temp
 .docusaurus
+.playwright-clipboard.lock
 e2e-screenshots
 test-results
 playwright-report

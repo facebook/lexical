@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {moveToLineEnd} from '../../../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -15,6 +16,7 @@ import {
   initialize,
   pasteFromClipboard,
   test,
+  withExclusiveClipboardAccess,
 } from '../../../utils/index.mjs';
 
 test.describe('ContextMenuCopyAndPaste', () => {
@@ -33,13 +35,15 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await page.pause();
     await doubleClick(page, 'div[contenteditable="false"] span');
     await page.pause();
-    await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-    await click(page, '#typeahead-menu [role="option"] :text("Copy")');
+    await withExclusiveClipboardAccess(async () => {
+      await click(page, 'div[contenteditable="false"] span', {button: 'right'});
+      await click(page, '#typeahead-menu [role="option"] :text("Copy")');
 
-    await click(page, '.unlock');
-    await focusEditor(page);
+      await click(page, '.unlock');
+      await focusEditor(page);
 
-    await pasteFromClipboard(page);
+      await pasteFromClipboard(page);
+    });
 
     await assertHTML(
       page,
@@ -60,27 +64,29 @@ test.describe('ContextMenuCopyAndPaste', () => {
   }) => {
     test.skip(isCollab || isPlainText || browserName !== 'chromium');
 
-    await page
-      .context()
-      .grantPermissions(['clipboard-read', 'clipboard-write']);
+    await withExclusiveClipboardAccess(async () => {
+      await page
+        .context()
+        .grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    await click(page, '.font-increment');
-    await focusEditor(page);
-    await page.keyboard.type('MLH Fellowship');
-    //await page.pause();
-    await moveToLineEnd(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('Fall 2024');
+      await click(page, '.font-increment');
+      await focusEditor(page);
+      await page.keyboard.type('MLH Fellowship');
+      //await page.pause();
+      await moveToLineEnd(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('Fall 2024');
 
-    await click(page, '.lock');
+      await click(page, '.lock');
 
-    await doubleClick(page, 'div[contenteditable="false"] span');
-    await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-    await click(page, '#typeahead-menu [role="option"] :text("Copy")');
+      await doubleClick(page, 'div[contenteditable="false"] span');
+      await click(page, 'div[contenteditable="false"] span', {button: 'right'});
+      await click(page, '#typeahead-menu [role="option"] :text("Copy")');
 
-    await click(page, '.unlock');
-    await focusEditor(page);
-    await pasteFromClipboard(page);
+      await click(page, '.unlock');
+      await focusEditor(page);
+      await pasteFromClipboard(page);
+    });
 
     await assertHTML(
       page,

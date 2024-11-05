@@ -268,7 +268,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 }: {
   close: () => void;
   editor: LexicalEditor;
-  anchorElementRef: React.MutableRefObject<HTMLElement | null>;
+  anchorElementRef: MutableRefObject<HTMLElement | null>;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;

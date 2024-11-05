@@ -879,7 +879,8 @@ test.describe('CopyAndPaste', () => {
       tag: '@flaky',
     },
     async ({page, isCollab, isPlainText}) => {
-      test.skip(isPlainText);
+      // TODO: This is skipped on collab because the right frame won't have the block cursor HTML
+      test.skip(isPlainText || isCollab);
 
       // copying and pasting the node is easier than creating the clipboard data
       await focusEditor(page);

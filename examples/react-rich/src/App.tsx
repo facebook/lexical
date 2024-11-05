@@ -36,10 +36,20 @@ const removeStylesExportDOM = (
 ): DOMExportOutput => {
   const output = target.exportDOM(editor);
   if (output && output.element instanceof HTMLElement) {
-    // Remove all inline styles if the element is an HTMLElement
-    output.element.removeAttribute('style');
+    // Remove all inline styles and classes if the element is an HTMLElement
+    // Children are checked as well since TextNode can be nested
+    // in i, b, and strong tags.
+    for (const el of [
+      output.element,
+      ...output.element.querySelectorAll('[style],[class],[dir="ltr"]'),
+    ]) {
+      el.removeAttribute('class');
+      el.removeAttribute('style');
+      if (el.getAttribute('dir') === 'ltr') {
+        el.removeAttribute('dir');
+      }
+    }
   }
-
   return output;
 };
 

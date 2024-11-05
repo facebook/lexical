@@ -18,6 +18,7 @@ import {
   pasteFromClipboard,
   test,
   waitForSelector,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.describe('CodeActionMenu', () => {
@@ -84,31 +85,33 @@ test.describe('CodeActionMenu', () => {
 
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
 
-    if (browserName === 'chromium') {
-      await context.grantPermissions(['clipboard-write']);
-      await click(page, 'button[aria-label=copy]');
-      await paste(page);
-      await context.clearPermissions();
-    } else {
-      await waitForSelector(page, 'button[aria-label=copy]');
+    await withExclusiveClipboardAccess(async () => {
+      if (browserName === 'chromium') {
+        await context.grantPermissions(['clipboard-write']);
+        await click(page, 'button[aria-label=copy]');
+        await paste(page);
+        await context.clearPermissions();
+      } else {
+        await waitForSelector(page, 'button[aria-label=copy]');
 
-      const copiedText = await evaluate(page, () => {
-        let text = null;
+        const copiedText = await evaluate(page, () => {
+          let text = null;
 
-        navigator.clipboard._writeText = navigator.clipboard.writeText;
-        navigator.clipboard.writeText = function (data) {
-          text = data;
-          this._writeText(data);
-        };
-        document.querySelector('button[aria-label=copy]').click();
+          navigator.clipboard._writeText = navigator.clipboard.writeText;
+          navigator.clipboard.writeText = function (data) {
+            text = data;
+            this._writeText(data);
+          };
+          document.querySelector('button[aria-label=copy]').click();
 
-        return text;
-      });
+          return text;
+        });
 
-      await pasteFromClipboard(page, {
-        'text/plain': copiedText,
-      });
-    }
+        await pasteFromClipboard(page, {
+          'text/plain': copiedText,
+        });
+      }
+    });
 
     await assertHTML(
       page,

@@ -186,7 +186,9 @@ function getConversionFunction(
       if (
         domConversion !== null &&
         (currentConversion === null ||
-          (currentConversion.priority || 0) < (domConversion.priority || 0))
+          // Given equal priority, prefer the last registered importer
+          // which is typically an application custom node or HTMLConfig['import']
+          (currentConversion.priority || 0) <= (domConversion.priority || 0))
       ) {
         currentConversion = domConversion;
       }

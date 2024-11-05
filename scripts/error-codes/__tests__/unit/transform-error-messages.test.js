@@ -52,7 +52,7 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]) {
     .join('')
     .replace(/.use strict.;\n/g, '')
     .replace(/var _[^;]+;\n/g, '')
-    .replace(/function _interopRequireDefault\(obj\) {[^;]+?;[\s\n]*}\n/g, '')
+    .replace(/function _interopRequireDefault\([^)]*\) {[^;]+?;[\s\n]*}\n/g, '')
     .replace(/_formatProdErrorMessage\d+/g, 'formatProdErrorMessage')
     .replace(
       /\(0,\s*formatProdErrorMessage\.default\)/g,

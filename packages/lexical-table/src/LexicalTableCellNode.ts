@@ -322,7 +322,7 @@ export function $convertTableCellNodeElement(
   }
 
   const style = domNode_.style;
-  const textDecoration = style.textDecoration.split(' ');
+  const textDecoration = ((style && style.textDecoration) || '').split(' ');
   const hasBoldFontWeight =
     style.fontWeight === '700' || style.fontWeight === 'bold';
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');

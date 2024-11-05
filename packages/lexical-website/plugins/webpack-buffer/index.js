@@ -8,13 +8,15 @@
 
 'use strict';
 
-const webpack = require('webpack');
-
 module.exports = async function (context, options) {
   return {
-    configureWebpack(config, isServer, utils) {
+    configureWebpack(config, isServer, {currentBundler}) {
       return {
-        plugins: [new webpack.ProvidePlugin({Buffer: ['buffer', 'Buffer']})],
+        plugins: [
+          new currentBundler.instance.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+          }),
+        ],
         resolve: {
           fallback: {buffer: require.resolve('buffer/')},
         },

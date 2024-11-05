@@ -24,6 +24,7 @@ import {
   $isTableNode,
   $isTableRowNode,
   applyTableHandlers,
+  getTableElement,
   INSERT_TABLE_COMMAND,
   setScrollableTablesActive,
   TableCellNode,
@@ -129,7 +130,7 @@ export function TablePlugin({
       nodeKey: NodeKey,
       dom: HTMLElement,
     ) => {
-      const tableElement = dom as HTMLTableElementWithWithTableSelectionState;
+      const tableElement = getTableElement(tableNode, dom);
       const tableSelection = applyTableHandlers(
         tableNode,
         tableElement,

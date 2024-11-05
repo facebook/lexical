@@ -6,18 +6,6 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import {
   addClassNamesToElement,
   isHTMLElement,
@@ -25,8 +13,20 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $getEditor,
   $getNearestNodeFromDOMNode,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  EditorConfig,
+  ElementDOMSlot,
   ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  SerializedElementNode,
+  setDOMUnmanaged,
+  Spread,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -76,6 +76,25 @@ function setRowStriping(
   } else {
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
+  }
+}
+
+const scrollableEditors = new WeakSet<LexicalEditor>();
+
+export function $isScrollableTablesActive(
+  editor: LexicalEditor = $getEditor(),
+): boolean {
+  return scrollableEditors.has(editor);
+}
+
+export function setScrollableTablesActive(
+  editor: LexicalEditor,
+  active: boolean,
+) {
+  if (active) {
+    scrollableEditors.add(editor);
+  } else {
+    scrollableEditors.delete(editor);
   }
 }
 
@@ -142,6 +161,16 @@ export class TableNode extends ElementNode {
     };
   }
 
+  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+    const tableElement =
+      element.dataset.lexicalScrollable === 'true'
+        ? element.querySelector('table') || element
+        : element;
+    return super
+      .getDOMSlot(tableElement)
+      .withAfter(tableElement.querySelector('colgroup'));
+  }
+
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
     const colGroup = document.createElement('colgroup');
@@ -152,10 +181,18 @@ export class TableNode extends ElementNode {
       this.getColumnCount(),
       this.getColWidths(),
     );
+    setDOMUnmanaged(colGroup);
 
     addClassNamesToElement(tableElement, config.theme.table);
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
+    }
+    if ($isScrollableTablesActive()) {
+      const wrapperElement = document.createElement('div');
+      wrapperElement.dataset.lexicalScrollable = 'true';
+      wrapperElement.style.overflowX = 'auto';
+      wrapperElement.appendChild(tableElement);
+      return wrapperElement;
     }
 
     return tableElement;
@@ -177,6 +214,13 @@ export class TableNode extends ElementNode {
     return {
       ...super.exportDOM(editor),
       after: (tableElement) => {
+        if (
+          tableElement &&
+          isHTMLElement(tableElement) &&
+          tableElement.dataset.lexicalScrollable === 'true'
+        ) {
+          tableElement = tableElement.querySelector('table');
+        }
         if (tableElement) {
           const newElement = tableElement.cloneNode() as ParentNode;
           const colGroup = document.createElement('colgroup');

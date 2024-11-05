@@ -85,9 +85,26 @@ const isMouseDownOnEvent = (event: MouseEvent) => {
   return (event.buttons & 1) === 1;
 };
 
+export function getTableElement(
+  tableNode: TableNode,
+  dom: HTMLElement,
+): HTMLTableElementWithWithTableSelectionState {
+  if (dom.tagName === 'TABLE') {
+    return dom as HTMLTableElementWithWithTableSelectionState;
+  }
+  const element = tableNode.getDOMSlot(dom)
+    .element as HTMLTableElementWithWithTableSelectionState;
+  invariant(
+    element.tagName === 'TABLE',
+    'getTableElement: Expecting table in as DOM node for TableNode, not %s',
+    dom.tagName,
+  );
+  return element;
+}
+
 export function applyTableHandlers(
   tableNode: TableNode,
-  tableElement: HTMLTableElementWithWithTableSelectionState,
+  element: HTMLElement,
   editor: LexicalEditor,
   hasTabHandler: boolean,
 ): TableObserver {
@@ -100,6 +117,7 @@ export function applyTableHandlers(
   const tableObserver = new TableObserver(editor, tableNode.getKey());
   const editorWindow = editor._window || window;
 
+  const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
   tableObserver.listenersToRemove.add(() =>
     deatatchTableObserverFromTableElement(tableElement, tableObserver),

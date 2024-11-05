@@ -24,8 +24,8 @@ import {
   $isTableRowNode,
   $isTableSelection,
   $unmergeCell,
+  getTableElement,
   getTableObserverFromTableElement,
-  HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
   TableRowNode,
@@ -229,13 +229,12 @@ function TableActionMenu({
     editor.update(() => {
       if (tableCellNode.isAttached()) {
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-        const tableElement = editor.getElementByKey(
-          tableNode.getKey(),
-        ) as HTMLTableElementWithWithTableSelectionState;
+        const tableNodeElement = editor.getElementByKey(tableNode.getKey());
 
-        if (!tableElement) {
+        if (!tableNodeElement) {
           throw new Error('Expected to find tableElement in DOM');
         }
+        const tableElement = getTableElement(tableNode, tableNodeElement);
 
         const tableObserver = getTableObserverFromTableElement(tableElement);
         if (tableObserver !== null) {

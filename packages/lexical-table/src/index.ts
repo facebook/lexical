@@ -22,7 +22,9 @@ export type {SerializedTableNode} from './LexicalTableNode';
 export {
   $createTableNode,
   $getElementForTableNode,
+  $isScrollableTablesActive,
   $isTableNode,
+  setScrollableTablesActive,
   TableNode,
 } from './LexicalTableNode';
 export type {TableDOMCell} from './LexicalTableObserver';
@@ -49,6 +51,7 @@ export {
   $findTableNode,
   applyTableHandlers,
   getDOMCellFromTarget,
+  getTableElement,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {

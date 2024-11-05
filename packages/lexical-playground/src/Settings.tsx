@@ -32,6 +32,7 @@ export default function Settings(): JSX.Element {
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
+      tableHorizontalScroll,
     },
   } = useSettings();
   useEffect(() => {
@@ -166,6 +167,13 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
+          />
+          <Switch
+            onClick={() => {
+              setOption('tableHorizontalScroll', !tableHorizontalScroll);
+            }}
+            checked={tableHorizontalScroll}
+            text="Tables have horizontal scroll"
           />
         </div>
       ) : null}

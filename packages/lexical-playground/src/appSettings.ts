@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   showTreeView: true,
   tableCellBackgroundColor: true,
   tableCellMerge: true,
+  tableHorizontalScroll: false,
 } as const;
 
 // These are mutated in setupEnv

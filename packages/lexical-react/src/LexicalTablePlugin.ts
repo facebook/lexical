@@ -25,6 +25,7 @@ import {
   $isTableRowNode,
   applyTableHandlers,
   INSERT_TABLE_COMMAND,
+  setScrollableTablesActive,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -47,12 +48,18 @@ export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
   hasTabHandler = true,
+  hasHorizontalScroll = false,
 }: {
   hasCellMerge?: boolean;
   hasCellBackgroundColor?: boolean;
   hasTabHandler?: boolean;
+  hasHorizontalScroll?: boolean;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    setScrollableTablesActive(editor, hasHorizontalScroll);
+  }, [editor, hasHorizontalScroll]);
 
   useEffect(() => {
     if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {

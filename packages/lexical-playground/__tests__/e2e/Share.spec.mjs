@@ -15,6 +15,7 @@ import {
   html,
   initialize,
   test,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.use({
@@ -46,24 +47,26 @@ test.describe('Share', () => {
     await page.keyboard.type('foo');
     await assertHTML(page, fooHTML);
 
-    if (browserName === 'chromium') {
-      await page
-        .context()
-        .grantPermissions(['clipboard-read', 'clipboard-write']);
-    }
-    expect(page.url()).not.toMatch(/#doc=/);
-    await click(page, '.action-button.share');
-    await page.getByRole('alert').getByText('URL copied to clipboard');
-    const fooUrl = page.url();
-    expect(fooUrl).toMatch(/#doc=/);
-    if (browserName !== 'webkit') {
-      expect(await page.evaluate('navigator.clipboard.readText()')).toEqual(
-        fooUrl,
-      );
-    }
-    if (browserName === 'chromium') {
-      await page.context().clearPermissions();
-    }
+    await withExclusiveClipboardAccess(async () => {
+      if (browserName === 'chromium') {
+        await page
+          .context()
+          .grantPermissions(['clipboard-read', 'clipboard-write']);
+      }
+      expect(page.url()).not.toMatch(/#doc=/);
+      await click(page, '.action-button.share');
+      await page.getByRole('alert').getByText('URL copied to clipboard');
+      const fooUrl = page.url();
+      expect(fooUrl).toMatch(/#doc=/);
+      if (browserName !== 'webkit') {
+        expect(await page.evaluate('navigator.clipboard.readText()')).toEqual(
+          fooUrl,
+        );
+      }
+      if (browserName === 'chromium') {
+        await page.context().clearPermissions();
+      }
+    });
     await focusEditor(page);
     await page.keyboard.type('bar');
     await assertHTML(

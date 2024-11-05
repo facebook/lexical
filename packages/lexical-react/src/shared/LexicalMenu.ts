@@ -32,6 +32,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type MenuTextMatch = {
@@ -481,12 +482,17 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
-  parent: HTMLElement = document.body,
+  parent: HTMLElement | undefined = CAN_USE_DOM ? document.body : undefined,
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
-): MutableRefObject<HTMLElement> {
+): MutableRefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
-  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
+  const anchorElementRef = useRef<HTMLElement | null>(
+    CAN_USE_DOM ? document.createElement('div') : null,
+  );
   const positionMenu = useCallback(() => {
+    if (anchorElementRef.current === null) {
+      return;
+    }
     anchorElementRef.current.style.top = anchorElementRef.current.style.bottom;
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
@@ -531,7 +537,7 @@ export function useMenuAnchorRef(
         }
       }
 
-      if (!containerDiv.isConnected) {
+      if (!containerDiv.isConnected && parent !== undefined) {
         if (className != null) {
           containerDiv.className = className;
         }

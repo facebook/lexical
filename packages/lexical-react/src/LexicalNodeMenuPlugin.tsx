@@ -110,12 +110,14 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
     }
   }, [editor, positionOrCloseMenu, nodeKey]);
 
-  return resolution === null || editor === null ? null : (
+  return anchorElementRef.current === null ||
+    resolution === null ||
+    editor === null ? null : (
     <LexicalMenu
       close={closeNodeMenu}
       resolution={resolution}
       editor={editor}
-      anchorElementRef={anchorElementRef}
+      anchorElementRef={anchorElementRef as React.MutableRefObject<HTMLElement>}
       options={options}
       menuRenderFn={menuRenderFn}
       onSelectOption={onSelectOption}

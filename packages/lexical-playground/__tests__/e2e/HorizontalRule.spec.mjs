@@ -23,6 +23,7 @@ import {
   selectFromInsertDropdown,
   test,
   waitForSelector,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.describe('HorizontalRule', () => {
@@ -307,37 +308,39 @@ test.describe('HorizontalRule', () => {
     // Select all the text
     await selectAll(page);
 
-    // Copy all the text
-    const clipboard = await copyToClipboard(page);
+    await withExclusiveClipboardAccess(async () => {
+      // Copy all the text
+      const clipboard = await copyToClipboard(page);
 
-    // Delete content
-    await page.keyboard.press('Backspace');
+      // Delete content
+      await page.keyboard.press('Backspace');
 
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <hr
-          class="PlaygroundEditorTheme__hr"
-          contenteditable="false"
-          data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-    );
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <hr
+            class="PlaygroundEditorTheme__hr"
+            contenteditable="false"
+            data-lexical-decorator="true" />
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
+      );
 
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [2],
-      focusOffset: 0,
-      focusPath: [2],
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [2],
+        focusOffset: 0,
+        focusPath: [2],
+      });
+
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('Backspace');
+
+      await pasteFromClipboard(page, clipboard);
     });
-
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('Backspace');
-
-    await pasteFromClipboard(page, clipboard);
 
     await assertHTML(
       page,

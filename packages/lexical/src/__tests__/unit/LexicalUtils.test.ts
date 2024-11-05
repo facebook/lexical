@@ -23,6 +23,7 @@ import {
 } from 'lexical';
 
 import {
+  $onUpdate,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
@@ -239,6 +240,43 @@ describe('LexicalUtils tests', () => {
         expect(currentParagraphKeys).toEqual(
           expect.arrayContaining(paragraphKeys),
         );
+      });
+    });
+
+    describe('$onUpdate', () => {
+      test('added fn runs after update, original onUpdate, and prior calls to $onUpdate', () => {
+        const {editor} = testEnv;
+        const runs: string[] = [];
+
+        editor.update(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('foo')),
+            );
+            $onUpdate(() => {
+              runs.push('second');
+            });
+            $onUpdate(() => {
+              runs.push('third');
+            });
+          },
+          {
+            onUpdate: () => {
+              runs.push('first');
+            },
+          },
+        );
+
+        // Flush pending updates
+        editor.read(() => {});
+
+        expect(runs).toEqual(['first', 'second', 'third']);
+      });
+
+      test('adding fn throws outside update', () => {
+        expect(() => {
+          $onUpdate(() => {});
+        }).toThrow();
       });
     });
 

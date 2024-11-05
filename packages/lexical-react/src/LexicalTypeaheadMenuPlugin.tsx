@@ -302,7 +302,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       close={closeTypeahead}
       resolution={resolution}
       editor={editor}
-      anchorElementRef={anchorElementRef as React.MutableRefObject<HTMLElement>}
+      anchorElementRef={anchorElementRef}
       options={options}
       menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}

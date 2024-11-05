@@ -151,7 +151,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
       close={closeNodeMenu}
       resolution={resolution}
       editor={editor}
-      anchorElementRef={anchorElementRef as MutableRefObject<HTMLElement>}
+      anchorElementRef={anchorElementRef}
       options={options}
       menuRenderFn={(anchorRef, itemProps) =>
         contextMenuRenderFn(anchorRef, itemProps, {

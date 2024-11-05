@@ -268,7 +268,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 }: {
   close: () => void;
   editor: LexicalEditor;
-  anchorElementRef: MutableRefObject<HTMLElement>;
+  anchorElementRef: React.MutableRefObject<HTMLElement | null>;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
@@ -490,7 +490,7 @@ export function useMenuAnchorRef(
     CAN_USE_DOM ? document.createElement('div') : null,
   );
   const positionMenu = useCallback(() => {
-    if (anchorElementRef.current === null) {
+    if (anchorElementRef.current === null || parent === undefined) {
       return;
     }
     anchorElementRef.current.style.top = anchorElementRef.current.style.bottom;
@@ -537,7 +537,7 @@ export function useMenuAnchorRef(
         }
       }
 
-      if (!containerDiv.isConnected && parent !== undefined) {
+      if (!containerDiv.isConnected) {
         if (className != null) {
           containerDiv.className = className;
         }

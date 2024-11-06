@@ -1863,7 +1863,12 @@ export function setNodeIndentFromDOM(
   elementNode.setIndent(indent);
 }
 
-/** @internal */
+/**
+ * @internal
+ *
+ * Mark this node as unmanaged by lexical's mutation observer like
+ * decorator nodes
+ */
 export function setDOMUnmanaged(elementDom: HTMLElement): void {
   const el: HTMLElement & LexicalPrivateDOM = elementDom;
   el.__lexicalUnmanaged = true;

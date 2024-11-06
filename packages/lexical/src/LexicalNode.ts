@@ -1170,7 +1170,12 @@ export class LexicalNode {
     this.getWritable();
   }
 
-  /** @internal */
+  /**
+   * @internal
+   *
+   * When the reconciler detects that a node was mutated, this method
+   * may be called to restore the node to a known good state.
+   */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
     this.markDirty();
   }

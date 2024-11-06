@@ -676,7 +676,7 @@ describe('getDOMSlot tests', () => {
       return false;
     }
     getDOMSlot(dom: HTMLElement): ElementDOMSlot {
-      return ElementNode.buildDOMSlot(dom.querySelector('section')!);
+      return super.getDOMSlot(dom).withElement(dom.querySelector('section')!);
     }
     exportJSON(): SerializedElementNode {
       throw new Error('Not implemented');

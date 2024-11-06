@@ -191,8 +191,10 @@ export class TableNode extends ElementNode {
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
-    if ($isScrollableTablesActive()) {
+    if ($isScrollableTablesActive(editor)) {
       const wrapperElement = document.createElement('div');
+      tableElement.contentEditable = 'true';
+      wrapperElement.contentEditable = 'false';
       wrapperElement.dataset.lexicalScrollable = 'true';
       wrapperElement.style.overflowX = 'auto';
       wrapperElement.appendChild(tableElement);

@@ -69,28 +69,47 @@ export interface ElementNode {
   getTopLevelElementOrThrow(): ElementNode;
 }
 
+/**
+ * A utility class for managing the DOM children of an ElementNode
+ */
 export class ElementDOMSlot {
   element: HTMLElement;
   before: Node | null;
   after: Node | null;
   constructor(
+    /** The element returned by createDOM */
     element: HTMLElement,
+    /** All managed children will be inserted before this node, if defined */
     before?: Node | undefined | null,
+    /** All managed children will be inserted after this node, if defined */
     after?: Node | undefined | null,
   ) {
     this.element = element;
     this.before = before || null;
     this.after = after || null;
   }
+  /**
+   * Return a new ElementDOMSlot where all managed children will be inserted before this node
+   */
   withBefore(before: Node | undefined | null): ElementDOMSlot {
     return new ElementDOMSlot(this.element, before, this.after);
   }
+  /**
+   * Return a new ElementDOMSlot where all managed children will be inserted after this node
+   */
   withAfter(after: Node | undefined | null): ElementDOMSlot {
     return new ElementDOMSlot(this.element, this.before, after);
   }
+  /**
+   * Return a new ElementDOMSlot with an updated root element
+   */
   withElement(element: HTMLElement): ElementDOMSlot {
     return new ElementDOMSlot(element, this.before, this.after);
   }
+  /**
+   * Insert the given child before this.before and any reconciler managed line break node,
+   * or append it if this.before is not defined
+   */
   insertChild(dom: Node): this {
     const element: HTMLElement & LexicalPrivateDOM = this.element;
     const before = this.before || element.__lexicalLineBreak || null;
@@ -101,6 +120,9 @@ export class ElementDOMSlot {
     this.element.insertBefore(dom, before);
     return this;
   }
+  /**
+   * Remove the managed child from this container, will throw if it was not already there
+   */
   removeChild(dom: Node): this {
     invariant(
       dom.parentElement === this.element,
@@ -109,6 +131,12 @@ export class ElementDOMSlot {
     this.element.removeChild(dom);
     return this;
   }
+  /**
+   * Replace managed child prevDom with dom. Will throw if prevDom is not a child
+   *
+   * @param dom The new node to replace prevDom
+   * @param prevDom the node that will be replaced
+   */
   replaceChild(dom: Node, prevDom: Node): this {
     invariant(
       prevDom.parentElement === this.element,
@@ -117,11 +145,18 @@ export class ElementDOMSlot {
     this.element.replaceChild(dom, prevDom);
     return this;
   }
+  /**
+   * Returns the first managed child of this node,
+   * which will either be this.after.nextSibling or this.element.firstChild,
+   * and will never be this.before if it is defined.
+   */
   getFirstChild(): ChildNode | null {
-    const firstChild = this.after
-      ? this.after.nextSibling
-      : this.element.firstChild;
-    return firstChild === this.before ? null : firstChild;
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const firstChild = this.after ? this.after.nextSibling : element.firstChild;
+    return firstChild === this.before ||
+      firstChild === element.__lexicalLineBreak
+      ? null
+      : firstChild;
   }
 }
 
@@ -153,14 +188,6 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
-  }
-
-  static buildDOMSlot(
-    element: HTMLElement,
-    before?: Node | undefined | null,
-    after?: Node | undefined | null,
-  ): ElementDOMSlot {
-    return new ElementDOMSlot(element, before, after);
   }
 
   afterCloneFrom(prevNode: this) {
@@ -593,9 +620,16 @@ export class ElementNode extends LexicalNode {
 
     return writableSelf;
   }
-  /** @internal */
+  /**
+   * @internal
+   *
+   * An experimental API that an ElementNode can override to control where its
+   * children are inserted into the DOM, this is useful to add a wrapping node
+   * or accessory nodes before or after the children. The root of the node returned
+   * by createDOM must still be exactly one HTMLElement.
+   */
   getDOMSlot(element: HTMLElement): ElementDOMSlot {
-    return ElementNode.buildDOMSlot(element);
+    return new ElementDOMSlot(element);
   }
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);

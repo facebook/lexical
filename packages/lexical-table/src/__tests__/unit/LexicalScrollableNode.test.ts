@@ -7,10 +7,12 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {tableNodeConfig} from '@lexical/react/LexicalScrollableNodePlugin';
 import {
   $createTableNode,
   $isScrollableNode,
   $isTableNode,
+  registerScrollableNodeTransform,
   ScrollableNode,
 } from '@lexical/table';
 import {$getRoot, $insertNodes} from 'lexical';
@@ -20,6 +22,7 @@ describe('LexicalScrollableNode tests', () => {
   initializeUnitTest((testEnv) => {
     test('LexicalScrollableNode.constructor', async () => {
       const {editor} = testEnv;
+      registerScrollableNodeTransform(editor, tableNodeConfig);
       let htmlString;
 
       // tables should be automatically wrapped in scrollableNodes

@@ -28,6 +28,7 @@ import {
   setDOMUnmanaged,
   Spread,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
@@ -163,9 +164,12 @@ export class TableNode extends ElementNode {
 
   getDOMSlot(element: HTMLElement): ElementDOMSlot {
     const tableElement =
-      element.dataset.lexicalScrollable === 'true'
-        ? element.querySelector('table') || element
-        : element;
+      (element.nodeName !== 'TABLE' && element.querySelector('table')) ||
+      element;
+    invariant(
+      tableElement.nodeName === 'TABLE',
+      'TableNode.getDOMSlot: createDOM() did not return a table',
+    );
     return super
       .getDOMSlot(tableElement)
       .withAfter(tableElement.querySelector('colgroup'));
@@ -393,7 +397,7 @@ export function $getElementForTableNode(
     throw new Error('Table Element Not Found');
   }
 
-  return getTable(tableElement);
+  return getTable(tableNode, tableElement);
 }
 
 export function $convertTableElement(

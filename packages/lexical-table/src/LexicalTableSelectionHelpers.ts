@@ -7,7 +7,6 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {TableNode} from './LexicalTableNode';
 import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
 import type {
   TableMapType,
@@ -68,7 +67,7 @@ import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
-import {$isTableNode} from './LexicalTableNode';
+import {$isTableNode, TableNode} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {$isTableSelection} from './LexicalTableSelection';
@@ -85,12 +84,14 @@ const isMouseDownOnEvent = (event: MouseEvent) => {
   return (event.buttons & 1) === 1;
 };
 
-export function getTableElement(
+export function getTableElement<T extends HTMLElement | null>(
   tableNode: TableNode,
-  dom: HTMLElement,
-): HTMLTableElementWithWithTableSelectionState {
-  if (dom.tagName === 'TABLE') {
-    return dom as HTMLTableElementWithWithTableSelectionState;
+  dom: T,
+): HTMLTableElementWithWithTableSelectionState | (T & null) {
+  if (!dom || dom.tagName === 'TABLE') {
+    return dom as unknown as
+      | HTMLTableElementWithWithTableSelectionState
+      | (T & null);
   }
   const element = tableNode.getDOMSlot(dom)
     .element as HTMLTableElementWithWithTableSelectionState;
@@ -1024,7 +1025,11 @@ export function doesTargetContainText(node: Node): boolean {
   return false;
 }
 
-export function getTable(tableElement: HTMLElement): TableDOMTable {
+export function getTable(
+  tableNode: TableNode,
+  dom: HTMLElement,
+): TableDOMTable {
+  const tableElement = getTableElement(tableNode, dom);
   const domRows: TableDOMRows = [];
   const grid = {
     columns: 0,
@@ -1577,11 +1582,12 @@ function $handleArrowKey(
     }
     const anchorCellTable = $findTableNode(anchorCellNode);
     if (anchorCellTable !== tableNode && anchorCellTable != null) {
-      const anchorCellTableElement = editor.getElementByKey(
-        anchorCellTable.getKey(),
+      const anchorCellTableElement = getTableElement(
+        anchorCellTable,
+        editor.getElementByKey(anchorCellTable.getKey()),
       );
       if (anchorCellTableElement != null) {
-        tableObserver.table = getTable(anchorCellTableElement);
+        tableObserver.table = getTable(anchorCellTable, anchorCellTableElement);
         return $handleArrowKey(
           editor,
           event,
@@ -1693,8 +1699,13 @@ function $handleArrowKey(
     );
 
     const [tableNodeFromSelection] = selection.getNodes();
-    const tableElement = editor.getElementByKey(
-      tableNodeFromSelection.getKey(),
+    invariant(
+      $isTableNode(tableNodeFromSelection),
+      '$handleArrowKey: TableSelection.getNodes()[0] expected to be TableNode',
+    );
+    const tableElement = getTableElement(
+      tableNodeFromSelection,
+      editor.getElementByKey(tableNodeFromSelection.getKey()),
     );
     if (
       !$isTableCellNode(anchorCellNode) ||
@@ -1706,7 +1717,7 @@ function $handleArrowKey(
     }
     tableObserver.updateTableTableSelection(selection);
 
-    const grid = getTable(tableElement);
+    const grid = getTable(tableNodeFromSelection, tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
     const anchorCell = tableNode.getDOMCellFromCordsOrThrow(
       cordsAnchor.x,

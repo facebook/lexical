@@ -28,11 +28,11 @@ export default function Settings(): JSX.Element {
       isAutocomplete,
       showTreeView,
       showNestedEditorTreeView,
-      disableBeforeInput,
+      // disableBeforeInput,
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
-      tableHorizontalScroll,
+      // tableHorizontalScroll,
     },
   } = useSettings();
   useEffect(() => {
@@ -133,14 +133,14 @@ export default function Settings(): JSX.Element {
             checked={isAutocomplete}
             text="Autocomplete"
           />
-          <Switch
+          {/* <Switch
             onClick={() => {
               setOption('disableBeforeInput', !disableBeforeInput);
               setTimeout(() => window.location.reload(), 500);
             }}
             checked={disableBeforeInput}
             text="Legacy Events"
-          />
+          /> */}
           <Switch
             onClick={() => {
               setOption('showTableOfContents', !showTableOfContents);
@@ -168,13 +168,13 @@ export default function Settings(): JSX.Element {
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
           />
-          <Switch
+          {/* <Switch
             onClick={() => {
               setOption('tableHorizontalScroll', !tableHorizontalScroll);
             }}
             checked={tableHorizontalScroll}
             text="Tables have horizontal scroll"
-          />
+          /> */}
         </div>
       ) : null}
     </>

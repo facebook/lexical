@@ -49,7 +49,7 @@ export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
   hasTabHandler = true,
-  hasHorizontalScroll = false,
+  hasHorizontalScroll = true,
 }: {
   hasCellMerge?: boolean;
   hasCellBackgroundColor?: boolean;

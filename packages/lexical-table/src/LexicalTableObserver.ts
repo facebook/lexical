@@ -140,23 +140,25 @@ export class TableObserver {
           return;
         }
 
+        const tableNode = $getNodeByKey(this.tableNodeKey);
         const tableElement = this.editor.getElementByKey(this.tableNodeKey);
 
-        if (!tableElement) {
+        if (!tableElement || !$isTableNode(tableNode)) {
           throw new Error('Expected to find TableElement in DOM');
         }
 
-        this.table = getTable(tableElement);
+        this.table = getTable(tableNode, tableElement);
       });
     });
     this.editor.update(() => {
+      const tableNode = $getNodeByKey(this.tableNodeKey);
       const tableElement = this.editor.getElementByKey(this.tableNodeKey);
 
-      if (!tableElement) {
+      if (!tableElement || !$isTableNode(tableNode)) {
         throw new Error('Expected to find TableElement in DOM');
       }
 
-      this.table = getTable(tableElement);
+      this.table = getTable(tableNode, tableElement);
       observer.observe(tableElement, {
         attributes: true,
         childList: true,
@@ -194,7 +196,7 @@ export class TableObserver {
         throw new Error('Expected to find TableElement in DOM');
       }
 
-      const grid = getTable(tableElement);
+      const grid = getTable(tableNode, tableElement);
       $updateDOMForSelection(editor, grid, null);
       $setSelection(null);
       editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);

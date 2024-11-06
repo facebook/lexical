@@ -448,6 +448,6 @@ describe('LexicalTableNode tests', () => {
       });
     },
     undefined,
-    <TablePlugin />,
+    <TablePlugin hasHorizontalScroll={false} />,
   );
 });

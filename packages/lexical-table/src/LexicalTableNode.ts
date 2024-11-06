@@ -223,25 +223,21 @@ export class TableNode extends ElementNode {
         if (
           tableElement &&
           isHTMLElement(tableElement) &&
-          tableElement.dataset.lexicalScrollable === 'true'
+          tableElement.nodeName !== 'TABLE'
         ) {
           tableElement = tableElement.querySelector('table');
         }
-        if (tableElement) {
-          const newElement = tableElement.cloneNode() as ParentNode;
-          const colGroup = document.createElement('colgroup');
-          const tBody = document.createElement('tbody');
-          if (isHTMLElement(tableElement)) {
-            const cols = tableElement.querySelectorAll('col');
-            colGroup.append(...cols);
-            const rows = tableElement.querySelectorAll('tr');
-            tBody.append(...rows);
-          }
-
-          newElement.replaceChildren(colGroup, tBody);
-
-          return newElement as HTMLElement;
+        if (!tableElement || !isHTMLElement(tableElement)) {
+          return null;
         }
+        // Wrap direct descendant rows in a tbody for export
+        const rows = tableElement.querySelectorAll(':scope > tr');
+        if (rows.length > 0) {
+          const tBody = document.createElement('tbody');
+          tBody.append(...rows);
+          tableElement.append(tBody);
+        }
+        return tableElement;
       },
     };
   }

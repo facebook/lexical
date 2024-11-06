@@ -1874,6 +1874,11 @@ export function setDOMUnmanaged(elementDom: HTMLElement): void {
   el.__lexicalUnmanaged = true;
 }
 
+/**
+ * @internal
+ *
+ * True if this DOM node was marked with {@link setDOMUnmanaged}
+ */
 export function isDOMUnmanaged(elementDom: Node): boolean {
   const el: Node & LexicalPrivateDOM = elementDom;
   return el.__lexicalUnmanaged === true;

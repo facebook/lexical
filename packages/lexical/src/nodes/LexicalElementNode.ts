@@ -158,6 +158,73 @@ export class ElementDOMSlot {
       ? null
       : firstChild;
   }
+  /**
+   * @internal
+   *
+   * Returns the offset of the first child
+   */
+  getFirstChildOffset(): number {
+    let i = 0;
+    for (let node = this.after; node !== null; node = node.previousSibling) {
+      i++;
+    }
+    return i;
+  }
+
+  /**
+   * @internal
+   */
+  resolveChildIndex(
+    element: ElementNode,
+    elementDOM: HTMLElement,
+    initialDOM: Node,
+    initialOffset: number,
+  ): [node: ElementNode, idx: number] {
+    if (initialDOM === this.element) {
+      const firstChildOffset = this.getFirstChildOffset();
+      return [
+        element,
+        Math.min(
+          firstChildOffset + element.getChildrenSize(),
+          Math.max(firstChildOffset, initialOffset),
+        ),
+      ];
+    }
+    // The resolved offset must be before or after the children
+    const initialPath = indexPath(elementDOM, initialDOM);
+    initialPath.push(initialOffset);
+    const elementPath = indexPath(elementDOM, this.element);
+    let offset = element.getIndexWithinParent();
+    for (let i = 0; i < elementPath.length; i++) {
+      const target = initialPath[i];
+      const source = elementPath[i];
+      if (target === undefined || target < source) {
+        break;
+      } else if (target > source) {
+        offset += 1;
+        break;
+      }
+    }
+    return [element.getParentOrThrow(), offset];
+  }
+}
+
+function indexPath(root: HTMLElement, child: Node): number[] {
+  const path: number[] = [];
+  let node: Node | null = child;
+  for (; node !== root && node !== null; node = child.parentNode) {
+    let i = 0;
+    for (
+      let sibling = node.previousSibling;
+      sibling !== null;
+      sibling = node.previousSibling
+    ) {
+      i++;
+    }
+    path.push(i);
+  }
+  invariant(node === root, 'indexPath: root is not a parent of child');
+  return path.reverse();
 }
 
 /** @noInheritDoc */
@@ -498,6 +565,13 @@ export class ElementNode extends LexicalNode {
     const nodesToInsertLength = nodesToInsert.length;
     const oldSize = this.getChildrenSize();
     const writableSelf = this.getWritable();
+    invariant(
+      start + deleteCount <= oldSize,
+      'ElementNode.splice: start + deleteCount > oldSize (%s + %s > %s)',
+      String(start),
+      String(deleteCount),
+      String(oldSize),
+    );
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];

@@ -522,6 +522,14 @@ function $reconcileChildren(
   } else {
     const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
     const nextChildren = createChildrenArray(nextElement, activeNextNodeMap);
+    invariant(
+      prevChildren.length === prevChildrenSize,
+      '$reconcileChildren: prevChildren.length !== prevChildrenSize',
+    );
+    invariant(
+      nextChildren.length === nextChildrenSize,
+      '$reconcileChildren: nextChildren.length !== nextChildrenSize',
+    );
 
     if (prevChildrenSize === 0) {
       if (nextChildrenSize !== 0) {

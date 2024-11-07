@@ -2109,9 +2109,22 @@ function $internalResolveSelectionPoint(
         return null;
       }
       if ($isElementNode(resolvedElement)) {
-        resolvedOffset = Math.min(
-          resolvedElement.getChildrenSize(),
-          resolvedOffset,
+        const elementDOM = editor.getElementByKey(resolvedElement.getKey());
+        invariant(
+          elementDOM !== null,
+          '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
+        );
+        const slot = resolvedElement.getDOMSlot(elementDOM);
+        [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
+          resolvedElement,
+          elementDOM,
+          dom,
+          offset,
+        );
+        // This is just a typescript workaround, it is true but lost due to mutability
+        invariant(
+          $isElementNode(resolvedElement),
+          '$internalResolveSelectionPoint: resolvedElement is not an ElementNode',
         );
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
@@ -2140,7 +2153,12 @@ function $internalResolveSelectionPoint(
           moveSelectionToEnd &&
           !hasBlockCursor
         ) {
-          resolvedOffset++;
+          invariant($isElementNode(resolvedElement), 'invariant');
+          // TODO: WTF
+          // resolvedOffset = Math.min(
+          //   resolvedElement.getChildrenSize(),
+          //   resolvedOffset + 1,
+          // );
         }
       } else {
         const index = resolvedElement.getIndexWithinParent();
@@ -2297,6 +2315,9 @@ function $internalResolveSelectionPoints(
   if (resolvedAnchorPoint === null) {
     return null;
   }
+  if (__DEV__) {
+    validatePoint(editor, 'anchor', resolvedAnchorPoint);
+  }
   const resolvedFocusPoint = $internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
@@ -2305,6 +2326,9 @@ function $internalResolveSelectionPoints(
   );
   if (resolvedFocusPoint === null) {
     return null;
+  }
+  if (__DEV__) {
+    validatePoint(editor, 'focus', resolvedAnchorPoint);
   }
   if (
     resolvedAnchorPoint.type === 'element' &&
@@ -2473,6 +2497,51 @@ export function $internalCreateRangeSelection(
     !$isRangeSelection(lastSelection) ? 0 : lastSelection.format,
     !$isRangeSelection(lastSelection) ? '' : lastSelection.style,
   );
+}
+
+function validatePoint(
+  editor: LexicalEditor,
+  name: 'anchor' | 'focus',
+  point: PointType,
+): void {
+  const node = editor.getEditorState()._nodeMap.get(point.key);
+  invariant(
+    node !== undefined,
+    'validatePoint: %s key %s not found in editorState',
+    name,
+    point.key,
+  );
+  if (point.type === 'text') {
+    invariant(
+      $isTextNode(node),
+      'validatePoint: %s key %s is not a TextNode',
+      name,
+      point.key,
+    );
+    const size = node.getTextContentSize();
+    invariant(
+      point.offset <= size,
+      'validatePoint: %s point.offset > node.getTextContentSize() (%s > %s)',
+      name,
+      String(point.offset),
+      String(size),
+    );
+  } else {
+    invariant(
+      $isElementNode(node),
+      'validatePoint: %s key %s is not an ElementNode',
+      name,
+      point.key,
+    );
+    const size = node.getChildrenSize();
+    invariant(
+      point.offset <= size,
+      'validatePoint: %s point.offset > node.getChildrenSize() (%s > %s)',
+      name,
+      String(point.offset),
+      String(size),
+    );
+  }
 }
 
 export function $getSelection(): null | BaseSelection {

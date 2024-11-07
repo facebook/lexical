@@ -34,6 +34,8 @@ export const IS_COLLAB =
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
+export const IS_TABLE_HORIZONTAL_SCROLL =
+  process.env.E2E_TABLE_MODE !== 'legacy';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -50,6 +52,17 @@ function wrapAndSlowDown(method, delay) {
     await new Promise((resolve) => setTimeout(resolve, delay));
     return method.apply(this, arguments);
   };
+}
+
+export function wrapTableHtml(expected) {
+  return html`
+    ${expected
+      .replace(
+        /<table/g,
+        `<div style="overflow-x: auto;" data-lexical-scrollable="true"><table`,
+      )
+      .replace(/<\/table>/g, '</table></div>')}
+  `;
 }
 
 export async function initialize({
@@ -77,7 +90,8 @@ export async function initialize({
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
   appSettings.disableBeforeInput = LEGACY_EVENTS;
-  appSettings.tableHorizontalScroll = !!tableHorizontalScroll;
+  appSettings.tableHorizontalScroll =
+    tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = randomUUID();

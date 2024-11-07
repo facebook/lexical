@@ -15,15 +15,17 @@ import {
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableNode,
+  getTableElement,
   TableCellNode,
   TableNode,
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
+import {$getNearestNodeFromDOMNode, $getNodeByKey, NodeKey} from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
+import invariant from 'shared/invariant';
 
 import {useDebounce} from '../CodeActionMenuPlugin/utils';
 
@@ -75,7 +77,10 @@ function TableHoverActionsContainer({
             return;
           }
 
-          tableDOMElement = editor.getElementByKey(table?.getKey());
+          tableDOMElement = getTableElement(
+            table,
+            editor.getElementByKey(table.getKey()),
+          );
 
           if (tableDOMElement) {
             const rowCount = table.getChildrenSize();
@@ -165,7 +170,15 @@ function TableHoverActionsContainer({
         (mutations) => {
           editor.getEditorState().read(() => {
             for (const [key, type] of mutations) {
-              const tableDOMElement = editor.getElementByKey(key);
+              const tableNode = $getNodeByKey(key);
+              invariant(
+                $isTableNode(tableNode),
+                'TableHoverActionsPlugin: Expecting TableNode in mutation listener',
+              );
+              const tableDOMElement = getTableElement(
+                tableNode,
+                editor.getElementByKey(key),
+              );
               switch (type) {
                 case 'created':
                   tableSetRef.current.add(key);
@@ -181,9 +194,15 @@ function TableHoverActionsContainer({
                   // Reset resize observers
                   tableResizeObserver.disconnect();
                   tableSetRef.current.forEach((tableKey: NodeKey) => {
-                    const tableElement = editor.getElementByKey(tableKey);
-                    if (tableElement) {
-                      tableResizeObserver.observe(tableElement);
+                    const otherTableNode = $getNodeByKey(tableKey);
+                    if ($isTableNode(otherTableNode)) {
+                      const tableElement = getTableElement(
+                        otherTableNode,
+                        editor.getElementByKey(tableKey),
+                      );
+                      if (tableElement) {
+                        tableResizeObserver.observe(tableElement);
+                      }
                     }
                   });
                   break;

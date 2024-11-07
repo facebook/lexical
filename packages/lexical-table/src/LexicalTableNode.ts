@@ -193,8 +193,6 @@ export class TableNode extends ElementNode {
     }
     if ($isScrollableTablesActive(editor)) {
       const wrapperElement = document.createElement('div');
-      tableElement.contentEditable = 'true';
-      wrapperElement.contentEditable = 'false';
       wrapperElement.dataset.lexicalScrollable = 'true';
       wrapperElement.style.overflowX = 'auto';
       wrapperElement.appendChild(tableElement);
@@ -390,11 +388,10 @@ export function $getElementForTableNode(
   tableNode: TableNode,
 ): TableDOMTable {
   const tableElement = editor.getElementByKey(tableNode.getKey());
-
-  if (tableElement == null) {
-    throw new Error('Table Element Not Found');
-  }
-
+  invariant(
+    tableElement !== null,
+    '$getElementForTableNode: Table Element Not Found',
+  );
   return getTable(tableNode, tableElement);
 }
 

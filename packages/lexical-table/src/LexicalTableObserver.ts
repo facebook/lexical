@@ -39,6 +39,7 @@ import {
   $updateDOMForSelection,
   getDOMSelection,
   getTable,
+  getTableElement,
 } from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {
@@ -186,15 +187,20 @@ export class TableObserver {
     editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
 
-      if (!$isTableNode(tableNode)) {
-        throw new Error('Expected TableNode.');
-      }
+      invariant(
+        $isTableNode(tableNode),
+        'LexicalTableObserver: Expected TableNode',
+      );
 
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(this.tableNodeKey),
+      );
 
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
+      invariant(
+        tableElement !== null,
+        'LexicalTableObserver: Expected to find TableElement in DOM',
+      );
 
       const grid = getTable(tableNode, tableElement);
       $updateDOMForSelection(editor, grid, null);
@@ -205,34 +211,60 @@ export class TableObserver {
 
   enableHighlightStyle() {
     const editor = this.editor;
-    editor.update(() => {
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
+    editor.getEditorState().read(
+      () => {
+        const tableNode = $getNodeByKey(this.tableNodeKey);
+        invariant(
+          $isTableNode(tableNode),
+          'LexicalTableObserver: Expected TableNode',
+        );
+        const tableElement = getTableElement(
+          tableNode,
+          editor.getElementByKey(this.tableNodeKey),
+        );
 
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
+        invariant(
+          tableElement !== null,
+          'LexicalTableObserver: Expected to find TableElement in DOM',
+        );
 
-      removeClassNamesFromElement(
-        tableElement,
-        editor._config.theme.tableSelection,
-      );
-      tableElement.classList.remove('disable-selection');
-      this.hasHijackedSelectionStyles = false;
-    });
+        removeClassNamesFromElement(
+          tableElement,
+          editor._config.theme.tableSelection,
+        );
+        tableElement.classList.remove('disable-selection');
+        this.hasHijackedSelectionStyles = false;
+      },
+      {editor},
+    );
   }
 
   disableHighlightStyle() {
     const editor = this.editor;
-    editor.update(() => {
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
+    editor.getEditorState().read(
+      () => {
+        const tableNode = $getNodeByKey(this.tableNodeKey);
+        invariant(
+          $isTableNode(tableNode),
+          'LexicalTableObserver: Expected TableNode',
+        );
+        const tableElement = getTableElement(
+          tableNode,
+          editor.getElementByKey(this.tableNodeKey),
+        );
+        invariant(
+          tableElement !== null,
+          'LexicalTableObserver: Expected to find TableElement in DOM',
+        );
 
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
-
-      addClassNamesToElement(tableElement, editor._config.theme.tableSelection);
-      this.hasHijackedSelectionStyles = true;
-    });
+        addClassNamesToElement(
+          tableElement,
+          editor._config.theme.tableSelection,
+        );
+        this.hasHijackedSelectionStyles = true;
+      },
+      {editor},
+    );
   }
 
   updateTableTableSelection(selection: TableSelection | null): void {
@@ -254,16 +286,18 @@ export class TableObserver {
     const editor = this.editor;
     editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
-
-      if (!$isTableNode(tableNode)) {
-        throw new Error('Expected TableNode.');
-      }
-
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
-
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
+      invariant(
+        $isTableNode(tableNode),
+        'LexicalTableObserver: Expected TableNode',
+      );
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(this.tableNodeKey),
+      );
+      invariant(
+        tableElement !== null,
+        'LexicalTableObserver: Expected to find TableElement in DOM',
+      );
 
       const cellX = cell.x;
       const cellY = cell.y;

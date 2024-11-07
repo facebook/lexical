@@ -2154,11 +2154,10 @@ function $internalResolveSelectionPoint(
           !hasBlockCursor
         ) {
           invariant($isElementNode(resolvedElement), 'invariant');
-          // TODO: WTF
-          // resolvedOffset = Math.min(
-          //   resolvedElement.getChildrenSize(),
-          //   resolvedOffset + 1,
-          // );
+          resolvedOffset = Math.min(
+            resolvedElement.getChildrenSize(),
+            resolvedOffset + 1,
+          );
         }
       } else {
         const index = resolvedElement.getIndexWithinParent();

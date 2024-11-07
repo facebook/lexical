@@ -42,6 +42,7 @@ export type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  DOMExportOutputMap,
   LexicalNode,
   NodeKey,
   NodeMap,

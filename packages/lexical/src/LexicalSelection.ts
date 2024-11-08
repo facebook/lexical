@@ -2126,6 +2126,12 @@ function $internalResolveSelectionPoint(
           $isElementNode(resolvedElement),
           '$internalResolveSelectionPoint: resolvedElement is not an ElementNode',
         );
+        if (
+          moveSelectionToEnd &&
+          resolvedOffset >= resolvedElement.getChildrenSize()
+        ) {
+          resolvedOffset = Math.max(0, resolvedElement.getChildrenSize() - 1);
+        }
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
           $isElementNode(child) &&

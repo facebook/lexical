@@ -20,8 +20,8 @@ import {
   $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
+  $getTableAndElementByKey,
   $isTableCellNode,
-  $isTableNode,
   $isTableRowNode,
   applyTableHandlers,
   getTableElement,
@@ -38,7 +38,6 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getNodeByKey,
   $isTextNode,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
@@ -143,34 +142,32 @@ export function TablePlugin({
     const unregisterMutationListener = editor.registerMutationListener(
       TableNode,
       (nodeMutations) => {
-        for (const [nodeKey, mutation] of nodeMutations) {
-          if (mutation === 'created' || mutation === 'updated') {
-            const tableSelection = tableSelections.get(nodeKey);
-            const dom = editor.getElementByKey(nodeKey);
-            if (!(tableSelection && dom === tableSelection[1])) {
-              // The update created a new DOM node, destroy the existing TableObserver
-              if (tableSelection) {
-                tableSelection[0].removeListeners();
-                tableSelections.delete(nodeKey);
-              }
-              if (dom !== null) {
-                // Create a new TableObserver
-                editor.getEditorState().read(() => {
-                  const tableNode = $getNodeByKey<TableNode>(nodeKey);
-                  if ($isTableNode(tableNode)) {
-                    initializeTableNode(tableNode, nodeKey, dom);
-                  }
-                });
+        editor.getEditorState().read(
+          () => {
+            for (const [nodeKey, mutation] of nodeMutations) {
+              const tableSelection = tableSelections.get(nodeKey);
+              if (mutation === 'created' || mutation === 'updated') {
+                const {tableNode, tableElement} =
+                  $getTableAndElementByKey(nodeKey);
+                if (
+                  tableSelection !== undefined &&
+                  tableElement !== tableSelection[1]
+                ) {
+                  // The update created a new DOM node, destroy the existing TableObserver
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                }
+                initializeTableNode(tableNode, nodeKey, tableElement);
+              } else if (mutation === 'destroyed') {
+                if (tableSelection !== undefined) {
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                }
               }
             }
-          } else if (mutation === 'destroyed') {
-            const tableSelection = tableSelections.get(nodeKey);
-            if (tableSelection !== undefined) {
-              tableSelection[0].removeListeners();
-              tableSelections.delete(nodeKey);
-            }
-          }
-        }
+          },
+          {editor},
+        );
       },
       {skipInitialization: false},
     );

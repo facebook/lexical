@@ -88,17 +88,16 @@ export function getTableElement<T extends HTMLElement | null>(
   tableNode: TableNode,
   dom: T,
 ): HTMLTableElementWithWithTableSelectionState | (T & null) {
-  if (!dom || dom.tagName === 'TABLE') {
-    return dom as unknown as
-      | HTMLTableElementWithWithTableSelectionState
-      | (T & null);
+  if (!dom) {
+    return dom as T & null;
   }
-  const element = tableNode.getDOMSlot(dom)
-    .element as HTMLTableElementWithWithTableSelectionState;
+  const element = (
+    dom.nodeName === 'TABLE' ? dom : tableNode.getDOMSlot(dom).element
+  ) as HTMLTableElementWithWithTableSelectionState;
   invariant(
-    element.tagName === 'TABLE',
+    element.nodeName === 'TABLE',
     'getTableElement: Expecting table in as DOM node for TableNode, not %s',
-    dom.tagName,
+    dom.nodeName,
   );
   return element;
 }
@@ -121,7 +120,7 @@ export function applyTableHandlers(
   const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
   tableObserver.listenersToRemove.add(() =>
-    deatatchTableObserverFromTableElement(tableElement, tableObserver),
+    detatchTableObserverFromTableElement(tableElement, tableObserver),
   );
 
   const createMouseHandlers = () => {
@@ -963,7 +962,7 @@ export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {
   [LEXICAL_ELEMENT_KEY]?: TableObserver | undefined;
 };
 
-export function deatatchTableObserverFromTableElement(
+export function detatchTableObserverFromTableElement(
   tableElement: HTMLTableElementWithWithTableSelectionState,
   tableObserver: TableObserver,
 ) {

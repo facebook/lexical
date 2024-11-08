@@ -9,6 +9,7 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
+  $getTableAndElementByKey,
   $getTableColumnIndexFromTableCellNode,
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn__EXPERIMENTAL,
@@ -21,11 +22,10 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, $getNodeByKey, NodeKey} from 'lexical';
+import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
-import invariant from 'shared/invariant';
 
 import {useDebounce} from '../CodeActionMenuPlugin/utils';
 
@@ -168,50 +168,37 @@ function TableHoverActionsContainer({
       editor.registerMutationListener(
         TableNode,
         (mutations) => {
-          editor.getEditorState().read(() => {
-            for (const [key, type] of mutations) {
-              const tableNode = $getNodeByKey(key);
-              invariant(
-                $isTableNode(tableNode),
-                'TableHoverActionsPlugin: Expecting TableNode in mutation listener',
-              );
-              const tableDOMElement = getTableElement(
-                tableNode,
-                editor.getElementByKey(key),
-              );
-              switch (type) {
-                case 'created':
-                  tableSetRef.current.add(key);
-                  setShouldListenMouseMove(tableSetRef.current.size > 0);
-                  if (tableDOMElement) {
-                    tableResizeObserver.observe(tableDOMElement);
+          editor.getEditorState().read(
+            () => {
+              let resetObserver = false;
+              for (const [key, type] of mutations) {
+                switch (type) {
+                  case 'created': {
+                    tableSetRef.current.add(key);
+                    resetObserver = true;
+                    break;
                   }
-                  break;
-
-                case 'destroyed':
-                  tableSetRef.current.delete(key);
-                  setShouldListenMouseMove(tableSetRef.current.size > 0);
-                  // Reset resize observers
-                  tableResizeObserver.disconnect();
-                  tableSetRef.current.forEach((tableKey: NodeKey) => {
-                    const otherTableNode = $getNodeByKey(tableKey);
-                    if ($isTableNode(otherTableNode)) {
-                      const tableElement = getTableElement(
-                        otherTableNode,
-                        editor.getElementByKey(tableKey),
-                      );
-                      if (tableElement) {
-                        tableResizeObserver.observe(tableElement);
-                      }
-                    }
-                  });
-                  break;
-
-                default:
-                  break;
+                  case 'destroyed': {
+                    tableSetRef.current.delete(key);
+                    resetObserver = true;
+                    break;
+                  }
+                  default:
+                    break;
+                }
               }
-            }
-          });
+              if (resetObserver) {
+                // Reset resize observers
+                tableResizeObserver.disconnect();
+                for (const tableKey of tableSetRef.current) {
+                  const {tableElement} = $getTableAndElementByKey(tableKey);
+                  tableResizeObserver.observe(tableElement);
+                }
+                setShouldListenMouseMove(tableSetRef.current.size > 0);
+              }
+            },
+            {editor},
+          );
         },
         {skipInitialization: false},
       ),

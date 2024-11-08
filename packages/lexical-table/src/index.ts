@@ -28,7 +28,7 @@ export {
   TableNode,
 } from './LexicalTableNode';
 export type {TableDOMCell} from './LexicalTableObserver';
-export {TableObserver} from './LexicalTableObserver';
+export {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 export type {SerializedTableRowNode} from './LexicalTableRowNode';
 export {
   $createTableRowNode,

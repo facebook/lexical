@@ -751,9 +751,22 @@ i.page-break,
   min-width: 100px;
 }
 
-.dropdown .item.fontsize-item,
-.dropdown .item.fontsize-item .text {
-  min-width: unset;
+.dropdown .item.wide {
+  align-items: center;
+  width: 248px;
+}
+
+.dropdown .item.wide .icon-text-container {
+  display: flex;
+
+  .text {
+    min-width: 120px;
+  }
+}
+
+.dropdown .item .shortcut {
+  color: #939393;
+  self-align: flex-end;
 }
 
 .dropdown .item .active {

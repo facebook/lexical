@@ -32,7 +32,7 @@ export type SerializedMarkNode = Spread<
 /** @noInheritDoc */
 export class MarkNode extends ElementNode {
   /** @internal */
-  __ids: Array<string>;
+  __ids: readonly string[];
 
   static getType(): string {
     return 'mark';
@@ -57,13 +57,13 @@ export class MarkNode extends ElementNode {
   exportJSON(): SerializedMarkNode {
     return {
       ...super.exportJSON(),
-      ids: this.getIDs(),
+      ids: Array.from(this.getIDs()),
       type: 'mark',
       version: 1,
     };
   }
 
-  constructor(ids: Array<string>, key?: NodeKey) {
+  constructor(ids: readonly string[], key?: NodeKey) {
     super(key);
     this.__ids = ids || [];
   }
@@ -112,7 +112,7 @@ export class MarkNode extends ElementNode {
 
   getIDs(): Array<string> {
     const self = this.getLatest();
-    return $isMarkNode(self) ? self.__ids : [];
+    return $isMarkNode(self) ? Array.from(self.__ids) : [];
   }
 
   addID(id: string): void {
@@ -197,7 +197,7 @@ export class MarkNode extends ElementNode {
   }
 }
 
-export function $createMarkNode(ids: Array<string>): MarkNode {
+export function $createMarkNode(ids: readonly string[]): MarkNode {
   return $applyNodeReplacement(new MarkNode(ids));
 }
 

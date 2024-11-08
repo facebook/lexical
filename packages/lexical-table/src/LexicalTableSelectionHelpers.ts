@@ -1910,14 +1910,29 @@ function $getTableEdgeCursorPosition(
     return undefined;
   }
 
-  const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
-  if (!tableNodeParentDOM) {
-    return undefined;
-  }
-
   // TODO: Add support for nested tables
   const domSelection = window.getSelection();
-  if (!domSelection || domSelection.anchorNode !== tableNodeParentDOM) {
+  if (!domSelection) {
+    return undefined;
+  }
+  const domAnchorNode = domSelection.anchorNode;
+  const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
+  const tableElement = getTableElement(
+    tableNode,
+    editor.getElementByKey(tableNode.getKey()),
+  );
+  // We are only interested in the scenario where the
+  // native selection anchor is:
+  // - at or inside the table's parent DOM
+  // - and NOT at or inside the table DOM
+  // It may be adjacent to the table DOM (e.g. in a wrapper)
+  if (
+    !domAnchorNode ||
+    !tableNodeParentDOM ||
+    !tableElement ||
+    !tableNodeParentDOM.contains(domAnchorNode) ||
+    tableElement.contains(domAnchorNode)
+  ) {
     return undefined;
   }
 

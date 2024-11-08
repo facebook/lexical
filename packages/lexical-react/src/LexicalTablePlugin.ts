@@ -149,15 +149,14 @@ export function TablePlugin({
               if (mutation === 'created' || mutation === 'updated') {
                 const {tableNode, tableElement} =
                   $getTableAndElementByKey(nodeKey);
-                if (
-                  tableSelection !== undefined &&
-                  tableElement !== tableSelection[1]
-                ) {
+                if (tableSelection === undefined) {
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                } else if (tableElement !== tableSelection[1]) {
                   // The update created a new DOM node, destroy the existing TableObserver
                   tableSelection[0].removeListeners();
                   tableSelections.delete(nodeKey);
+                  initializeTableNode(tableNode, nodeKey, tableElement);
                 }
-                initializeTableNode(tableNode, nodeKey, tableElement);
               } else if (mutation === 'destroyed') {
                 if (tableSelection !== undefined) {
                   tableSelection[0].removeListeners();

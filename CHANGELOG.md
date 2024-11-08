@@ -1,3 +1,21 @@
+## v0.20.0 (2024-11-07)
+
+- Add optional selection argument to getHtmlContent flow type (#6803) Rajiv Anisetti
+- Fix importDOM for Layout plugin (#6799) Ivaylo Pavlov
+- lexical-playground Feature Add more keyboard shortcuts (#6754) Bedru Umer
+- lexical-website Documentation Update Add Documentation for html Property in Lexical Editor Configuration (#6770) Ajaezo Kingsley
+- lexical-yjs Bug Fix clean up dangling text after undo in collaboration (#6670) Michael Shafer
+- Lexical-website BugFix Change button text colour to improve visibility (#6796) Fadekemi Adebayo
+- lexical-markdown Feature add ability to control finding the end of a node matched by TextMatchTransformer (#6681) Alessio Gravili
+- lexical-react Bug Fix LexicalTypeaheadMenuPlugin SSR error ReferenceError document is not defined (#6794) Bedru Umer
+- lexical-website Chore upgrade to Docusaurus v3.6 - Docusaurus Faster (#6761) Sbastien Lorber
+- Bug Fix  ContextMenu Paste option not preserving style  (#6780) C.
+- lexical-playground Fix the placement of the fontSize button in the ToolbarPlugin  and hide the vertical scroll (Bug Fix) (#6786) Oluwasanya Olaoluwa
+- #6768 fix to avoid infinite markdown shortcut matchers run (#6778) Maksim Horbachevsky
+- lexical Feature Add onUpdate function during update with onUpdate (correct baselline) (#6773) Michael Landis
+- v0.19.0 (#6774) Sherry
+- v0.19.0 Lexical GitHub Actions Bot
+
 ## v0.19.0 (2024-10-28)
 
 - lexical Add missing commands to Lexical.js.flow (#6769) Sherry

@@ -24,7 +24,11 @@ declare export function $insertDataTransferForRichText(
   editor: LexicalEditor,
 ): void;
 
-declare export function $getHtmlContent(editor: LexicalEditor): string | null;
+declare export function $getHtmlContent(
+  editor: LexicalEditor,
+  selection?: BaseSelection,
+): string | null;
+
 declare export function $getLexicalContent(
   editor: LexicalEditor,
 ): string | null;

@@ -157,21 +157,25 @@ export class CollabElementNode {
               nodeIndex !== 0 ? children[nodeIndex - 1] : null;
             const nodeSize = node.getSize();
 
-            if (
-              offset === 0 &&
-              delCount === 1 &&
-              nodeIndex > 0 &&
-              prevCollabNode instanceof CollabTextNode &&
-              length === nodeSize &&
-              // If the node has no keys, it's been deleted
-              Array.from(node._map.keys()).length === 0
-            ) {
-              // Merge the text node with previous.
-              prevCollabNode._text += node._text;
+            if (offset === 0 && length === nodeSize) {
+              // Text node has been deleted.
               children.splice(nodeIndex, 1);
-            } else if (offset === 0 && delCount === nodeSize) {
-              // The entire thing needs removing
-              children.splice(nodeIndex, 1);
+              // If this was caused by an undo from YJS, there could be dangling text.
+              const danglingText = spliceString(
+                node._text,
+                offset,
+                delCount - 1,
+                '',
+              );
+              if (danglingText.length > 0) {
+                if (prevCollabNode instanceof CollabTextNode) {
+                  // Merge the text node with previous.
+                  prevCollabNode._text += danglingText;
+                } else {
+                  // No previous text node to merge into, just delete the text.
+                  this._xmlText.delete(offset, danglingText.length);
+                }
+              }
             } else {
               node._text = spliceString(node._text, offset, delCount, '');
             }

@@ -30,6 +30,7 @@ import {
   keyUpCtrlOrMeta,
   pasteFromClipboard,
   test,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.beforeEach(({isPlainText}) => {
@@ -2093,11 +2094,13 @@ test.describe('Link attributes', () => {
       await page.keyboard.type('Hello awesome');
       await focusEditor(page);
       await selectAll(page);
-      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-      await page.evaluate(() =>
-        navigator.clipboard.writeText('https://facebook.com'),
-      );
-      await paste(page);
+      await withExclusiveClipboardAccess(async () => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await page.evaluate(() =>
+          navigator.clipboard.writeText('https://facebook.com'),
+        );
+        await paste(page);
+      });
       await assertHTML(
         page,
         html`

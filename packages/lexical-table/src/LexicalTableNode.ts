@@ -195,6 +195,9 @@ export class TableNode extends ElementNode {
       const wrapperElement = document.createElement('div');
       wrapperElement.dataset.lexicalScrollable = 'true';
       wrapperElement.style.overflowX = 'auto';
+      // Without this, keyboard based caret navigation does not work
+      // as expected with Firefox (down arrow it will skip over the table)
+      wrapperElement.style.display = 'table';
       wrapperElement.appendChild(tableElement);
       return wrapperElement;
     }

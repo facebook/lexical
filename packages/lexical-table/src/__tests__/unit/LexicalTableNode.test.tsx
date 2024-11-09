@@ -78,7 +78,7 @@ function wrapTableHtml(expected: string): string {
   return expected
     .replace(
       /<table/g,
-      `<div style="overflow-x: auto;" data-lexical-scrollable="true"><table`,
+      `<div style="overflow-x: auto; display: table;" data-lexical-scrollable="true"><table`,
     )
     .replace(/<\/table>/g, '</table></div>');
 }

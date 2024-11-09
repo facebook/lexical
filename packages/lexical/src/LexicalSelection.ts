@@ -2321,7 +2321,7 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
-    validatePoint(editor, 'anchor', resolvedAnchorPoint);
+    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
   }
   const resolvedFocusPoint = $internalResolveSelectionPoint(
     focusDOM,
@@ -2333,7 +2333,7 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
-    validatePoint(editor, 'focus', resolvedAnchorPoint);
+    $validatePoint(editor, 'focus', resolvedAnchorPoint);
   }
   if (
     resolvedAnchorPoint.type === 'element' &&
@@ -2504,29 +2504,29 @@ export function $internalCreateRangeSelection(
   );
 }
 
-function validatePoint(
+function $validatePoint(
   editor: LexicalEditor,
   name: 'anchor' | 'focus',
   point: PointType,
 ): void {
-  const node = editor.getEditorState()._nodeMap.get(point.key);
+  const node = $getNodeByKey(point.key);
   invariant(
     node !== undefined,
-    'validatePoint: %s key %s not found in editorState',
+    '$validatePoint: %s key %s not found in current editorState',
     name,
     point.key,
   );
   if (point.type === 'text') {
     invariant(
       $isTextNode(node),
-      'validatePoint: %s key %s is not a TextNode',
+      '$validatePoint: %s key %s is not a TextNode',
       name,
       point.key,
     );
     const size = node.getTextContentSize();
     invariant(
       point.offset <= size,
-      'validatePoint: %s point.offset > node.getTextContentSize() (%s > %s)',
+      '$validatePoint: %s point.offset > node.getTextContentSize() (%s > %s)',
       name,
       String(point.offset),
       String(size),
@@ -2534,14 +2534,14 @@ function validatePoint(
   } else {
     invariant(
       $isElementNode(node),
-      'validatePoint: %s key %s is not an ElementNode',
+      '$validatePoint: %s key %s is not an ElementNode',
       name,
       point.key,
     );
     const size = node.getChildrenSize();
     invariant(
       point.offset <= size,
-      'validatePoint: %s point.offset > node.getChildrenSize() (%s > %s)',
+      '$validatePoint: %s point.offset > node.getChildrenSize() (%s > %s)',
       name,
       String(point.offset),
       String(size),

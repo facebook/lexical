@@ -56,12 +56,10 @@
 }
 .PlaygroundEditorTheme__textUnderline {
   border-bottom: 0.1em solid currentColor;
-  white-space: pre;
 }
 
 .PlaygroundEditorTheme__textStrikethrough {
   position: relative;
-  white-space: pre;
 }
 
 .PlaygroundEditorTheme__textStrikethrough::after {
@@ -76,7 +74,6 @@
 .PlaygroundEditorTheme__textUnderlineStrikethrough {
   position: relative;
   border-bottom: 0.1em solid currentColor;
-  white-space: pre;
 }
 
 .PlaygroundEditorTheme__textUnderlineStrikethrough::after {

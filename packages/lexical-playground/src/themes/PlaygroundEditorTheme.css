@@ -55,25 +55,37 @@
   font-style: italic;
 }
 .PlaygroundEditorTheme__textUnderline {
-  text-decoration: underline;
+  border-bottom: 0.1em solid currentColor;
+  white-space: pre;
 }
-.PlaygroundEditorTheme__textStrikethrough {
-  text-decoration: line-through;
-}
+
 .PlaygroundEditorTheme__textStrikethrough {
   position: relative;
-  text-decoration: none;
+  white-space: pre;
 }
 
 .PlaygroundEditorTheme__textStrikethrough::after {
   content: '';
   position: absolute;
-  top: 50%;
   left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: black;
-  pointer-events: none;
+  right: 0;
+  top: 50%;
+  border-top: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__textUnderlineStrikethrough {
+  position: relative;
+  border-bottom: 0.1em solid currentColor;
+  white-space: pre;
+}
+
+.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 0.1em solid currentColor;
 }
 
 .PlaygroundEditorTheme__textSubscript {

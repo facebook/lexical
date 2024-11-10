@@ -77,10 +77,22 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-async function assertHTML(page, expected, ...args) {
+async function assertHTML(
+  page,
+  expectedHtml,
+  expectedHtmlFrameRight = undefined,
+  options = undefined,
+  ...args
+) {
   return await rawAssertHTML(
     page,
-    IS_TABLE_HORIZONTAL_SCROLL ? wrapTableHtml(expected) : expected,
+    IS_TABLE_HORIZONTAL_SCROLL
+      ? wrapTableHtml(expectedHtml, options)
+      : expectedHtml,
+    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
+      ? wrapTableHtml(expectedHtmlFrameRight, options)
+      : expectedHtmlFrameRight,
+    options,
     ...args,
   );
 }

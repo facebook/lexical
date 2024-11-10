@@ -54,12 +54,16 @@ function wrapAndSlowDown(method, delay) {
   };
 }
 
-export function wrapTableHtml(expected) {
+export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
   return html`
     ${expected
       .replace(
         /<table/g,
-        `<div class="PlaygroundEditorTheme__tableScrollableWrapper"><table`,
+        `<div${
+          ignoreClasses
+            ? ''
+            : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
+        }><table`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;

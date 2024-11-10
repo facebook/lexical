@@ -1,4 +1,6 @@
-`@lexical/list`
+# `@lexical/list`
+
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_list)
 
 This package exposes the primitives for implementing lists in Lexical. If you're trying to implement conventional lists with React, take a look at the ListPlugin exposed
 by [@lexical/react](https://lexical.dev/docs/packages/lexical-react), which wraps these primitives into a neat component that you can drop into any LexicalComposer.
@@ -55,7 +57,7 @@ function onButtonClick(e: MouseEvent) {
 
 ## Theming
 
-Lists can be styled using the following properties in the EditorTheme passed to the editor in the initial config (the values are classses that will be applied in the denoted contexts):
+Lists can be styled using the following properties in the EditorTheme passed to the editor in the initial config (the values are classes that will be applied in the denoted contexts):
 
 ```ts
 {

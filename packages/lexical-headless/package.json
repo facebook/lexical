@@ -8,14 +8,34 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.12.2",
+  "version": "0.20.0",
   "main": "LexicalHeadless.js",
-  "peerDependencies": {
-    "lexical": "0.12.2"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-headless"
+  },
+  "module": "LexicalHeadless.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHeadless.dev.mjs",
+        "production": "./LexicalHeadless.prod.mjs",
+        "node": "./LexicalHeadless.node.mjs",
+        "default": "./LexicalHeadless.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalHeadless.dev.js",
+        "production": "./LexicalHeadless.prod.js",
+        "default": "./LexicalHeadless.js"
+      }
+    }
+  },
+  "dependencies": {
+    "lexical": "0.20.0"
   }
 }

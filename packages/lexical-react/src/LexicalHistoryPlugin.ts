@@ -17,13 +17,15 @@ export {createEmptyHistoryState} from '@lexical/history';
 export type {HistoryState};
 
 export function HistoryPlugin({
+  delay,
   externalHistoryState,
 }: {
+  delay?: number;
   externalHistoryState?: HistoryState;
 }): null {
   const [editor] = useLexicalComposerContext();
 
-  useHistory(editor, externalHistoryState);
+  useHistory(editor, externalHistoryState, delay);
 
   return null;
 }

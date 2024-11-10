@@ -32,6 +32,7 @@ const config = {
     },
   ],
   retries: IS_CI ? 4 : 1,
+  testIgnore: /\/__tests__\/unit\//,
   timeout: 150000,
   use: {
     navigationTimeout: 30000,
@@ -47,5 +48,6 @@ const config = {
         timeout: 120 * 1000,
       }
     : undefined,
+  workers: 4,
 };
 module.exports = config;

@@ -19,7 +19,6 @@ import {
   assertSelection,
   clearEditor,
   click,
-  E2E_BROWSER,
   focusEditor,
   getHTML,
   html,
@@ -50,7 +49,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   await assertHTML(page, forwardHTML);
 }
 
-test.describe('Markdown', () => {
+test.describe.parallel('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
@@ -103,7 +102,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -151,7 +150,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -160,7 +159,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -375,10 +374,10 @@ async function assertMarkdownImportExport(
   await assertHTML(page, expectedHTML);
 }
 
-test.describe('Markdown', () => {
+test.describe.parallel('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
-    initialize({isCollab, page});
+    return initialize({isCollab, page});
   });
 
   const BASE_BLOCK_SHORTCUTS = [
@@ -494,14 +493,20 @@ test.describe('Markdown', () => {
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '--- ',
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '*** ',
@@ -589,6 +594,16 @@ test.describe('Markdown', () => {
         </p>
       `,
       text: 'hello [world](https://www.test.com)!',
+    },
+    {
+      html: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">10:20:30😄</span>
+        </p>
+      `,
+      text: '10:20:30:smile:',
     },
   ];
 
@@ -861,7 +876,7 @@ test.describe('Markdown', () => {
     await assertHTML(page, TYPED_MARKDOWN_HTML);
   });
 
-  test('itraword text format', async ({page}) => {
+  test('intraword text format', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('he_llo_ world');
     await assertHTML(
@@ -904,10 +919,11 @@ test.describe('Markdown', () => {
       html`
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          spellcheck="false"
           dir="ltr"
+          spellcheck="false"
+          data-gutter="12"
           data-highlight-language="markdown"
-          data-gutter="12">
+          data-language="markdown">
           <span data-lexical-text="true">Hello</span>
           <br />
           <span
@@ -945,11 +961,77 @@ test.describe('Markdown', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 800px; width: inherit" />
             </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+  });
+
+  test('can import several text match transformers in a same line (#5385)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
+        SAMPLE_IMAGE_URL +
+        ')just text in between$1$',
+    );
+    await click(page, '.action-button .markdown');
+    await waitForSelector(page, '.editor-image img');
+    await waitForSelector(page, '.editor-equation');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 800px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">just text in between</span>
+          <span
+            class="editor-equation"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img alt="" src="#" />
+            <span role="button" tabindex="-1">
+              <span class="katex">
+                <span class="katex-html" aria-hidden="true">
+                  <span class="base">
+                    <span class="strut" style="height: 0.6444em;"></span>
+                    <span class="mord">1</span>
+                  </span>
+                </span>
+              </span>
+            </span>
+            <img alt="" src="#" />
           </span>
           <br />
         </p>
@@ -970,9 +1052,9 @@ test.describe('Markdown', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://lexical.dev"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://lexical.dev">
             <span data-lexical-text="true">link</span>
           </a>
           <span data-lexical-text="true">world</span>
@@ -981,25 +1063,12 @@ test.describe('Markdown', () => {
     );
     // Selection starts after newly created link element
 
-    if (E2E_BROWSER === 'webkit') {
-      // TODO: safari keeps dom selection on newly inserted link although Lexical's selection
-      // is correctly adjusted to start on [ world] text node. #updateDomSelection calls
-      // selection.setBaseAndExtent correctly, but safari does not seem to sync dom selection
-      // to newly passed values of anchor/focus/offset
-      await assertSelection(page, {
-        anchorOffset: 4,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 4,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 2, 0],
-        focusOffset: 0,
-        focusPath: [0, 2, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 2, 0],
+      focusOffset: 0,
+      focusPath: [0, 2, 0],
+    });
   });
 });
 
@@ -1078,9 +1147,9 @@ const TYPED_MARKDOWN_HTML = html`
       works
     </strong>
     <a
-      href="https://lexical.io"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.io">
       <strong
         class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
         data-lexical-text="true">
@@ -1119,22 +1188,25 @@ const TYPED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Quote</span>
   </blockquote>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <ul class="PlaygroundEditorTheme__ul">
     <li
-      value="1"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="1">
       <span data-lexical-text="true">List here</span>
     </li>
     <li
-      value="2"
-      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+      value="2">
       <ul class="PlaygroundEditorTheme__ul">
         <li
-          value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          value="1">
           <span data-lexical-text="true">Nested one</span>
         </li>
       </ul>
@@ -1142,10 +1214,11 @@ const TYPED_MARKDOWN_HTML = html`
   </ul>
   <code
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-    spellcheck="false"
     dir="ltr"
+    spellcheck="false"
+    data-gutter="1"
     data-highlight-language="sql"
-    data-gutter="1">
+    data-language="sql">
     <span data-lexical-text="true">Code block</span>
   </code>
   <p
@@ -1192,6 +1265,7 @@ line after
     1. And can be nested
     and multiline as well
 
+.
 31. Have any starting number
 ### Inline code
 Inline \`code\` format which also \`preserves **_~~any markdown-like~~_** text\` within
@@ -1263,9 +1337,9 @@ const IMPORTED_MARKDOWN_HTML = html`
       works
     </strong>
     <a
-      href="https://lexical.io"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.io">
       <strong
         class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
         data-lexical-text="true">
@@ -1279,16 +1353,16 @@ const IMPORTED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Links</span>
     <a
-      href="https://lexical.io/tag_here_and__here__and___here___too"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.io/tag_here_and__here__and___here___too">
       <span data-lexical-text="true">with underscores</span>
     </a>
     <span data-lexical-text="true">and (</span>
     <a
-      href="https://lexical.dev"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.dev">
       <span data-lexical-text="true">parenthesis</span>
     </a>
     <span data-lexical-text="true">)</span>
@@ -1332,7 +1406,10 @@ const IMPORTED_MARKDOWN_HTML = html`
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Horizontal Rules</span>
   </h3>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Blockquotes</span>
   </h3>
@@ -1355,9 +1432,9 @@ const IMPORTED_MARKDOWN_HTML = html`
   </h3>
   <ul class="PlaygroundEditorTheme__ul">
     <li
-      value="1"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="1">
       <span data-lexical-text="true">Create a list with</span>
       <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">+</span>
@@ -1372,25 +1449,25 @@ const IMPORTED_MARKDOWN_HTML = html`
       </code>
     </li>
     <li
-      value="2"
-      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+      value="2">
       <ul class="PlaygroundEditorTheme__ul">
         <li
-          value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          value="1">
           <span data-lexical-text="true">
             Lists can be indented with 2 spaces
           </span>
         </li>
         <li
-          value="2"
-          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+          value="2">
           <ul class="PlaygroundEditorTheme__ul">
             <li
-              value="1"
               class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="ltr"
+              value="1">
               <span data-lexical-text="true">Very easy</span>
             </li>
           </ul>
@@ -1403,9 +1480,9 @@ const IMPORTED_MARKDOWN_HTML = html`
   </h3>
   <ol class="PlaygroundEditorTheme__ol1">
     <li
-      value="1"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="1">
       <span data-lexical-text="true">
         Oredered lists started with numbers as
       </span>
@@ -1414,13 +1491,13 @@ const IMPORTED_MARKDOWN_HTML = html`
       </code>
     </li>
     <li
-      value="2"
-      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+      value="2">
       <ol class="PlaygroundEditorTheme__ol2">
         <li
-          value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          value="1">
           <span data-lexical-text="true">And can be nested</span>
           <br />
           <span data-lexical-text="true">and multiline as well</span>
@@ -1428,11 +1505,14 @@ const IMPORTED_MARKDOWN_HTML = html`
       </ol>
     </li>
   </ol>
-  <ol start="31" class="PlaygroundEditorTheme__ol1">
+  <p class="PlaygroundEditorTheme__paragraph">
+    <span data-lexical-text="true">.</span>
+  </p>
+  <ol class="PlaygroundEditorTheme__ol1" start="31">
     <li
-      value="31"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="31">
       <span data-lexical-text="true">Have any starting number</span>
     </li>
   </ol>
@@ -1459,10 +1539,11 @@ const IMPORTED_MARKDOWN_HTML = html`
   </h3>
   <code
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-    spellcheck="false"
     dir="ltr"
+    spellcheck="false"
+    data-gutter="123"
     data-highlight-language="javascript"
-    data-gutter="123">
+    data-language="javascript">
     <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">
       // Some comments
     </span>

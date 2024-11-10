@@ -8,13 +8,12 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.12.2",
+  "version": "0.20.0",
   "main": "LexicalCode.js",
-  "peerDependencies": {
-    "lexical": "0.12.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.12.2",
+    "@lexical/utils": "0.20.0",
+    "lexical": "0.20.0",
     "prismjs": "^1.27.0"
   },
   "repository": {
@@ -24,5 +23,24 @@
   },
   "devDependencies": {
     "@types/prismjs": "^1.26.0"
+  },
+  "module": "LexicalCode.mjs",
+  "sideEffects": true,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalCode.dev.mjs",
+        "production": "./LexicalCode.prod.mjs",
+        "node": "./LexicalCode.node.mjs",
+        "default": "./LexicalCode.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalCode.dev.js",
+        "production": "./LexicalCode.prod.js",
+        "default": "./LexicalCode.js"
+      }
+    }
   }
 }

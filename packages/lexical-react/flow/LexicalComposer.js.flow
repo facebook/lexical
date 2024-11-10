@@ -23,7 +23,6 @@ export type InitialEditorStateType =
   | ((editor: LexicalEditor) => void);
 
 export type InitialConfigType = $ReadOnly<{
-  editor__DEPRECATED?: LexicalEditor | null,
   editable?: boolean,
   namespace: string,
   nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,

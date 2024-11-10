@@ -8,10 +8,12 @@
  */
 
 import type {
+  BaseSelection,
   EditorConfig,
   LexicalNode,
   NodeKey,
   ParagraphNode,
+  PointType,
   RangeSelection,
   LexicalEditor,
   TextFormatType,
@@ -20,9 +22,6 @@ import type {
 
 import {
   ElementNode,
-  deprecated_GridCellNode,
-  deprecated_GridRowNode,
-  deprecated_GridNode,
 } from 'lexical';
 
 /**
@@ -38,7 +37,9 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends deprecated_GridCellNode {
+declare export class TableCellNode extends ElementNode {
+  __colSpan: number;
+  __rowSpan: number;
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
@@ -56,13 +57,17 @@ declare export class TableCellNode extends deprecated_GridCellNode {
     selection: RangeSelection,
   ): null | ParagraphNode | TableCellNode;
   collapseAtStart(): true;
+  getColSpan(): number;
+  setColSpan(colSpan: number): this;
+  getRowSpan(): number;
+  setRowSpan(rowSpan: number): this;
   getTag(): string;
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
+  setHeaderStyles(headerState: TableCellHeaderState, mask?: TableCellHeaderState): TableCellNode;
   getHeaderStyles(): TableCellHeaderState;
-  setWidth(width: number): ?number;
+  setWidth(width: number): TableCellNode;
   getWidth(): ?number;
   getBackgroundColor(): null | string;
-  setBackgroundColor(newBackgroundColor: null | string): void;
+  setBackgroundColor(newBackgroundColor: null | string): TableCellNode;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
@@ -76,42 +81,47 @@ declare export function $createTableCellNode(
 ): TableCellNode;
 declare export function $isTableCellNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TableCellNode);
+): node is TableCellNode;
 
 /**
  * LexicalTableNode
  */
 
-declare export class TableNode extends deprecated_GridNode {
+export type TableMapValueType = {
+  cell: TableCellNode,
+  startRow: number,
+  startColumn: number,
+};
+export type TableMapType = Array<Array<TableMapValueType>>;
+
+declare export class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
-  constructor(grid: ?Grid, key?: NodeKey): void;
+  constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   collapseAtStart(): true;
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
-    grid: Grid,
+    table: TableDOMTable,
   ): {x: number, y: number};
-  getCellFromCords(x: number, y: number, grid: Grid): ?Cell;
-  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell;
-  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode;
-  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode;
-  setGrid(grid: ?Grid): TableNode;
-  getGrid(): ?Grid;
+  getDOMCellFromCords(x: number, y: number, table: TableDOMTable): ?TableDOMCell;
+  getDOMCellFromCordsOrThrow(x: number, y: number, table: TableDOMTable): TableDOMCell;
+  getCellNodeFromCords(x: number, y: number, table: TableDOMTable): ?TableCellNode;
+  getCellNodeFromCordsOrThrow(x: number, y: number, table: TableDOMTable): TableCellNode;
   canSelectBefore(): true;
 }
 declare export function $createTableNode(): TableNode;
 declare export function $isTableNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TableNode);
+): node is TableNode;
 
 /**
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends deprecated_GridRowNode {
+declare export class TableRowNode extends ElementNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
@@ -127,23 +137,23 @@ declare export class TableRowNode extends deprecated_GridRowNode {
 declare export function $createTableRowNode(): TableRowNode;
 declare export function $isTableRowNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TableRowNode);
+): node is TableRowNode;
 
 /**
  * LexicalTableSelectionHelpers
  */
 
-export type Cell = {
+export type TableDOMCell = {
   elem: HTMLElement,
   highlighted: boolean,
   x: number,
   y: number,
 };
 
-export type Cells = Array<Array<Cell>>;
+export type TableDOMRows = Array<Array<TableDOMCell>>;
 
-export type Grid = {
-  cells: Cells,
+export type TableDOMTable = {
+  cells: TableDOMRows,
   columns: number,
   rows: number,
 };
@@ -152,18 +162,22 @@ declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
-): TableSelection;
+): TableObserver;
 
-declare export function $getElementGridForTableNode(
+declare export function $getElementForTableNode(
   editor: LexicalEditor,
   tableNode: TableNode,
-): Grid;
+): TableDOMTable;
 
-declare export function getTableSelectionFromTableElement(
+declare export function getTableObserverFromTableElement(
   tableElement: HTMLElement,
-): null | TableSelection;
+): null | TableObserver;
 
-declare export function getCellFromTarget(node: Node): Cell | null;
+declare export function getDOMCellFromTarget(node: Node): null | TableDOMCell;
+
+declare export function $findTableNode(node: LexicalNode): null | TableNode;
+
+declare export function $findCellNode(node: LexicalNode): null | TableCellNode;
 
 /**
  * LexicalTableUtils
@@ -205,7 +219,7 @@ declare export function $insertTableRow(
   targetIndex: number,
   shouldInsertAfter?: boolean,
   rowCount: number,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableNode;
 
 declare export function $insertTableColumn(
@@ -213,7 +227,7 @@ declare export function $insertTableColumn(
   targetIndex: number,
   shouldInsertAfter?: boolean,
   columnCount: number,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableNode;
 
 declare export function $deleteTableColumn(
@@ -223,22 +237,44 @@ declare export function $deleteTableColumn(
 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableRowNode | null;
+
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableCellNode | null;
+
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
+
 declare export function $deleteTableColumn__EXPERIMENTAL(): void;
+
 declare export function $unmergeCell(): void;
 
+declare export function $computeTableMap(
+  table: TableNode,
+  cellA: TableCellNode,
+  cellB: TableCellNode,
+): [TableMapType, TableMapValueType, TableMapValueType];
+
+declare export function $getNodeTriplet(
+  source: PointType | LexicalNode | TableCellNode,
+): [TableCellNode, TableRowNode, TableNode];
+
+declare export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
+  rowIndex: number;
+  columnIndex: number;
+  rowSpan: number;
+  colSpan: number;
+} | null;
+
 /**
- * LexicalTableSelection.js
+ * LexicalTableObserver.js
  */
-declare export class TableSelection {
+
+declare export class TableObserver {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
-  grid: Grid;
+  table: TableDOMTable;
   isHighlightingCells: boolean;
   isMouseDown: boolean;
   startX: number;
@@ -246,18 +282,71 @@ declare export class TableSelection {
   nodeKey: string;
   editor: LexicalEditor;
   constructor(editor: LexicalEditor, nodeKey: string): void;
-  getGrid(): Grid;
+  getTable(): TableDOMTable;
   removeListeners(): void;
-  trackTableGrid(): void;
+  trackTable(): void;
   clearHighlight(): void;
-  setFocusCellForSelection(cell: Cell): void;
-  setAnchorCellForSelection(cell: Cell): void;
+  setFocusCellForSelection(cell: TableDOMCell): void;
+  setAnchorCellForSelection(cell: TableDOMCell): void;
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }
 
-declare export var INSERT_TABLE_COMMAND: LexicalCommand<{
-  rows: string,
-  columns: string,
-  includeHeaders?: boolean,
+/**
+ * LexicalTableSelection.ts
+ */
+
+export type TableSelectionShape = {
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+};
+declare export class TableSelection implements BaseSelection {
+  tableKey: NodeKey;
+  anchor: PointType;
+  focus: PointType;
+  dirty: boolean;
+  constructor(tableKey: NodeKey, anchor: PointType, focus: PointType): void;
+  is(selection: null | BaseSelection): boolean;
+  set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
+  clone(): TableSelection;
+  getCharacterOffsets(): [number, number];
+  extract(): Array<LexicalNode>;
+  insertRawText(): void;
+  insertText(): void;
+  isCollapsed(): false;
+  isBackward(): boolean;
+  getShape(): TableSelectionShape;
+  getNodes(): Array<LexicalNode>;
+  getTextContent(): string;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getStartEndPoints(): [PointType, PointType];
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
+}
+
+declare export function $isTableSelection(
+  x: ?mixed,
+): x is TableSelection;
+
+declare export function $createTableSelection(): TableSelection;
+
+/**
+ * LexicalTableCommands
+ */
+
+export type InsertTableCommandPayloadHeaders =
+  | $ReadOnly<{
+      rows: boolean;
+      columns: boolean;
+    }>
+  | boolean;
+
+export type InsertTableCommandPayload = $ReadOnly<{
+  columns: string;
+  rows: string;
+  includeHeaders?: InsertTableCommandPayloadHeaders;
 }>;
+
+declare export var INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;

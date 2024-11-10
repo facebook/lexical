@@ -6,7 +6,20 @@
  *
  */
 
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isLinkNode,
+  $toggleLink,
+  LinkNode,
+  SerializedLinkNode,
+} from '@lexical/link';
+import {
+  $getRoot,
+  $selectAll,
+  ParagraphNode,
+  SerializedParagraphNode,
+  TextNode,
+} from 'lexical/src';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -376,6 +389,25 @@ describe('LexicalLinkNode tests', () => {
 
         expect($isLinkNode(linkNode)).toBe(true);
       });
+    });
+
+    test('$toggleLink applies the title attribute when creating', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const p = new ParagraphNode();
+        p.append(new TextNode('Some text'));
+        $getRoot().append(p);
+      });
+
+      await editor.update(() => {
+        $selectAll();
+        $toggleLink('https://lexical.dev/', {title: 'Lexical Website'});
+      });
+
+      const paragraph = editor!.getEditorState().toJSON().root
+        .children[0] as SerializedParagraphNode;
+      const link = paragraph.children[0] as SerializedLinkNode;
+      expect(link.title).toBe('Lexical Website');
     });
   });
 });

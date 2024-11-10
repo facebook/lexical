@@ -22,7 +22,7 @@ import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
-function diffTextContentAndApplyDelta(
+function $diffTextContentAndApplyDelta(
   collabNode: CollabTextNode,
   key: NodeKey,
   prevText: string,
@@ -134,7 +134,7 @@ export class CollabTextNode {
 
       if (prevText !== nextText) {
         const key = nextLexicalNode.__key;
-        diffTextContentAndApplyDelta(this, key, prevText, nextText);
+        $diffTextContentAndApplyDelta(this, key, prevText, nextText);
         this._text = nextText;
       }
     }
@@ -147,7 +147,7 @@ export class CollabTextNode {
     const lexicalNode = this.getNode();
     invariant(
       lexicalNode !== null,
-      'syncPropertiesAndTextFromYjs: cound not find decorator node',
+      'syncPropertiesAndTextFromYjs: could not find decorator node',
     );
 
     syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
@@ -173,7 +173,6 @@ export function $createCollabTextNode(
   type: string,
 ): CollabTextNode {
   const collabNode = new CollabTextNode(map, text, parent, type);
-  // @ts-expect-error: internal field
   map._collabNode = collabNode;
   return collabNode;
 }

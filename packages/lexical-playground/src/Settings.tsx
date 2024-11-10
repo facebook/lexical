@@ -6,10 +6,10 @@
  *
  */
 
-import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {CAN_USE_BEFORE_INPUT} from '@lexical/utils';
+import {useEffect, useMemo, useState} from 'react';
 
-import {isDevPlayground} from './appSettings';
+import {INITIAL_SETTINGS, isDevPlayground} from './appSettings';
 import {useSettings} from './context/SettingsContext';
 import Switch from './ui/Switch';
 
@@ -22,6 +22,7 @@ export default function Settings(): JSX.Element {
       isCollab,
       isRichText,
       isMaxLength,
+      hasLinkAttributes,
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
@@ -30,8 +31,16 @@ export default function Settings(): JSX.Element {
       disableBeforeInput,
       showTableOfContents,
       shouldUseLexicalContextMenu,
+      shouldPreserveNewLinesInMarkdown,
     },
   } = useSettings();
+  useEffect(() => {
+    if (INITIAL_SETTINGS.disableBeforeInput && CAN_USE_BEFORE_INPUT) {
+      console.error(
+        `Legacy events are enabled (disableBeforeInput) but CAN_USE_BEFORE_INPUT is true`,
+      );
+    }
+  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [isSplitScreen, search] = useMemo(() => {
     const parentWindow = window.parent;
@@ -109,6 +118,11 @@ export default function Settings(): JSX.Element {
             text="Char Limit (UTF-8)"
           />
           <Switch
+            onClick={() => setOption('hasLinkAttributes', !hasLinkAttributes)}
+            checked={hasLinkAttributes}
+            text="Link Attributes"
+          />
+          <Switch
             onClick={() => setOption('isMaxLength', !isMaxLength)}
             checked={isMaxLength}
             text="Max Length"
@@ -142,6 +156,16 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldUseLexicalContextMenu}
             text="Use Lexical Context Menu"
+          />
+          <Switch
+            onClick={() => {
+              setOption(
+                'shouldPreserveNewLinesInMarkdown',
+                !shouldPreserveNewLinesInMarkdown,
+              );
+            }}
+            checked={shouldPreserveNewLinesInMarkdown}
+            text="Preserve newlines in Markdown"
           />
         </div>
       ) : null}

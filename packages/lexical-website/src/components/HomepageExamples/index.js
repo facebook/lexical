@@ -7,8 +7,9 @@
  */
 
 import Link from '@docusaurus/Link';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import * as Tabs from '@radix-ui/react-tabs';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 const EXAMPLES = [
   {
@@ -23,7 +24,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-1',
     label: 'Simple Setup',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark',
+    src: 'vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=1',
   },
   {
     content: (
@@ -38,7 +39,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-2',
     label: 'Powerful Features',
-    src: 'https://codesandbox.io/embed/lexical-rich-text-example-5tncvy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark',
+    src: 'react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1',
   },
   {
     content: (
@@ -50,12 +51,15 @@ const EXAMPLES = [
     ),
     id: 'example-feature-3',
     label: 'Built to Extend',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-forked-qdxhy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEmoticonPlugin.js&theme=dark&view=editor',
+    src: 'vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=1',
   },
 ];
 
 export default function HomepageExamples() {
   const [activeItemID, setActiveItemID] = useState(EXAMPLES[0].id);
+  const {
+    siteConfig: {customFields},
+  } = useDocusaurusContext();
 
   return (
     <Tabs.Root
@@ -67,7 +71,7 @@ export default function HomepageExamples() {
           {EXAMPLES.map(({id, label}) => (
             <Tabs.Trigger asChild={true} value={id} key={id}>
               <li
-                className={`cursor-pointer list-none rounded-md px-4 py-1 font-bold transition-colors hover:bg-[#f2f2f2] ${
+                className={`button--text cursor-pointer list-none rounded-md px-4 py-1 font-bold transition-colors hover:bg-[#f2f2f2] ${
                   activeItemID === id && 'pills__item--active'
                 }`}
                 tabIndex={0}
@@ -79,7 +83,7 @@ export default function HomepageExamples() {
         </ul>
       </Tabs.List>
 
-      {EXAMPLES.map(({id, content, src}) => (
+      {EXAMPLES.map(({id, content, src, label}) => (
         <Tabs.Content asChild={true} value={id} key={id}>
           <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
             <div className="flex flex-col gap-6">
@@ -97,9 +101,9 @@ export default function HomepageExamples() {
             <div>
               <iframe
                 className="h-[500px] w-full overflow-hidden"
-                src={src}
-                title="lexical-plain-text-example"
-                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                src={`${customFields.STACKBLITZ_PREFIX}examples/${src}`}
+                title={label}
+                sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
               />
             </div>
           </div>

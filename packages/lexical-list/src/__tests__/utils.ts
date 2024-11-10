@@ -28,6 +28,6 @@ export function expectHtmlToBeEqual(expected: string, actual: string): void {
   expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
 }
 
-function prettifyHtml(s: string): string {
+export function prettifyHtml(s: string): string {
   return prettier.format(s.replace(/\n/g, ''), {parser: 'html'});
 }

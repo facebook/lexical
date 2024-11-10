@@ -31,15 +31,15 @@ test.describe('Regression test #3433', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul">
           <li
-            value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            value="1">
             <span data-lexical-text="true">two</span>
           </li>
           <li
-            value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            value="2">
             <span data-lexical-text="true">one</span>
           </li>
         </ul>

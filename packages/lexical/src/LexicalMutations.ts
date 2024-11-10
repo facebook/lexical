@@ -8,11 +8,7 @@
 
 import type {TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from './LexicalSelection';
+import type {BaseSelection} from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
 
@@ -28,9 +24,9 @@ import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
+  $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
-  getNodeFromDOMNode,
   getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
@@ -41,7 +37,7 @@ const TEXT_MUTATION_VARIANCE = 100;
 let isProcessingMutations = false;
 let lastTextEntryTimeStamp = 0;
 
-export function getIsProcesssingMutations(): boolean {
+export function getIsProcessingMutations(): boolean {
   return isProcessingMutations;
 }
 
@@ -68,16 +64,14 @@ function isManagedLineBreak(
   );
 }
 
-function getLastSelection(
-  editor: LexicalEditor,
-): null | RangeSelection | NodeSelection | GridSelection {
+function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
     return selection !== null ? selection.clone() : null;
   });
 }
 
-function handleTextMutation(
+function $handleTextMutation(
   target: Text,
   node: TextNode,
   editor: LexicalEditor,
@@ -98,7 +92,7 @@ function handleTextMutation(
 }
 
 function shouldUpdateTextNodeFromMutation(
-  selection: null | RangeSelection | GridSelection | NodeSelection,
+  selection: null | BaseSelection,
   targetDOM: Node,
   targetNode: TextNode,
 ): boolean {
@@ -159,7 +153,7 @@ export function $flushMutations(
             $isTextNode(targetNode) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            handleTextMutation(
+            $handleTextMutation(
               // nodeType === DOM_TEXT_TYPE is a Text DOM node
               targetDOM as Text,
               targetNode,
@@ -175,7 +169,7 @@ export function $flushMutations(
 
           for (let s = 0; s < addedDOMs.length; s++) {
             const addedDOM = addedDOMs[s];
-            const node = getNodeFromDOMNode(addedDOM);
+            const node = $getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
 
             if (
@@ -309,7 +303,7 @@ export function $flushMutations(
   }
 }
 
-export function flushRootMutations(editor: LexicalEditor): void {
+export function $flushRootMutations(editor: LexicalEditor): void {
   const observer = editor._observer;
 
   if (observer !== null) {

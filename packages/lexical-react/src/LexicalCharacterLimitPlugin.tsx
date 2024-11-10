@@ -39,12 +39,29 @@ function utf8Length(text: string) {
   return currentTextEncoder.encode(text).length;
 }
 
+function DefaultRenderer({remainingCharacters}: {remainingCharacters: number}) {
+  return (
+    <span
+      className={`characters-limit ${
+        remainingCharacters < 0 ? 'characters-limit-exceeded' : ''
+      }`}>
+      {remainingCharacters}
+    </span>
+  );
+}
+
 export function CharacterLimitPlugin({
   charset = 'UTF-16',
   maxLength = CHARACTER_LIMIT,
+  renderer = DefaultRenderer,
 }: {
   charset: 'UTF-8' | 'UTF-16';
   maxLength: number;
+  renderer?: ({
+    remainingCharacters,
+  }: {
+    remainingCharacters: number;
+  }) => JSX.Element;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -68,12 +85,5 @@ export function CharacterLimitPlugin({
 
   useCharacterLimit(editor, maxLength, characterLimitProps);
 
-  return (
-    <span
-      className={`characters-limit ${
-        remainingCharacters < 0 ? 'characters-limit-exceeded' : ''
-      }`}>
-      {remainingCharacters}
-    </span>
-  );
+  return renderer({remainingCharacters});
 }

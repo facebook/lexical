@@ -9,14 +9,34 @@
     "selection"
   ],
   "license": "MIT",
-  "version": "0.12.2",
+  "version": "0.20.0",
   "main": "LexicalSelection.js",
-  "peerDependencies": {
-    "lexical": "0.12.2"
-  },
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-selection"
+  },
+  "module": "LexicalSelection.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalSelection.dev.mjs",
+        "production": "./LexicalSelection.prod.mjs",
+        "node": "./LexicalSelection.node.mjs",
+        "default": "./LexicalSelection.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalSelection.dev.js",
+        "production": "./LexicalSelection.prod.js",
+        "default": "./LexicalSelection.js"
+      }
+    }
+  },
+  "dependencies": {
+    "lexical": "0.20.0"
   }
 }

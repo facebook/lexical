@@ -1,4 +1,3 @@
-/** @module @lexical/selection */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -9,11 +8,10 @@
 
 import {
   $addNodeStyle,
-  $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
-  trimTextContentFromAnchor,
+  $trimTextContentFromAnchor,
 } from './lexical-node';
 import {
   $getSelectionStyleValueForProperty,
@@ -28,17 +26,22 @@ import {
 import {
   createDOMRange,
   createRectsFromDOMRange,
+  getCSSFromStyleObject,
   getStyleObjectFromCSS,
 } from './utils';
 
 export {
+  /** @deprecated moved to the lexical package */ $cloneWithProperties,
+} from 'lexical';
+export {
   $addNodeStyle,
-  $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
-  trimTextContentFromAnchor,
+  $trimTextContentFromAnchor,
 };
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
+export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 
 export {
   $getSelectionStyleValueForProperty,
@@ -51,4 +54,9 @@ export {
   $wrapNodes,
 };
 
-export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};
+export {
+  createDOMRange,
+  createRectsFromDOMRange,
+  getCSSFromStyleObject,
+  getStyleObjectFromCSS,
+};

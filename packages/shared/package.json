@@ -8,13 +8,14 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.12.2",
+  "version": "0.20.0",
   "dependencies": {
-    "lexical": "0.12.2"
+    "lexical": "0.20.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/shared"
-  }
+  },
+  "sideEffects": false
 }

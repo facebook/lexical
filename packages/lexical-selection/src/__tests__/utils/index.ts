@@ -12,6 +12,8 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
+  LexicalEditor,
+  PointType,
 } from 'lexical';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
@@ -30,7 +32,6 @@ type Segment = {
   segment: string;
 };
 
-// @ts-ignore
 if (!Selection.prototype.modify) {
   const wordBreakPolyfillRegex =
     /[\s.,\\/#!$%^&*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/u;
@@ -49,7 +50,7 @@ if (!Selection.prototype.modify) {
   };
 
   const getWordsFromString = function (string: string): Array<Segment> {
-    const segments = [];
+    const segments: Segment[] = [];
     let wordString = '';
     let nonWordString = '';
     let i;
@@ -85,12 +86,12 @@ if (!Selection.prototype.modify) {
     return segments;
   };
 
-  // @ts-ignore
   Selection.prototype.modify = function (alter, direction, granularity) {
     // This is not a thorough implementation, it was more to get tests working
     // given the refactor to use this selection method.
     const symbol = Object.getOwnPropertySymbols(this)[0];
-    const impl = this[symbol];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const impl = (this as any)[symbol];
     const focus = impl._focus;
     const anchor = impl._anchor;
 
@@ -164,11 +165,11 @@ if (!Selection.prototype.modify) {
         }
       }
     } else if (granularity === 'word') {
-      const anchorNode = this.anchorNode;
+      const anchorNode = this.anchorNode!;
       const targetTextContent =
         direction === 'backward'
-          ? anchorNode.textContent.slice(0, this.anchorOffset)
-          : anchorNode.textContent.slice(this.anchorOffset);
+          ? anchorNode.textContent!.slice(0, this.anchorOffset)
+          : anchorNode.textContent!.slice(this.anchorOffset);
       const segments = getWordsFromString(targetTextContent);
       const segmentsLength = segments.length;
       let index = anchor.offset;
@@ -218,27 +219,27 @@ if (!Selection.prototype.modify) {
   };
 }
 
-export function printWhitespace(whitespaceCharacter) {
+export function printWhitespace(whitespaceCharacter: string) {
   return whitespaceCharacter.charCodeAt(0) === 160
     ? '&nbsp;'
     : whitespaceCharacter;
 }
 
-export function insertText(text) {
+export function insertText(text: string) {
   return {
     text,
     type: 'insert_text',
   };
 }
 
-export function insertTokenNode(text) {
+export function insertTokenNode(text: string) {
   return {
     text,
     type: 'insert_token_node',
   };
 }
 
-export function insertSegmentedNode(text) {
+export function insertSegmentedNode(text: string) {
   return {
     text,
     type: 'insert_segmented_node',
@@ -385,10 +386,10 @@ export function pasteHTML(text: string) {
 }
 
 export function moveNativeSelection(
-  anchorPath,
-  anchorOffset,
-  focusPath,
-  focusOffset,
+  anchorPath: number[],
+  anchorOffset: number,
+  focusPath: number[],
+  focusOffset: number,
 ) {
   return {
     anchorOffset,
@@ -399,7 +400,7 @@ export function moveNativeSelection(
   };
 }
 
-export function getNodeFromPath(path, rootElement) {
+export function getNodeFromPath(path: number[], rootElement: Node) {
   let node = rootElement;
 
   for (let i = 0; i < path.length; i++) {
@@ -410,12 +411,12 @@ export function getNodeFromPath(path, rootElement) {
 }
 
 export function setNativeSelection(
-  anchorNode,
-  anchorOffset,
-  focusNode,
-  focusOffset,
+  anchorNode: Node,
+  anchorOffset: number,
+  focusNode: Node,
+  focusOffset: number,
 ) {
-  const domSelection = window.getSelection();
+  const domSelection = window.getSelection()!;
   const range = document.createRange();
   range.setStart(anchorNode, anchorOffset);
   range.setEnd(focusNode, focusOffset);
@@ -427,18 +428,18 @@ export function setNativeSelection(
 }
 
 export function setNativeSelectionWithPaths(
-  rootElement,
-  anchorPath,
-  anchorOffset,
-  focusPath,
-  focusOffset,
+  rootElement: Node,
+  anchorPath: number[],
+  anchorOffset: number,
+  focusPath: number[],
+  focusOffset: number,
 ) {
   const anchorNode = getNodeFromPath(anchorPath, rootElement);
   const focusNode = getNodeFromPath(focusPath, rootElement);
   setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset);
 }
 
-function getLastTextNode(startingNode) {
+function getLastTextNode(startingNode: Node) {
   let node = startingNode;
 
   mainLoop: while (node !== null) {
@@ -477,7 +478,7 @@ function getLastTextNode(startingNode) {
   return null;
 }
 
-function getNextTextNode(startingNode) {
+function getNextTextNode(startingNode: Node) {
   let node = startingNode;
 
   mainLoop: while (node !== null) {
@@ -517,12 +518,14 @@ function getNextTextNode(startingNode) {
 }
 
 function moveNativeSelectionBackward() {
-  const domSelection = window.getSelection();
-  let {anchorNode, anchorOffset} = domSelection;
+  const domSelection = window.getSelection()!;
+  let anchorNode = domSelection.anchorNode!;
+  let anchorOffset = domSelection.anchorOffset!;
 
   if (domSelection.isCollapsed) {
-    const target =
-      anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode;
+    const target = (
+      anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode
+    )!;
     const keyDownEvent = new KeyboardEvent('keydown', {
       bubbles: true,
       cancelable: true,
@@ -539,7 +542,7 @@ function moveNativeSelectionBackward() {
           if (lastTextNode === null) {
             throw new Error('moveNativeSelectionBackward: TODO');
           } else {
-            const textLength = lastTextNode.nodeValue.length;
+            const textLength = lastTextNode.nodeValue!.length;
             setNativeSelection(
               lastTextNode,
               textLength,
@@ -557,7 +560,7 @@ function moveNativeSelectionBackward() {
         }
       } else if (anchorNode.nodeType === 1) {
         if (anchorNode.nodeName === 'BR') {
-          const parentNode = anchorNode.parentNode;
+          const parentNode = anchorNode.parentNode!;
           const childNodes = Array.from(parentNode.childNodes);
           anchorOffset = childNodes.indexOf(anchorNode as ChildNode);
           anchorNode = parentNode;
@@ -584,12 +587,14 @@ function moveNativeSelectionBackward() {
 }
 
 function moveNativeSelectionForward() {
-  const domSelection = window.getSelection();
-  const {anchorNode, anchorOffset} = domSelection;
+  const domSelection = window.getSelection()!;
+  const anchorNode = domSelection.anchorNode!;
+  const anchorOffset = domSelection.anchorOffset!;
 
   if (domSelection.isCollapsed) {
-    const target =
-      anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode;
+    const target = (
+      anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode
+    )!;
     const keyDownEvent = new KeyboardEvent('keydown', {
       bubbles: true,
       cancelable: true,
@@ -600,7 +605,7 @@ function moveNativeSelectionForward() {
 
     if (!keyDownEvent.defaultPrevented) {
       if (anchorNode.nodeType === 3) {
-        const text = anchorNode.nodeValue;
+        const text = anchorNode.nodeValue!;
 
         if (text.length === anchorOffset) {
           const nextTextNode = getNextTextNode(anchorNode);
@@ -635,8 +640,13 @@ function moveNativeSelectionForward() {
   }
 }
 
-export async function applySelectionInputs(inputs, update, editor) {
-  const rootElement = editor.getRootElement();
+export async function applySelectionInputs(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  inputs: Record<string, any>[],
+  update: (fn: () => void) => Promise<void>,
+  editor: LexicalEditor,
+) {
+  const rootElement = editor.getRootElement()!;
 
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
@@ -644,7 +654,7 @@ export async function applySelectionInputs(inputs, update, editor) {
 
     for (let j = 0; j < times; j++) {
       await update(() => {
-        const selection = $getSelection();
+        const selection = $getSelection()!;
 
         switch (input.type) {
           case 'insert_text': {
@@ -800,7 +810,7 @@ export async function applySelectionInputs(inputs, update, editor) {
                 }),
                 {
                   clipboardData: {
-                    getData: (type) => {
+                    getData: (type: string) => {
                       if (type === 'text/plain') {
                         return input.text;
                       }
@@ -823,7 +833,7 @@ export async function applySelectionInputs(inputs, update, editor) {
                 }),
                 {
                   clipboardData: {
-                    getData: (type) => {
+                    getData: (type: string) => {
                       if (type === 'application/x-lexical-editor') {
                         return input.text;
                       }
@@ -846,7 +856,7 @@ export async function applySelectionInputs(inputs, update, editor) {
                 }),
                 {
                   clipboardData: {
-                    getData: (type) => {
+                    getData: (type: string) => {
                       if (type === 'text/html') {
                         return input.text;
                       }
@@ -865,13 +875,15 @@ export async function applySelectionInputs(inputs, update, editor) {
   }
 }
 
-export function setAnchorPoint(point) {
-  let selection = $getSelection();
+export function $setAnchorPoint(
+  point: Pick<PointType, 'type' | 'offset' | 'key'>,
+) {
+  const selection = $getSelection();
 
-  if (selection === null) {
+  if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    selection = $getSelection();
+    return $setAnchorPoint(point);
   }
 
   if ($isNodeSelection(selection)) {
@@ -884,13 +896,15 @@ export function setAnchorPoint(point) {
   anchor.key = point.key;
 }
 
-export function setFocusPoint(point) {
-  let selection = $getSelection();
+export function $setFocusPoint(
+  point: Pick<PointType, 'type' | 'offset' | 'key'>,
+) {
+  const selection = $getSelection();
 
-  if (selection === null) {
+  if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    selection = $getSelection();
+    return $setFocusPoint(point);
   }
 
   if ($isNodeSelection(selection)) {

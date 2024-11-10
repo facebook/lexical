@@ -20,7 +20,7 @@ import {
 test.describe('Element format', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
-    initialize({isCollab, page});
+    return initialize({isCollab, page});
   });
 
   test('Can indent/align paragraph when caret is within link', async ({
@@ -39,13 +39,13 @@ test.describe('Element format', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(80px); text-align: center;"
-          dir="ltr">
+          dir="ltr"
+          style="padding-inline-start: calc(80px); text-align: center;">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://lexical.io"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://lexical.io">
             <span data-lexical-text="true">https://lexical.io</span>
           </a>
           <span data-lexical-text="true">world</span>

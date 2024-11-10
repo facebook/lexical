@@ -6,8 +6,9 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
+import type {LexicalNode, Spread} from 'lexical';
 
+import {$findMatchingParent} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -124,6 +125,10 @@ export function $getAllListItems(node: ListNode): Array<ListItemNode> {
   return listItemNodes;
 }
 
+const NestedListNodeBrand: unique symbol = Symbol.for(
+  '@lexical/NestedListNodeBrand',
+);
+
 /**
  * Checks to see if the passed node is a ListItemNode and has a ListNode as a child.
  * @param node - The node to be checked.
@@ -131,7 +136,10 @@ export function $getAllListItems(node: ListNode): Array<ListItemNode> {
  */
 export function isNestedListNode(
   node: LexicalNode | null | undefined,
-): boolean {
+): node is Spread<
+  {getFirstChild(): ListNode; [NestedListNodeBrand]: never},
+  ListItemNode
+> {
   return $isListItemNode(node) && $isListNode(node.getFirstChild());
 }
 
@@ -140,20 +148,13 @@ export function isNestedListNode(
  * @param node - Node to start the search.
  * @returns The first ListItemNode found, or null if none exist.
  */
-// TODO: rewrite with $findMatchingParent or *nodeOfType
-export function findNearestListItemNode(
+export function $findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {
-  let currentNode: LexicalNode | null = node;
-
-  while (currentNode !== null) {
-    if ($isListItemNode(currentNode)) {
-      return currentNode;
-    }
-    currentNode = currentNode.getParent();
-  }
-
-  return null;
+  const matchingParent = $findMatchingParent(node, (parent) =>
+    $isListItemNode(parent),
+  );
+  return matchingParent as ListItemNode | null;
 }
 
 /**
@@ -198,7 +199,7 @@ export function $removeHighestEmptyListParent(
  * @param node - The node to be wrapped into a ListItemNode
  * @returns The ListItemNode which the passed node is wrapped in.
  */
-export function wrapInListItem(node: LexicalNode): ListItemNode {
+export function $wrapInListItem(node: LexicalNode): ListItemNode {
   const listItemWrapper = $createListItemNode();
   return listItemWrapper.append(node);
 }

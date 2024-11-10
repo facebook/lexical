@@ -58,8 +58,30 @@ declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
 declare export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
 declare export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
 declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
+declare export var SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_END: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_START: LexicalCommand<KeyboardEvent>;
+declare export var SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
+  nodes: Array<LexicalNode>;
+  selection: BaseSelection;
+}>;
 
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
+
+/**
+ * LexicalConstants
+ */
+
+declare export var IS_ALL_FORMATTING: number;
+declare export var IS_BOLD: number;
+declare export var IS_CODE: number;
+declare export var IS_HIGHLIGHT: number;
+declare export var IS_ITALIC: number;
+declare export var IS_STRIKETHROUGH: number;
+declare export var IS_SUBSCRIPT: number;
+declare export var IS_SUPERSCRIPT: number;
+declare export var IS_UNDERLIN: number;
+declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
 
 /**
  * LexicalEditor
@@ -94,6 +116,9 @@ export type MutationListener = (
     prevEditorState: EditorState,
   },
 ) => void;
+export type MutationListenerOptions = {
+  skipInitialization?: boolean;
+};
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
   decorator: Set<DecoratorListener>,
@@ -102,7 +127,7 @@ type Listeners = {
   root: Set<RootListener>,
   update: Set<UpdateListener>,
 };
-type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
+export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 // $FlowFixMe[unclear-type]
 type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
 type RegisteredNodes = Map<string, RegisteredNode>;
@@ -163,6 +188,7 @@ declare export class LexicalEditor {
   registerMutationListener(
     klass: Class<LexicalNode>,
     listener: MutationListener,
+    options?: MutationListenerOptions,
   ): () => void;
   registerNodeTransform<T: LexicalNode>(
     klass: Class<T>,
@@ -183,6 +209,7 @@ declare export class LexicalEditor {
     maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
+  read<V>(callbackFn: () => V, options?: EditorReadOptions): V;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
@@ -190,9 +217,12 @@ declare export class LexicalEditor {
   setEditable(editable: boolean): void;
   toJSON(): SerializedEditor;
 }
+type EditorReadOptions = {
+  pending?: boolean,
+};
 type EditorUpdateOptions = {
   onUpdate?: () => void,
-  tag?: string,
+  tag?: string | Array<string>,
   skipTransforms?: true,
   discrete?: true,
 };
@@ -304,19 +334,17 @@ declare export function createEditor(editorConfig?: {
 
 export interface EditorState {
   _nodeMap: NodeMap;
-  _selection: null | RangeSelection | NodeSelection | GridSelection;
+  _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
-  constructor(
-    nodeMap: NodeMap,
-    selection?: RangeSelection | NodeSelection | GridSelection | null,
-  ): void;
+  constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
-  read<V>(callbackFn: () => V): V;
+  read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V;
   toJSON(): SerializedEditorState;
-  clone(
-    selection?: RangeSelection | NodeSelection | GridSelection | null,
-  ): EditorState;
+  clone(selection?: BaseSelection | null): EditorState;
+}
+type EditorStateReadOptions = {
+  editor?: LexicalEditor | null;
 }
 
 /**
@@ -365,8 +393,8 @@ declare export class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T: ElementNode>(): T | null;
   getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): DecoratorNode<mixed> | ElementNode | null;
+  getTopLevelElementOrThrow(): DecoratorNode<mixed> | ElementNode;
   getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T: LexicalNode>(): T | null;
@@ -414,52 +442,27 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 
 declare export function $isBlockElementNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ElementNode);
+): node is ElementNode;
 
-interface BaseSelection {
+export interface BaseSelection {
   clone(): BaseSelection;
   dirty: boolean;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertRawText(text: string): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
+  insertText(text: string): void;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
-export type GridSelectionShape = {
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-};
-declare export class GridSelection implements BaseSelection {
-  gridKey: NodeKey;
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
-  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
-  clone(): GridSelection;
-  getCharacterOffsets(): [number, number];
-  extract(): Array<LexicalNode>;
-  insertRawText(): void;
-  insertText(): void;
-  isCollapsed(): false;
-  isBackward(): boolean;
-  getShape(): GridSelectionShape;
-  getNodes(): Array<LexicalNode>;
-  getTextContent(): string;
-}
-
-declare export function DEPRECATED_$isGridSelection(
-  x: ?mixed,
-): boolean %checks(x instanceof GridSelection);
 
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
   constructor(objects: Set<NodeKey>): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
   add(key: NodeKey): void;
   delete(key: NodeKey): void;
   clear(): void;
@@ -470,11 +473,14 @@ declare export class NodeSelection implements BaseSelection {
   insertText(): void;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
 declare export function $isNodeSelection(
   x: ?mixed,
-): boolean %checks(x instanceof NodeSelection);
+): x is NodeSelection;
 
 declare export class RangeSelection implements BaseSelection {
   anchor: PointType;
@@ -482,7 +488,7 @@ declare export class RangeSelection implements BaseSelection {
   dirty: boolean;
   format: number;
   constructor(anchor: PointType, focus: PointType, format: number): void;
-  is(selection: null | RangeSelection | GridSelection | NodeSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
   isCollapsed(): boolean;
   getNodes(): Array<LexicalNode>;
@@ -503,10 +509,9 @@ declare export class RangeSelection implements BaseSelection {
   insertRawText(text: string): void;
   removeText(): void;
   formatText(formatType: TextFormatType): void;
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean;
+  insertNodes(nodes: Array<LexicalNode>): void;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
-  getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   modify(
     alter: 'move' | 'extend',
@@ -516,6 +521,9 @@ declare export class RangeSelection implements BaseSelection {
   deleteCharacter(isBackward: boolean): void;
   deleteLine(isBackward: boolean): void;
   deleteWord(isBackward: boolean): void;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 export type TextPoint = TextPointType;
 type TextPointType = {
@@ -539,7 +547,7 @@ type ElementPointType = {
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
 };
 export type Point = PointType;
-type PointType = TextPointType | ElementPointType;
+export type PointType = TextPointType | ElementPointType;
 declare class _Point {
   key: NodeKey;
   offset: number;
@@ -553,38 +561,16 @@ declare class _Point {
 
 declare export function $createRangeSelection(): RangeSelection;
 declare export function $createNodeSelection(): NodeSelection;
-declare export function DEPRECATED_$createGridSelection(): GridSelection;
 declare export function $isRangeSelection(
   x: ?mixed,
-): boolean %checks(x instanceof RangeSelection);
-declare export function $getSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection;
-declare export function $getPreviousSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection;
-declare export function $insertNodes(
-  nodes: Array<LexicalNode>,
-  selectStart?: boolean,
-): boolean;
-export type GridMapValueType = {
-  cell: deprecated_GridCellNode,
-  startRow: number,
-  startColumn: number,
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
-declare export function DEPRECATED_$computeGridMap(
-  grid: deprecated_GridNode,
-  cellA: deprecated_GridCellNode,
-  cellB: deprecated_GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType];
-declare export function DEPRECATED_$getNodeTriplet(
-  source: PointType | LexicalNode | deprecated_GridCellNode,
-): [deprecated_GridCellNode, deprecated_GridRowNode, deprecated_GridNode];
+): x is RangeSelection;
+declare export function $getSelection(): null | BaseSelection;
+declare export function $getPreviousSelection(): null | BaseSelection;
+declare export function $insertNodes(nodes: Array<LexicalNode>): void;
+declare export function $getCharacterOffsets(
+  selection: BaseSelection,
+): [number, number];
+
 
 /**
  * LexicalTextNode
@@ -610,6 +596,8 @@ declare export class TextNode extends LexicalNode {
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
@@ -628,7 +616,7 @@ declare export class TextNode extends LexicalNode {
     config: EditorConfig,
   ): boolean;
   selectionTransform(
-    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
+    prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
   ): void;
   setFormat(format: number): this;
@@ -659,7 +647,7 @@ declare export class TextNode extends LexicalNode {
 declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TextNode);
+): node is TextNode;
 
 /**
  * LexicalTabNode
@@ -671,7 +659,7 @@ declare export function $createTabNode(): TabNode;
 
 declare export function $isTabNode(
   node: LexicalNode | null | void,
-): boolean %checks(node instanceof TabNode);
+): node is TabNode;
 
 declare export class TabNode extends TextNode {
   static getType(): string;
@@ -701,7 +689,7 @@ declare export class LineBreakNode extends LexicalNode {
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof LineBreakNode);
+): node is LineBreakNode;
 
 /**
  * LexicalRootNode
@@ -724,7 +712,7 @@ declare export class RootNode extends ElementNode {
 }
 declare export function $isRootNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof RootNode);
+): node is RootNode;
 
 /**
  * LexicalElementNode
@@ -745,6 +733,8 @@ declare export class ElementNode extends LexicalNode {
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
@@ -781,12 +771,11 @@ declare export class ElementNode extends LexicalNode {
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;
-  canExtractContents(): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canInsertAfter(node: LexicalNode): boolean;
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: BaseSelection,
     destination: 'clone' | 'html',
   ): boolean;
   canBeEmpty(): boolean;
@@ -804,7 +793,7 @@ declare export class ElementNode extends LexicalNode {
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ElementNode);
+): node is ElementNode;
 
 /**
  * LexicalDecoratorNode
@@ -812,14 +801,18 @@ declare export function $isElementNode(
 
 declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
+  // Not sure how to get flow to agree that the DecoratorNode<mixed> is compatible with this,
+  // so we have a less precise type than in TS
+  // getTopLevelElement(): this | ElementNode | null;
+  // getTopLevelElementOrThrow(): this | ElementNode;
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
   isInline(): boolean;
   isKeyboardSelectable(): boolean;
 }
-declare export function $isDecoratorNode(
+declare export function $isDecoratorNode<T = mixed>(
   node: ?LexicalNode,
-): boolean %checks(node instanceof DecoratorNode);
+): node is DecoratorNode<T>;
 
 /**
  * LexicalParagraphNode
@@ -830,7 +823,10 @@ declare export class ParagraphNode extends ElementNode {
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
-  insertNewAfter(): ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode;
   collapseAtStart(): boolean;
   static importJSON(
     serializedParagraphNode: SerializedParagraphNode,
@@ -840,34 +836,7 @@ declare export class ParagraphNode extends ElementNode {
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ParagraphNode);
-
-declare export class deprecated_GridNode extends ElementNode {}
-
-declare export function DEPRECATED_$isGridNode(
-  node: ?LexicalNode,
-): boolean %checks(node instanceof deprecated_GridNode);
-
-declare export class deprecated_GridRowNode extends ElementNode {}
-
-declare export function DEPRECATED_$isGridRowNode(
-  node: ?LexicalNode,
-): boolean %checks(node instanceof deprecated_GridRowNode);
-
-declare export class deprecated_GridCellNode extends ElementNode {
-  __colSpan: number;
-  __rowSpan: number;
-
-  constructor(colSpan: number, key?: NodeKey): void;
-  getColSpan(): number;
-  setColSpan(colSpan: number): this;
-  getRowSpan(): number;
-  setRowSpan(rowSpan: number): this;
-}
-
-declare export function DEPRECATED_$isGridCellNode(
-  node: ?LexicalNode,
-): boolean %checks(node instanceof deprecated_GridCellNode);
+): node is ParagraphNode;
 
 /**
  * LexicalUtils
@@ -875,46 +844,54 @@ declare export function DEPRECATED_$isGridCellNode(
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 declare export function $hasUpdateTag(tag: string): boolean;
 declare export function $addUpdateTag(tag: string): void;
+declare export function $onUpdate(updateFn: () => void): void;
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
 declare export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null;
+declare export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N;
 declare export function $getRoot(): RootNode;
-declare export function $isLeafNode(
+declare export function $isLeafNode<T = mixed>(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TextNode ||
-  node instanceof LineBreakNode ||
-  node instanceof DecoratorNode);
+): node is TextNode | LineBreakNode |  DecoratorNode<T>;
 declare export function $setCompositionKey(
   compositionKey: null | NodeKey,
 ): void;
-declare export function $setSelection(
-  selection: null | RangeSelection | NodeSelection | GridSelection,
-): void;
+declare export function $setSelection(selection: null | BaseSelection): void;
 declare export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T>;
 declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
+declare export function resetRandomKey(): void;
 declare export function generateRandomKey(): string;
-declare export function $isInlineElementOrDecoratorNode(
+declare export function $isInlineElementOrDecoratorNode<T = mixed>(
   node: LexicalNode,
-): boolean %checks(node instanceof ElementNode ||
-  node instanceof DecoratorNode);
+): node is ElementNode|  DecoratorNode<T>;
 declare export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
   node: ?LexicalNode,
-): boolean %checks(node instanceof RootNode || node instanceof ElementNode);
+): node is RootNode | ElementNode;
 declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function $copyNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode, ElementNode];
+declare export function $getEditor(): LexicalEditor;
+
+/**
+ * LexicalNormalization
+ */
+
+declare export function $normalizeSelection__EXPERIMENTAL(
+  selection: RangeSelection,
+): RangeSelection;
 
 /**
  * Serialization/Deserialization

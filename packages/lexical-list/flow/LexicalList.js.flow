@@ -30,10 +30,10 @@ declare export function $getListDepth(listNode: ListNode): number;
 declare export function $handleListInsertParagraph(): boolean;
 declare export function $isListItemNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ListItemNode);
+): node is ListItemNode;
 declare export function $isListNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ListNode);
+): node is ListNode;
 declare export function indentList(): void;
 declare export function insertList(
   editor: LexicalEditor,
@@ -43,7 +43,10 @@ declare export class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): this;
   replace<N: LexicalNode>(replaceWithNode: N): N;
   insertAfter(node: LexicalNode, restoreSelection?: boolean): LexicalNode;
-  insertNewAfter(): ListItemNode | ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ListItemNode | ParagraphNode;
   collapseAtStart(selection: RangeSelection): true;
   getIndent(): number;
   setIndent(indent: number): this;
@@ -51,6 +54,8 @@ declare export class ListItemNode extends ElementNode {
   canInsertAfter(node: LexicalNode): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canMergeWith(node: LexicalNode): boolean;
+  getValue(): number;
+  setValue(value: number): void;
   getChecked(): boolean | void;
   setChecked(boolean): this;
   toggleChecked(): void;

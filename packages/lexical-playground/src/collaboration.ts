@@ -31,7 +31,7 @@ export function createWebsocketProvider(
     doc.load();
   }
 
-  // @ts-ignore
+  // @ts-expect-error
   return new WebsocketProvider(
     WEBSOCKET_ENDPOINT,
     WEBSOCKET_SLUG + '/' + WEBSOCKET_ID + '/' + id,

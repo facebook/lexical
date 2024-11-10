@@ -8,14 +8,21 @@
 
 import './ColorPicker.css';
 
+import {calculateZoomLevel} from '@lexical/utils';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
 import TextInput from './TextInput';
 
+let skipAddingToHistoryStack = false;
+
 interface ColorPickerProps {
   color: string;
-  onChange?: (color: string) => void;
+  onChange?: (value: string, skipHistoryStack: boolean) => void;
+}
+
+export function parseAllowedColor(input: string) {
+  return /^rgb\(\d+, \d+, \d+\)$/.test(input) ? input : '';
 }
 
 const basicColors = [
@@ -92,13 +99,15 @@ export default function ColorPicker({
   useEffect(() => {
     // Check if the dropdown is actually active
     if (innerDivRef.current !== null && onChange) {
-      onChange(selfColor.hex);
+      onChange(selfColor.hex, skipAddingToHistoryStack);
       setInputColor(selfColor.hex);
     }
   }, [selfColor, onChange]);
 
   useEffect(() => {
-    if (color === undefined) return;
+    if (color === undefined) {
+      return;
+    }
     const newColor = transformColor('hex', color);
     setSelfColor(newColor);
     setInputColor(newColor.hex);
@@ -167,33 +176,43 @@ interface MoveWrapperProps {
 
 function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
   const divRef = useRef<HTMLDivElement>(null);
+  const draggedRef = useRef(false);
 
   const move = (e: React.MouseEvent | MouseEvent): void => {
     if (divRef.current) {
       const {current: div} = divRef;
       const {width, height, left, top} = div.getBoundingClientRect();
-
-      const x = clamp(e.clientX - left, width, 0);
-      const y = clamp(e.clientY - top, height, 0);
+      const zoom = calculateZoomLevel(div);
+      const x = clamp(e.clientX / zoom - left, width, 0);
+      const y = clamp(e.clientY / zoom - top, height, 0);
 
       onChange({x, y});
     }
   };
 
   const onMouseDown = (e: React.MouseEvent): void => {
-    if (e.button !== 0) return;
+    if (e.button !== 0) {
+      return;
+    }
 
     move(e);
 
     const onMouseMove = (_e: MouseEvent): void => {
+      draggedRef.current = true;
+      skipAddingToHistoryStack = true;
       move(_e);
     };
 
     const onMouseUp = (_e: MouseEvent): void => {
+      if (draggedRef.current) {
+        skipAddingToHistoryStack = false;
+      }
+
       document.removeEventListener('mousemove', onMouseMove, false);
       document.removeEventListener('mouseup', onMouseUp, false);
 
       move(_e);
+      draggedRef.current = false;
     };
 
     document.addEventListener('mousemove', onMouseMove, false);

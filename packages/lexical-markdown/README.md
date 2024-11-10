@@ -1,5 +1,7 @@
 # `@lexical/markdown`
 
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_markdown)
+
 This package contains markdown helpers for Lexical: import, export and shortcuts.
 
 ## Import and export
@@ -79,6 +81,7 @@ LINK
 And bundles of commonly used transformers:
 - `TRANSFORMERS` - all built-in transformers
 - `ELEMENT_TRANSFORMERS` - all built-in element transformers
+- `MULTILINE_ELEMENT_TRANSFORMERS` - all built-in multiline element transformers
 - `TEXT_FORMAT_TRANSFORMERS` - all built-in text format transformers
 - `TEXT_MATCH_TRANSFORMERS` - all built-in text match transformers
 

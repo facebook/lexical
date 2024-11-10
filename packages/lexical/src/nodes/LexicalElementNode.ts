@@ -6,18 +6,21 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
 import type {
-  GridSelection,
-  NodeSelection,
+  DOMExportOutput,
+  NodeKey,
+  SerializedLexicalNode,
+} from '../LexicalNode';
+import type {
+  BaseSelection,
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
+import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isTextNode, TextNode} from '../';
+import {$isTextNode, TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
@@ -26,14 +29,15 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
-  internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
   $isRootOrShadowRoot,
+  isHTMLElement,
   removeFromParent,
 } from '../LexicalUtils';
 
@@ -58,8 +62,16 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ElementNode {
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
+  ['constructor']!: KlassConstructor<typeof ElementNode>;
   /** @internal */
   __first: null | NodeKey;
   /** @internal */
@@ -68,6 +80,8 @@ export class ElementNode extends LexicalNode {
   __size: number;
   /** @internal */
   __format: number;
+  /** @internal */
+  __style: string;
   /** @internal */
   __indent: number;
   /** @internal */
@@ -79,8 +93,20 @@ export class ElementNode extends LexicalNode {
     this.__last = null;
     this.__size = 0;
     this.__format = 0;
+    this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+  }
+
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__first = prevNode.__first;
+    this.__last = prevNode.__last;
+    this.__size = prevNode.__size;
+    this.__indent = prevNode.__indent;
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__dir = prevNode.__dir;
   }
 
   getFormat(): number {
@@ -90,6 +116,10 @@ export class ElementNode extends LexicalNode {
   getFormatType(): ElementFormatType {
     const format = this.getFormat();
     return ELEMENT_FORMAT_TO_TYPE[format] || '';
+  }
+  getStyle(): string {
+    const self = this.getLatest();
+    return self.__style;
   }
   getIndent(): number {
     const self = this.getLatest();
@@ -147,29 +177,23 @@ export class ElementNode extends LexicalNode {
   }
   getFirstDescendant<T extends LexicalNode>(): null | T {
     let node = this.getFirstChild<T>();
-    while (node !== null) {
-      if ($isElementNode(node)) {
-        const child = node.getFirstChild<T>();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
+    while ($isElementNode(node)) {
+      const child = node.getFirstChild<T>();
+      if (child === null) {
+        break;
       }
-      break;
+      node = child;
     }
     return node;
   }
   getLastDescendant<T extends LexicalNode>(): null | T {
     let node = this.getLastChild<T>();
-    while (node !== null) {
-      if ($isElementNode(node)) {
-        const child = node.getLastChild<T>();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
+    while ($isElementNode(node)) {
+      const child = node.getLastChild<T>();
+      if (child === null) {
+        break;
       }
-      break;
+      node = child;
     }
     return node;
   }
@@ -322,7 +346,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,
@@ -339,25 +363,11 @@ export class ElementNode extends LexicalNode {
   }
   selectStart(): RangeSelection {
     const firstNode = this.getFirstDescendant();
-    if ($isElementNode(firstNode) || $isTextNode(firstNode)) {
-      return firstNode.select(0, 0);
-    }
-    // Decorator or LineBreak
-    if (firstNode !== null) {
-      return firstNode.selectPrevious();
-    }
-    return this.select(0, 0);
+    return firstNode ? firstNode.selectStart() : this.select();
   }
   selectEnd(): RangeSelection {
     const lastNode = this.getLastDescendant();
-    if ($isElementNode(lastNode) || $isTextNode(lastNode)) {
-      return lastNode.select();
-    }
-    // Decorator or LineBreak
-    if (lastNode !== null) {
-      return lastNode.selectNext();
-    }
-    return this.select();
+    return lastNode ? lastNode.selectEnd() : this.select();
   }
   clear(): this {
     const writableSelf = this.getWritable();
@@ -376,6 +386,11 @@ export class ElementNode extends LexicalNode {
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    return this;
+  }
+  setStyle(style: string): this {
+    const self = this.getWritable();
+    self.__style = style || '';
     return this;
   }
   setIndent(indentLevel: number): this {
@@ -513,6 +528,24 @@ export class ElementNode extends LexicalNode {
 
     return writableSelf;
   }
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element && isHTMLElement(element)) {
+      const indent = this.getIndent();
+      if (indent > 0) {
+        // padding-inline-start is not widely supported in email HTML
+        // (see https://www.caniemail.com/features/css-padding-inline-start-end/),
+        // If you want to use HTML output for email, consider overriding the serialization
+        // to use `padding-right` in RTL languages, `padding-left` in `LTR` languages, or
+        // `text-indent` if you are ok with first-line indents.
+        // We recommend keeping multiples of 40px to maintain consistency with list-items
+        // (see https://github.com/facebook/lexical/pull/4025)
+        element.style.paddingInlineStart = `${indent * 40}px`;
+      }
+    }
+
+    return {element};
+  }
   // JSON serialization
   exportJSON(): SerializedElementNode {
     return {
@@ -545,13 +578,11 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
-  // TODO 0.10 deprecate
-  canExtractContents(): boolean {
-    return true;
-  }
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
   }
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return true;
   }
@@ -574,14 +605,32 @@ export class ElementNode extends LexicalNode {
   isShadowRoot(): boolean {
     return false;
   }
+  /** @deprecated @internal */
   canMergeWith(node: ElementNode): boolean {
     return false;
   }
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection | null,
+    selection: BaseSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
+    return false;
+  }
+
+  /**
+   * Determines whether this node, when empty, can merge with a first block
+   * of nodes being inserted.
+   *
+   * This method is specifically called in {@link RangeSelection.insertNodes}
+   * to determine merging behavior during nodes insertion.
+   *
+   * @example
+   * // In a ListItemNode or QuoteNode implementation:
+   * canMergeWhenEmpty(): true {
+   *  return true;
+   * }
+   */
+  canMergeWhenEmpty(): boolean {
     return false;
   }
 }

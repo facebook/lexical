@@ -40,24 +40,107 @@ import {
 
 export type Transformer =
   | ElementTransformer
+  | MultilineElementTransformer
   | TextFormatTransformer
   | TextMatchTransformer;
 
 export type ElementTransformer = {
   dependencies: Array<Klass<LexicalNode>>;
+  /**
+   * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
+   *
+   * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
+   */
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
   regExp: RegExp;
+  /**
+   * `replace` is called when markdown is imported or typed in the editor
+   *
+   * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
+   */
   replace: (
     parentNode: ElementNode,
     children: Array<LexicalNode>,
     match: Array<string>,
+    /**
+     * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
+     */
     isImport: boolean,
-  ) => void;
+  ) => boolean | void;
   type: 'element';
+};
+
+export type MultilineElementTransformer = {
+  /**
+   * Use this function to manually handle the import process, once the `regExpStart` has matched successfully.
+   * Without providing this function, the default behavior is to match until `regExpEnd` is found, or until the end of the document if `regExpEnd.optional` is true.
+   *
+   * @returns a tuple or null. The first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed. If null is returned, the next multilineElementTransformer will be tried. If undefined is returned, the default behavior will be used.
+   */
+  handleImportAfterStartMatch?: (args: {
+    lines: Array<string>;
+    rootNode: ElementNode;
+    startLineIndex: number;
+    startMatch: RegExpMatchArray;
+    transformer: MultilineElementTransformer;
+  }) => [boolean, number] | null | undefined;
+  dependencies: Array<Klass<LexicalNode>>;
+  /**
+   * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
+   *
+   * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
+   */
+  export?: (
+    node: LexicalNode,
+    // eslint-disable-next-line no-shadow
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null;
+  /**
+   * This regex determines when to start matching
+   */
+  regExpStart: RegExp;
+  /**
+   * This regex determines when to stop matching. Anything in between regExpStart and regExpEnd will be matched
+   */
+  regExpEnd?:
+    | RegExp
+    | {
+        /**
+         * Whether the end match is optional. If true, the end match is not required to match for the transformer to be triggered.
+         * The entire text from regexpStart to the end of the document will then be matched.
+         */
+        optional?: true;
+        regExp: RegExp;
+      };
+  /**
+   * `replace` is called only when markdown is imported in the editor, not when it's typed
+   *
+   * @return return false to cancel the transform, even though the regex matched. Lexical will then search for the next transformer.
+   */
+  replace: (
+    rootNode: ElementNode,
+    /**
+     * During markdown shortcut transforms, children nodes may be provided to the transformer. If this is the case, no `linesInBetween` will be provided and
+     * the children nodes should be used instead of the `linesInBetween` to create the new node.
+     */
+    children: Array<LexicalNode> | null,
+    startMatch: Array<string>,
+    endMatch: Array<string> | null,
+    /**
+     * linesInBetween includes the text between the start & end matches, split up by lines, not including the matches themselves.
+     * This is null when the transformer is triggered through markdown shortcuts (by typing in the editor)
+     */
+    linesInBetween: Array<string> | null,
+    /**
+     * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
+     */
+    isImport: boolean,
+  ) => boolean | void;
+  type: 'multiline-element';
 };
 
 export type TextFormatTransformer = Readonly<{
@@ -69,19 +152,56 @@ export type TextFormatTransformer = Readonly<{
 
 export type TextMatchTransformer = Readonly<{
   dependencies: Array<Klass<LexicalNode>>;
-  export: (
+  /**
+   * Determines how a node should be exported to markdown
+   */
+  export?: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     exportChildren: (node: ElementNode) => string,
     // eslint-disable-next-line no-shadow
     exportFormat: (node: TextNode, textContent: string) => string,
   ) => string | null;
-  importRegExp: RegExp;
+  /**
+   * This regex determines what text is matched during markdown imports
+   */
+  importRegExp?: RegExp;
+  /**
+   * This regex determines what text is matched for markdown shortcuts while typing in the editor
+   */
   regExp: RegExp;
-  replace: (node: TextNode, match: RegExpMatchArray) => void;
-  trigger: string;
+  /**
+   * Determines how the matched markdown text should be transformed into a node during the markdown import process
+   */
+  replace?: (node: TextNode, match: RegExpMatchArray) => void;
+  /**
+   * For import operations, this function can be used to determine the end index of the match, after `importRegExp` has matched.
+   * Without this function, the end index will be determined by the length of the match from `importRegExp`. Manually determining the end index can be useful if
+   * the match from `importRegExp` is not the entire text content of the node. That way, `importRegExp` can be used to match only the start of the node, and `getEndIndex`
+   * can be used to match the end of the node.
+   *
+   * @returns The end index of the match, or false if the match was unsuccessful and a different transformer should be tried.
+   */
+  getEndIndex?: (node: TextNode, match: RegExpMatchArray) => number | false;
+  /**
+   * Single character that allows the transformer to trigger when typed in the editor. This does not affect markdown imports outside of the markdown shortcut plugin.
+   * If the trigger is matched, the `regExp` will be used to match the text in the second step.
+   */
+  trigger?: string;
   type: 'text-match';
 }>;
+
+const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
+const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
+const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
+const HEADING_REGEX = /^(#{1,6})\s/;
+const QUOTE_REGEX = /^>\s/;
+const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
+const CODE_END_REGEX = /[ \t]*```$/;
+const CODE_SINGLE_LINE_REGEX =
+  /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
+const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
+const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -97,6 +217,23 @@ const createBlockNode = (
 // Amount of spaces that define indentation level
 // TODO: should be an option
 const LIST_INDENT_SIZE = 4;
+
+function getIndent(whitespaces: string): number {
+  const tabs = whitespaces.match(/\t/g);
+  const spaces = whitespaces.match(/ /g);
+
+  let indent = 0;
+
+  if (tabs) {
+    indent += tabs.length;
+  }
+
+  if (spaces) {
+    indent += Math.floor(spaces.length / LIST_INDENT_SIZE);
+  }
+
+  return indent;
+}
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
@@ -130,7 +267,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     }
     listItem.append(...children);
     listItem.select(0, 0);
-    const indent = Math.floor(match[1].length / LIST_INDENT_SIZE);
+    const indent = getIndent(match[1]);
     if (indent) {
       listItem.setIndent(indent);
     }
@@ -179,7 +316,7 @@ export const HEADING: ElementTransformer = {
     const level = Number(node.getTag().slice(1));
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
-  regExp: /^(#{1,6})\s/,
+  regExp: HEADING_REGEX,
   replace: createBlockNode((match) => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
@@ -201,7 +338,7 @@ export const QUOTE: ElementTransformer = {
     }
     return output.join('\n');
   },
-  regExp: /^>\s/,
+  regExp: QUOTE_REGEX,
   replace: (parentNode, children, _match, isImport) => {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
@@ -224,7 +361,7 @@ export const QUOTE: ElementTransformer = {
   type: 'element',
 };
 
-export const CODE: ElementTransformer = {
+export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
@@ -239,11 +376,72 @@ export const CODE: ElementTransformer = {
       '```'
     );
   },
-  regExp: /^```(\w{1,10})?\s/,
-  replace: createBlockNode((match) => {
-    return $createCodeNode(match ? match[1] : undefined);
-  }),
-  type: 'element',
+  regExpEnd: {
+    optional: true,
+    regExp: CODE_END_REGEX,
+  },
+  regExpStart: CODE_START_REGEX,
+  replace: (
+    rootNode,
+    children,
+    startMatch,
+    endMatch,
+    linesInBetween,
+    isImport,
+  ) => {
+    let codeBlockNode: CodeNode;
+    let code: string;
+
+    if (!children && linesInBetween) {
+      if (linesInBetween.length === 1) {
+        // Single-line code blocks
+        if (endMatch) {
+          // End match on same line. Example: ```markdown hello```. markdown should not be considered the language here.
+          codeBlockNode = $createCodeNode();
+          code = startMatch[1] + linesInBetween[0];
+        } else {
+          // No end match. We should assume the language is next to the backticks and that code will be typed on the next line in the future
+          codeBlockNode = $createCodeNode(startMatch[1]);
+          code = linesInBetween[0].startsWith(' ')
+            ? linesInBetween[0].slice(1)
+            : linesInBetween[0];
+        }
+      } else {
+        // Treat multi-line code blocks as if they always have an end match
+        codeBlockNode = $createCodeNode(startMatch[1]);
+
+        if (linesInBetween[0].trim().length === 0) {
+          // Filter out all start and end lines that are length 0 until we find the first line with content
+          while (linesInBetween.length > 0 && !linesInBetween[0].length) {
+            linesInBetween.shift();
+          }
+        } else {
+          // The first line already has content => Remove the first space of the line if it exists
+          linesInBetween[0] = linesInBetween[0].startsWith(' ')
+            ? linesInBetween[0].slice(1)
+            : linesInBetween[0];
+        }
+
+        // Filter out all end lines that are length 0 until we find the last line with content
+        while (
+          linesInBetween.length > 0 &&
+          !linesInBetween[linesInBetween.length - 1].length
+        ) {
+          linesInBetween.pop();
+        }
+
+        code = linesInBetween.join('\n');
+      }
+      const textNode = $createTextNode(code);
+      codeBlockNode.append(textNode);
+      rootNode.append(codeBlockNode);
+    } else if (children) {
+      createBlockNode((match) => {
+        return $createCodeNode(match ? match[1] : undefined);
+      })(rootNode, children, startMatch, isImport);
+    }
+  },
+  type: 'multiline-element',
 };
 
 export const UNORDERED_LIST: ElementTransformer = {
@@ -251,7 +449,7 @@ export const UNORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)[-*+]\s/,
+  regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
   type: 'element',
 };
@@ -261,7 +459,7 @@ export const CHECK_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i,
+  regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
   type: 'element',
 };
@@ -271,7 +469,7 @@ export const ORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)(\d{1,})\.\s/,
+  regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),
   type: 'element',
 };
@@ -371,3 +569,59 @@ export const LINK: TextMatchTransformer = {
   trigger: ')',
   type: 'text-match',
 };
+
+export function normalizeMarkdown(
+  input: string,
+  shouldMergeAdjacentLines = false,
+): string {
+  const lines = input.split('\n');
+  let inCodeBlock = false;
+  const sanitizedLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lastLine = sanitizedLines[sanitizedLines.length - 1];
+
+    // Code blocks of ```single line``` don't toggle the inCodeBlock flag
+    if (CODE_SINGLE_LINE_REGEX.test(line)) {
+      sanitizedLines.push(line);
+      continue;
+    }
+
+    // Detect the start or end of a code block
+    if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      sanitizedLines.push(line);
+      continue;
+    }
+
+    // If we are inside a code block, keep the line unchanged
+    if (inCodeBlock) {
+      sanitizedLines.push(line);
+      continue;
+    }
+
+    // In markdown the concept of "empty paragraphs" does not exist.
+    // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
+    if (
+      line === '' ||
+      lastLine === '' ||
+      !lastLine ||
+      HEADING_REGEX.test(lastLine) ||
+      HEADING_REGEX.test(line) ||
+      QUOTE_REGEX.test(line) ||
+      ORDERED_LIST_REGEX.test(line) ||
+      UNORDERED_LIST_REGEX.test(line) ||
+      CHECK_LIST_REGEX.test(line) ||
+      TABLE_ROW_REG_EXP.test(line) ||
+      TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      !shouldMergeAdjacentLines
+    ) {
+      sanitizedLines.push(line);
+    } else {
+      sanitizedLines[sanitizedLines.length - 1] = lastLine + line;
+    }
+  }
+
+  return sanitizedLines.join('\n');
+}

@@ -8,10 +8,10 @@
  */
 import type {
   ElementNode,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  BaseSelection,
   NodeSelection,
   Point,
   RangeSelection,
@@ -20,8 +20,9 @@ declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
 };
+declare export function getCSSFromStyleObject(styles: Record<string, string>): string;
 declare export function $patchStyleText(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   patch: {
     [string]: string | null,
   },
@@ -45,7 +46,7 @@ declare export function $moveCharacter(
 ): void;
 declare export function $selectAll(selection: RangeSelection): void;
 declare export function $wrapNodes(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
 ): void;
@@ -72,8 +73,11 @@ declare export function createRectsFromDOMRange(
   range: Range,
 ): Array<ClientRect>;
 
-declare export function trimTextContentFromAnchor(
+declare export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,
 ): void;
+
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
+declare export const trimTextContentFromAnchor: typeof $trimTextContentFromAnchor;

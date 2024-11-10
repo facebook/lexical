@@ -23,6 +23,7 @@ import {
   insertUploadImage,
   insertUrlImage,
   IS_WINDOWS,
+  LEGACY_EVENTS,
   SAMPLE_IMAGE_URL,
   SAMPLE_LANDSCAPE_IMAGE_URL,
   selectorBoundingBox,
@@ -54,9 +55,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -122,11 +123,11 @@ test.describe('Images', () => {
               data-lexical-decorator="true">
               <div draggable="true">
                 <img
-                  src="${SAMPLE_IMAGE_URL}"
+                  class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  style="height: inherit; max-width: 500px; width: inherit;"
-                  class="focused draggable" />
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit;" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -174,9 +175,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -236,9 +237,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -248,9 +249,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -276,9 +277,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -327,9 +328,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -339,9 +340,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -369,9 +370,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -414,9 +415,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="https://lexical.dev/img/logo.svg"
                 alt="lexical logo"
                 draggable="false"
+                src="https://lexical.dev/img/logo.svg"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -426,9 +427,9 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAAagAwAEAAAAAQAAAAcAAAAA/8IAEQgABwAGAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAMCBAEFAAYHCAkKC//EAMMQAAEDAwIEAwQGBAcGBAgGcwECAAMRBBIhBTETIhAGQVEyFGFxIweBIJFCFaFSM7EkYjAWwXLRQ5I0ggjhU0AlYxc18JNzolBEsoPxJlQ2ZJR0wmDShKMYcOInRTdls1V1pJXDhfLTRnaA40dWZrQJChkaKCkqODk6SElKV1hZWmdoaWp3eHl6hoeIiYqQlpeYmZqgpaanqKmqsLW2t7i5usDExcbHyMnK0NTV1tfY2drg5OXm5+jp6vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAQIAAwQFBgcICQoL/8QAwxEAAgIBAwMDAgMFAgUCBASHAQACEQMQEiEEIDFBEwUwIjJRFEAGMyNhQhVxUjSBUCSRoUOxFgdiNVPw0SVgwUThcvEXgmM2cCZFVJInotIICQoYGRooKSo3ODk6RkdISUpVVldYWVpkZWZnaGlqc3R1dnd4eXqAg4SFhoeIiYqQk5SVlpeYmZqgo6SlpqeoqaqwsrO0tba3uLm6wMLDxMXGx8jJytDT1NXW19jZ2uDi4+Tl5ufo6ery8/T19vf4+fr/2wBDAAIDAwMEAwQFBQQGBgYGBggIBwcICA0JCgkKCQ0TDA4MDA4MExEUEQ8RFBEeGBUVGB4jHRwdIyolJSo1MjVFRVz/2wBDAQIDAwMEAwQFBQQGBgYGBggIBwcICA0JCgkKCQ0TDA4MDA4MExEUEQ8RFBEeGBUVGB4jHRwdIyolJSo1MjVFRVz/2gAMAwEAAhEDEQAAAfBeXfV/i9n/2gAIAQEAAQUCmlT7p//aAAgBAxEBPwGWbIKo/wBmP+0f/9oACAECEQE/AYYoHddn7pf7V//aAAgBAQAGPwKFaUpWtZJJVUl//8QAMxABAAMAAgICAgIDAQEAAAILAREAITFBUWFxgZGhscHw0RDh8SAwQFBgcICQoLDA0OD/2gAIAQEAAT8hFyPFTveHPBl//9oADAMBAAIRAxEAABCL/8QAMxEBAQEAAwABAgUFAQEAAQEJAQARITEQQVFhIHHwkYGhsdHB4fEwQFBgcICQoLDA0OD/2gAIAQMRAT8QYOAdB9nP5t//2gAIAQIRAT8QEWh51X58fxf/2gAIAQEAAT8QJfU4BLBcKyeUzf/Z"
                 alt="a pretty yellow flower :)"
                 draggable="false"
+                src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAAagAwAEAAAAAQAAAAcAAAAA/8IAEQgABwAGAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAMCBAEFAAYHCAkKC//EAMMQAAEDAwIEAwQGBAcGBAgGcwECAAMRBBIhBTETIhAGQVEyFGFxIweBIJFCFaFSM7EkYjAWwXLRQ5I0ggjhU0AlYxc18JNzolBEsoPxJlQ2ZJR0wmDShKMYcOInRTdls1V1pJXDhfLTRnaA40dWZrQJChkaKCkqODk6SElKV1hZWmdoaWp3eHl6hoeIiYqQlpeYmZqgpaanqKmqsLW2t7i5usDExcbHyMnK0NTV1tfY2drg5OXm5+jp6vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAQIAAwQFBgcICQoL/8QAwxEAAgIBAwMDAgMFAgUCBASHAQACEQMQEiEEIDFBEwUwIjJRFEAGMyNhQhVxUjSBUCSRoUOxFgdiNVPw0SVgwUThcvEXgmM2cCZFVJInotIICQoYGRooKSo3ODk6RkdISUpVVldYWVpkZWZnaGlqc3R1dnd4eXqAg4SFhoeIiYqQk5SVlpeYmZqgo6SlpqeoqaqwsrO0tba3uLm6wMLDxMXGx8jJytDT1NXW19jZ2uDi4+Tl5ufo6ery8/T19vf4+fr/2wBDAAIDAwMEAwQFBQQGBgYGBggIBwcICA0JCgkKCQ0TDA4MDA4MExEUEQ8RFBEeGBUVGB4jHRwdIyolJSo1MjVFRVz/2wBDAQIDAwMEAwQFBQQGBgYGBggIBwcICA0JCgkKCQ0TDA4MDA4MExEUEQ8RFBEeGBUVGB4jHRwdIyolJSo1MjVFRVz/2gAMAwEAAhEDEQAAAfBeXfV/i9n/2gAIAQEAAQUCmlT7p//aAAgBAxEBPwGWbIKo/wBmP+0f/9oACAECEQE/AYYoHddn7pf7V//aAAgBAQAGPwKFaUpWtZJJVUl//8QAMxABAAMAAgICAgIDAQEAAAILAREAITFBUWFxgZGhscHw0RDh8SAwQFBgcICQoLDA0OD/2gAIAQEAAT8hFyPFTveHPBl//9oADAMBAAIRAxEAABCL/8QAMxEBAQEAAwABAgUFAQEAAQEJAQARITEQQVFhIHHwkYGhsdHB4fEwQFBgcICQoLDA0OD/2gAIAQMRAT8QYOAdB9nP5t//2gAIAQIRAT8QEWh51X58fxf/2gAIAQEAAT8QJfU4BLBcKyeUzf/Z"
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
@@ -617,7 +618,10 @@ test.describe('Images', () => {
   test('Node selection: can select multiple image nodes and replace them with a new image', async ({
     page,
     isPlainText,
+    browserName,
   }) => {
+    // It doesn't work in legacy events mode in WebKit #5673
+    test.fixme(LEGACY_EVENTS && browserName === 'webkit');
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -732,6 +736,53 @@ test.describe('Images', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">text3</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Can resolve selection correctly when the image is clicked and dragged right', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    let leftFrame = page;
+    if (isCollab) {
+      leftFrame = await page.frame('left');
+    }
+    await focusEditor(page);
+
+    await page.keyboard.type('HelloWorld');
+    await insertSampleImage(page);
+    await click(page, '.editor-image img');
+
+    await leftFrame.locator('.editor-image img').hover();
+    await page.mouse.down();
+    await leftFrame.locator('.PlaygroundEditorTheme__paragraph').hover();
+    await page.mouse.up();
+    await waitForSelector(page, '.editor-image img');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">HelloWorld</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
         </p>
       `,
     );

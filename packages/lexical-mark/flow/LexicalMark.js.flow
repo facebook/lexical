@@ -36,7 +36,7 @@ declare export class MarkNode extends ElementNode {
 
 declare export function $isMarkNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof MarkNode);
+): node is MarkNode;
 
 declare export function $createMarkNode(ids: Array<string>): MarkNode;
 

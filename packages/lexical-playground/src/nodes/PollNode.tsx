@@ -27,10 +27,7 @@ export type Option = Readonly<{
   votes: Array<number>;
 }>;
 
-const PollComponent = React.lazy(
-  // @ts-ignore
-  () => import('./PollComponent'),
-);
+const PollComponent = React.lazy(() => import('./PollComponent'));
 
 function createUID(): string {
   return Math.random()
@@ -67,7 +64,7 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
+function $convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
   const question = domNode.getAttribute('data-lexical-poll-question');
   const options = domNode.getAttribute('data-lexical-poll-options');
   if (question !== null && options !== null) {
@@ -161,7 +158,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
           return null;
         }
         return {
-          conversion: convertPollElement,
+          conversion: $convertPollElement,
           priority: 2,
         };
       },

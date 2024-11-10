@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, MutationListener} from 'lexical';
+import type {
+  CommandListenerPriority,
+  LexicalNode,
+  MutationListener,
+} from 'lexical';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -19,6 +23,7 @@ import {
   $getNodeByKey,
   $getSelection,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   createCommand,
   LexicalCommand,
   LexicalEditor,
@@ -78,6 +83,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
   menuRenderFn: MenuRenderFn<AutoEmbedOption>;
+  menuCommandPriority?: CommandListenerPriority;
 };
 
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
@@ -85,6 +91,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   onOpenEmbedModalForConfig,
   getMenuOptions,
   menuRenderFn,
+  menuCommandPriority = COMMAND_PRIORITY_LOW,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -98,24 +105,23 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   }, []);
 
   const checkIfLinkNodeIsEmbeddable = useCallback(
-    (key: NodeKey) => {
-      editor.getEditorState().read(async () => {
+    async (key: NodeKey) => {
+      const url = editor.getEditorState().read(function () {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
-          for (let i = 0; i < embedConfigs.length; i++) {
-            const embedConfig = embedConfigs[i];
-
-            const urlMatch = await Promise.resolve(
-              embedConfig.parseUrl(linkNode.__url),
-            );
-
-            if (urlMatch != null) {
-              setActiveEmbedConfig(embedConfig);
-              setNodeKey(linkNode.getKey());
-            }
-          }
+          return linkNode.getURL();
         }
       });
+      if (url === undefined) {
+        return;
+      }
+      for (const embedConfig of embedConfigs) {
+        const urlMatch = await Promise.resolve(embedConfig.parseUrl(url));
+        if (urlMatch != null) {
+          setActiveEmbedConfig(embedConfig);
+          setNodeKey(key);
+        }
+      }
     },
     [editor, embedConfigs],
   );
@@ -139,7 +145,9 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     };
     return mergeRegister(
       ...[LinkNode, AutoLinkNode].map((Klass) =>
-        editor.registerMutationListener(Klass, (...args) => listener(...args)),
+        editor.registerMutationListener(Klass, (...args) => listener(...args), {
+          skipInitialization: true,
+        }),
       ),
     );
   }, [checkIfLinkNodeIsEmbeddable, editor, embedConfigs, nodeKey, reset]);
@@ -161,34 +169,37 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     );
   }, [editor, embedConfigs, onOpenEmbedModalForConfig]);
 
-  const embedLinkViaActiveEmbedConfig = useCallback(async () => {
-    if (activeEmbedConfig != null && nodeKey != null) {
-      const linkNode = editor.getEditorState().read(() => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isLinkNode(node)) {
-          return node;
-        }
-        return null;
-      });
+  const embedLinkViaActiveEmbedConfig = useCallback(
+    async function () {
+      if (activeEmbedConfig != null && nodeKey != null) {
+        const linkNode = editor.getEditorState().read(() => {
+          const node = $getNodeByKey(nodeKey);
+          if ($isLinkNode(node)) {
+            return node;
+          }
+          return null;
+        });
 
-      if ($isLinkNode(linkNode)) {
-        const result = await Promise.resolve(
-          activeEmbedConfig.parseUrl(linkNode.__url),
-        );
-        if (result != null) {
-          editor.update(() => {
-            if (!$getSelection()) {
-              linkNode.selectEnd();
-            }
-            activeEmbedConfig.insertNode(editor, result);
-            if (linkNode.isAttached()) {
-              linkNode.remove();
-            }
-          });
+        if ($isLinkNode(linkNode)) {
+          const result = await Promise.resolve(
+            activeEmbedConfig.parseUrl(linkNode.__url),
+          );
+          if (result != null) {
+            editor.update(() => {
+              if (!$getSelection()) {
+                linkNode.selectEnd();
+              }
+              activeEmbedConfig.insertNode(editor, result);
+              if (linkNode.isAttached()) {
+                linkNode.remove();
+              }
+            });
+          }
         }
       }
-    }
-  }, [activeEmbedConfig, editor, nodeKey]);
+    },
+    [activeEmbedConfig, editor, nodeKey],
+  );
 
   const options = useMemo(() => {
     return activeEmbedConfig != null && nodeKey != null
@@ -223,6 +234,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       onSelectOption={onSelectOption}
       options={options}
       menuRenderFn={menuRenderFn}
+      commandPriority={menuCommandPriority}
     />
   ) : null;
 }

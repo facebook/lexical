@@ -6,8 +6,8 @@
  *
  */
 
-import {$createQuoteNode} from '@lexical/rich-text';
-import {$getRoot, ParagraphNode} from 'lexical';
+import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
+import {$createRangeSelection, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -64,7 +64,7 @@ describe('LexicalQuoteNode tests', () => {
 
     test('QuoteNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
-      let quoteNode;
+      let quoteNode: QuoteNode;
       await editor.update(() => {
         const root = $getRoot();
         quoteNode = $createQuoteNode();
@@ -74,7 +74,7 @@ describe('LexicalQuoteNode tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote></div>',
       );
       await editor.update(() => {
-        const result = quoteNode.insertNewAfter();
+        const result = quoteNode.insertNewAfter($createRangeSelection());
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(quoteNode.getDirection());
       });

@@ -98,12 +98,14 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
   // Determine if a given URL is a match and return url data.
   parseUrl: (text: string) => {
     const match =
-      /^https:\/\/twitter\.com\/(#!\/)?(\w+)\/status(es)*\/(\d+)$/.exec(text);
+      /^https:\/\/(twitter|x)\.com\/(#!\/)?(\w+)\/status(es)*\/(\d+)/.exec(
+        text,
+      );
 
     if (match != null) {
       return {
-        id: match[4],
-        url: match[0],
+        id: match[5],
+        url: match[1],
       };
     }
 
@@ -327,7 +329,10 @@ export default function AutoEmbedPlugin(): JSX.Element {
                 <div
                   className="typeahead-popover auto-embed-menu"
                   style={{
-                    marginLeft: anchorElementRef.current.style.width,
+                    marginLeft: `${Math.max(
+                      parseFloat(anchorElementRef.current.style.width) - 200,
+                      0,
+                    )}px`,
                     width: 200,
                   }}>
                   <AutoEmbedMenu

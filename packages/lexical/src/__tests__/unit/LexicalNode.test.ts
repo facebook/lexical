@@ -7,14 +7,24 @@
  */
 
 import {
+  $createRangeSelection,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isDecoratorNode,
+  $isElementNode,
+  $isRangeSelection,
+  $setSelection,
+  createEditor,
+  DecoratorNode,
+  ElementNode,
+  LexicalEditor,
+  NodeKey,
   ParagraphNode,
+  RangeSelection,
+  SerializedTextNode,
   TextNode,
 } from 'lexical';
 
-import {$createRangeSelection} from '../..';
 import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
@@ -47,6 +57,40 @@ class TestNode extends LexicalNode {
   }
 }
 
+class InlineDecoratorNode extends DecoratorNode<string> {
+  static getType(): string {
+    return 'inline-decorator';
+  }
+
+  static clone(): InlineDecoratorNode {
+    return new InlineDecoratorNode();
+  }
+
+  static importJSON() {
+    return new InlineDecoratorNode();
+  }
+
+  exportJSON() {
+    return {type: 'inline-decorator', version: 1};
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('span');
+  }
+
+  isInline(): true {
+    return true;
+  }
+
+  isParentRequired(): true {
+    return true;
+  }
+
+  decorate() {
+    return 'inline-decorator';
+  }
+}
+
 // This is a hack to bypass the node type validation on LexicalNode. We never want to create
 // an LexicalNode directly but we're testing the base functionality in this module.
 LexicalNode.getType = function () {
@@ -56,8 +100,8 @@ LexicalNode.getType = function () {
 describe('LexicalNode tests', () => {
   initializeUnitTest(
     (testEnv) => {
-      let paragraphNode;
-      let textNode;
+      let paragraphNode: ParagraphNode;
+      let textNode: TextNode;
 
       beforeEach(async () => {
         const {editor} = testEnv;
@@ -87,14 +131,96 @@ describe('LexicalNode tests', () => {
         });
       });
 
+      test('LexicalNode.constructor: type change detected', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const validNode = new TextNode(textNode.__text, textNode.__key);
+          expect(textNode.getLatest()).toBe(textNode);
+          expect(validNode.getLatest()).toBe(textNode);
+          expect(() => new TestNode(textNode.__key)).toThrowError(
+            /TestNode.*re-use key.*TextNode/,
+          );
+        });
+      });
+
       test('LexicalNode.clone()', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
           const node = new LexicalNode('__custom_key__');
 
-          expect(() => node.clone()).toThrow();
+          expect(() => LexicalNode.clone(node)).toThrow();
         });
+      });
+      test('LexicalNode.afterCloneFrom()', () => {
+        class VersionedTextNode extends TextNode {
+          // ['constructor']!: KlassConstructor<typeof VersionedTextNode>;
+          __version = 0;
+          static getType(): 'vtext' {
+            return 'vtext';
+          }
+          static clone(node: VersionedTextNode): VersionedTextNode {
+            return new VersionedTextNode(node.__text, node.__key);
+          }
+          static importJSON(node: SerializedTextNode): VersionedTextNode {
+            throw new Error('Not implemented');
+          }
+          exportJSON(): SerializedTextNode {
+            throw new Error('Not implemented');
+          }
+          afterCloneFrom(node: this): void {
+            super.afterCloneFrom(node);
+            this.__version = node.__version + 1;
+          }
+        }
+        const editor = createEditor({
+          nodes: [VersionedTextNode],
+          onError(err) {
+            throw err;
+          },
+        });
+        let versionedTextNode: VersionedTextNode;
+
+        editor.update(
+          () => {
+            versionedTextNode = new VersionedTextNode('test');
+            $getRoot().append($createParagraphNode().append(versionedTextNode));
+            expect(versionedTextNode.__version).toEqual(0);
+          },
+          {discrete: true},
+        );
+        editor.update(
+          () => {
+            expect(versionedTextNode.getLatest().__version).toEqual(0);
+            expect(
+              versionedTextNode.setTextContent('update').setMode('token')
+                .__version,
+            ).toEqual(1);
+          },
+          {discrete: true},
+        );
+        editor.update(
+          () => {
+            let latest = versionedTextNode.getLatest();
+            expect(versionedTextNode.__version).toEqual(0);
+            expect(versionedTextNode.__mode).toEqual(0);
+            expect(versionedTextNode.getMode()).toEqual('token');
+            expect(latest.__version).toEqual(1);
+            expect(latest.__mode).toEqual(1);
+            latest = latest.setTextContent('another update');
+            expect(latest.__version).toEqual(2);
+            expect(latest.getWritable().__version).toEqual(2);
+            expect(
+              versionedTextNode.getLatest().getWritable().__version,
+            ).toEqual(2);
+            expect(versionedTextNode.getLatest().__version).toEqual(2);
+            expect(versionedTextNode.__mode).toEqual(0);
+            expect(versionedTextNode.getLatest().__mode).toEqual(1);
+            expect(versionedTextNode.getMode()).toEqual('token');
+          },
+          {discrete: true},
+        );
       });
 
       test('LexicalNode.getType()', async () => {
@@ -108,7 +234,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isAttached()', async () => {
         const {editor} = testEnv;
-        let node;
+        let node: LexicalNode;
 
         await editor.update(() => {
           node = new LexicalNode('__custom_key__');
@@ -125,7 +251,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSelected()', async () => {
         const {editor} = testEnv;
-        let node;
+        let node: LexicalNode;
 
         await editor.update(() => {
           node = new LexicalNode('__custom_key__');
@@ -168,8 +294,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSelected(): selected block node range', async () => {
         const {editor} = testEnv;
-        let newParagraphNode;
-        let newTextNode;
+        let newParagraphNode: ParagraphNode;
+        let newTextNode: TextNode;
 
         await editor.update(() => {
           expect(paragraphNode.isSelected()).toBe(false);
@@ -188,7 +314,7 @@ describe('LexicalNode tests', () => {
 
           expect(selection).not.toBe(null);
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -205,7 +331,7 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -220,8 +346,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSelected(): with custom range selection', async () => {
         const {editor} = testEnv;
-        let newParagraphNode;
-        let newTextNode;
+        let newParagraphNode: ParagraphNode;
+        let newTextNode: TextNode;
 
         await editor.update(() => {
           expect(paragraphNode.isSelected()).toBe(false);
@@ -251,6 +377,167 @@ describe('LexicalNode tests', () => {
         });
 
         await Promise.resolve().then();
+      });
+
+      describe('LexicalNode.isSelected(): with inline decorator node', () => {
+        let editor: LexicalEditor;
+        let paragraphNode1: ParagraphNode;
+        let paragraphNode2: ParagraphNode;
+        let paragraphNode3: ParagraphNode;
+        let inlineDecoratorNode: InlineDecoratorNode;
+        let names: Record<NodeKey, string>;
+        beforeEach(() => {
+          editor = testEnv.editor;
+          editor.update(() => {
+            inlineDecoratorNode = new InlineDecoratorNode();
+            paragraphNode1 = $createParagraphNode();
+            paragraphNode2 = $createParagraphNode().append(inlineDecoratorNode);
+            paragraphNode3 = $createParagraphNode();
+            names = {
+              [inlineDecoratorNode.getKey()]: 'd',
+              [paragraphNode1.getKey()]: 'p1',
+              [paragraphNode2.getKey()]: 'p2',
+              [paragraphNode3.getKey()]: 'p3',
+            };
+            $getRoot()
+              .clear()
+              .append(paragraphNode1, paragraphNode2, paragraphNode3);
+          });
+        });
+        const cases: {
+          label: string;
+          isSelected: boolean;
+          update: () => void;
+        }[] = [
+          {
+            isSelected: true,
+            label: 'whole editor',
+            update() {
+              $getRoot().select(0);
+            },
+          },
+          {
+            isSelected: true,
+            label: 'containing paragraph',
+            update() {
+              paragraphNode2.select(0);
+            },
+          },
+          {
+            isSelected: true,
+            label: 'before and containing',
+            update() {
+              paragraphNode2
+                .select(0)
+                .anchor.set(paragraphNode1.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: true,
+            label: 'containing and after',
+            update() {
+              paragraphNode2
+                .select(0)
+                .focus.set(paragraphNode3.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: true,
+            label: 'before and after',
+            update() {
+              paragraphNode1
+                .select(0)
+                .focus.set(paragraphNode3.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: false,
+            label: 'collapsed before',
+            update() {
+              paragraphNode2.select(0, 0);
+            },
+          },
+          {
+            isSelected: false,
+            label: 'in another element',
+            update() {
+              paragraphNode1.select(0);
+            },
+          },
+          {
+            isSelected: false,
+            label: 'before',
+            update() {
+              paragraphNode1
+                .select(0)
+                .focus.set(paragraphNode2.getKey(), 0, 'element');
+            },
+          },
+          {
+            isSelected: false,
+            label: 'collapsed after',
+            update() {
+              paragraphNode2.selectEnd();
+            },
+          },
+          {
+            isSelected: false,
+            label: 'after',
+            update() {
+              paragraphNode3
+                .select(0)
+                .anchor.set(
+                  paragraphNode2.getKey(),
+                  paragraphNode2.getChildrenSize(),
+                  'element',
+                );
+            },
+          },
+        ];
+        for (const {label, isSelected, update} of cases) {
+          test(`${isSelected ? 'is' : "isn't"} selected ${label}`, () => {
+            editor.update(update);
+            const $verify = () => {
+              const selection = $getSelection() as RangeSelection;
+              expect($isRangeSelection(selection)).toBe(true);
+              const dbg = [selection.anchor, selection.focus]
+                .map(
+                  (point) =>
+                    `(${names[point.key] || point.key}:${point.offset})`,
+                )
+                .join(' ');
+              const nodes = `[${selection
+                .getNodes()
+                .map((k) => names[k.__key] || k.__key)
+                .join(',')}]`;
+              expect([dbg, nodes, inlineDecoratorNode.isSelected()]).toEqual([
+                dbg,
+                nodes,
+                isSelected,
+              ]);
+            };
+            editor.read($verify);
+            editor.update(() => {
+              const selection = $getSelection();
+              if ($isRangeSelection(selection)) {
+                const backwards = $createRangeSelection();
+                backwards.anchor.set(
+                  selection.focus.key,
+                  selection.focus.offset,
+                  selection.focus.type,
+                );
+                backwards.focus.set(
+                  selection.anchor.key,
+                  selection.anchor.offset,
+                  selection.anchor.type,
+                );
+                $setSelection(backwards);
+              }
+              expect($isRangeSelection(selection)).toBe(true);
+            });
+            editor.read($verify);
+          });
+        }
       });
 
       test('LexicalNode.getKey()', async () => {
@@ -302,6 +589,30 @@ describe('LexicalNode tests', () => {
           expect(paragraphNode.getTopLevelElement()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElement()).toThrow();
+        await editor.update(() => {
+          const node = new InlineDecoratorNode();
+          expect(node.getTopLevelElement()).toBe(null);
+          $getRoot().append(node);
+          expect(node.getTopLevelElement()).toBe(node);
+        });
+        editor.getEditorState().read(() => {
+          const elementNodes: ElementNode[] = [];
+          const decoratorNodes: DecoratorNode<unknown>[] = [];
+          for (const child of $getRoot().getChildren()) {
+            expect(child.getTopLevelElement()).toBe(child);
+            if ($isElementNode(child)) {
+              elementNodes.push(child);
+            } else if ($isDecoratorNode(child)) {
+              decoratorNodes.push(child);
+            } else {
+              throw new Error(
+                'Expecting all children to be ElementNode or DecoratorNode',
+              );
+            }
+          }
+          expect(decoratorNodes).toHaveLength(1);
+          expect(elementNodes).toHaveLength(1);
+        });
       });
 
       test('LexicalNode.getTopLevelElementOrThrow()', async () => {
@@ -317,6 +628,12 @@ describe('LexicalNode tests', () => {
           expect(paragraphNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElementOrThrow()).toThrow();
+        await editor.update(() => {
+          const node = new InlineDecoratorNode();
+          expect(() => node.getTopLevelElementOrThrow()).toThrow();
+          $getRoot().append(node);
+          expect(node.getTopLevelElementOrThrow()).toBe(node);
+        });
       });
 
       test('LexicalNode.getParents()', async () => {
@@ -341,7 +658,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getPreviousSibling()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
+        let barTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -365,8 +682,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getPreviousSiblings()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -404,7 +721,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getNextSibling()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
+        let barTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -425,8 +742,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getNextSiblings()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -453,11 +770,11 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getCommonAncestor()', async () => {
         const {editor} = testEnv;
-        let quxTextNode;
-        let barParagraphNode;
-        let barTextNode;
-        let bazParagraphNode;
-        let bazTextNode;
+        let quxTextNode: TextNode;
+        let barParagraphNode: ParagraphNode;
+        let barTextNode: TextNode;
+        let bazParagraphNode: ParagraphNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           const rootNode = $getRoot();
@@ -499,8 +816,8 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isBefore()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
@@ -542,10 +859,10 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getNodesBetween()', async () => {
         const {editor} = testEnv;
-        let barTextNode;
-        let bazTextNode;
-        let newParagraphNode;
-        let quxTextNode;
+        let barTextNode: TextNode;
+        let bazTextNode: TextNode;
+        let newParagraphNode: ParagraphNode;
+        let quxTextNode: TextNode;
 
         await editor.update(() => {
           const rootNode = $getRoot();
@@ -590,7 +907,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isToken()', async () => {
         const {editor} = testEnv;
-        let tokenTextNode;
+        let tokenTextNode: TextNode;
 
         await editor.update(() => {
           tokenTextNode = new TextNode('token').setMode('token');
@@ -602,7 +919,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(textNode.isToken(textNode)).toBe(false);
+          expect(textNode.isToken()).toBe(false);
           expect(tokenTextNode.isToken()).toBe(true);
         });
         expect(() => textNode.isToken()).toThrow();
@@ -610,7 +927,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isSegmented()', async () => {
         const {editor} = testEnv;
-        let segmentedTextNode;
+        let segmentedTextNode: TextNode;
 
         await editor.update(() => {
           segmentedTextNode = new TextNode('segmented').setMode('segmented');
@@ -622,7 +939,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(textNode.isSegmented(textNode)).toBe(false);
+          expect(textNode.isSegmented()).toBe(false);
           expect(segmentedTextNode.isSegmented()).toBe(true);
         });
         expect(() => textNode.isSegmented()).toThrow();
@@ -630,7 +947,7 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isDirectionless()', async () => {
         const {editor} = testEnv;
-        let directionlessTextNode;
+        let directionlessTextNode: TextNode;
 
         await editor.update(() => {
           directionlessTextNode = new TextNode(
@@ -662,9 +979,9 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.getLatest(): garbage collected node', async () => {
         const {editor} = testEnv;
-        let node;
-        let text;
-        let block;
+        let node: LexicalNode;
+        let text: TextNode;
+        let block: TestElementNode;
 
         await editor.update(() => {
           node = new LexicalNode();
@@ -762,6 +1079,7 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
+          // @ts-expect-error
           expect(() => textNode.replace()).toThrow();
         });
         expect(() => textNode.remove()).toThrow();
@@ -773,7 +1091,7 @@ describe('LexicalNode tests', () => {
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span></p></div>',
         );
-        let barTextNode;
+        let barTextNode: TextNode;
 
         await editor.update(() => {
           const rootNode = $getRoot();
@@ -895,8 +1213,10 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
+          // @ts-expect-error
           expect(() => textNode.insertAfter()).toThrow();
         });
+        // @ts-expect-error
         expect(() => textNode.insertAfter()).toThrow();
       });
 
@@ -971,7 +1291,12 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.insertAfter() move blocks around', async () => {
         const {editor} = testEnv;
-        let block1, block2, block3, text1, text2, text3;
+        let block1: ParagraphNode,
+          block2: ParagraphNode,
+          block3: ParagraphNode,
+          text1: TextNode,
+          text2: TextNode,
+          text3: TextNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -1003,7 +1328,12 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.insertAfter() move blocks around #2', async () => {
         const {editor} = testEnv;
-        let block1, block2, block3, text1, text2, text3;
+        let block1: ParagraphNode,
+          block2: ParagraphNode,
+          block3: ParagraphNode,
+          text1: TextNode,
+          text2: TextNode,
+          text3: TextNode;
 
         await editor.update(() => {
           const root = $getRoot();
@@ -1043,8 +1373,10 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
+          // @ts-expect-error
           expect(() => textNode.insertBefore()).toThrow();
         });
+        // @ts-expect-error
         expect(() => textNode.insertBefore()).toThrow();
       });
 
@@ -1178,7 +1510,7 @@ describe('LexicalNode tests', () => {
     },
     {
       namespace: '',
-      nodes: [LexicalNode, TestNode],
+      nodes: [LexicalNode, TestNode, InlineDecoratorNode],
       theme: {},
     },
   );

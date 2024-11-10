@@ -143,7 +143,9 @@ class NoInheritPlugin {
     }
     // As we move up the chain, check if the reflection parent is in the noInherit list
     const parent = current.parent;
-    if (!parent) return false;
+    if (!parent) {
+      return false;
+    }
     if (
       this.isNoInherit(parent) &&
       (depth === 0 || this.isInherited(current))

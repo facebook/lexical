@@ -6,10 +6,17 @@
  *
  */
 
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getEditor,
+  $getRoot,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 
 import {EditorState} from '../../LexicalEditorState';
-import {$createRootNode} from '../../nodes/LexicalRootNode';
+import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalEditorState tests', () => {
@@ -33,14 +40,14 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
 
-      let root = null;
-      let paragraph = null;
-      let text = null;
+      let root!: RootNode;
+      let paragraph!: ParagraphNode;
+      let text!: TextNode;
 
       editor.getEditorState().read(() => {
         root = $getRoot();
-        paragraph = root.getFirstChild();
-        text = paragraph.getFirstChild();
+        paragraph = root.getFirstChild()!;
+        text = paragraph.getFirstChild()!;
       });
 
       expect(root).toEqual({
@@ -55,6 +62,7 @@ describe('LexicalEditorState tests', () => {
         __parent: null,
         __prev: null,
         __size: 1,
+        __style: '',
         __type: 'root',
       });
       expect(paragraph).toEqual({
@@ -68,6 +76,9 @@ describe('LexicalEditorState tests', () => {
         __parent: 'root',
         __prev: null,
         __size: 1,
+        __style: '',
+        __textFormat: 0,
+        __textStyle: '',
         __type: 'paragraph',
       });
       expect(text).toEqual({
@@ -82,6 +93,12 @@ describe('LexicalEditorState tests', () => {
         __text: 'foo',
         __type: 'text',
       });
+      expect(() => editor.getEditorState().read(() => $getEditor())).toThrow(
+        /Unable to find an active editor/,
+      );
+      expect(
+        editor.getEditorState().read(() => $getEditor(), {editor: editor}),
+      ).toBe(editor);
     });
 
     test('toJSON()', async () => {
@@ -96,7 +113,7 @@ describe('LexicalEditorState tests', () => {
       });
 
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
       );
     });
 
@@ -112,7 +129,7 @@ describe('LexicalEditorState tests', () => {
       // Remove the first node, which should cause a GC for everything
 
       await editor.update(() => {
-        $getRoot().getFirstChild().remove();
+        $getRoot().getFirstChild()!.remove();
       });
 
       expect(editor.getEditorState()._nodeMap).toEqual(
@@ -131,6 +148,7 @@ describe('LexicalEditorState tests', () => {
               __parent: null,
               __prev: null,
               __size: 0,
+              __style: '',
               __type: 'root',
             },
           ],

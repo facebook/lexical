@@ -2,11 +2,52 @@
 
 # Editor State
 
-## Understanding the Editor State
+## Why is it necessary?
 
 With Lexical, the source of truth is not the DOM, but rather an underlying state model
-that Lexical maintains and associates with an editor instance. You can get the latest
-editor state from an editor by calling `editor.getEditorState()`.
+that Lexical maintains and associates with an editor instance.
+
+While HTML is great for storing rich text content it's often "way too flexible" when it comes to text editing.
+For example the following lines of content will produce equal outcome:
+
+```html
+<i><b>Lexical</b></i>
+<i><b>Lex<b><b>ical</b></i>
+<b><i>Lexical</i></b>
+```
+
+<details>
+  <summary>See rendered version!</summary>
+  <div>
+    <i><b>Lexical</b></i>
+    <i><b>Lex</b><b>ical</b></i>
+    <b><i>Lexical</i></b>
+  </div>
+</details>
+
+Of course, there are ways to normalize all these variants to a single canonical form, however this would require DOM manipulation and so re-rendering of the content. And to overcome this we can use Virtual DOM, or State.
+
+On top of that it allows to decouple content structure from content formatting. Let's look at this example stored in HTML:
+
+```html
+<p>Why did the JavaScript developer go to the bar? <b>Because he couldn't handle his <i>Promise</i>s</b></p>
+```
+
+<figure class="text--center">
+  <img src="/img/docs/state-formatting-html.drawio.svg" alt="Nested structure of the HTML state"/>
+  <figcaption>Nested structure of the HTML state because of the formatting</figcaption>
+</figure>
+
+In contrast, Lexical decouples structure from formatting by offsetting this information to attributes. This allows us to have canonical document structure regardless of the order in which different styles were applied.
+
+<figure class="text--center">
+  <img src="/img/docs/state-formatting-lexical.png" alt="Flat Lexical state"/>
+  <figcaption>Flat Lexical state structure</figcaption>
+</figure>
+
+## Understanding the Editor State
+
+You can get the latest editor state from an editor by calling `editor.getEditorState()`.
 
 Editor states have two phases:
 
@@ -46,17 +87,19 @@ const onSubmit = () => {
 }
 ```
 
-For React it could be something following:
+For React it could be something like the following:
 
 ```jsx
 const initialEditorState = await loadContent();
-const editorStateRef = useRef();
+const editorStateRef = useRef(undefined);
 
 <LexicalComposer initialConfig={{
   editorState: initialEditorState
 }}>
   <LexicalRichTextPlugin />
-  <LexicalOnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
+  <LexicalOnChangePlugin onChange={(editorState) => {
+    editorStateRef.current = editorState;
+  }} />
   <Button label="Save" onPress={() => {
     if (editorStateRef.current) {
       saveContent(JSON.stringify(editorStateRef.current))
@@ -70,18 +113,25 @@ won't be reflected in editor. See "Update state" below for proper ways of updati
 
 ## Updating state
 
+:::tip
+
+For a deep dive into how state updates work, check out [this blog post](https://dio.la/article/lexical-state-updates) by Lexical contributor [@DaniGuardiola](https://twitter.com/daniguardio_la).
+
+:::
+
 The most common way to update the editor is to use `editor.update()`. Calling this function
 requires a function to be passed in that will provide access to mutate the underlying
 editor state. When starting a fresh update, the current editor state is cloned and
 used as the starting point. From a technical perspective, this means that Lexical leverages a technique
-called double-buffering during updates. There's an editor state to represent what is current on
-the screen, and another work-in-progress editor state that represents future changes.
+called double-buffering during updates. There's the "current" frozen editor state to represent what was
+most recently reconciled to the DOM, and another work-in-progress "pending" editor state that represents
+future changes for the next reconciliation.
 
-Creating an update is typically an async process that allows Lexical to batch multiple updates together in
-a single update – improving performance. When Lexical is ready to commit the update to
-the DOM, the underlying mutations and changes in the update will form a new immutable
-editor state. Calling `editor.getEditorState()` will then return the latest editor state
-based on the changes from the update.
+Reconciling an update is typically an async process that allows Lexical to batch multiple synchronous
+updates of the editor state together in a single update to the DOM – improving performance. When
+Lexical is ready to commit the update to the DOM, the underlying mutations and changes in the update
+batch will form a new immutable editor state. Calling `editor.getEditorState()` will then return the
+latest editor state based on the changes from the update.
 
 Here's an example of how you can update an editor instance:
 
@@ -138,6 +188,45 @@ editor.registerUpdateListener(({editorState}) => {
     // the $ prefixed helper functions.
   });
 });
+```
+
+## When are Listeners, Transforms, and Commands called?
+
+There are several types of callbacks that can be registered with the editor that are related to
+updates of the Editor State.
+
+| Callback Type | When It's Called |
+| -- | -- |
+| Update Listener | After reconciliation |
+| Mutation Listener | After reconciliation |
+| Node Transform | During `editor.update()`, after the callback finishes, if any instances of the node type they are registered for were updated |
+| Command | As soon as the command is dispatched to the editor (called from an implicit `editor.update()`) |
+
+## Synchronous reconciliation with discrete updates
+
+While commit scheduling and batching are normally what we want, they can sometimes get in the way.
+
+Consider this example: you're trying to manipulate an editor state in a server context and then persist it in a database.
+
+```js
+editor.update(() => {
+  // manipulate the state...
+});
+
+saveToDatabase(editor.getEditorState().toJSON());
+```
+
+This code will not work as expected, because the `saveToDatabase` call will happen before the state has been committed.
+The state that will be saved will be the same one that existed before the update.
+
+Fortunately, the `discrete` option for `LexicalEditor.update` forces an update to be immediately committed.
+
+```js
+editor.update(() => {
+  // manipulate the state...
+}, {discrete: true});
+
+saveToDatabase(editor.getEditorState().toJSON());
 ```
 
 ### Cloning state

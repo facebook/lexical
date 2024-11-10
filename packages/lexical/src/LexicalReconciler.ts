@@ -166,22 +166,6 @@ function setElementFormat(dom: HTMLElement, format: number): void {
   }
 }
 
-function removeLineBreak(slot: ElementDOMSlot) {
-  const element: HTMLElement & LexicalPrivateDOM = slot.element;
-  const br = element.__lexicalLineBreak;
-  if (br) {
-    slot.removeChild(br);
-  }
-  element.__lexicalLineBreak = null;
-}
-
-function insertLineBreak(slot: ElementDOMSlot) {
-  const element: HTMLElement & LexicalPrivateDOM = slot.element;
-  const br = document.createElement('br');
-  slot.insertChild(br);
-  element.__lexicalLineBreak = br;
-}
-
 function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   const node = activeNextNodeMap.get(key);
 
@@ -338,9 +322,9 @@ function reconcileElementTerminatingLineBreak(
   if (prevLineBreak !== nextLineBreak) {
     const slot = nextElement.getDOMSlot(dom);
     if (prevLineBreak) {
-      removeLineBreak(slot);
+      slot.removeManagedLineBreak();
     } else {
-      insertLineBreak(slot);
+      slot.insertManagedLineBreak();
     }
   }
 }

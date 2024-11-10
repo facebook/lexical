@@ -1582,13 +1582,11 @@ export function updateDOMBlockCursorElement(
       }
     } else {
       const child = elementNode.getChildAtIndex(offset);
-      if (needsBlockCursor(child)) {
-        const sibling = (child as LexicalNode).getPreviousSibling();
+      if (child !== null && needsBlockCursor(child)) {
+        const sibling = child.getPreviousSibling();
         if (sibling === null || needsBlockCursor(sibling)) {
           isBlockCursor = true;
-          insertBeforeElement = editor.getElementByKey(
-            (child as LexicalNode).__key,
-          );
+          insertBeforeElement = editor.getElementByKey(child.__key);
         }
       }
     }

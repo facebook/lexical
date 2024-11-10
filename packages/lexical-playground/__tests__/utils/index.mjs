@@ -195,6 +195,16 @@ export async function clickSelectors(page, selectors) {
     await click(page, selectors[i]);
   }
 }
+
+function removeSafariLinebreakImgHack(actualHtml) {
+  return E2E_BROWSER === 'webkit'
+    ? actualHtml.replaceAll(
+        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        '',
+      )
+    : actualHtml;
+}
+
 /**
  * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
  */
@@ -211,10 +221,12 @@ async function assertHTMLOnPageOrFrame(
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = await pageOrFrame
-      .locator('div[contenteditable="true"]')
-      .first()
-      .innerHTML();
+    const actualHtml = removeSafariLinebreakImgHack(
+      await pageOrFrame
+        .locator('div[contenteditable="true"]')
+        .first()
+        .innerHTML(),
+    );
     let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,

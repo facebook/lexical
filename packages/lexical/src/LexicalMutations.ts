@@ -60,9 +60,13 @@ function isManagedLineBreak(
   target: Node & LexicalPrivateDOM,
   editor: LexicalEditor,
 ): boolean {
+  const isBR = dom.nodeName === 'BR';
+  const lexicalLineBreak = target.__lexicalLineBreak;
   return (
-    target.__lexicalLineBreak === dom ||
-    getNodeKeyFromDOMNode(dom, editor) !== undefined
+    (lexicalLineBreak &&
+      (dom === lexicalLineBreak ||
+        (isBR && dom.previousSibling === lexicalLineBreak))) ||
+    (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
   );
 }
 
@@ -201,8 +205,7 @@ export function $flushMutations(
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
-              (addedDOM.nodeName !== 'BR' ||
-                !isManagedLineBreak(addedDOM, parentDOM, editor))
+              !isManagedLineBreak(addedDOM, parentDOM, editor)
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
@@ -227,8 +230,7 @@ export function $flushMutations(
               const removedDOM = removedDOMs[s];
 
               if (
-                (removedDOM.nodeName === 'BR' &&
-                  isManagedLineBreak(removedDOM, targetDOM, editor)) ||
+                isManagedLineBreak(removedDOM, targetDOM, editor) ||
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);

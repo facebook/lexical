@@ -19,6 +19,7 @@ import type {
 } from '../LexicalSelection';
 import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTextNode, TextNode} from '../index';
@@ -111,8 +112,7 @@ export class ElementDOMSlot {
    * or append it if this.before is not defined
    */
   insertChild(dom: Node): this {
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    const before = this.before || element.__lexicalLineBreak || null;
+    const before = this.before || this.getManagedLineBreak();
     invariant(
       before === null || before.parentElement === this.element,
       'ElementDOMSlot.insertChild: before is not in element',
@@ -151,13 +151,57 @@ export class ElementDOMSlot {
    * and will never be this.before if it is defined.
    */
   getFirstChild(): ChildNode | null {
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    const firstChild = this.after ? this.after.nextSibling : element.firstChild;
+    const firstChild = this.after
+      ? this.after.nextSibling
+      : this.element.firstChild;
     return firstChild === this.before ||
-      firstChild === element.__lexicalLineBreak
+      firstChild === this.getManagedLineBreak()
       ? null
       : firstChild;
   }
+  /**
+   * @internal
+   */
+  getManagedLineBreak(): Exclude<
+    LexicalPrivateDOM['__lexicalLineBreak'],
+    undefined
+  > {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    return element.__lexicalLineBreak || null;
+  }
+  /** @internal */
+  removeManagedLineBreak(): void {
+    const br = this.getManagedLineBreak();
+    if (br) {
+      const element: HTMLElement & LexicalPrivateDOM = this.element;
+      const sibling = br.nodeName === 'IMG' ? br.nextSibling : null;
+      if (sibling) {
+        element.removeChild(sibling);
+      }
+      element.removeChild(br);
+      element.__lexicalLineBreak = undefined;
+    }
+  }
+  /** @internal */
+  insertManagedLineBreak(): void {
+    if (this.getManagedLineBreak()) {
+      return;
+    }
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const before = this.before;
+    const br = document.createElement('br');
+    const img = IS_IOS || IS_SAFARI ? document.createElement('img') : null;
+    element.insertBefore(br, before);
+    if (img) {
+      img.setAttribute('data-lexical-linebreak', 'true');
+      img.style.cssText =
+        'display: inline !important; border: 0px !important; margin: 0px !important;';
+      img.alt = '';
+      element.insertBefore(img, br);
+    }
+    element.__lexicalLineBreak = img || br;
+  }
+
   /**
    * @internal
    *

@@ -93,6 +93,11 @@ export function setScrollableTablesActive(
   active: boolean,
 ) {
   if (active) {
+    if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
+      console.warn(
+        'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
+      );
+    }
     scrollableEditors.add(editor);
   } else {
     scrollableEditors.delete(editor);
@@ -193,11 +198,12 @@ export class TableNode extends ElementNode {
     }
     if ($isScrollableTablesActive(editor)) {
       const wrapperElement = document.createElement('div');
-      wrapperElement.dataset.lexicalScrollable = 'true';
-      wrapperElement.style.overflowX = 'auto';
-      // Without this, keyboard based caret navigation does not work
-      // as expected with Firefox (down arrow it will skip over the table)
-      wrapperElement.style.display = 'table';
+      const classes = config.theme.tableScrollableWrapper;
+      if (classes) {
+        addClassNamesToElement(wrapperElement, classes);
+      } else {
+        wrapperElement.style.cssText = 'overflow-x: auto;';
+      }
       wrapperElement.appendChild(tableElement);
       return wrapperElement;
     }

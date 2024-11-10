@@ -102,6 +102,7 @@ export class TableObserver {
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
+  shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
 
@@ -126,6 +127,7 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
     this.isSelecting = false;
+    this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};
     this.trackTable();
@@ -268,6 +270,28 @@ export class TableObserver {
     }
   }
 
+  /**
+   * @internal
+   * Firefox has a strange behavior where pressing the down arrow key from
+   * above the table will move the caret after the table and then lexical
+   * will select the last cell instead of the first.
+   * We do still want to let the browser handle caret movement but we will
+   * tag the update so that we can recheck the selection after the event
+   * is processed.
+   */
+  setShouldCheckSelection(): void {
+    this.shouldCheckSelection = true;
+  }
+  /**
+   * @internal
+   */
+  getAndClearShouldCheckSelection(): boolean {
+    if (this.shouldCheckSelection) {
+      this.shouldCheckSelection = false;
+      return true;
+    }
+    return false;
+  }
   setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false) {
     const editor = this.editor;
     editor.update(() => {

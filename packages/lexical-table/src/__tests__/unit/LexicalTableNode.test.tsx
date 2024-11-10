@@ -71,15 +71,13 @@ const editorConfig = Object.freeze({
   theme: {
     table: 'test-table-class',
     tableRowStriping: 'test-table-row-striping-class',
+    tableScrollableWraooer: 'table-scrollable-wrapper',
   },
 });
 
 function wrapTableHtml(expected: string): string {
   return expected
-    .replace(
-      /<table/g,
-      `<div style="overflow-x: auto; display: table;" data-lexical-scrollable="true"><table`,
-    )
+    .replace(/<table/g, `<div class="table-scrollable-wrapper"><table`)
     .replace(/<\/table>/g, '</table></div>');
 }
 

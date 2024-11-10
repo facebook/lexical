@@ -59,7 +59,7 @@ export function wrapTableHtml(expected) {
     ${expected
       .replace(
         /<table/g,
-        `<div style="overflow-x: auto; display: table;" data-lexical-scrollable="true"><table`,
+        `<div class="PlaygroundEditorTheme__tableScrollableWrapper"><table`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;

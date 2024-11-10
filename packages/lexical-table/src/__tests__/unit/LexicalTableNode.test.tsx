@@ -71,7 +71,7 @@ const editorConfig = Object.freeze({
   theme: {
     table: 'test-table-class',
     tableRowStriping: 'test-table-row-striping-class',
-    tableScrollableWraooer: 'table-scrollable-wrapper',
+    tableScrollableWrapper: 'table-scrollable-wrapper',
   },
 });
 
@@ -157,7 +157,7 @@ describe('LexicalTableNode tests', () => {
             expectTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <table>
+                <table class="test-table-class">
                   <colgroup>
                     <col style="width: 100px;" />
                     <col style="width: 200px;" />
@@ -206,7 +206,7 @@ describe('LexicalTableNode tests', () => {
             expectTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <table>
+                <table class="test-table-class">
                   <colgroup>
                     <col />
                     <col />
@@ -416,7 +416,7 @@ describe('LexicalTableNode tests', () => {
               testEnv.innerHTML,
               html`
                 <p><br /></p>
-                <table>
+                <table class="test-table-class">
                   <colgroup>
                     <col />
                     <col />
@@ -674,7 +674,7 @@ describe('LexicalTableNode tests', () => {
             });
           });
         },
-        undefined,
+        {theme: editorConfig.theme},
         <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
       );
     });

@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {createEditor, LexicalEditor} from 'lexical';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
@@ -15,41 +15,36 @@ import {ContentEditableElement} from '../../shared/LexicalContentEditableElement
 describe('ContentEditableElement tests', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot: Root;
-  let mockEditor: LexicalEditor;
+  let editor: LexicalEditor;
 
   beforeEach(() => {
-    // Create a container for rendering
     container = document.createElement('div');
     document.body.appendChild(container);
     reactRoot = createRoot(container);
 
-    // Mock LexicalEditor
-    mockEditor = {
-      isEditable: jest.fn(() => true),
-      registerEditableListener: jest.fn((cb) => {
-        cb(true || false); // Simulate editable state
-        return jest.fn(); // Mock unregister function
-      }),
-      setRootElement: jest.fn(),
-    } as unknown as LexicalEditor;
+    editor = createEditor({
+      namespace: 'ContentEditableElement',
+      onError: (error) => {
+        throw error;
+      },
+    });
   });
 
   afterEach(async () => {
-    // Cleanup the DOM and mocks
     if (container) {
       await ReactTestUtils.act(async () => {
-        reactRoot.unmount(); // Wrap unmount in act
+        reactRoot.unmount();
       });
       document.body.removeChild(container);
     }
-    jest.restoreAllMocks(); // Restore mocks after each test
+    editor.setRootElement(null); //editor cleanup
   });
 
   it('renders the correct ARIA attributes when editable', async () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           ariaLabelledBy="test-label"
           role="textbox"
         />,
@@ -61,13 +56,28 @@ describe('ContentEditableElement tests', () => {
     expect(element.getAttribute('contenteditable')).toBe('true');
   });
 
+  it('renders aria-labelledby attribute correctly', async () => {
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(
+        <ContentEditableElement
+          editor={editor}
+          aria-labelledby="TEST" // original  issue
+          className="ContentEditable__root"
+        />,
+      );
+    });
+
+    const element = container!.querySelector('.ContentEditable__root')!;
+    expect(element.getAttribute('aria-labelledby')).toBe('TEST');
+  });
+
   it('renders the correct ARIA attributes for different roles', async () => {
     const roles = ['textbox', 'combobox', 'listbox', 'spinbutton'];
 
     for (const role of roles) {
       await ReactTestUtils.act(async () => {
         reactRoot.render(
-          <ContentEditableElement editor={mockEditor} role={role} />,
+          <ContentEditableElement editor={editor} role={role} />,
         );
       });
 
@@ -79,7 +89,7 @@ describe('ContentEditableElement tests', () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           ariaDescribedBy="test-description"
           role="textbox"
         />,
@@ -94,7 +104,7 @@ describe('ContentEditableElement tests', () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           role="combobox"
           ariaExpanded={true} // Provide ariaExpanded
         />,
@@ -110,7 +120,7 @@ describe('ContentEditableElement tests', () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           ariaInvalid="true" // Mark as invalid
           ariaRequired={true} // Mark as required
           role="textbox"
@@ -127,7 +137,7 @@ describe('ContentEditableElement tests', () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           role="textbox"
           data-testid="test-element"
           style={{color: 'red', fontSize: '16px'}}
@@ -145,7 +155,7 @@ describe('ContentEditableElement tests', () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           ariaInvalid="false" // Not invalid
           ariaRequired={false} // Not required
           role="textbox"
@@ -162,7 +172,7 @@ describe('ContentEditableElement tests', () => {
     await ReactTestUtils.act(async () => {
       reactRoot.render(
         <ContentEditableElement
-          editor={mockEditor}
+          editor={editor}
           role="textbox"
           data-testid="test-element"
           data-custom-attribute="custom-value"
@@ -177,13 +187,13 @@ describe('ContentEditableElement tests', () => {
 
   it('registers and cleans up root element properly', async () => {
     let rootElement: HTMLElement | null = null;
-    mockEditor.setRootElement = jest.fn((element) => {
+    editor.setRootElement = jest.fn((element) => {
       rootElement = element;
     });
 
     await ReactTestUtils.act(async () => {
       reactRoot.render(
-        <ContentEditableElement editor={mockEditor} role="textbox" />,
+        <ContentEditableElement editor={editor} role="textbox" />,
       );
     });
 
@@ -204,7 +214,7 @@ describe('ContentEditableElement tests', () => {
       await ReactTestUtils.act(async () => {
         reactRoot.render(
           <ContentEditableElement
-            editor={mockEditor}
+            editor={editor}
             spellCheck={spellCheck}
             role="textbox"
           />,

@@ -6,7 +6,7 @@
  *
  */
 
-import type {BaseSelection, NodeKey} from 'lexical';
+import type {BaseSelection, NodeKey, TextNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
@@ -86,6 +86,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
     let lastMatch: null | string = null;
     let lastSuggestion: null | string = null;
     let searchPromise: null | SearchPromise = null;
+    let prevNodeFormat: number = 0;
     function $clearSuggestion() {
       const autocompleteNode =
         autocompleteNodeKey !== null
@@ -101,6 +102,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
       }
       lastMatch = null;
       lastSuggestion = null;
+      prevNodeFormat = 0;
       setSuggestion(null);
     }
     function updateAsyncSuggestion(
@@ -124,7 +126,11 @@ export default function AutocompletePlugin(): JSX.Element | null {
             return;
           }
           const selectionCopy = selection.clone();
-          const node = $createAutocompleteNode(uuid);
+          const prevNode = selection.getNodes()[0] as TextNode;
+          prevNodeFormat = prevNode.getFormat();
+          const node = $createAutocompleteNode(newSuggestion, uuid).setFormat(
+            prevNodeFormat,
+          );
           autocompleteNodeKey = node.getKey();
           selection.insertNodes([node]);
           $setSelection(selectionCopy);
@@ -175,7 +181,8 @@ export default function AutocompletePlugin(): JSX.Element | null {
       if (autocompleteNode === null) {
         return false;
       }
-      const textNode = $createTextNode(lastSuggestion);
+      const textNode =
+        $createTextNode(lastSuggestion).setFormat(prevNodeFormat);
       autocompleteNode.replace(textNode);
       textNode.selectNext();
       $clearSuggestion();

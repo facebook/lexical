@@ -383,7 +383,14 @@ function importTextMatchTransformers(
       }
 
       const startIndex = match.index || 0;
-      const endIndex = startIndex + match[0].length;
+      const endIndex = transformer.getEndIndex
+        ? transformer.getEndIndex(textNode, match)
+        : startIndex + match[0].length;
+
+      if (endIndex === false) {
+        continue;
+      }
+
       let replaceNode, newTextNode;
 
       if (startIndex === 0) {

@@ -26,7 +26,7 @@ function registerKeyTimeStampTracker() {
     'keydown',
     (event: KeyboardEvent) => {
       // Tab
-      if (event.keyCode === 9) {
+      if (event.key === 'Tab') {
         lastTabKeyDownTimestamp = event.timeStamp;
       }
     },

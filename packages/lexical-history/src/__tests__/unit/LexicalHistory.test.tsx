@@ -7,38 +7,105 @@
  */
 
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
-import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
-import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
-import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
-import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
-import {$createQuoteNode} from '@lexical/rich-text/src';
-import {$setBlocksType} from '@lexical/selection/src';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {$createQuoteNode} from '@lexical/rich-text';
+import {$setBlocksType} from '@lexical/selection';
+import {$restoreEditorState} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createNodeSelection,
+  $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
+  $getRoot,
   $isNodeSelection,
+  $setSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
+  type KlassConstructor,
   LexicalEditor,
+  LexicalNode,
+  type NodeKey,
   REDO_COMMAND,
   SerializedElementNode,
-  SerializedTextNode,
+  type SerializedTextNode,
+  type Spread,
+  TextNode,
   UNDO_COMMAND,
-} from 'lexical/src';
+} from 'lexical';
 import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
-import {$getRoot, $setSelection} from 'lexical/src/LexicalUtils';
-import {$createParagraphNode} from 'lexical/src/nodes/LexicalParagraphNode';
-import {$createTextNode} from 'lexical/src/nodes/LexicalTextNode';
-import React from 'react';
-import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import {createRoot, Root} from 'react-dom/client';
+import * as ReactTestUtils from 'shared/react-test-utils';
+
+type SerializedCustomTextNode = Spread<
+  {type: ReturnType<typeof CustomTextNode.getType>; classes: string[]},
+  SerializedTextNode
+>;
+
+class CustomTextNode extends TextNode {
+  ['constructor']!: KlassConstructor<typeof CustomTextNode>;
+
+  __classes: Set<string>;
+  constructor(text: string, classes: Iterable<string>, key?: NodeKey) {
+    super(text, key);
+    this.__classes = new Set(classes);
+  }
+  static getType(): 'custom-text' {
+    return 'custom-text';
+  }
+  static clone(node: CustomTextNode): CustomTextNode {
+    return new CustomTextNode(node.__text, node.__classes, node.__key);
+  }
+  addClass(className: string): this {
+    const self = this.getWritable();
+    self.__classes.add(className);
+    return self;
+  }
+  removeClass(className: string): this {
+    const self = this.getWritable();
+    self.__classes.delete(className);
+    return self;
+  }
+  setClasses(classes: Iterable<string>): this {
+    const self = this.getWritable();
+    self.__classes = new Set(classes);
+    return self;
+  }
+  getClasses(): ReadonlySet<string> {
+    return this.getLatest().__classes;
+  }
+  static importJSON({text, classes}: SerializedCustomTextNode): CustomTextNode {
+    return $createCustomTextNode(text, classes);
+  }
+  exportJSON(): SerializedCustomTextNode {
+    return {
+      ...super.exportJSON(),
+      classes: Array.from(this.getClasses()),
+      type: this.constructor.getType(),
+    };
+  }
+}
+function $createCustomTextNode(
+  text: string,
+  classes: string[] = [],
+): CustomTextNode {
+  return $applyNodeReplacement(new CustomTextNode(text, classes));
+}
+function $isCustomTextNode(
+  node: LexicalNode | null | undefined,
+): node is CustomTextNode {
+  return node instanceof CustomTextNode;
+}
 
 describe('LexicalHistory tests', () => {
   let container: HTMLDivElement | null = null;
-  let reactRoot;
+  let reactRoot: Root;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -58,13 +125,12 @@ describe('LexicalHistory tests', () => {
   // Shared instance across tests
   let editor: LexicalEditor;
 
+  function TestPlugin() {
+    // Plugin used just to get our hands on the Editor object
+    [editor] = useLexicalComposerContext();
+    return null;
+  }
   function Test(): JSX.Element {
-    function TestPlugin() {
-      // Plugin used just to get our hands on the Editor object
-      [editor] = useLexicalComposerContext();
-      return null;
-    }
-
     return (
       <TestComposer>
         <RichTextPlugin
@@ -127,8 +193,8 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph1 = createParagraphNode('AAA');
-        const paragraph2 = createParagraphNode('BBB');
+        const paragraph1 = $createParagraphNodeWithText('AAA');
+        const paragraph2 = $createParagraphNodeWithText('BBB');
 
         // The editor has one child that is an empty
         // paragraph Node.
@@ -222,7 +288,7 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph = createParagraphNode('foo');
+        const paragraph = $createParagraphNodeWithText('foo');
         root.append(paragraph);
       });
     });
@@ -260,7 +326,7 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph = createParagraphNode('foo');
+        const paragraph = $createParagraphNodeWithText('foo');
         root.append(paragraph);
       });
     });
@@ -312,9 +378,68 @@ describe('LexicalHistory tests', () => {
     await editor_.dispatchCommand(UNDO_COMMAND, undefined);
     expect($isNodeSelection(editor_.getEditorState()._selection)).toBe(true);
   });
+
+  test('Changes to TextNode leaf are detected properly #6409', async () => {
+    editor = createTestEditor({
+      nodes: [CustomTextNode],
+    });
+    const sharedHistory = createEmptyHistoryState();
+    registerHistory(editor, sharedHistory, 0);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createCustomTextNode('Initial text'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    expect(sharedHistory.undoStack).toHaveLength(0);
+
+    editor.update(
+      () => {
+        // Mark dirty with no changes
+        for (const node of $getRoot().getAllTextNodes()) {
+          node.getWritable();
+        }
+        // Restore the editor state and ensure the history did not change
+        $restoreEditorState(editor, editor.getEditorState());
+      },
+      {discrete: true},
+    );
+    expect(sharedHistory.undoStack).toHaveLength(0);
+    editor.update(
+      () => {
+        // Mark dirty with text change
+        for (const node of $getRoot().getAllTextNodes()) {
+          if ($isCustomTextNode(node)) {
+            node.setTextContent(node.getTextContent() + '!');
+          }
+        }
+      },
+      {discrete: true},
+    );
+    expect(sharedHistory.undoStack).toHaveLength(1);
+
+    editor.update(
+      () => {
+        // Mark dirty with only a change to the class
+        for (const node of $getRoot().getAllTextNodes()) {
+          if ($isCustomTextNode(node)) {
+            node.addClass('updated');
+          }
+        }
+      },
+      {discrete: true},
+    );
+    expect(sharedHistory.undoStack).toHaveLength(2);
+  });
 });
 
-const createParagraphNode = (text: string) => {
+const $createParagraphNodeWithText = (text: string) => {
   const paragraph = $createParagraphNode();
   const textNode = $createTextNode(text);
 

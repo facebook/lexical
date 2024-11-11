@@ -6,8 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
-import type {Cell, Grid} from './LexicalTableSelection';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -17,54 +15,128 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {
+  addClassNamesToElement,
+  isHTMLElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getNearestNodeFromDOMNode,
-  DEPRECATED_GridNode,
+  ElementNode,
 } from 'lexical';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
-import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
-import {getTableGrid} from './LexicalTableSelectionHelpers';
+import {PIXEL_VALUE_REG_EXP} from './constants';
+import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
+import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
+import {TableRowNode} from './LexicalTableRowNode';
+import {getTable} from './LexicalTableSelectionHelpers';
 
-export type SerializedTableNode = SerializedElementNode;
+export type SerializedTableNode = Spread<
+  {
+    colWidths?: readonly number[];
+    rowStriping?: boolean;
+  },
+  SerializedElementNode
+>;
+
+function updateColgroup(
+  dom: HTMLElement,
+  config: EditorConfig,
+  colCount: number,
+  colWidths?: number[] | readonly number[],
+) {
+  const colGroup = dom.querySelector('colgroup');
+  if (!colGroup) {
+    return;
+  }
+  const cols = [];
+  for (let i = 0; i < colCount; i++) {
+    const col = document.createElement('col');
+    const width = colWidths && colWidths[i];
+    if (width) {
+      col.style.width = `${width}px`;
+    }
+    cols.push(col);
+  }
+  colGroup.replaceChildren(...cols);
+}
+
+function setRowStriping(
+  dom: HTMLElement,
+  config: EditorConfig,
+  rowStriping: boolean,
+) {
+  if (rowStriping) {
+    addClassNamesToElement(dom, config.theme.tableRowStriping);
+    dom.setAttribute('data-lexical-row-striping', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableRowStriping);
+    dom.removeAttribute('data-lexical-row-striping');
+  }
+}
 
 /** @noInheritDoc */
-export class TableNode extends DEPRECATED_GridNode {
+export class TableNode extends ElementNode {
   /** @internal */
-  __grid?: Grid;
+  __rowStriping: boolean;
+  __colWidths?: number[] | readonly number[];
 
   static getType(): string {
     return 'table';
+  }
+
+  getColWidths(): number[] | readonly number[] | undefined {
+    const self = this.getLatest();
+    return self.__colWidths;
+  }
+
+  setColWidths(colWidths: readonly number[]): this {
+    const self = this.getWritable();
+    // NOTE: Node properties should be immutable. Freeze to prevent accidental mutation.
+    self.__colWidths = __DEV__ ? Object.freeze(colWidths) : colWidths;
+    return self;
   }
 
   static clone(node: TableNode): TableNode {
     return new TableNode(node.__key);
   }
 
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__colWidths = prevNode.__colWidths;
+    this.__rowStriping = prevNode.__rowStriping;
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       table: (_node: Node) => ({
-        conversion: convertTableElement,
+        conversion: $convertTableElement,
         priority: 1,
       }),
     };
   }
 
-  static importJSON(_serializedNode: SerializedTableNode): TableNode {
-    return $createTableNode();
+  static importJSON(serializedNode: SerializedTableNode): TableNode {
+    const tableNode = $createTableNode();
+    tableNode.__rowStriping = serializedNode.rowStriping || false;
+    tableNode.__colWidths = serializedNode.colWidths;
+    return tableNode;
   }
 
   constructor(key?: NodeKey) {
     super(key);
+    this.__rowStriping = false;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
+      colWidths: this.getColWidths(),
+      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
       type: 'table',
       version: 1,
     };
@@ -72,13 +144,32 @@ export class TableNode extends DEPRECATED_GridNode {
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
+    const colGroup = document.createElement('colgroup');
+    tableElement.appendChild(colGroup);
+    updateColgroup(
+      tableElement,
+      config,
+      this.getColumnCount(),
+      this.getColWidths(),
+    );
 
     addClassNamesToElement(tableElement, config.theme.table);
+    if (this.__rowStriping) {
+      setRowStriping(tableElement, config, true);
+    }
 
     return tableElement;
   }
 
-  updateDOM(): boolean {
+  updateDOM(
+    prevNode: TableNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    if (prevNode.__rowStriping !== this.__rowStriping) {
+      setRowStriping(dom, config, this.__rowStriping);
+    }
+    updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
     return false;
   }
 
@@ -90,18 +181,11 @@ export class TableNode extends DEPRECATED_GridNode {
           const newElement = tableElement.cloneNode() as ParentNode;
           const colGroup = document.createElement('colgroup');
           const tBody = document.createElement('tbody');
-          tBody.append(...tableElement.children);
-          const firstRow = this.getFirstChildOrThrow<TableRowNode>();
-
-          if (!$isTableRowNode(firstRow)) {
-            throw new Error('Expected to find row node.');
-          }
-
-          const colCount = firstRow.getChildrenSize();
-
-          for (let i = 0; i < colCount; i++) {
-            const col = document.createElement('col');
-            colGroup.append(col);
+          if (isHTMLElement(tableElement)) {
+            const cols = tableElement.querySelectorAll('col');
+            colGroup.append(...cols);
+            const rows = tableElement.querySelectorAll('tr');
+            tBody.append(...rows);
           }
 
           newElement.replaceChildren(colGroup, tBody);
@@ -110,11 +194,6 @@ export class TableNode extends DEPRECATED_GridNode {
         }
       },
     };
-  }
-
-  // TODO 0.10 deprecate
-  canExtractContents(): false {
-    return false;
   }
 
   canBeEmpty(): false {
@@ -127,18 +206,22 @@ export class TableNode extends DEPRECATED_GridNode {
 
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
-    grid: Grid,
+    table: TableDOMTable,
   ): {x: number; y: number} {
-    const {rows, cells} = grid;
+    const {rows, domRows} = table;
 
     for (let y = 0; y < rows; y++) {
-      const row = cells[y];
+      const row = domRows[y];
 
       if (row == null) {
-        throw new Error(`Row not found at y:${y}`);
+        continue;
       }
 
-      const x = row.findIndex(({elem}) => {
+      const x = row.findIndex((cell) => {
+        if (!cell) {
+          return;
+        }
+        const {elem} = cell;
         const cellNode = $getNearestNodeFromDOMNode(elem);
         return cellNode === tableCellNode;
       });
@@ -151,16 +234,22 @@ export class TableNode extends DEPRECATED_GridNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellFromCords(x: number, y: number, grid: Grid): Cell | null {
-    const {cells} = grid;
+  getDOMCellFromCords(
+    x: number,
+    y: number,
+    table: TableDOMTable,
+  ): null | TableDOMCell {
+    const {domRows} = table;
 
-    const row = cells[y];
+    const row = domRows[y];
 
     if (row == null) {
       return null;
     }
 
-    const cell = row[x];
+    const index = x < row.length ? x : row.length - 1;
+
+    const cell = row[index];
 
     if (cell == null) {
       return null;
@@ -169,8 +258,12 @@ export class TableNode extends DEPRECATED_GridNode {
     return cell;
   }
 
-  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell {
-    const cell = this.getCellFromCords(x, y, grid);
+  getDOMCellFromCordsOrThrow(
+    x: number,
+    y: number,
+    table: TableDOMTable,
+  ): TableDOMCell {
+    const cell = this.getDOMCellFromCords(x, y, table);
 
     if (!cell) {
       throw new Error('Cell not found at cords.');
@@ -179,8 +272,12 @@ export class TableNode extends DEPRECATED_GridNode {
     return cell;
   }
 
-  getCellNodeFromCords(x: number, y: number, grid: Grid): TableCellNode | null {
-    const cell = this.getCellFromCords(x, y, grid);
+  getCellNodeFromCords(
+    x: number,
+    y: number,
+    table: TableDOMTable,
+  ): null | TableCellNode {
+    const cell = this.getDOMCellFromCords(x, y, table);
 
     if (cell == null) {
       return null;
@@ -195,14 +292,26 @@ export class TableNode extends DEPRECATED_GridNode {
     return null;
   }
 
-  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode {
-    const node = this.getCellNodeFromCords(x, y, grid);
+  getCellNodeFromCordsOrThrow(
+    x: number,
+    y: number,
+    table: TableDOMTable,
+  ): TableCellNode {
+    const node = this.getCellNodeFromCords(x, y, table);
 
     if (!node) {
       throw new Error('Node at cords not TableCellNode.');
     }
 
     return node;
+  }
+
+  getRowStriping(): boolean {
+    return Boolean(this.getLatest().__rowStriping);
+  }
+
+  setRowStriping(newRowStriping: boolean): void {
+    this.getWritable().__rowStriping = newRowStriping;
   }
 
   canSelectBefore(): true {
@@ -212,23 +321,60 @@ export class TableNode extends DEPRECATED_GridNode {
   canIndent(): false {
     return false;
   }
+
+  getColumnCount(): number {
+    const firstRow = this.getFirstChild<TableRowNode>();
+    if (!firstRow) {
+      return 0;
+    }
+
+    let columnCount = 0;
+    firstRow.getChildren().forEach((cell) => {
+      if ($isTableCellNode(cell)) {
+        columnCount += cell.getColSpan();
+      }
+    });
+
+    return columnCount;
+  }
 }
 
-export function $getElementGridForTableNode(
+export function $getElementForTableNode(
   editor: LexicalEditor,
   tableNode: TableNode,
-): Grid {
+): TableDOMTable {
   const tableElement = editor.getElementByKey(tableNode.getKey());
 
   if (tableElement == null) {
     throw new Error('Table Element Not Found');
   }
 
-  return getTableGrid(tableElement);
+  return getTable(tableElement);
 }
 
-export function convertTableElement(_domNode: Node): DOMConversionOutput {
-  return {node: $createTableNode()};
+export function $convertTableElement(
+  domNode: HTMLElement,
+): DOMConversionOutput {
+  const tableNode = $createTableNode();
+  if (domNode.hasAttribute('data-lexical-row-striping')) {
+    tableNode.setRowStriping(true);
+  }
+  const colGroup = domNode.querySelector(':scope > colgroup');
+  if (colGroup) {
+    let columns: number[] | undefined = [];
+    for (const col of colGroup.querySelectorAll(':scope > col')) {
+      const width = (col as HTMLElement).style.width;
+      if (!width || !PIXEL_VALUE_REG_EXP.test(width)) {
+        columns = undefined;
+        break;
+      }
+      columns.push(parseFloat(width));
+    }
+    if (columns) {
+      tableNode.setColWidths(columns);
+    }
+  }
+  return {node: tableNode};
 }
 
 export function $createTableNode(): TableNode {

@@ -10,15 +10,16 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isRangeSelection,
   ElementNode,
+  LexicalEditor,
   LexicalNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
 import {createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   $createTestElementNode,
@@ -26,7 +27,7 @@ import {
 } from '../../../__tests__/utils';
 
 describe('LexicalElementNode tests', () => {
-  let container = null;
+  let container: HTMLElement;
 
   beforeEach(async () => {
     container = document.createElement('div');
@@ -37,16 +38,16 @@ describe('LexicalElementNode tests', () => {
 
   afterEach(() => {
     document.body.removeChild(container);
+    // @ts-ignore
     container = null;
   });
 
-  async function update(fn) {
+  async function update(fn: () => void) {
     editor.update(fn);
     return Promise.resolve().then();
   }
 
-  function useLexicalEditor(rootElementRef) {
-    // @ts-ignore
+  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
     const editor = React.useMemo(() => createTestEditor(), []);
 
     useEffect(() => {
@@ -57,7 +58,7 @@ describe('LexicalElementNode tests', () => {
     return editor;
   }
 
-  let editor = null;
+  let editor: LexicalEditor;
 
   async function init() {
     const ref = createRef<HTMLDivElement>();
@@ -97,6 +98,7 @@ describe('LexicalElementNode tests', () => {
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
         // to accomodate these changes.
+
         expect(node.exportJSON()).toStrictEqual({
           children: [],
           direction: null,
@@ -121,7 +123,7 @@ describe('LexicalElementNode tests', () => {
 
     test('some children', async () => {
       await update(() => {
-        const children = $getRoot().getFirstChild<ElementNode>().getChildren();
+        const children = $getRoot().getFirstChild<ElementNode>()!.getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -131,7 +133,7 @@ describe('LexicalElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         const textNodes = $getRoot()
-          .getFirstChild<ElementNode>()
+          .getFirstChild<ElementNode>()!
           .getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
@@ -173,8 +175,8 @@ describe('LexicalElementNode tests', () => {
       await update(() => {
         expect(
           $getRoot()
-            .getFirstChild<ElementNode>()
-            .getFirstChild()
+            .getFirstChild<ElementNode>()!
+            .getFirstChild()!
             .getTextContent(),
         ).toBe('Foo');
       });
@@ -193,8 +195,8 @@ describe('LexicalElementNode tests', () => {
       await update(() => {
         expect(
           $getRoot()
-            .getFirstChild<ElementNode>()
-            .getLastChild()
+            .getFirstChild<ElementNode>()!
+            .getLastChild()!
             .getTextContent(),
         ).toBe('Baz');
       });
@@ -211,7 +213,7 @@ describe('LexicalElementNode tests', () => {
   describe('getTextContent()', () => {
     test('basic', async () => {
       await update(() => {
-        expect($getRoot().getFirstChild().getTextContent()).toBe('FooBarBaz');
+        expect($getRoot().getFirstChild()!.getTextContent()).toBe('FooBarBaz');
       });
     });
 
@@ -254,8 +256,8 @@ describe('LexicalElementNode tests', () => {
   describe('getTextContentSize()', () => {
     test('basic', async () => {
       await update(() => {
-        expect($getRoot().getFirstChild().getTextContentSize()).toBe(
-          $getRoot().getFirstChild().getTextContent().length,
+        expect($getRoot().getFirstChild()!.getTextContentSize()).toBe(
+          $getRoot().getFirstChild()!.getTextContent().length,
         );
       });
     });
@@ -273,7 +275,7 @@ describe('LexicalElementNode tests', () => {
   });
 
   describe('splice', () => {
-    let block;
+    let block: ElementNode;
 
     beforeEach(async () => {
       await update(() => {
@@ -567,7 +569,7 @@ describe('LexicalElementNode tests', () => {
           const selection = $getSelection();
           const expectedSelection = testCase.expectedSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -587,7 +589,7 @@ describe('LexicalElementNode tests', () => {
 
     it('Running transforms for inserted nodes, their previous siblings and new siblings', async () => {
       const transforms = new Set();
-      const expectedTransforms = [];
+      const expectedTransforms: string[] = [];
 
       const removeTransform = editor.registerNodeTransform(TextNode, (node) => {
         transforms.add(node.__key);
@@ -609,14 +611,14 @@ describe('LexicalElementNode tests', () => {
           text1.__key,
           text2.__key,
           text3.__key,
-          block.getChildAtIndex(0).__key,
-          block.getChildAtIndex(1).__key,
+          block.getChildAtIndex(0)!.__key,
+          block.getChildAtIndex(1)!.__key,
         );
       });
 
       await update(() => {
         block.splice(1, 0, [
-          $getRoot().getLastChild<ElementNode>().getChildAtIndex(1),
+          $getRoot().getLastChild<ElementNode>()!.getChildAtIndex(1)!,
         ]);
       });
 

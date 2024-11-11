@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {BaseSelection, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
@@ -100,7 +95,10 @@ const formatStep = (step: Step) => {
 };
 
 export function isSelectAll(event: KeyboardEvent): boolean {
-  return event.keyCode === 65 && (IS_APPLE ? event.metaKey : event.ctrlKey);
+  return (
+    event.key.toLowerCase() === 'a' &&
+    (IS_APPLE ? event.metaKey : event.ctrlKey)
+  );
 }
 
 // stolen from LexicalSelection-test
@@ -159,9 +157,7 @@ function useTestRecorder(
   const [isRecording, setIsRecording] = useState(false);
   const [, setCurrentInnerHTML] = useState('');
   const [templatedTest, setTemplatedTest] = useState('');
-  const previousSelectionRef = useRef<
-    RangeSelection | GridSelection | NodeSelection | null
-  >(null);
+  const previousSelectionRef = useRef<BaseSelection | null>(null);
   const skipNextSelectionChangeRef = useRef(false);
   const preRef = useRef<HTMLPreElement>(null);
 

@@ -1,5 +1,7 @@
 # `@lexical/headless`
 
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_headless)
+
 This package allows you to interact with Lexical in a headless environment (one that does not rely on DOM, e.g. for Node.js environment), and use its
 main features like editor.update(), editor.registerNodeTransform(), editor.registerUpdateListener()
 to create, update or traverse state.
@@ -33,14 +35,14 @@ you can convert lexical editor state to markdown on server:
 const { createHeadlessEditor } = require('@lexical/headless');
 const { $convertToMarkdownString, TRANSFORMERS } = require('@lexical/markdown');
 
-app.get('article/:id/markdown', await (req, res) => {
+app.get('article/:id/markdown', async (req, res) => {
   const editor = createHeadlessEditor({
     nodes: [],
     onError: () => {},
   });
 
   const articleEditorStateJSON = await loadArticleBody(req.query.id);
-  editor.setEditorState(editor.parseEditorState(articleEditorStateJSON));  
+  editor.setEditorState(editor.parseEditorState(articleEditorStateJSON));
 
   editor.update(() => {
     const markdown = $convertToMarkdownString(TRANSFORMERS);

@@ -1,22 +1,12 @@
 name: Publish to NPM
-on:
-  push:
-    branches:
-      - main
+on: workflow_dispatch
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    if: contains(github.ref, '-next.')
-    steps:
-      - uses: actions/checkout@v3
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: npm run prepare-release
-      - run: node ./scripts/npm/release.js --non-interactive --dry-run=${{ secrets.RELEASE_DRY_RUN }} --channel next
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    uses: ./.github/workflows/call-npm-publish.yml
+    with:
+      ref: main
+      dry-run: false
+      channel: latest
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

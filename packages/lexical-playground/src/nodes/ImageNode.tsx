@@ -23,10 +23,7 @@ import {$applyNodeReplacement, createEditor, DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
-const ImageComponent = React.lazy(
-  // @ts-ignore
-  () => import('./ImageComponent'),
-);
+const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
 export interface ImagePayload {
   altText: string;
@@ -40,13 +37,23 @@ export interface ImagePayload {
   captionsEnabled?: boolean;
 }
 
-function convertImageElement(domNode: Node): null | DOMConversionOutput {
-  if (domNode instanceof HTMLImageElement) {
-    const {alt: altText, src, width, height} = domNode;
-    const node = $createImageNode({altText, height, src, width});
-    return {node};
+function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
+  return (
+    img.parentElement != null &&
+    img.parentElement.tagName === 'LI' &&
+    img.previousSibling === null &&
+    img.getAttribute('aria-roledescription') === 'checkbox'
+  );
+}
+
+function $convertImageElement(domNode: Node): null | DOMConversionOutput {
+  const img = domNode as HTMLImageElement;
+  if (img.src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
+    return null;
   }
-  return null;
+  const {alt: altText, src, width, height} = img;
+  const node = $createImageNode({altText, height, src, width});
+  return {node};
 }
 
 export type SerializedImageNode = Spread<
@@ -122,7 +129,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       img: (node: Node) => ({
-        conversion: convertImageElement,
+        conversion: $convertImageElement,
         priority: 0,
       }),
     };
@@ -146,7 +153,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
     this.__showCaption = showCaption || false;
-    this.__caption = caption || createEditor();
+    this.__caption =
+      caption ||
+      createEditor({
+        nodes: [],
+      });
     this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
   }
 

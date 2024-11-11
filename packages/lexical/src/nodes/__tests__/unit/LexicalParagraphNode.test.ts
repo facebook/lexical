@@ -11,6 +11,7 @@ import {
   $getRoot,
   $isParagraphNode,
   ParagraphNode,
+  RangeSelection,
 } from 'lexical';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
@@ -51,6 +52,8 @@ describe('LexicalParagraphNode tests', () => {
           direction: null,
           format: '',
           indent: 0,
+          textFormat: 0,
+          textStyle: '',
           type: 'paragraph',
           version: 1,
         });
@@ -98,7 +101,7 @@ describe('LexicalParagraphNode tests', () => {
 
     test('ParagraphNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
-      let paragraphNode;
+      let paragraphNode: ParagraphNode;
 
       await editor.update(() => {
         const root = $getRoot();
@@ -111,14 +114,17 @@ describe('LexicalParagraphNode tests', () => {
       );
 
       await editor.update(() => {
-        const result = paragraphNode.insertNewAfter();
-
+        const selection = paragraphNode.select();
+        const result = paragraphNode.insertNewAfter(
+          selection as RangeSelection,
+          false,
+        );
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
+        expect(testEnv.outerHTML).toBe(
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        );
       });
-      expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p><p><br></p></div>',
-      );
     });
 
     test('$createParagraphNode()', async () => {

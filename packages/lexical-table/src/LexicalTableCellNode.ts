@@ -14,7 +14,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedGridCellNode,
+  SerializedElementNode,
   Spread,
 } from 'lexical';
 
@@ -24,10 +24,11 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
-  DEPRECATED_GridCellNode,
+  $isTextNode,
+  ElementNode,
 } from 'lexical';
 
-import {PIXEL_VALUE_REG_EXP} from './constants';
+import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -41,15 +42,21 @@ export type TableCellHeaderState =
 
 export type SerializedTableCellNode = Spread<
   {
+    colSpan?: number;
+    rowSpan?: number;
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
   },
-  SerializedGridCellNode
+  SerializedElementNode
 >;
 
 /** @noInheritDoc */
-export class TableCellNode extends DEPRECATED_GridCellNode {
+export class TableCellNode extends ElementNode {
+  /** @internal */
+  __colSpan: number;
+  /** @internal */
+  __rowSpan: number;
   /** @internal */
   __headerState: TableCellHeaderState;
   /** @internal */
@@ -62,25 +69,28 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    const cellNode = new TableCellNode(
+    return new TableCellNode(
       node.__headerState,
       node.__colSpan,
       node.__width,
       node.__key,
     );
-    cellNode.__rowSpan = node.__rowSpan;
-    cellNode.__backgroundColor = node.__backgroundColor;
-    return cellNode;
+  }
+
+  afterCloneFrom(node: this): void {
+    super.afterCloneFrom(node);
+    this.__rowSpan = node.__rowSpan;
+    this.__backgroundColor = node.__backgroundColor;
   }
 
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
       th: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
     };
@@ -89,14 +99,13 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
     const colSpan = serializedNode.colSpan || 1;
     const rowSpan = serializedNode.rowSpan || 1;
-    const cellNode = $createTableCellNode(
+    return $createTableCellNode(
       serializedNode.headerState,
       colSpan,
       serializedNode.width || undefined,
-    );
-    cellNode.__rowSpan = rowSpan;
-    cellNode.__backgroundColor = serializedNode.backgroundColor || null;
-    return cellNode;
+    )
+      .setRowSpan(rowSpan)
+      .setBackgroundColor(serializedNode.backgroundColor || null);
   }
 
   constructor(
@@ -105,7 +114,9 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     width?: number,
     key?: NodeKey,
   ) {
-    super(colSpan, key);
+    super(key);
+    this.__colSpan = colSpan;
+    this.__rowSpan = 1;
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
@@ -143,8 +154,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
 
     if (element) {
       const element_ = element as HTMLTableCellElement;
-      const maxWidth = 700;
-      const colCount = this.getParentOrThrow().getChildrenSize();
       element_.style.border = '1px solid black';
       if (this.__colSpan > 1) {
         element_.colSpan = this.__colSpan;
@@ -152,9 +161,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
-      element_.style.width = `${
-        this.getWidth() || Math.max(90, maxWidth / colCount)
-      }px`;
+      element_.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
@@ -176,30 +183,55 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     return {
       ...super.exportJSON(),
       backgroundColor: this.getBackgroundColor(),
+      colSpan: this.__colSpan,
       headerState: this.__headerState,
+      rowSpan: this.__rowSpan,
       type: 'tablecell',
       width: this.getWidth(),
     };
+  }
+
+  getColSpan(): number {
+    return this.getLatest().__colSpan;
+  }
+
+  setColSpan(colSpan: number): this {
+    const self = this.getWritable();
+    self.__colSpan = colSpan;
+    return self;
+  }
+
+  getRowSpan(): number {
+    return this.getLatest().__rowSpan;
+  }
+
+  setRowSpan(rowSpan: number): this {
+    const self = this.getWritable();
+    self.__rowSpan = rowSpan;
+    return self;
   }
 
   getTag(): string {
     return this.hasHeader() ? 'th' : 'td';
   }
 
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState {
+  setHeaderStyles(
+    headerState: TableCellHeaderState,
+    mask: TableCellHeaderState = TableCellHeaderStates.BOTH,
+  ): this {
     const self = this.getWritable();
-    self.__headerState = headerState;
-    return this.__headerState;
+    self.__headerState = (headerState & mask) | (self.__headerState & ~mask);
+    return self;
   }
 
   getHeaderStyles(): TableCellHeaderState {
     return this.getLatest().__headerState;
   }
 
-  setWidth(width: number): number | null | undefined {
+  setWidth(width: number): this {
     const self = this.getWritable();
     self.__width = width;
-    return this.__width;
+    return self;
   }
 
   getWidth(): number | undefined {
@@ -210,11 +242,13 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     return this.getLatest().__backgroundColor;
   }
 
-  setBackgroundColor(newBackgroundColor: null | string): void {
-    this.getWritable().__backgroundColor = newBackgroundColor;
+  setBackgroundColor(newBackgroundColor: null | string): this {
+    const self = this.getWritable();
+    self.__backgroundColor = newBackgroundColor;
+    return self;
   }
 
-  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
+  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
     if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {
@@ -261,7 +295,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 }
 
-export function convertTableCellNodeElement(
+export function $convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
@@ -287,7 +321,20 @@ export function convertTableCellNodeElement(
     tableCellNode.__backgroundColor = backgroundColor;
   }
 
+  const style = domNode_.style;
+  const textDecoration = ((style && style.textDecoration) || '').split(' ');
+  const hasBoldFontWeight =
+    style.fontWeight === '700' || style.fontWeight === 'bold';
+  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
+  const hasItalicFontStyle = style.fontStyle === 'italic';
+  const hasUnderlineTextDecoration = textDecoration.includes('underline');
   return {
+    after: (childLexicalNodes) => {
+      if (childLexicalNodes.length === 0) {
+        childLexicalNodes.push($createParagraphNode());
+      }
+      return childLexicalNodes;
+    },
     forChild: (lexicalNode, parentLexicalNode) => {
       if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
         const paragraphNode = $createParagraphNode();
@@ -296,6 +343,20 @@ export function convertTableCellNodeElement(
           lexicalNode.getTextContent() === '\n'
         ) {
           return null;
+        }
+        if ($isTextNode(lexicalNode)) {
+          if (hasBoldFontWeight) {
+            lexicalNode.toggleFormat('bold');
+          }
+          if (hasLinethroughTextDecoration) {
+            lexicalNode.toggleFormat('strikethrough');
+          }
+          if (hasItalicFontStyle) {
+            lexicalNode.toggleFormat('italic');
+          }
+          if (hasUnderlineTextDecoration) {
+            lexicalNode.toggleFormat('underline');
+          }
         }
         paragraphNode.append(lexicalNode);
         return paragraphNode;

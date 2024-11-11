@@ -4,7 +4,6 @@ node_modules
 
 base-build
 build
-build
 coverage
 dist
 npm
@@ -16,8 +15,11 @@ npm
 .env.production.local
 .ts-temp
 .docusaurus
+.playwright-clipboard.lock
 e2e-screenshots
 test-results
+playwright-report
+/SOURCE_CODE_REVIEW.md
 
 npm-debug.log*
 
@@ -27,5 +29,11 @@ npm-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
+
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
 
 .idea

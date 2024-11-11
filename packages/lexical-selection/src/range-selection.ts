@@ -7,8 +7,8 @@
  */
 
 import type {
+  BaseSelection,
   ElementNode,
-  GridSelection,
   LexicalNode,
   NodeKey,
   Point,
@@ -16,6 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {TableSelection} from '@lexical/table';
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -31,6 +32,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
@@ -40,10 +42,16 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement - The function that creates the node. eg. $createParagraphNode.
  */
 export function $setBlocksType(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void {
-  if (selection.anchor.key === 'root') {
+  if (selection === null) {
+    return;
+  }
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
+
+  if (anchor !== null && anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
@@ -58,47 +66,25 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  let maybeBlock = selection.anchor.getNode().getParentOrThrow();
-
-  if (nodes.indexOf(maybeBlock) === -1) {
-    nodes.push(maybeBlock);
-  }
-
-  if (maybeBlock.isInline()) {
-    maybeBlock = maybeBlock.getParentOrThrow();
-
-    if (nodes.indexOf(maybeBlock) === -1) {
-      nodes.push(maybeBlock);
-    }
+  const firstSelectedBlock =
+    anchor !== null ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock) : false;
+  if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
+    nodes.push(firstSelectedBlock);
   }
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (!isBlock(node)) {
+    if (!INTERNAL_$isBlock(node)) {
       continue;
     }
+    invariant($isElementNode(node), 'Expected block node to be an ElementNode');
 
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
     targetElement.setIndent(node.getIndent());
     node.replace(targetElement, true);
   }
-}
-
-function isBlock(node: LexicalNode): boolean {
-  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
-    return false;
-  }
-
-  const firstChild = node.getFirstChild();
-  const isLeafElement =
-    firstChild === null ||
-    $isLineBreakNode(firstChild) ||
-    $isTextNode(firstChild) ||
-    firstChild.isInline();
-
-  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
 function isPointAttached(point: Point): boolean {
@@ -128,19 +114,21 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @param wrappingElement - An element to append the wrapped selection and its children to.
  */
 export function $wrapNodes(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
-  const anchor = selection.anchor;
 
   if (
-    nodesLength === 0 ||
-    (nodesLength === 1 &&
-      anchor.type === 'element' &&
-      anchor.getNode().getChildrenSize() === 0)
+    anchor !== null &&
+    (nodesLength === 0 ||
+      (nodesLength === 1 &&
+        anchor.type === 'element' &&
+        anchor.getNode().getChildrenSize() === 0))
   ) {
     const target =
       anchor.type === 'text'
@@ -214,7 +202,7 @@ export function $wrapNodes(
  * @returns
  */
 export function $wrapNodesImpl(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,
@@ -306,6 +294,10 @@ export function $wrapNodesImpl(
         $removeParentEmptyElements(parent);
       }
     } else if (emptyElements.has(node.getKey())) {
+      invariant(
+        $isElementNode(node),
+        'Expected node in emptyElements to be an ElementNode',
+      );
       const targetElement = createElement();
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
@@ -526,7 +518,7 @@ function $getNodeStyleValueForProperty(
  * @returns The value of the property for the selected TextNodes.
  */
 export function $getSelectionStyleValueForProperty(
-  selection: RangeSelection,
+  selection: RangeSelection | TableSelection,
   styleProperty: string,
   defaultValue = '',
 ): string {
@@ -538,7 +530,11 @@ export function $getSelectionStyleValueForProperty(
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
 
-  if (selection.style !== '') {
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.style !== ''
+  ) {
     const css = selection.style;
     const styleObject = getStyleObjectFromCSS(css);
 
@@ -576,4 +572,37 @@ export function $getSelectionStyleValueForProperty(
   }
 
   return styleValue === null ? defaultValue : styleValue;
+}
+
+/**
+ * This function is for internal use of the library.
+ * Please do not use it as it may change in the future.
+ */
+export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
+  if ($isDecoratorNode(node)) {
+    return false;
+  }
+  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
+    return false;
+  }
+
+  const firstChild = node.getFirstChild();
+  const isLeafElement =
+    firstChild === null ||
+    $isLineBreakNode(firstChild) ||
+    $isTextNode(firstChild) ||
+    firstChild.isInline();
+
+  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
+}
+
+export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
+  node: LexicalNode,
+  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
+) {
+  let parent = node;
+  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
+    parent = parent.getParentOrThrow();
+  }
+  return predicate(parent) ? parent : null;
 }

@@ -27,12 +27,14 @@ import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
 import {FigmaNode} from './FigmaNode';
 import {ImageNode} from './ImageNode';
-import {InlineImageNode} from './InlineImageNode';
+import {InlineImageNode} from './InlineImageNode/InlineImageNode';
 import {KeywordNode} from './KeywordNode';
+import {LayoutContainerNode} from './LayoutContainerNode';
+import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
+import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
 import {StickyNode} from './StickyNode';
-import {TableNode as NewTableNode} from './TableNode';
 import {TweetNode} from './TweetNode';
 import {YouTubeNode} from './YouTubeNode';
 
@@ -42,7 +44,6 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   ListItemNode,
   QuoteNode,
   CodeNode,
-  NewTableNode,
   TableNode,
   TableCellNode,
   TableRowNode,
@@ -69,6 +70,9 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   CollapsibleContainerNode,
   CollapsibleContentNode,
   CollapsibleTitleNode,
+  PageBreakNode,
+  LayoutContainerNode,
+  LayoutItemNode,
 ];
 
 export default PlaygroundNodes;

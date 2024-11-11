@@ -9,6 +9,7 @@
 import {
   moveRight,
   moveToEditorBeginning,
+  STANDARD_KEYPRESS_DELAY_MS,
 } from '../../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -46,7 +47,7 @@ test(`Headings - stays as a heading when you press enter in the middle of a head
 
   await moveToEditorBeginning(page);
 
-  await moveRight(page, 5);
+  await moveRight(page, 5, STANDARD_KEYPRESS_DELAY_MS);
 
   await page.keyboard.press('Enter');
 

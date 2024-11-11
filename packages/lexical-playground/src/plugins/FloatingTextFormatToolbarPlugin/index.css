@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 .floating-text-format-popup {
   display: flex;
   background: #fff;
@@ -8,7 +16,6 @@
   left: 0;
   z-index: 10;
   opacity: 0;
-  background-color: #fff;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
@@ -36,7 +43,6 @@
 
 .floating-text-format-popup button.popup-item i.format {
   background-size: contain;
-  display: inline-block;
   height: 18px;
   width: 18px;
   margin-top: 2px;
@@ -84,7 +90,6 @@
 .floating-text-format-popup .popup-item .text {
   display: flex;
   line-height: 20px;
-  width: 200px;
   vertical-align: middle;
   font-size: 14px;
   color: #777;

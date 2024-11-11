@@ -1,4 +1,3 @@
-/** @module lexical */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -15,16 +14,27 @@ export type {
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
+  EditorSetOptions,
   EditorThemeClasses,
+  EditorThemeClassName,
+  EditorUpdateOptions,
+  HTMLConfig,
   Klass,
+  KlassConstructor,
   LexicalCommand,
   LexicalEditor,
+  LexicalNodeReplacement,
   MutationListener,
   NodeMutation,
   SerializedEditor,
   Spread,
+  Transform,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {
+  EditorState,
+  EditorStateReadOptions,
+  SerializedEditorState,
+} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,
@@ -32,6 +42,7 @@ export type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  DOMExportOutputMap,
   LexicalNode,
   NodeKey,
   NodeMap,
@@ -40,12 +51,9 @@ export type {
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
-  GridMapType,
-  GridMapValueType,
-  GridSelection,
-  GridSelectionShape,
   NodeSelection,
   Point,
+  PointType,
   RangeSelection,
   TextPointType as TextPoint,
 } from './LexicalSelection';
@@ -53,7 +61,6 @@ export type {
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
-export type {SerializedGridCellNode} from './nodes/LexicalGridCellNode';
 export type {SerializedRootNode} from './nodes/LexicalRootNode';
 export type {
   SerializedTextNode,
@@ -105,9 +112,23 @@ export {
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
+export {
+  IS_ALL_FORMATTING,
+  IS_BOLD,
+  IS_CODE,
+  IS_HIGHLIGHT,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
+  IS_UNDERLINE,
+  TEXT_TYPE_TO_FORMAT,
+} from './LexicalConstants';
 export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -120,7 +141,10 @@ export type {EventHandler} from './LexicalEvents';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,
+  $createPoint,
   $createRangeSelection,
+  $createRangeSelectionFromDom,
+  $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
   $getTextContent,
@@ -128,48 +152,48 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
-  DEPRECATED_$computeGridMap,
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$getNodeTriplet,
-  DEPRECATED_$isGridSelection,
 } from './LexicalSelection';
-export {$parseSerializedNode} from './LexicalUpdates';
+export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
+  $cloneWithProperties,
   $copyNode,
   $getAdjacentNode,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isTokenOrSegmented,
   $nodesOfType,
+  $onUpdate,
+  $selectAll,
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  isBlockDomNode,
+  isDocumentFragment,
+  isHTMLAnchorElement,
+  isHTMLElement,
+  isInlineDomNode,
+  isLexicalEditor,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  resetRandomKey,
+  setNodeIndentFromDOM,
 } from './LexicalUtils';
+export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
-export {
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_GridCellNode,
-} from './nodes/LexicalGridCellNode';
-export {
-  DEPRECATED_$isGridNode,
-  DEPRECATED_GridNode,
-} from './nodes/LexicalGridNode';
-export {
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridRowNode,
-} from './nodes/LexicalGridRowNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,

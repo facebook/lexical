@@ -13,7 +13,9 @@ import {
   $getRoot,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   ElementNode,
+  LexicalEditor,
   ParagraphNode,
   TextFormatType,
   TextModeType,
@@ -22,7 +24,7 @@ import {
 import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   $createTestSegmentedNode,
@@ -34,6 +36,8 @@ import {
   IS_HIGHLIGHT,
   IS_ITALIC,
   IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
   IS_UNDERLINE,
 } from '../../../LexicalConstants';
 import {
@@ -58,7 +62,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalTextNode tests', () => {
-  let container = null;
+  let container: HTMLElement;
 
   beforeEach(async () => {
     container = document.createElement('div');
@@ -68,15 +72,16 @@ describe('LexicalTextNode tests', () => {
   });
   afterEach(() => {
     document.body.removeChild(container);
+    // @ts-ignore
     container = null;
   });
 
-  async function update(fn) {
+  async function update(fn: () => void) {
     editor.update(fn);
     return Promise.resolve().then();
   }
 
-  function useLexicalEditor(rootElementRef) {
+  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
     const editor = useMemo(() => createTestEditor(editorConfig), []);
 
     useEffect(() => {
@@ -88,7 +93,7 @@ describe('LexicalTextNode tests', () => {
     return editor;
   }
 
-  let editor = null;
+  let editor: LexicalEditor;
 
   async function init() {
     const ref = createRef<HTMLDivElement>();
@@ -122,6 +127,7 @@ describe('LexicalTextNode tests', () => {
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
         // to accomodate these changes.
+
         expect(node.exportJSON()).toStrictEqual({
           detail: 0,
           format: 0,
@@ -137,7 +143,7 @@ describe('LexicalTextNode tests', () => {
 
   describe('root.getTextContent()', () => {
     test('writable nodes', async () => {
-      let nodeKey;
+      let nodeKey: string;
 
       await update(() => {
         const textNode = $createTextNode('Text');
@@ -146,7 +152,7 @@ describe('LexicalTextNode tests', () => {
         expect(textNode.getTextContent()).toBe('Text');
         expect(textNode.__text).toBe('Text');
 
-        $getRoot().getFirstChild<ElementNode>().append(textNode);
+        $getRoot().getFirstChild<ElementNode>()!.append(textNode);
       });
 
       expect(
@@ -159,7 +165,7 @@ describe('LexicalTextNode tests', () => {
 
       // Make sure that the editor content is still set after further reconciliations
       await update(() => {
-        $getNodeByKey(nodeKey).markDirty();
+        $getNodeByKey(nodeKey)!.markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
     });
@@ -167,14 +173,14 @@ describe('LexicalTextNode tests', () => {
     test('prepend node', async () => {
       await update(() => {
         const textNode = $createTextNode('World').toggleUnmergeable();
-        $getRoot().getFirstChild<ElementNode>().append(textNode);
+        $getRoot().getFirstChild<ElementNode>()!.append(textNode);
       });
 
       await update(() => {
         const textNode = $createTextNode('Hello ').toggleUnmergeable();
         const previousTextNode = $getRoot()
-          .getFirstChild<ElementNode>()
-          .getFirstChild();
+          .getFirstChild<ElementNode>()!
+          .getFirstChild()!;
         previousTextNode.insertBefore(textNode);
       });
 
@@ -196,97 +202,121 @@ describe('LexicalTextNode tests', () => {
   });
 
   describe.each([
-    [
-      'bold',
-      IS_BOLD,
-      (node) => node.hasFormat('bold'),
-      (node) => node.toggleFormat('bold'),
-    ],
-    [
-      'italic',
-      IS_ITALIC,
-      (node) => node.hasFormat('italic'),
-      (node) => node.toggleFormat('italic'),
-    ],
-    [
-      'strikethrough',
-      IS_STRIKETHROUGH,
-      (node) => node.hasFormat('strikethrough'),
-      (node) => node.toggleFormat('strikethrough'),
-    ],
-    [
-      'underline',
-      IS_UNDERLINE,
-      (node) => node.hasFormat('underline'),
-      (node) => node.toggleFormat('underline'),
-    ],
-    [
-      'code',
-      IS_CODE,
-      (node) => node.hasFormat('code'),
-      (node) => node.toggleFormat('code'),
-    ],
-    [
-      'highlight',
-      IS_HIGHLIGHT,
-      (node) => node.hasFormat('highlight'),
-      (node) => node.toggleFormat('highlight'),
-    ],
-  ])(
-    '%s flag',
-    (formatFlag: TextFormatType, stateFormat, flagPredicate, flagToggle) => {
-      test(`getFormatFlags(${formatFlag})`, async () => {
-        await update(() => {
-          const root = $getRoot();
-          const paragraphNode = root.getFirstChild<ParagraphNode>();
-          const textNode = paragraphNode.getFirstChild<TextNode>();
-          const newFormat = textNode.getFormatFlags(formatFlag, null);
+    ['bold', IS_BOLD],
+    ['italic', IS_ITALIC],
+    ['strikethrough', IS_STRIKETHROUGH],
+    ['underline', IS_UNDERLINE],
+    ['code', IS_CODE],
+    ['subscript', IS_SUBSCRIPT],
+    ['superscript', IS_SUPERSCRIPT],
+    ['highlight', IS_HIGHLIGHT],
+  ] as const)('%s flag', (formatFlag: TextFormatType, stateFormat: number) => {
+    const flagPredicate = (node: TextNode) => node.hasFormat(formatFlag);
+    const flagToggle = (node: TextNode) => node.toggleFormat(formatFlag);
 
-          expect(newFormat).toBe(stateFormat);
+    test(`getFormatFlags(${formatFlag})`, async () => {
+      await update(() => {
+        const root = $getRoot();
+        const paragraphNode = root.getFirstChild<ParagraphNode>()!;
+        const textNode = paragraphNode.getFirstChild<TextNode>()!;
+        const newFormat = textNode.getFormatFlags(formatFlag, null);
 
-          textNode.setFormat(newFormat);
-          const newFormat2 = textNode.getFormatFlags(formatFlag, null);
+        expect(newFormat).toBe(stateFormat);
 
-          expect(newFormat2).toBe(0);
-        });
+        textNode.setFormat(newFormat);
+        const newFormat2 = textNode.getFormatFlags(formatFlag, null);
+
+        expect(newFormat2).toBe(0);
       });
+    });
 
-      test(`predicate for ${formatFlag}`, async () => {
-        await update(() => {
-          const root = $getRoot();
-          const paragraphNode = root.getFirstChild<ParagraphNode>();
-          const textNode = paragraphNode.getFirstChild<TextNode>();
+    test(`predicate for ${formatFlag}`, async () => {
+      await update(() => {
+        const root = $getRoot();
+        const paragraphNode = root.getFirstChild<ParagraphNode>()!;
+        const textNode = paragraphNode.getFirstChild<TextNode>()!;
 
-          textNode.setFormat(stateFormat);
+        textNode.setFormat(stateFormat);
 
-          expect(flagPredicate(textNode)).toBe(true);
-        });
+        expect(flagPredicate(textNode)).toBe(true);
       });
+    });
 
-      test(`toggling for ${formatFlag}`, async () => {
-        // Toggle method hasn't been implemented for this flag.
-        if (flagToggle === null) {
-          return;
-        }
+    test(`toggling for ${formatFlag}`, async () => {
+      // Toggle method hasn't been implemented for this flag.
+      if (flagToggle === null) {
+        return;
+      }
 
-        await update(() => {
-          const root = $getRoot();
-          const paragraphNode = root.getFirstChild<ParagraphNode>();
-          const textNode = paragraphNode.getFirstChild<TextNode>();
+      await update(() => {
+        const root = $getRoot();
+        const paragraphNode = root.getFirstChild<ParagraphNode>()!;
+        const textNode = paragraphNode.getFirstChild<TextNode>()!;
 
-          expect(flagPredicate(textNode)).toBe(false);
+        expect(flagPredicate(textNode)).toBe(false);
 
-          flagToggle(textNode);
+        flagToggle(textNode);
 
-          expect(flagPredicate(textNode)).toBe(true);
+        expect(flagPredicate(textNode)).toBe(true);
 
-          flagToggle(textNode);
+        flagToggle(textNode);
 
-          expect(flagPredicate(textNode)).toBe(false);
-        });
+        expect(flagPredicate(textNode)).toBe(false);
       });
-    },
-  );
+    });
+  });
+
+  test('setting subscript clears superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(true);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('setting superscript clears subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(true);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
+  test('clearing subscript does not set superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(false);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('clearing superscript does not set subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(false);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
 
   test('selectPrevious()', async () => {
     await update(() => {
@@ -552,11 +582,23 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+
+    test('with detached parent', async () => {
+      await update(() => {
+        const textNode = $createTextNode('foo');
+        const splits = textNode.splitText(1, 2);
+        expect(splits.map((split) => split.getTextContent())).toEqual([
+          'f',
+          'o',
+          'o',
+        ]);
+      });
+    });
   });
 
   describe('createDOM()', () => {
     test.each([
-      ['no formatting', null, 'My text node', '<span>My text node</span>'],
+      ['no formatting', 0, 'My text node', '<span>My text node</span>'],
       [
         'bold',
         IS_BOLD,
@@ -592,7 +634,7 @@ describe('LexicalTextNode tests', () => {
         'code',
         IS_CODE,
         'My text node',
-        '<code><span class="my-code-class">My text node</span></code>',
+        '<code spellcheck="false"><span class="my-code-class">My text node</span></code>',
       ],
       [
         'underline + strikethrough',
@@ -605,13 +647,13 @@ describe('LexicalTextNode tests', () => {
         'code + italic',
         IS_CODE | IS_ITALIC,
         'My text node',
-        '<code><em class="my-code-class my-italic-class">My text node</em></code>',
+        '<code spellcheck="false"><em class="my-code-class my-italic-class">My text node</em></code>',
       ],
       [
         'code + underline + strikethrough',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH,
         'My text node',
-        '<code><span class="my-underline-strikethrough-class my-code-class">' +
+        '<code spellcheck="false"><span class="my-underline-strikethrough-class my-code-class">' +
           'My text node</span></code>',
       ],
       [
@@ -624,7 +666,7 @@ describe('LexicalTextNode tests', () => {
         'code + underline + strikethrough + bold + italic',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
         'My text node',
-        '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
+        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
       ],
       [
         'code + underline + strikethrough + bold + italic + highlight',
@@ -635,7 +677,7 @@ describe('LexicalTextNode tests', () => {
           IS_ITALIC |
           IS_HIGHLIGHT,
         'My text node',
-        '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
+        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {
@@ -649,8 +691,8 @@ describe('LexicalTextNode tests', () => {
 
     describe('has parent node', () => {
       test.each([
-        ['no formatting', null, 'My text node', '<span>My text node</span>'],
-        ['no formatting + empty string', null, '', `<span></span>`],
+        ['no formatting', 0, 'My text node', '<span>My text node</span>'],
+        ['no formatting + empty string', 0, '', `<span></span>`],
       ])(
         '%s text format type',
         async (_type, format, contents, expectedHTML) => {
@@ -771,7 +813,7 @@ describe('LexicalTextNode tests', () => {
 
   test('mergeWithSibling', async () => {
     await update(() => {
-      const paragraph = $getRoot().getFirstChild<ElementNode>();
+      const paragraph = $getRoot().getFirstChild<ElementNode>()!;
       const textNode1 = $createTextNode('1');
       const textNode2 = $createTextNode('2');
       const textNode3 = $createTextNode('3');
@@ -781,7 +823,7 @@ describe('LexicalTextNode tests', () => {
       const selection = $getSelection();
       textNode2.mergeWithSibling(textNode1);
 
-      if ($isNodeSelection(selection)) {
+      if (!$isRangeSelection(selection)) {
         return;
       }
 

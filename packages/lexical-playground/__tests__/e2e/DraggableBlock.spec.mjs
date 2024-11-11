@@ -150,4 +150,41 @@ test.describe('DraggableBlock', () => {
       `,
     );
   });
+
+  test('Dragging the first paragraph to an empty space in the middle of the editor works correctly', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+    test.skip(isPlainText);
+    test.skip(browserName === 'firefox');
+
+    await focusEditor(page);
+    await page.keyboard.type('Paragraph 1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Paragraph 2');
+
+    await mouseMoveToSelector(page, 'p:has-text("Paragraph 1")');
+    await page.pause();
+    await dragDraggableMenuTo(page, '.ContentEditable__root');
+
+    await assertHTML(
+      page,
+      `
+      <p
+        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+        dir="ltr">
+        <span data-lexical-text="true">Paragraph 2</span>
+      </p>
+      <p
+        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+        dir="ltr"
+        style="">
+        <span data-lexical-text="true">Paragraph 1</span>
+      </p>
+    `,
+    );
+  });
 });

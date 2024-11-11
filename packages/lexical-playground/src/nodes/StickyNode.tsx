@@ -21,10 +21,7 @@ import * as React from 'react';
 import {Suspense} from 'react';
 import {createPortal} from 'react-dom';
 
-const StickyComponent = React.lazy(
-  // @ts-ignore
-  () => import('./StickyComponent'),
-);
+const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
 

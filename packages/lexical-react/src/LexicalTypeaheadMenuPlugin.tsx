@@ -18,6 +18,8 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
   createCommand,
   LexicalCommand,
   LexicalEditor,
@@ -26,6 +28,7 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
+import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 
@@ -45,8 +48,12 @@ function getTextUpToAnchor(selection: RangeSelection): string | null {
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 
-function tryToPositionRange(leadOffset: number, range: Range): boolean {
-  const domSelection = window.getSelection();
+function tryToPositionRange(
+  leadOffset: number,
+  range: Range,
+  editorWindow: Window,
+): boolean {
+  const domSelection = editorWindow.getSelection();
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
@@ -99,14 +106,6 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-function startTransition(callback: () => void) {
-  if (React.startTransition) {
-    React.startTransition(callback);
-  } else {
-    callback();
-  }
-}
-
 // Got from https://stackoverflow.com/a/42543908/2013580
 export function getScrollParent(
   element: HTMLElement,
@@ -138,69 +137,7 @@ export function getScrollParent(
   return document.body;
 }
 
-function isTriggerVisibleInNearestScrollContainer(
-  targetElement: HTMLElement,
-  containerElement: HTMLElement,
-): boolean {
-  const tRect = targetElement.getBoundingClientRect();
-  const cRect = containerElement.getBoundingClientRect();
-  return tRect.top > cRect.top && tRect.top < cRect.bottom;
-}
-
-// Reposition the menu on scroll, window resize, and element resize.
-export function useDynamicPositioning(
-  resolution: MenuResolution | null,
-  targetElement: HTMLElement | null,
-  onReposition: () => void,
-  onVisibilityChange?: (isInView: boolean) => void,
-) {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    if (targetElement != null && resolution != null) {
-      const rootElement = editor.getRootElement();
-      const rootScrollParent =
-        rootElement != null
-          ? getScrollParent(rootElement, false)
-          : document.body;
-      let ticking = false;
-      let previousIsInView = isTriggerVisibleInNearestScrollContainer(
-        targetElement,
-        rootScrollParent,
-      );
-      const handleScroll = function () {
-        if (!ticking) {
-          window.requestAnimationFrame(function () {
-            onReposition();
-            ticking = false;
-          });
-          ticking = true;
-        }
-        const isInView = isTriggerVisibleInNearestScrollContainer(
-          targetElement,
-          rootScrollParent,
-        );
-        if (isInView !== previousIsInView) {
-          previousIsInView = isInView;
-          if (onVisibilityChange != null) {
-            onVisibilityChange(isInView);
-          }
-        }
-      };
-      const resizeObserver = new ResizeObserver(onReposition);
-      window.addEventListener('resize', onReposition);
-      document.addEventListener('scroll', handleScroll, {
-        capture: true,
-        passive: true,
-      });
-      resizeObserver.observe(targetElement);
-      return () => {
-        resizeObserver.unobserve(targetElement);
-        window.removeEventListener('resize', onReposition);
-        document.removeEventListener('scroll', handleScroll);
-      };
-    }
-  }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
-}
+export {useDynamicPositioning} from './shared/LexicalMenu';
 
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
@@ -258,6 +195,8 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
   anchorClassName?: string;
+  commandPriority?: CommandListenerPriority;
+  parent?: HTMLElement;
 };
 
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
@@ -269,6 +208,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   menuRenderFn,
   triggerFn,
   anchorClassName,
+  commandPriority = COMMAND_PRIORITY_LOW,
+  parent,
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -276,6 +217,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     resolution,
     setResolution,
     anchorClassName,
+    parent,
   );
 
   const closeTypeahead = useCallback(() => {
@@ -298,7 +240,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   useEffect(() => {
     const updateListener = () => {
       editor.getEditorState().read(() => {
-        const range = document.createRange();
+        const editorWindow = editor._window || window;
+        const range = editorWindow.document.createRange();
         const selection = $getSelection();
         const text = getQueryTextForSearch(editor);
 
@@ -319,7 +262,11 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
           match !== null &&
           !isSelectionOnEntityBoundary(editor, match.leadOffset)
         ) {
-          const isRangePositioned = tryToPositionRange(match.leadOffset, range);
+          const isRangePositioned = tryToPositionRange(
+            match.leadOffset,
+            range,
+            editorWindow,
+          );
           if (isRangePositioned !== null) {
             startTransition(() =>
               openTypeahead({
@@ -348,7 +295,9 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     openTypeahead,
   ]);
 
-  return resolution === null || editor === null ? null : (
+  return resolution === null ||
+    editor === null ||
+    anchorElementRef.current === null ? null : (
     <LexicalMenu
       close={closeTypeahead}
       resolution={resolution}
@@ -358,6 +307,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
+      commandPriority={commandPriority}
     />
   );
 }

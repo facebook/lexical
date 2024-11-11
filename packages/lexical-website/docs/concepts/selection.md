@@ -11,8 +11,10 @@ In Lexical, there are four types of selection possible:
 
 - `RangeSelection`
 - `NodeSelection`
-- `GridSelection`
+- `TableSelection` (implemented in `@lexical/table`)
 - `null`
+
+It is possible, but not generally recommended, to implement your own selection types that implement `BaseSelection`.
 
 ### `RangeSelection`
 
@@ -35,17 +37,17 @@ NodeSelection represents a selection of multiple arbitrary nodes. For example, t
 
 - `getNodes()` returns an array containing the selected LexicalNodes
 
-### `GridSelection`
+### `TableSelection`
 
-GridSelection represents a grid-like selection like tables. It stores the key of the parent node where the selection takes place and the start and end points.
-`GridSelection` consists of three main properties:
+TableSelection represents a grid-like selection like tables. It stores the key of the parent node where the selection takes place and the start and end points.
+`TableSelection` consists of three main properties:
 
-- `gridKey` representing the parent node key where the selection takes place
-- `anchor` representing a `GridSelection` point
-- `focus` reprensenting a `GridSelection` point
+- `tableKey` representing the parent node key where the selection takes place
+- `anchor` representing a `TableSelection` point
+- `focus` reprensenting a `TableSelection` point
 
 For example, a table where you select row = 1 col = 1 to row 2 col = 2 could be stored as follows:
-- `gridKey = 2` table key
+- `tableKey = 2` table key
 - `anchor = 4` table cell (key may vary)
 - `focus = 10` table cell (key may vary)
 
@@ -101,7 +103,7 @@ editor.update(() => {
   someNode.selectPrevious();
   someNode.selectNext();
 
-  // On element nodes, you can use these.
+  // You can use this on any node.
   someNode.selectStart();
   someNode.selectEnd();
 

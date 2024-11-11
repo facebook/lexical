@@ -1,5 +1,3 @@
-
-
 # Nodes
 
 ## Base Nodes
@@ -113,6 +111,8 @@ class MyCustomNode extends SomeOtherNode {
   }
 
   static clone(node: MyCustomNode): MyCustomNode {
+    // If any state needs to be set after construction, it should be
+    // done by overriding the `afterCloneFrom` instance method.
     return new MyCustomNode(node.__foo, node.__key);
   }
 
@@ -149,14 +149,14 @@ As mentioned above, Lexical exposes three base nodes that can be extended.
 Below is an example of how you might extend `ElementNode`:
 
 ```js
-import {ElementNode} from 'lexical';
+import {ElementNode, LexicalNode} from 'lexical';
 
 export class CustomParagraph extends ElementNode {
   static getType(): string {
     return 'custom-paragraph';
   }
 
-  static clone(node: ParagraphNode): ParagraphNode {
+  static clone(node: CustomParagraph): CustomParagraph {
     return new CustomParagraph(node.__key);
   }
 
@@ -179,7 +179,7 @@ your custom `ElementNode` so that others can easily consume and validate nodes
 are that of your custom node. Here's how you might do this for the above example:
 
 ```js
-export function $createCustomParagraphNode(): ParagraphNode {
+export function $createCustomParagraphNode(): CustomParagraph {
   return new CustomParagraph();
 }
 
@@ -271,7 +271,13 @@ export function $createVideoNode(id: string): VideoNode {
   return new VideoNode(id);
 }
 
-export function $isVideoNode(node: LexicalNode | null | undefined): node is VideoNode {
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
   return node instanceof VideoNode;
 }
 ```
+
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
+and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.

@@ -38,6 +38,7 @@ test.describe('Regression test #3136', () => {
     await page.keyboard.type('link');
     await selectCharacters(page, 'left', 'link'.length);
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     // Select non-link text so that selection ends just before the link
     await moveLeft(page, 5);
@@ -78,6 +79,7 @@ test.describe('Regression test #3136', () => {
     await page.keyboard.type('link');
     await selectCharacters(page, 'left', 'link'.length);
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     // Non-link text
     await moveRight(page, 1);

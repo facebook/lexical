@@ -84,6 +84,12 @@ editor.update(() => {
 });
 ```
 
+:::tip
+
+Remember that state updates are asynchronous, so executing `editor.getEditorState()` immediately afterwards might not return the expected content. To avoid it, [pass `discrete: true` in the `editor.update` method](https://dio.la/article/lexical-state-updates#discrete-updates).
+
+:::
+
 #### `LexicalNode.importDOM()`
 You can control how an `HTMLElement` is represented in `Lexical` by adding an `importDOM()` method to your `LexicalNode`.
 
@@ -92,31 +98,29 @@ static importDOM(): DOMConversionMap | null;
 ```
 The return value of `importDOM` is a map of the lower case (DOM) [Node.nodeName](https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeName) property to an object that specifies a conversion function and a priority for that conversion. This allows `LexicalNodes` to specify which type of DOM nodes they can convert and what the relative priority of their conversion should be. This is useful in cases where a DOM Node with specific attributes should be interpreted as one type of `LexicalNode`, and otherwise it should be represented as another type of `LexicalNode`.
 
-```js
-export type DOMConversionMap = {
-  [NodeName]: <T: HTMLElement>(node: T) => DOMConversion | null,
+```ts
+type DOMConversionMap = Record<
+  string,
+  (node: HTMLElement) => DOMConversion | null
+>;
+
+type DOMConversion = {
+  conversion: DOMConversionFn;
+  priority: 0 | 1 | 2 | 3 | 4;
 };
 
-export type DOMConversion = {
-  conversion: DOMConversionFn,
-  priority: 0 | 1 | 2 | 3 | 4,
+type DOMConversionFn = (element: HTMLElement) => DOMConversionOutput | null;
+
+type DOMConversionOutput = {
+  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
+  forChild?: DOMChildConversion;
+  node: null | LexicalNode | Array<LexicalNode>;
 };
 
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-  preformatted?: boolean,
-) => DOMConversionOutput;
-
-export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
-
-export type DOMChildConversion = (
+type DOMChildConversion = (
   lexicalNode: LexicalNode,
-) => LexicalNode | null | void;
+  parentLexicalNode: LexicalNode | null | undefined,
+) => LexicalNode | null | undefined;
 ```
 
 @lexical/code provides a good example of the usefulness of this design. GitHub uses HTML ```<table>``` elements to represent the structure of copied code in HTML. If we interpreted all HTML ```<table>``` elements as literal tables, then code pasted from GitHub would appear in Lexical as a Lexical TableNode. Instead, CodeNode specifies that it can handle ```<table>``` elements too:
@@ -145,27 +149,7 @@ static importDOM(): DOMConversionMap | null {
 
 If the imported ```<table>``` doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
 
-Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. Finally, `preformatted` flag indicates that nested text content is preformatted (similar to `<pre>` tag) and all newlines and spaces should be preserved as is.
-
-```js
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-  preformatted?: boolean,
-) => DOMConversionOutput;
-
-export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
-
-export type DOMChildConversion = (
-  lexicalNode: LexicalNode,
-  parentLexicalNode: LexicalNode | null | undefined,
-) => LexicalNode | null;
-```
-
+Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. 
 
 ## JSON
 
@@ -300,7 +284,7 @@ export type SerializedTextNode = SerializedTextNodeV1 | SerializedTextNodeV2;
 ```
 ### Handling extended HTML styling
 
-Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON <-> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
+Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON \<-\> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
 
 You need to override the base TextNode:
 
@@ -311,9 +295,13 @@ const initialConfig: InitialConfigType = {
     onError: (error: any) => console.log(error),
     nodes: [
       ExtendedTextNode,
-      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text, node.__key) },
+      {
+        replace: TextNode,
+        with: (node: TextNode) => new ExtendedTextNode(node.__text),
+        withKlass: ExtendedTextNode,
+      },
       ListNode,
-      ListItemNode,   
+      ListItemNode,
     ]
   };
 ```
@@ -322,13 +310,15 @@ and create a new Extended Text Node plugin
 
 ```js
 import {
+  $applyNodeReplacement,
   $isTextNode,
   DOMConversion,
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
   TextNode,
-  SerializedTextNode
+  SerializedTextNode,
+  LexicalNode
 } from 'lexical';
 
 export class ExtendedTextNode extends TextNode {
@@ -378,6 +368,26 @@ export class ExtendedTextNode extends TextNode {
   static importJSON(serializedNode: SerializedTextNode): TextNode {
     return TextNode.importJSON(serializedNode);
   }
+
+  isSimpleText() {
+    return this.__type === 'extended-text' && this.__mode === 0;
+  }
+
+  exportJSON(): SerializedTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'extended-text',
+      version: 1,
+    }
+  }
+}
+
+export function $createExtendedTextNode(text: string): ExtendedTextNode {
+  return $applyNodeReplacement(new ExtendedTextNode(text));
+}
+
+export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {
+	return node instanceof ExtendedTextNode;
 }
 
 function patchStyleConversion(
@@ -385,7 +395,7 @@ function patchStyleConversion(
 ): (node: HTMLElement) => DOMConversionOutput | null {
   return (node) => {
     const original = originalDOMConverter?.(node);
-    if (!original) {    
+    if (!original) {
       return null;
     }
     const originalOutput = original.conversion(node);
@@ -427,3 +437,32 @@ function patchStyleConversion(
   };
 }
 ```
+
+### `html` Property for Import and Export Configuration
+
+The `html` property in `CreateEditorArgs` provides an alternate way to configure HTML import and export behavior in Lexical without subclassing or node replacement. It includes two properties:
+
+- `import` - Similar to `importDOM`, it controls how HTML elements are transformed into `LexicalNodes`. However, instead of defining conversions directly on each `LexicalNode`, `html.import` provides a configuration that can be overridden easily in the editor setup.
+  
+- `export` - Similar to `exportDOM`, this property customizes how `LexicalNodes` are serialized into HTML. With `html.export`, users can specify transformations for various nodes collectively, offering a flexible override mechanism that can adapt without needing to extend or replace specific `LexicalNodes`.
+
+#### Key Differences from `importDOM` and `exportDOM`
+
+While `importDOM` and `exportDOM` allow for highly customized, node-specific conversions by defining them directly within the `LexicalNode` class, the `html` property enables broader, editor-wide configurations. This setup benefits situations where:
+
+- **Consistent Transformations**: You want uniform import/export behavior across different nodes without adjusting each node individually.
+- **No Subclassing Required**: Overrides to import and export logic are applied at the editor configuration level, simplifying customization and reducing the need for extensive subclassing.
+
+#### Type Definitions
+
+```typescript
+type HTMLConfig = {
+  export?: DOMExportOutputMap;  // Optional map defining how nodes are exported to HTML.
+  import?: DOMConversionMap;     // Optional record defining how HTML is converted into nodes.
+};
+```
+
+#### Example of a use case for the `html` Property for Import and Export Configuration:
+
+[Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+

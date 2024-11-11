@@ -1,0 +1,64 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+/* @import url('assets/styles/variables.css'); */
+
+[type='page-break'] {
+  position: relative;
+  display: block;
+  width: calc(100% + var(--editor-input-padding, 28px) * 2);
+  overflow: unset;
+  margin-left: calc(var(--editor-input-padding, 28px) * -1);
+  margin-top: var(--editor-input-padding, 28px);
+  margin-bottom: var(--editor-input-padding, 28px);
+
+  border: none;
+  border-top: 1px dashed var(--editor-color-secondary, #eeeeee);
+  border-bottom: 1px dashed var(--editor-color-secondary, #eeeeee);
+  background-color: var(--editor-color-secondary, #eeeeee);
+}
+
+[type='page-break']::before {
+  content: '';
+
+  position: absolute;
+  top: 50%;
+  left: calc(var(--editor-input-padding, 28px) + 12px);
+  transform: translateY(-50%);
+  opacity: 0.5;
+
+  background-size: cover;
+  background-image: url(/src/images/icons/scissors.svg);
+  width: 16px;
+  height: 16px;
+}
+
+[type='page-break']::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  display: block;
+  padding: 2px 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+
+  content: 'PAGE BREAK';
+  font-size: 12px;
+  color: #000;
+  font-weight: 600;
+}
+
+.selected[type='page-break'] {
+  border-color: var(--editor-color-primary, #4766cb);
+}
+
+.selected[type='page-break']::before {
+  opacity: 1;
+}

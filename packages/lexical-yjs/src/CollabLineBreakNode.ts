@@ -63,7 +63,6 @@ export function $createCollabLineBreakNode(
   parent: CollabElementNode,
 ): CollabLineBreakNode {
   const collabNode = new CollabLineBreakNode(map, parent);
-  // @ts-expect-error: internal field
   map._collabNode = collabNode;
   return collabNode;
 }

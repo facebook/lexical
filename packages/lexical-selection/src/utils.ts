@@ -176,12 +176,17 @@ export function createRectsFromDOMRange(
  */
 export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   const styleObject: Record<string, string> = {};
+  if (!css) {
+    return styleObject;
+  }
   const styles = css.split(';');
 
   for (const style of styles) {
     if (style !== '') {
       const [key, value] = style.split(/:([^]+)/); // split on first colon
-      styleObject[key.trim()] = value.trim();
+      if (key && value) {
+        styleObject[key.trim()] = value.trim();
+      }
     }
   }
 

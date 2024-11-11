@@ -14,6 +14,9 @@ export type LexicalSubscription<T> = {
   subscribe: (callback: (value: T) => void) => () => void,
 };
 
-declare export default function useLexicalSubscription<T>(
+declare export function useLexicalSubscription<T>(
   subscription: (editor: LexicalEditor) => LexicalSubscription<T>,
 ): T;
+
+/** @deprecated use the named export {@link useLexicalSubscription} */
+declare export default typeof useLexicalSubscription;

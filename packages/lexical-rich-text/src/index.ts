@@ -1,4 +1,3 @@
-/** @module @lexical/rich-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -38,6 +37,7 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
+  isHTMLElement,
   mergeRegister,
   objectKlassEquals,
 } from '@lexical/utils';
@@ -58,6 +58,7 @@ import {
   $isRootNode,
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
+  $selectAll,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -68,7 +69,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DEPRECATED_$isGridSelection,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -91,6 +91,8 @@ import {
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SELECT_ALL_COMMAND,
+  setNodeIndentFromDOM,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -141,7 +143,7 @@ export class QuoteNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       blockquote: (node: Node) => ({
-        conversion: convertBlockquoteElement,
+        conversion: $convertBlockquoteElement,
         priority: 0,
       }),
     };
@@ -150,10 +152,11 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) {
+        element.append(document.createElement('br'));
+      }
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 
@@ -198,6 +201,10 @@ export class QuoteNode extends ElementNode {
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     this.replace(paragraph);
+    return true;
+  }
+
+  canMergeWhenEmpty(): true {
     return true;
   }
 }
@@ -257,27 +264,27 @@ export class HeadingNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       h1: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h2: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h3: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h4: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h5: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h6: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       p: (node: Node) => {
@@ -311,10 +318,11 @@ export class HeadingNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) {
+        element.append(document.createElement('br'));
+      }
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 
@@ -352,13 +360,24 @@ export class HeadingNode extends ElementNode {
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
+    const lastDesc = this.getLastDescendant();
+    const isAtEnd =
+      !lastDesc ||
+      (selection &&
+        selection.anchor.key === lastDesc.getKey() &&
+        anchorOffet === lastDesc.getTextContentSize());
     const newElement =
-      anchorOffet > 0 && anchorOffet < this.getTextContentSize()
-        ? $createHeadingNode(this.getTag())
-        : $createParagraphNode();
+      isAtEnd || !selection
+        ? $createParagraphNode()
+        : $createHeadingNode(this.getTag());
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);
+    if (anchorOffet === 0 && !this.isEmpty() && selection) {
+      const paragraph = $createParagraphNode();
+      paragraph.select();
+      this.replace(paragraph, true);
+    }
     return newElement;
   }
 
@@ -384,7 +403,7 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
+function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
@@ -397,16 +416,18 @@ function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   ) {
     node = $createHeadingNode(nodeName);
     if (element.style !== null) {
+      setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
   }
   return {node};
 }
 
-function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
+function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
+    setNodeIndentFromDOM(element, node);
   }
   return {node};
 }
@@ -430,13 +451,11 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent || event instanceof KeyboardEvent
+        objectKlassEquals(event, InputEvent) ||
+        objectKlassEquals(event, KeyboardEvent)
           ? null
-          : event.clipboardData;
-      if (
-        clipboardData != null &&
-        ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
-      ) {
+          : (event as ClipboardEvent).clipboardData;
+      if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -465,16 +484,16 @@ async function onCutForRichText(
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
-// in certain ocassions, we want to know whether it was a file transfer, as opposed to text. We
+// in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
-  if (event instanceof DragEvent) {
-    dataTransfer = event.dataTransfer;
-  } else if (event instanceof ClipboardEvent) {
-    dataTransfer = event.clipboardData;
+  if (objectKlassEquals(event, DragEvent)) {
+    dataTransfer = (event as DragEvent).dataTransfer;
+  } else if (objectKlassEquals(event, ClipboardEvent)) {
+    dataTransfer = (event as ClipboardEvent).clipboardData;
   }
 
   if (dataTransfer === null) {
@@ -488,7 +507,7 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-function handleIndentAndOutdent(
+function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
   const selection = $getSelection();
@@ -503,7 +522,14 @@ function handleIndentAndOutdent(
     if (alreadyHandled.has(key)) {
       continue;
     }
-    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    const parentBlock = $findMatchingParent(
+      node,
+      (parentNode): parentNode is ElementNode =>
+        $isElementNode(parentNode) && !parentNode.isInline(),
+    );
+    if (parentBlock === null) {
+      continue;
+    }
     const parentKey = parentBlock.getKey();
     if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
       alreadyHandled.add(parentKey);
@@ -579,16 +605,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
-          if ($isRangeSelection(selection)) {
+          if (selection !== null) {
             selection.insertText(eventOrText);
-          } else if (DEPRECATED_$isGridSelection(selection)) {
-            // TODO: Insert into the first cell & clear selection.
           }
         } else {
-          if (
-            !$isRangeSelection(selection) &&
-            !DEPRECATED_$isGridSelection(selection)
-          ) {
+          if (selection === null) {
             return false;
           }
 
@@ -642,7 +663,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         for (const node of nodes) {
           const element = $findMatchingParent(
             node,
-            (parentNode) =>
+            (parentNode): parentNode is ElementNode =>
               $isElementNode(parentNode) && !parentNode.isInline(),
           );
           if (element !== null) {
@@ -688,7 +709,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           block.setIndent(indent + 1);
         });
@@ -698,7 +719,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           if (indent > 0) {
             block.setIndent(indent - 1);
@@ -1002,6 +1023,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
+      SELECT_ALL_COMMAND,
+      () => {
+        $selectAll();
+
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
       COPY_COMMAND,
       (event) => {
         copyToClipboard(
@@ -1037,10 +1067,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
         }

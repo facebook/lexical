@@ -21,13 +21,20 @@ import * as React from 'react';
 export function EditorRefPlugin({
   editorRef,
 }: {
-  editorRef: React.RefCallback<LexicalEditor> | MutableRefObject<LexicalEditor>;
+  editorRef:
+    | React.RefCallback<LexicalEditor>
+    | MutableRefObject<LexicalEditor | null | undefined>;
 }): null {
   const [editor] = useLexicalComposerContext();
-  if (typeof editorRef === 'function') {
-    editorRef(editor);
-  } else if (typeof editorRef === 'object') {
-    editorRef.current = editor;
-  }
+
+  React.useEffect(() => {
+    if (typeof editorRef === 'function') {
+      editorRef(editor);
+    } else if (typeof editorRef === 'object') {
+      editorRef.current = editor;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
   return null;
 }

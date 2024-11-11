@@ -8,7 +8,6 @@
 
 import type {EditorState, NodeKey} from 'lexical';
 
-import {$createOffsetView} from '@lexical/offset';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -16,7 +15,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  $setSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
@@ -26,20 +24,21 @@ import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
+  $syncLocalCursorPosition,
   syncCursorPositions,
   syncLexicalSelectionToYjs,
-  syncLocalCursorPosition,
 } from './SyncCursors';
 import {
+  $getOrInitCollabNodeFromSharedType,
+  $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
-  getOrInitCollabNodeFromSharedType,
   syncWithTransaction,
 } from './Utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function syncEvent(binding: Binding, event: any): void {
+function $syncEvent(binding: Binding, event: any): void {
   const {target} = event;
-  const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
+  const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     // @ts-expect-error We need to access the private property of the class
@@ -97,59 +96,23 @@ export function syncYjsChangesToLexical(
 
   editor.update(
     () => {
-      const pendingEditorState: EditorState | null = editor._pendingEditorState;
-
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
-        syncEvent(binding, event);
+        $syncEvent(binding, event);
       }
 
       const selection = $getSelection();
 
       if ($isRangeSelection(selection)) {
-        // We can't use Yjs's cursor position here, as it doesn't always
-        // handle selection recovery correctly – especially on elements that
-        // get moved around or split. So instead, we roll our own solution.
         if (doesSelectionNeedRecovering(selection)) {
           const prevSelection = currentEditorState._selection;
 
           if ($isRangeSelection(prevSelection)) {
-            const prevOffsetView = $createOffsetView(
-              editor,
-              0,
-              currentEditorState,
-            );
-            const nextOffsetView = $createOffsetView(
-              editor,
-              0,
-              pendingEditorState,
-            );
-            const [start, end] =
-              prevOffsetView.getOffsetsFromSelection(prevSelection);
-            const nextSelection = nextOffsetView.createSelectionFromOffsets(
-              start,
-              end,
-              prevOffsetView,
-            );
-
-            if (nextSelection !== null) {
-              $setSelection(nextSelection);
-            } else {
-              // Fallback is to use the Yjs cursor position
-              syncLocalCursorPosition(binding, provider);
-
-              if (doesSelectionNeedRecovering(selection)) {
-                const root = $getRoot();
-
-                // If there was a collision on the top level paragraph
-                // we need to re-add a paragraph
-                if (root.getChildrenSize() === 0) {
-                  root.append($createParagraphNode());
-                }
-
-                // Fallback
-                $getRoot().selectEnd();
-              }
+            $syncLocalCursorPosition(binding, provider);
+            if (doesSelectionNeedRecovering(selection)) {
+              // If the selected node is deleted, move the selection to the previous or parent node.
+              const anchorNodeKey = selection.anchor.key;
+              $moveSelectionToPreviousNode(anchorNodeKey, currentEditorState);
             }
           }
 
@@ -160,13 +123,21 @@ export function syncYjsChangesToLexical(
             $getSelection(),
           );
         } else {
-          syncLocalCursorPosition(binding, provider);
+          $syncLocalCursorPosition(binding, provider);
         }
       }
     },
     {
       onUpdate: () => {
         syncCursorPositions(binding, provider);
+        // If there was a collision on the top level paragraph
+        // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
+        // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+        editor.update(() => {
+          if ($getRoot().getChildrenSize() === 0) {
+            $getRoot().append($createParagraphNode());
+          }
+        });
       },
       skipTransforms: true,
       tag: isFromUndoManger ? 'historic' : 'collaboration',
@@ -174,7 +145,7 @@ export function syncYjsChangesToLexical(
   );
 }
 
-function handleNormalizationMergeConflicts(
+function $handleNormalizationMergeConflicts(
   binding: Binding,
   normalizedNodes: Set<NodeKey>,
 ): void {
@@ -244,7 +215,7 @@ export function syncLexicalUpdateToYjs(
       // when we need to handle normalization merge conflicts.
       if (tags.has('collaboration') || tags.has('historic')) {
         if (normalizedNodes.size > 0) {
-          handleNormalizationMergeConflicts(binding, normalizedNodes);
+          $handleNormalizationMergeConflicts(binding, normalizedNodes);
         }
 
         return;

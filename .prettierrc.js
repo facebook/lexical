@@ -7,5 +7,10 @@ module.exports = {
   printWidth: 80,
   trailingComma: 'all',
   htmlWhitespaceSensitivity: 'ignore',
-  attributeGroups: ['$DEFAULT', '^data-'],
+  attributeGroups: ['^class$', '^(id|name)$', '$DEFAULT', '^aria-', '^data-'],
+  attributeSort: 'ASC',
+  plugins: [
+    'prettier-plugin-tailwindcss',
+    'prettier-plugin-organize-attributes',
+  ],
 };

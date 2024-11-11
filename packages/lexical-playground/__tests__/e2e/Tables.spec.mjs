@@ -3048,7 +3048,6 @@ test.describe.parallel('Tables', () => {
     await insertTable(page, 2, 2);
 
     await click(page, '.PlaygroundEditorTheme__tableCell');
-    await page.pause();
     await selectCellsFromTableCords(
       page,
       {x: 0, y: 0},
@@ -3056,9 +3055,7 @@ test.describe.parallel('Tables', () => {
       true,
       true,
     );
-    await page.pause();
     await insertTableColumnBefore(page);
-    await page.pause();
 
     await assertHTML(
       page,

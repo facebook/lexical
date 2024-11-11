@@ -276,8 +276,8 @@ export class TableObserver {
    * above the table will move the caret after the table and then lexical
    * will select the last cell instead of the first.
    * We do still want to let the browser handle caret movement but we will
-   * tag the update so that we can recheck the selection after the event
-   * is processed.
+   * use this property to "tag" the update so that we can recheck the
+   * selection after the event is processed.
    */
   setShouldCheckSelection(): void {
     this.shouldCheckSelection = true;

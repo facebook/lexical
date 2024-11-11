@@ -370,13 +370,30 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return path.reverse();
     };
 
+    const fixOffset = (node, offset) => {
+      // If the selection offset is at the br of a webkit img+br linebreak
+      // then move the offset to the img so the tests are consistent across
+      // browsers
+      if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+        const child = node.children[offset - 1];
+        if (
+          child &&
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.getAttribute('data-lexical-linebreak') === 'true'
+        ) {
+          return offset - 1;
+        }
+      }
+      return offset;
+    };
+
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
     return {
-      anchorOffset,
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
       anchorPath: getPathFromNode(anchorNode),
-      focusOffset,
+      focusOffset: fixOffset(focusNode, focusOffset),
       focusPath: getPathFromNode(focusNode),
     };
   }, expected);

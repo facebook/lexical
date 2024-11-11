@@ -170,6 +170,18 @@ export class ElementDOMSlot {
     return element.__lexicalLineBreak || null;
   }
   /** @internal */
+  setManagedLineBreak(
+    lineBreakType: null | 'empty' | 'line-break' | 'decorator',
+  ): void {
+    if (lineBreakType === null) {
+      this.removeManagedLineBreak();
+    } else {
+      const webkitHack = lineBreakType === 'decorator' && (IS_IOS || IS_SAFARI);
+      this.insertManagedLineBreak(webkitHack);
+    }
+  }
+
+  /** @internal */
   removeManagedLineBreak(): void {
     const br = this.getManagedLineBreak();
     if (br) {
@@ -183,23 +195,29 @@ export class ElementDOMSlot {
     }
   }
   /** @internal */
-  insertManagedLineBreak(): void {
-    if (this.getManagedLineBreak()) {
-      return;
+  insertManagedLineBreak(webkitHack: boolean): void {
+    const prevBreak = this.getManagedLineBreak();
+    if (prevBreak) {
+      if (webkitHack === (prevBreak.nodeName === 'IMG')) {
+        return;
+      }
+      this.removeManagedLineBreak();
     }
     const element: HTMLElement & LexicalPrivateDOM = this.element;
     const before = this.before;
     const br = document.createElement('br');
-    const img = IS_IOS || IS_SAFARI ? document.createElement('img') : null;
     element.insertBefore(br, before);
-    if (img) {
+    if (webkitHack) {
+      const img = document.createElement('img');
       img.setAttribute('data-lexical-linebreak', 'true');
       img.style.cssText =
         'display: inline !important; border: 0px !important; margin: 0px !important;';
       img.alt = '';
       element.insertBefore(img, br);
+      element.__lexicalLineBreak = img;
+    } else {
+      element.__lexicalLineBreak = br;
     }
-    element.__lexicalLineBreak = img || br;
   }
 
   /**

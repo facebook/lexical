@@ -291,12 +291,26 @@ function $createChildren(
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
+type LastChildState = 'line-break' | 'decorator' | 'empty';
 function isLastChildLineBreakOrDecorator(
-  childKey: NodeKey,
+  element: null | ElementNode,
   nodeMap: NodeMap,
-): boolean {
-  const node = nodeMap.get(childKey);
-  return $isLineBreakNode(node) || ($isDecoratorNode(node) && node.isInline());
+): null | LastChildState {
+  if (element) {
+    const lastKey = element.__last;
+    if (lastKey) {
+      const node = nodeMap.get(lastKey);
+      if (node) {
+        return $isLineBreakNode(node)
+          ? 'line-break'
+          : $isDecoratorNode(node) && node.isInline()
+          ? 'decorator'
+          : null;
+      }
+    }
+    return 'empty';
+  }
+  return null;
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
@@ -305,27 +319,16 @@ function reconcileElementTerminatingLineBreak(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
-  const prevLineBreak =
-    prevElement !== null &&
-    (prevElement.__size === 0 ||
-      isLastChildLineBreakOrDecorator(
-        prevElement.__last as NodeKey,
-        activePrevNodeMap,
-      ));
-  const nextLineBreak =
-    nextElement.__size === 0 ||
-    isLastChildLineBreakOrDecorator(
-      nextElement.__last as NodeKey,
-      activeNextNodeMap,
-    );
-
+  const prevLineBreak = isLastChildLineBreakOrDecorator(
+    prevElement,
+    activePrevNodeMap,
+  );
+  const nextLineBreak = isLastChildLineBreakOrDecorator(
+    nextElement,
+    activeNextNodeMap,
+  );
   if (prevLineBreak !== nextLineBreak) {
-    const slot = nextElement.getDOMSlot(dom);
-    if (prevLineBreak) {
-      slot.removeManagedLineBreak();
-    } else {
-      slot.insertManagedLineBreak();
-    }
+    nextElement.getDOMSlot(dom).setManagedLineBreak(nextLineBreak);
   }
 }
 

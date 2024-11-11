@@ -35,6 +35,7 @@ test.describe('Regression test #379', () => {
         <p class="PlaygroundEditorTheme__paragraph">
           <span
             class="mention"
+            spellcheck="false"
             style="background-color: rgba(24, 119, 232, 0.2);"
             data-lexical-text="true">
             Luke Skywalker
@@ -57,6 +58,7 @@ test.describe('Regression test #379', () => {
         <p class="PlaygroundEditorTheme__paragraph">
           <span
             class="mention"
+            spellcheck="false"
             style="background-color: rgba(24, 119, 232, 0.2);"
             data-lexical-text="true">
             Luke Skywalker

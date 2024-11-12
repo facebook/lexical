@@ -410,4 +410,6 @@ describe('LexicalLinkNode tests', () => {
       expect(link.title).toBe('Lexical Website');
     });
   });
+
+  test('LinkNode removes correctly and preserves descendants', async () => {});
 });

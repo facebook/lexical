@@ -871,6 +871,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         ) {
           const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
           if (element.getIndent() > 0) {
+            event.preventDefault();
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
         }

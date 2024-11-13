@@ -34,6 +34,8 @@ export const IS_COLLAB =
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
+export const IS_TABLE_HORIZONTAL_SCROLL =
+  process.env.E2E_TABLE_MODE !== 'legacy';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -52,6 +54,21 @@ function wrapAndSlowDown(method, delay) {
   };
 }
 
+export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
+  return html`
+    ${expected
+      .replace(
+        /<table/g,
+        `<div${
+          ignoreClasses
+            ? ''
+            : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
+        }><table`,
+      )
+      .replace(/<\/table>/g, '</table></div>')}
+  `;
+}
+
 export async function initialize({
   page,
   isCollab,
@@ -64,6 +81,7 @@ export async function initialize({
   tableCellMerge,
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
+  tableHorizontalScroll,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -76,6 +94,8 @@ export async function initialize({
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
   appSettings.disableBeforeInput = LEGACY_EVENTS;
+  appSettings.tableHorizontalScroll =
+    tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = randomUUID();
@@ -175,6 +195,16 @@ export async function clickSelectors(page, selectors) {
     await click(page, selectors[i]);
   }
 }
+
+function removeSafariLinebreakImgHack(actualHtml) {
+  return E2E_BROWSER === 'webkit'
+    ? actualHtml.replaceAll(
+        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        '',
+      )
+    : actualHtml;
+}
+
 /**
  * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
  */
@@ -191,10 +221,12 @@ async function assertHTMLOnPageOrFrame(
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = await pageOrFrame
-      .locator('div[contenteditable="true"]')
-      .first()
-      .innerHTML();
+    const actualHtml = removeSafariLinebreakImgHack(
+      await pageOrFrame
+        .locator('div[contenteditable="true"]')
+        .first()
+        .innerHTML(),
+    );
     let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
@@ -338,13 +370,30 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return path.reverse();
     };
 
+    const fixOffset = (node, offset) => {
+      // If the selection offset is at the br of a webkit img+br linebreak
+      // then move the offset to the img so the tests are consistent across
+      // browsers
+      if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+        const child = node.children[offset - 1];
+        if (
+          child &&
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.getAttribute('data-lexical-linebreak') === 'true'
+        ) {
+          return offset - 1;
+        }
+      }
+      return offset;
+    };
+
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
     return {
-      anchorOffset,
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
       anchorPath: getPathFromNode(anchorNode),
-      focusOffset,
+      focusOffset: fixOffset(focusNode, focusOffset),
       focusPath: getPathFromNode(focusNode),
     };
   }, expected);

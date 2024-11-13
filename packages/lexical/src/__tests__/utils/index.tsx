@@ -798,8 +798,25 @@ export function html(
   return output;
 }
 
-export function expectHtmlToBeEqual(expected: string, actual: string): void {
-  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+export function polyfillContentEditable() {
+  const div = document.createElement('div');
+  div.contentEditable = 'true';
+  if (/contenteditable/.test(div.outerHTML)) {
+    return;
+  }
+  Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+    get() {
+      return this.getAttribute('contenteditable');
+    },
+
+    set(value) {
+      this.setAttribute('contenteditable', value);
+    },
+  });
+}
+
+export function expectHtmlToBeEqual(actual: string, expected: string): void {
+  expect(prettifyHtml(actual)).toBe(prettifyHtml(expected));
 }
 
 export function prettifyHtml(s: string): string {

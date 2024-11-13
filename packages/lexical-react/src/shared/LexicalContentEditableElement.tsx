@@ -88,7 +88,6 @@ function ContentEditableElementImpl(
 
   return (
     <div
-      {...rest}
       aria-activedescendant={isEditable ? ariaActiveDescendant : undefined}
       aria-autocomplete={isEditable ? ariaAutoComplete : 'none'}
       aria-controls={isEditable ? ariaControls : undefined}
@@ -118,6 +117,7 @@ function ContentEditableElementImpl(
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}
+      {...rest}
     />
   );
 }

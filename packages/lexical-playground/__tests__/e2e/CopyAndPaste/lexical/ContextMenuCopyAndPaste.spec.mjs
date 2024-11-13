@@ -32,9 +32,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await page.keyboard.type('hello');
     await click(page, '.lock');
 
-    await page.pause();
     await doubleClick(page, 'div[contenteditable="false"] span');
-    await page.pause();
     await withExclusiveClipboardAccess(async () => {
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
       await click(page, '#typeahead-menu [role="option"] :text("Copy")');
@@ -72,7 +70,6 @@ test.describe('ContextMenuCopyAndPaste', () => {
       await click(page, '.font-increment');
       await focusEditor(page);
       await page.keyboard.type('MLH Fellowship');
-      //await page.pause();
       await moveToLineEnd(page);
       await page.keyboard.press('Enter');
       await page.keyboard.type('Fall 2024');

@@ -7,7 +7,6 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {TableNode} from './LexicalTableNode';
 import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
 import type {
   TableMapType,
@@ -68,7 +67,11 @@ import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
-import {$isTableNode} from './LexicalTableNode';
+import {
+  $isScrollableTablesActive,
+  $isTableNode,
+  TableNode,
+} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {$isTableSelection} from './LexicalTableSelection';
@@ -85,9 +88,27 @@ const isMouseDownOnEvent = (event: MouseEvent) => {
   return (event.buttons & 1) === 1;
 };
 
+export function getTableElement<T extends HTMLElement | null>(
+  tableNode: TableNode,
+  dom: T,
+): HTMLTableElementWithWithTableSelectionState | (T & null) {
+  if (!dom) {
+    return dom as T & null;
+  }
+  const element = (
+    dom.nodeName === 'TABLE' ? dom : tableNode.getDOMSlot(dom).element
+  ) as HTMLTableElementWithWithTableSelectionState;
+  invariant(
+    element.nodeName === 'TABLE',
+    'getTableElement: Expecting table in as DOM node for TableNode, not %s',
+    dom.nodeName,
+  );
+  return element;
+}
+
 export function applyTableHandlers(
   tableNode: TableNode,
-  tableElement: HTMLTableElementWithWithTableSelectionState,
+  element: HTMLElement,
   editor: LexicalEditor,
   hasTabHandler: boolean,
 ): TableObserver {
@@ -100,9 +121,10 @@ export function applyTableHandlers(
   const tableObserver = new TableObserver(editor, tableNode.getKey());
   const editorWindow = editor._window || window;
 
+  const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
   tableObserver.listenersToRemove.add(() =>
-    deatatchTableObserverFromTableElement(tableElement, tableObserver),
+    detatchTableObserverFromTableElement(tableElement, tableObserver),
   );
 
   const createMouseHandlers = () => {
@@ -744,6 +766,29 @@ export function applyTableHandlers(
       () => {
         const selection = $getSelection();
         const prevSelection = $getPreviousSelection();
+        // If they pressed the down arrow with the selection outside of the
+        // table, and then the selection ends up in the table but not in the
+        // first cell, then move the selection to the first cell.
+        if (
+          tableObserver.getAndClearShouldCheckSelection() &&
+          $isRangeSelection(prevSelection) &&
+          $isRangeSelection(selection) &&
+          selection.isCollapsed()
+        ) {
+          const anchor = selection.anchor.getNode();
+          const firstRow = tableNode.getFirstChild();
+          const anchorCell = $findCellNode(anchor);
+          if (anchorCell !== null && $isTableRowNode(firstRow)) {
+            const firstCell = firstRow.getFirstChild();
+            if (
+              $isTableCellNode(firstCell) &&
+              !$findMatchingParent(anchorCell, (node) => node.is(firstCell))
+            ) {
+              firstCell.selectStart();
+              return true;
+            }
+          }
+        }
 
         if ($isRangeSelection(selection)) {
           const {anchor, focus} = selection;
@@ -944,7 +989,7 @@ export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {
   [LEXICAL_ELEMENT_KEY]?: TableObserver | undefined;
 };
 
-export function deatatchTableObserverFromTableElement(
+export function detatchTableObserverFromTableElement(
   tableElement: HTMLTableElementWithWithTableSelectionState,
   tableObserver: TableObserver,
 ) {
@@ -1006,7 +1051,11 @@ export function doesTargetContainText(node: Node): boolean {
   return false;
 }
 
-export function getTable(tableElement: HTMLElement): TableDOMTable {
+export function getTable(
+  tableNode: TableNode,
+  dom: HTMLElement,
+): TableDOMTable {
+  const tableElement = getTableElement(tableNode, dom);
   const domRows: TableDOMRows = [];
   const grid = {
     columns: 0,
@@ -1538,6 +1587,10 @@ function $handleArrowKey(
         }
       }
     }
+    if (direction === 'down' && $isScrollableTablesActive(editor)) {
+      // Enable Firefox workaround
+      tableObserver.setShouldCheckSelection();
+    }
     return false;
   }
 
@@ -1559,11 +1612,12 @@ function $handleArrowKey(
     }
     const anchorCellTable = $findTableNode(anchorCellNode);
     if (anchorCellTable !== tableNode && anchorCellTable != null) {
-      const anchorCellTableElement = editor.getElementByKey(
-        anchorCellTable.getKey(),
+      const anchorCellTableElement = getTableElement(
+        anchorCellTable,
+        editor.getElementByKey(anchorCellTable.getKey()),
       );
       if (anchorCellTableElement != null) {
-        tableObserver.table = getTable(anchorCellTableElement);
+        tableObserver.table = getTable(anchorCellTable, anchorCellTableElement);
         return $handleArrowKey(
           editor,
           event,
@@ -1675,8 +1729,13 @@ function $handleArrowKey(
     );
 
     const [tableNodeFromSelection] = selection.getNodes();
-    const tableElement = editor.getElementByKey(
-      tableNodeFromSelection.getKey(),
+    invariant(
+      $isTableNode(tableNodeFromSelection),
+      '$handleArrowKey: TableSelection.getNodes()[0] expected to be TableNode',
+    );
+    const tableElement = getTableElement(
+      tableNodeFromSelection,
+      editor.getElementByKey(tableNodeFromSelection.getKey()),
     );
     if (
       !$isTableCellNode(anchorCellNode) ||
@@ -1688,7 +1747,7 @@ function $handleArrowKey(
     }
     tableObserver.updateTableTableSelection(selection);
 
-    const grid = getTable(tableElement);
+    const grid = getTable(tableNodeFromSelection, tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
     const anchorCell = tableNode.getDOMCellFromCordsOrThrow(
       cordsAnchor.x,
@@ -1882,14 +1941,29 @@ function $getTableEdgeCursorPosition(
     return undefined;
   }
 
-  const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
-  if (!tableNodeParentDOM) {
-    return undefined;
-  }
-
   // TODO: Add support for nested tables
   const domSelection = window.getSelection();
-  if (!domSelection || domSelection.anchorNode !== tableNodeParentDOM) {
+  if (!domSelection) {
+    return undefined;
+  }
+  const domAnchorNode = domSelection.anchorNode;
+  const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
+  const tableElement = getTableElement(
+    tableNode,
+    editor.getElementByKey(tableNode.getKey()),
+  );
+  // We are only interested in the scenario where the
+  // native selection anchor is:
+  // - at or inside the table's parent DOM
+  // - and NOT at or inside the table DOM
+  // It may be adjacent to the table DOM (e.g. in a wrapper)
+  if (
+    !domAnchorNode ||
+    !tableNodeParentDOM ||
+    !tableElement ||
+    !tableNodeParentDOM.contains(domAnchorNode) ||
+    tableElement.contains(domAnchorNode)
+  ) {
     return undefined;
   }
 

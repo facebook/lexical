@@ -13,6 +13,7 @@ import {
   LinkNode,
   SerializedLinkNode,
 } from '@lexical/link';
+import {MarkNode} from '@lexical/mark';
 import {
   $getRoot,
   $selectAll,
@@ -409,7 +410,81 @@ describe('LexicalLinkNode tests', () => {
       const link = paragraph.children[0] as SerializedLinkNode;
       expect(link.title).toBe('Lexical Website');
     });
-  });
 
-  test('LinkNode removes correctly and preserves descendants', async () => {});
+    test('$toggleLink correctly removes link when textnode has children(like marknode)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = new ParagraphNode();
+        const precedingText = new TextNode('some '); // space after
+        const textNode = new TextNode('text');
+
+        paragraph.append(precedingText, textNode);
+
+        const linkNode = $createLinkNode('https://example.com/foo', {
+          rel: 'noreferrer',
+        });
+        textNode.insertAfter(linkNode);
+        linkNode.append(textNode);
+
+        const markNode = new MarkNode(['knetk']);
+        textNode.insertBefore(markNode);
+        markNode.append(textNode);
+        $getRoot().append(paragraph);
+      });
+      // Verify structure after all steps
+      expect(editor.getEditorState().toJSON().root.children[0]).toMatchObject({
+        children: [
+          {
+            text: 'some ',
+            type: 'text',
+          },
+          {
+            children: [
+              {
+                children: [
+                  {
+                    text: 'text',
+                    type: 'text',
+                  },
+                ],
+                ids: ['knetk'],
+                type: 'mark',
+              },
+            ],
+            rel: 'noreferrer',
+            type: 'link',
+            url: 'https://example.com/foo',
+          },
+        ],
+        type: 'paragraph',
+      });
+
+      // 4. Remove the link
+      await editor.update(() => {
+        $selectAll();
+        $toggleLink(null);
+      });
+
+      // Verify link is removed but mark remains
+      expect(editor.getEditorState().toJSON().root.children[0]).toMatchObject({
+        children: [
+          {
+            text: 'some ',
+            type: 'text',
+          },
+          {
+            children: [
+              {
+                text: 'text',
+                type: 'text',
+              },
+            ],
+            ids: ['knetk'],
+            type: 'mark',
+          },
+        ],
+        type: 'paragraph',
+      });
+    });
+  });
 });

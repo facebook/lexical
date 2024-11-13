@@ -31,7 +31,12 @@ import {
 
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>
-    initialize({isCollab, page, showNestedEditorTreeView: false}),
+    initialize({
+      isCollab,
+      page,
+      showNestedEditorTreeView: false,
+      tableHorizontalScroll: false,
+    }),
   );
 
   test(

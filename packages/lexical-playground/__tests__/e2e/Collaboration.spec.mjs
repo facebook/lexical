@@ -322,17 +322,43 @@ test.describe('Collaboration', () => {
     // Left collaborator types two pieces of text in the same paragraph, but with different styling.
     await focusEditor(page);
     await page.keyboard.type('normal');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal</span>
+        </p>
+      `,
+    );
     await sleep(1050);
     await toggleBold(page);
     await page.keyboard.type('bold');
 
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            bold
+          </strong>
+        </p>
+      `,
+    );
+    const boldSleep = sleep(1050);
+
     // Right collaborator types at the end of the paragraph.
-    await sleep(50);
     await page
       .frameLocator('iframe[name="right"]')
       .locator('[data-lexical-editor="true"]')
       .focus();
-    await page.keyboard.press('ArrowDown'); // Move caret to end of paragraph
+    await page.keyboard.press('ArrowDown', {delay: 50}); // Move caret to end of paragraph
     await page.keyboard.type('BOLD');
 
     await assertHTML(
@@ -352,7 +378,7 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator undoes their bold text.
-    await sleep(50);
+    await boldSleep;
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
     // The undo also removed bold the text node from YJS.

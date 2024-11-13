@@ -80,6 +80,7 @@ export class MentionNode extends TextNode {
     const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
+    dom.spellcheck = false;
     return dom;
   }
 

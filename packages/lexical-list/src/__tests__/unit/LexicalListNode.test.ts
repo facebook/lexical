@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {$isLinkNode, LinkNode} from '@lexical/link';
 import {ParagraphNode, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
@@ -257,6 +258,31 @@ describe('LexicalListNode tests', () => {
         expect(listNode.append(...nodesToAppend)).toBe(listNode);
         expect($isListItemNode(listNode.getFirstChild())).toBe(true);
         expect(listNode.getFirstChild()?.getTextContent()).toBe('Hello');
+      });
+    });
+
+    test('ListNode.append() should wrap an InlineNode in a ListItemNode without converting it to TextNode', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const listNode = new ListNode('bullet', 1);
+        const linkNode = new LinkNode('https://lexical.dev/');
+
+        listNode.append(linkNode);
+
+        const firstChild = listNode.getFirstChild();
+        expect($isListItemNode(firstChild)).toBe(true);
+
+        if ($isListItemNode(firstChild)) {
+          const wrappedNode = firstChild?.getFirstChild();
+          expect($isLinkNode(wrappedNode)).toBe(true);
+
+          expect((wrappedNode as LinkNode).getURL()).toBe(
+            'https://lexical.dev/',
+          );
+        } else {
+          throw new Error('First child is not a ListItemNode');
+        }
       });
     });
 

@@ -10,17 +10,7 @@ import type {EditorConfig, NodeKey, SerializedTextNode, Spread} from 'lexical';
 
 import {TextNode} from 'lexical';
 
-// import * as React from 'react';
-// import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
 import {uuid as UUID} from '../plugins/AutocompletePlugin';
-
-declare global {
-  interface Navigator {
-    userAgentData?: {
-      mobile: boolean;
-    };
-  }
-}
 
 export type SerializedAutocompleteNode = Spread<
   {
@@ -100,21 +90,3 @@ export function $createAutocompleteNode(
 ): AutocompleteNode {
   return new AutocompleteNode(text, uuid);
 }
-
-// function AutocompleteComponent({
-//   className,
-// }: {
-//   className: EditorThemeClassName;
-// }): JSX.Element {
-//   const [suggestion] = useSharedAutocompleteContext();
-//   const userAgentData = window.navigator.userAgentData;
-//   const isMobile =
-//     userAgentData !== undefined
-//       ? userAgentData.mobile
-//       : window.innerWidth <= 800 && window.innerHeight <= 600;
-//   return (
-//     <span className={className} spellCheck="false">
-//       {suggestion} {isMobile ? '(SWIPE \u2B95)' : '(TAB)'}
-//     </span>
-//   );
-// }

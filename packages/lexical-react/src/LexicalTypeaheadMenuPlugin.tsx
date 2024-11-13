@@ -295,7 +295,9 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     openTypeahead,
   ]);
 
-  return resolution === null || editor === null ? null : (
+  return resolution === null ||
+    editor === null ||
+    anchorElementRef.current === null ? null : (
     <LexicalMenu
       close={closeTypeahead}
       resolution={resolution}

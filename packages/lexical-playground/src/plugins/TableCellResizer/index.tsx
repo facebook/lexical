@@ -19,6 +19,7 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   getDOMCellFromTarget,
+  getTableElement,
   TableNode,
 } from '@lexical/table';
 import {calculateZoomLevel} from '@lexical/utils';
@@ -115,7 +116,10 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
               const tableNode =
                 $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-              const tableElement = editor.getElementByKey(tableNode.getKey());
+              const tableElement = getTableElement(
+                tableNode,
+                editor.getElementByKey(tableNode.getKey()),
+              );
 
               if (!tableElement) {
                 throw new Error('TableCellResizer: Table element not found.');

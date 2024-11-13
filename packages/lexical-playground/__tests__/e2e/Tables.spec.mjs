@@ -18,7 +18,7 @@ import {
   selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
-  assertHTML,
+  assertHTML as rawAssertHTML,
   assertSelection,
   click,
   clickSelectors,
@@ -37,6 +37,7 @@ import {
   insertTableRowBelow,
   IS_COLLAB,
   IS_LINUX,
+  IS_TABLE_HORIZONTAL_SCROLL,
   IS_WINDOWS,
   LEGACY_EVENTS,
   mergeTableCells,
@@ -51,6 +52,8 @@ import {
   toggleColumnHeader,
   unmergeTableCell,
   waitForSelector,
+  withExclusiveClipboardAccess,
+  wrapTableHtml,
 } from '../utils/index.mjs';
 
 async function fillTablePartiallyWithText(page) {
@@ -73,6 +76,28 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('c');
 }
+
+async function assertHTML(
+  page,
+  expectedHtml,
+  expectedHtmlFrameRight = undefined,
+  options = undefined,
+  ...args
+) {
+  return await rawAssertHTML(
+    page,
+    IS_TABLE_HORIZONTAL_SCROLL
+      ? wrapTableHtml(expectedHtml, options)
+      : expectedHtml,
+    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
+      ? wrapTableHtml(expectedHtmlFrameRight, options)
+      : expectedHtmlFrameRight,
+    options,
+    ...args,
+  );
+}
+
+const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
 
 test.describe.parallel('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({
@@ -180,12 +205,13 @@ test.describe.parallel('Tables', () => {
 
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
       });
 
       await moveLeft(page, 1);
+
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [0],
@@ -195,19 +221,20 @@ test.describe.parallel('Tables', () => {
 
       await moveRight(page, 1);
       await page.keyboard.type('ab');
+
       await assertSelection(page, {
         anchorOffset: 2,
-        anchorPath: [1, 1, 0, 0, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
         focusOffset: 2,
-        focusPath: [1, 1, 0, 0, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
       });
 
       await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 2, 1, 0],
+        anchorPath: [1, ...WRAPPER, 2, 1, 0],
         focusOffset: 0,
-        focusPath: [1, 2, 1, 0],
+        focusPath: [1, ...WRAPPER, 2, 1, 0],
       });
     });
 
@@ -225,9 +252,9 @@ test.describe.parallel('Tables', () => {
       await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 2, 1, 0],
+        anchorPath: [1, ...WRAPPER, 2, 1, 0],
         focusOffset: 0,
-        focusPath: [1, 2, 1, 0],
+        focusPath: [1, ...WRAPPER, 2, 1, 0],
       });
 
       await moveRight(page, 1);
@@ -242,9 +269,9 @@ test.describe.parallel('Tables', () => {
       await page.keyboard.type('ab');
       await assertSelection(page, {
         anchorOffset: 2,
-        anchorPath: [1, 2, 1, 0, 0, 0],
+        anchorPath: [1, ...WRAPPER, 2, 1, 0, 0, 0],
         focusOffset: 2,
-        focusPath: [1, 2, 1, 0, 0, 0],
+        focusPath: [1, ...WRAPPER, 2, 1, 0, 0, 0],
       });
 
       await moveRight(page, 3);
@@ -270,17 +297,17 @@ test.describe.parallel('Tables', () => {
 
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
       });
 
       await moveLeft(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
       });
     });
 
@@ -299,17 +326,17 @@ test.describe.parallel('Tables', () => {
       await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 1, 2, 1, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 1, 2, 1, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
       });
 
       await moveRight(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 2],
+        anchorPath: [1, ...WRAPPER, 1, 0, 2],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 2],
+        focusPath: [1, ...WRAPPER, 1, 0, 2],
       });
     });
   });
@@ -344,9 +371,9 @@ test.describe.parallel('Tables', () => {
     await deleteBackward(page);
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [1, 2, 1, 0],
+      anchorPath: [1, ...WRAPPER, 2, 1, 0],
       focusOffset: 0,
-      focusPath: [1, 2, 1, 0],
+      focusPath: [1, ...WRAPPER, 2, 1, 0],
     });
     await assertHTML(
       page,
@@ -380,14 +407,24 @@ test.describe.parallel('Tables', () => {
     );
 
     await moveRight(page, 1);
-    // The native window selection should be on the root, whereas
-    // the editor selection should be on the last cell of the table.
-    await assertSelection(page, {
-      anchorOffset: 2,
-      anchorPath: [],
-      focusOffset: 2,
-      focusPath: [],
-    });
+    if (WRAPPER.length === 0) {
+      // The native window selection should be on the root, whereas
+      // the editor selection should be on the last cell of the table.
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [],
+        focusOffset: 2,
+        focusPath: [],
+      });
+    } else {
+      // The native window selection is in the wrapper after the table
+      await assertSelection(page, {
+        anchorOffset: WRAPPER[0] + 1,
+        anchorPath: [1],
+        focusOffset: WRAPPER[0] + 1,
+        focusPath: [1],
+      });
+    }
 
     await page.keyboard.press('Enter');
     await assertSelection(page, {
@@ -513,9 +550,9 @@ test.describe.parallel('Tables', () => {
     await moveLeft(page, 1);
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [1, 2, 1, 0],
+      anchorPath: [1, ...WRAPPER, 2, 1, 0],
       focusOffset: 0,
-      focusPath: [1, 2, 1, 0],
+      focusPath: [1, ...WRAPPER, 2, 1, 0],
     });
   });
 
@@ -565,57 +602,57 @@ test.describe.parallel('Tables', () => {
 
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
       });
 
       await moveRight(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 1, 0],
+        anchorPath: [1, ...WRAPPER, 1, 1, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 1, 0],
+        focusPath: [1, ...WRAPPER, 1, 1, 0],
       });
 
       await moveRight(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 2, 0, 0],
+        anchorPath: [1, ...WRAPPER, 2, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 2, 0, 0],
+        focusPath: [1, ...WRAPPER, 2, 0, 0],
       });
 
       await moveRight(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 2, 1, 0],
+        anchorPath: [1, ...WRAPPER, 2, 1, 0],
         focusOffset: 0,
-        focusPath: [1, 2, 1, 0],
+        focusPath: [1, ...WRAPPER, 2, 1, 0],
       });
 
       await moveLeft(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 2, 0, 0],
+        anchorPath: [1, ...WRAPPER, 2, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 2, 0, 0],
+        focusPath: [1, ...WRAPPER, 2, 0, 0],
       });
 
       await moveLeft(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 1, 0],
+        anchorPath: [1, ...WRAPPER, 1, 1, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 1, 0],
+        focusPath: [1, ...WRAPPER, 1, 1, 0],
       });
 
       await moveLeft(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
       });
     });
 
@@ -632,25 +669,25 @@ test.describe.parallel('Tables', () => {
 
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
       });
 
       await moveDown(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 2, 0, 0],
+        anchorPath: [1, ...WRAPPER, 2, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 2, 0, 0],
+        focusPath: [1, ...WRAPPER, 2, 0, 0],
       });
 
       await moveUp(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
       });
     });
 
@@ -668,9 +705,9 @@ test.describe.parallel('Tables', () => {
       await page.keyboard.type('@A');
       await assertSelection(page, {
         anchorOffset: 2,
-        anchorPath: [1, 1, 0, 0, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
         focusOffset: 2,
-        focusPath: [1, 1, 0, 0, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
       });
 
       await waitForSelector(page, `#typeahead-menu ul li:first-child.selected`);
@@ -678,9 +715,9 @@ test.describe.parallel('Tables', () => {
       await moveDown(page, 1);
       await assertSelection(page, {
         anchorOffset: 2,
-        anchorPath: [1, 1, 0, 0, 0, 0],
+        anchorPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
         focusOffset: 2,
-        focusPath: [1, 1, 0, 0, 0, 0],
+        focusPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
       });
 
       await waitForSelector(
@@ -1258,14 +1295,16 @@ test.describe.parallel('Tables', () => {
         false,
       );
 
-      const clipboard = await copyToClipboard(page);
+      await withExclusiveClipboardAccess(async () => {
+        const clipboard = await copyToClipboard(page);
 
-      // For some reason you need to click the paragraph twice for this to pass
-      // on Collab Firefox.
-      await click(page, 'div.ContentEditable__root > p:first-of-type');
-      await click(page, 'div.ContentEditable__root > p:first-of-type');
+        // For some reason you need to click the paragraph twice for this to pass
+        // on Collab Firefox.
+        await click(page, 'div.ContentEditable__root > p:first-of-type');
+        await click(page, 'div.ContentEditable__root > p:first-of-type');
 
-      await pasteFromClipboard(page, clipboard);
+        await pasteFromClipboard(page, clipboard);
+      });
 
       // Check that the character styles are applied.
       await assertHTML(
@@ -3845,27 +3884,29 @@ test.describe.parallel('Tables', () => {
     await page.keyboard.type('Hello');
     await selectCharacters(page, 'left', 'Hello'.length);
 
-    const clipboard = await copyToClipboard(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
 
-    // move caret to the first position of the editor
-    await click(page, '.PlaygroundEditorTheme__paragraph');
+      // move caret to the first position of the editor
+      await click(page, '.PlaygroundEditorTheme__paragraph');
 
-    // move caret to the table cell (2,2)
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowRight');
+      // move caret to the table cell (2,2)
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
 
-    await pasteFromClipboard(page, clipboard);
-    await pasteFromClipboard(page, clipboard);
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
+    });
 
     await assertHTML(
       page,

@@ -1,3 +1,60 @@
+## v0.20.0 (2024-11-07)
+
+- Add optional selection argument to getHtmlContent flow type (#6803) Rajiv Anisetti
+- Fix importDOM for Layout plugin (#6799) Ivaylo Pavlov
+- lexical-playground Feature Add more keyboard shortcuts (#6754) Bedru Umer
+- lexical-website Documentation Update Add Documentation for html Property in Lexical Editor Configuration (#6770) Ajaezo Kingsley
+- lexical-yjs Bug Fix clean up dangling text after undo in collaboration (#6670) Michael Shafer
+- Lexical-website BugFix Change button text colour to improve visibility (#6796) Fadekemi Adebayo
+- lexical-markdown Feature add ability to control finding the end of a node matched by TextMatchTransformer (#6681) Alessio Gravili
+- lexical-react Bug Fix LexicalTypeaheadMenuPlugin SSR error ReferenceError document is not defined (#6794) Bedru Umer
+- lexical-website Chore upgrade to Docusaurus v3.6 - Docusaurus Faster (#6761) Sbastien Lorber
+- Bug Fix  ContextMenu Paste option not preserving style  (#6780) C.
+- lexical-playground Fix the placement of the fontSize button in the ToolbarPlugin  and hide the vertical scroll (Bug Fix) (#6786) Oluwasanya Olaoluwa
+- #6768 fix to avoid infinite markdown shortcut matchers run (#6778) Maksim Horbachevsky
+- lexical Feature Add onUpdate function during update with onUpdate (correct baselline) (#6773) Michael Landis
+- v0.19.0 (#6774) Sherry
+- v0.19.0 Lexical GitHub Actions Bot
+
+## v0.19.0 (2024-10-28)
+
+- lexical Add missing commands to Lexical.js.flow (#6769) Sherry
+- lexical-react Feature add attributes in LinkPlugin (#6760) Taro Shono
+- lexical-react replace abstract component (#6752) Sherry
+- Trust HTML for rich text clipboard (#6755) Gerard Rovira
+- lexical-playground Bug Fix Disable editing of Excalidraw Component in Read-Only Mode (#6704) Neysan Foo
+- lexical-playground Bug Fix Disable table hover actions in read-only mode (#6706) Neysan Foo
+- lexical-table lexical-selection Try to fix calling split on undefined (#6746) Ivaylo Pavlov
+- Add ariaErrorMessage and ariaInvalid to Flow type (#6751) EJ Hammond
+- lexical-react Feature Add aria-errormessage and aria-invalid support to LexicalContentEditable (#6745) EJ Hammond
+- lexical-table Return inserted node from insertTableRowEXPERIMENTAL and insertTableColumnEXPERIMENTAL (#6741) Aman Harwara
+- Bug Fix Shiftdown selects an extra subsequent element  for Table selection (#6679) Katsia
+- lexical-playground Bug Fix Disable equation editing in read-only mode (#6707) Neysan Foo
+- lexical-markdown Feature add ability to hook into the import process for multiline element transformers (#6682) Alessio Gravili
+- lexical-playground Bug Fix Disable image and inline focusing, adding caption and editing in read-only mode (#6705) Neysan Foo
+- lexical-code Bug Fix Add global type declarations for Prism (#6736) Bob Ippolito
+-  Chore Disable react-beta test job for now (#6738) Bob Ippolito
+- lexical-playground Table Hover Actions Layout Fixes (#6725) Ivaylo Pavlov
+- lexical Bug Fix lines were being deleted with deleteLine (#6719) Taro Shono
+- lexical-table Bug Fix colWidths not imported from DOM for TableNode (#6731) cwstra
+- Chore add workflow to auto close stale pr based on label (#6732) Sherry
+- lexical-playground Bug Fix match toolbar font size input with the rest of toolbar items in Read-Only mode (#6698) Bedru Umer
+- lexical-playground Remove unused command (#6726) Ivaylo Pavlov
+- fix preserve custom fields in Lexical-Yjs sync (#6724) Vadim Nicolaev
+- lexicallexical-listlexical-rich-text Fix Preserve indentation when serializing to and from HTML (#6693) Germn Jabloski
+- lexicallexical-list Bug Fix Retain indentation when list format is removed and reapplied (#6684) Sebastian Arrazola
+- lexical Bug Fix Insertion into inline ElementNode should not crash (#6703) Bob Ippolito
+- lexical-playground Bug Fix Track Resizing Actions for Excalidraw in History Stack (#6696) Neysan Foo
+- lexical-playground Bug Fix toolbar font size input keyboard accessibility (#6695) Riley Pearce
+- lexical-playground 3 Bug Fixes, 1 UX Improvement All Regarding Excalidraw Node (#6666) Neysan Foo
+- lexical Bug Fix TextNode in token mode should not be split by removeText (#6690) Bob Ippolito
+- lexical-yjs Bug Fix Add missing setLocalStateField method to ProviderAwareness type (#6683) Vadim Nicolaev
+- lexical Bug Fix Fix Table formatting when no TextNodes present (#6675) Katsia
+- lexical-tablelexical-playground Bug Fix Make style buttons in toolbar respect table selection (#6678) Katsia
+- Support backward selection in rows deletion (#6680) Maksim Horbachevsky
+- v0.18.0 (#6676) Sherry
+- v0.18.0 Lexical GitHub Actions Bot
+
 ## v0.18.0 (2024-09-26)
 
 - lexical-markdown set shouldMergeAdjacentLines default to be false  (#6660) Sherry

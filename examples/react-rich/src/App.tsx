@@ -54,7 +54,10 @@ const removeStylesExportDOM = (
   return output;
 };
 
-const exportMap: DOMExportOutputMap = new Map([
+const exportMap: DOMExportOutputMap = new Map<
+  Klass<LexicalNode>,
+  (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+>([
   [ParagraphNode, removeStylesExportDOM],
   [TextNode, removeStylesExportDOM],
 ]);

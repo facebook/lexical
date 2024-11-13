@@ -24,12 +24,20 @@ import {
 } from 'lexical';
 import {useCallback, useEffect} from 'react';
 
-import {useSharedAutocompleteContext} from '../../context/SharedAutocompleteContext';
+import {useToolbarState} from '../../context/ToolbarContext';
 import {
   $createAutocompleteNode,
   AutocompleteNode,
 } from '../../nodes/AutocompleteNode';
 import {addSwipeRightListener} from '../../utils/swipe';
+
+declare global {
+  interface Navigator {
+    userAgentData?: {
+      mobile: boolean;
+    };
+  }
+}
 
 type SearchPromise = {
   dismiss: () => void;
@@ -76,10 +84,20 @@ function useQuery(): (searchText: string) => SearchPromise {
   }, []);
 }
 
+function formatSuggestionText(suggestion: string): string {
+  const userAgentData = window.navigator.userAgentData;
+  const isMobile =
+    userAgentData !== undefined
+      ? userAgentData.mobile
+      : window.innerWidth <= 800 && window.innerHeight <= 600;
+
+  return `${suggestion} ${isMobile ? '(SWIPE \u2B95)' : '(TAB)'}`;
+}
+
 export default function AutocompletePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  const [, setSuggestion] = useSharedAutocompleteContext();
   const query = useQuery();
+  const {toolbarState} = useToolbarState();
 
   useEffect(() => {
     let autocompleteNodeKey: null | NodeKey = null;
@@ -103,7 +121,6 @@ export default function AutocompletePlugin(): JSX.Element | null {
       lastMatch = null;
       lastSuggestion = null;
       prevNodeFormat = 0;
-      setSuggestion(null);
     }
     function updateAsyncSuggestion(
       refSearchPromise: SearchPromise,
@@ -128,14 +145,16 @@ export default function AutocompletePlugin(): JSX.Element | null {
           const selectionCopy = selection.clone();
           const prevNode = selection.getNodes()[0] as TextNode;
           prevNodeFormat = prevNode.getFormat();
-          const node = $createAutocompleteNode(newSuggestion, uuid).setFormat(
-            prevNodeFormat,
-          );
+          const node = $createAutocompleteNode(
+            formatSuggestionText(newSuggestion),
+            uuid,
+          )
+            .setFormat(prevNodeFormat)
+            .setStyle(`font-size: ${toolbarState.fontSize}`);
           autocompleteNodeKey = node.getKey();
           selection.insertNodes([node]);
           $setSelection(selectionCopy);
           lastSuggestion = newSuggestion;
-          setSuggestion(newSuggestion);
         },
         {tag: 'history-merge'},
       );
@@ -181,8 +200,9 @@ export default function AutocompletePlugin(): JSX.Element | null {
       if (autocompleteNode === null) {
         return false;
       }
-      const textNode =
-        $createTextNode(lastSuggestion).setFormat(prevNodeFormat);
+      const textNode = $createTextNode(lastSuggestion)
+        .setFormat(prevNodeFormat)
+        .setStyle(`font-size: ${toolbarState.fontSize}`);
       autocompleteNode.replace(textNode);
       textNode.selectNext();
       $clearSuggestion();
@@ -231,7 +251,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
         : []),
       unmountSuggestion,
     );
-  }, [editor, query, setSuggestion]);
+  }, [editor, query, toolbarState.fontSize]);
 
   return null;
 }

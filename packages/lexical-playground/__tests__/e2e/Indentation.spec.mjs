@@ -18,7 +18,9 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Identation', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page}) =>
+    initialize({isCollab, page, tableHorizontalScroll: false}),
+  );
 
   test(`Can create content and indent and outdent it all`, async ({
     page,

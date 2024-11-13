@@ -53,7 +53,9 @@ import {
 } from '../utils/index.mjs';
 
 test.describe.parallel('Selection', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page}) =>
+    initialize({isCollab, page, tableHorizontalScroll: false}),
+  );
   test('does not focus the editor on load', async ({page}) => {
     const editorHasFocus = async () =>
       await evaluate(page, () => {

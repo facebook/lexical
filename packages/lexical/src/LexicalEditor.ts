@@ -144,7 +144,9 @@ export type EditorThemeClasses = {
   tableCellSortedIndicator?: EditorThemeClassName;
   tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
+  tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
+  tableSelection?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   embedBlock?: {
     base?: EditorThemeClassName;

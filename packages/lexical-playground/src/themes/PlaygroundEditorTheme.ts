@@ -103,6 +103,7 @@ const theme: EditorThemeClasses = {
   tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
   tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
+  tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {

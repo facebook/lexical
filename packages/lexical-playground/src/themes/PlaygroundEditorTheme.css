@@ -138,6 +138,14 @@
   text-align: right;
   min-width: 25px;
 }
+.PlaygroundEditorTheme__tableScrollableWrapper {
+  overflow-x: auto;
+  margin: 0px 25px 30px 0px;
+}
+.PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
+  /* Remove the table's margin and put it on the wrapper */
+  margin: 0;
+}
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
   border-spacing: 0;

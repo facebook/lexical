@@ -136,6 +136,7 @@ export function applyTableHandlers(
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
+      const prevSelection = tableObserver.tableSelection;
       setTimeout(() => {
         if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
           tableObserver.isSelecting = false;
@@ -145,11 +146,18 @@ export function applyTableHandlers(
         }
         const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
         if (
+          // Revert any selection changes if the target isn't in the editor,
+          // such as when it moves over some sort of overlaid portal like the
+          // .table-cell-action-button-container
+          !rootElement.contains(moveEvent.target as Node) &&
+          prevSelection !== null
+        ) {
+          editor.update(() => $setSelection(prevSelection.clone()));
+        } else if (
           focusCell !== null &&
           (tableObserver.anchorX !== focusCell.x ||
             tableObserver.anchorY !== focusCell.y)
         ) {
-          moveEvent.preventDefault();
           tableObserver.setFocusCellForSelection(focusCell);
         }
       }, 0);

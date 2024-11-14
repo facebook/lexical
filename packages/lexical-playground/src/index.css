@@ -750,6 +750,7 @@ i.page-break,
   border: 0;
   max-width: 250px;
   min-width: 100px;
+  width: calc(100% - 16px);
 }
 
 .dropdown .item.wide {

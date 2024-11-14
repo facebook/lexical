@@ -7,6 +7,7 @@
  */
 
 import {
+  decreaseFontSize,
   increaseFontSize,
   toggleBold,
   toggleItalic,
@@ -39,6 +40,7 @@ test.describe('Autocomplete', () => {
           <span data-lexical-text="true">Sort by alpha</span>
           <span
             class="PlaygroundEditorTheme__autocomplete"
+            style="font-size: 15px"
             data-lexical-text="true">
             betical (TAB)
           </span>
@@ -62,7 +64,10 @@ test.describe('Autocomplete', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Sort by alphabetical order:</span>
+          <span data-lexical-text="true">Sort by alpha</span>
+          <span style="font-size: 15px" data-lexical-text="true">
+            betical order:
+          </span>
         </p>
       `,
     );
@@ -117,7 +122,14 @@ test.describe('Autocomplete', () => {
     );
 
     await page.keyboard.press('Tab');
-    await page.keyboard.type(' is awesome!');
+
+    await toggleBold(page);
+    await toggleItalic(page);
+    await toggleUnderline(page);
+    await toggleStrikethrough(page);
+    await decreaseFontSize(page);
+
+    await page.keyboard.type(' 2024');
 
     await assertHTML(
       page,
@@ -135,8 +147,9 @@ test.describe('Autocomplete', () => {
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
             data-lexical-text="true">
-            owship is awesome!
+            owship
           </strong>
+          <span style="font-size: 15px;" data-lexical-text="true">2024</span>
         </p>
       `,
     );

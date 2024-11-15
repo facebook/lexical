@@ -94,6 +94,7 @@ export default function Editor(): JSX.Element {
       shouldPreserveNewLinesInMarkdown,
       tableCellMerge,
       tableCellBackgroundColor,
+      tableHorizontalScroll,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -199,6 +200,7 @@ export default function Editor(): JSX.Element {
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
+              hasHorizontalScroll={tableHorizontalScroll}
             />
             <TableCellResizer />
             <ImagesPlugin />

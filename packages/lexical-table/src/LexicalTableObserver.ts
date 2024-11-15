@@ -16,6 +16,7 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
@@ -28,7 +29,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode} from './LexicalTableNode';
+import {$isTableNode, TableNode} from './LexicalTableNode';
 import {
   $createTableSelection,
   $isTableSelection,
@@ -39,6 +40,8 @@ import {
   $updateDOMForSelection,
   getDOMSelection,
   getTable,
+  getTableElement,
+  HTMLTableElementWithWithTableSelectionState,
 } from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {
@@ -57,6 +60,31 @@ export type TableDOMTable = {
   rows: number;
 };
 
+export function $getTableAndElementByKey(
+  tableNodeKey: NodeKey,
+  editor: LexicalEditor = $getEditor(),
+): {
+  tableNode: TableNode;
+  tableElement: HTMLTableElementWithWithTableSelectionState;
+} {
+  const tableNode = $getNodeByKey(tableNodeKey);
+  invariant(
+    $isTableNode(tableNode),
+    'TableObserver: Expected tableNodeKey %s to be a TableNode',
+    tableNodeKey,
+  );
+  const tableElement = getTableElement(
+    tableNode,
+    editor.getElementByKey(tableNodeKey),
+  );
+  invariant(
+    tableElement !== null,
+    'TableObserver: Expected to find TableElement in DOM for key %s',
+    tableNodeKey,
+  );
+  return {tableElement, tableNode};
+}
+
 export class TableObserver {
   focusX: number;
   focusY: number;
@@ -74,6 +102,7 @@ export class TableObserver {
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
+  shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
 
@@ -97,10 +126,11 @@ export class TableObserver {
     this.anchorCell = null;
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
-    this.trackTable();
     this.isSelecting = false;
+    this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};
+    this.trackTable();
   }
 
   getTable(): TableDOMTable {
@@ -115,54 +145,57 @@ export class TableObserver {
     this.listenersToRemove.clear();
   }
 
+  $lookup(): {
+    tableNode: TableNode;
+    tableElement: HTMLTableElementWithWithTableSelectionState;
+  } {
+    return $getTableAndElementByKey(this.tableNodeKey, this.editor);
+  }
+
   trackTable() {
     const observer = new MutationObserver((records) => {
-      this.editor.update(() => {
-        let gridNeedsRedraw = false;
+      this.editor.getEditorState().read(
+        () => {
+          let gridNeedsRedraw = false;
 
-        for (let i = 0; i < records.length; i++) {
-          const record = records[i];
-          const target = record.target;
-          const nodeName = target.nodeName;
+          for (let i = 0; i < records.length; i++) {
+            const record = records[i];
+            const target = record.target;
+            const nodeName = target.nodeName;
 
-          if (
-            nodeName === 'TABLE' ||
-            nodeName === 'TBODY' ||
-            nodeName === 'THEAD' ||
-            nodeName === 'TR'
-          ) {
-            gridNeedsRedraw = true;
-            break;
+            if (
+              nodeName === 'TABLE' ||
+              nodeName === 'TBODY' ||
+              nodeName === 'THEAD' ||
+              nodeName === 'TR'
+            ) {
+              gridNeedsRedraw = true;
+              break;
+            }
           }
-        }
 
-        if (!gridNeedsRedraw) {
-          return;
-        }
+          if (!gridNeedsRedraw) {
+            return;
+          }
 
-        const tableElement = this.editor.getElementByKey(this.tableNodeKey);
-
-        if (!tableElement) {
-          throw new Error('Expected to find TableElement in DOM');
-        }
-
-        this.table = getTable(tableElement);
-      });
+          const {tableNode, tableElement} = this.$lookup();
+          this.table = getTable(tableNode, tableElement);
+        },
+        {editor: this.editor},
+      );
     });
-    this.editor.update(() => {
-      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
-
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
-
-      this.table = getTable(tableElement);
-      observer.observe(tableElement, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-      });
-    });
+    this.editor.getEditorState().read(
+      () => {
+        const {tableNode, tableElement} = this.$lookup();
+        this.table = getTable(tableNode, tableElement);
+        observer.observe(tableElement, {
+          attributes: true,
+          childList: true,
+          subtree: true,
+        });
+      },
+      {editor: this.editor},
+    );
   }
 
   clearHighlight() {
@@ -182,19 +215,8 @@ export class TableObserver {
     this.enableHighlightStyle();
 
     editor.update(() => {
-      const tableNode = $getNodeByKey(this.tableNodeKey);
-
-      if (!$isTableNode(tableNode)) {
-        throw new Error('Expected TableNode.');
-      }
-
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
-
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
-
-      const grid = getTable(tableElement);
+      const {tableNode, tableElement} = this.$lookup();
+      const grid = getTable(tableNode, tableElement);
       $updateDOMForSelection(editor, grid, null);
       $setSelection(null);
       editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
@@ -203,34 +225,34 @@ export class TableObserver {
 
   enableHighlightStyle() {
     const editor = this.editor;
-    editor.update(() => {
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
+    editor.getEditorState().read(
+      () => {
+        const {tableElement} = this.$lookup();
 
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
-
-      removeClassNamesFromElement(
-        tableElement,
-        editor._config.theme.tableSelection,
-      );
-      tableElement.classList.remove('disable-selection');
-      this.hasHijackedSelectionStyles = false;
-    });
+        removeClassNamesFromElement(
+          tableElement,
+          editor._config.theme.tableSelection,
+        );
+        tableElement.classList.remove('disable-selection');
+        this.hasHijackedSelectionStyles = false;
+      },
+      {editor},
+    );
   }
 
   disableHighlightStyle() {
     const editor = this.editor;
-    editor.update(() => {
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
-
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
-
-      addClassNamesToElement(tableElement, editor._config.theme.tableSelection);
-      this.hasHijackedSelectionStyles = true;
-    });
+    editor.getEditorState().read(
+      () => {
+        const {tableElement} = this.$lookup();
+        addClassNamesToElement(
+          tableElement,
+          editor._config.theme.tableSelection,
+        );
+        this.hasHijackedSelectionStyles = true;
+      },
+      {editor},
+    );
   }
 
   updateTableTableSelection(selection: TableSelection | null): void {
@@ -248,20 +270,32 @@ export class TableObserver {
     }
   }
 
+  /**
+   * @internal
+   * Firefox has a strange behavior where pressing the down arrow key from
+   * above the table will move the caret after the table and then lexical
+   * will select the last cell instead of the first.
+   * We do still want to let the browser handle caret movement but we will
+   * use this property to "tag" the update so that we can recheck the
+   * selection after the event is processed.
+   */
+  setShouldCheckSelection(): void {
+    this.shouldCheckSelection = true;
+  }
+  /**
+   * @internal
+   */
+  getAndClearShouldCheckSelection(): boolean {
+    if (this.shouldCheckSelection) {
+      this.shouldCheckSelection = false;
+      return true;
+    }
+    return false;
+  }
   setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false) {
     const editor = this.editor;
     editor.update(() => {
-      const tableNode = $getNodeByKey(this.tableNodeKey);
-
-      if (!$isTableNode(tableNode)) {
-        throw new Error('Expected TableNode.');
-      }
-
-      const tableElement = editor.getElementByKey(this.tableNodeKey);
-
-      if (!tableElement) {
-        throw new Error('Expected to find TableElement in DOM');
-      }
+      const {tableNode} = this.$lookup();
 
       const cellX = cell.x;
       const cellY = cell.y;

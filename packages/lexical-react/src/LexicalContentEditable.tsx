@@ -15,7 +15,7 @@ import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
-export type Props = Omit<ElementProps, 'editor'> &
+export type ContentEditableProps = Omit<ElementProps, 'editor'> &
   (
     | {
         'aria-placeholder'?: void;
@@ -32,7 +32,7 @@ export type Props = Omit<ElementProps, 'editor'> &
 export const ContentEditable = forwardRef(ContentEditableImpl);
 
 function ContentEditableImpl(
-  props: Props,
+  props: ContentEditableProps,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
   const {placeholder, ...rest} = props;

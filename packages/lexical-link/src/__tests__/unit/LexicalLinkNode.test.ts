@@ -434,7 +434,7 @@ describe('LexicalLinkNode tests', () => {
         $getRoot().append(paragraph);
       });
 
-      await editor.read(() => {
+      editor.read(() => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
         const [textNode, linkNode] = paragraph.getChildren();
 
@@ -462,7 +462,7 @@ describe('LexicalLinkNode tests', () => {
       });
 
       // Verify structure after link removal
-      await editor.read(() => {
+      editor.read(() => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
         const [textNode, markNode] = paragraph.getChildren();
 

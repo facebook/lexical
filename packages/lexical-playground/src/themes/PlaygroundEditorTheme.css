@@ -55,34 +55,15 @@
   font-style: italic;
 }
 .PlaygroundEditorTheme__textUnderline {
-  border-bottom: 0.1em solid currentColor;
+  text-decoration: underline;
 }
 
 .PlaygroundEditorTheme__textStrikethrough {
-  position: relative;
-}
-
-.PlaygroundEditorTheme__textStrikethrough::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  border-top: 0.1em solid currentColor;
+  text-decoration: line-through;
 }
 
 .PlaygroundEditorTheme__textUnderlineStrikethrough {
-  position: relative;
-  border-bottom: 0.1em solid currentColor;
-}
-
-.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  border-top: 0.1em solid currentColor;
+  text-decoration: underline line-through;
 }
 
 .PlaygroundEditorTheme__textSubscript {

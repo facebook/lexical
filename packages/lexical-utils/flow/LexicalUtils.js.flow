@@ -94,3 +94,20 @@ declare export function $splitNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode | null, ElementNode];
+
+//new
+
+declare export function $getNextRightPreorderNode(
+  startingNode: LexicalNode,
+): LexicalNode | null;
+declare export function calculateZoomLevel(element: Element | null): number;
+declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;
+declare export function objectKlassEquals<T>(
+  object: mixed,
+  objectClass: Class<T>,
+): boolean;
+declare export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T>;
+declare export function $insertFirst(parent: ElementNode, node: LexicalNode): void;

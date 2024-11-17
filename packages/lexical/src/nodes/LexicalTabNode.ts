@@ -11,6 +11,7 @@ import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {EditorConfig} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 import {
@@ -45,6 +46,45 @@ export class TabNode extends TextNode {
 
   static importDOM(): DOMConversionMap | null {
     return null;
+  }
+
+  // Add method to get class name for styling
+  getClassName(): string {
+    const baseClass = 'PlaygroundEditorTheme__tabNode';
+    const formatClassNames = [];
+
+    const underline = this.hasFormat('underline');
+    const strikethrough = this.hasFormat('strikethrough');
+
+    if (underline && strikethrough) {
+      formatClassNames.push(
+        'PlaygroundEditorTheme__textUnderlineStrikethrough',
+      );
+    } else if (strikethrough) {
+      formatClassNames.push('PlaygroundEditorTheme__textStrikethrough');
+    } else if (underline) {
+      formatClassNames.push('PlaygroundEditorTheme__textUnderline');
+    }
+
+    return [baseClass, ...formatClassNames].join(' ');
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    dom.className = this.getClassName();
+    return dom;
+  }
+
+  updateDOM(
+    prevNode: TabNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    const updated = super.updateDOM(prevNode, dom, config);
+    if (updated) {
+      dom.className = this.getClassName();
+    }
+    return updated;
   }
 
   static importJSON(serializedTabNode: SerializedTabNode): TabNode {

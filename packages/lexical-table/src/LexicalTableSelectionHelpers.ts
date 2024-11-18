@@ -782,8 +782,14 @@ export function applyTableHandlers(
             const firstCell = firstRow.getFirstChild();
             if (
               $isTableCellNode(firstCell) &&
-              !$findMatchingParent(anchorCell, (node) => node.is(firstCell))
+              tableNode.is(
+                $findMatchingParent(
+                  anchorCell,
+                  (node) => node.is(tableNode) || node.is(firstCell),
+                ),
+              )
             ) {
+              // The selection moved to the table, but not in the first cell
               firstCell.selectStart();
               return true;
             }

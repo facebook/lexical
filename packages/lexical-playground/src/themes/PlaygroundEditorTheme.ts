@@ -109,11 +109,14 @@ const theme: EditorThemeClasses = {
     bold: 'PlaygroundEditorTheme__textBold',
     code: 'PlaygroundEditorTheme__textCode',
     italic: 'PlaygroundEditorTheme__textItalic',
+    lowercase: 'PlaygroundEditorTheme__textLowercase',
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',
     subscript: 'PlaygroundEditorTheme__textSubscript',
     superscript: 'PlaygroundEditorTheme__textSuperscript',
+    titlecase: 'PlaygroundEditorTheme__textTitlecase',
     underline: 'PlaygroundEditorTheme__textUnderline',
     underlineStrikethrough: 'PlaygroundEditorTheme__textUnderlineStrikethrough',
+    uppercase: 'PlaygroundEditorTheme__textUppercase',
   },
 };
 

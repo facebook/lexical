@@ -396,7 +396,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       focusOffset: fixOffset(focusNode, focusOffset),
       focusPath: getPathFromNode(focusNode),
     };
-  }, expected);
+  });
   expect(selection.anchorPath).toEqual(expected.anchorPath);
   expect(selection.focusPath).toEqual(expected.focusPath);
   if (Array.isArray(expected.anchorOffset)) {

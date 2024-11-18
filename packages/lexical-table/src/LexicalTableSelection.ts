@@ -9,23 +9,24 @@
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
-  $getNodeByKey,
   $isElementNode,
   $isParagraphNode,
   $normalizeSelection__EXPERIMENTAL,
   BaseSelection,
+  ElementNode,
   isCurrentlyReadOnlyMode,
   LexicalNode,
   NodeKey,
   PointType,
   TEXT_TYPE_TO_FORMAT,
   TextFormatType,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode} from './LexicalTableNode';
-import {$isTableRowNode} from './LexicalTableRowNode';
+import {$isTableNode, TableNode} from './LexicalTableNode';
+import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {$computeTableMap, $getTableCellNodeRect} from './LexicalTableUtils';
 
 export type TableSelectionShape = {
@@ -41,6 +42,62 @@ export type TableMapValueType = {
   startColumn: number;
 };
 export type TableMapType = Array<Array<TableMapValueType>>;
+
+function $getCellNodes(tableSelection: TableSelection): {
+  anchorCell: TableCellNode;
+  anchorNode: TextNode | ElementNode;
+  anchorRow: TableRowNode;
+  anchorTable: TableNode;
+  focusCell: TableCellNode;
+  focusNode: TextNode | ElementNode;
+  focusRow: TableRowNode;
+  focusTable: TableNode;
+} {
+  const [
+    [anchorNode, anchorCell, anchorRow, anchorTable],
+    [focusNode, focusCell, focusRow, focusTable],
+  ] = (['anchor', 'focus'] as const).map(
+    (k): [ElementNode | TextNode, TableCellNode, TableRowNode, TableNode] => {
+      const node = tableSelection[k].getNode();
+      const cellNode = $findMatchingParent(node, $isTableCellNode);
+      invariant(
+        $isTableCellNode(cellNode),
+        'Expected TableSelection %s to be (or a child of) TableCellNode, got key %s of type %s',
+        k,
+        node.getKey(),
+        node.getType(),
+      );
+      const rowNode = cellNode.getParent();
+      invariant(
+        $isTableRowNode(rowNode),
+        'Expected TableSelection %s cell parent to be a TableRowNode',
+        k,
+      );
+      const tableNode = rowNode.getParent();
+      invariant(
+        $isTableNode(tableNode),
+        'Expected TableSelection %s row parent to be a TableNode',
+        k,
+      );
+      return [node, cellNode, rowNode, tableNode];
+    },
+  );
+  // TODO: nested tables may violate this
+  invariant(
+    anchorTable.is(focusTable),
+    'Expected TableSelection anchor and focus to be in the same table',
+  );
+  return {
+    anchorCell,
+    anchorNode,
+    anchorRow,
+    anchorTable,
+    focusCell,
+    focusNode,
+    focusRow,
+    focusTable,
+  };
+}
 
 export class TableSelection implements BaseSelection {
   tableKey: NodeKey;
@@ -61,6 +118,23 @@ export class TableSelection implements BaseSelection {
 
   getStartEndPoints(): [PointType, PointType] {
     return [this.anchor, this.focus];
+  }
+
+  /**
+   * {@link $createTableSelection} unfortunately makes it very easy to create
+   * nonsense selections, so we have a method to see if the selection probably
+   * makes sense.
+   *
+   * @returns true if the TableSelection is (probably) valid
+   */
+  isValid(): boolean {
+    return (
+      this.tableKey !== 'root' &&
+      this.anchor.key !== 'root' &&
+      this.anchor.type === 'element' &&
+      this.focus.key !== 'root' &&
+      this.focus.type === 'element'
+    );
   }
 
   /**
@@ -155,23 +229,13 @@ export class TableSelection implements BaseSelection {
 
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): TableSelectionShape {
-    const anchorCellNode = $getNodeByKey(this.anchor.key);
-    invariant(
-      $isTableCellNode(anchorCellNode),
-      'Expected TableSelection anchor to be (or a child of) TableCellNode',
-    );
-    const anchorCellNodeRect = $getTableCellNodeRect(anchorCellNode);
+    const {anchorCell, focusCell} = $getCellNodes(this);
+    const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);
     invariant(
       anchorCellNodeRect !== null,
       'getCellRect: expected to find AnchorNode',
     );
-
-    const focusCellNode = $getNodeByKey(this.focus.key);
-    invariant(
-      $isTableCellNode(focusCellNode),
-      'Expected TableSelection focus to be (or a child of) TableCellNode',
-    );
-    const focusCellNodeRect = $getTableCellNodeRect(focusCellNode);
+    const focusCellNodeRect = $getTableCellNodeRect(focusCell);
     invariant(
       focusCellNodeRect !== null,
       'getCellRect: expected to find focusCellNode',
@@ -204,34 +268,15 @@ export class TableSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
+    if (!this.isValid()) {
+      return [];
+    }
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
       return cachedNodes;
     }
 
-    const anchorNode = this.anchor.getNode();
-    const focusNode = this.focus.getNode();
-    const anchorCell = $findMatchingParent(anchorNode, $isTableCellNode);
-    // todo replace with triplet
-    const focusCell = $findMatchingParent(focusNode, $isTableCellNode);
-    invariant(
-      $isTableCellNode(anchorCell),
-      'Expected TableSelection anchor to be (or a child of) TableCellNode',
-    );
-    invariant(
-      $isTableCellNode(focusCell),
-      'Expected TableSelection focus to be (or a child of) TableCellNode',
-    );
-    const anchorRow = anchorCell.getParent();
-    invariant(
-      $isTableRowNode(anchorRow),
-      'Expected anchorCell to have a parent TableRowNode',
-    );
-    const tableNode = anchorRow.getParent();
-    invariant(
-      $isTableNode(tableNode),
-      'Expected tableNode to have a parent TableNode',
-    );
+    const {anchorTable: tableNode, anchorCell, focusCell} = $getCellNodes(this);
 
     const focusCellGrid = focusCell.getParents()[1];
     if (focusCellGrid !== tableNode) {
@@ -381,6 +426,11 @@ export function $isTableSelection(x: unknown): x is TableSelection {
 }
 
 export function $createTableSelection(): TableSelection {
+  // TODO this is a suboptimal design, it doesn't make sense to have
+  // a table selection that isn't associated with a table. This
+  // constructor should have required argumnets and in __DEV__ we
+  // should check that they point to a table and are element points to
+  // cell nodes of that table.
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new TableSelection('root', anchor, focus);

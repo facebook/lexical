@@ -31,6 +31,7 @@ import {
   TableRowNode,
   TableSelection,
 } from '@lexical/table';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getRoot,
@@ -672,23 +673,60 @@ function TableCellActionMenuContainer({
         tableCellNodeFromSelection.getKey(),
       );
 
-      if (tableCellParentNodeDOM == null) {
+      if (
+        tableCellParentNodeDOM == null ||
+        !tableCellNodeFromSelection.isAttached()
+      ) {
         setTableMenuCellNode(null);
         return;
       }
 
-      setTableMenuCellNode(tableCellNodeFromSelection);
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(
+        tableCellNodeFromSelection,
+      );
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(tableNode.getKey()),
+      );
+
+      invariant(
+        tableElement !== null,
+        'TableActionMenu: Expected to find tableElement in DOM',
+      );
+
+      const tableObserver = getTableObserverFromTableElement(tableElement);
+
+      setTableMenuCellNode(
+        tableObserver && tableObserver.isSelecting
+          ? null
+          : tableCellNodeFromSelection,
+      );
     } else if (!activeElement) {
       setTableMenuCellNode(null);
     }
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(() => {
+    // We call the $moveMenu callback every time the mouse button is released
+    // and after every update so that we can hide it when the table observer is
+    // selecting
+    const callback = () => {
       editor.getEditorState().read(() => {
         $moveMenu();
       });
-    });
+    };
+    const delayedCallback = () => setTimeout(callback, 0);
+    return mergeRegister(
+      editor.registerUpdateListener(callback),
+      editor.registerRootListener((rootElement, prevRootElement) => {
+        if (prevRootElement) {
+          prevRootElement.removeEventListener('mouseup', delayedCallback);
+        }
+        if (rootElement) {
+          rootElement.addEventListener('mouseup', delayedCallback);
+        }
+      }),
+    );
   });
 
   useEffect(() => {

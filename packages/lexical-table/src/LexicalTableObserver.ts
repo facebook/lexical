@@ -105,6 +105,7 @@ export class TableObserver {
   shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
+  nextFocus: {focusCell: TableDOMCell; override: boolean} | null;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -130,6 +131,7 @@ export class TableObserver {
     this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};
+    this.nextFocus = null;
     this.trackTable();
   }
 
@@ -292,6 +294,32 @@ export class TableObserver {
     }
     return false;
   }
+
+  /**
+   * @internal
+   * When handling mousemove events we track what the focus cell should be, but
+   * the DOM selection may end up somewhere else entirely. We don't have an elegant
+   * way to handle this after the DOM selection has been resolved in a
+   * SELECTION_CHANGE_COMMAND callback.
+   */
+  setNextFocus(
+    nextFocus: null | {focusCell: TableDOMCell; override: boolean},
+  ): void {
+    this.nextFocus = nextFocus;
+  }
+
+  /** @internal */
+  getAndClearNextFocus(): {
+    focusCell: TableDOMCell;
+    override: boolean;
+  } | null {
+    const {nextFocus} = this;
+    if (nextFocus !== null) {
+      this.nextFocus = null;
+    }
+    return nextFocus;
+  }
+
   setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false) {
     const editor = this.editor;
     editor.update(() => {

@@ -88,6 +88,8 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  KEY_SPACE_COMMAND,
+  KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -549,6 +551,19 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
   return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
 }
 
+function $resetCapitalization(selection: RangeSelection): void {
+  const capitalizationTypes: TextFormatType[] = [
+    'lowercase',
+    'titlecase',
+    'uppercase',
+  ];
+  capitalizationTypes.forEach((type) => {
+    if (selection.hasFormat(type)) {
+      selection.toggleFormat(type);
+    }
+  });
+}
+
 export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -900,6 +915,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        $resetCapitalization(selection);
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
@@ -1060,6 +1076,34 @@ export function registerRichText(editor: LexicalEditor): () => void {
           onPasteForRichText(event, editor);
           return true;
         }
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_SPACE_COMMAND,
+      (_) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+
+        $resetCapitalization(selection);
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_TAB_COMMAND,
+      (_) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+
+        $resetCapitalization(selection);
 
         return false;
       },

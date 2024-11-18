@@ -221,6 +221,15 @@ export function toggleTextFormatType(
     newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
   } else if (type === 'superscript') {
     newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
+  } else if (type === 'lowercase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.titlecase;
+  } else if (type === 'uppercase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.titlecase;
+  } else if (type === 'titlecase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
   }
   return newFormat;
 }

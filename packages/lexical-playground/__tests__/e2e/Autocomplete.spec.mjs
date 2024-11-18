@@ -84,7 +84,7 @@ test.describe('Autocomplete', () => {
     await toggleStrikethrough(page);
     await increaseFontSize(page);
 
-    await page.keyboard.type('MLH Fell');
+    await page.keyboard.type('Test');
     await sleep(500);
 
     await assertHTML(
@@ -97,13 +97,13 @@ test.describe('Autocomplete', () => {
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
             data-lexical-text="true">
-            MLH Fell
+            Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
             style="font-size: 17px;"
             data-lexical-text="true">
-            owship (TAB)
+            imonials (TAB)
           </strong>
         </p>
       `,
@@ -115,7 +115,7 @@ test.describe('Autocomplete', () => {
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
             data-lexical-text="true">
-            MLH Fell
+            Test
           </strong>
         </p>
       `,
@@ -141,13 +141,13 @@ test.describe('Autocomplete', () => {
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
             data-lexical-text="true">
-            MLH Fell
+            Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
             data-lexical-text="true">
-            owship
+            imonials
           </strong>
           <span style="font-size: 15px;" data-lexical-text="true">2024</span>
         </p>

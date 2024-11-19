@@ -217,8 +217,8 @@ describe('LexicalTextNode tests', () => {
     ['superscript', IS_SUPERSCRIPT],
     ['highlight', IS_HIGHLIGHT],
     ['lowercase', IS_LOWERCASE],
-    ['titlecase', IS_TITLECASE],
     ['uppercase', IS_UPPERCASE],
+    ['titlecase', IS_TITLECASE],
   ] as const)('%s flag', (formatFlag: TextFormatType, stateFormat: number) => {
     const flagPredicate = (node: TextNode) => node.hasFormat(formatFlag);
     const flagToggle = (node: TextNode) => node.toggleFormat(formatFlag);
@@ -334,7 +334,7 @@ describe('LexicalTextNode tests', () => {
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      const formats: TextFormatType[] = ['lowercase', 'titlecase', 'uppercase'];
+      const formats: TextFormatType[] = ['lowercase', 'uppercase', 'titlecase'];
 
       for (const format of formats) {
         textNode.toggleFormat(format);
@@ -356,7 +356,7 @@ describe('LexicalTextNode tests', () => {
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      const formats: TextFormatType[] = ['lowercase', 'titlecase', 'uppercase'];
+      const formats: TextFormatType[] = ['lowercase', 'uppercase', 'titlecase'];
 
       for (const format of formats) {
         textNode.toggleFormat(format);
@@ -691,16 +691,16 @@ describe('LexicalTextNode tests', () => {
         '<span class="my-lowercase-class">My text node</span>',
       ],
       [
-        'titlecase',
-        IS_TITLECASE,
-        'My text node',
-        '<span class="my-titlecase-class">My text node</span>',
-      ],
-      [
         'uppercase',
         IS_UPPERCASE,
         'My text node',
         '<span class="my-uppercase-class">My text node</span>',
+      ],
+      [
+        'titlecase',
+        IS_TITLECASE,
+        'My text node',
+        '<span class="my-titlecase-class">My text node</span>',
       ],
       [
         'underline + strikethrough',

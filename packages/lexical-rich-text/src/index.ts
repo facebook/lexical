@@ -554,8 +554,8 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
 function $resetCapitalization(selection: RangeSelection): void {
   const capitalizationTypes: TextFormatType[] = [
     'lowercase',
-    'titlecase',
     'uppercase',
+    'titlecase',
   ];
   capitalizationTypes.forEach((type) => {
     if (selection.hasFormat(type)) {

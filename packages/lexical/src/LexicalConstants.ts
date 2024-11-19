@@ -45,8 +45,8 @@ export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
 export const IS_HIGHLIGHT = 1 << 7;
 export const IS_LOWERCASE = 1 << 8;
-export const IS_TITLECASE = 1 << 9;
-export const IS_UPPERCASE = 1 << 10;
+export const IS_UPPERCASE = 1 << 9;
+export const IS_TITLECASE = 1 << 10;
 
 export const IS_ALL_FORMATTING =
   IS_BOLD |
@@ -58,8 +58,8 @@ export const IS_ALL_FORMATTING =
   IS_SUPERSCRIPT |
   IS_HIGHLIGHT |
   IS_LOWERCASE |
-  IS_TITLECASE |
-  IS_UPPERCASE;
+  IS_UPPERCASE |
+  IS_TITLECASE;
 
 // Text node details
 export const IS_DIRECTIONLESS = 1;

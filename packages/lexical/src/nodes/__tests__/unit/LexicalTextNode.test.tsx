@@ -334,20 +334,18 @@ describe('LexicalTextNode tests', () => {
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      textNode.toggleFormat('lowercase');
-      expect(textNode.hasFormat('lowercase')).toBe(true);
-      expect(textNode.hasFormat('titlecase')).toBe(false);
-      expect(textNode.hasFormat('uppercase')).toBe(false);
+      const formats: TextFormatType[] = ['lowercase', 'titlecase', 'uppercase'];
 
-      textNode.toggleFormat('titlecase');
-      expect(textNode.hasFormat('titlecase')).toBe(true);
-      expect(textNode.hasFormat('lowercase')).toBe(false);
-      expect(textNode.hasFormat('uppercase')).toBe(false);
-
-      textNode.toggleFormat('uppercase');
-      expect(textNode.hasFormat('uppercase')).toBe(true);
-      expect(textNode.hasFormat('lowercase')).toBe(false);
-      expect(textNode.hasFormat('titlecase')).toBe(false);
+      for (const format of formats) {
+        textNode.toggleFormat(format);
+        formats.forEach((f) => {
+          if (f === format) {
+            expect(textNode.hasFormat(f)).toBe(true);
+          } else {
+            expect(textNode.hasFormat(f)).toBe(false);
+          }
+        });
+      }
     });
   });
 
@@ -358,23 +356,13 @@ describe('LexicalTextNode tests', () => {
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      textNode.toggleFormat('lowercase');
-      textNode.toggleFormat('lowercase');
-      expect(textNode.hasFormat('lowercase')).toBe(false);
-      expect(textNode.hasFormat('titlecase')).toBe(false);
-      expect(textNode.hasFormat('uppercase')).toBe(false);
+      const formats: TextFormatType[] = ['lowercase', 'titlecase', 'uppercase'];
 
-      textNode.toggleFormat('titlecase');
-      textNode.toggleFormat('titlecase');
-      expect(textNode.hasFormat('titlecase')).toBe(false);
-      expect(textNode.hasFormat('lowercase')).toBe(false);
-      expect(textNode.hasFormat('uppercase')).toBe(false);
-
-      textNode.toggleFormat('uppercase');
-      textNode.toggleFormat('uppercase');
-      expect(textNode.hasFormat('uppercase')).toBe(false);
-      expect(textNode.hasFormat('lowercase')).toBe(false);
-      expect(textNode.hasFormat('titlecase')).toBe(false);
+      for (const format of formats) {
+        textNode.toggleFormat(format);
+        textNode.toggleFormat(format);
+        formats.forEach((f) => expect(textNode.hasFormat(f)).toBe(false));
+      }
     });
   });
 

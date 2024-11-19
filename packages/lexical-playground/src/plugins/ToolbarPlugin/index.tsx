@@ -616,8 +616,8 @@ export default function ToolbarPlugin({
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
       );
       updateToolbarState('isLowercase', selection.hasFormat('lowercase'));
-      updateToolbarState('isTitlecase', selection.hasFormat('titlecase'));
       updateToolbarState('isUppercase', selection.hasFormat('uppercase'));
+      updateToolbarState('isTitlecase', selection.hasFormat('titlecase'));
     }
   }, [activeEditor, editor, updateToolbarState]);
 
@@ -908,21 +908,6 @@ export default function ToolbarPlugin({
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'titlecase');
-              }}
-              className={
-                'item wide ' + dropDownActiveClass(toolbarState.isTitlecase)
-              }
-              title="Titlecase"
-              aria-label="Format text to titlecase">
-              <div className="icon-text-container">
-                <i className="icon titlecase" />
-                <span className="text">Titlecase</span>
-              </div>
-              <span className="shortcut">{SHORTCUTS.TITLECASE}</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
               }}
               className={
@@ -935,6 +920,21 @@ export default function ToolbarPlugin({
                 <span className="text">UPPERCASE</span>
               </div>
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'titlecase');
+              }}
+              className={
+                'item wide ' + dropDownActiveClass(toolbarState.isTitlecase)
+              }
+              title="Titlecase"
+              aria-label="Format text to titlecase">
+              <div className="icon-text-container">
+                <i className="icon titlecase" />
+                <span className="text">Title Case</span>
+              </div>
+              <span className="shortcut">{SHORTCUTS.TITLECASE}</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

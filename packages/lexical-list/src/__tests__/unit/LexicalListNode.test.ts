@@ -277,23 +277,25 @@ describe('LexicalListNode tests', () => {
       editor.read(() => {
         const root = $getRoot();
 
-        const listNode = root.getFirstChild(); // returns type LexicalNode instead of ListNode
+        const listNode = root.getFirstChild();
         expect(listNode).not.toBeNull();
-        expect($isListNode(listNode)).toBe(true); // passes this assertion
+        expect($isListNode(listNode)).toBe(true);
 
-        const firstChild = listNode?.getFirstChild(); // Property 'getFirstChild' does not exist on type 'LexicalNode'
-        expect($isListItemNode(firstChild)).toBe(true);
-
-        if ($isListItemNode(firstChild)) {
-          const wrappedNode = firstChild?.getFirstChild();
-          expect(wrappedNode).not.toBeNull();
-          expect($isLinkNode(wrappedNode)).toBe(true);
-
-          expect((wrappedNode as LinkNode).getURL()).toBe(
-            'https://lexical.dev/',
-          );
-        } else {
+        if ($isListNode(listNode)) {
+          const firstChild = listNode.getFirstChild();
           expect($isListItemNode(firstChild)).toBe(true);
+
+          if ($isListItemNode(firstChild)) {
+            const wrappedNode = firstChild?.getFirstChild();
+            expect(wrappedNode).not.toBeNull();
+            expect($isLinkNode(wrappedNode)).toBe(true);
+
+            expect((wrappedNode as LinkNode).getURL()).toBe(
+              'https://lexical.dev/',
+            );
+          } else {
+            expect($isListItemNode(firstChild)).toBe(true);
+          }
         }
       });
     });

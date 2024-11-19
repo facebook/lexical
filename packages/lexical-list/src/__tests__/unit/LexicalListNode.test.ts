@@ -6,7 +6,7 @@
  *
  */
 import {$isLinkNode, LinkNode} from '@lexical/link';
-import {ParagraphNode, TextNode} from 'lexical';
+import {$getRoot, ParagraphNode, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {
@@ -270,18 +270,30 @@ describe('LexicalListNode tests', () => {
 
         listNode.append(linkNode);
 
-        const firstChild = listNode.getFirstChild();
+        const root = $getRoot();
+        root.append(listNode);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+
+        const listNode = root.getFirstChild(); // returns type LexicalNode instead of ListNode
+        expect(listNode).not.toBeNull();
+        expect($isListNode(listNode)).toBe(true); // passes this assertion
+
+        const firstChild = listNode?.getFirstChild(); // Property 'getFirstChild' does not exist on type 'LexicalNode'
         expect($isListItemNode(firstChild)).toBe(true);
 
         if ($isListItemNode(firstChild)) {
           const wrappedNode = firstChild?.getFirstChild();
+          expect(wrappedNode).not.toBeNull();
           expect($isLinkNode(wrappedNode)).toBe(true);
 
           expect((wrappedNode as LinkNode).getURL()).toBe(
             'https://lexical.dev/',
           );
         } else {
-          throw new Error('First child is not a ListItemNode');
+          expect($isListItemNode(firstChild)).toBe(true);
         }
       });
     });

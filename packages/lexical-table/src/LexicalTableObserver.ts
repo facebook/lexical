@@ -24,6 +24,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $setSelection,
+  getDOMSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -38,7 +39,6 @@ import {
 import {
   $findTableNode,
   $updateDOMForSelection,
-  getDOMSelection,
   getTable,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -263,6 +263,7 @@ export class TableObserver {
       this.tableSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
+      this.updateDOMSelection();
       $updateDOMForSelection(editor, this.table, this.tableSelection);
     } else if (selection == null) {
       this.clearHighlight();
@@ -320,6 +321,22 @@ export class TableObserver {
     return nextFocus;
   }
 
+  /** @internal */
+  updateDOMSelection() {
+    if (this.anchorCell !== null && this.focusCell !== null) {
+      const domSelection = getDOMSelection(this.editor._window);
+      // Collapse the selection
+      if (domSelection) {
+        domSelection.setBaseAndExtent(
+          this.anchorCell.elem,
+          0,
+          this.focusCell.elem,
+          this.focusCell.elem.children.length,
+        );
+      }
+    }
+  }
+
   setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false) {
     const editor = this.editor;
     editor.update(() => {
@@ -328,19 +345,6 @@ export class TableObserver {
       const cellX = cell.x;
       const cellY = cell.y;
       this.focusCell = cell;
-
-      if (this.anchorCell !== null) {
-        const domSelection = getDOMSelection(editor._window);
-        // Collapse the selection
-        if (domSelection) {
-          domSelection.setBaseAndExtent(
-            this.anchorCell.elem,
-            0,
-            this.focusCell.elem,
-            0,
-          );
-        }
-      }
 
       if (
         !this.isHighlightingCells &&

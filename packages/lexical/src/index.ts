@@ -179,6 +179,7 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getDOMSelection,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
   isBlockDomNode,

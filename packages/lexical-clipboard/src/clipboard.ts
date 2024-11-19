@@ -22,6 +22,7 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
+  getDOMSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -29,11 +30,7 @@ import {
   SerializedElementNode,
   SerializedTextNode,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
-
-const getDOMSelection = (targetWindow: Window | null): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;

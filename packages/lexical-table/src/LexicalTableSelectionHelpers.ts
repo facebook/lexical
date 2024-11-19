@@ -51,6 +51,7 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -63,7 +64,6 @@ import {
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -78,11 +78,6 @@ import {$isTableSelection} from './LexicalTableSelection';
 import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
-
-export const getDOMSelection = (
-  targetWindow: Window | null,
-): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 const isMouseDownOnEvent = (event: MouseEvent) => {
   return (event.buttons & 1) === 1;
@@ -106,6 +101,10 @@ export function getTableElement<T extends HTMLElement | null>(
   return element;
 }
 
+export function getEditorWindow(editor: LexicalEditor): Window | null {
+  return editor._window;
+}
+
 export function applyTableHandlers(
   tableNode: TableNode,
   element: HTMLElement,
@@ -113,13 +112,13 @@ export function applyTableHandlers(
   hasTabHandler: boolean,
 ): TableObserver {
   const rootElement = editor.getRootElement();
-
-  if (rootElement === null) {
-    throw new Error('No root element.');
-  }
+  const editorWindow = getEditorWindow(editor);
+  invariant(
+    rootElement !== null && editorWindow !== null,
+    'applyTableHandlers: editor has no root element set',
+  );
 
   const tableObserver = new TableObserver(editor, tableNode.getKey());
-  const editorWindow = editor._window || window;
 
   const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
@@ -913,7 +912,7 @@ export function applyTableHandlers(
           selection.tableKey === tableNode.getKey()
         ) {
           // if selection goes outside of the table we need to change it to Range selection
-          const domSelection = getDOMSelection(editor._window);
+          const domSelection = getDOMSelection(editorWindow);
           if (
             domSelection &&
             domSelection.anchorNode &&
@@ -1698,7 +1697,7 @@ function $handleArrowKey(
     if (anchor.type === 'element') {
       edgeSelectionRect = anchorDOM.getBoundingClientRect();
     } else {
-      const domSelection = window.getSelection();
+      const domSelection = getDOMSelection(getEditorWindow(editor));
       if (domSelection === null || domSelection.rangeCount === 0) {
         return false;
       }
@@ -1980,7 +1979,7 @@ function $getTableEdgeCursorPosition(
   }
 
   // TODO: Add support for nested tables
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection(getEditorWindow(editor));
   if (!domSelection) {
     return undefined;
   }

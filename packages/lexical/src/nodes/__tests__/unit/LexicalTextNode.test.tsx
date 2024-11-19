@@ -35,10 +35,13 @@ import {
   IS_CODE,
   IS_HIGHLIGHT,
   IS_ITALIC,
+  IS_LOWERCASE,
   IS_STRIKETHROUGH,
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
+  IS_TITLECASE,
   IS_UNDERLINE,
+  IS_UPPERCASE,
 } from '../../../LexicalConstants';
 import {
   $getCompositionKey,
@@ -54,9 +57,12 @@ const editorConfig = Object.freeze({
       code: 'my-code-class',
       highlight: 'my-highlight-class',
       italic: 'my-italic-class',
+      lowercase: 'my-lowercase-class',
       strikethrough: 'my-strikethrough-class',
+      titlecase: 'my-titlecase-class',
       underline: 'my-underline-class',
       underlineStrikethrough: 'my-underline-strikethrough-class',
+      uppercase: 'my-uppercase-class',
     },
   },
 });
@@ -210,6 +216,9 @@ describe('LexicalTextNode tests', () => {
     ['subscript', IS_SUBSCRIPT],
     ['superscript', IS_SUPERSCRIPT],
     ['highlight', IS_HIGHLIGHT],
+    ['lowercase', IS_LOWERCASE],
+    ['titlecase', IS_TITLECASE],
+    ['uppercase', IS_UPPERCASE],
   ] as const)('%s flag', (formatFlag: TextFormatType, stateFormat: number) => {
     const flagPredicate = (node: TextNode) => node.hasFormat(formatFlag);
     const flagToggle = (node: TextNode) => node.toggleFormat(formatFlag);
@@ -315,6 +324,57 @@ describe('LexicalTextNode tests', () => {
       textNode.toggleFormat('superscript');
       expect(textNode.hasFormat('superscript')).toBe(false);
       expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
+  test('capitalization formats are mutually exclusive', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+
+      textNode.toggleFormat('lowercase');
+      expect(textNode.hasFormat('lowercase')).toBe(true);
+      expect(textNode.hasFormat('titlecase')).toBe(false);
+      expect(textNode.hasFormat('uppercase')).toBe(false);
+
+      textNode.toggleFormat('titlecase');
+      expect(textNode.hasFormat('titlecase')).toBe(true);
+      expect(textNode.hasFormat('lowercase')).toBe(false);
+      expect(textNode.hasFormat('uppercase')).toBe(false);
+
+      textNode.toggleFormat('uppercase');
+      expect(textNode.hasFormat('uppercase')).toBe(true);
+      expect(textNode.hasFormat('lowercase')).toBe(false);
+      expect(textNode.hasFormat('titlecase')).toBe(false);
+    });
+  });
+
+  test('clearing one capitalization format does not set another', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+
+      textNode.toggleFormat('lowercase');
+      textNode.toggleFormat('lowercase');
+      expect(textNode.hasFormat('lowercase')).toBe(false);
+      expect(textNode.hasFormat('titlecase')).toBe(false);
+      expect(textNode.hasFormat('uppercase')).toBe(false);
+
+      textNode.toggleFormat('titlecase');
+      textNode.toggleFormat('titlecase');
+      expect(textNode.hasFormat('titlecase')).toBe(false);
+      expect(textNode.hasFormat('lowercase')).toBe(false);
+      expect(textNode.hasFormat('uppercase')).toBe(false);
+
+      textNode.toggleFormat('uppercase');
+      textNode.toggleFormat('uppercase');
+      expect(textNode.hasFormat('uppercase')).toBe(false);
+      expect(textNode.hasFormat('lowercase')).toBe(false);
+      expect(textNode.hasFormat('titlecase')).toBe(false);
     });
   });
 
@@ -637,6 +697,24 @@ describe('LexicalTextNode tests', () => {
         '<code spellcheck="false"><span class="my-code-class">My text node</span></code>',
       ],
       [
+        'lowercase',
+        IS_LOWERCASE,
+        'My text node',
+        '<span class="my-lowercase-class">My text node</span>',
+      ],
+      [
+        'titlecase',
+        IS_TITLECASE,
+        'My text node',
+        '<span class="my-titlecase-class">My text node</span>',
+      ],
+      [
+        'uppercase',
+        IS_UPPERCASE,
+        'My text node',
+        '<span class="my-uppercase-class">My text node</span>',
+      ],
+      [
         'underline + strikethrough',
         IS_UNDERLINE | IS_STRIKETHROUGH,
         'My text node',
@@ -669,15 +747,16 @@ describe('LexicalTextNode tests', () => {
         '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
       ],
       [
-        'code + underline + strikethrough + bold + italic + highlight',
+        'code + underline + strikethrough + bold + italic + highlight + uppercase',
         IS_CODE |
           IS_UNDERLINE |
           IS_STRIKETHROUGH |
           IS_BOLD |
           IS_ITALIC |
-          IS_HIGHLIGHT,
+          IS_HIGHLIGHT |
+          IS_UPPERCASE,
         'My text node',
-        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
+        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class my-uppercase-class">My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {

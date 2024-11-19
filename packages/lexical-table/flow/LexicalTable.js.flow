@@ -162,6 +162,7 @@ declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
+  hasTabHandler: boolean,
 ): TableObserver;
 
 declare export function $getElementForTableNode(

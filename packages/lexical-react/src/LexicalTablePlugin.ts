@@ -20,11 +20,13 @@ import {
   $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
+  $getTableAndElementByKey,
   $isTableCellNode,
-  $isTableNode,
   $isTableRowNode,
   applyTableHandlers,
+  getTableElement,
   INSERT_TABLE_COMMAND,
+  setScrollableTablesActive,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -36,23 +38,49 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getNodeByKey,
   $isTextNode,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
+export interface TablePluginProps {
+  /**
+   * When `false` (default `true`), merged cell support (colspan and rowspan) will be disabled and all
+   * tables will be forced into a regular grid with 1x1 table cells.
+   */
+  hasCellMerge?: boolean;
+  /**
+   * When `false` (default `true`), the background color of TableCellNode will always be removed.
+   */
+  hasCellBackgroundColor?: boolean;
+  /**
+   * When `true` (default `true`), the tab key can be used to navigate table cells.
+   */
+  hasTabHandler?: boolean;
+  /**
+   * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
+   */
+  hasHorizontalScroll?: boolean;
+}
+
+/**
+ * A plugin to enable all of the features of Lexical's TableNode.
+ *
+ * @param props - See type for documentation
+ * @returns An element to render in your LexicalComposer
+ */
 export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
   hasTabHandler = true,
-}: {
-  hasCellMerge?: boolean;
-  hasCellBackgroundColor?: boolean;
-  hasTabHandler?: boolean;
-}): JSX.Element | null {
+  hasHorizontalScroll = false,
+}: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    setScrollableTablesActive(editor, hasHorizontalScroll);
+  }, [editor, hasHorizontalScroll]);
 
   useEffect(() => {
     if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
@@ -122,7 +150,7 @@ export function TablePlugin({
       nodeKey: NodeKey,
       dom: HTMLElement,
     ) => {
-      const tableElement = dom as HTMLTableElementWithWithTableSelectionState;
+      const tableElement = getTableElement(tableNode, dom);
       const tableSelection = applyTableHandlers(
         tableNode,
         tableElement,
@@ -135,34 +163,31 @@ export function TablePlugin({
     const unregisterMutationListener = editor.registerMutationListener(
       TableNode,
       (nodeMutations) => {
-        for (const [nodeKey, mutation] of nodeMutations) {
-          if (mutation === 'created' || mutation === 'updated') {
-            const tableSelection = tableSelections.get(nodeKey);
-            const dom = editor.getElementByKey(nodeKey);
-            if (!(tableSelection && dom === tableSelection[1])) {
-              // The update created a new DOM node, destroy the existing TableObserver
-              if (tableSelection) {
-                tableSelection[0].removeListeners();
-                tableSelections.delete(nodeKey);
-              }
-              if (dom !== null) {
-                // Create a new TableObserver
-                editor.getEditorState().read(() => {
-                  const tableNode = $getNodeByKey<TableNode>(nodeKey);
-                  if ($isTableNode(tableNode)) {
-                    initializeTableNode(tableNode, nodeKey, dom);
-                  }
-                });
+        editor.getEditorState().read(
+          () => {
+            for (const [nodeKey, mutation] of nodeMutations) {
+              const tableSelection = tableSelections.get(nodeKey);
+              if (mutation === 'created' || mutation === 'updated') {
+                const {tableNode, tableElement} =
+                  $getTableAndElementByKey(nodeKey);
+                if (tableSelection === undefined) {
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                } else if (tableElement !== tableSelection[1]) {
+                  // The update created a new DOM node, destroy the existing TableObserver
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                }
+              } else if (mutation === 'destroyed') {
+                if (tableSelection !== undefined) {
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                }
               }
             }
-          } else if (mutation === 'destroyed') {
-            const tableSelection = tableSelections.get(nodeKey);
-            if (tableSelection !== undefined) {
-              tableSelection[0].removeListeners();
-              tableSelections.delete(nodeKey);
-            }
-          }
-        }
+          },
+          {editor},
+        );
       },
       {skipInitialization: false},
     );

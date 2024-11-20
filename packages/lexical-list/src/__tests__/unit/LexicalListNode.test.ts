@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {$getRoot, ParagraphNode, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
@@ -265,8 +265,8 @@ describe('LexicalListNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const listNode = new ListNode('bullet', 1);
-        const linkNode = new LinkNode('https://lexical.dev/');
+        const listNode = $createListNode('bullet', 1);
+        const linkNode = $createLinkNode('https://lexical.dev/');
 
         listNode.append(linkNode);
 

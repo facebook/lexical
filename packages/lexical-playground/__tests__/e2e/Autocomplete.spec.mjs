@@ -51,7 +51,7 @@ test.describe('Autocomplete', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Sort by alpha</span>
-          <span contenteditable="false" data-lexical-decorator="true"></span>
+          <span data-lexical-text="true"></span>
           <br />
         </p>
       `,
@@ -118,6 +118,7 @@ test.describe('Autocomplete', () => {
             data-lexical-text="true">
             Test
           </strong>
+          <span data-lexical-text="true"></span>
         </p>
       `,
     );

@@ -247,7 +247,7 @@ function TableActionMenu({
 
         const tableObserver = getTableObserverFromTableElement(tableElement);
         if (tableObserver !== null) {
-          tableObserver.clearHighlight();
+          tableObserver.$clearHighlight();
         }
 
         tableNode.markDirty();
@@ -759,11 +759,12 @@ function TableCellActionMenuContainer({
     };
     const delayedCallback = () => {
       if (timeoutId === undefined) {
-        timeoutId = setTimeout(callback, 1);
+        timeoutId = setTimeout(callback, 0);
       }
       return false;
     };
     return mergeRegister(
+      editor.registerUpdateListener(delayedCallback),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         delayedCallback,

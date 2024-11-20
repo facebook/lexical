@@ -127,6 +127,9 @@ export function applyTableHandlers(
   );
 
   const createMouseHandlers = () => {
+    if (tableObserver.isSelecting) {
+      return;
+    }
     const onMouseUp = () => {
       tableObserver.isSelecting = false;
       editorWindow.removeEventListener('mouseup', onMouseUp);
@@ -163,11 +166,23 @@ export function applyTableHandlers(
           focusCell.x !== tableObserver.anchorX ||
           focusCell.y !== tableObserver.anchorY
         ) {
-          tableObserver.setFocusCellForSelection(focusCell);
+          editor.update(() => {
+            tableObserver.$setFocusCellForSelection(focusCell);
+          });
         }
       }
     };
-    return {onMouseMove, onMouseUp};
+    tableObserver.isSelecting = true;
+    editorWindow.addEventListener(
+      'mouseup',
+      onMouseUp,
+      tableObserver.listenerOptions,
+    );
+    editorWindow.addEventListener(
+      'mousemove',
+      onMouseMove,
+      tableObserver.listenerOptions,
+    );
   };
 
   const onMouseDown = (event: MouseEvent) => {
@@ -181,21 +196,12 @@ export function applyTableHandlers(
 
     const anchorCell = getDOMCellFromTarget(event.target as Node);
     if (anchorCell !== null) {
-      tableObserver.setAnchorCellForSelection(anchorCell);
+      editor.update(() => {
+        tableObserver.$setAnchorCellForSelection(anchorCell);
+      });
     }
 
-    const {onMouseUp, onMouseMove} = createMouseHandlers();
-    tableObserver.isSelecting = true;
-    editorWindow.addEventListener(
-      'mouseup',
-      onMouseUp,
-      tableObserver.listenerOptions,
-    );
-    editorWindow.addEventListener(
-      'mousemove',
-      onMouseMove,
-      tableObserver.listenerOptions,
-    );
+    createMouseHandlers();
   };
   tableElement.addEventListener(
     'mousedown',
@@ -217,7 +223,7 @@ export function applyTableHandlers(
         selection.tableKey === tableObserver.tableNodeKey &&
         rootElement.contains(target)
       ) {
-        tableObserver.clearHighlight();
+        tableObserver.$clearHighlight();
       }
     });
   };
@@ -294,7 +300,7 @@ export function applyTableHandlers(
     }
 
     if ($isTableSelection(selection)) {
-      tableObserver.clearText();
+      tableObserver.$clearText();
 
       return true;
     } else if ($isRangeSelection(selection)) {
@@ -317,7 +323,7 @@ export function applyTableHandlers(
         (isFocusInside && !isAnchorInside);
 
       if (selectionContainsPartialTable) {
-        tableObserver.clearText();
+        tableObserver.$clearText();
         return true;
       }
 
@@ -400,7 +406,7 @@ export function applyTableHandlers(
         event.preventDefault();
         event.stopPropagation();
       }
-      tableObserver.clearText();
+      tableObserver.$clearText();
 
       return true;
     }
@@ -466,7 +472,7 @@ export function applyTableHandlers(
         }
 
         if ($isTableSelection(selection)) {
-          tableObserver.formatCells(payload);
+          tableObserver.$formatCells(payload);
 
           return true;
         } else if ($isRangeSelection(selection)) {
@@ -550,7 +556,7 @@ export function applyTableHandlers(
         }
 
         if ($isTableSelection(selection)) {
-          tableObserver.clearHighlight();
+          tableObserver.$clearHighlight();
 
           return false;
         } else if ($isRangeSelection(selection)) {
@@ -790,7 +796,7 @@ export function applyTableHandlers(
               // The selection is already the correct table selection
               return false;
             } else {
-              tableObserver.setFocusCellForSelection(focusCell);
+              tableObserver.$setFocusCellForSelection(focusCell);
               return true;
             }
           }
@@ -888,21 +894,13 @@ export function applyTableHandlers(
             // Handle case when selection spans across multiple cells but still
             // has range selection, then we convert it into grid selection
             if (!anchorCellNode.is(focusCellNode)) {
-              tableObserver.setAnchorCellForSelection(
+              tableObserver.$setAnchorCellForSelection(
                 getObserverCellFromCellNode(anchorCellNode),
               );
-              tableObserver.setFocusCellForSelection(
+              tableObserver.$setFocusCellForSelection(
                 getObserverCellFromCellNode(focusCellNode),
                 true,
               );
-              if (!tableObserver.isSelecting) {
-                setTimeout(() => {
-                  const {onMouseUp, onMouseMove} = createMouseHandlers();
-                  tableObserver.isSelecting = true;
-                  editorWindow.addEventListener('mouseup', onMouseUp);
-                  editorWindow.addEventListener('mousemove', onMouseMove);
-                }, 0);
-              }
             }
           }
         } else if (
@@ -963,13 +961,13 @@ export function applyTableHandlers(
             $isTableSelection(selection) &&
             selection.tableKey === tableObserver.tableNodeKey
           ) {
-            tableObserver.updateTableTableSelection(selection);
+            tableObserver.$updateTableTableSelection(selection);
           } else if (
             !$isTableSelection(selection) &&
             $isTableSelection(prevSelection) &&
             prevSelection.tableKey === tableObserver.tableNodeKey
           ) {
-            tableObserver.updateTableTableSelection(null);
+            tableObserver.$updateTableTableSelection(null);
           }
           return false;
         }
@@ -1226,7 +1224,7 @@ export function $addHighlightStyleToTable(
   editor: LexicalEditor,
   tableSelection: TableObserver,
 ) {
-  tableSelection.disableHighlightStyle();
+  tableSelection.$disableHighlightStyle();
   $forEachTableCell(tableSelection.table, (cell) => {
     cell.highlighted = true;
     $addHighlightToDOM(editor, cell);
@@ -1237,7 +1235,7 @@ export function $removeHighlightStyleToTable(
   editor: LexicalEditor,
   tableObserver: TableObserver,
 ) {
-  tableObserver.enableHighlightStyle();
+  tableObserver.$enableHighlightStyle();
   $forEachTableCell(tableObserver.table, (cell) => {
     const elem = cell.elem;
     cell.highlighted = false;
@@ -1319,7 +1317,7 @@ const selectTableNodeInDirection = (
   }
 };
 
-const adjustFocusNodeInDirection = (
+const $adjustFocusNodeInDirection = (
   tableObserver: TableObserver,
   tableNode: TableNode,
   x: number,
@@ -1332,7 +1330,7 @@ const adjustFocusNodeInDirection = (
     case 'backward':
     case 'forward':
       if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
-        tableObserver.setFocusCellForSelection(
+        tableObserver.$setFocusCellForSelection(
           tableNode.getDOMCellFromCordsOrThrow(
             x + (isForward ? 1 : -1),
             y,
@@ -1344,7 +1342,7 @@ const adjustFocusNodeInDirection = (
       return true;
     case 'up':
       if (y !== 0) {
-        tableObserver.setFocusCellForSelection(
+        tableObserver.$setFocusCellForSelection(
           tableNode.getDOMCellFromCordsOrThrow(x, y - 1, tableObserver.table),
         );
 
@@ -1354,7 +1352,7 @@ const adjustFocusNodeInDirection = (
       }
     case 'down':
       if (y !== tableObserver.table.rows - 1) {
-        tableObserver.setFocusCellForSelection(
+        tableObserver.$setFocusCellForSelection(
           tableNode.getDOMCellFromCordsOrThrow(x, y + 1, tableObserver.table),
         );
 
@@ -1576,8 +1574,8 @@ function $handleArrowKey(
                 lastCellCoords.y,
                 tableObserver.table,
               );
-              tableObserver.setAnchorCellForSelection(firstCellDOM);
-              tableObserver.setFocusCellForSelection(lastCellDOM, true);
+              tableObserver.$setAnchorCellForSelection(firstCellDOM);
+              tableObserver.$setFocusCellForSelection(lastCellDOM, true);
               return true;
             }
           }
@@ -1740,8 +1738,8 @@ function $handleArrowKey(
           cords.y,
           tableObserver.table,
         );
-        tableObserver.setAnchorCellForSelection(cell);
-        tableObserver.setFocusCellForSelection(cell, true);
+        tableObserver.$setAnchorCellForSelection(cell);
+        tableObserver.$setFocusCellForSelection(cell, true);
       } else {
         return selectTableNodeInDirection(
           tableObserver,
@@ -1782,7 +1780,7 @@ function $handleArrowKey(
     ) {
       return false;
     }
-    tableObserver.updateTableTableSelection(selection);
+    tableObserver.$updateTableTableSelection(selection);
 
     const grid = getTable(tableNodeFromSelection, tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
@@ -1791,13 +1789,13 @@ function $handleArrowKey(
       cordsAnchor.y,
       grid,
     );
-    tableObserver.setAnchorCellForSelection(anchorCell);
+    tableObserver.$setAnchorCellForSelection(anchorCell);
 
     stopEvent(event);
 
     if (event.shiftKey) {
       const cords = tableNode.getCordsFromCellNode(focusCellNode, grid);
-      return adjustFocusNodeInDirection(
+      return $adjustFocusNodeInDirection(
         tableObserver,
         tableNodeFromSelection,
         cords.x,

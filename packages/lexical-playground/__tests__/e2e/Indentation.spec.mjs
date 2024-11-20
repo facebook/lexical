@@ -18,7 +18,9 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Identation', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page}) =>
+    initialize({isCollab, page, tableHorizontalScroll: false}),
+  );
 
   test(`Can create content and indent and outdent it all`, async ({
     page,
@@ -106,6 +108,9 @@ test.describe('Identation', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -188,6 +193,9 @@ test.describe('Identation', () => {
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -281,6 +289,9 @@ test.describe('Identation', () => {
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -368,6 +379,9 @@ test.describe('Identation', () => {
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -445,6 +459,9 @@ test.describe('Identation', () => {
         <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"

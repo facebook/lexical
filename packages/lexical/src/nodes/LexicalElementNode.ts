@@ -6,14 +6,20 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
+import type {
+  DOMExportOutput,
+  LexicalPrivateDOM,
+  NodeKey,
+  SerializedLexicalNode,
+} from '../LexicalNode';
 import type {
   BaseSelection,
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {KlassConstructor, Spread} from 'lexical';
+import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTextNode, TextNode} from '../index';
@@ -33,6 +39,7 @@ import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
   $isRootOrShadowRoot,
+  isHTMLElement,
   removeFromParent,
 } from '../LexicalUtils';
 
@@ -63,6 +70,225 @@ export interface ElementNode {
   getTopLevelElementOrThrow(): ElementNode;
 }
 
+/**
+ * A utility class for managing the DOM children of an ElementNode
+ */
+export class ElementDOMSlot {
+  element: HTMLElement;
+  before: Node | null;
+  after: Node | null;
+  constructor(
+    /** The element returned by createDOM */
+    element: HTMLElement,
+    /** All managed children will be inserted before this node, if defined */
+    before?: Node | undefined | null,
+    /** All managed children will be inserted after this node, if defined */
+    after?: Node | undefined | null,
+  ) {
+    this.element = element;
+    this.before = before || null;
+    this.after = after || null;
+  }
+  /**
+   * Return a new ElementDOMSlot where all managed children will be inserted before this node
+   */
+  withBefore(before: Node | undefined | null): ElementDOMSlot {
+    return new ElementDOMSlot(this.element, before, this.after);
+  }
+  /**
+   * Return a new ElementDOMSlot where all managed children will be inserted after this node
+   */
+  withAfter(after: Node | undefined | null): ElementDOMSlot {
+    return new ElementDOMSlot(this.element, this.before, after);
+  }
+  /**
+   * Return a new ElementDOMSlot with an updated root element
+   */
+  withElement(element: HTMLElement): ElementDOMSlot {
+    return new ElementDOMSlot(element, this.before, this.after);
+  }
+  /**
+   * Insert the given child before this.before and any reconciler managed line break node,
+   * or append it if this.before is not defined
+   */
+  insertChild(dom: Node): this {
+    const before = this.before || this.getManagedLineBreak();
+    invariant(
+      before === null || before.parentElement === this.element,
+      'ElementDOMSlot.insertChild: before is not in element',
+    );
+    this.element.insertBefore(dom, before);
+    return this;
+  }
+  /**
+   * Remove the managed child from this container, will throw if it was not already there
+   */
+  removeChild(dom: Node): this {
+    invariant(
+      dom.parentElement === this.element,
+      'ElementDOMSlot.removeChild: dom is not in element',
+    );
+    this.element.removeChild(dom);
+    return this;
+  }
+  /**
+   * Replace managed child prevDom with dom. Will throw if prevDom is not a child
+   *
+   * @param dom The new node to replace prevDom
+   * @param prevDom the node that will be replaced
+   */
+  replaceChild(dom: Node, prevDom: Node): this {
+    invariant(
+      prevDom.parentElement === this.element,
+      'ElementDOMSlot.replaceChild: prevDom is not in element',
+    );
+    this.element.replaceChild(dom, prevDom);
+    return this;
+  }
+  /**
+   * Returns the first managed child of this node,
+   * which will either be this.after.nextSibling or this.element.firstChild,
+   * and will never be this.before if it is defined.
+   */
+  getFirstChild(): ChildNode | null {
+    const firstChild = this.after
+      ? this.after.nextSibling
+      : this.element.firstChild;
+    return firstChild === this.before ||
+      firstChild === this.getManagedLineBreak()
+      ? null
+      : firstChild;
+  }
+  /**
+   * @internal
+   */
+  getManagedLineBreak(): Exclude<
+    LexicalPrivateDOM['__lexicalLineBreak'],
+    undefined
+  > {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    return element.__lexicalLineBreak || null;
+  }
+  /** @internal */
+  setManagedLineBreak(
+    lineBreakType: null | 'empty' | 'line-break' | 'decorator',
+  ): void {
+    if (lineBreakType === null) {
+      this.removeManagedLineBreak();
+    } else {
+      const webkitHack = lineBreakType === 'decorator' && (IS_IOS || IS_SAFARI);
+      this.insertManagedLineBreak(webkitHack);
+    }
+  }
+
+  /** @internal */
+  removeManagedLineBreak(): void {
+    const br = this.getManagedLineBreak();
+    if (br) {
+      const element: HTMLElement & LexicalPrivateDOM = this.element;
+      const sibling = br.nodeName === 'IMG' ? br.nextSibling : null;
+      if (sibling) {
+        element.removeChild(sibling);
+      }
+      element.removeChild(br);
+      element.__lexicalLineBreak = undefined;
+    }
+  }
+  /** @internal */
+  insertManagedLineBreak(webkitHack: boolean): void {
+    const prevBreak = this.getManagedLineBreak();
+    if (prevBreak) {
+      if (webkitHack === (prevBreak.nodeName === 'IMG')) {
+        return;
+      }
+      this.removeManagedLineBreak();
+    }
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const before = this.before;
+    const br = document.createElement('br');
+    element.insertBefore(br, before);
+    if (webkitHack) {
+      const img = document.createElement('img');
+      img.setAttribute('data-lexical-linebreak', 'true');
+      img.style.cssText =
+        'display: inline !important; border: 0px !important; margin: 0px !important;';
+      img.alt = '';
+      element.insertBefore(img, br);
+      element.__lexicalLineBreak = img;
+    } else {
+      element.__lexicalLineBreak = br;
+    }
+  }
+
+  /**
+   * @internal
+   *
+   * Returns the offset of the first child
+   */
+  getFirstChildOffset(): number {
+    let i = 0;
+    for (let node = this.after; node !== null; node = node.previousSibling) {
+      i++;
+    }
+    return i;
+  }
+
+  /**
+   * @internal
+   */
+  resolveChildIndex(
+    element: ElementNode,
+    elementDOM: HTMLElement,
+    initialDOM: Node,
+    initialOffset: number,
+  ): [node: ElementNode, idx: number] {
+    if (initialDOM === this.element) {
+      const firstChildOffset = this.getFirstChildOffset();
+      return [
+        element,
+        Math.min(
+          firstChildOffset + element.getChildrenSize(),
+          Math.max(firstChildOffset, initialOffset),
+        ),
+      ];
+    }
+    // The resolved offset must be before or after the children
+    const initialPath = indexPath(elementDOM, initialDOM);
+    initialPath.push(initialOffset);
+    const elementPath = indexPath(elementDOM, this.element);
+    let offset = element.getIndexWithinParent();
+    for (let i = 0; i < elementPath.length; i++) {
+      const target = initialPath[i];
+      const source = elementPath[i];
+      if (target === undefined || target < source) {
+        break;
+      } else if (target > source) {
+        offset += 1;
+        break;
+      }
+    }
+    return [element.getParentOrThrow(), offset];
+  }
+}
+
+function indexPath(root: HTMLElement, child: Node): number[] {
+  const path: number[] = [];
+  let node: Node | null = child;
+  for (; node !== root && node !== null; node = child.parentNode) {
+    let i = 0;
+    for (
+      let sibling = node.previousSibling;
+      sibling !== null;
+      sibling = node.previousSibling
+    ) {
+      i++;
+    }
+    path.push(i);
+  }
+  invariant(node === root, 'indexPath: root is not a parent of child');
+  return path.reverse();
+}
+
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
@@ -91,6 +317,17 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+  }
+
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__first = prevNode.__first;
+    this.__last = prevNode.__last;
+    this.__size = prevNode.__size;
+    this.__indent = prevNode.__indent;
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__dir = prevNode.__dir;
   }
 
   getFormat(): number {
@@ -390,6 +627,13 @@ export class ElementNode extends LexicalNode {
     const nodesToInsertLength = nodesToInsert.length;
     const oldSize = this.getChildrenSize();
     const writableSelf = this.getWritable();
+    invariant(
+      start + deleteCount <= oldSize,
+      'ElementNode.splice: start + deleteCount > oldSize (%s + %s > %s)',
+      String(start),
+      String(deleteCount),
+      String(oldSize),
+    );
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];
@@ -512,6 +756,35 @@ export class ElementNode extends LexicalNode {
 
     return writableSelf;
   }
+  /**
+   * @internal
+   *
+   * An experimental API that an ElementNode can override to control where its
+   * children are inserted into the DOM, this is useful to add a wrapping node
+   * or accessory nodes before or after the children. The root of the node returned
+   * by createDOM must still be exactly one HTMLElement.
+   */
+  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+    return new ElementDOMSlot(element);
+  }
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element && isHTMLElement(element)) {
+      const indent = this.getIndent();
+      if (indent > 0) {
+        // padding-inline-start is not widely supported in email HTML
+        // (see https://www.caniemail.com/features/css-padding-inline-start-end/),
+        // If you want to use HTML output for email, consider overriding the serialization
+        // to use `padding-right` in RTL languages, `padding-left` in `LTR` languages, or
+        // `text-indent` if you are ok with first-line indents.
+        // We recommend keeping multiples of 40px to maintain consistency with list-items
+        // (see https://github.com/facebook/lexical/pull/4025)
+        element.style.paddingInlineStart = `${indent * 40}px`;
+      }
+    }
+
+    return {element};
+  }
   // JSON serialization
   exportJSON(): SerializedElementNode {
     return {
@@ -598,6 +871,32 @@ export class ElementNode extends LexicalNode {
    */
   canMergeWhenEmpty(): boolean {
     return false;
+  }
+
+  /** @internal */
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
+    const slot = this.getDOMSlot(dom);
+    let currentDOM = slot.getFirstChild();
+    for (
+      let currentNode = this.getFirstChild();
+      currentNode;
+      currentNode = currentNode.getNextSibling()
+    ) {
+      const correctDOM = editor.getElementByKey(currentNode.getKey());
+
+      if (correctDOM === null) {
+        continue;
+      }
+
+      if (currentDOM == null) {
+        slot.insertChild(correctDOM);
+        currentDOM = correctDOM;
+      } else if (currentDOM !== correctDOM) {
+        slot.replaceChild(correctDOM, currentDOM);
+      }
+
+      currentDOM = currentDOM.nextSibling;
+    }
   }
 }
 

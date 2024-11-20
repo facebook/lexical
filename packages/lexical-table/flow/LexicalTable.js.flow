@@ -62,12 +62,12 @@ declare export class TableCellNode extends ElementNode {
   getRowSpan(): number;
   setRowSpan(rowSpan: number): this;
   getTag(): string;
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
+  setHeaderStyles(headerState: TableCellHeaderState, mask?: TableCellHeaderState): TableCellNode;
   getHeaderStyles(): TableCellHeaderState;
-  setWidth(width: number): ?number;
+  setWidth(width: number): TableCellNode;
   getWidth(): ?number;
   getBackgroundColor(): null | string;
-  setBackgroundColor(newBackgroundColor: null | string): void;
+  setBackgroundColor(newBackgroundColor: null | string): TableCellNode;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
@@ -162,6 +162,7 @@ declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
+  hasTabHandler: boolean,
 ): TableObserver;
 
 declare export function $getElementForTableNode(
@@ -237,11 +238,11 @@ declare export function $deleteTableColumn(
 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableRowNode | null;
 
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableCellNode | null;
 
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
 

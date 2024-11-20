@@ -6,6 +6,7 @@
  *
  */
 
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -57,8 +58,10 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
+import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
+import {emptyFunction} from '../../LexicalUtils';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -2039,6 +2042,28 @@ describe('LexicalEditor tests', () => {
     ]);
   });
 
+  it('multiple update tags', async () => {
+    init();
+    const $mutateSomething = $createTextNode;
+
+    editor.update($mutateSomething, {
+      tag: ['a', 'b'],
+    });
+    expect(editor._updateTags).toEqual(new Set(['a', 'b']));
+    editor.update(
+      () => {
+        editor.update(emptyFunction, {tag: ['e', 'f']});
+      },
+      {
+        tag: ['c', 'd'],
+      },
+    );
+    expect(editor._updateTags).toEqual(new Set(['a', 'b', 'c', 'd', 'e', 'f']));
+
+    await Promise.resolve();
+    expect(editor._updateTags).toEqual(new Set([]));
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
@@ -2776,5 +2801,95 @@ describe('LexicalEditor tests', () => {
     newEditor2.setRootElement(container2);
     newEditor1.setRootElement(null);
     newEditor2.setRootElement(null);
+  });
+
+  describe('html config', () => {
+    it('should override export output function', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        html: {
+          export: new Map([
+            [
+              TextNode,
+              (_, target) => {
+                invariant($isTextNode(target));
+
+                return {
+                  element: target.hasFormat('bold')
+                    ? document.createElement('bor')
+                    : document.createElement('foo'),
+                };
+              },
+            ],
+          ]),
+        },
+        onError: onError,
+      });
+
+      newEditor.setRootElement(container);
+
+      newEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode();
+        root.append(paragraph);
+        paragraph.append(text);
+
+        const selection = $createNodeSelection();
+        selection.add(text.getKey());
+
+        const htmlFoo = $generateHtmlFromNodes(newEditor, selection);
+        expect(htmlFoo).toBe('<foo></foo>');
+
+        text.toggleFormat('bold');
+
+        const htmlBold = $generateHtmlFromNodes(newEditor, selection);
+        expect(htmlBold).toBe('<bor></bor>');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('should override import conversion function', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        html: {
+          import: {
+            figure: () => ({
+              conversion: () => ({node: $createTextNode('yolo')}),
+              priority: 4,
+            }),
+          },
+        },
+        onError: onError,
+      });
+
+      newEditor.setRootElement(container);
+
+      newEditor.update(() => {
+        const html = '<figure></figure>';
+
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(html, 'text/html');
+        const node = $generateNodesFromDOM(newEditor, dom)[0];
+
+        expect(node).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: node.getKey(),
+          __mode: 0,
+          __next: null,
+          __parent: null,
+          __prev: null,
+          __style: '',
+          __text: 'yolo',
+          __type: 'text',
+        });
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
   });
 });

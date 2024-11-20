@@ -24,8 +24,8 @@ import {
   $isTableRowNode,
   $isTableSelection,
   $unmergeCell,
+  getTableElement,
   getTableObserverFromTableElement,
-  HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
   TableRowNode,
@@ -57,48 +57,6 @@ function computeSelectionCount(selection: TableSelection): {
     columns: selectionShape.toX - selectionShape.fromX + 1,
     rows: selectionShape.toY - selectionShape.fromY + 1,
   };
-}
-
-// This is important when merging cells as there is no good way to re-merge weird shapes (a result
-// of selecting merged cells and non-merged)
-function isTableSelectionRectangular(selection: TableSelection): boolean {
-  const nodes = selection.getNodes();
-  const currentRows: Array<number> = [];
-  let currentRow = null;
-  let expectedColumns = null;
-  let currentColumns = 0;
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if ($isTableCellNode(node)) {
-      const row = node.getParentOrThrow();
-      invariant(
-        $isTableRowNode(row),
-        'Expected CellNode to have a RowNode parent',
-      );
-      if (currentRow !== row) {
-        if (expectedColumns !== null && currentColumns !== expectedColumns) {
-          return false;
-        }
-        if (currentRow !== null) {
-          expectedColumns = currentColumns;
-        }
-        currentRow = row;
-        currentColumns = 0;
-      }
-      const colSpan = node.__colSpan;
-      for (let j = 0; j < colSpan; j++) {
-        if (currentRows[currentColumns + j] === undefined) {
-          currentRows[currentColumns + j] = 0;
-        }
-        currentRows[currentColumns + j] += node.__rowSpan;
-      }
-      currentColumns += colSpan;
-    }
-  }
-  return (
-    (expectedColumns === null || currentColumns === expectedColumns) &&
-    currentRows.every((v) => v === currentRows[0])
-  );
 }
 
 function $canUnmerge(): boolean {
@@ -208,9 +166,7 @@ function TableActionMenu({
         const currentSelectionCounts = computeSelectionCount(selection);
         updateSelectionCounts(computeSelectionCount(selection));
         setCanMergeCells(
-          isTableSelectionRectangular(selection) &&
-            (currentSelectionCounts.columns > 1 ||
-              currentSelectionCounts.rows > 1),
+          currentSelectionCounts.columns > 1 || currentSelectionCounts.rows > 1,
         );
       }
       // Unmerge cell
@@ -274,17 +230,19 @@ function TableActionMenu({
     editor.update(() => {
       if (tableCellNode.isAttached()) {
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-        const tableElement = editor.getElementByKey(
-          tableNode.getKey(),
-        ) as HTMLTableElementWithWithTableSelectionState;
+        const tableElement = getTableElement(
+          tableNode,
+          editor.getElementByKey(tableNode.getKey()),
+        );
 
-        if (!tableElement) {
-          throw new Error('Expected to find tableElement in DOM');
-        }
+        invariant(
+          tableElement !== null,
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
 
-        const tableSelection = getTableObserverFromTableElement(tableElement);
-        if (tableSelection !== null) {
-          tableSelection.clearHighlight();
+        const tableObserver = getTableObserverFromTableElement(tableElement);
+        if (tableObserver !== null) {
+          tableObserver.clearHighlight();
         }
 
         tableNode.markDirty();
@@ -407,12 +365,14 @@ function TableActionMenu({
         throw new Error('Expected table row');
       }
 
+      const newStyle =
+        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.ROW;
       tableRow.getChildren().forEach((tableCell) => {
         if (!$isTableCellNode(tableCell)) {
           throw new Error('Expected table cell');
         }
 
-        tableCell.toggleHeaderStyle(TableCellHeaderStates.ROW);
+        tableCell.setHeaderStyles(newStyle, TableCellHeaderStates.ROW);
       });
 
       clearTableSelection();
@@ -436,6 +396,8 @@ function TableActionMenu({
         throw new Error('Expected table cell to be inside of table row.');
       }
 
+      const newStyle =
+        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.COLUMN;
       for (let r = 0; r < tableRows.length; r++) {
         const tableRow = tableRows[r];
 
@@ -455,9 +417,21 @@ function TableActionMenu({
           throw new Error('Expected table cell');
         }
 
-        tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
+        tableCell.setHeaderStyles(newStyle, TableCellHeaderStates.COLUMN);
       }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const toggleRowStriping = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setRowStriping(!tableNode.getRowStriping());
+        }
+      }
       clearTableSelection();
       onClose();
     });
@@ -498,7 +472,7 @@ function TableActionMenu({
           className="item"
           onClick={() => mergeTableCellsAtSelection()}
           data-test-id="table-merge-cells">
-          Merge cells
+          <span className="text">Merge cells</span>
         </button>
       );
     } else if (canUnmergeCell) {
@@ -508,7 +482,7 @@ function TableActionMenu({
           className="item"
           onClick={() => unmergeTableCellsAtSelection()}
           data-test-id="table-unmerge-cells">
-          Unmerge cells
+          <span className="text">Unmerge cells</span>
         </button>
       );
     }
@@ -536,6 +510,13 @@ function TableActionMenu({
         }
         data-test-id="table-background-color">
         <span className="text">Background color</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleRowStriping()}
+        data-test-id="table-row-striping">
+        <span className="text">Toggle Row Striping</span>
       </button>
       <hr />
       <button

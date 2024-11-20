@@ -12,10 +12,6 @@ import type {
   LexicalNode,
   ElementNode,
 } from 'lexical';
-export type DFSNode = $ReadOnly<{
-  depth: number,
-  node: LexicalNode,
-}>;
 declare export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
@@ -32,11 +28,29 @@ declare export function mediaFileReader(
   files: Array<File>,
   acceptableMimeTypes: Array<string>,
 ): Promise<Array<$ReadOnly<{file: File, result: string}>>>;
+export type DFSNode = $ReadOnly<{
+  depth: number,
+  node: LexicalNode,
+}>;
 declare export function $dfs(
-  startingNode?: LexicalNode,
-  endingNode?: LexicalNode,
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
 ): Array<DFSNode>;
-declare function $getDepth(node: LexicalNode): number;
+type DFSIterator = {
+  next: () => IteratorResult<DFSNode, void>;
+  @@iterator: () => DFSIterator;
+};
+declare export function $dfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator;
+declare export function $getNextSiblingOrParentSibling(
+  node: LexicalNode,
+): null | [LexicalNode, number];
+declare export function $getDepth(node: LexicalNode): number;
+declare export function $getNextRightPreorderNode(
+  startingNode: LexicalNode,
+): LexicalNode | null;
 declare export function $getNearestNodeOfType<T: LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,
@@ -79,7 +93,23 @@ declare export function $wrapNodeInElement(
   createElementNode: () => ElementNode,
 ): ElementNode;
 
+declare export function objectKlassEquals<T>(
+  object: mixed,
+  objectClass: Class<T>,
+): boolean;
+
+declare export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T>;
+
+declare export function $insertFirst(parent: ElementNode, node: LexicalNode): void;
+
 declare export function $splitNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode | null, ElementNode];
+
+declare export function calculateZoomLevel(element: Element | null): number;
+
+declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;

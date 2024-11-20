@@ -8,10 +8,11 @@
 
 import type {
   ElementTransformer,
+  MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '@lexical/markdown';
+} from './MarkdownTransformers';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
@@ -59,15 +60,78 @@ function runElementTransformers(
   for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
-    if (match && match[0].length === anchorOffset) {
+    if (
+      match &&
+      match[0].length ===
+        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
+    ) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
       leadingNode.remove();
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
-      replace(parentNode, siblings, match, false);
-      return true;
+      if (replace(parentNode, siblings, match, false) !== false) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function runMultilineElementTransformers(
+  parentNode: ElementNode,
+  anchorNode: TextNode,
+  anchorOffset: number,
+  elementTransformers: ReadonlyArray<MultilineElementTransformer>,
+): boolean {
+  const grandParentNode = parentNode.getParent();
+
+  if (
+    !$isRootOrShadowRoot(grandParentNode) ||
+    parentNode.getFirstChild() !== anchorNode
+  ) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+
+  // Checking for anchorOffset position to prevent any checks for cases when caret is too far
+  // from a line start to be a part of block-level markdown trigger.
+  //
+  // TODO:
+  // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
+  // since otherwise it won't be a markdown shortcut, but tables are exception
+  if (textContent[anchorOffset - 1] !== ' ') {
+    return false;
+  }
+
+  for (const {regExpStart, replace, regExpEnd} of elementTransformers) {
+    if (
+      (regExpEnd && !('optional' in regExpEnd)) ||
+      (regExpEnd && 'optional' in regExpEnd && !regExpEnd.optional)
+    ) {
+      continue;
+    }
+
+    const match = textContent.match(regExpStart);
+
+    if (
+      match &&
+      match[0].length ===
+        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
+    ) {
+      const nextSiblings = anchorNode.getNextSiblings();
+      const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
+      leadingNode.remove();
+      const siblings = remainderNode
+        ? [remainderNode, ...nextSiblings]
+        : nextSiblings;
+
+      if (replace(parentNode, siblings, match, null, null, false) !== false) {
+        return true;
+      }
     }
   }
 
@@ -94,6 +158,9 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
+    if (!transformer.replace || !transformer.regExp) {
+      continue;
+    }
     const match = textContent.match(transformer.regExp);
 
     if (match === null) {
@@ -325,18 +392,22 @@ export function registerMarkdownShortcuts(
   transformers: Array<Transformer> = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
-  const textFormatTransformersIndex = indexBy(
+  const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,
     ({tag}) => tag[tag.length - 1],
   );
-  const textMatchTransformersIndex = indexBy(
+  const textMatchTransformersByTrigger = indexBy(
     byType.textMatch,
     ({trigger}) => trigger,
   );
 
   for (const transformer of transformers) {
     const type = transformer.type;
-    if (type === 'element' || type === 'text-match') {
+    if (
+      type === 'element' ||
+      type === 'text-match' ||
+      type === 'multiline-element'
+    ) {
       const dependencies = transformer.dependencies;
       for (const node of dependencies) {
         if (!editor.hasNode(node)) {
@@ -367,10 +438,21 @@ export function registerMarkdownShortcuts(
     }
 
     if (
+      runMultilineElementTransformers(
+        parentNode,
+        anchorNode,
+        anchorOffset,
+        byType.multilineElement,
+      )
+    ) {
+      return;
+    }
+
+    if (
       runTextMatchTransformers(
         anchorNode,
         anchorOffset,
-        textMatchTransformersIndex,
+        textMatchTransformersByTrigger,
       )
     ) {
       return;
@@ -379,7 +461,7 @@ export function registerMarkdownShortcuts(
     $runTextFormatTransformers(
       anchorNode,
       anchorOffset,
-      textFormatTransformersIndex,
+      textFormatTransformersByTrigger,
     );
   };
 
@@ -398,10 +480,13 @@ export function registerMarkdownShortcuts(
       const selection = editorState.read($getSelection);
       const prevSelection = prevEditorState.read($getSelection);
 
+      // We expect selection to be a collapsed range and not match previous one (as we want
+      // to trigger transforms only as user types)
       if (
         !$isRangeSelection(prevSelection) ||
         !$isRangeSelection(selection) ||
-        !selection.isCollapsed()
+        !selection.isCollapsed() ||
+        selection.is(prevSelection)
       ) {
         return;
       }

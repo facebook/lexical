@@ -12,6 +12,7 @@ import {
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
+  MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -99,7 +100,7 @@ export const EMOJI: TextMatchTransformer = {
   dependencies: [],
   export: () => null,
   importRegExp: /:([a-z0-9_]+):/,
-  regExp: /:([a-z0-9_]+):/,
+  regExp: /:([a-z0-9_]+):$/,
   replace: (textNode, [, name]) => {
     const emoji = emojiList.find((e) => e.aliases.includes(name))?.emoji;
     if (emoji) {
@@ -211,7 +212,10 @@ export const TABLE: ElementTransformer = {
         if (!$isTableCellNode(cell)) {
           return;
         }
-        cell.toggleHeaderStyle(TableCellHeaderStates.ROW);
+        cell.setHeaderStyles(
+          TableCellHeaderStates.ROW,
+          TableCellHeaderStates.ROW,
+        );
       });
 
       // Remove line
@@ -313,6 +317,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   TWEET,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];

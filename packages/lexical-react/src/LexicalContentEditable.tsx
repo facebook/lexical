@@ -15,9 +15,8 @@ import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 import {ContentEditableElement} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
-export type Props = Omit<ElementProps, 'editor'> & {
-  editor__DEPRECATED?: LexicalEditor;
-} & (
+export type ContentEditableProps = Omit<ElementProps, 'editor'> &
+  (
     | {
         'aria-placeholder'?: void;
         placeholder?: null;
@@ -30,16 +29,23 @@ export type Props = Omit<ElementProps, 'editor'> & {
       }
   );
 
+/**
+ * @deprecated This type has been renamed to `ContentEditableProps` to provide a clearer and more descriptive name.
+ * For backward compatibility, this type is still exported as `Props`, but it is recommended to migrate to using `ContentEditableProps` instead.
+ *
+ * @note This alias is maintained for compatibility purposes but may be removed in future versions.
+ * Please update your codebase to use `ContentEditableProps` to ensure long-term maintainability.
+ */
+export type Props = ContentEditableProps;
+
 export const ContentEditable = forwardRef(ContentEditableImpl);
 
 function ContentEditableImpl(
-  props: Props,
+  props: ContentEditableProps,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
-  const {placeholder, editor__DEPRECATED, ...rest} = props;
-  // editor__DEPRECATED will always be defined for non MLC surfaces
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const editor = editor__DEPRECATED || useLexicalComposerContext()[0];
+  const {placeholder, ...rest} = props;
+  const [editor] = useLexicalComposerContext();
 
   return (
     <>

@@ -10,6 +10,7 @@ import {expect, test as base} from '@playwright/test';
 import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
+import * as lockfile from 'proper-lockfile';
 import {URLSearchParams} from 'url';
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
@@ -33,6 +34,8 @@ export const IS_COLLAB =
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
+export const IS_TABLE_HORIZONTAL_SCROLL =
+  process.env.E2E_TABLE_MODE !== 'legacy';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -51,6 +54,21 @@ function wrapAndSlowDown(method, delay) {
   };
 }
 
+export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
+  return html`
+    ${expected
+      .replace(
+        /<table/g,
+        `<div${
+          ignoreClasses
+            ? ''
+            : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
+        }><table`,
+      )
+      .replace(/<\/table>/g, '</table></div>')}
+  `;
+}
+
 export async function initialize({
   page,
   isCollab,
@@ -58,10 +76,12 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   isMaxLength,
+  hasLinkAttributes,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
+  tableHorizontalScroll,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -74,6 +94,8 @@ export async function initialize({
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
   appSettings.disableBeforeInput = LEGACY_EVENTS;
+  appSettings.tableHorizontalScroll =
+    tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = randomUUID();
@@ -85,6 +107,7 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  appSettings.hasLinkAttributes = !!hasLinkAttributes;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
@@ -140,6 +163,7 @@ async function exposeLexicalEditor(page) {
 }
 
 export const test = base.extend({
+  hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
@@ -171,6 +195,16 @@ export async function clickSelectors(page, selectors) {
     await click(page, selectors[i]);
   }
 }
+
+function removeSafariLinebreakImgHack(actualHtml) {
+  return E2E_BROWSER === 'webkit'
+    ? actualHtml.replaceAll(
+        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        '',
+      )
+    : actualHtml;
+}
+
 /**
  * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
  */
@@ -187,10 +221,12 @@ async function assertHTMLOnPageOrFrame(
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = await pageOrFrame
-      .locator('div[contenteditable="true"]')
-      .first()
-      .innerHTML();
+    const actualHtml = removeSafariLinebreakImgHack(
+      await pageOrFrame
+        .locator('div[contenteditable="true"]')
+        .first()
+        .innerHTML(),
+    );
     let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
@@ -203,6 +239,24 @@ async function assertHTMLOnPageOrFrame(
       `innerHTML of contenteditable in ${frameName} did not match`,
     ).toEqual(expected);
   }).toPass({intervals: [100, 250, 500], timeout: 5000});
+}
+
+/**
+ * @function
+ * @template T
+ * @param {() => T | Promise<T>}
+ * @returns {Promise<T>}
+ */
+export async function withExclusiveClipboardAccess(f) {
+  const release = await lockfile.lock('.', {
+    lockfilePath: '.playwright-clipboard.lock',
+    retries: 5,
+  });
+  try {
+    return f();
+  } finally {
+    await release();
+  }
 }
 
 /**
@@ -316,13 +370,30 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return path.reverse();
     };
 
+    const fixOffset = (node, offset) => {
+      // If the selection offset is at the br of a webkit img+br linebreak
+      // then move the offset to the img so the tests are consistent across
+      // browsers
+      if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+        const child = node.children[offset - 1];
+        if (
+          child &&
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.getAttribute('data-lexical-linebreak') === 'true'
+        ) {
+          return offset - 1;
+        }
+      }
+      return offset;
+    };
+
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
     return {
-      anchorOffset,
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
       anchorPath: getPathFromNode(anchorNode),
-      focusOffset,
+      focusOffset: fixOffset(focusNode, focusOffset),
       focusPath: getPathFromNode(focusNode),
     };
   }, expected);
@@ -826,12 +897,12 @@ export async function selectCellsFromTableCords(
   }
 
   const firstRowFirstColumnCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${firstCords.y + 1}) > ${
       isFirstHeader ? 'th' : 'td'
     }:nth-child(${firstCords.x + 1})`,
   );
   const secondRowSecondCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${secondCords.y + 1}) > ${
       isSecondHeader ? 'th' : 'td'
     }:nth-child(${secondCords.x + 1})`,
   );
@@ -960,4 +1031,37 @@ export async function dragDraggableMenuTo(
 
 export async function pressInsertLinkButton(page) {
   await click(page, '.toolbar-item[aria-label="Insert link"]');
+}
+
+/**
+ * Creates a selection object to assert against that is human readable and self-describing.
+ *
+ * Selections are composed of an anchorPath (the start) and a focusPath (the end).
+ * Once you traverse each path, you use the respective offsets to find the exact location of the cursor.
+ * So offsets are relative to their path. For example, if the anchorPath is [0, 1, 2] and the anchorOffset is 3,
+ * then the cursor is at the 4th character of the 3rd element of the 2nd element of the 1st element.
+ *
+ * @example
+ * const expectedSelection = createHumanReadableSelection('the full text of the last cell', {
+ *   anchorOffset: {desc: 'beginning of cell', value: 0},
+ *   anchorPath: [
+ *     {desc: 'index of table in root', value: 1},
+ *     {desc: 'first table row', value: 0},
+ *     {desc: 'first cell', value: 0},
+ *   ],
+ *   focusOffset: {desc: 'full text length', value: 9},
+ *   focusPath: [
+ *     {desc: 'index of last paragraph', value: 2},
+ *     {desc: 'index of first span', value: 0},
+ *     {desc: 'index of text block', value: 0},
+ *   ],
+ * });
+ */
+export function createHumanReadableSelection(_overview, dto) {
+  return {
+    anchorOffset: dto.anchorOffset.value,
+    anchorPath: dto.anchorPath.map((p) => p.value),
+    focusOffset: dto.focusOffset.value,
+    focusPath: dto.focusPath.map((p) => p.value),
+  };
 }

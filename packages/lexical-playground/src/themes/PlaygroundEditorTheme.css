@@ -116,14 +116,25 @@
   text-align: right;
   min-width: 25px;
 }
+.PlaygroundEditorTheme__tableScrollableWrapper {
+  overflow-x: auto;
+  margin: 0px 25px 30px 0px;
+}
+.PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
+  /* Remove the table's margin and put it on the wrapper */
+  margin: 0;
+}
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
   border-spacing: 0;
   overflow-y: scroll;
   overflow-x: scroll;
   table-layout: fixed;
-  width: max-content;
+  width: fit-content;
   margin: 0px 25px 30px 0px;
+}
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
+  background-color: #f2f5fb;
 }
 .PlaygroundEditorTheme__tableSelection *::selection {
   background-color: transparent;
@@ -134,7 +145,6 @@
 .PlaygroundEditorTheme__tableCell {
   border: 1px solid #bbb;
   width: 75px;
-  min-width: 75px;
   vertical-align: top;
   text-align: start;
   padding: 6px 8px;

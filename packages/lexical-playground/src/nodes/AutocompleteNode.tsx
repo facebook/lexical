@@ -6,7 +6,14 @@
  *
  */
 
-import type {EditorConfig, NodeKey, SerializedTextNode, Spread} from 'lexical';
+import type {
+  DOMExportOutput,
+  EditorConfig,
+  LexicalEditor,
+  NodeKey,
+  SerializedTextNode,
+  Spread,
+} from 'lexical';
 
 import {TextNode} from 'lexical';
 
@@ -72,6 +79,11 @@ export class AutocompleteNode extends TextNode {
     config: EditorConfig,
   ): boolean {
     return false;
+  }
+
+  exportDOM(_: LexicalEditor): DOMExportOutput {
+    const element = document.createElement('span');
+    return {element};
   }
 
   createDOM(config: EditorConfig): HTMLElement {

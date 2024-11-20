@@ -77,6 +77,7 @@ test.describe('Autocomplete', () => {
     page,
     isPlainText,
   }) => {
+    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBold(page);
     await toggleItalic(page);

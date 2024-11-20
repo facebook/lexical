@@ -82,8 +82,7 @@ export class AutocompleteNode extends TextNode {
   }
 
   exportDOM(_: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('span');
-    return {element};
+    return {element: null};
   }
 
   createDOM(config: EditorConfig): HTMLElement {

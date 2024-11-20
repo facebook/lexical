@@ -52,7 +52,6 @@ test.describe('Autocomplete', () => {
           dir="ltr">
           <span data-lexical-text="true">Sort by alpha</span>
           <span data-lexical-text="true"></span>
-          <br />
         </p>
       `,
     );

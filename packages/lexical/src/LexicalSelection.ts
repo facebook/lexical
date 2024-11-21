@@ -1778,7 +1778,7 @@ export class RangeSelection implements BaseSelection {
         possibleNode.selectStart();
         return;
       }
-      this.modify('extend', isBackward, 'character');
+      this.modify('move', isBackward, 'character');
 
       if (!this.isCollapsed()) {
         const focusNode = focus.type === 'text' ? focus.getNode() : null;

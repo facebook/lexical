@@ -75,7 +75,13 @@ import {
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {$isTableSelection} from './LexicalTableSelection';
-import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
+import {
+  $computeTableCellRectBoundary,
+  $computeTableCellRectSpans,
+  $computeTableMap,
+  $getNodeTriplet,
+  TableCellRectBoundary,
+} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -104,6 +110,22 @@ export function getTableElement<T extends HTMLElement | null>(
 export function getEditorWindow(editor: LexicalEditor): Window | null {
   return editor._window;
 }
+
+const ARROW_KEY_COMMANDS_WITH_DIRECTION = [
+  [KEY_ARROW_DOWN_COMMAND, 'down'],
+  [KEY_ARROW_UP_COMMAND, 'up'],
+  [KEY_ARROW_LEFT_COMMAND, 'backward'],
+  [KEY_ARROW_RIGHT_COMMAND, 'forward'],
+] as const;
+const DELETE_TEXT_COMMANDS = [
+  DELETE_WORD_COMMAND,
+  DELETE_LINE_COMMAND,
+  DELETE_CHARACTER_COMMAND,
+] as const;
+const DELETE_KEY_COMMANDS = [
+  KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
+] as const;
 
 export function applyTableHandlers(
   tableNode: TableNode,
@@ -160,16 +182,13 @@ export function applyTableHandlers(
           }
         }
       }
-      if (focusCell) {
+      if (
+        focusCell &&
+        (tableObserver.focusCell === null ||
+          focusCell.elem !== tableObserver.focusCell.elem)
+      ) {
         tableObserver.setNextFocus({focusCell, override});
-        if (
-          focusCell.x !== tableObserver.anchorX ||
-          focusCell.y !== tableObserver.anchorY
-        ) {
-          editor.update(() => {
-            tableObserver.$setFocusCellForSelection(focusCell);
-          });
-        }
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
       }
     };
     tableObserver.isSelecting = true;
@@ -234,40 +253,16 @@ export function applyTableHandlers(
     tableObserver.listenerOptions,
   );
 
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_DOWN_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'down', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_UP_COMMAND,
-      (event) => $handleArrowKey(editor, event, 'up', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_LEFT_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'backward', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_RIGHT_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'forward', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
+  for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
+    tableObserver.listenersToRemove.add(
+      editor.registerCommand<KeyboardEvent>(
+        command,
+        (event) =>
+          $handleArrowKey(editor, event, direction, tableNode, tableObserver),
+        COMMAND_PRIORITY_HIGH,
+      ),
+    );
+  }
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
@@ -358,17 +353,15 @@ export function applyTableHandlers(
     return false;
   };
 
-  [DELETE_WORD_COMMAND, DELETE_LINE_COMMAND, DELETE_CHARACTER_COMMAND].forEach(
-    (command) => {
-      tableObserver.listenersToRemove.add(
-        editor.registerCommand(
-          command,
-          deleteTextHandler(command),
-          COMMAND_PRIORITY_CRITICAL,
-        ),
-      );
-    },
-  );
+  for (const command of DELETE_TEXT_COMMANDS) {
+    tableObserver.listenersToRemove.add(
+      editor.registerCommand(
+        command,
+        deleteTextHandler(command),
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    );
+  }
 
   const $deleteCellHandler = (
     event: KeyboardEvent | ClipboardEvent | null,
@@ -414,21 +407,15 @@ export function applyTableHandlers(
     return false;
   };
 
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_BACKSPACE_COMMAND,
-      $deleteCellHandler,
-      COMMAND_PRIORITY_CRITICAL,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_DELETE_COMMAND,
-      $deleteCellHandler,
-      COMMAND_PRIORITY_CRITICAL,
-    ),
-  );
+  for (const command of DELETE_KEY_COMMANDS) {
+    tableObserver.listenersToRemove.add(
+      editor.registerCommand<KeyboardEvent>(
+        command,
+        $deleteCellHandler,
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    );
+  }
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent | ClipboardEvent | null>(
@@ -640,20 +627,6 @@ export function applyTableHandlers(
       COMMAND_PRIORITY_HIGH,
     ),
   );
-
-  function getObserverCellFromCellNode(
-    tableCellNode: TableCellNode,
-  ): TableDOMCell {
-    const currentCords = tableNode.getCordsFromCellNode(
-      tableCellNode,
-      tableObserver.table,
-    );
-    return tableNode.getDOMCellFromCordsOrThrow(
-      currentCords.x,
-      currentCords.y,
-      tableObserver.table,
-    );
-  }
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
@@ -892,13 +865,19 @@ export function applyTableHandlers(
             $addHighlightStyleToTable(editor, tableObserver);
           } else if (isWithinTable) {
             // Handle case when selection spans across multiple cells but still
-            // has range selection, then we convert it into grid selection
+            // has range selection, then we convert it into table selection
             if (!anchorCellNode.is(focusCellNode)) {
               tableObserver.$setAnchorCellForSelection(
-                getObserverCellFromCellNode(anchorCellNode),
+                $getObserverCellFromCellNodeOrThrow(
+                  tableObserver,
+                  anchorCellNode,
+                ),
               );
               tableObserver.$setFocusCellForSelection(
-                getObserverCellFromCellNode(focusCellNode),
+                $getObserverCellFromCellNodeOrThrow(
+                  tableObserver,
+                  focusCellNode,
+                ),
                 true,
               );
             }
@@ -1317,53 +1296,170 @@ const selectTableNodeInDirection = (
   }
 };
 
-const $adjustFocusNodeInDirection = (
-  tableObserver: TableObserver,
-  tableNode: TableNode,
-  x: number,
-  y: number,
-  direction: Direction,
-): boolean => {
-  const isForward = direction === 'forward';
-
-  switch (direction) {
-    case 'backward':
-    case 'forward':
-      if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
-        tableObserver.$setFocusCellForSelection(
-          tableNode.getDOMCellFromCordsOrThrow(
-            x + (isForward ? 1 : -1),
-            y,
-            tableObserver.table,
-          ),
-        );
-      }
-
-      return true;
-    case 'up':
-      if (y !== 0) {
-        tableObserver.$setFocusCellForSelection(
-          tableNode.getDOMCellFromCordsOrThrow(x, y - 1, tableObserver.table),
-        );
-
-        return true;
-      } else {
-        return false;
-      }
-    case 'down':
-      if (y !== tableObserver.table.rows - 1) {
-        tableObserver.$setFocusCellForSelection(
-          tableNode.getDOMCellFromCordsOrThrow(x, y + 1, tableObserver.table),
-        );
-
-        return true;
-      } else {
-        return false;
-      }
-    default:
-      return false;
+type Corner = ['minColumn' | 'maxColumn', 'minRow' | 'maxRow'];
+function getCorner(
+  rect: TableCellRectBoundary,
+  cellValue: TableMapValueType,
+): Corner | null {
+  let colName: 'minColumn' | 'maxColumn';
+  let rowName: 'minRow' | 'maxRow';
+  if (cellValue.startColumn === rect.minColumn) {
+    colName = 'minColumn';
+  } else if (
+    cellValue.startColumn + cellValue.cell.__colSpan - 1 ===
+    rect.maxColumn
+  ) {
+    colName = 'maxColumn';
+  } else {
+    return null;
   }
-};
+  if (cellValue.startRow === rect.minRow) {
+    rowName = 'minRow';
+  } else if (
+    cellValue.startRow + cellValue.cell.__rowSpan - 1 ===
+    rect.maxRow
+  ) {
+    rowName = 'maxRow';
+  } else {
+    return null;
+  }
+  return [colName, rowName];
+}
+
+function getCornerOrThrow(
+  rect: TableCellRectBoundary,
+  cellValue: TableMapValueType,
+): Corner {
+  const corner = getCorner(rect, cellValue);
+  invariant(
+    corner !== null,
+    'getCornerOrThrow: cell %s is not at a corner of rect',
+    cellValue.cell.getKey(),
+  );
+  return corner;
+}
+
+function oppositeCorner([colName, rowName]: Corner): Corner {
+  return [
+    colName === 'minColumn' ? 'maxColumn' : 'minColumn',
+    rowName === 'minRow' ? 'maxRow' : 'minRow',
+  ];
+}
+
+function cellAtCornerOrThrow(
+  tableMap: TableMapType,
+  rect: TableCellRectBoundary,
+  [colName, rowName]: Corner,
+): TableMapValueType {
+  const rowNum = rect[rowName];
+  const rowMap = tableMap[rowNum];
+  invariant(
+    rowMap !== undefined,
+    'cellAtCornerOrThrow: %s = %s missing in tableMap',
+    rowName,
+    String(rowNum),
+  );
+  const colNum = rect[colName];
+  const cell = rowMap[colNum];
+  invariant(
+    cell !== undefined,
+    'cellAtCornerOrThrow: %s = %s missing in tableMap',
+    colName,
+    String(colNum),
+  );
+  return cell;
+}
+
+function $extractRectCorners(
+  tableMap: TableMapType,
+  anchorCellValue: TableMapValueType,
+  newFocusCellValue: TableMapValueType,
+) {
+  // We are sure that the focus now either contracts or expands the rect
+  // but both the anchor and focus might be moved to ensure a rectangle
+  // given a potentially ragged merge shape
+  const rect = $computeTableCellRectBoundary(
+    tableMap,
+    anchorCellValue,
+    newFocusCellValue,
+  );
+  const anchorCorner = getCorner(rect, anchorCellValue);
+  if (anchorCorner) {
+    return [
+      cellAtCornerOrThrow(tableMap, rect, anchorCorner),
+      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(anchorCorner)),
+    ];
+  }
+  const newFocusCorner = getCorner(rect, newFocusCellValue);
+  if (newFocusCorner) {
+    return [
+      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newFocusCorner)),
+      cellAtCornerOrThrow(tableMap, rect, newFocusCorner),
+    ];
+  }
+  // TODO this doesn't have to be arbitrary, use the closest corner instead
+  const newAnchorCorner: Corner = ['minColumn', 'minRow'];
+  return [
+    cellAtCornerOrThrow(tableMap, rect, newAnchorCorner),
+    cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newAnchorCorner)),
+  ];
+}
+
+function $adjustFocusInDirection(
+  tableObserver: TableObserver,
+  tableMap: TableMapType,
+  anchorCellValue: TableMapValueType,
+  focusCellValue: TableMapValueType,
+  direction: Direction,
+): boolean {
+  const rect = $computeTableCellRectBoundary(
+    tableMap,
+    anchorCellValue,
+    focusCellValue,
+  );
+  const spans = $computeTableCellRectSpans(tableMap, rect);
+  const {topSpan, leftSpan, bottomSpan, rightSpan} = spans;
+  const anchorCorner = getCornerOrThrow(rect, anchorCellValue);
+  const [focusColumn, focusRow] = oppositeCorner(anchorCorner);
+  let fCol = rect[focusColumn];
+  let fRow = rect[focusRow];
+  if (direction === 'forward') {
+    fCol += focusColumn === 'maxColumn' ? 1 : leftSpan;
+  } else if (direction === 'backward') {
+    fCol -= focusColumn === 'minColumn' ? 1 : rightSpan;
+  } else if (direction === 'down') {
+    fRow += focusRow === 'maxRow' ? 1 : topSpan;
+  } else if (direction === 'up') {
+    fRow -= focusRow === 'minRow' ? 1 : bottomSpan;
+  }
+  const targetRowMap = tableMap[fRow];
+  if (targetRowMap === undefined) {
+    return false;
+  }
+  const newFocusCellValue = targetRowMap[fCol];
+  if (newFocusCellValue === undefined) {
+    return false;
+  }
+  // We can be certain that anchorCellValue and newFocusCellValue are
+  // contained within the desired selection, but we are not certain if
+  // they need to be expanded or not to maintain a rectangular shape
+  const [finalAnchorCell, finalFocusCell] = $extractRectCorners(
+    tableMap,
+    anchorCellValue,
+    newFocusCellValue,
+  );
+  const anchorDOM = $getObserverCellFromCellNodeOrThrow(
+    tableObserver,
+    finalAnchorCell.cell,
+  )!;
+  const focusDOM = $getObserverCellFromCellNodeOrThrow(
+    tableObserver,
+    finalFocusCell.cell,
+  );
+  tableObserver.$setAnchorCellForSelection(anchorDOM);
+  tableObserver.$setFocusCellForSelection(focusDOM, true);
+  return true;
+}
 
 function $isSelectionInTable(
   selection: null | BaseSelection,
@@ -1679,7 +1775,13 @@ function $handleArrowKey(
       if (
         isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
       ) {
-        return $handleTableExit(event, anchorNode, tableNode, direction);
+        return $handleTableExit(
+          event,
+          anchorNode,
+          anchorCellNode,
+          tableNode,
+          direction,
+        );
       }
 
       return false;
@@ -1794,12 +1896,16 @@ function $handleArrowKey(
     stopEvent(event);
 
     if (event.shiftKey) {
-      const cords = tableNode.getCordsFromCellNode(focusCellNode, grid);
-      return $adjustFocusNodeInDirection(
+      const [tableMap, anchorValue, focusValue] = $computeTableMap(
+        tableNode,
+        anchorCellNode,
+        focusCellNode,
+      );
+      return $adjustFocusInDirection(
         tableObserver,
-        tableNodeFromSelection,
-        cords.x,
-        cords.y,
+        tableMap,
+        anchorValue,
+        focusValue,
         direction,
       );
     } else {
@@ -1885,13 +1991,10 @@ function $isExitingTableTextAnchor(
 function $handleTableExit(
   event: KeyboardEvent,
   anchorNode: LexicalNode,
+  anchorCellNode: TableCellNode,
   tableNode: TableNode,
   direction: 'backward' | 'forward',
-) {
-  const anchorCellNode = $findMatchingParent(anchorNode, $isTableCellNode);
-  if (!$isTableCellNode(anchorCellNode)) {
-    return false;
-  }
+): boolean {
   const [tableMap, cellValue] = $computeTableMap(
     tableNode,
     anchorCellNode,
@@ -2037,4 +2140,20 @@ function $getTableEdgeCursorPosition(
   } else {
     return undefined;
   }
+}
+
+export function $getObserverCellFromCellNodeOrThrow(
+  tableObserver: TableObserver,
+  tableCellNode: TableCellNode,
+): TableDOMCell {
+  const {tableNode} = tableObserver.$lookup();
+  const currentCords = tableNode.getCordsFromCellNode(
+    tableCellNode,
+    tableObserver.table,
+  );
+  return tableNode.getDOMCellFromCordsOrThrow(
+    currentCords.x,
+    currentCords.y,
+    tableObserver.table,
+  );
 }

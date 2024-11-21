@@ -287,7 +287,7 @@ declare export class TableObserver {
   removeListeners(): void;
   trackTable(): void;
   $clearHighlight(): void;
-  $setFocusCellForSelection(cell: TableDOMCell): void;
+  $setFocusCellForSelection(cell: TableDOMCell, ignoreStart?: boolean): void;
   $setAnchorCellForSelection(cell: TableDOMCell): void;
   $formatCells(type: TextFormatType): void;
   $clearText(): void;

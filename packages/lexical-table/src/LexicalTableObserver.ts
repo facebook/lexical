@@ -33,6 +33,7 @@ import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {
   $createTableSelection,
+  $createTableSelectionFrom,
   $isTableSelection,
   type TableSelection,
 } from './LexicalTableSelection';
@@ -361,16 +362,11 @@ export class TableObserver {
         $isTableCellNode(focusTableCellNode) &&
         tableNode.is($findTableNode(focusTableCellNode))
       ) {
-        const focusNodeKey = focusTableCellNode.getKey();
-
-        this.tableSelection =
-          this.tableSelection.clone() || $createTableSelection();
-
-        this.focusCellNodeKey = focusNodeKey;
-        this.tableSelection.set(
-          this.tableNodeKey,
-          this.anchorCellNodeKey,
-          this.focusCellNodeKey,
+        this.focusCellNodeKey = focusTableCellNode.getKey();
+        this.tableSelection = $createTableSelectionFrom(
+          tableNode,
+          this.$getAnchorTableCellOrThrow(),
+          focusTableCellNode,
         );
 
         $setSelection(this.tableSelection);
@@ -382,6 +378,30 @@ export class TableObserver {
       }
     }
     return false;
+  }
+
+  $getAnchorTableCell(): TableCellNode | null {
+    return this.anchorCellNodeKey
+      ? $getNodeByKey(this.anchorCellNodeKey)
+      : null;
+  }
+  $getAnchorTableCellOrThrow(): TableCellNode {
+    const anchorTableCell = this.$getAnchorTableCell();
+    invariant(
+      anchorTableCell !== null,
+      'TableObserver anchorTableCell is null',
+    );
+    return anchorTableCell;
+  }
+
+  $getFocusTableCell(): TableCellNode | null {
+    return this.focusCellNodeKey ? $getNodeByKey(this.focusCellNodeKey) : null;
+  }
+
+  $getFocusTableCellOrThrow(): TableCellNode {
+    const focusTableCell = this.$getFocusTableCell();
+    invariant(focusTableCell !== null, 'TableObserver focusTableCell is null');
+    return focusTableCell;
   }
 
   $setAnchorCellForSelection(cell: TableDOMCell) {

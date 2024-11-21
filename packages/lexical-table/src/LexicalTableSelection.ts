@@ -170,7 +170,9 @@ export class TableSelection implements BaseSelection {
   }
 
   set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
-    this.dirty ||=
+    // note: closure compiler's acorn does not support ||=
+    this.dirty =
+      this.dirty ||
       tableKey !== this.tableKey ||
       anchorCellKey !== this.anchor.key ||
       focusCellKey !== this.focus.key;

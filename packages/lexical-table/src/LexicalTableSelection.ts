@@ -338,13 +338,11 @@ export class TableSelection implements BaseSelection {
           nodeMap.set(currentRow.getKey(), currentRow);
           lastRow = currentRow;
         }
-        $visitRecursively(cell, (childNode) => {
-          if (nodeMap.has(cell.getKey())) {
-            return false;
-          }
-          nodeMap.set(cell.getKey(), childNode);
-          return true;
-        });
+        if (!nodeMap.has(cell.getKey())) {
+          $visitRecursively(cell, (childNode) => {
+            nodeMap.set(childNode.getKey(), childNode);
+          });
+        }
       }
     }
     const nodes = Array.from(nodeMap.values());
@@ -423,9 +421,14 @@ export function $createTableSelectionFrom(
   return nextSelection;
 }
 
+/**
+ * Depth first visitor
+ * @param node The starting node
+ * @param $visit The function to call for each node. If the function returns false, then children of this node will not be explored
+ */
 export function $visitRecursively(
   node: LexicalNode,
-  $visit: (childNode: LexicalNode) => boolean,
+  $visit: (childNode: LexicalNode) => boolean | undefined,
 ): void {
   const stack = [[node]];
   for (
@@ -437,7 +440,7 @@ export function $visitRecursively(
     if (currentNode === undefined) {
       stack.pop();
       continue;
-    } else if ($visit(currentNode) && $isElementNode(currentNode)) {
+    } else if ($visit(currentNode) !== false && $isElementNode(currentNode)) {
       stack.push(currentNode.getChildren());
     }
   }

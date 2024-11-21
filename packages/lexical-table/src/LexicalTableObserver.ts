@@ -318,16 +318,13 @@ export class TableObserver {
   updateDOMSelection() {
     if (this.anchorCell !== null && this.focusCell !== null) {
       const domSelection = getDOMSelection(this.editor._window);
-      // We are not using a native selection for tables
+      // We are not using a native selection for tables, and if we
+      // set one then the reconciler will undo it.
+      // TODO - it would make sense to have one so that native
+      //        copy/paste worked. Right now we have to emulate with
+      //        keyboard events but it won't fire if trigged from the menu
       if (domSelection && domSelection.rangeCount > 0) {
         domSelection.removeAllRanges();
-        // TODO TABLES - check to see if this was useful?
-        // domSelection.setBaseAndExtent(
-        //   this.anchorCell.elem,
-        //   0,
-        //   this.focusCell.elem,
-        //   this.focusCell.elem.children.length,
-        // );
       }
     }
   }

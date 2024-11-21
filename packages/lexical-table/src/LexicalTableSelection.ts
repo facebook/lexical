@@ -428,7 +428,7 @@ export function $createTableSelectionFrom(
  */
 export function $visitRecursively(
   node: LexicalNode,
-  $visit: (childNode: LexicalNode) => boolean | undefined,
+  $visit: (childNode: LexicalNode) => boolean | undefined | void,
 ): void {
   const stack = [[node]];
   for (
@@ -439,7 +439,6 @@ export function $visitRecursively(
     const currentNode = currentArray.pop();
     if (currentNode === undefined) {
       stack.pop();
-      continue;
     } else if ($visit(currentNode) !== false && $isElementNode(currentNode)) {
       stack.push(currentNode.getChildren());
     }

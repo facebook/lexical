@@ -902,7 +902,7 @@ export default function ToolbarPlugin({
               aria-label="Format text to lowercase">
               <div className="icon-text-container">
                 <i className="icon lowercase" />
-                <span className="text">lowercase</span>
+                <span className="text">Lowercase</span>
               </div>
               <span className="shortcut">{SHORTCUTS.LOWERCASE}</span>
             </DropDownItem>
@@ -917,7 +917,7 @@ export default function ToolbarPlugin({
               aria-label="Format text to uppercase">
               <div className="icon-text-container">
                 <i className="icon uppercase" />
-                <span className="text">UPPERCASE</span>
+                <span className="text">Uppercase</span>
               </div>
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
             </DropDownItem>

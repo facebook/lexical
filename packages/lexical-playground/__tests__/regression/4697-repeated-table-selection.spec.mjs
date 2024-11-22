@@ -38,6 +38,7 @@ test.describe('Regression test #4697', () => {
         false,
         false,
       );
+      await page.pause();
 
       await selectCellsFromTableCords(
         page,
@@ -46,6 +47,7 @@ test.describe('Regression test #4697', () => {
         false,
         false,
       );
+      await page.pause();
 
       await assertTableSelectionCoordinates(page, {
         anchor: {x: 2, y: 1},

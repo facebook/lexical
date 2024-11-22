@@ -240,11 +240,10 @@ export function applyTableHandlers(
         // we don't have a proper state machine to do this "correctly" but
         // if we go ahead and make the table selection now it will work
         if (
-          (IS_FIREFOX &&
-            event.shiftKey &&
-            $isSelectionInTable(prevSelection, tableNode) &&
-            $isRangeSelection(prevSelection)) ||
-          $isTableSelection(prevSelection)
+          IS_FIREFOX &&
+          event.shiftKey &&
+          $isSelectionInTable(prevSelection, tableNode) &&
+          ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
         ) {
           const prevAnchorNode = prevSelection.anchor.getNode();
           const prevAnchorCell = $findParentTableCellNodeInTable(

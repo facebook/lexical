@@ -84,7 +84,7 @@ handle external UI state and UI features relating to specific types of node.
 If any existing nodes are in the DOM, and skipInitialization is not true, the listener
 will be called immediately with an updateTag of 'registerMutationListener' where all
 nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
-(The default was previously true for backwards compatibility with <= 0.16.1 but has been changed to false as of 0.21.0).
+(whose default was previously true for backwards compatibility with &lt;=0.16.1 but has been changed to false as of 0.21.0).
 
 ```js
 const removeMutationListener = editor.registerMutationListener(

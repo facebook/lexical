@@ -1149,7 +1149,7 @@ export function setMutatedNode(
   }
 }
 /**
- * @deprecated Use registerMutationListener instead.
+ * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
  */
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const klassType = klass.getType();

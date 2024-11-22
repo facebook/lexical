@@ -64,6 +64,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -109,6 +110,24 @@ export function getTableElement<T extends HTMLElement | null>(
 
 export function getEditorWindow(editor: LexicalEditor): Window | null {
   return editor._window;
+}
+
+export function $findParentTableCellNodeInTable(
+  tableNode: LexicalNode,
+  node: LexicalNode | null,
+): TableCellNode | null {
+  for (
+    let currentNode = node, lastTableCellNode: TableCellNode | null = null;
+    currentNode !== null;
+    currentNode = currentNode.getParent()
+  ) {
+    if (tableNode.is(currentNode)) {
+      return lastTableCellNode;
+    } else if ($isTableCellNode(currentNode)) {
+      lastTableCellNode = currentNode;
+    }
+  }
+  return null;
 }
 
 const ARROW_KEY_COMMANDS_WITH_DIRECTION = [
@@ -213,10 +232,47 @@ export function applyTableHandlers(
       return;
     }
 
-    const anchorCell = getDOMCellFromTarget(event.target as Node);
-    if (anchorCell !== null) {
+    const targetCell = getDOMCellFromTarget(event.target as Node);
+    if (targetCell !== null) {
       editor.update(() => {
-        tableObserver.$setAnchorCellForSelection(anchorCell);
+        const prevSelection = $getPreviousSelection();
+        // We can't trust Firefox to do the right thing with the selection and
+        // we don't have a proper state machine to do this "correctly" but
+        // if we go ahead and make the table selection now it will work
+        if (
+          (IS_FIREFOX &&
+            event.shiftKey &&
+            $isSelectionInTable(prevSelection, tableNode) &&
+            $isRangeSelection(prevSelection)) ||
+          $isTableSelection(prevSelection)
+        ) {
+          const prevAnchorNode = prevSelection.anchor.getNode();
+          const prevAnchorCell = $findParentTableCellNodeInTable(
+            tableNode,
+            prevSelection.anchor.getNode(),
+          );
+          if (prevAnchorCell) {
+            tableObserver.$setAnchorCellForSelection(
+              $getObserverCellFromCellNodeOrThrow(
+                tableObserver,
+                prevAnchorCell,
+              ),
+            );
+            tableObserver.$setFocusCellForSelection(targetCell);
+            stopEvent(event);
+          } else {
+            const newSelection = tableNode.isBefore(prevAnchorNode)
+              ? tableNode.selectStart()
+              : tableNode.selectEnd();
+            newSelection.anchor.set(
+              prevSelection.anchor.key,
+              prevSelection.anchor.offset,
+              prevSelection.anchor.type,
+            );
+          }
+        } else {
+          tableObserver.$setAnchorCellForSelection(targetCell);
+        }
       });
     }
 
@@ -270,11 +326,11 @@ export function applyTableHandlers(
       (event) => {
         const selection = $getSelection();
         if ($isTableSelection(selection)) {
-          const focusCellNode = $findMatchingParent(
+          const focusCellNode = $findParentTableCellNodeInTable(
+            tableNode,
             selection.focus.getNode(),
-            $isTableCellNode,
           );
-          if ($isTableCellNode(focusCellNode)) {
+          if (focusCellNode !== null) {
             stopEvent(event);
             focusCellNode.selectEnd();
             return true;
@@ -299,9 +355,9 @@ export function applyTableHandlers(
 
       return true;
     } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findMatchingParent(
+      const tableCellNode = $findParentTableCellNodeInTable(
+        tableNode,
         selection.anchor.getNode(),
-        (n) => $isTableCellNode(n),
       );
 
       if (!$isTableCellNode(tableCellNode)) {
@@ -502,19 +558,27 @@ export function applyTableHandlers(
           anchorNode,
           focusNode,
         );
-        const maxRow = Math.max(anchorCell.startRow, focusCell.startRow);
+        const maxRow = Math.max(
+          anchorCell.startRow + anchorCell.cell.__rowSpan - 1,
+          focusCell.startRow + focusCell.cell.__rowSpan - 1,
+        );
         const maxColumn = Math.max(
-          anchorCell.startColumn,
-          focusCell.startColumn,
+          anchorCell.startColumn + anchorCell.cell.__colSpan - 1,
+          focusCell.startColumn + focusCell.cell.__colSpan - 1,
         );
         const minRow = Math.min(anchorCell.startRow, focusCell.startRow);
         const minColumn = Math.min(
           anchorCell.startColumn,
           focusCell.startColumn,
         );
+        const visited = new Set<TableCellNode>();
         for (let i = minRow; i <= maxRow; i++) {
           for (let j = minColumn; j <= maxColumn; j++) {
             const cell = tableMap[i][j].cell;
+            if (visited.has(cell)) {
+              continue;
+            }
+            visited.add(cell);
             cell.setFormat(formatType);
 
             const cellChildren = cell.getChildren();

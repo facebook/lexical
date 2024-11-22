@@ -3534,8 +3534,6 @@ test.describe.parallel('Tables', () => {
      </div>`,
     });
 
-    await page.pause();
-
     await assertHTML(
       page,
       html`

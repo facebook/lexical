@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS = {
   isMaxLength: false,
   isRichText: true,
   measureTypingPerf: false,
+  shouldAllowHighlightingWithBrackets: false,
   shouldPreserveNewLinesInMarkdown: false,
   shouldUseLexicalContextMenu: false,
   showNestedEditorTreeView: false,

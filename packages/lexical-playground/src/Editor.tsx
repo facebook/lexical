@@ -61,6 +61,7 @@ import MentionsPlugin from './plugins/MentionsPlugin';
 import PageBreakPlugin from './plugins/PageBreakPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
+import SpecialTextPlugin from './plugins/SpecialTextPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
@@ -95,6 +96,7 @@ export default function Editor(): JSX.Element {
       tableCellMerge,
       tableCellBackgroundColor,
       tableHorizontalScroll,
+      shouldAllowHighlightingWithBrackets,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -258,6 +260,7 @@ export default function Editor(): JSX.Element {
         {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
+        {shouldAllowHighlightingWithBrackets && <SpecialTextPlugin />}
         <ActionsPlugin
           isRichText={isRichText}
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}

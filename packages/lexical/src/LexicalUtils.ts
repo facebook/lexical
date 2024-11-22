@@ -1148,7 +1148,9 @@ export function setMutatedNode(
     mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
-
+/**
+ * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
+ */
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();

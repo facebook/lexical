@@ -98,6 +98,7 @@ export type EditorThemeClasses = {
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
   hashtag?: EditorThemeClassName;
+  specialText?: EditorThemeClassName;
   heading?: {
     h1?: EditorThemeClassName;
     h2?: EditorThemeClassName;

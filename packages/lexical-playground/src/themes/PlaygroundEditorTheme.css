@@ -67,52 +67,20 @@
 }
 
 .PlaygroundEditorTheme__tabNode {
-  display: inline-block;
-  vertical-align: baseline;
   position: relative;
-  height: 1.3em;
 }
 
+/* affected tabs
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderline {
-  text-decoration: none;
-  border-bottom: 0.1em solid currentColor;
 }
 
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough {
-  text-decoration: none;
-  position: relative;
-}
-
-/* Center the strikethrough line using pseudo-element for better control */
-.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 68%;
-  transform: translateY(-50%);
-  height: 0.1em;
-  background-color: currentColor;
 }
 
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough {
-  text-decoration: none;
-  border-bottom: 0.1em solid currentColor;
-  position: relative;
 }
 
-/* Center the strikethrough line for combined underline+strikethrough */
-.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 68%;
-  transform: translateY(-50%);
-  height: 0.1em;
-  background-color: currentColor;
-}
-
+*/
 .PlaygroundEditorTheme__textSubscript {
   font-size: 0.8em;
   vertical-align: sub !important;

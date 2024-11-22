@@ -39,7 +39,6 @@ import {
   IS_STRIKETHROUGH,
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
-  IS_TITLECASE,
   IS_UNDERLINE,
   IS_UPPERCASE,
 } from '../../../LexicalConstants';
@@ -59,7 +58,6 @@ const editorConfig = Object.freeze({
       italic: 'my-italic-class',
       lowercase: 'my-lowercase-class',
       strikethrough: 'my-strikethrough-class',
-      titlecase: 'my-titlecase-class',
       underline: 'my-underline-class',
       underlineStrikethrough: 'my-underline-strikethrough-class',
       uppercase: 'my-uppercase-class',
@@ -218,7 +216,6 @@ describe('LexicalTextNode tests', () => {
     ['highlight', IS_HIGHLIGHT],
     ['lowercase', IS_LOWERCASE],
     ['uppercase', IS_UPPERCASE],
-    ['titlecase', IS_TITLECASE],
   ] as const)('%s flag', (formatFlag: TextFormatType, stateFormat: number) => {
     const flagPredicate = (node: TextNode) => node.hasFormat(formatFlag);
     const flagToggle = (node: TextNode) => node.toggleFormat(formatFlag);
@@ -275,94 +272,41 @@ describe('LexicalTextNode tests', () => {
     });
   });
 
-  test('setting subscript clears superscript', async () => {
+  test.each([
+    ['subscript', 'superscript'],
+    ['superscript', 'subscript'],
+    ['lowercase', 'uppercase'],
+    ['uppercase', 'lowercase'],
+  ])('setting %s clears %s', async (newFormat, previousFormat) => {
     await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
-      textNode.toggleFormat('superscript');
-      textNode.toggleFormat('subscript');
-      expect(textNode.hasFormat('subscript')).toBe(true);
-      expect(textNode.hasFormat('superscript')).toBe(false);
+
+      textNode.toggleFormat(previousFormat as TextFormatType);
+      textNode.toggleFormat(newFormat as TextFormatType);
+      expect(textNode.hasFormat(newFormat as TextFormatType)).toBe(true);
+      expect(textNode.hasFormat(previousFormat as TextFormatType)).toBe(false);
     });
   });
 
-  test('setting superscript clears subscript', async () => {
-    await update(() => {
-      const paragraphNode = $createParagraphNode();
-      const textNode = $createTextNode('Hello World');
-      paragraphNode.append(textNode);
-      $getRoot().append(paragraphNode);
-      textNode.toggleFormat('subscript');
-      textNode.toggleFormat('superscript');
-      expect(textNode.hasFormat('superscript')).toBe(true);
-      expect(textNode.hasFormat('subscript')).toBe(false);
-    });
-  });
-
-  test('clearing subscript does not set superscript', async () => {
-    await update(() => {
-      const paragraphNode = $createParagraphNode();
-      const textNode = $createTextNode('Hello World');
-      paragraphNode.append(textNode);
-      $getRoot().append(paragraphNode);
-      textNode.toggleFormat('subscript');
-      textNode.toggleFormat('subscript');
-      expect(textNode.hasFormat('subscript')).toBe(false);
-      expect(textNode.hasFormat('superscript')).toBe(false);
-    });
-  });
-
-  test('clearing superscript does not set subscript', async () => {
-    await update(() => {
-      const paragraphNode = $createParagraphNode();
-      const textNode = $createTextNode('Hello World');
-      paragraphNode.append(textNode);
-      $getRoot().append(paragraphNode);
-      textNode.toggleFormat('superscript');
-      textNode.toggleFormat('superscript');
-      expect(textNode.hasFormat('superscript')).toBe(false);
-      expect(textNode.hasFormat('subscript')).toBe(false);
-    });
-  });
-
-  test('capitalization formats are mutually exclusive', async () => {
+  test.each([
+    ['subscript', 'superscript'],
+    ['superscript', 'subscript'],
+    ['lowercase', 'uppercase'],
+    ['uppercase', 'lowercase'],
+  ])('clearing %s does not set %s', async (formatToClear, otherFormat) => {
     await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      const formats: TextFormatType[] = ['lowercase', 'uppercase', 'titlecase'];
-
-      for (const format of formats) {
-        textNode.toggleFormat(format);
-        formats.forEach((f) => {
-          if (f === format) {
-            expect(textNode.hasFormat(f)).toBe(true);
-          } else {
-            expect(textNode.hasFormat(f)).toBe(false);
-          }
-        });
-      }
-    });
-  });
-
-  test('clearing one capitalization format does not set another', async () => {
-    await update(() => {
-      const paragraphNode = $createParagraphNode();
-      const textNode = $createTextNode('Hello World');
-      paragraphNode.append(textNode);
-      $getRoot().append(paragraphNode);
-
-      const formats: TextFormatType[] = ['lowercase', 'uppercase', 'titlecase'];
-
-      for (const format of formats) {
-        textNode.toggleFormat(format);
-        textNode.toggleFormat(format);
-        formats.forEach((f) => expect(textNode.hasFormat(f)).toBe(false));
-      }
+      textNode.toggleFormat(formatToClear as TextFormatType);
+      textNode.toggleFormat(formatToClear as TextFormatType);
+      expect(textNode.hasFormat(formatToClear as TextFormatType)).toBe(false);
+      expect(textNode.hasFormat(otherFormat as TextFormatType)).toBe(false);
     });
   });
 
@@ -695,12 +639,6 @@ describe('LexicalTextNode tests', () => {
         IS_UPPERCASE,
         'My text node',
         '<span class="my-uppercase-class">My text node</span>',
-      ],
-      [
-        'titlecase',
-        IS_TITLECASE,
-        'My text node',
-        '<span class="my-titlecase-class">My text node</span>',
       ],
       [
         'underline + strikethrough',

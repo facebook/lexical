@@ -617,7 +617,6 @@ export default function ToolbarPlugin({
       );
       updateToolbarState('isLowercase', selection.hasFormat('lowercase'));
       updateToolbarState('isUppercase', selection.hasFormat('uppercase'));
-      updateToolbarState('isTitlecase', selection.hasFormat('titlecase'));
     }
   }, [activeEditor, editor, updateToolbarState]);
 
@@ -920,21 +919,6 @@ export default function ToolbarPlugin({
                 <span className="text">Uppercase</span>
               </div>
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'titlecase');
-              }}
-              className={
-                'item wide ' + dropDownActiveClass(toolbarState.isTitlecase)
-              }
-              title="Titlecase"
-              aria-label="Format text to titlecase">
-              <div className="icon-text-container">
-                <i className="icon titlecase" />
-                <span className="text">Title Case</span>
-              </div>
-              <span className="shortcut">{SHORTCUTS.TITLECASE}</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

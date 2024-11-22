@@ -113,7 +113,6 @@ const theme: EditorThemeClasses = {
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',
     subscript: 'PlaygroundEditorTheme__textSubscript',
     superscript: 'PlaygroundEditorTheme__textSuperscript',
-    titlecase: 'PlaygroundEditorTheme__textTitlecase',
     underline: 'PlaygroundEditorTheme__textUnderline',
     underlineStrikethrough: 'PlaygroundEditorTheme__textUnderlineStrikethrough',
     uppercase: 'PlaygroundEditorTheme__textUppercase',

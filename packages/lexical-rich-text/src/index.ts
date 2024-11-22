@@ -552,16 +552,11 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
 }
 
 function $resetCapitalization(selection: RangeSelection): void {
-  const capitalizationTypes: TextFormatType[] = [
-    'lowercase',
-    'uppercase',
-    'titlecase',
-  ];
-  capitalizationTypes.forEach((type) => {
+  for (const type of ['lowercase', 'uppercase'] as const) {
     if (selection.hasFormat(type)) {
       selection.toggleFormat(type);
     }
-  });
+  }
 }
 
 export function registerRichText(editor: LexicalEditor): () => void {

@@ -83,9 +83,6 @@
 .PlaygroundEditorTheme__textUppercase {
   text-transform: uppercase;
 }
-.PlaygroundEditorTheme__textTitlecase {
-  text-transform: capitalize;
-}
 .PlaygroundEditorTheme__hashtag {
   background-color: rgba(88, 144, 255, 0.15);
   border-bottom: 1px solid rgba(88, 144, 255, 0.3);

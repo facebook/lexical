@@ -402,10 +402,6 @@ i.lowercase {
   background-image: url(images/icons/type-lowercase.svg);
 }
 
-i.titlecase {
-  background-image: url(images/icons/type-titlecase.svg);
-}
-
 i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }

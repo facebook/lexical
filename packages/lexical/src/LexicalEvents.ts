@@ -590,14 +590,20 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           // Chromium Android at the moment seems to ignore the preventDefault
           // on 'deleteContentBackward' and still deletes the content. Which leads
           // to multiple deletions. So we let the browser handle the deletion in this case.
-          const selectedNodeText = selection.anchor.getNode().getTextContent();
+          const selectedNode = selection.anchor.getNode();
+          const selectedNodeText = selectedNode.getTextContent();
+          // When the target node has `canInsertTextAfter` set to false, the first deletion
+          // doesn't have an effect, so we need to handle it with Lexical.
+          const selectedNodeCanInsertTextAfter =
+            selectedNode.canInsertTextAfter();
           const hasSelectedAllTextInNode =
             selection.anchor.offset === 0 &&
             selection.focus.offset === selectedNodeText.length;
           const shouldLetBrowserHandleDelete =
             IS_ANDROID_CHROME &&
             isSelectionAnchorSameAsFocus &&
-            !hasSelectedAllTextInNode;
+            !hasSelectedAllTextInNode &&
+            selectedNodeCanInsertTextAfter;
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }

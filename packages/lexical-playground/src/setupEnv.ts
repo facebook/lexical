@@ -30,5 +30,9 @@ export default (() => {
     // @ts-expect-error
     delete window.InputEvent.prototype.getTargetRanges;
   }
+
+  // @ts-ignore
+  window.EXCALIDRAW_ASSET_PATH = process.env.EXCALIDRAW_ASSET_PATH;
+
   return INITIAL_SETTINGS;
 })();

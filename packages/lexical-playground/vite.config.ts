@@ -77,7 +77,7 @@ export default defineConfig(({command}) => {
         presets: [['@babel/preset-react', {runtime: 'automatic'}]],
       }),
       react(),
-      ...viteCopyExcalidrawAssets('dev'),
+      ...viteCopyExcalidrawAssets(),
       viteCopyEsm(),
       commonjs({
         // This is required for React 19 (at least 19.0.0-beta-26f2496093-20240514)

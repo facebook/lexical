@@ -8,6 +8,8 @@
 import type {Plugin} from 'vite';
 
 import {createRequire} from 'node:module';
+import * as path from 'node:path';
+import {normalizePath} from 'vite';
 import {Target, viteStaticCopy} from 'vite-plugin-static-copy';
 
 const require = createRequire(import.meta.url);
@@ -17,17 +19,22 @@ export default function viteCopyExcalidrawAssets(): Plugin[] {
     'excalidraw-assets',
     'excalidraw-assets-dev',
   ].flatMap((assetDir) => {
-    const srcDir = `${require.resolve(
-      '@excalidraw/excalidraw',
-    )}/../dist/${assetDir}`;
+    const srcDir = path.join(
+      require.resolve('@excalidraw/excalidraw'),
+      '..',
+      'dist',
+      assetDir,
+    );
     return [
       {
         dest: `${assetDir}/`,
-        src: [`${srcDir}/*.js`, `${srcDir}/*.woff2`],
+        src: [path.join(srcDir, '*.js'), path.join(srcDir, '*.woff2')].map(
+          normalizePath,
+        ),
       },
       {
         dest: `${assetDir}/locales/`,
-        src: [`${srcDir}/locales/*.js`],
+        src: [path.join(srcDir, 'locales', '*.js')].map(normalizePath),
       },
     ];
   });

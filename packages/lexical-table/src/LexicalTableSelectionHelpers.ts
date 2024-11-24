@@ -52,6 +52,7 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -64,7 +65,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -76,14 +77,15 @@ import {
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {$isTableSelection} from './LexicalTableSelection';
-import {$computeTableMap, $getNodeTriplet} from './LexicalTableUtils';
+import {
+  $computeTableCellRectBoundary,
+  $computeTableCellRectSpans,
+  $computeTableMap,
+  $getNodeTriplet,
+  TableCellRectBoundary,
+} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
-
-export const getDOMSelection = (
-  targetWindow: Window | null,
-): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 const isMouseDownOnEvent = (event: MouseEvent) => {
   return (event.buttons & 1) === 1;
@@ -107,6 +109,44 @@ export function getTableElement<T extends HTMLElement | null>(
   return element;
 }
 
+export function getEditorWindow(editor: LexicalEditor): Window | null {
+  return editor._window;
+}
+
+export function $findParentTableCellNodeInTable(
+  tableNode: LexicalNode,
+  node: LexicalNode | null,
+): TableCellNode | null {
+  for (
+    let currentNode = node, lastTableCellNode: TableCellNode | null = null;
+    currentNode !== null;
+    currentNode = currentNode.getParent()
+  ) {
+    if (tableNode.is(currentNode)) {
+      return lastTableCellNode;
+    } else if ($isTableCellNode(currentNode)) {
+      lastTableCellNode = currentNode;
+    }
+  }
+  return null;
+}
+
+const ARROW_KEY_COMMANDS_WITH_DIRECTION = [
+  [KEY_ARROW_DOWN_COMMAND, 'down'],
+  [KEY_ARROW_UP_COMMAND, 'up'],
+  [KEY_ARROW_LEFT_COMMAND, 'backward'],
+  [KEY_ARROW_RIGHT_COMMAND, 'forward'],
+] as const;
+const DELETE_TEXT_COMMANDS = [
+  DELETE_WORD_COMMAND,
+  DELETE_LINE_COMMAND,
+  DELETE_CHARACTER_COMMAND,
+] as const;
+const DELETE_KEY_COMMANDS = [
+  KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
+] as const;
+
 export function applyTableHandlers(
   tableNode: TableNode,
   element: HTMLElement,
@@ -114,13 +154,13 @@ export function applyTableHandlers(
   hasTabHandler: boolean,
 ): TableObserver {
   const rootElement = editor.getRootElement();
-
-  if (rootElement === null) {
-    throw new Error('No root element.');
-  }
+  const editorWindow = getEditorWindow(editor);
+  invariant(
+    rootElement !== null && editorWindow !== null,
+    'applyTableHandlers: editor has no root element set',
+  );
 
   const tableObserver = new TableObserver(editor, tableNode.getKey());
-  const editorWindow = editor._window || window;
 
   const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
@@ -129,6 +169,9 @@ export function applyTableHandlers(
   );
 
   const createMouseHandlers = () => {
+    if (tableObserver.isSelecting) {
+      return;
+    }
     const onMouseUp = () => {
       tableObserver.isSelecting = false;
       editorWindow.removeEventListener('mouseup', onMouseUp);
@@ -136,57 +179,104 @@ export function applyTableHandlers(
     };
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
-      setTimeout(() => {
-        if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
-          tableObserver.isSelecting = false;
-          editorWindow.removeEventListener('mouseup', onMouseUp);
-          editorWindow.removeEventListener('mousemove', onMouseMove);
-          return;
+      if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+        tableObserver.isSelecting = false;
+        editorWindow.removeEventListener('mouseup', onMouseUp);
+        editorWindow.removeEventListener('mousemove', onMouseMove);
+        return;
+      }
+      const override = !tableElement.contains(moveEvent.target as Node);
+      let focusCell: null | TableDOMCell = null;
+      if (!override) {
+        focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+      } else {
+        for (const el of document.elementsFromPoint(
+          moveEvent.clientX,
+          moveEvent.clientY,
+        )) {
+          focusCell = tableElement.contains(el)
+            ? getDOMCellFromTarget(el)
+            : null;
+          if (focusCell) {
+            break;
+          }
         }
-        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
-        if (
-          focusCell !== null &&
-          (tableObserver.anchorX !== focusCell.x ||
-            tableObserver.anchorY !== focusCell.y)
-        ) {
-          moveEvent.preventDefault();
-          tableObserver.setFocusCellForSelection(focusCell);
-        }
-      }, 0);
+      }
+      if (
+        focusCell &&
+        (tableObserver.focusCell === null ||
+          focusCell.elem !== tableObserver.focusCell.elem)
+      ) {
+        tableObserver.setNextFocus({focusCell, override});
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      }
     };
-    return {onMouseMove, onMouseUp};
+    tableObserver.isSelecting = true;
+    editorWindow.addEventListener(
+      'mouseup',
+      onMouseUp,
+      tableObserver.listenerOptions,
+    );
+    editorWindow.addEventListener(
+      'mousemove',
+      onMouseMove,
+      tableObserver.listenerOptions,
+    );
   };
 
   const onMouseDown = (event: MouseEvent) => {
-    setTimeout(() => {
-      if (event.button !== 0) {
-        return;
-      }
+    if (event.button !== 0) {
+      return;
+    }
 
-      if (!editorWindow) {
-        return;
-      }
+    if (!editorWindow) {
+      return;
+    }
 
-      const anchorCell = getDOMCellFromTarget(event.target as Node);
-      if (anchorCell !== null) {
-        stopEvent(event);
-        tableObserver.setAnchorCellForSelection(anchorCell);
-      }
+    const targetCell = getDOMCellFromTarget(event.target as Node);
+    if (targetCell !== null) {
+      editor.update(() => {
+        const prevSelection = $getPreviousSelection();
+        // We can't trust Firefox to do the right thing with the selection and
+        // we don't have a proper state machine to do this "correctly" but
+        // if we go ahead and make the table selection now it will work
+        if (
+          IS_FIREFOX &&
+          event.shiftKey &&
+          $isSelectionInTable(prevSelection, tableNode) &&
+          ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
+        ) {
+          const prevAnchorNode = prevSelection.anchor.getNode();
+          const prevAnchorCell = $findParentTableCellNodeInTable(
+            tableNode,
+            prevSelection.anchor.getNode(),
+          );
+          if (prevAnchorCell) {
+            tableObserver.$setAnchorCellForSelection(
+              $getObserverCellFromCellNodeOrThrow(
+                tableObserver,
+                prevAnchorCell,
+              ),
+            );
+            tableObserver.$setFocusCellForSelection(targetCell);
+            stopEvent(event);
+          } else {
+            const newSelection = tableNode.isBefore(prevAnchorNode)
+              ? tableNode.selectStart()
+              : tableNode.selectEnd();
+            newSelection.anchor.set(
+              prevSelection.anchor.key,
+              prevSelection.anchor.offset,
+              prevSelection.anchor.type,
+            );
+          }
+        } else {
+          tableObserver.$setAnchorCellForSelection(targetCell);
+        }
+      });
+    }
 
-      const {onMouseUp, onMouseMove} = createMouseHandlers();
-      tableObserver.isSelecting = true;
-      editorWindow.addEventListener(
-        'mouseup',
-        onMouseUp,
-        tableObserver.listenerOptions,
-      );
-      editorWindow.addEventListener(
-        'mousemove',
-        onMouseMove,
-        tableObserver.listenerOptions,
-      );
-    }, 0);
+    createMouseHandlers();
   };
   tableElement.addEventListener(
     'mousedown',
@@ -208,7 +298,7 @@ export function applyTableHandlers(
         selection.tableKey === tableObserver.tableNodeKey &&
         rootElement.contains(target)
       ) {
-        tableObserver.clearHighlight();
+        tableObserver.$clearHighlight();
       }
     });
   };
@@ -219,40 +309,16 @@ export function applyTableHandlers(
     tableObserver.listenerOptions,
   );
 
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_DOWN_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'down', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_UP_COMMAND,
-      (event) => $handleArrowKey(editor, event, 'up', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_LEFT_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'backward', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_ARROW_RIGHT_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'forward', tableNode, tableObserver),
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
+  for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
+    tableObserver.listenersToRemove.add(
+      editor.registerCommand<KeyboardEvent>(
+        command,
+        (event) =>
+          $handleArrowKey(editor, event, direction, tableNode, tableObserver),
+        COMMAND_PRIORITY_HIGH,
+      ),
+    );
+  }
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
@@ -260,11 +326,11 @@ export function applyTableHandlers(
       (event) => {
         const selection = $getSelection();
         if ($isTableSelection(selection)) {
-          const focusCellNode = $findMatchingParent(
+          const focusCellNode = $findParentTableCellNodeInTable(
+            tableNode,
             selection.focus.getNode(),
-            $isTableCellNode,
           );
-          if ($isTableCellNode(focusCellNode)) {
+          if (focusCellNode !== null) {
             stopEvent(event);
             focusCellNode.selectEnd();
             return true;
@@ -285,13 +351,13 @@ export function applyTableHandlers(
     }
 
     if ($isTableSelection(selection)) {
-      tableObserver.clearText();
+      tableObserver.$clearText();
 
       return true;
     } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findMatchingParent(
+      const tableCellNode = $findParentTableCellNodeInTable(
+        tableNode,
         selection.anchor.getNode(),
-        (n) => $isTableCellNode(n),
       );
 
       if (!$isTableCellNode(tableCellNode)) {
@@ -308,7 +374,7 @@ export function applyTableHandlers(
         (isFocusInside && !isAnchorInside);
 
       if (selectionContainsPartialTable) {
-        tableObserver.clearText();
+        tableObserver.$clearText();
         return true;
       }
 
@@ -343,17 +409,15 @@ export function applyTableHandlers(
     return false;
   };
 
-  [DELETE_WORD_COMMAND, DELETE_LINE_COMMAND, DELETE_CHARACTER_COMMAND].forEach(
-    (command) => {
-      tableObserver.listenersToRemove.add(
-        editor.registerCommand(
-          command,
-          deleteTextHandler(command),
-          COMMAND_PRIORITY_CRITICAL,
-        ),
-      );
-    },
-  );
+  for (const command of DELETE_TEXT_COMMANDS) {
+    tableObserver.listenersToRemove.add(
+      editor.registerCommand(
+        command,
+        deleteTextHandler(command),
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    );
+  }
 
   const $deleteCellHandler = (
     event: KeyboardEvent | ClipboardEvent | null,
@@ -391,7 +455,7 @@ export function applyTableHandlers(
         event.preventDefault();
         event.stopPropagation();
       }
-      tableObserver.clearText();
+      tableObserver.$clearText();
 
       return true;
     }
@@ -399,21 +463,15 @@ export function applyTableHandlers(
     return false;
   };
 
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_BACKSPACE_COMMAND,
-      $deleteCellHandler,
-      COMMAND_PRIORITY_CRITICAL,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
-      KEY_DELETE_COMMAND,
-      $deleteCellHandler,
-      COMMAND_PRIORITY_CRITICAL,
-    ),
-  );
+  for (const command of DELETE_KEY_COMMANDS) {
+    tableObserver.listenersToRemove.add(
+      editor.registerCommand<KeyboardEvent>(
+        command,
+        $deleteCellHandler,
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    );
+  }
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent | ClipboardEvent | null>(
@@ -457,7 +515,7 @@ export function applyTableHandlers(
         }
 
         if ($isTableSelection(selection)) {
-          tableObserver.formatCells(payload);
+          tableObserver.$formatCells(payload);
 
           return true;
         } else if ($isRangeSelection(selection)) {
@@ -500,19 +558,27 @@ export function applyTableHandlers(
           anchorNode,
           focusNode,
         );
-        const maxRow = Math.max(anchorCell.startRow, focusCell.startRow);
+        const maxRow = Math.max(
+          anchorCell.startRow + anchorCell.cell.__rowSpan - 1,
+          focusCell.startRow + focusCell.cell.__rowSpan - 1,
+        );
         const maxColumn = Math.max(
-          anchorCell.startColumn,
-          focusCell.startColumn,
+          anchorCell.startColumn + anchorCell.cell.__colSpan - 1,
+          focusCell.startColumn + focusCell.cell.__colSpan - 1,
         );
         const minRow = Math.min(anchorCell.startRow, focusCell.startRow);
         const minColumn = Math.min(
           anchorCell.startColumn,
           focusCell.startColumn,
         );
+        const visited = new Set<TableCellNode>();
         for (let i = minRow; i <= maxRow; i++) {
           for (let j = minColumn; j <= maxColumn; j++) {
             const cell = tableMap[i][j].cell;
+            if (visited.has(cell)) {
+              continue;
+            }
+            visited.add(cell);
             cell.setFormat(formatType);
 
             const cellChildren = cell.getChildren();
@@ -541,7 +607,7 @@ export function applyTableHandlers(
         }
 
         if ($isTableSelection(selection)) {
-          tableObserver.clearHighlight();
+          tableObserver.$clearHighlight();
 
           return false;
         } else if ($isRangeSelection(selection)) {
@@ -625,20 +691,6 @@ export function applyTableHandlers(
       COMMAND_PRIORITY_HIGH,
     ),
   );
-
-  function getObserverCellFromCellNode(
-    tableCellNode: TableCellNode,
-  ): TableDOMCell {
-    const currentCords = tableNode.getCordsFromCellNode(
-      tableCellNode,
-      tableObserver.table,
-    );
-    return tableNode.getDOMCellFromCordsOrThrow(
-      currentCords.x,
-      currentCords.y,
-      tableObserver.table,
-    );
-  }
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
@@ -767,11 +819,39 @@ export function applyTableHandlers(
       () => {
         const selection = $getSelection();
         const prevSelection = $getPreviousSelection();
+        const nextFocus = tableObserver.getAndClearNextFocus();
+        if (nextFocus !== null) {
+          const {focusCell} = nextFocus;
+          if (
+            $isTableSelection(selection) &&
+            selection.tableKey === tableObserver.tableNodeKey
+          ) {
+            if (
+              focusCell.x === tableObserver.focusX &&
+              focusCell.y === tableObserver.focusY
+            ) {
+              // The selection is already the correct table selection
+              return false;
+            } else {
+              tableObserver.$setFocusCellForSelection(focusCell);
+              return true;
+            }
+          } else if (
+            focusCell !== tableObserver.anchorCell &&
+            $isSelectionInTable(selection, tableNode)
+          ) {
+            // The selection has crossed cells
+            tableObserver.$setFocusCellForSelection(focusCell);
+            return true;
+          }
+        }
+        const shouldCheckSelection =
+          tableObserver.getAndClearShouldCheckSelection();
         // If they pressed the down arrow with the selection outside of the
         // table, and then the selection ends up in the table but not in the
         // first cell, then move the selection to the first cell.
         if (
-          tableObserver.getAndClearShouldCheckSelection() &&
+          shouldCheckSelection &&
           $isRangeSelection(prevSelection) &&
           $isRangeSelection(selection) &&
           selection.isCollapsed()
@@ -783,8 +863,14 @@ export function applyTableHandlers(
             const firstCell = firstRow.getFirstChild();
             if (
               $isTableCellNode(firstCell) &&
-              !$findMatchingParent(anchorCell, (node) => node.is(firstCell))
+              tableNode.is(
+                $findMatchingParent(
+                  anchorCell,
+                  (node) => node.is(tableNode) || node.is(firstCell),
+                ),
+              )
             ) {
+              // The selection moved to the table, but not in the first cell
               firstCell.selectStart();
               return true;
             }
@@ -805,11 +891,11 @@ export function applyTableHandlers(
           const isFocusInside = !!(
             focusCellNode && tableNode.is($findTableNode(focusCellNode))
           );
-          const isPartialyWithinTable = isAnchorInside !== isFocusInside;
+          const isPartiallyWithinTable = isAnchorInside !== isFocusInside;
           const isWithinTable = isAnchorInside && isFocusInside;
           const isBackward = selection.isBackward();
 
-          if (isPartialyWithinTable) {
+          if (isPartiallyWithinTable) {
             const newSelection = selection.clone();
             if (isFocusInside) {
               const [tableMap] = $computeTableMap(
@@ -850,23 +936,21 @@ export function applyTableHandlers(
             $addHighlightStyleToTable(editor, tableObserver);
           } else if (isWithinTable) {
             // Handle case when selection spans across multiple cells but still
-            // has range selection, then we convert it into grid selection
+            // has range selection, then we convert it into table selection
             if (!anchorCellNode.is(focusCellNode)) {
-              tableObserver.setAnchorCellForSelection(
-                getObserverCellFromCellNode(anchorCellNode),
+              tableObserver.$setAnchorCellForSelection(
+                $getObserverCellFromCellNodeOrThrow(
+                  tableObserver,
+                  anchorCellNode,
+                ),
               );
-              tableObserver.setFocusCellForSelection(
-                getObserverCellFromCellNode(focusCellNode),
+              tableObserver.$setFocusCellForSelection(
+                $getObserverCellFromCellNodeOrThrow(
+                  tableObserver,
+                  focusCellNode,
+                ),
                 true,
               );
-              if (!tableObserver.isSelecting) {
-                setTimeout(() => {
-                  const {onMouseUp, onMouseMove} = createMouseHandlers();
-                  tableObserver.isSelecting = true;
-                  editorWindow.addEventListener('mouseup', onMouseUp);
-                  editorWindow.addEventListener('mousemove', onMouseMove);
-                }, 0);
-              }
             }
           }
         } else if (
@@ -876,7 +960,7 @@ export function applyTableHandlers(
           selection.tableKey === tableNode.getKey()
         ) {
           // if selection goes outside of the table we need to change it to Range selection
-          const domSelection = getDOMSelection(editor._window);
+          const domSelection = getDOMSelection(editorWindow);
           if (
             domSelection &&
             domSelection.anchorNode &&
@@ -927,13 +1011,13 @@ export function applyTableHandlers(
             $isTableSelection(selection) &&
             selection.tableKey === tableObserver.tableNodeKey
           ) {
-            tableObserver.updateTableTableSelection(selection);
+            tableObserver.$updateTableTableSelection(selection);
           } else if (
             !$isTableSelection(selection) &&
             $isTableSelection(prevSelection) &&
             prevSelection.tableKey === tableObserver.tableNodeKey
           ) {
-            tableObserver.updateTableTableSelection(null);
+            tableObserver.$updateTableTableSelection(null);
           }
           return false;
         }
@@ -1190,7 +1274,7 @@ export function $addHighlightStyleToTable(
   editor: LexicalEditor,
   tableSelection: TableObserver,
 ) {
-  tableSelection.disableHighlightStyle();
+  tableSelection.$disableHighlightStyle();
   $forEachTableCell(tableSelection.table, (cell) => {
     cell.highlighted = true;
     $addHighlightToDOM(editor, cell, editor._config.theme);
@@ -1201,7 +1285,7 @@ export function $removeHighlightStyleToTable(
   editor: LexicalEditor,
   tableObserver: TableObserver,
 ) {
-  tableObserver.enableHighlightStyle();
+  tableObserver.$enableHighlightStyle();
   $forEachTableCell(tableObserver.table, (cell) => {
     const elem = cell.elem;
     cell.highlighted = false;
@@ -1283,53 +1367,170 @@ const selectTableNodeInDirection = (
   }
 };
 
-const adjustFocusNodeInDirection = (
-  tableObserver: TableObserver,
-  tableNode: TableNode,
-  x: number,
-  y: number,
-  direction: Direction,
-): boolean => {
-  const isForward = direction === 'forward';
-
-  switch (direction) {
-    case 'backward':
-    case 'forward':
-      if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
-        tableObserver.setFocusCellForSelection(
-          tableNode.getDOMCellFromCordsOrThrow(
-            x + (isForward ? 1 : -1),
-            y,
-            tableObserver.table,
-          ),
-        );
-      }
-
-      return true;
-    case 'up':
-      if (y !== 0) {
-        tableObserver.setFocusCellForSelection(
-          tableNode.getDOMCellFromCordsOrThrow(x, y - 1, tableObserver.table),
-        );
-
-        return true;
-      } else {
-        return false;
-      }
-    case 'down':
-      if (y !== tableObserver.table.rows - 1) {
-        tableObserver.setFocusCellForSelection(
-          tableNode.getDOMCellFromCordsOrThrow(x, y + 1, tableObserver.table),
-        );
-
-        return true;
-      } else {
-        return false;
-      }
-    default:
-      return false;
+type Corner = ['minColumn' | 'maxColumn', 'minRow' | 'maxRow'];
+function getCorner(
+  rect: TableCellRectBoundary,
+  cellValue: TableMapValueType,
+): Corner | null {
+  let colName: 'minColumn' | 'maxColumn';
+  let rowName: 'minRow' | 'maxRow';
+  if (cellValue.startColumn === rect.minColumn) {
+    colName = 'minColumn';
+  } else if (
+    cellValue.startColumn + cellValue.cell.__colSpan - 1 ===
+    rect.maxColumn
+  ) {
+    colName = 'maxColumn';
+  } else {
+    return null;
   }
-};
+  if (cellValue.startRow === rect.minRow) {
+    rowName = 'minRow';
+  } else if (
+    cellValue.startRow + cellValue.cell.__rowSpan - 1 ===
+    rect.maxRow
+  ) {
+    rowName = 'maxRow';
+  } else {
+    return null;
+  }
+  return [colName, rowName];
+}
+
+function getCornerOrThrow(
+  rect: TableCellRectBoundary,
+  cellValue: TableMapValueType,
+): Corner {
+  const corner = getCorner(rect, cellValue);
+  invariant(
+    corner !== null,
+    'getCornerOrThrow: cell %s is not at a corner of rect',
+    cellValue.cell.getKey(),
+  );
+  return corner;
+}
+
+function oppositeCorner([colName, rowName]: Corner): Corner {
+  return [
+    colName === 'minColumn' ? 'maxColumn' : 'minColumn',
+    rowName === 'minRow' ? 'maxRow' : 'minRow',
+  ];
+}
+
+function cellAtCornerOrThrow(
+  tableMap: TableMapType,
+  rect: TableCellRectBoundary,
+  [colName, rowName]: Corner,
+): TableMapValueType {
+  const rowNum = rect[rowName];
+  const rowMap = tableMap[rowNum];
+  invariant(
+    rowMap !== undefined,
+    'cellAtCornerOrThrow: %s = %s missing in tableMap',
+    rowName,
+    String(rowNum),
+  );
+  const colNum = rect[colName];
+  const cell = rowMap[colNum];
+  invariant(
+    cell !== undefined,
+    'cellAtCornerOrThrow: %s = %s missing in tableMap',
+    colName,
+    String(colNum),
+  );
+  return cell;
+}
+
+function $extractRectCorners(
+  tableMap: TableMapType,
+  anchorCellValue: TableMapValueType,
+  newFocusCellValue: TableMapValueType,
+) {
+  // We are sure that the focus now either contracts or expands the rect
+  // but both the anchor and focus might be moved to ensure a rectangle
+  // given a potentially ragged merge shape
+  const rect = $computeTableCellRectBoundary(
+    tableMap,
+    anchorCellValue,
+    newFocusCellValue,
+  );
+  const anchorCorner = getCorner(rect, anchorCellValue);
+  if (anchorCorner) {
+    return [
+      cellAtCornerOrThrow(tableMap, rect, anchorCorner),
+      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(anchorCorner)),
+    ];
+  }
+  const newFocusCorner = getCorner(rect, newFocusCellValue);
+  if (newFocusCorner) {
+    return [
+      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newFocusCorner)),
+      cellAtCornerOrThrow(tableMap, rect, newFocusCorner),
+    ];
+  }
+  // TODO this doesn't have to be arbitrary, use the closest corner instead
+  const newAnchorCorner: Corner = ['minColumn', 'minRow'];
+  return [
+    cellAtCornerOrThrow(tableMap, rect, newAnchorCorner),
+    cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newAnchorCorner)),
+  ];
+}
+
+function $adjustFocusInDirection(
+  tableObserver: TableObserver,
+  tableMap: TableMapType,
+  anchorCellValue: TableMapValueType,
+  focusCellValue: TableMapValueType,
+  direction: Direction,
+): boolean {
+  const rect = $computeTableCellRectBoundary(
+    tableMap,
+    anchorCellValue,
+    focusCellValue,
+  );
+  const spans = $computeTableCellRectSpans(tableMap, rect);
+  const {topSpan, leftSpan, bottomSpan, rightSpan} = spans;
+  const anchorCorner = getCornerOrThrow(rect, anchorCellValue);
+  const [focusColumn, focusRow] = oppositeCorner(anchorCorner);
+  let fCol = rect[focusColumn];
+  let fRow = rect[focusRow];
+  if (direction === 'forward') {
+    fCol += focusColumn === 'maxColumn' ? 1 : leftSpan;
+  } else if (direction === 'backward') {
+    fCol -= focusColumn === 'minColumn' ? 1 : rightSpan;
+  } else if (direction === 'down') {
+    fRow += focusRow === 'maxRow' ? 1 : topSpan;
+  } else if (direction === 'up') {
+    fRow -= focusRow === 'minRow' ? 1 : bottomSpan;
+  }
+  const targetRowMap = tableMap[fRow];
+  if (targetRowMap === undefined) {
+    return false;
+  }
+  const newFocusCellValue = targetRowMap[fCol];
+  if (newFocusCellValue === undefined) {
+    return false;
+  }
+  // We can be certain that anchorCellValue and newFocusCellValue are
+  // contained within the desired selection, but we are not certain if
+  // they need to be expanded or not to maintain a rectangular shape
+  const [finalAnchorCell, finalFocusCell] = $extractRectCorners(
+    tableMap,
+    anchorCellValue,
+    newFocusCellValue,
+  );
+  const anchorDOM = $getObserverCellFromCellNodeOrThrow(
+    tableObserver,
+    finalAnchorCell.cell,
+  )!;
+  const focusDOM = $getObserverCellFromCellNodeOrThrow(
+    tableObserver,
+    finalFocusCell.cell,
+  );
+  tableObserver.$setAnchorCellForSelection(anchorDOM);
+  tableObserver.$setFocusCellForSelection(focusDOM, true);
+  return true;
+}
 
 function $isSelectionInTable(
   selection: null | BaseSelection,
@@ -1541,8 +1742,8 @@ function $handleArrowKey(
                 lastCellCoords.y,
                 tableObserver.table,
               );
-              tableObserver.setAnchorCellForSelection(firstCellDOM);
-              tableObserver.setFocusCellForSelection(lastCellDOM, true);
+              tableObserver.$setAnchorCellForSelection(firstCellDOM);
+              tableObserver.$setFocusCellForSelection(lastCellDOM, true);
               return true;
             }
           }
@@ -1646,7 +1847,13 @@ function $handleArrowKey(
       if (
         isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
       ) {
-        return $handleTableExit(event, anchorNode, tableNode, direction);
+        return $handleTableExit(
+          event,
+          anchorNode,
+          anchorCellNode,
+          tableNode,
+          direction,
+        );
       }
 
       return false;
@@ -1662,7 +1869,7 @@ function $handleArrowKey(
     if (anchor.type === 'element') {
       edgeSelectionRect = anchorDOM.getBoundingClientRect();
     } else {
-      const domSelection = window.getSelection();
+      const domSelection = getDOMSelection(getEditorWindow(editor));
       if (domSelection === null || domSelection.rangeCount === 0) {
         return false;
       }
@@ -1705,8 +1912,8 @@ function $handleArrowKey(
           cords.y,
           tableObserver.table,
         );
-        tableObserver.setAnchorCellForSelection(cell);
-        tableObserver.setFocusCellForSelection(cell, true);
+        tableObserver.$setAnchorCellForSelection(cell);
+        tableObserver.$setFocusCellForSelection(cell, true);
       } else {
         return selectTableNodeInDirection(
           tableObserver,
@@ -1747,7 +1954,7 @@ function $handleArrowKey(
     ) {
       return false;
     }
-    tableObserver.updateTableTableSelection(selection);
+    tableObserver.$updateTableTableSelection(selection);
 
     const grid = getTable(tableNodeFromSelection, tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
@@ -1756,17 +1963,21 @@ function $handleArrowKey(
       cordsAnchor.y,
       grid,
     );
-    tableObserver.setAnchorCellForSelection(anchorCell);
+    tableObserver.$setAnchorCellForSelection(anchorCell);
 
     stopEvent(event);
 
     if (event.shiftKey) {
-      const cords = tableNode.getCordsFromCellNode(focusCellNode, grid);
-      return adjustFocusNodeInDirection(
+      const [tableMap, anchorValue, focusValue] = $computeTableMap(
+        tableNode,
+        anchorCellNode,
+        focusCellNode,
+      );
+      return $adjustFocusInDirection(
         tableObserver,
-        tableNodeFromSelection,
-        cords.x,
-        cords.y,
+        tableMap,
+        anchorValue,
+        focusValue,
         direction,
       );
     } else {
@@ -1852,13 +2063,10 @@ function $isExitingTableTextAnchor(
 function $handleTableExit(
   event: KeyboardEvent,
   anchorNode: LexicalNode,
+  anchorCellNode: TableCellNode,
   tableNode: TableNode,
   direction: 'backward' | 'forward',
-) {
-  const anchorCellNode = $findMatchingParent(anchorNode, $isTableCellNode);
-  if (!$isTableCellNode(anchorCellNode)) {
-    return false;
-  }
+): boolean {
   const [tableMap, cellValue] = $computeTableMap(
     tableNode,
     anchorCellNode,
@@ -1944,7 +2152,7 @@ function $getTableEdgeCursorPosition(
   }
 
   // TODO: Add support for nested tables
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection(getEditorWindow(editor));
   if (!domSelection) {
     return undefined;
   }
@@ -2004,4 +2212,20 @@ function $getTableEdgeCursorPosition(
   } else {
     return undefined;
   }
+}
+
+export function $getObserverCellFromCellNodeOrThrow(
+  tableObserver: TableObserver,
+  tableCellNode: TableCellNode,
+): TableDOMCell {
+  const {tableNode} = tableObserver.$lookup();
+  const currentCords = tableNode.getCordsFromCellNode(
+    tableCellNode,
+    tableObserver.table,
+  );
+  return tableNode.getDOMCellFromCordsOrThrow(
+    currentCords.x,
+    currentCords.y,
+    tableObserver.table,
+  );
 }

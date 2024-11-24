@@ -13,7 +13,10 @@ import {
   LinkNode,
   SerializedLinkNode,
 } from '@lexical/link';
+import {$createMarkNode, $isMarkNode} from '@lexical/mark';
 import {
+  $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $selectAll,
   ParagraphNode,
@@ -408,6 +411,71 @@ describe('LexicalLinkNode tests', () => {
         .children[0] as SerializedParagraphNode;
       const link = paragraph.children[0] as SerializedLinkNode;
       expect(link.title).toBe('Lexical Website');
+    });
+
+    test('$toggleLink correctly removes link when textnode has children(like marknode)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const precedingText = $createTextNode('some '); // space after
+        const textNode = $createTextNode('text');
+
+        paragraph.append(precedingText, textNode);
+
+        const linkNode = $createLinkNode('https://example.com/foo', {
+          rel: 'noreferrer',
+        });
+        textNode.insertAfter(linkNode);
+        linkNode.append(textNode);
+
+        const markNode = $createMarkNode(['knetk']);
+        textNode.insertBefore(markNode);
+        markNode.append(textNode);
+        $getRoot().append(paragraph);
+      });
+
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const [textNode, linkNode] = paragraph.getChildren();
+
+        // Check first text node
+        expect(textNode.getTextContent()).toBe('some ');
+
+        // Check link node and its nested structure
+        if ($isLinkNode(linkNode)) {
+          expect(linkNode.getURL()).toBe('https://example.com/foo');
+          expect(linkNode.getRel()).toBe('noreferrer');
+
+          // Check mark node nested inside link
+          const markNode = linkNode.getFirstChild();
+          if ($isMarkNode(markNode)) {
+            expect(markNode.getType()).toBe('mark');
+            expect(markNode.getIDs()).toEqual(['knetk']);
+            expect(markNode.getTextContent()).toBe('text');
+          }
+        }
+      });
+
+      await editor.update(() => {
+        $selectAll();
+        $toggleLink(null);
+      });
+
+      // Verify structure after link removal
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const [textNode, markNode] = paragraph.getChildren();
+
+        // Check text node remains unchanged
+        expect(textNode.getTextContent()).toBe('some ');
+
+        // Check mark node is preserved and moved up to paragraph level
+        if ($isMarkNode(markNode)) {
+          expect(markNode.getType()).toBe('mark');
+          expect(markNode.getIDs()).toEqual(['knetk']);
+          expect(markNode.getTextContent()).toBe('text');
+        }
+      });
     });
   });
 });

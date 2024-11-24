@@ -1148,7 +1148,9 @@ export function setMutatedNode(
     mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
-
+/**
+ * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
+ */
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();
@@ -1613,6 +1615,13 @@ export function updateDOMBlockCursorElement(
   }
 }
 
+/**
+ * Returns the selection for the given window, or the global window if null.
+ * Will return null if {@link CAN_USE_DOM} is false.
+ *
+ * @param targetWindow The window to get the selection from
+ * @returns a Selection or null
+ */
 export function getDOMSelection(targetWindow: null | Window): null | Selection {
   return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
 }

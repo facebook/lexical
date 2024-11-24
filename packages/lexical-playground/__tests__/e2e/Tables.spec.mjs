@@ -2294,7 +2294,6 @@ test.describe.parallel('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
-
     await unmergeTableCell(page);
     await assertHTML(
       page,
@@ -3467,8 +3466,6 @@ test.describe.parallel('Tables', () => {
    </div>`,
     });
 
-    await page.pause();
-
     await assertHTML(
       page,
       html`
@@ -3556,8 +3553,6 @@ test.describe.parallel('Tables', () => {
         </table>
      </div>`,
     });
-
-    await page.pause();
 
     await assertHTML(
       page,

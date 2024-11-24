@@ -11,6 +11,7 @@ import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
+import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {
   InitialConfigType,
@@ -486,6 +487,7 @@ const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   TestInlineElementNode,
   TestShadowRootNode,
   TestTextNode,
+  MarkNode,
 ];
 
 export function TestComposer({

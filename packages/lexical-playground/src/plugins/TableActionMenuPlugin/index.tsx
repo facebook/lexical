@@ -28,9 +28,11 @@ import {
   getTableObserverFromTableElement,
   TableCellHeaderStates,
   TableCellNode,
+  TableObserver,
   TableRowNode,
   TableSelection,
 } from '@lexical/table';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getRoot,
@@ -39,6 +41,9 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_CRITICAL,
+  getDOMSelection,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
@@ -242,7 +247,7 @@ function TableActionMenu({
 
         const tableObserver = getTableObserverFromTableElement(tableElement);
         if (tableObserver !== null) {
-          tableObserver.clearHighlight();
+          tableObserver.$clearHighlight();
         }
 
         tableNode.markDirty();
@@ -472,7 +477,7 @@ function TableActionMenu({
           className="item"
           onClick={() => mergeTableCellsAtSelection()}
           data-test-id="table-merge-cells">
-          Merge cells
+          <span className="text">Merge cells</span>
         </button>
       );
     } else if (canUnmergeCell) {
@@ -482,7 +487,7 @@ function TableActionMenu({
           className="item"
           onClick={() => unmergeTableCellsAtSelection()}
           data-test-id="table-unmerge-cells">
-          Unmerge cells
+          <span className="text">Unmerge cells</span>
         </button>
       );
     }
@@ -630,8 +635,8 @@ function TableCellActionMenuContainer({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const menuButtonRef = useRef(null);
-  const menuRootRef = useRef(null);
+  const menuButtonRef = useRef<HTMLDivElement | null>(null);
+  const menuRootRef = useRef<HTMLButtonElement | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [tableCellNode, setTableMenuCellNode] = useState<TableCellNode | null>(
@@ -643,15 +648,23 @@ function TableCellActionMenuContainer({
   const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
-    const nativeSelection = window.getSelection();
+    const nativeSelection = getDOMSelection(editor._window);
     const activeElement = document.activeElement;
+    function disable() {
+      if (menu) {
+        menu.classList.remove('table-cell-action-button-container--active');
+        menu.classList.add('table-cell-action-button-container--inactive');
+      }
+      setTableMenuCellNode(null);
+    }
 
     if (selection == null || menu == null) {
-      setTableMenuCellNode(null);
-      return;
+      return disable();
     }
 
     const rootElement = editor.getRootElement();
+    let tableObserver: TableObserver | null = null;
+    let tableCellParentNodeDOM: HTMLElement | null = null;
 
     if (
       $isRangeSelection(selection) &&
@@ -664,56 +677,111 @@ function TableCellActionMenuContainer({
       );
 
       if (tableCellNodeFromSelection == null) {
-        setTableMenuCellNode(null);
-        return;
+        return disable();
       }
 
-      const tableCellParentNodeDOM = editor.getElementByKey(
+      tableCellParentNodeDOM = editor.getElementByKey(
         tableCellNodeFromSelection.getKey(),
       );
 
-      if (tableCellParentNodeDOM == null) {
-        setTableMenuCellNode(null);
-        return;
+      if (
+        tableCellParentNodeDOM == null ||
+        !tableCellNodeFromSelection.isAttached()
+      ) {
+        return disable();
       }
 
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(
+        tableCellNodeFromSelection,
+      );
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(tableNode.getKey()),
+      );
+
+      invariant(
+        tableElement !== null,
+        'TableActionMenu: Expected to find tableElement in DOM',
+      );
+
+      tableObserver = getTableObserverFromTableElement(tableElement);
       setTableMenuCellNode(tableCellNodeFromSelection);
+    } else if ($isTableSelection(selection)) {
+      const anchorNode = $getTableCellNodeFromLexicalNode(
+        selection.anchor.getNode(),
+      );
+      invariant(
+        $isTableCellNode(anchorNode),
+        'TableSelection anchorNode must be a TableCellNode',
+      );
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorNode);
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(tableNode.getKey()),
+      );
+      invariant(
+        tableElement !== null,
+        'TableActionMenu: Expected to find tableElement in DOM',
+      );
+      tableObserver = getTableObserverFromTableElement(tableElement);
+      tableCellParentNodeDOM = editor.getElementByKey(anchorNode.getKey());
     } else if (!activeElement) {
-      setTableMenuCellNode(null);
+      return disable();
     }
-  }, [editor]);
+    if (tableObserver === null || tableCellParentNodeDOM === null) {
+      return disable();
+    }
+    const enabled = !tableObserver || !tableObserver.isSelecting;
+    menu.classList.toggle(
+      'table-cell-action-button-container--active',
+      enabled,
+    );
+    menu.classList.toggle(
+      'table-cell-action-button-container--inactive',
+      !enabled,
+    );
+    if (enabled) {
+      const tableCellRect = tableCellParentNodeDOM.getBoundingClientRect();
+      const anchorRect = anchorElem.getBoundingClientRect();
+      const top = tableCellRect.top - anchorRect.top;
+      const left = tableCellRect.right - anchorRect.left;
+      menu.style.transform = `translate(${left}px, ${top}px)`;
+    }
+  }, [editor, anchorElem]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(() => {
-      editor.getEditorState().read(() => {
-        $moveMenu();
-      });
-    });
-  });
-
-  useEffect(() => {
-    const menuButtonDOM = menuButtonRef.current as HTMLButtonElement | null;
-
-    if (menuButtonDOM != null && tableCellNode != null) {
-      const tableCellNodeDOM = editor.getElementByKey(tableCellNode.getKey());
-
-      if (tableCellNodeDOM != null) {
-        const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
-        const menuRect = menuButtonDOM.getBoundingClientRect();
-        const anchorRect = anchorElem.getBoundingClientRect();
-
-        const top = tableCellRect.top - anchorRect.top + 4;
-        const left =
-          tableCellRect.right - menuRect.width - 10 - anchorRect.left;
-
-        menuButtonDOM.style.opacity = '1';
-        menuButtonDOM.style.transform = `translate(${left}px, ${top}px)`;
-      } else {
-        menuButtonDOM.style.opacity = '0';
-        menuButtonDOM.style.transform = 'translate(-10000px, -10000px)';
+    // We call the $moveMenu callback every time the selection changes,
+    // once up front, and once after each mouseUp
+    let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
+    const callback = () => {
+      timeoutId = undefined;
+      editor.getEditorState().read($moveMenu);
+    };
+    const delayedCallback = () => {
+      if (timeoutId === undefined) {
+        timeoutId = setTimeout(callback, 0);
       }
-    }
-  }, [menuButtonRef, tableCellNode, editor, anchorElem]);
+      return false;
+    };
+    return mergeRegister(
+      editor.registerUpdateListener(delayedCallback),
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        delayedCallback,
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+      editor.registerRootListener((rootElement, prevRootElement) => {
+        if (prevRootElement) {
+          prevRootElement.removeEventListener('mouseup', delayedCallback);
+        }
+        if (rootElement) {
+          rootElement.addEventListener('mouseup', delayedCallback);
+          delayedCallback();
+        }
+      }),
+      () => clearTimeout(timeoutId),
+    );
+  });
 
   const prevTableCellDOM = useRef(tableCellNode);
 

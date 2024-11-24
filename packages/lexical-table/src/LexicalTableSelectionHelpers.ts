@@ -15,7 +15,6 @@ import type {
 } from './LexicalTableSelection';
 import type {
   BaseSelection,
-  EditorThemeClasses,
   ElementFormatType,
   LexicalCommand,
   LexicalEditor,
@@ -28,7 +27,12 @@ import {
   $getClipboardDataFromSelection,
   copyToClipboard,
 } from '@lexical/clipboard';
-import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  objectKlassEquals,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
@@ -1223,7 +1227,7 @@ export function $updateDOMForSelection(
 
     if (selectedCellNodes.has(lexicalNode)) {
       cell.highlighted = true;
-      $addHighlightToDOM(editor, cell, editor._config.theme);
+      $addHighlightToDOM(editor, cell);
     } else {
       cell.highlighted = false;
       $removeHighlightFromDOM(editor, cell);
@@ -1277,7 +1281,7 @@ export function $addHighlightStyleToTable(
   tableSelection.$disableHighlightStyle();
   $forEachTableCell(tableSelection.table, (cell) => {
     cell.highlighted = true;
-    $addHighlightToDOM(editor, cell, editor._config.theme);
+    $addHighlightToDOM(editor, cell);
   });
 }
 
@@ -1554,25 +1558,15 @@ function selectTableCellNode(tableCell: TableCellNode, fromStart: boolean) {
   }
 }
 
-const BROWSER_BLUE_RGB = '172,206,247';
-function $addHighlightToDOM(
-  editor: LexicalEditor,
-  cell: TableDOMCell,
-  editorThemeClasses: EditorThemeClasses,
-): void {
+function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
   const element = cell.elem;
+  const editorThemeClasses = editor._config.theme;
   const node = $getNearestNodeFromDOMNode(element);
   invariant(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const {tableCellSelected} = editorThemeClasses;
-  if (tableCellSelected) {
-    element.classList.add(tableCellSelected);
-  } else {
-    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
-  }
-  element.style.setProperty('caret-color', 'transparent');
+  addClassNamesToElement(element, editorThemeClasses.tableCellSelected);
 }
 
 function $removeHighlightFromDOM(
@@ -1585,12 +1579,8 @@ function $removeHighlightFromDOM(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const backgroundColor = node.getBackgroundColor();
-  if (backgroundColor === null) {
-    element.style.removeProperty('background-color');
-  }
-  element.style.removeProperty('background-image');
-  element.style.removeProperty('caret-color');
+  const editorThemeClasses = editor._config.theme;
+  removeClassNamesFromElement(element, editorThemeClasses.tableCellSelected);
 }
 
 export function $findCellNode(node: LexicalNode): null | TableCellNode {

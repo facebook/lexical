@@ -135,14 +135,10 @@ export type EditorThemeClasses = {
   tableAddRows?: EditorThemeClassName;
   tableCellActionButton?: EditorThemeClassName;
   tableCellActionButtonContainer?: EditorThemeClassName;
-  tableCellPrimarySelected?: EditorThemeClassName;
   tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
-  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
   tableCellResizer?: EditorThemeClassName;
-  tableCellSortedIndicator?: EditorThemeClassName;
-  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
   tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;

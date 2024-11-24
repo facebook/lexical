@@ -496,7 +496,7 @@ i.justify-align {
   right: 0;
   bottom: 0;
   top: 0;
-  background-color: rgba(172, 206, 247);
+  background-color: rgb(172, 206, 247);
   opacity: 0.6;
   content: '';
 }

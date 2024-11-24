@@ -82,6 +82,7 @@ export async function initialize({
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
   tableHorizontalScroll,
+  shouldAllowHighlightingWithBrackets,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -115,6 +116,8 @@ export async function initialize({
     appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
   appSettings.shouldUseLexicalContextMenu = !!shouldUseLexicalContextMenu;
+  appSettings.shouldAllowHighlightingWithBrackets =
+    !!shouldAllowHighlightingWithBrackets;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

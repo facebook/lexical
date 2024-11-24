@@ -16,11 +16,12 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Special Text', () => {
-  test.beforeEach(({isCollab, page}) =>
+  test.use({shouldAllowHighlightingWithBrackets: true});
+  test.beforeEach(({isCollab, page, shouldAllowHighlightingWithBrackets}) =>
     initialize({
       isCollab,
       page,
-      shouldAllowHighlightingWithBrackets: true,
+      shouldAllowHighlightingWithBrackets,
     }),
   );
   test('should handle a single special text', async ({page}) => {
@@ -30,7 +31,9 @@ test.describe('Special Text', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
           <span
             class="PlaygroundEditorTheme__specialText"
             style="white-space: pre-wrap;">
@@ -75,8 +78,10 @@ test.describe('Special Text', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-          <span style="white-space: pre-wrap;">[MLH Fellowship]</span>
+        <p
+          class="PlaygroundEditorTheme__paragraph laygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">[MLH Fellowship]</span>
         </p>
       `,
     );

@@ -21,6 +21,7 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
+  getDOMSelection,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -53,7 +54,7 @@ function tryToPositionRange(
   range: Range,
   editorWindow: Window,
 ): boolean {
-  const domSelection = editorWindow.getSelection();
+  const domSelection = getDOMSelection(editorWindow);
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }

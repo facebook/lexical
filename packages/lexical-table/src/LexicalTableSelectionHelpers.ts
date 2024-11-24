@@ -835,6 +835,13 @@ export function applyTableHandlers(
               tableObserver.$setFocusCellForSelection(focusCell);
               return true;
             }
+          } else if (
+            focusCell !== tableObserver.anchorCell &&
+            $isSelectionInTable(selection, tableNode)
+          ) {
+            // The selection has crossed cells
+            tableObserver.$setFocusCellForSelection(focusCell);
+            return true;
           }
         }
         const shouldCheckSelection =

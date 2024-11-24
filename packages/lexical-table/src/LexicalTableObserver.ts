@@ -24,6 +24,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $setSelection,
+  getDOMSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -32,13 +33,13 @@ import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {
   $createTableSelection,
+  $createTableSelectionFrom,
   $isTableSelection,
   type TableSelection,
 } from './LexicalTableSelection';
 import {
   $findTableNode,
   $updateDOMForSelection,
-  getDOMSelection,
   getTable,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -105,6 +106,7 @@ export class TableObserver {
   shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
+  nextFocus: {focusCell: TableDOMCell; override: boolean} | null;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -130,6 +132,7 @@ export class TableObserver {
     this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};
+    this.nextFocus = null;
     this.trackTable();
   }
 
@@ -198,7 +201,7 @@ export class TableObserver {
     );
   }
 
-  clearHighlight() {
+  $clearHighlight(): void {
     const editor = this.editor;
     this.isHighlightingCells = false;
     this.anchorX = -1;
@@ -212,61 +215,54 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
 
-    this.enableHighlightStyle();
+    this.$enableHighlightStyle();
 
-    editor.update(() => {
-      const {tableNode, tableElement} = this.$lookup();
-      const grid = getTable(tableNode, tableElement);
-      $updateDOMForSelection(editor, grid, null);
+    const {tableNode, tableElement} = this.$lookup();
+    const grid = getTable(tableNode, tableElement);
+    $updateDOMForSelection(editor, grid, null);
+    if ($getSelection() !== null) {
       $setSelection(null);
       editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-    });
+    }
   }
 
-  enableHighlightStyle() {
+  $enableHighlightStyle() {
     const editor = this.editor;
-    editor.getEditorState().read(
-      () => {
-        const {tableElement} = this.$lookup();
+    const {tableElement} = this.$lookup();
 
-        removeClassNamesFromElement(
-          tableElement,
-          editor._config.theme.tableSelection,
-        );
-        tableElement.classList.remove('disable-selection');
-        this.hasHijackedSelectionStyles = false;
-      },
-      {editor},
+    removeClassNamesFromElement(
+      tableElement,
+      editor._config.theme.tableSelection,
     );
+    tableElement.classList.remove('disable-selection');
+    this.hasHijackedSelectionStyles = false;
   }
 
-  disableHighlightStyle() {
-    const editor = this.editor;
-    editor.getEditorState().read(
-      () => {
-        const {tableElement} = this.$lookup();
-        addClassNamesToElement(
-          tableElement,
-          editor._config.theme.tableSelection,
-        );
-        this.hasHijackedSelectionStyles = true;
-      },
-      {editor},
+  $disableHighlightStyle() {
+    const {tableElement} = this.$lookup();
+    addClassNamesToElement(
+      tableElement,
+      this.editor._config.theme.tableSelection,
     );
+    this.hasHijackedSelectionStyles = true;
   }
 
-  updateTableTableSelection(selection: TableSelection | null): void {
-    if (selection !== null && selection.tableKey === this.tableNodeKey) {
+  $updateTableTableSelection(selection: TableSelection | null): void {
+    if (selection !== null) {
+      invariant(
+        selection.tableKey === this.tableNodeKey,
+        "TableObserver.$updateTableTableSelection: selection.tableKey !== this.tableNodeKey ('%s' !== '%s')",
+        selection.tableKey,
+        this.tableNodeKey,
+      );
       const editor = this.editor;
       this.tableSelection = selection;
       this.isHighlightingCells = true;
-      this.disableHighlightStyle();
+      this.$disableHighlightStyle();
+      this.updateDOMSelection();
       $updateDOMForSelection(editor, this.table, this.tableSelection);
-    } else if (selection == null) {
-      this.clearHighlight();
     } else {
-      this.tableNodeKey = selection.tableKey;
-      this.updateTableTableSelection(selection);
+      this.$clearHighlight();
     }
   }
 
@@ -292,168 +288,208 @@ export class TableObserver {
     }
     return false;
   }
-  setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false) {
-    const editor = this.editor;
-    editor.update(() => {
-      const {tableNode} = this.$lookup();
 
-      const cellX = cell.x;
-      const cellY = cell.y;
-      this.focusCell = cell;
-
-      if (this.anchorCell !== null) {
-        const domSelection = getDOMSelection(editor._window);
-        // Collapse the selection
-        if (domSelection) {
-          domSelection.setBaseAndExtent(
-            this.anchorCell.elem,
-            0,
-            this.focusCell.elem,
-            0,
-          );
-        }
-      }
-
-      if (
-        !this.isHighlightingCells &&
-        (this.anchorX !== cellX || this.anchorY !== cellY || ignoreStart)
-      ) {
-        this.isHighlightingCells = true;
-        this.disableHighlightStyle();
-      } else if (cellX === this.focusX && cellY === this.focusY) {
-        return;
-      }
-
-      this.focusX = cellX;
-      this.focusY = cellY;
-
-      if (this.isHighlightingCells) {
-        const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
-
-        if (
-          this.tableSelection != null &&
-          this.anchorCellNodeKey != null &&
-          $isTableCellNode(focusTableCellNode) &&
-          tableNode.is($findTableNode(focusTableCellNode))
-        ) {
-          const focusNodeKey = focusTableCellNode.getKey();
-
-          this.tableSelection =
-            this.tableSelection.clone() || $createTableSelection();
-
-          this.focusCellNodeKey = focusNodeKey;
-          this.tableSelection.set(
-            this.tableNodeKey,
-            this.anchorCellNodeKey,
-            this.focusCellNodeKey,
-          );
-
-          $setSelection(this.tableSelection);
-
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-
-          $updateDOMForSelection(editor, this.table, this.tableSelection);
-        }
-      }
-    });
+  /**
+   * @internal
+   * When handling mousemove events we track what the focus cell should be, but
+   * the DOM selection may end up somewhere else entirely. We don't have an elegant
+   * way to handle this after the DOM selection has been resolved in a
+   * SELECTION_CHANGE_COMMAND callback.
+   */
+  setNextFocus(
+    nextFocus: null | {focusCell: TableDOMCell; override: boolean},
+  ): void {
+    this.nextFocus = nextFocus;
   }
 
-  setAnchorCellForSelection(cell: TableDOMCell) {
+  /** @internal */
+  getAndClearNextFocus(): {
+    focusCell: TableDOMCell;
+    override: boolean;
+  } | null {
+    const {nextFocus} = this;
+    if (nextFocus !== null) {
+      this.nextFocus = null;
+    }
+    return nextFocus;
+  }
+
+  /** @internal */
+  updateDOMSelection() {
+    if (this.anchorCell !== null && this.focusCell !== null) {
+      const domSelection = getDOMSelection(this.editor._window);
+      // We are not using a native selection for tables, and if we
+      // set one then the reconciler will undo it.
+      // TODO - it would make sense to have one so that native
+      //        copy/paste worked. Right now we have to emulate with
+      //        keyboard events but it won't fire if trigged from the menu
+      if (domSelection && domSelection.rangeCount > 0) {
+        domSelection.removeAllRanges();
+      }
+    }
+  }
+
+  $setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false): boolean {
+    const editor = this.editor;
+    const {tableNode} = this.$lookup();
+
+    const cellX = cell.x;
+    const cellY = cell.y;
+    this.focusCell = cell;
+
+    if (
+      !this.isHighlightingCells &&
+      (this.anchorX !== cellX || this.anchorY !== cellY || ignoreStart)
+    ) {
+      this.isHighlightingCells = true;
+      this.$disableHighlightStyle();
+    } else if (cellX === this.focusX && cellY === this.focusY) {
+      return false;
+    }
+
+    this.focusX = cellX;
+    this.focusY = cellY;
+
+    if (this.isHighlightingCells) {
+      const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
+
+      if (
+        this.tableSelection != null &&
+        this.anchorCellNodeKey != null &&
+        $isTableCellNode(focusTableCellNode) &&
+        tableNode.is($findTableNode(focusTableCellNode))
+      ) {
+        this.focusCellNodeKey = focusTableCellNode.getKey();
+        this.tableSelection = $createTableSelectionFrom(
+          tableNode,
+          this.$getAnchorTableCellOrThrow(),
+          focusTableCellNode,
+        );
+
+        $setSelection(this.tableSelection);
+
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+
+        $updateDOMForSelection(editor, this.table, this.tableSelection);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  $getAnchorTableCell(): TableCellNode | null {
+    return this.anchorCellNodeKey
+      ? $getNodeByKey(this.anchorCellNodeKey)
+      : null;
+  }
+  $getAnchorTableCellOrThrow(): TableCellNode {
+    const anchorTableCell = this.$getAnchorTableCell();
+    invariant(
+      anchorTableCell !== null,
+      'TableObserver anchorTableCell is null',
+    );
+    return anchorTableCell;
+  }
+
+  $getFocusTableCell(): TableCellNode | null {
+    return this.focusCellNodeKey ? $getNodeByKey(this.focusCellNodeKey) : null;
+  }
+
+  $getFocusTableCellOrThrow(): TableCellNode {
+    const focusTableCell = this.$getFocusTableCell();
+    invariant(focusTableCell !== null, 'TableObserver focusTableCell is null');
+    return focusTableCell;
+  }
+
+  $setAnchorCellForSelection(cell: TableDOMCell) {
     this.isHighlightingCells = false;
     this.anchorCell = cell;
     this.anchorX = cell.x;
     this.anchorY = cell.y;
 
-    this.editor.update(() => {
-      const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
+    const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
-      if ($isTableCellNode(anchorTableCellNode)) {
-        const anchorNodeKey = anchorTableCellNode.getKey();
-        this.tableSelection =
-          this.tableSelection != null
-            ? this.tableSelection.clone()
-            : $createTableSelection();
-        this.anchorCellNodeKey = anchorNodeKey;
-      }
-    });
+    if ($isTableCellNode(anchorTableCellNode)) {
+      const anchorNodeKey = anchorTableCellNode.getKey();
+      this.tableSelection =
+        this.tableSelection != null
+          ? this.tableSelection.clone()
+          : $createTableSelection();
+      this.anchorCellNodeKey = anchorNodeKey;
+    }
   }
 
-  formatCells(type: TextFormatType) {
-    this.editor.update(() => {
-      const selection = $getSelection();
+  $formatCells(type: TextFormatType) {
+    const selection = $getSelection();
 
-      if (!$isTableSelection(selection)) {
-        invariant(false, 'Expected grid selection');
-      }
+    invariant($isTableSelection(selection), 'Expected Table selection');
 
-      const formatSelection = $createRangeSelection();
+    const formatSelection = $createRangeSelection();
 
-      const anchor = formatSelection.anchor;
-      const focus = formatSelection.focus;
+    const anchor = formatSelection.anchor;
+    const focus = formatSelection.focus;
 
-      const cellNodes = selection.getNodes().filter($isTableCellNode);
-      const paragraph = cellNodes[0].getFirstChild();
-      const alignFormatWith = $isParagraphNode(paragraph)
-        ? paragraph.getFormatFlags(type, null)
-        : null;
+    const cellNodes = selection.getNodes().filter($isTableCellNode);
+    invariant(cellNodes.length > 0, 'No table cells present');
+    const paragraph = cellNodes[0].getFirstChild();
+    const alignFormatWith = $isParagraphNode(paragraph)
+      ? paragraph.getFormatFlags(type, null)
+      : null;
 
-      cellNodes.forEach((cellNode: TableCellNode) => {
-        anchor.set(cellNode.getKey(), 0, 'element');
-        focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
-        formatSelection.formatText(type, alignFormatWith);
-      });
-
-      $setSelection(selection);
-
-      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    cellNodes.forEach((cellNode: TableCellNode) => {
+      anchor.set(cellNode.getKey(), 0, 'element');
+      focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
+      formatSelection.formatText(type, alignFormatWith);
     });
+
+    $setSelection(selection);
+
+    this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 
-  clearText() {
-    const editor = this.editor;
-    editor.update(() => {
-      const tableNode = $getNodeByKey(this.tableNodeKey);
+  $clearText() {
+    const {editor} = this;
+    const tableNode = $getNodeByKey(this.tableNodeKey);
 
-      if (!$isTableNode(tableNode)) {
-        throw new Error('Expected TableNode.');
+    if (!$isTableNode(tableNode)) {
+      throw new Error('Expected TableNode.');
+    }
+
+    const selection = $getSelection();
+
+    if (!$isTableSelection(selection)) {
+      invariant(false, 'Expected grid selection');
+    }
+
+    const selectedNodes = selection.getNodes().filter($isTableCellNode);
+
+    if (selectedNodes.length === this.table.columns * this.table.rows) {
+      tableNode.selectPrevious();
+      // Delete entire table
+      tableNode.remove();
+      const rootNode = $getRoot();
+      rootNode.selectStart();
+      return;
+    }
+
+    selectedNodes.forEach((cellNode) => {
+      if ($isElementNode(cellNode)) {
+        const paragraphNode = $createParagraphNode();
+        const textNode = $createTextNode();
+        paragraphNode.append(textNode);
+        cellNode.append(paragraphNode);
+        cellNode.getChildren().forEach((child) => {
+          if (child !== paragraphNode) {
+            child.remove();
+          }
+        });
       }
-
-      const selection = $getSelection();
-
-      if (!$isTableSelection(selection)) {
-        invariant(false, 'Expected grid selection');
-      }
-
-      const selectedNodes = selection.getNodes().filter($isTableCellNode);
-
-      if (selectedNodes.length === this.table.columns * this.table.rows) {
-        tableNode.selectPrevious();
-        // Delete entire table
-        tableNode.remove();
-        const rootNode = $getRoot();
-        rootNode.selectStart();
-        return;
-      }
-
-      selectedNodes.forEach((cellNode) => {
-        if ($isElementNode(cellNode)) {
-          const paragraphNode = $createParagraphNode();
-          const textNode = $createTextNode();
-          paragraphNode.append(textNode);
-          cellNode.append(paragraphNode);
-          cellNode.getChildren().forEach((child) => {
-            if (child !== paragraphNode) {
-              child.remove();
-            }
-          });
-        }
-      });
-
-      $updateDOMForSelection(editor, this.table, null);
-
-      $setSelection(null);
-
-      editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
+
+    $updateDOMForSelection(editor, this.table, null);
+
+    $setSelection(null);
+
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 }

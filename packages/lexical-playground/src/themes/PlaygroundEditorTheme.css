@@ -176,6 +176,7 @@
   background-color: rgb(172, 206, 247);
   opacity: 0.6;
   content: '';
+  pointer-events: none;
 }
 .PlaygroundEditorTheme__tableAddColumns {
   position: absolute;

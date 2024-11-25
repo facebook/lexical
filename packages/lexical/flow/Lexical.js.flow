@@ -256,6 +256,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>,
     ol?: EditorThemeClassName,
     olDepth?: Array<EditorThemeClassName>,
+    checklist?: EditorThemeClassName,
     listitem?: EditorThemeClassName,
     listitemChecked?: EditorThemeClassName,
     listitemUnchecked?: EditorThemeClassName,
@@ -446,13 +447,17 @@ declare export function $isBlockElementNode(
 ): node is ElementNode;
 
 export interface BaseSelection {
-  clone(): BaseSelection;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null | [PointType, PointType];
   getTextContent(): string;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   insertText(text: string): void;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -528,6 +533,7 @@ declare export class RangeSelection implements BaseSelection {
 }
 export type TextPoint = TextPointType;
 type TextPointType = {
+  _selection: BaseSelection,
   key: NodeKey,
   offset: number,
   type: 'text',
@@ -539,6 +545,7 @@ type TextPointType = {
 };
 export type ElementPoint = ElementPointType;
 type ElementPointType = {
+  _selection: BaseSelection,
   key: NodeKey,
   offset: number,
   type: 'element',

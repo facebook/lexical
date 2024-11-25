@@ -19,6 +19,7 @@ import {
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
+  $setSelection,
   BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -194,8 +195,12 @@ function FloatingLinkEditor({
   const handleLinkSubmission = () => {
     if (lastSelection !== null) {
       if (linkUrl !== '') {
-        editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
         editor.update(() => {
+          $setSelection(lastSelection.clone());
+          editor.dispatchCommand(
+            TOGGLE_LINK_COMMAND,
+            sanitizeUrl(editedLinkUrl),
+          );
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const parent = getSelectedNode(selection).getParent();

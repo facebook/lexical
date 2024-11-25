@@ -659,7 +659,7 @@ function needsManualZoom(): boolean {
       'position: absolute; opacity: 0; width: 100px; left: -1000px;';
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
-    div.style.zoom = '2';
+    div.style.setProperty('zoom', '2');
     NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width > noZoom.width;
     document.body.removeChild(div);
   }

@@ -27,7 +27,12 @@ import {
   $getClipboardDataFromSelection,
   copyToClipboard,
 } from '@lexical/clipboard';
-import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  objectKlassEquals,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
@@ -1553,24 +1558,15 @@ function selectTableCellNode(tableCell: TableCellNode, fromStart: boolean) {
   }
 }
 
-const BROWSER_BLUE_RGB = '172,206,247';
 function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
   const element = cell.elem;
+  const editorThemeClasses = editor._config.theme;
   const node = $getNearestNodeFromDOMNode(element);
   invariant(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const backgroundColor = node.getBackgroundColor();
-  if (backgroundColor === null) {
-    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
-  } else {
-    element.style.setProperty(
-      'background-image',
-      `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
-    );
-  }
-  element.style.setProperty('caret-color', 'transparent');
+  addClassNamesToElement(element, editorThemeClasses.tableCellSelected);
 }
 
 function $removeHighlightFromDOM(
@@ -1583,12 +1579,8 @@ function $removeHighlightFromDOM(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const backgroundColor = node.getBackgroundColor();
-  if (backgroundColor === null) {
-    element.style.removeProperty('background-color');
-  }
-  element.style.removeProperty('background-image');
-  element.style.removeProperty('caret-color');
+  const editorThemeClasses = editor._config.theme;
+  removeClassNamesFromElement(element, editorThemeClasses.tableCellSelected);
 }
 
 export function $findCellNode(node: LexicalNode): null | TableCellNode {

@@ -28,6 +28,7 @@ test.describe('Special Text', () => {
     await focusEditor(page);
     await page.keyboard.type('[MLH Fellowship]');
     await waitForSelector(page, '.PlaygroundEditorTheme__specialText');
+
     await assertHTML(
       page,
       html`
@@ -36,7 +37,7 @@ test.describe('Special Text', () => {
           dir="ltr">
           <span
             class="PlaygroundEditorTheme__specialText"
-            style="white-space: pre-wrap;">
+            data-lexical-text="true">
             MLH Fellowship
           </span>
         </p>
@@ -50,16 +51,18 @@ test.describe('Special Text', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
           <span
             class="PlaygroundEditorTheme__specialText"
-            style="white-space: pre-wrap;">
+            data-lexical-text="true">
             MLH Fellowship
           </span>
-          <span style="white-space: pre-wrap;"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__specialText"
-            style="white-space: pre-wrap;">
+            data-lexical-text="true">
             MLH Fellowship
           </span>
         </p>
@@ -79,7 +82,7 @@ test.describe('Special Text', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph laygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">[MLH Fellowship]</span>
         </p>

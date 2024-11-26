@@ -11,6 +11,7 @@ import type {
   NpmModuleExportEntry,
   PackageMetadata,
 } from '../../scripts/shared/PackageMetadata';
+import type {Alias} from 'vite';
 
 import * as fs from 'node:fs';
 import {createRequire} from 'node:module';
@@ -81,7 +82,7 @@ const distModuleResolution = (environment: 'development' | 'production') => {
 
 export default function moduleResolution(
   environment: 'source' | 'development' | 'production',
-) {
+): Alias[] {
   return environment === 'source'
     ? sourceModuleResolution()
     : distModuleResolution(environment);

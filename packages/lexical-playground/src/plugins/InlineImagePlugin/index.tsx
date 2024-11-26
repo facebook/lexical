@@ -26,12 +26,12 @@ import {
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  getDOMSelection,
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 import {
   $createInlineImageNode,
@@ -46,9 +46,6 @@ import Select from '../../ui/Select';
 import TextInput from '../../ui/TextInput';
 
 export type InsertInlineImagePayload = Readonly<InlineImagePayload>;
-
-const getDOMSelection = (targetWindow: Window | null): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 export const INSERT_INLINE_IMAGE_COMMAND: LexicalCommand<InlineImagePayload> =
   createCommand('INSERT_INLINE_IMAGE_COMMAND');

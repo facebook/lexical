@@ -447,7 +447,6 @@ declare export function $isBlockElementNode(
 ): node is ElementNode;
 
 export interface BaseSelection {
-  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
   clone(): BaseSelection;
   extract(): Array<LexicalNode>;
@@ -493,6 +492,7 @@ declare export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  style: string;
   constructor(anchor: PointType, focus: PointType, format: number): void;
   is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
@@ -530,10 +530,11 @@ declare export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  forwardDeletion(anchor, anchorNode, isBackward): boolean;
+  getStartEndPoints(): null | [PointType, PointType];
 }
 export type TextPoint = TextPointType;
 type TextPointType = {
-  _selection: BaseSelection,
   key: NodeKey,
   offset: number,
   type: 'text',
@@ -545,7 +546,6 @@ type TextPointType = {
 };
 export type ElementPoint = ElementPointType;
 type ElementPointType = {
-  _selection: BaseSelection,
   key: NodeKey,
   offset: number,
   type: 'element',

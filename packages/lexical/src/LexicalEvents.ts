@@ -26,7 +26,6 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -437,7 +436,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           domSelection.removeAllRanges();
           selection.dirty = true;
         } else if (event.detail === 3 && !selection.isCollapsed()) {
-          // Tripple click causing selection to overflow into the nearest element. In that
+          // Triple click causing selection to overflow into the nearest element. In that
           // case visually it looks like a single element content is selected, focus node
           // is actually at the beginning of the next element (if present) and any manipulations
           // with selection (formatting) are affecting second element as well
@@ -1089,7 +1088,8 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
-    if ($isNodeSelection(prevSelection)) {
+    if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
+      // Only RangeSelection can use the native cut/copy/select all
       if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);

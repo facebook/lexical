@@ -135,14 +135,10 @@ export type EditorThemeClasses = {
   tableAddRows?: EditorThemeClassName;
   tableCellActionButton?: EditorThemeClassName;
   tableCellActionButtonContainer?: EditorThemeClassName;
-  tableCellPrimarySelected?: EditorThemeClassName;
   tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
-  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
   tableCellResizer?: EditorThemeClassName;
-  tableCellSortedIndicator?: EditorThemeClassName;
-  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
   tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
@@ -216,13 +212,13 @@ export interface MutationListenerOptions {
   /**
    * Skip the initial call of the listener with pre-existing DOM nodes.
    *
-   * The default is currently true for backwards compatibility with <= 0.16.1
-   * but this default is expected to change to false in 0.17.0.
+   * The default was previously true for backwards compatibility with <= 0.16.1
+   * but this default has been changed to false as of 0.21.0.
    */
   skipInitialization?: boolean;
 }
 
-const DEFAULT_SKIP_INITIALIZATION = true;
+const DEFAULT_SKIP_INITIALIZATION = false;
 
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -844,7 +840,7 @@ export class LexicalEditor {
    * If any existing nodes are in the DOM, and skipInitialization is not true, the listener
    * will be called immediately with an updateTag of 'registerMutationListener' where all
    * nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
-   * (default is currently true for backwards compatibility in 0.16.x but will change to false in 0.17.0).
+   * (whose default was previously true for backwards compatibility with &lt;=0.16.1 but has been changed to false as of 0.21.0).
    *
    * @param klass - The class of the node that you want to listen to mutations on.
    * @param listener - The logic you want to run when the node is mutated.

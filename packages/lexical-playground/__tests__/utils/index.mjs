@@ -396,7 +396,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       focusOffset: fixOffset(focusNode, focusOffset),
       focusPath: getPathFromNode(focusNode),
     };
-  }, expected);
+  });
   expect(selection.anchorPath).toEqual(expected.anchorPath);
   expect(selection.focusPath).toEqual(expected.focusPath);
   if (Array.isArray(expected.anchorOffset)) {
@@ -738,9 +738,6 @@ export async function dragMouse(
     fromX += fromBoundingBox.width;
     fromY += fromBoundingBox.height;
   }
-  await page.mouse.move(fromX, fromY);
-  await page.mouse.down();
-
   let toX = toBoundingBox.x;
   let toY = toBoundingBox.y;
   if (positionEnd === 'middle') {
@@ -751,13 +748,9 @@ export async function dragMouse(
     toY += toBoundingBox.height;
   }
 
-  if (slow) {
-    //simulate more than 1 mouse move event to replicate human slow dragging
-    await page.mouse.move((fromX + toX) / 2, (fromY + toY) / 2);
-  }
-
-  await page.mouse.move(toX, toY);
-
+  await page.mouse.move(fromX, fromY);
+  await page.mouse.down();
+  await page.mouse.move(toX, toY, slow ? 10 : 1);
   if (mouseUp) {
     await page.mouse.up();
   }
@@ -907,72 +900,75 @@ export async function selectCellsFromTableCords(
     }:nth-child(${secondCords.x + 1})`,
   );
 
-  // Focus on inside the iFrame or the boundingBox() below returns null.
   await firstRowFirstColumnCell.click();
+  await page.keyboard.down('Shift');
+  await secondRowSecondCell.click();
+  await page.keyboard.up('Shift');
 
-  await dragMouse(
+  // const firstBox = await firstRowFirstColumnCell.boundingBox();
+  // const secondBox = await secondRowSecondCell.boundingBox();
+  // await dragMouse(page, firstBox, secondBox, 'middle', 'middle', true, true);
+}
+
+export async function clickTableCellActiveButton(page) {
+  await click(
     page,
-    await firstRowFirstColumnCell.boundingBox(),
-    await secondRowSecondCell.boundingBox(),
-    'middle',
-    'middle',
-    true,
-    true,
+    '.table-cell-action-button-container--active > .table-cell-action-button',
   );
 }
 
 export async function insertTableRowAbove(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-row-above"]');
 }
 
 export async function insertTableRowBelow(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-row-below"]');
 }
 
 export async function insertTableColumnBefore(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-column-before"]');
 }
 
 export async function insertTableColumnAfter(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-column-after"]');
 }
 
 export async function mergeTableCells(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-merge-cells"]');
 }
 
 export async function unmergeTableCell(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-unmerge-cells"]');
 }
 
 export async function toggleColumnHeader(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-column-header"]');
 }
 
 export async function deleteTableRows(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete-rows"]');
 }
 
 export async function deleteTableColumns(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete-columns"]');
 }
 
 export async function deleteTable(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete"]');
 }
 
 export async function setBackgroundColor(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-background-color"]');
 }
 

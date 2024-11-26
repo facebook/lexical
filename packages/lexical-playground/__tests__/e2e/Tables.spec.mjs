@@ -759,12 +759,10 @@ test.describe.parallel('Tables', () => {
               <col style="width: 92px" />
             </colgroup>
             <tr>
-              <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <th class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><span data-lexical-text="true">a</span></p>
               </th>
-              <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <th class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><span data-lexical-text="true">bb</span></p>
               </th>
               <th>
@@ -772,12 +770,10 @@ test.describe.parallel('Tables', () => {
               </th>
             </tr>
             <tr>
-              <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <th class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><span data-lexical-text="true">d</span></p>
               </th>
-              <td
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <td class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><span data-lexical-text="true">e</span></p>
               </td>
               <td>
@@ -873,12 +869,10 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p dir="ltr"><span data-lexical-text="true">a</span></p>
             </th>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p dir="ltr"><span data-lexical-text="true">bb</span></p>
             </th>
             <th>
@@ -886,12 +880,10 @@ test.describe.parallel('Tables', () => {
             </th>
           </tr>
           <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p dir="ltr"><span data-lexical-text="true">d</span></p>
             </th>
-            <td
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <td class="PlaygroundEditorTheme__tableCellSelected">
               <p dir="ltr"><span data-lexical-text="true">e</span></p>
             </td>
             <td>
@@ -997,12 +989,10 @@ test.describe.parallel('Tables', () => {
               <col style="width: 92px" />
             </colgroup>
             <tr>
-              <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <th class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
               </th>
-              <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <th class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
               </th>
               <th>
@@ -1010,12 +1000,10 @@ test.describe.parallel('Tables', () => {
               </th>
             </tr>
             <tr>
-              <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <th class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
               </th>
-              <td
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <td class="PlaygroundEditorTheme__tableCellSelected">
                 <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
               </td>
               <td>
@@ -1448,12 +1436,10 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </th>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </th>
           </tr>
@@ -1508,30 +1494,24 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </th>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </th>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </th>
           </tr>
           <tr>
-            <th
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <th class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </th>
-            <td
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <td class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </td>
-            <td
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <td class="PlaygroundEditorTheme__tableCellSelected">
               <p><br /></p>
             </td>
           </tr>
@@ -2274,7 +2254,6 @@ test.describe.parallel('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
-
     await unmergeTableCell(page);
     await assertHTML(
       page,
@@ -2609,27 +2588,23 @@ test.describe.parallel('Tables', () => {
             </colgroup>
             <tr>
               <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                rowspan="2"
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                rowspan="2">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </th>
               <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                colspan="2"
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                colspan="2">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </th>
             </tr>
             <tr>
               <td
-                class="PlaygroundEditorTheme__tableCell"
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </td>
               <td
-                class="PlaygroundEditorTheme__tableCell"
-                style="background-color: rgb(172, 206, 247); caret-color: transparent">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
                 <p class="PlaygroundEditorTheme__paragraph"><br /></p>
               </td>
             </tr>
@@ -3447,8 +3422,6 @@ test.describe.parallel('Tables', () => {
    </div>`,
     });
 
-    await page.pause();
-
     await assertHTML(
       page,
       html`
@@ -3536,8 +3509,6 @@ test.describe.parallel('Tables', () => {
         </table>
      </div>`,
     });
-
-    await page.pause();
 
     await assertHTML(
       page,
@@ -3695,13 +3666,15 @@ test.describe.parallel('Tables', () => {
             </colgroup>
             <tr>
               <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent; text-align: center">
+                class="PlaygroundEditorTheme__tableCellSelected"
+                style="text-align: center">
                 <p dir="ltr" style="text-align: center">
                   <span data-lexical-text="true">a</span>
                 </p>
               </th>
               <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent; text-align: center">
+                class="PlaygroundEditorTheme__tableCellSelected"
+                style="text-align: center">
                 <p dir="ltr" style="text-align: center">
                   <span data-lexical-text="true">bb</span>
                 </p>
@@ -3712,13 +3685,15 @@ test.describe.parallel('Tables', () => {
             </tr>
             <tr>
               <th
-                style="background-color: rgb(172, 206, 247); caret-color: transparent; text-align: center">
+                class="PlaygroundEditorTheme__tableCellSelected"
+                style="text-align: center">
                 <p dir="ltr" style="text-align: center">
                   <span data-lexical-text="true">d</span>
                 </p>
               </th>
               <td
-                style="background-color: rgb(172, 206, 247); caret-color: transparent; text-align: center">
+                class="PlaygroundEditorTheme__tableCellSelected"
+                style="text-align: center">
                 <p dir="ltr" style="text-align: center">
                   <span data-lexical-text="true">e</span>
                 </p>

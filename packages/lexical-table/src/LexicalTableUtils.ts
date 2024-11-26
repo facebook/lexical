@@ -788,12 +788,12 @@ export function $unmergeCell(): void {
 }
 
 export function $computeTableMap(
-  grid: TableNode,
+  tableNode: TableNode,
   cellA: TableCellNode,
   cellB: TableCellNode,
 ): [TableMapType, TableMapValueType, TableMapValueType] {
   const [tableMap, cellAValue, cellBValue] = $computeTableMapSkipCellCheck(
-    grid,
+    tableNode,
     cellA,
     cellB,
   );
@@ -803,10 +803,14 @@ export function $computeTableMap(
 }
 
 export function $computeTableMapSkipCellCheck(
-  grid: TableNode,
+  tableNode: TableNode,
   cellA: null | TableCellNode,
   cellB: null | TableCellNode,
-): [TableMapType, TableMapValueType | null, TableMapValueType | null] {
+): [
+  tableMap: TableMapType,
+  cellAValue: TableMapValueType | null,
+  cellBValue: TableMapValueType | null,
+] {
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
@@ -817,7 +821,7 @@ export function $computeTableMapSkipCellCheck(
     }
     return row;
   }
-  const gridChildren = grid.getChildren();
+  const gridChildren = tableNode.getChildren();
   for (let rowIdx = 0; rowIdx < gridChildren.length; rowIdx++) {
     const row = gridChildren[rowIdx];
     invariant(
@@ -903,6 +907,118 @@ export function $getNodeTriplet(
     'Expected TableRowNode to have a parent TableNode',
   );
   return [cell, row, grid];
+}
+
+export interface TableCellRectBoundary {
+  minColumn: number;
+  minRow: number;
+  maxColumn: number;
+  maxRow: number;
+}
+
+export interface TableCellRectSpans {
+  topSpan: number;
+  leftSpan: number;
+  rightSpan: number;
+  bottomSpan: number;
+}
+
+export function $computeTableCellRectSpans(
+  map: TableMapType,
+  boundary: TableCellRectBoundary,
+): TableCellRectSpans {
+  const {minColumn, maxColumn, minRow, maxRow} = boundary;
+  let topSpan = 1;
+  let leftSpan = 1;
+  let rightSpan = 1;
+  let bottomSpan = 1;
+  const topRow = map[minRow];
+  const bottomRow = map[maxRow];
+  for (let col = minColumn; col <= maxColumn; col++) {
+    topSpan = Math.max(topSpan, topRow[col].cell.__rowSpan);
+    bottomSpan = Math.max(bottomSpan, bottomRow[col].cell.__rowSpan);
+  }
+  for (let row = minRow; row <= maxRow; row++) {
+    leftSpan = Math.max(leftSpan, map[row][minColumn].cell.__colSpan);
+    rightSpan = Math.max(rightSpan, map[row][maxColumn].cell.__colSpan);
+  }
+  return {bottomSpan, leftSpan, rightSpan, topSpan};
+}
+
+export function $computeTableCellRectBoundary(
+  map: TableMapType,
+  cellAMap: TableMapValueType,
+  cellBMap: TableMapValueType,
+): TableCellRectBoundary {
+  let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
+  let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
+  let maxColumn = Math.max(
+    cellAMap.startColumn + cellAMap.cell.__colSpan - 1,
+    cellBMap.startColumn + cellBMap.cell.__colSpan - 1,
+  );
+  let maxRow = Math.max(
+    cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
+    cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
+  );
+  let exploredMinColumn = minColumn;
+  let exploredMinRow = minRow;
+  let exploredMaxColumn = minColumn;
+  let exploredMaxRow = minRow;
+  function expandBoundary(mapValue: TableMapValueType): void {
+    const {
+      cell,
+      startColumn: cellStartColumn,
+      startRow: cellStartRow,
+    } = mapValue;
+    minColumn = Math.min(minColumn, cellStartColumn);
+    minRow = Math.min(minRow, cellStartRow);
+    maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
+    maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
+  }
+  while (
+    minColumn < exploredMinColumn ||
+    minRow < exploredMinRow ||
+    maxColumn > exploredMaxColumn ||
+    maxRow > exploredMaxRow
+  ) {
+    if (minColumn < exploredMinColumn) {
+      // Expand on the left
+      const rowDiff = exploredMaxRow - exploredMinRow;
+      const previousColumn = exploredMinColumn - 1;
+      for (let i = 0; i <= rowDiff; i++) {
+        expandBoundary(map[exploredMinRow + i][previousColumn]);
+      }
+      exploredMinColumn = previousColumn;
+    }
+    if (minRow < exploredMinRow) {
+      // Expand on top
+      const columnDiff = exploredMaxColumn - exploredMinColumn;
+      const previousRow = exploredMinRow - 1;
+      for (let i = 0; i <= columnDiff; i++) {
+        expandBoundary(map[previousRow][exploredMinColumn + i]);
+      }
+      exploredMinRow = previousRow;
+    }
+    if (maxColumn > exploredMaxColumn) {
+      // Expand on the right
+      const rowDiff = exploredMaxRow - exploredMinRow;
+      const nextColumn = exploredMaxColumn + 1;
+      for (let i = 0; i <= rowDiff; i++) {
+        expandBoundary(map[exploredMinRow + i][nextColumn]);
+      }
+      exploredMaxColumn = nextColumn;
+    }
+    if (maxRow > exploredMaxRow) {
+      // Expand on the bottom
+      const columnDiff = exploredMaxColumn - exploredMinColumn;
+      const nextRow = exploredMaxRow + 1;
+      for (let i = 0; i <= columnDiff; i++) {
+        expandBoundary(map[nextRow][exploredMinColumn + i]);
+      }
+      exploredMaxRow = nextRow;
+    }
+  }
+  return {maxColumn, maxRow, minColumn, minRow};
 }
 
 export function $getTableCellNodeRect(tableCellNode: TableCellNode): {

@@ -22,12 +22,12 @@ import {
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  getDOMSelection,
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
@@ -43,9 +43,6 @@ import FileInput from '../../ui/FileInput';
 import TextInput from '../../ui/TextInput';
 
 export type InsertImagePayload = Readonly<ImagePayload>;
-
-const getDOMSelection = (targetWindow: Window | null): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand('INSERT_IMAGE_COMMAND');

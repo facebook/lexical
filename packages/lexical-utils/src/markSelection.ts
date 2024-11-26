@@ -14,12 +14,19 @@ import {
   type LexicalEditor,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import mergeRegister from './mergeRegister';
 import positionNodeOnRange from './positionNodeOnRange';
 import px from './px';
 
+/**
+ * Place one or multiple newly created Nodes at the current selection. Multiple
+ * nodes will only be created when the selection spans multiple lines (aka
+ * client rects).
+ *
+ * This function can come useful when you want to show the selection but the
+ * editor has been focused away.
+ */
 export default function markSelection(
   editor: LexicalEditor,
   onReposition?: (node: Array<HTMLElement>) => void,
@@ -82,13 +89,7 @@ export default function markSelection(
         const focusHTMLElement = editor.getElementByKey(
           focus.getNode().getKey(),
         );
-        // TODO handle selection beyond the common TextNode
-        if (
-          anchorHTMLElement !== null &&
-          focusHTMLElement !== null &&
-          anchorHTMLElement.tagName === 'SPAN' &&
-          focusHTMLElement.tagName === 'SPAN'
-        ) {
+        if (anchorHTMLElement !== null && focusHTMLElement !== null) {
           const range = document.createRange();
           let firstHTMLElement;
           let firstOffset;
@@ -105,48 +106,39 @@ export default function markSelection(
             lastHTMLElement = focusHTMLElement;
             lastOffset = focus.offset;
           }
-          const firstTextNode = firstHTMLElement.firstChild;
-          invariant(
-            firstTextNode !== null,
-            'Expected text node to be first child of span',
+          const firstHTMLElementTextChild = firstTextChild(firstHTMLElement);
+          const lastHTMLElementtextChild = firstTextChild(lastHTMLElement);
+          range.setStart(
+            firstHTMLElementTextChild ?? firstHTMLElement,
+            firstOffset,
           );
-          const lastTextNode = lastHTMLElement.firstChild;
-          invariant(
-            lastTextNode !== null,
-            'Expected text node to be first child of span',
-          );
-          range.setStart(firstTextNode, firstOffset);
-          range.setEnd(lastTextNode, lastOffset);
+          range.setEnd(lastHTMLElementtextChild ?? lastHTMLElement, lastOffset);
           removeRangeListener();
           removeRangeListener = positionNodeOnRange(
             editor,
             range,
             (domNodes) => {
-              for (const domNode of domNodes) {
-                const domNodeStyle = domNode.style;
-                if (domNodeStyle.background !== 'Highlight') {
-                  domNodeStyle.background = 'Highlight';
+              if (onReposition === undefined) {
+                for (const domNode of domNodes) {
+                  const domNodeStyle = domNode.style;
+
+                  if (domNodeStyle.background !== 'Highlight') {
+                    domNodeStyle.background = 'Highlight';
+                  }
+                  if (domNodeStyle.color !== 'HighlightText') {
+                    domNodeStyle.color = 'HighlightText';
+                  }
+                  if (domNodeStyle.marginTop !== px(-1.5)) {
+                    domNodeStyle.marginTop = px(-1.5);
+                  }
+                  if (domNodeStyle.paddingTop !== px(4)) {
+                    domNodeStyle.paddingTop = px(4);
+                  }
+                  if (domNodeStyle.paddingBottom !== px(0)) {
+                    domNodeStyle.paddingBottom = px(0);
+                  }
                 }
-                if (domNodeStyle.color !== 'HighlightText') {
-                  domNodeStyle.color = 'HighlightText';
-                }
-                if (domNodeStyle.zIndex !== '-1') {
-                  domNodeStyle.zIndex = '-1';
-                }
-                if (domNodeStyle.pointerEvents !== 'none') {
-                  domNodeStyle.pointerEvents = 'none';
-                }
-                if (domNodeStyle.marginTop !== px(-1.5)) {
-                  domNodeStyle.marginTop = px(-1.5);
-                }
-                if (domNodeStyle.paddingTop !== px(4)) {
-                  domNodeStyle.paddingTop = px(4);
-                }
-                if (domNodeStyle.paddingBottom !== px(0)) {
-                  domNodeStyle.paddingBottom = px(0);
-                }
-              }
-              if (onReposition !== undefined) {
+              } else {
                 onReposition(domNodes);
               }
             },
@@ -167,4 +159,12 @@ export default function markSelection(
       removeRangeListener();
     },
   );
+}
+
+function firstTextChild(node: Node): null | Text {
+  let text: null | Node = node;
+  while (text !== null && !(text instanceof Text)) {
+    text = text.firstChild ?? null;
+  }
+  return text;
 }

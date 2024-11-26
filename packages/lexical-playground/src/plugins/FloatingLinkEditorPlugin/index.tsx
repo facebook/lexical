@@ -19,6 +19,7 @@ import {
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
+  $setSelection,
   BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -205,6 +206,7 @@ function FloatingLinkEditor({
     if (lastSelection !== null) {
       if (linkUrl !== '') {
         editor.update(() => {
+          $setSelection(lastSelection.clone());
           editor.dispatchCommand(
             TOGGLE_LINK_COMMAND,
             sanitizeUrl(editedLinkUrl),

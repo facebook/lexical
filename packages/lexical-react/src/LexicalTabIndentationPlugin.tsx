@@ -87,7 +87,7 @@ export function TabIndentationPlugin(): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     return registerTabIndentation(editor);
-  });
+  }, [editor]);
 
   return null;
 }

@@ -33,6 +33,7 @@ export default function Settings(): JSX.Element {
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
       // tableHorizontalScroll,
+      retainSelection,
     },
   } = useSettings();
   useEffect(() => {
@@ -175,6 +176,13 @@ export default function Settings(): JSX.Element {
             checked={tableHorizontalScroll}
             text="Tables have horizontal scroll"
           /> */}
+          <Switch
+            onClick={() => {
+              setOption('retainSelection', !retainSelection);
+            }}
+            checked={retainSelection}
+            text="Retain selection"
+          />
         </div>
       ) : null}
     </>

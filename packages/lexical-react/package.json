@@ -941,6 +941,36 @@
         "default": "./LexicalPlainTextPlugin.js"
       }
     },
+    "./LexicalRetainSelection": {
+      "import": {
+        "types": "./LexicalRetainSelection.d.ts",
+        "development": "./LexicalRetainSelection.dev.mjs",
+        "production": "./LexicalRetainSelection.prod.mjs",
+        "node": "./LexicalRetainSelection.node.mjs",
+        "default": "./LexicalRetainSelection.mjs"
+      },
+      "require": {
+        "types": "./LexicalRetainSelection.d.ts",
+        "development": "./LexicalRetainSelection.dev.js",
+        "production": "./LexicalRetainSelection.prod.js",
+        "default": "./LexicalRetainSelection.js"
+      }
+    },
+    "./LexicalRetainSelection.js": {
+      "import": {
+        "types": "./LexicalRetainSelection.d.ts",
+        "development": "./LexicalRetainSelection.dev.mjs",
+        "production": "./LexicalRetainSelection.prod.mjs",
+        "node": "./LexicalRetainSelection.node.mjs",
+        "default": "./LexicalRetainSelection.mjs"
+      },
+      "require": {
+        "types": "./LexicalRetainSelection.d.ts",
+        "development": "./LexicalRetainSelection.dev.js",
+        "production": "./LexicalRetainSelection.prod.js",
+        "default": "./LexicalRetainSelection.js"
+      }
+    },
     "./LexicalRichTextPlugin": {
       "import": {
         "types": "./LexicalRichTextPlugin.d.ts",

@@ -19,6 +19,7 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {HorizontalRulePlugin} from '@lexical/react/LexicalHorizontalRulePlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {LexicalRetainSelection} from '@lexical/react/LexicalRetainSelection';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
@@ -95,6 +96,7 @@ export default function Editor(): JSX.Element {
       tableCellMerge,
       tableCellBackgroundColor,
       tableHorizontalScroll,
+      retainSelection,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -219,6 +221,7 @@ export default function Editor(): JSX.Element {
             <CollapsiblePlugin />
             <PageBreakPlugin />
             <LayoutPlugin />
+            {retainSelection && <LexicalRetainSelection />}
             {floatingAnchorElem && !isSmallWidthViewport && (
               <>
                 <DraggableBlockPlugin anchorElem={floatingAnchorElem} />

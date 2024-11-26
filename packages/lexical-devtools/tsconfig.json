@@ -117,6 +117,9 @@
       "@lexical/react/LexicalPlainTextPlugin": [
         "../lexical-react/src/LexicalPlainTextPlugin.tsx"
       ],
+      "@lexical/react/LexicalRetainSelection": [
+        "../lexical-react/src/LexicalRetainSelection.tsx"
+      ],
       "@lexical/react/LexicalRichTextPlugin": [
         "../lexical-react/src/LexicalRichTextPlugin.tsx"
       ],

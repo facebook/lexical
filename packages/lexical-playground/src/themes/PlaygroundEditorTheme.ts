@@ -95,14 +95,11 @@ const theme: EditorThemeClasses = {
   tableCellActionButton: 'PlaygroundEditorTheme__tableCellActionButton',
   tableCellActionButtonContainer:
     'PlaygroundEditorTheme__tableCellActionButtonContainer',
-  tableCellEditing: 'PlaygroundEditorTheme__tableCellEditing',
   tableCellHeader: 'PlaygroundEditorTheme__tableCellHeader',
-  tableCellPrimarySelected: 'PlaygroundEditorTheme__tableCellPrimarySelected',
   tableCellResizer: 'PlaygroundEditorTheme__tableCellResizer',
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
-  tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
-  tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
   tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
+  tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {

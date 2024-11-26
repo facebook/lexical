@@ -14,6 +14,7 @@ export const isDevPlayground: boolean =
 export const DEFAULT_SETTINGS = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
+  hasLinkAttributes: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
@@ -28,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   showTreeView: true,
   tableCellBackgroundColor: true,
   tableCellMerge: true,
+  tableHorizontalScroll: true,
 } as const;
 
 // These are mutated in setupEnv

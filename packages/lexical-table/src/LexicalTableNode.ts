@@ -6,18 +6,6 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import {
   addClassNamesToElement,
   isHTMLElement,
@@ -25,10 +13,24 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $getEditor,
   $getNearestNodeFromDOMNode,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  EditorConfig,
+  ElementDOMSlot,
   ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  SerializedElementNode,
+  setDOMUnmanaged,
+  Spread,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
+import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {TableRowNode} from './LexicalTableRowNode';
@@ -75,6 +77,30 @@ function setRowStriping(
   } else {
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
+  }
+}
+
+const scrollableEditors = new WeakSet<LexicalEditor>();
+
+export function $isScrollableTablesActive(
+  editor: LexicalEditor = $getEditor(),
+): boolean {
+  return scrollableEditors.has(editor);
+}
+
+export function setScrollableTablesActive(
+  editor: LexicalEditor,
+  active: boolean,
+) {
+  if (active) {
+    if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
+      console.warn(
+        'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
+      );
+    }
+    scrollableEditors.add(editor);
+  } else {
+    scrollableEditors.delete(editor);
   }
 }
 
@@ -141,6 +167,19 @@ export class TableNode extends ElementNode {
     };
   }
 
+  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+    const tableElement =
+      (element.nodeName !== 'TABLE' && element.querySelector('table')) ||
+      element;
+    invariant(
+      tableElement.nodeName === 'TABLE',
+      'TableNode.getDOMSlot: createDOM() did not return a table',
+    );
+    return super
+      .getDOMSlot(tableElement)
+      .withAfter(tableElement.querySelector('colgroup'));
+  }
+
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
     const colGroup = document.createElement('colgroup');
@@ -151,10 +190,22 @@ export class TableNode extends ElementNode {
       this.getColumnCount(),
       this.getColWidths(),
     );
+    setDOMUnmanaged(colGroup);
 
     addClassNamesToElement(tableElement, config.theme.table);
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
+    }
+    if ($isScrollableTablesActive(editor)) {
+      const wrapperElement = document.createElement('div');
+      const classes = config.theme.tableScrollableWrapper;
+      if (classes) {
+        addClassNamesToElement(wrapperElement, classes);
+      } else {
+        wrapperElement.style.cssText = 'overflow-x: auto;';
+      }
+      wrapperElement.appendChild(tableElement);
+      return wrapperElement;
     }
 
     return tableElement;
@@ -176,21 +227,24 @@ export class TableNode extends ElementNode {
     return {
       ...super.exportDOM(editor),
       after: (tableElement) => {
-        if (tableElement) {
-          const newElement = tableElement.cloneNode() as ParentNode;
-          const colGroup = document.createElement('colgroup');
-          const tBody = document.createElement('tbody');
-          if (isHTMLElement(tableElement)) {
-            const cols = tableElement.querySelectorAll('col');
-            colGroup.append(...cols);
-            const rows = tableElement.querySelectorAll('tr');
-            tBody.append(...rows);
-          }
-
-          newElement.replaceChildren(colGroup, tBody);
-
-          return newElement as HTMLElement;
+        if (
+          tableElement &&
+          isHTMLElement(tableElement) &&
+          tableElement.nodeName !== 'TABLE'
+        ) {
+          tableElement = tableElement.querySelector('table');
         }
+        if (!tableElement || !isHTMLElement(tableElement)) {
+          return null;
+        }
+        // Wrap direct descendant rows in a tbody for export
+        const rows = tableElement.querySelectorAll(':scope > tr');
+        if (rows.length > 0) {
+          const tBody = document.createElement('tbody');
+          tBody.append(...rows);
+          tableElement.append(tBody);
+        }
+        return tableElement;
       },
     };
   }
@@ -343,12 +397,11 @@ export function $getElementForTableNode(
   tableNode: TableNode,
 ): TableDOMTable {
   const tableElement = editor.getElementByKey(tableNode.getKey());
-
-  if (tableElement == null) {
-    throw new Error('Table Element Not Found');
-  }
-
-  return getTable(tableElement);
+  invariant(
+    tableElement !== null,
+    '$getElementForTableNode: Table Element Not Found',
+  );
+  return getTable(tableNode, tableElement);
 }
 
 export function $convertTableElement(
@@ -357,6 +410,21 @@ export function $convertTableElement(
   const tableNode = $createTableNode();
   if (domNode.hasAttribute('data-lexical-row-striping')) {
     tableNode.setRowStriping(true);
+  }
+  const colGroup = domNode.querySelector(':scope > colgroup');
+  if (colGroup) {
+    let columns: number[] | undefined = [];
+    for (const col of colGroup.querySelectorAll(':scope > col')) {
+      const width = (col as HTMLElement).style.width;
+      if (!width || !PIXEL_VALUE_REG_EXP.test(width)) {
+        columns = undefined;
+        break;
+      }
+      columns.push(parseFloat(width));
+    }
+    if (columns) {
+      tableNode.setColWidths(columns);
+    }
   }
   return {node: tableNode};
 }

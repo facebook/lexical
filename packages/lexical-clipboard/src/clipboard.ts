@@ -22,6 +22,7 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
+  getDOMSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -29,11 +30,7 @@ import {
   SerializedElementNode,
   SerializedTextNode,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
-
-const getDOMSelection = (targetWindow: Window | null): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -154,7 +151,10 @@ export function $insertDataTransferForRichText(
   if (htmlString) {
     try {
       const parser = new DOMParser();
-      const dom = parser.parseFromString(htmlString, 'text/html');
+      const dom = parser.parseFromString(
+        trustHTML(htmlString) as string,
+        'text/html',
+      );
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {
@@ -190,6 +190,16 @@ export function $insertDataTransferForRichText(
       selection.insertRawText(text);
     }
   }
+}
+
+function trustHTML(html: string): string | TrustedHTML {
+  if (window.trustedTypes && window.trustedTypes.createPolicy) {
+    const policy = window.trustedTypes.createPolicy('lexical', {
+      createHTML: (input) => input,
+    });
+    return policy.createHTML(html);
+  }
+  return html;
 }
 
 /**

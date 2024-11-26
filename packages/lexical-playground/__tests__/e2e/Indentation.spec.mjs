@@ -18,7 +18,9 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Identation', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page}) =>
+    initialize({isCollab, page, tableHorizontalScroll: false}),
+  );
 
   test(`Can create content and indent and outdent it all`, async ({
     page,
@@ -111,8 +113,7 @@ test.describe('Identation', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -196,8 +197,7 @@ test.describe('Identation', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
@@ -292,8 +292,7 @@ test.describe('Identation', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
@@ -382,8 +381,7 @@ test.describe('Identation', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
@@ -462,8 +460,7 @@ test.describe('Identation', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr"

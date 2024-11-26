@@ -162,6 +162,7 @@ declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
+  hasTabHandler: boolean,
 ): TableObserver;
 
 declare export function $getElementForTableNode(
@@ -237,11 +238,11 @@ declare export function $deleteTableColumn(
 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableRowNode | null;
 
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableCellNode | null;
 
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
 
@@ -285,11 +286,11 @@ declare export class TableObserver {
   getTable(): TableDOMTable;
   removeListeners(): void;
   trackTable(): void;
-  clearHighlight(): void;
-  setFocusCellForSelection(cell: TableDOMCell): void;
-  setAnchorCellForSelection(cell: TableDOMCell): void;
-  formatCells(type: TextFormatType): void;
-  clearText(): void;
+  $clearHighlight(): void;
+  $setFocusCellForSelection(cell: TableDOMCell, ignoreStart?: boolean): void;
+  $setAnchorCellForSelection(cell: TableDOMCell): void;
+  $formatCells(type: TextFormatType): void;
+  $clearText(): void;
 }
 
 /**

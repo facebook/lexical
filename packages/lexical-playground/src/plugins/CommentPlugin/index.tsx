@@ -47,6 +47,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  getDOMSelection,
   KEY_ESCAPE_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -923,7 +924,7 @@ export default function CommentPlugin({
       editor.registerCommand(
         INSERT_INLINE_COMMAND,
         () => {
-          const domSelection = window.getSelection();
+          const domSelection = getDOMSelection(editor._window);
           if (domSelection !== null) {
             domSelection.removeAllRanges();
           }

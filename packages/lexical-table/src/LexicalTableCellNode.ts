@@ -122,10 +122,8 @@ export class TableCellNode extends ElementNode {
     this.__backgroundColor = null;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement(
-      this.getTag(),
-    ) as HTMLTableCellElement;
+  createDOM(config: EditorConfig): HTMLTableCellElement {
+    const element = document.createElement(this.getTag());
 
     if (this.__width) {
       element.style.width = `${this.__width}px`;
@@ -150,33 +148,27 @@ export class TableCellNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const {element} = super.exportDOM(editor);
+    const output = super.exportDOM(editor);
 
-    if (element) {
-      const element_ = element as HTMLTableCellElement;
-      element_.style.border = '1px solid black';
+    if (output.element) {
+      const element = output.element as HTMLTableCellElement;
+      element.style.border = '1px solid black';
       if (this.__colSpan > 1) {
-        element_.colSpan = this.__colSpan;
+        element.colSpan = this.__colSpan;
       }
       if (this.__rowSpan > 1) {
-        element_.rowSpan = this.__rowSpan;
+        element.rowSpan = this.__rowSpan;
       }
-      element_.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
+      element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
-      element_.style.verticalAlign = 'top';
-      element_.style.textAlign = 'start';
-
-      const backgroundColor = this.getBackgroundColor();
-      if (backgroundColor !== null) {
-        element_.style.backgroundColor = backgroundColor;
-      } else if (this.hasHeader()) {
-        element_.style.backgroundColor = '#f2f3f5';
+      element.style.verticalAlign = 'top';
+      element.style.textAlign = 'start';
+      if (this.__backgroundColor === null && this.hasHeader()) {
+        element.style.backgroundColor = '#f2f3f5';
       }
     }
 
-    return {
-      element,
-    };
+    return output;
   }
 
   exportJSON(): SerializedTableCellNode {
@@ -211,7 +203,7 @@ export class TableCellNode extends ElementNode {
     return self;
   }
 
-  getTag(): string {
+  getTag(): 'th' | 'td' {
     return this.hasHeader() ? 'th' : 'td';
   }
 
@@ -322,7 +314,7 @@ export function $convertTableCellNodeElement(
   }
 
   const style = domNode_.style;
-  const textDecoration = style.textDecoration.split(' ');
+  const textDecoration = ((style && style.textDecoration) || '').split(' ');
   const hasBoldFontWeight =
     style.fontWeight === '700' || style.fontWeight === 'bold';
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');

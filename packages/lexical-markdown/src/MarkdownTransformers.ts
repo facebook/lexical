@@ -75,6 +75,19 @@ export type ElementTransformer = {
 };
 
 export type MultilineElementTransformer = {
+  /**
+   * Use this function to manually handle the import process, once the `regExpStart` has matched successfully.
+   * Without providing this function, the default behavior is to match until `regExpEnd` is found, or until the end of the document if `regExpEnd.optional` is true.
+   *
+   * @returns a tuple or null. The first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed. If null is returned, the next multilineElementTransformer will be tried. If undefined is returned, the default behavior will be used.
+   */
+  handleImportAfterStartMatch?: (args: {
+    lines: Array<string>;
+    rootNode: ElementNode;
+    startLineIndex: number;
+    startMatch: RegExpMatchArray;
+    transformer: MultilineElementTransformer;
+  }) => [boolean, number] | null | undefined;
   dependencies: Array<Klass<LexicalNode>>;
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
@@ -161,6 +174,15 @@ export type TextMatchTransformer = Readonly<{
    * Determines how the matched markdown text should be transformed into a node during the markdown import process
    */
   replace?: (node: TextNode, match: RegExpMatchArray) => void;
+  /**
+   * For import operations, this function can be used to determine the end index of the match, after `importRegExp` has matched.
+   * Without this function, the end index will be determined by the length of the match from `importRegExp`. Manually determining the end index can be useful if
+   * the match from `importRegExp` is not the entire text content of the node. That way, `importRegExp` can be used to match only the start of the node, and `getEndIndex`
+   * can be used to match the end of the node.
+   *
+   * @returns The end index of the match, or false if the match was unsuccessful and a different transformer should be tried.
+   */
+  getEndIndex?: (node: TextNode, match: RegExpMatchArray) => number | false;
   /**
    * Single character that allows the transformer to trigger when typed in the editor. This does not affect markdown imports outside of the markdown shortcut plugin.
    * If the trigger is matched, the `regExp` will be used to match the text in the second step.
@@ -550,7 +572,7 @@ export const LINK: TextMatchTransformer = {
 
 export function normalizeMarkdown(
   input: string,
-  shouldMergeAdjacentLines = true,
+  shouldMergeAdjacentLines = false,
 ): string {
   const lines = input.split('\n');
   let inCodeBlock = false;

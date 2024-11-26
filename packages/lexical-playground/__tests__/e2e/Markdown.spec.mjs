@@ -595,6 +595,16 @@ test.describe.parallel('Markdown', () => {
       `,
       text: 'hello [world](https://www.test.com)!',
     },
+    {
+      html: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">10:20:30😄</span>
+        </p>
+      `,
+      text: '10:20:30:smile:',
+    },
   ];
 
   const NESTED_TEXT_FORMAT_SHORTCUTS = [
@@ -1310,6 +1320,7 @@ const IMPORTED_MARKDOWN_HTML = html`
       bold italic strikethrough
     </strong>
     <span data-lexical-text="true">text,</span>
+    <br />
     <strong
       class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
       data-lexical-text="true">
@@ -1407,7 +1418,9 @@ const IMPORTED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Blockquotes text goes here</span>
     <br />
-    <span data-lexical-text="true">And secondline after</span>
+    <span data-lexical-text="true">And second</span>
+    <br />
+    <span data-lexical-text="true">line after</span>
   </blockquote>
   <blockquote
     class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
@@ -1485,9 +1498,9 @@ const IMPORTED_MARKDOWN_HTML = html`
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
           dir="ltr"
           value="1">
-          <span data-lexical-text="true">
-            And can be nested and multiline as well
-          </span>
+          <span data-lexical-text="true">And can be nested</span>
+          <br />
+          <span data-lexical-text="true">and multiline as well</span>
         </li>
       </ol>
     </li>

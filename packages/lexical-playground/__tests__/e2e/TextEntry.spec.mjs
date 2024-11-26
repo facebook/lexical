@@ -641,7 +641,6 @@ test.describe('TextEntry', () => {
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         `,
       );
-      await page.pause();
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1],

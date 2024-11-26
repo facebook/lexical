@@ -44,3 +44,7 @@ html[data-theme='dark'] .docusaurus-highlight-code-line {
 html[data-theme='dark'] .button--outline:hover {
   color: white;
 }
+
+html[data-theme='dark'] .button--text:hover {
+  color: rgba(0, 0, 0, 0.5);
+}

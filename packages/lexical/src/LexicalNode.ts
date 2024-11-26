@@ -56,6 +56,15 @@ export type SerializedLexicalNode = {
   version: number;
 };
 
+/** @internal */
+export interface LexicalPrivateDOM {
+  __lexicalTextContent?: string | undefined | null;
+  __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
+  __lexicalDirTextContent?: string | undefined | null;
+  __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
+  __lexicalUnmanaged?: boolean | undefined;
+}
+
 export function $removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
@@ -1159,6 +1168,16 @@ export class LexicalNode {
    * */
   markDirty(): void {
     this.getWritable();
+  }
+
+  /**
+   * @internal
+   *
+   * When the reconciler detects that a node was mutated, this method
+   * may be called to restore the node to a known good state.
+   */
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
+    this.markDirty();
   }
 }
 

@@ -84,7 +84,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedExcalidrawNode {
     return {
-      ...super.exportJSON(),
       data: this.__data,
       height: this.__height === 'inherit' ? undefined : this.__height,
       type: 'excalidraw',
@@ -110,25 +109,13 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     const span = document.createElement('span');
     const theme = config.theme;
     const className = theme.image;
-
-    span.style.display = 'inline-block';
-
-    span.style.width =
-      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
-    span.style.height =
-      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
-
     if (className !== undefined) {
       span.className = className;
     }
     return span;
   }
 
-  updateDOM(prevNode: ExcalidrawNode, dom: HTMLElement): boolean {
-    dom.style.width =
-      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
-    dom.style.height =
-      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
+  updateDOM(): false {
     return false;
   }
 
@@ -194,7 +181,12 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return (
       <Suspense fallback={null}>
-        <ExcalidrawComponent nodeKey={this.getKey()} data={this.__data} />
+        <ExcalidrawComponent
+          nodeKey={this.getKey()}
+          data={this.__data}
+          width={this.__width}
+          height={this.__height}
+        />
       </Suspense>
     );
   }

@@ -82,6 +82,7 @@ export async function initialize({
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
   tableHorizontalScroll,
+  retainSelection,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -115,6 +116,7 @@ export async function initialize({
     appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
   appSettings.shouldUseLexicalContextMenu = !!shouldUseLexicalContextMenu;
+  appSettings.retainSelection = !!retainSelection;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -171,6 +173,7 @@ export const test = base.extend({
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,
+  retainSelection: false,
   shouldUseLexicalContextMenu: false,
 });
 

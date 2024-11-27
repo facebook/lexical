@@ -174,6 +174,7 @@ export const test = base.extend({
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,
+  shouldAllowHighlightingWithBrackets: false,
   shouldUseLexicalContextMenu: false,
 });
 

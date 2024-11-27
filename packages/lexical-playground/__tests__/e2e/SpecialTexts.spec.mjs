@@ -24,7 +24,7 @@ test.describe('Special Text', () => {
       shouldAllowHighlightingWithBrackets,
     }),
   );
-  test('should handle a single special text', async ({page}) => {
+  test('should handle a single special text', async ({page, isCollab}) => {
     await focusEditor(page);
     await page.keyboard.type('[MLH Fellowship]');
     await waitForSelector(page, '.PlaygroundEditorTheme__specialText');
@@ -44,7 +44,7 @@ test.describe('Special Text', () => {
       `,
     );
   });
-  test('should handle multiple special texts', async ({page}) => {
+  test('should handle multiple special texts', async ({page, isCollab}) => {
     await focusEditor(page);
     await page.keyboard.type('[MLH Fellowship] [MLH Fellowship]');
     await waitForSelector(page, '.PlaygroundEditorTheme__specialText');
@@ -69,10 +69,14 @@ test.describe('Special Text', () => {
       `,
     );
   });
+
   test('should not work when the option to use brackets for highlighting is disabled', async ({
     page,
+    isCollab,
+    shouldAllowHighlightingWithBrackets,
   }) => {
     await initialize({
+      isCollab,
       page,
       shouldAllowHighlightingWithBrackets: false,
     });

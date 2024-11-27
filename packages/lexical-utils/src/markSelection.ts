@@ -162,9 +162,12 @@ export default function markSelection(
 }
 
 function firstTextChild(node: Node): null | Text {
-  let text: null | Node = node;
-  while (text !== null && !(text instanceof Text)) {
-    text = text.firstChild || null;
+  let current: Node | null = node;
+  while (current !== null) {
+    if (current instanceof Text) {
+      return current;
+    }
+    current = current.firstChild;
   }
-  return text;
+  return null;
 }

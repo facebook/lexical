@@ -2549,7 +2549,8 @@ describe('LexicalEditor tests', () => {
       `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
     );
     editor.setEditorState(state);
-    expect(editor._editorState).toBe(state);
+    // A writable version of the EditorState may have been created, we settle for equal serializations
+    expect(editor._editorState.toJSON()).toEqual(state.toJSON());
     expect(editor._pendingEditorState).toBe(null);
   });
 

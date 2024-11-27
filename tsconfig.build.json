@@ -118,11 +118,11 @@
       "@lexical/react/LexicalPlainTextPlugin": [
         "./packages/lexical-react/src/LexicalPlainTextPlugin.tsx"
       ],
-      "@lexical/react/LexicalRetainSelection": [
-        "./packages/lexical-react/src/LexicalRetainSelection.tsx"
-      ],
       "@lexical/react/LexicalRichTextPlugin": [
         "./packages/lexical-react/src/LexicalRichTextPlugin.tsx"
+      ],
+      "@lexical/react/LexicalSelectionAlwaysOnDisplay": [
+        "./packages/lexical-react/src/LexicalSelectionAlwaysOnDisplay.tsx"
       ],
       "@lexical/react/LexicalTabIndentationPlugin": [
         "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"

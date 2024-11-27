@@ -8,6 +8,6 @@
  */
 
 /**
- * LexicalRetainSelection
+ * LexicalSelectionAlwaysOnDisplay
  */
-declare export function RetainSelection(): null;
+declare export function SelectionAlwaysOnDisplay(): null;

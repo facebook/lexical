@@ -941,36 +941,6 @@
         "default": "./LexicalPlainTextPlugin.js"
       }
     },
-    "./LexicalRetainSelection": {
-      "import": {
-        "types": "./LexicalRetainSelection.d.ts",
-        "development": "./LexicalRetainSelection.dev.mjs",
-        "production": "./LexicalRetainSelection.prod.mjs",
-        "node": "./LexicalRetainSelection.node.mjs",
-        "default": "./LexicalRetainSelection.mjs"
-      },
-      "require": {
-        "types": "./LexicalRetainSelection.d.ts",
-        "development": "./LexicalRetainSelection.dev.js",
-        "production": "./LexicalRetainSelection.prod.js",
-        "default": "./LexicalRetainSelection.js"
-      }
-    },
-    "./LexicalRetainSelection.js": {
-      "import": {
-        "types": "./LexicalRetainSelection.d.ts",
-        "development": "./LexicalRetainSelection.dev.mjs",
-        "production": "./LexicalRetainSelection.prod.mjs",
-        "node": "./LexicalRetainSelection.node.mjs",
-        "default": "./LexicalRetainSelection.mjs"
-      },
-      "require": {
-        "types": "./LexicalRetainSelection.d.ts",
-        "development": "./LexicalRetainSelection.dev.js",
-        "production": "./LexicalRetainSelection.prod.js",
-        "default": "./LexicalRetainSelection.js"
-      }
-    },
     "./LexicalRichTextPlugin": {
       "import": {
         "types": "./LexicalRichTextPlugin.d.ts",
@@ -999,6 +969,36 @@
         "development": "./LexicalRichTextPlugin.dev.js",
         "production": "./LexicalRichTextPlugin.prod.js",
         "default": "./LexicalRichTextPlugin.js"
+      }
+    },
+    "./LexicalSelectionAlwaysOnDisplay": {
+      "import": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+      },
+      "require": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./LexicalSelectionAlwaysOnDisplay.js"
+      }
+    },
+    "./LexicalSelectionAlwaysOnDisplay.js": {
+      "import": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+      },
+      "require": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./LexicalSelectionAlwaysOnDisplay.js"
       }
     },
     "./LexicalTabIndentationPlugin": {

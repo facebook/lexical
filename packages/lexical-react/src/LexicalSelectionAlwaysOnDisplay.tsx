@@ -7,13 +7,13 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {retainSelection} from '@lexical/utils';
+import {selectionAlwaysOnDisplay} from '@lexical/utils';
 import {useEffect} from 'react';
 
-export function RetainSelection(): null {
+export function SelectionAlwaysOnDisplay(): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return retainSelection(editor);
+    return selectionAlwaysOnDisplay(editor);
   }, [editor]);
 
   return null;

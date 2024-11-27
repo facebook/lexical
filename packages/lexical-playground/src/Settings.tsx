@@ -33,7 +33,7 @@ export default function Settings(): JSX.Element {
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
       // tableHorizontalScroll,
-      retainSelection,
+      selectionAlwaysOnDisplay,
     },
   } = useSettings();
   useEffect(() => {
@@ -178,9 +178,9 @@ export default function Settings(): JSX.Element {
           /> */}
           <Switch
             onClick={() => {
-              setOption('retainSelection', !retainSelection);
+              setOption('selectionAlwaysOnDisplay', !selectionAlwaysOnDisplay);
             }}
-            checked={retainSelection}
+            checked={selectionAlwaysOnDisplay}
             text="Retain selection"
           />
         </div>

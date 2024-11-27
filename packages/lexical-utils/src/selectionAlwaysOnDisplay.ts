@@ -10,7 +10,9 @@ import {LexicalEditor} from 'lexical';
 
 import markSelection from './markSelection';
 
-export default function retainSelection(editor: LexicalEditor): () => void {
+export default function selectionAlwaysOnDisplay(
+  editor: LexicalEditor,
+): () => void {
   let removeSelectionMark: (() => void) | null = null;
 
   const onSelectionChange = () => {

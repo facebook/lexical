@@ -12,6 +12,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $addUpdateTag,
   $createTextNode,
   $getNodeByKey,
   $getSelection,
@@ -30,6 +31,8 @@ import {
   AutocompleteNode,
 } from '../../nodes/AutocompleteNode';
 import {addSwipeRightListener} from '../../utils/swipe';
+
+const HISTORY_MERGE = {tag: 'history-merge'};
 
 declare global {
   interface Navigator {
@@ -130,34 +133,27 @@ export default function AutocompletePlugin(): JSX.Element | null {
         // Outdated or no suggestion
         return;
       }
-      editor.update(
-        () => {
-          const selection = $getSelection();
-          const [hasMatch, match] = $search(selection);
-          if (
-            !hasMatch ||
-            match !== lastMatch ||
-            !$isRangeSelection(selection)
-          ) {
-            // Outdated
-            return;
-          }
-          const selectionCopy = selection.clone();
-          const prevNode = selection.getNodes()[0] as TextNode;
-          prevNodeFormat = prevNode.getFormat();
-          const node = $createAutocompleteNode(
-            formatSuggestionText(newSuggestion),
-            uuid,
-          )
-            .setFormat(prevNodeFormat)
-            .setStyle(`font-size: ${toolbarState.fontSize}`);
-          autocompleteNodeKey = node.getKey();
-          selection.insertNodes([node]);
-          $setSelection(selectionCopy);
-          lastSuggestion = newSuggestion;
-        },
-        {tag: 'history-merge'},
-      );
+      editor.update(() => {
+        const selection = $getSelection();
+        const [hasMatch, match] = $search(selection);
+        if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
+          // Outdated
+          return;
+        }
+        const selectionCopy = selection.clone();
+        const prevNode = selection.getNodes()[0] as TextNode;
+        prevNodeFormat = prevNode.getFormat();
+        const node = $createAutocompleteNode(
+          formatSuggestionText(newSuggestion),
+          uuid,
+        )
+          .setFormat(prevNodeFormat)
+          .setStyle(`font-size: ${toolbarState.fontSize}`);
+        autocompleteNodeKey = node.getKey();
+        selection.insertNodes([node]);
+        $setSelection(selectionCopy);
+        lastSuggestion = newSuggestion;
+      }, HISTORY_MERGE);
     }
 
     function $handleAutocompleteNodeTransform(node: AutocompleteNode) {
@@ -187,10 +183,12 @@ export default function AutocompletePlugin(): JSX.Element | null {
             }
           })
           .catch((e) => {
-            console.error(e);
+            if (e !== 'Dismissed') {
+              console.error(e);
+            }
           });
         lastMatch = match;
-      });
+      }, HISTORY_MERGE);
     }
     function $handleAutocompleteIntent(): boolean {
       if (lastSuggestion === null || autocompleteNodeKey === null) {
@@ -219,13 +217,15 @@ export default function AutocompletePlugin(): JSX.Element | null {
       editor.update(() => {
         if ($handleAutocompleteIntent()) {
           e.preventDefault();
+        } else {
+          $addUpdateTag(HISTORY_MERGE.tag);
         }
       });
     }
     function unmountSuggestion() {
       editor.update(() => {
         $clearSuggestion();
-      });
+      }, HISTORY_MERGE);
     }
 
     const rootElem = editor.getRootElement();

@@ -9,8 +9,10 @@
 import {
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   type EditorState,
   ElementNode,
+  getDOMTextNode,
   type LexicalEditor,
   TextNode,
 } from 'lexical';
@@ -64,7 +66,7 @@ export default function markSelection(
         currentAnchorOffset !== previousAnchorOffset ||
         currentAnchorNodeKey !== previousAnchorNode.getKey() ||
         (currentAnchorNode !== previousAnchorNode &&
-          (!(previousAnchorNode instanceof TextNode) ||
+          (!$isTextNode(previousAnchorNode) ||
             currentAnchorNode.updateDOM(
               previousAnchorNode,
               currentAnchorNodeDOM,
@@ -76,7 +78,7 @@ export default function markSelection(
         currentFocusOffset !== previousFocusOffset ||
         currentFocusNodeKey !== previousFocusNode.getKey() ||
         (currentFocusNode !== previousFocusNode &&
-          (!(previousFocusNode instanceof TextNode) ||
+          (!$isTextNode(previousFocusNode) ||
             currentFocusNode.updateDOM(
               previousFocusNode,
               currentFocusNodeDOM,
@@ -106,8 +108,8 @@ export default function markSelection(
             lastHTMLElement = focusHTMLElement;
             lastOffset = focus.offset;
           }
-          const firstHTMLElementTextChild = firstTextChild(firstHTMLElement);
-          const lastHTMLElementtextChild = firstTextChild(lastHTMLElement);
+          const firstHTMLElementTextChild = getDOMTextNode(firstHTMLElement);
+          const lastHTMLElementtextChild = getDOMTextNode(lastHTMLElement);
           range.setStart(
             firstHTMLElementTextChild || firstHTMLElement,
             firstOffset,
@@ -159,15 +161,4 @@ export default function markSelection(
       removeRangeListener();
     },
   );
-}
-
-function firstTextChild(node: Node): null | Text {
-  let current: Node | null = node;
-  while (current !== null) {
-    if (current instanceof Text) {
-      return current;
-    }
-    current = current.firstChild;
-  }
-  return null;
 }

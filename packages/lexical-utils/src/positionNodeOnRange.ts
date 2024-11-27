@@ -6,9 +6,8 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {createRectsFromDOMRange} from '@lexical/selection';
+import {isHTMLElement, type LexicalEditor} from 'lexical';
 import invariant from 'shared/invariant';
 
 import px from './px';
@@ -21,11 +20,7 @@ const mutationObserverConfig = {
 };
 
 function prependDOMNode(parent: HTMLElement, node: HTMLElement) {
-  if (parent.hasChildNodes()) {
-    parent.insertBefore(node, parent.firstChild);
-  } else {
-    parent.append(node);
-  }
+  parent.insertBefore(node, parent.firstChild);
 }
 
 /**
@@ -126,7 +121,7 @@ export default function mlcPositionNodeOnRange(
       return stop();
     }
     const currentParentDOMNode = currentRootDOMNode.parentElement;
-    if (!(currentParentDOMNode instanceof HTMLElement)) {
+    if (currentParentDOMNode === null || !isHTMLElement(currentParentDOMNode)) {
       return stop();
     }
     stop();

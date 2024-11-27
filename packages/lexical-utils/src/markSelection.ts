@@ -109,10 +109,10 @@ export default function markSelection(
           const firstHTMLElementTextChild = firstTextChild(firstHTMLElement);
           const lastHTMLElementtextChild = firstTextChild(lastHTMLElement);
           range.setStart(
-            firstHTMLElementTextChild ?? firstHTMLElement,
+            firstHTMLElementTextChild || firstHTMLElement,
             firstOffset,
           );
-          range.setEnd(lastHTMLElementtextChild ?? lastHTMLElement, lastOffset);
+          range.setEnd(lastHTMLElementtextChild || lastHTMLElement, lastOffset);
           removeRangeListener();
           removeRangeListener = positionNodeOnRange(
             editor,
@@ -164,7 +164,7 @@ export default function markSelection(
 function firstTextChild(node: Node): null | Text {
   let text: null | Node = node;
   while (text !== null && !(text instanceof Text)) {
-    text = text.firstChild ?? null;
+    text = text.firstChild || null;
   }
   return text;
 }

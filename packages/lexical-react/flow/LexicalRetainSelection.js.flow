@@ -10,3 +10,4 @@
 /**
  * LexicalRetainSelection
  */
+declare export function RetainSelection(): null;

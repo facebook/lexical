@@ -10,7 +10,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {retainSelection} from '@lexical/utils';
 import {useEffect} from 'react';
 
-export function LexicalRetainSelection(): null {
+export function RetainSelection(): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     return retainSelection(editor);

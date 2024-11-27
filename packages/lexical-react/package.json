@@ -971,6 +971,36 @@
         "default": "./LexicalRichTextPlugin.js"
       }
     },
+    "./LexicalSelectionAlwaysOnDisplay": {
+      "import": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+      },
+      "require": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./LexicalSelectionAlwaysOnDisplay.js"
+      }
+    },
+    "./LexicalSelectionAlwaysOnDisplay.js": {
+      "import": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+      },
+      "require": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./LexicalSelectionAlwaysOnDisplay.js"
+      }
+    },
     "./LexicalTabIndentationPlugin": {
       "import": {
         "types": "./LexicalTabIndentationPlugin.d.ts",

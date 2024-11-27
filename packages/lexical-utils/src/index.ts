@@ -44,6 +44,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
+export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
   $splitNode,
   isBlockDomNode,

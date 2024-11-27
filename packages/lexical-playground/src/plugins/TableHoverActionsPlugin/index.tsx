@@ -66,40 +66,44 @@ function TableHoverActionsContainer({
       let hoveredColumnNode: TableCellNode | null = null;
       let tableDOMElement: HTMLElement | null = null;
 
-      editor.update(() => {
-        const maybeTableCell = $getNearestNodeFromDOMNode(tableDOMNode);
+      editor.getEditorState().read(
+        () => {
+          const maybeTableCell = $getNearestNodeFromDOMNode(tableDOMNode);
 
-        if ($isTableCellNode(maybeTableCell)) {
-          const table = $findMatchingParent(maybeTableCell, (node) =>
-            $isTableNode(node),
-          );
-          if (!$isTableNode(table)) {
-            return;
-          }
+          if ($isTableCellNode(maybeTableCell)) {
+            const table = $findMatchingParent(maybeTableCell, (node) =>
+              $isTableNode(node),
+            );
+            if (!$isTableNode(table)) {
+              return;
+            }
 
-          tableDOMElement = getTableElement(
-            table,
-            editor.getElementByKey(table.getKey()),
-          );
+            tableDOMElement = getTableElement(
+              table,
+              editor.getElementByKey(table.getKey()),
+            );
 
-          if (tableDOMElement) {
-            const rowCount = table.getChildrenSize();
-            const colCount = (
-              (table as TableNode).getChildAtIndex(0) as TableRowNode
-            )?.getChildrenSize();
+            if (tableDOMElement) {
+              const rowCount = table.getChildrenSize();
+              const colCount = (
+                (table as TableNode).getChildAtIndex(0) as TableRowNode
+              )?.getChildrenSize();
 
-            const rowIndex = $getTableRowIndexFromTableCellNode(maybeTableCell);
-            const colIndex =
-              $getTableColumnIndexFromTableCellNode(maybeTableCell);
+              const rowIndex =
+                $getTableRowIndexFromTableCellNode(maybeTableCell);
+              const colIndex =
+                $getTableColumnIndexFromTableCellNode(maybeTableCell);
 
-            if (rowIndex === rowCount - 1) {
-              hoveredRowNode = maybeTableCell;
-            } else if (colIndex === colCount - 1) {
-              hoveredColumnNode = maybeTableCell;
+              if (rowIndex === rowCount - 1) {
+                hoveredRowNode = maybeTableCell;
+              } else if (colIndex === colCount - 1) {
+                hoveredColumnNode = maybeTableCell;
+              }
             }
           }
-        }
-      });
+        },
+        {editor},
+      );
 
       if (tableDOMElement) {
         const {

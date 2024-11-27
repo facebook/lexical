@@ -16,6 +16,7 @@ import type {
 import type {
   BaseSelection,
   ElementFormatType,
+  ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -27,7 +28,12 @@ import {
   $getClipboardDataFromSelection,
   copyToClipboard,
 } from '@lexical/clipboard';
-import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  objectKlassEquals,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
@@ -1553,24 +1559,15 @@ function selectTableCellNode(tableCell: TableCellNode, fromStart: boolean) {
   }
 }
 
-const BROWSER_BLUE_RGB = '172,206,247';
 function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
   const element = cell.elem;
+  const editorThemeClasses = editor._config.theme;
   const node = $getNearestNodeFromDOMNode(element);
   invariant(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const backgroundColor = node.getBackgroundColor();
-  if (backgroundColor === null) {
-    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
-  } else {
-    element.style.setProperty(
-      'background-image',
-      `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
-    );
-  }
-  element.style.setProperty('caret-color', 'transparent');
+  addClassNamesToElement(element, editorThemeClasses.tableCellSelected);
 }
 
 function $removeHighlightFromDOM(
@@ -1583,12 +1580,8 @@ function $removeHighlightFromDOM(
     $isTableCellNode(node),
     'Expected to find LexicalNode from Table Cell DOMNode',
   );
-  const backgroundColor = node.getBackgroundColor();
-  if (backgroundColor === null) {
-    element.style.removeProperty('background-color');
-  }
-  element.style.removeProperty('background-image');
-  element.style.removeProperty('caret-color');
+  const editorThemeClasses = editor._config.theme;
+  removeClassNamesFromElement(element, editorThemeClasses.tableCellSelected);
 }
 
 export function $findCellNode(node: LexicalNode): null | TableCellNode {
@@ -1599,6 +1592,27 @@ export function $findCellNode(node: LexicalNode): null | TableCellNode {
 export function $findTableNode(node: LexicalNode): null | TableNode {
   const tableNode = $findMatchingParent(node, $isTableNode);
   return $isTableNode(tableNode) ? tableNode : null;
+}
+
+function $getBlockParentIfFirstNode(node: LexicalNode): ElementNode | null {
+  for (
+    let prevNode = node, currentNode: LexicalNode | null = node;
+    currentNode !== null;
+    prevNode = currentNode, currentNode = currentNode.getParent()
+  ) {
+    if ($isElementNode(currentNode)) {
+      if (
+        currentNode !== prevNode &&
+        currentNode.getFirstChild() !== prevNode
+      ) {
+        // Not the first child or the initial node
+        return null;
+      } else if (!currentNode.isInline()) {
+        return currentNode;
+      }
+    }
+  }
+  return null;
 }
 
 function $handleArrowKey(
@@ -1619,32 +1633,30 @@ function $handleArrowKey(
 
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
-      if (selection.isCollapsed() && direction === 'backward') {
-        const anchorType = selection.anchor.type;
-        const anchorOffset = selection.anchor.offset;
-        if (
-          anchorType !== 'element' &&
-          !(anchorType === 'text' && anchorOffset === 0)
-        ) {
+      if (direction === 'backward') {
+        if (selection.focus.offset > 0) {
           return false;
         }
-        const anchorNode = selection.anchor.getNode();
-        if (!anchorNode) {
-          return false;
-        }
-        const parentNode = $findMatchingParent(
-          anchorNode,
-          (n) => $isElementNode(n) && !n.isInline(),
+        const parentNode = $getBlockParentIfFirstNode(
+          selection.focus.getNode(),
         );
         if (!parentNode) {
           return false;
         }
         const siblingNode = parentNode.getPreviousSibling();
-        if (!siblingNode || !$isTableNode(siblingNode)) {
+        if (!$isTableNode(siblingNode)) {
           return false;
         }
         stopEvent(event);
-        siblingNode.selectEnd();
+        if (event.shiftKey) {
+          selection.focus.set(
+            siblingNode.getParentOrThrow().getKey(),
+            siblingNode.getIndexWithinParent(),
+            'element',
+          );
+        } else {
+          siblingNode.selectEnd();
+        }
         return true;
       } else if (
         event.shiftKey &&

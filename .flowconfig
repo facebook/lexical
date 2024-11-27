@@ -69,6 +69,7 @@ module.name_mapper='^@lexical/react/LexicalNodeMenuPlugin$' -> '<PROJECT_ROOT>/p
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalPlainTextPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalPlainTextPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalRichTextPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalRichTextPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalSelectionAlwaysOnDisplay$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalSelectionAlwaysOnDisplay.js.flow'
 module.name_mapper='^@lexical/react/LexicalTabIndentationPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTabIndentationPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalTableOfContents$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContents.js.flow'
 module.name_mapper='^@lexical/react/LexicalTableOfContentsPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContentsPlugin.js.flow'

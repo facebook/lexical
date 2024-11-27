@@ -51,7 +51,7 @@ declare export function $wrapNodes(
   wrappingElement?: ElementNode,
 ): void;
 declare export function $setBlocksType(
-  selection: RangeSelection,
+  selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void;
 declare export function $isAtNodeEnd(point: Point): boolean;

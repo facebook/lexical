@@ -16,6 +16,7 @@ import type {
 import type {
   BaseSelection,
   ElementFormatType,
+  ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -1593,6 +1594,27 @@ export function $findTableNode(node: LexicalNode): null | TableNode {
   return $isTableNode(tableNode) ? tableNode : null;
 }
 
+function $getBlockParentIfFirstNode(node: LexicalNode): ElementNode | null {
+  for (
+    let prevNode = node, currentNode: LexicalNode | null = node;
+    currentNode !== null;
+    prevNode = currentNode, currentNode = currentNode.getParent()
+  ) {
+    if ($isElementNode(currentNode)) {
+      if (
+        currentNode !== prevNode &&
+        currentNode.getFirstChild() !== prevNode
+      ) {
+        // Not the first child or the initial node
+        return null;
+      } else if (!currentNode.isInline()) {
+        return currentNode;
+      }
+    }
+  }
+  return null;
+}
+
 function $handleArrowKey(
   editor: LexicalEditor,
   event: KeyboardEvent,
@@ -1611,32 +1633,30 @@ function $handleArrowKey(
 
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
-      if (selection.isCollapsed() && direction === 'backward') {
-        const anchorType = selection.anchor.type;
-        const anchorOffset = selection.anchor.offset;
-        if (
-          anchorType !== 'element' &&
-          !(anchorType === 'text' && anchorOffset === 0)
-        ) {
+      if (direction === 'backward') {
+        if (selection.focus.offset > 0) {
           return false;
         }
-        const anchorNode = selection.anchor.getNode();
-        if (!anchorNode) {
-          return false;
-        }
-        const parentNode = $findMatchingParent(
-          anchorNode,
-          (n) => $isElementNode(n) && !n.isInline(),
+        const parentNode = $getBlockParentIfFirstNode(
+          selection.focus.getNode(),
         );
         if (!parentNode) {
           return false;
         }
         const siblingNode = parentNode.getPreviousSibling();
-        if (!siblingNode || !$isTableNode(siblingNode)) {
+        if (!$isTableNode(siblingNode)) {
           return false;
         }
         stopEvent(event);
-        siblingNode.selectEnd();
+        if (event.shiftKey) {
+          selection.focus.set(
+            siblingNode.getParentOrThrow().getKey(),
+            siblingNode.getIndexWithinParent(),
+            'element',
+          );
+        } else {
+          siblingNode.selectEnd();
+        }
         return true;
       } else if (
         event.shiftKey &&

@@ -666,18 +666,9 @@ export function applyTableHandlers(
           }
 
           stopEvent(event);
-
-          const currentCords = tableNode.getCordsFromCellNode(
+          $selectAdjacentCell(
             tableCellNode,
-            tableObserver.table,
-          );
-
-          selectTableNodeInDirection(
-            tableObserver,
-            tableNode,
-            currentCords.x,
-            currentCords.y,
-            !event.shiftKey ? 'forward' : 'backward',
+            event.shiftKey ? 'previous' : 'next',
           );
 
           return true;
@@ -1300,6 +1291,36 @@ export function $removeHighlightStyleToTable(
       elem.removeAttribute('style');
     }
   });
+}
+
+function $selectAdjacentCell(
+  tableCellNode: TableCellNode,
+  direction: 'next' | 'previous',
+) {
+  const siblingMethod =
+    direction === 'next' ? 'getNextSibling' : 'getPreviousSibling';
+  const childMethod = direction === 'next' ? 'getFirstChild' : 'getLastChild';
+  const sibling = tableCellNode[siblingMethod]();
+  if ($isElementNode(sibling)) {
+    return sibling.selectEnd();
+  }
+  const parentRow = $findMatchingParent(tableCellNode, $isTableRowNode);
+  invariant(parentRow !== null, 'selectAdjacentCell: Cell not in table row');
+  for (
+    let nextRow = parentRow[siblingMethod]();
+    $isTableRowNode(nextRow);
+    nextRow = nextRow[siblingMethod]()
+  ) {
+    const child = nextRow[childMethod]();
+    if ($isElementNode(child)) {
+      return child.selectEnd();
+    }
+  }
+  const parentTable = $findMatchingParent(parentRow, $isTableNode);
+  invariant(parentTable !== null, 'selectAdjacentCell: Row not in table');
+  return direction === 'next'
+    ? parentTable.selectNext()
+    : parentTable.selectPrevious();
 }
 
 type Direction = 'backward' | 'forward' | 'up' | 'down';

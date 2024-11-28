@@ -17,7 +17,6 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getEditor,
-  $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -38,7 +37,7 @@ import {
   type TableSelection,
 } from './LexicalTableSelection';
 import {
-  $findTableNode,
+  $getNearestTableCellInTableFromDOMNode,
   $updateDOMForSelection,
   getTable,
   getTableElement,
@@ -351,13 +350,15 @@ export class TableObserver {
     this.focusY = cellY;
 
     if (this.isHighlightingCells) {
-      const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
+      const focusTableCellNode = $getNearestTableCellInTableFromDOMNode(
+        tableNode,
+        cell.elem,
+      );
 
       if (
         this.tableSelection != null &&
         this.anchorCellNodeKey != null &&
-        $isTableCellNode(focusTableCellNode) &&
-        tableNode.is($findTableNode(focusTableCellNode))
+        focusTableCellNode !== null
       ) {
         this.focusCellNodeKey = focusTableCellNode.getKey();
         this.tableSelection = $createTableSelectionFrom(
@@ -407,9 +408,13 @@ export class TableObserver {
     this.anchorX = cell.x;
     this.anchorY = cell.y;
 
-    const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
+    const {tableNode} = this.$lookup();
+    const anchorTableCellNode = $getNearestTableCellInTableFromDOMNode(
+      tableNode,
+      cell.elem,
+    );
 
-    if ($isTableCellNode(anchorTableCellNode)) {
+    if (anchorTableCellNode !== null) {
       const anchorNodeKey = anchorTableCellNode.getKey();
       this.tableSelection =
         this.tableSelection != null

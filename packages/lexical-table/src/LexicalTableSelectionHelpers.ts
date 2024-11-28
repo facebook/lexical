@@ -15,6 +15,7 @@ import type {
 } from './LexicalTableSelection';
 import type {
   BaseSelection,
+  EditorState,
   ElementFormatType,
   ElementNode,
   LexicalCommand,
@@ -661,7 +662,10 @@ export function applyTableHandlers(
           }
 
           const tableCellNode = $findCellNode(selection.anchor.getNode());
-          if (tableCellNode === null) {
+          if (
+            tableCellNode === null ||
+            !tableNode.is($findTableNode(tableCellNode))
+          ) {
             return false;
           }
 
@@ -966,13 +970,13 @@ export function applyTableHandlers(
               domSelection.focusNode,
             );
             const isFocusOutside =
-              focusNode && !tableNode.is($findTableNode(focusNode));
+              focusNode && !tableNode.isParentOf(focusNode);
 
             const anchorNode = $getNearestNodeFromDOMNode(
               domSelection.anchorNode,
             );
             const isAnchorInside =
-              anchorNode && tableNode.is($findTableNode(anchorNode));
+              anchorNode && tableNode.isParentOf(anchorNode);
 
             if (
               isFocusOutside &&
@@ -1743,11 +1747,11 @@ function $handleArrowKey(
               ? selection.getNodes()[selection.getNodes().length - 1]
               : selection.getNodes()[0];
           if (selectedNode) {
-            const tableCellNode = $findMatchingParent(
+            const tableCellNode = $findParentTableCellNodeInTable(
+              tableNode,
               selectedNode,
-              $isTableCellNode,
             );
-            if (tableCellNode && tableNode.isParentOf(tableCellNode)) {
+            if (tableCellNode !== null) {
               const firstDescendant = tableNode.getFirstDescendant();
               const lastDescendant = tableNode.getLastDescendant();
               if (!firstDescendant || !lastDescendant) {
@@ -2258,5 +2262,16 @@ export function $getObserverCellFromCellNodeOrThrow(
     currentCords.x,
     currentCords.y,
     tableObserver.table,
+  );
+}
+
+export function $getNearestTableCellInTableFromDOMNode(
+  tableNode: TableNode,
+  startingDOM: Node,
+  editorState?: EditorState,
+) {
+  return $findParentTableCellNodeInTable(
+    tableNode,
+    $getNearestNodeFromDOMNode(startingDOM, editorState),
   );
 }

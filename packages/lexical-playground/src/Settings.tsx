@@ -32,6 +32,7 @@ export default function Settings(): JSX.Element {
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
+      shouldAllowHighlightingWithBrackets,
       // tableHorizontalScroll,
       selectionAlwaysOnDisplay,
     },
@@ -176,6 +177,17 @@ export default function Settings(): JSX.Element {
             checked={tableHorizontalScroll}
             text="Tables have horizontal scroll"
           /> */}
+          <Switch
+            onClick={() => {
+              setOption(
+                'shouldAllowHighlightingWithBrackets',
+                !shouldAllowHighlightingWithBrackets,
+              );
+            }}
+            checked={shouldAllowHighlightingWithBrackets}
+            text="Use Brackets for Highlighting"
+          />
+
           <Switch
             onClick={() => {
               setOption('selectionAlwaysOnDisplay', !selectionAlwaysOnDisplay);

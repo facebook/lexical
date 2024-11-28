@@ -82,6 +82,7 @@ export async function initialize({
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
   tableHorizontalScroll,
+  shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
 }) {
   // Tests with legacy events often fail to register keypress, so
@@ -116,6 +117,10 @@ export async function initialize({
     appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
   appSettings.shouldUseLexicalContextMenu = !!shouldUseLexicalContextMenu;
+
+  appSettings.shouldAllowHighlightingWithBrackets =
+    !!shouldAllowHighlightingWithBrackets;
+
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
 
   const urlParams = appSettingsToURLParams(appSettings);
@@ -174,6 +179,7 @@ export const test = base.extend({
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,
   selectionAlwaysOnDisplay: false,
+  shouldAllowHighlightingWithBrackets: false,
   shouldUseLexicalContextMenu: false,
 });
 

@@ -245,6 +245,8 @@ type TextNodeThemeClasses = {
   code?: EditorThemeClassName,
   subscript?: EditorThemeClassName,
   superscript?: EditorThemeClassName,
+  uppercase?: EditorThemeClassName,
+  lowercase?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName,

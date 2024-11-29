@@ -26,11 +26,13 @@ import {
   toggleChecklist,
   toggleInsertCodeBlock,
   toggleItalic,
+  toggleLowercase,
   toggleNumberedList,
   toggleStrikethrough,
   toggleSubscript,
   toggleSuperscript,
   toggleUnderline,
+  toggleUppercase,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -112,6 +114,14 @@ const alignmentTestCases = [
 ];
 
 const additionalStylesTestCases = [
+  {
+    applyShortcut: (page) => toggleLowercase(page),
+    style: 'Lowercase',
+  },
+  {
+    applyShortcut: (page) => toggleUppercase(page),
+    style: 'Uppercase',
+  },
   {
     applyShortcut: (page) => toggleStrikethrough(page),
     style: 'Strikethrough',

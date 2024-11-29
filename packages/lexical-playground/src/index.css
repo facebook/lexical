@@ -767,7 +767,7 @@ i.page-break,
 
 .dropdown .item .shortcut {
   color: #939393;
-  self-align: flex-end;
+  align-self: flex-end;
 }
 
 .dropdown .item .active {

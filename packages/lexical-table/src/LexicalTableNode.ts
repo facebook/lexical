@@ -227,9 +227,12 @@ export class TableNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element, after} = super.exportDOM(editor);
     return {
-      ...super.exportDOM(editor),
       after: (tableElement) => {
+        if (after) {
+          tableElement = after(tableElement);
+        }
         if (
           tableElement &&
           isHTMLElement(tableElement) &&
@@ -249,6 +252,10 @@ export class TableNode extends ElementNode {
         }
         return tableElement;
       },
+      element:
+        element && isHTMLElement(element) && element.nodeName !== 'TABLE'
+          ? element.querySelector('table')
+          : element,
     };
   }
 

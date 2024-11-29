@@ -435,6 +435,7 @@ declare export class LexicalNode {
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -795,10 +796,37 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
+
+/**
+ * ElementDOMSlot
+ */
+declare export class ElementDOMSlot {
+  element: HTMLElement;
+  before: Node | null;
+  after: Node | null;
+  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): ElementDOMSlot;
+  withAfter(after: Node | null | void): ElementDOMSlot;
+  withElement(element: HTMLElement): ElementDOMSlot;
+  insertChild(dom: Node): this;
+  removeChild(dom: Node): this;
+  replaceChild(dom: Node, prevDom: Node): this;
+  getFirstChild(): Node | null;
+  //
+  getManagedLineBreak(): HTMLElement | null;
+  removeManagedLineBreak(): void;
+  insertManagedLineBreak(webkitHack: boolean): void;
+  getFirstChildOffset(): number;
+  resolveChildIndex(element: ElementNode, elementDOM: HTMLElement, initialDOM: Node, initialOffset: number): [node: ElementNode, idx: number];
+}
+
+declare export function setDOMUnmanaged(elementDOM: HTMLElement): void;
+declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
 
 /**
  * LexicalDecoratorNode

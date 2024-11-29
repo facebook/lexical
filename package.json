@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.19.0",
+  "version": "0.20.1",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -58,8 +58,8 @@
     "test-e2e-collab-ci-webkit": "npm run prepare-ci && cross-env E2E_PORT=4000 concurrently -k -s \"first\" \"npm run collab\" -P \"npm run test-e2e-collab-webkit -- {@}\"",
     "test-e2e-prod-ci-chromium": "npm run prepare-ci-prod && cross-env E2E_PORT=4000 npm run test-e2e-prod-chromium",
     "test-e2e-collab-prod-ci-chromium": " npm run prepare-ci-prod && cross-env E2E_PORT=4000 concurrently -k -s \"first\" \"npm run collab\" -P \"npm run test-e2e-collab-prod-chromium -- {@}\"",
-    "debug-run-all": "npm-run-all debug-test-e2e-*",
-    "run-all": "npm-run-all test-e2e-*",
+    "debug-run-all": "npm-run-all 'debug-test-e2e-* -- {1}' --",
+    "run-all": "npm-run-all 'test-e2e-* -- {1}' --",
     "debug-test-e2e": "cross-env playwright test --debug",
     "debug-test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --debug --project=\"chromium\"",
     "debug-test-e2e-prod-chromium": "cross-env E2E_BROWSER=chromium E2E_PORT=4173 playwright test --debug --project=\"chromium\"",

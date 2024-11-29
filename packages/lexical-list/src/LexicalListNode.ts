@@ -200,8 +200,12 @@ export class ListNode extends ElementNode {
         if ($isListNode(currentNode)) {
           listItemNode.append(currentNode);
         } else if ($isElementNode(currentNode)) {
-          const textNode = $createTextNode(currentNode.getTextContent());
-          listItemNode.append(textNode);
+          if (currentNode.isInline()) {
+            listItemNode.append(currentNode);
+          } else {
+            const textNode = $createTextNode(currentNode.getTextContent());
+            listItemNode.append(textNode);
+          }
         } else {
           listItemNode.append(currentNode);
         }

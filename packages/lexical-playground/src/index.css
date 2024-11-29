@@ -74,17 +74,18 @@ header h1 {
 
 .editor-scroller {
   min-height: 150px;
+  max-width: 100%;
   border: 0;
   display: flex;
   position: relative;
   outline: 0;
   z-index: 0;
-  overflow: auto;
   resize: vertical;
 }
 
 .editor {
   flex: auto;
+  max-width: 100%;
   position: relative;
   resize: vertical;
   z-index: -1;
@@ -774,7 +775,7 @@ i.page-break,
 
 .dropdown .item .shortcut {
   color: #939393;
-  self-align: flex-end;
+  align-self: flex-end;
 }
 
 .dropdown .item .active {
@@ -1314,14 +1315,23 @@ i.page-break,
   left: 0;
   will-change: transform;
 }
+.table-cell-action-button-container.table-cell-action-button-container--active {
+  pointer-events: auto;
+  opacity: 1;
+}
+.table-cell-action-button-container.table-cell-action-button-container--inactive {
+  pointer-events: none;
+  opacity: 0;
+}
 
 .table-cell-action-button {
-  background-color: none;
   display: flex;
   justify-content: center;
   align-items: center;
   border: 0;
-  position: relative;
+  position: absolute;
+  top: 10px;
+  right: 10px;
   border-radius: 15px;
   color: #222;
   display: inline-block;

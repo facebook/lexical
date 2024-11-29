@@ -16,6 +16,7 @@ import {
   $isTextNode,
   DOMConversionMap,
   DOMExportOutput,
+  DOMExportOutputMap,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -53,7 +54,7 @@ const removeStylesExportDOM = (
   return output;
 };
 
-const exportMap = new Map<
+const exportMap: DOMExportOutputMap = new Map<
   Klass<LexicalNode>,
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
 >([

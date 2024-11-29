@@ -6,9 +6,8 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {createRectsFromDOMRange} from '@lexical/selection';
+import {isHTMLElement, type LexicalEditor} from 'lexical';
 import invariant from 'shared/invariant';
 
 import px from './px';
@@ -20,7 +19,23 @@ const mutationObserverConfig = {
   subtree: true,
 };
 
-export default function positionNodeOnRange(
+function prependDOMNode(parent: HTMLElement, node: HTMLElement) {
+  parent.insertBefore(node, parent.firstChild);
+}
+
+/**
+ * Place one or multiple newly created Nodes at the passed Range's position.
+ * Multiple nodes will only be created when the Range spans multiple lines (aka
+ * client rects).
+ *
+ * This function can come particularly useful to highlight particular parts of
+ * the text without interfering with the EditorState, that will often replicate
+ * the state across collab and clipboard.
+ *
+ * This function accounts for DOM updates which can modify the passed Range.
+ * Hence, the function return to remove the listener.
+ */
+export default function mlcPositionNodeOnRange(
   editor: LexicalEditor,
   range: Range,
   onReposition: (node: Array<HTMLElement>) => void,
@@ -30,15 +45,16 @@ export default function positionNodeOnRange(
   let observer: null | MutationObserver = null;
   let lastNodes: Array<HTMLElement> = [];
   const wrapperNode = document.createElement('div');
+  wrapperNode.style.position = 'relative';
 
   function position(): void {
     invariant(rootDOMNode !== null, 'Unexpected null rootDOMNode');
     invariant(parentDOMNode !== null, 'Unexpected null parentDOMNode');
-    const {left: rootLeft, top: rootTop} = rootDOMNode.getBoundingClientRect();
-    const parentDOMNode_ = parentDOMNode;
+    const {left: parentLeft, top: parentTop} =
+      parentDOMNode.getBoundingClientRect();
     const rects = createRectsFromDOMRange(editor, range);
     if (!wrapperNode.isConnected) {
-      parentDOMNode_.append(wrapperNode);
+      prependDOMNode(parentDOMNode, wrapperNode);
     }
     let hasRepositioned = false;
     for (let i = 0; i < rects.length; i++) {
@@ -51,12 +67,12 @@ export default function positionNodeOnRange(
         rectNodeStyle.position = 'absolute';
         hasRepositioned = true;
       }
-      const left = px(rect.left - rootLeft);
+      const left = px(rect.left - parentLeft);
       if (rectNodeStyle.left !== left) {
         rectNodeStyle.left = left;
         hasRepositioned = true;
       }
-      const top = px(rect.top - rootTop);
+      const top = px(rect.top - parentTop);
       if (rectNodeStyle.top !== top) {
         rectNode.style.top = top;
         hasRepositioned = true;
@@ -105,7 +121,7 @@ export default function positionNodeOnRange(
       return stop();
     }
     const currentParentDOMNode = currentRootDOMNode.parentElement;
-    if (!(currentParentDOMNode instanceof HTMLElement)) {
+    if (currentParentDOMNode === null || !isHTMLElement(currentParentDOMNode)) {
       return stop();
     }
     stop();

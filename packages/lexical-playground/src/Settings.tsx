@@ -28,10 +28,13 @@ export default function Settings(): JSX.Element {
       isAutocomplete,
       showTreeView,
       showNestedEditorTreeView,
-      disableBeforeInput,
+      // disableBeforeInput,
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
+      shouldAllowHighlightingWithBrackets,
+      // tableHorizontalScroll,
+      selectionAlwaysOnDisplay,
     },
   } = useSettings();
   useEffect(() => {
@@ -132,14 +135,14 @@ export default function Settings(): JSX.Element {
             checked={isAutocomplete}
             text="Autocomplete"
           />
-          <Switch
+          {/* <Switch
             onClick={() => {
               setOption('disableBeforeInput', !disableBeforeInput);
               setTimeout(() => window.location.reload(), 500);
             }}
             checked={disableBeforeInput}
             text="Legacy Events"
-          />
+          /> */}
           <Switch
             onClick={() => {
               setOption('showTableOfContents', !showTableOfContents);
@@ -166,6 +169,31 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
+          />
+          {/* <Switch
+            onClick={() => {
+              setOption('tableHorizontalScroll', !tableHorizontalScroll);
+            }}
+            checked={tableHorizontalScroll}
+            text="Tables have horizontal scroll"
+          /> */}
+          <Switch
+            onClick={() => {
+              setOption(
+                'shouldAllowHighlightingWithBrackets',
+                !shouldAllowHighlightingWithBrackets,
+              );
+            }}
+            checked={shouldAllowHighlightingWithBrackets}
+            text="Use Brackets for Highlighting"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('selectionAlwaysOnDisplay', !selectionAlwaysOnDisplay);
+            }}
+            checked={selectionAlwaysOnDisplay}
+            text="Retain selection"
           />
         </div>
       ) : null}

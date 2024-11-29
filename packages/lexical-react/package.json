@@ -8,27 +8,27 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.19.0",
+  "version": "0.20.1",
   "dependencies": {
-    "@lexical/clipboard": "0.19.0",
-    "@lexical/code": "0.19.0",
-    "@lexical/devtools-core": "0.19.0",
-    "@lexical/dragon": "0.19.0",
-    "@lexical/hashtag": "0.19.0",
-    "@lexical/history": "0.19.0",
-    "@lexical/link": "0.19.0",
-    "@lexical/list": "0.19.0",
-    "@lexical/mark": "0.19.0",
-    "@lexical/markdown": "0.19.0",
-    "@lexical/overflow": "0.19.0",
-    "@lexical/plain-text": "0.19.0",
-    "@lexical/rich-text": "0.19.0",
-    "@lexical/selection": "0.19.0",
-    "@lexical/table": "0.19.0",
-    "@lexical/text": "0.19.0",
-    "@lexical/utils": "0.19.0",
-    "@lexical/yjs": "0.19.0",
-    "lexical": "0.19.0",
+    "@lexical/clipboard": "0.20.1",
+    "@lexical/code": "0.20.1",
+    "@lexical/devtools-core": "0.20.1",
+    "@lexical/dragon": "0.20.1",
+    "@lexical/hashtag": "0.20.1",
+    "@lexical/history": "0.20.1",
+    "@lexical/link": "0.20.1",
+    "@lexical/list": "0.20.1",
+    "@lexical/mark": "0.20.1",
+    "@lexical/markdown": "0.20.1",
+    "@lexical/overflow": "0.20.1",
+    "@lexical/plain-text": "0.20.1",
+    "@lexical/rich-text": "0.20.1",
+    "@lexical/selection": "0.20.1",
+    "@lexical/table": "0.20.1",
+    "@lexical/text": "0.20.1",
+    "@lexical/utils": "0.20.1",
+    "@lexical/yjs": "0.20.1",
+    "lexical": "0.20.1",
     "react-error-boundary": "^3.1.4"
   },
   "peerDependencies": {
@@ -969,6 +969,36 @@
         "development": "./LexicalRichTextPlugin.dev.js",
         "production": "./LexicalRichTextPlugin.prod.js",
         "default": "./LexicalRichTextPlugin.js"
+      }
+    },
+    "./LexicalSelectionAlwaysOnDisplay": {
+      "import": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+      },
+      "require": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./LexicalSelectionAlwaysOnDisplay.js"
+      }
+    },
+    "./LexicalSelectionAlwaysOnDisplay.js": {
+      "import": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+      },
+      "require": {
+        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./LexicalSelectionAlwaysOnDisplay.js"
       }
     },
     "./LexicalTabIndentationPlugin": {

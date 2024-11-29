@@ -34,13 +34,9 @@ export default {
   tableCellActionButton: 'ExampleEditorTheme__tableCellActionButton',
   tableCellActionButtonContainer:
     'ExampleEditorTheme__tableCellActionButtonContainer',
-  tableCellEditing: 'ExampleEditorTheme__tableCellEditing',
   tableCellHeader: 'ExampleEditorTheme__tableCellHeader',
-  tableCellPrimarySelected: 'ExampleEditorTheme__tableCellPrimarySelected',
   tableCellResizer: 'ExampleEditorTheme__tableCellResizer',
   tableCellSelected: 'ExampleEditorTheme__tableCellSelected',
-  tableCellSortedIndicator: 'ExampleEditorTheme__tableCellSortedIndicator',
-  tableResizeRuler: 'ExampleEditorTheme__tableCellResizeRuler',
   tableSelected: 'ExampleEditorTheme__tableSelected',
   tableSelection: 'ExampleEditorTheme__tableSelection',
   text: {

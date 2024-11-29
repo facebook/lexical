@@ -48,6 +48,9 @@ declare export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number];
 declare export function $getDepth(node: LexicalNode): number;
+declare export function $getNextRightPreorderNode(
+  startingNode: LexicalNode,
+): LexicalNode | null;
 declare export function $getNearestNodeOfType<T: LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,
@@ -62,6 +65,18 @@ declare export function $findMatchingParent(
 ): LexicalNode | null;
 type Func = () => void;
 declare export function mergeRegister(...func: Array<Func>): () => void;
+declare export function markSelection(
+  editor: LexicalEditor,
+  onReposition?: (node: Array<HTMLElement>) => void,
+): () => void;
+declare export function positionNodeOnRange(
+  editor: LexicalEditor,
+  range: Range,
+  onReposition: (node: Array<HTMLElement>) => void,
+): () => void;
+declare export function selectionAlwaysOnDisplay(
+  editor: LexicalEditor,
+): () => void;
 declare export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
@@ -90,7 +105,23 @@ declare export function $wrapNodeInElement(
   createElementNode: () => ElementNode,
 ): ElementNode;
 
+declare export function objectKlassEquals<T>(
+  object: mixed,
+  objectClass: Class<T>,
+): boolean;
+
+declare export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T>;
+
+declare export function $insertFirst(parent: ElementNode, node: LexicalNode): void;
+
 declare export function $splitNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode | null, ElementNode];
+
+declare export function calculateZoomLevel(element: Element | null): number;
+
+declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;

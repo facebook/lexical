@@ -9,24 +9,31 @@
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
-  $getNodeByKey,
+  $getSelection,
   $isElementNode,
   $isParagraphNode,
   $normalizeSelection__EXPERIMENTAL,
   BaseSelection,
+  ElementNode,
   isCurrentlyReadOnlyMode,
   LexicalNode,
   NodeKey,
   PointType,
   TEXT_TYPE_TO_FORMAT,
   TextFormatType,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode} from './LexicalTableNode';
-import {$isTableRowNode} from './LexicalTableRowNode';
-import {$computeTableMap, $getTableCellNodeRect} from './LexicalTableUtils';
+import {$isTableNode, TableNode} from './LexicalTableNode';
+import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
+import {$findTableNode} from './LexicalTableSelectionHelpers';
+import {
+  $computeTableCellRectBoundary,
+  $computeTableMap,
+  $getTableCellNodeRect,
+} from './LexicalTableUtils';
 
 export type TableSelectionShape = {
   fromX: number;
@@ -41,6 +48,62 @@ export type TableMapValueType = {
   startColumn: number;
 };
 export type TableMapType = Array<Array<TableMapValueType>>;
+
+function $getCellNodes(tableSelection: TableSelection): {
+  anchorCell: TableCellNode;
+  anchorNode: TextNode | ElementNode;
+  anchorRow: TableRowNode;
+  anchorTable: TableNode;
+  focusCell: TableCellNode;
+  focusNode: TextNode | ElementNode;
+  focusRow: TableRowNode;
+  focusTable: TableNode;
+} {
+  const [
+    [anchorNode, anchorCell, anchorRow, anchorTable],
+    [focusNode, focusCell, focusRow, focusTable],
+  ] = (['anchor', 'focus'] as const).map(
+    (k): [ElementNode | TextNode, TableCellNode, TableRowNode, TableNode] => {
+      const node = tableSelection[k].getNode();
+      const cellNode = $findMatchingParent(node, $isTableCellNode);
+      invariant(
+        $isTableCellNode(cellNode),
+        'Expected TableSelection %s to be (or a child of) TableCellNode, got key %s of type %s',
+        k,
+        node.getKey(),
+        node.getType(),
+      );
+      const rowNode = cellNode.getParent();
+      invariant(
+        $isTableRowNode(rowNode),
+        'Expected TableSelection %s cell parent to be a TableRowNode',
+        k,
+      );
+      const tableNode = rowNode.getParent();
+      invariant(
+        $isTableNode(tableNode),
+        'Expected TableSelection %s row parent to be a TableNode',
+        k,
+      );
+      return [node, cellNode, rowNode, tableNode];
+    },
+  );
+  // TODO: nested tables may violate this
+  invariant(
+    anchorTable.is(focusTable),
+    'Expected TableSelection anchor and focus to be in the same table',
+  );
+  return {
+    anchorCell,
+    anchorNode,
+    anchorRow,
+    anchorTable,
+    focusCell,
+    focusNode,
+    focusRow,
+    focusTable,
+  };
+}
 
 export class TableSelection implements BaseSelection {
   tableKey: NodeKey;
@@ -64,6 +127,23 @@ export class TableSelection implements BaseSelection {
   }
 
   /**
+   * {@link $createTableSelection} unfortunately makes it very easy to create
+   * nonsense selections, so we have a method to see if the selection probably
+   * makes sense.
+   *
+   * @returns true if the TableSelection is (probably) valid
+   */
+  isValid(): boolean {
+    return (
+      this.tableKey !== 'root' &&
+      this.anchor.key !== 'root' &&
+      this.anchor.type === 'element' &&
+      this.focus.key !== 'root' &&
+      this.focus.type === 'element'
+    );
+  }
+
+  /**
    * Returns whether the Selection is "backwards", meaning the focus
    * logically precedes the anchor in the EditorState.
    * @returns true if the Selection is backwards, false otherwise.
@@ -81,10 +161,8 @@ export class TableSelection implements BaseSelection {
   }
 
   is(selection: null | BaseSelection): boolean {
-    if (!$isTableSelection(selection)) {
-      return false;
-    }
     return (
+      $isTableSelection(selection) &&
       this.tableKey === selection.tableKey &&
       this.anchor.is(selection.anchor) &&
       this.focus.is(selection.focus)
@@ -92,7 +170,12 @@ export class TableSelection implements BaseSelection {
   }
 
   set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
-    this.dirty = true;
+    // note: closure compiler's acorn does not support ||=
+    this.dirty =
+      this.dirty ||
+      tableKey !== this.tableKey ||
+      anchorCellKey !== this.anchor.key ||
+      focusCellKey !== this.focus.key;
     this.tableKey = tableKey;
     this.anchor.key = anchorCellKey;
     this.focus.key = focusCellKey;
@@ -100,7 +183,11 @@ export class TableSelection implements BaseSelection {
   }
 
   clone(): TableSelection {
-    return new TableSelection(this.tableKey, this.anchor, this.focus);
+    return new TableSelection(
+      this.tableKey,
+      $createPoint(this.anchor.key, this.anchor.offset, this.anchor.type),
+      $createPoint(this.focus.key, this.focus.offset, this.focus.type),
+    );
   }
 
   isCollapsed(): boolean {
@@ -155,23 +242,13 @@ export class TableSelection implements BaseSelection {
 
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): TableSelectionShape {
-    const anchorCellNode = $getNodeByKey(this.anchor.key);
-    invariant(
-      $isTableCellNode(anchorCellNode),
-      'Expected TableSelection anchor to be (or a child of) TableCellNode',
-    );
-    const anchorCellNodeRect = $getTableCellNodeRect(anchorCellNode);
+    const {anchorCell, focusCell} = $getCellNodes(this);
+    const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);
     invariant(
       anchorCellNodeRect !== null,
       'getCellRect: expected to find AnchorNode',
     );
-
-    const focusCellNode = $getNodeByKey(this.focus.key);
-    invariant(
-      $isTableCellNode(focusCellNode),
-      'Expected TableSelection focus to be (or a child of) TableCellNode',
-    );
-    const focusCellNodeRect = $getTableCellNodeRect(focusCellNode);
+    const focusCellNodeRect = $getTableCellNodeRect(focusCell);
     invariant(
       focusCellNodeRect !== null,
       'getCellRect: expected to find focusCellNode',
@@ -204,34 +281,15 @@ export class TableSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
+    if (!this.isValid()) {
+      return [];
+    }
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
       return cachedNodes;
     }
 
-    const anchorNode = this.anchor.getNode();
-    const focusNode = this.focus.getNode();
-    const anchorCell = $findMatchingParent(anchorNode, $isTableCellNode);
-    // todo replace with triplet
-    const focusCell = $findMatchingParent(focusNode, $isTableCellNode);
-    invariant(
-      $isTableCellNode(anchorCell),
-      'Expected TableSelection anchor to be (or a child of) TableCellNode',
-    );
-    invariant(
-      $isTableCellNode(focusCell),
-      'Expected TableSelection focus to be (or a child of) TableCellNode',
-    );
-    const anchorRow = anchorCell.getParent();
-    invariant(
-      $isTableRowNode(anchorRow),
-      'Expected anchorCell to have a parent TableRowNode',
-    );
-    const tableNode = anchorRow.getParent();
-    invariant(
-      $isTableNode(tableNode),
-      'Expected tableNode to have a parent TableNode',
-    );
+    const {anchorTable: tableNode, anchorCell, focusCell} = $getCellNodes(this);
 
     const focusCellGrid = focusCell.getParents()[1];
     if (focusCellGrid !== tableNode) {
@@ -261,82 +319,15 @@ export class TableSelection implements BaseSelection {
       anchorCell,
       focusCell,
     );
-
-    let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
-    let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
-    let maxColumn = Math.max(
-      cellAMap.startColumn + cellAMap.cell.__colSpan - 1,
-      cellBMap.startColumn + cellBMap.cell.__colSpan - 1,
-    );
-    let maxRow = Math.max(
-      cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
-      cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
-    );
-    let exploredMinColumn = minColumn;
-    let exploredMinRow = minRow;
-    let exploredMaxColumn = minColumn;
-    let exploredMaxRow = minRow;
-    function expandBoundary(mapValue: TableMapValueType): void {
-      const {
-        cell,
-        startColumn: cellStartColumn,
-        startRow: cellStartRow,
-      } = mapValue;
-      minColumn = Math.min(minColumn, cellStartColumn);
-      minRow = Math.min(minRow, cellStartRow);
-      maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
-      maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
-    }
-    while (
-      minColumn < exploredMinColumn ||
-      minRow < exploredMinRow ||
-      maxColumn > exploredMaxColumn ||
-      maxRow > exploredMaxRow
-    ) {
-      if (minColumn < exploredMinColumn) {
-        // Expand on the left
-        const rowDiff = exploredMaxRow - exploredMinRow;
-        const previousColumn = exploredMinColumn - 1;
-        for (let i = 0; i <= rowDiff; i++) {
-          expandBoundary(map[exploredMinRow + i][previousColumn]);
-        }
-        exploredMinColumn = previousColumn;
-      }
-      if (minRow < exploredMinRow) {
-        // Expand on top
-        const columnDiff = exploredMaxColumn - exploredMinColumn;
-        const previousRow = exploredMinRow - 1;
-        for (let i = 0; i <= columnDiff; i++) {
-          expandBoundary(map[previousRow][exploredMinColumn + i]);
-        }
-        exploredMinRow = previousRow;
-      }
-      if (maxColumn > exploredMaxColumn) {
-        // Expand on the right
-        const rowDiff = exploredMaxRow - exploredMinRow;
-        const nextColumn = exploredMaxColumn + 1;
-        for (let i = 0; i <= rowDiff; i++) {
-          expandBoundary(map[exploredMinRow + i][nextColumn]);
-        }
-        exploredMaxColumn = nextColumn;
-      }
-      if (maxRow > exploredMaxRow) {
-        // Expand on the bottom
-        const columnDiff = exploredMaxColumn - exploredMinColumn;
-        const nextRow = exploredMaxRow + 1;
-        for (let i = 0; i <= columnDiff; i++) {
-          expandBoundary(map[nextRow][exploredMinColumn + i]);
-        }
-        exploredMaxRow = nextRow;
-      }
-    }
+    const {minColumn, maxColumn, minRow, maxRow} =
+      $computeTableCellRectBoundary(map, cellAMap, cellBMap);
 
     // We use a Map here because merged cells in the grid would otherwise
     // show up multiple times in the nodes array
     const nodeMap: Map<NodeKey, LexicalNode> = new Map([
       [tableNode.getKey(), tableNode],
     ]);
-    let lastRow = null;
+    let lastRow: null | TableRowNode = null;
     for (let i = minRow; i <= maxRow; i++) {
       for (let j = minColumn; j <= maxColumn; j++) {
         const {cell} = map[i][j];
@@ -347,12 +338,13 @@ export class TableSelection implements BaseSelection {
         );
         if (currentRow !== lastRow) {
           nodeMap.set(currentRow.getKey(), currentRow);
+          lastRow = currentRow;
         }
-        nodeMap.set(cell.getKey(), cell);
-        for (const child of $getChildrenRecursively(cell)) {
-          nodeMap.set(child.getKey(), child);
+        if (!nodeMap.has(cell.getKey())) {
+          $visitRecursively(cell, (childNode) => {
+            nodeMap.set(childNode.getKey(), childNode);
+          });
         }
-        lastRow = currentRow;
       }
     }
     const nodes = Array.from(nodeMap.values());
@@ -381,26 +373,76 @@ export function $isTableSelection(x: unknown): x is TableSelection {
 }
 
 export function $createTableSelection(): TableSelection {
+  // TODO this is a suboptimal design, it doesn't make sense to have
+  // a table selection that isn't associated with a table. This
+  // constructor should have required argumnets and in __DEV__ we
+  // should check that they point to a table and are element points to
+  // cell nodes of that table.
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new TableSelection('root', anchor, focus);
 }
 
-export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
-  const nodes = [];
-  const stack = [node];
-  while (stack.length > 0) {
-    const currentNode = stack.pop();
+export function $createTableSelectionFrom(
+  tableNode: TableNode,
+  anchorCell: TableCellNode,
+  focusCell: TableCellNode,
+): TableSelection {
+  const tableNodeKey = tableNode.getKey();
+  const anchorCellKey = anchorCell.getKey();
+  const focusCellKey = focusCell.getKey();
+  if (__DEV__) {
     invariant(
-      currentNode !== undefined,
-      "Stack.length > 0; can't be undefined",
+      tableNode.isAttached(),
+      '$createTableSelectionFrom: tableNode %s is not attached',
+      tableNodeKey,
     );
-    if ($isElementNode(currentNode)) {
-      stack.unshift(...currentNode.getChildren());
-    }
-    if (currentNode !== node) {
-      nodes.push(currentNode);
+    invariant(
+      tableNode.is($findTableNode(anchorCell)),
+      '$createTableSelectionFrom: anchorCell %s is not in table %s',
+      anchorCellKey,
+      tableNodeKey,
+    );
+    invariant(
+      tableNode.is($findTableNode(focusCell)),
+      '$createTableSelectionFrom: focusCell %s is not in table %s',
+      focusCellKey,
+      tableNodeKey,
+    );
+    // TODO: Check for rectangular grid
+  }
+  const prevSelection = $getSelection();
+  const nextSelection = $isTableSelection(prevSelection)
+    ? prevSelection.clone()
+    : $createTableSelection();
+  nextSelection.set(
+    tableNode.getKey(),
+    anchorCell.getKey(),
+    focusCell.getKey(),
+  );
+  return nextSelection;
+}
+
+/**
+ * Depth first visitor
+ * @param node The starting node
+ * @param $visit The function to call for each node. If the function returns false, then children of this node will not be explored
+ */
+export function $visitRecursively(
+  node: LexicalNode,
+  $visit: (childNode: LexicalNode) => boolean | undefined | void,
+): void {
+  const stack = [[node]];
+  for (
+    let currentArray = stack.at(-1);
+    currentArray !== undefined && stack.length > 0;
+    currentArray = stack.at(-1)
+  ) {
+    const currentNode = currentArray.pop();
+    if (currentNode === undefined) {
+      stack.pop();
+    } else if ($visit(currentNode) !== false && $isElementNode(currentNode)) {
+      stack.push(currentNode.getChildren());
     }
   }
-  return nodes;
 }

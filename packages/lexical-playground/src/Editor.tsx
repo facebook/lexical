@@ -20,6 +20,7 @@ import {HorizontalRulePlugin} from '@lexical/react/LexicalHorizontalRulePlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
@@ -61,6 +62,7 @@ import MentionsPlugin from './plugins/MentionsPlugin';
 import PageBreakPlugin from './plugins/PageBreakPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
+import SpecialTextPlugin from './plugins/SpecialTextPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
@@ -94,6 +96,9 @@ export default function Editor(): JSX.Element {
       shouldPreserveNewLinesInMarkdown,
       tableCellMerge,
       tableCellBackgroundColor,
+      tableHorizontalScroll,
+      shouldAllowHighlightingWithBrackets,
+      selectionAlwaysOnDisplay,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -156,6 +161,7 @@ export default function Editor(): JSX.Element {
         {isMaxLength && <MaxLengthPlugin maxLength={30} />}
         <DragDropPaste />
         <AutoFocusPlugin />
+        {selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
         <ClearEditorPlugin />
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
@@ -198,6 +204,7 @@ export default function Editor(): JSX.Element {
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
+              hasHorizontalScroll={tableHorizontalScroll}
             />
             <TableCellResizer />
             <ImagesPlugin />
@@ -255,6 +262,7 @@ export default function Editor(): JSX.Element {
         {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
+        {shouldAllowHighlightingWithBrackets && <SpecialTextPlugin />}
         <ActionsPlugin
           isRichText={isRichText}
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}

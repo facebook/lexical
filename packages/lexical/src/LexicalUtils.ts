@@ -20,7 +20,12 @@ import type {
   Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+import type {
+  LexicalNode,
+  LexicalPrivateDOM,
+  NodeKey,
+  NodeMap,
+} from './LexicalNode';
 import type {
   BaseSelection,
   PointType,
@@ -189,14 +194,14 @@ export function $isTokenOrSegmented(node: TextNode): boolean {
   return node.isToken() || node.isSegmented();
 }
 
-function isDOMNodeLexicalTextNode(node: Node): node is Text {
+export function isDOMTextNode(node: Node): node is Text {
   return node.nodeType === DOM_TEXT_TYPE;
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (isDOMNodeLexicalTextNode(node)) {
+    if (isDOMTextNode(node)) {
       return node;
     }
     node = node.firstChild;
@@ -445,12 +450,28 @@ export function $getNodeFromDOMNode(
   editorState?: EditorState,
 ): LexicalNode | null {
   const editor = getActiveEditor();
-  // @ts-ignore We intentionally add this to the Node.
-  const key = dom[`__lexicalKey_${editor._key}`];
+  const key = getNodeKeyFromDOMNode(dom, editor);
   if (key !== undefined) {
     return $getNodeByKey(key, editorState);
   }
   return null;
+}
+
+export function setNodeKeyOnDOMNode(
+  dom: Node,
+  editor: LexicalEditor,
+  key: NodeKey,
+) {
+  const prop = `__lexicalKey_${editor._key}`;
+  (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop] = key;
+}
+
+export function getNodeKeyFromDOMNode(
+  dom: Node,
+  editor: LexicalEditor,
+): NodeKey | undefined {
+  const prop = `__lexicalKey_${editor._key}`;
+  return (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
 }
 
 export function $getNearestNodeFromDOMNode(
@@ -541,7 +562,7 @@ export function $flushMutations(): void {
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
-  const nodeKey = getNodeKeyFromDOM(dom, editor);
+  const nodeKey = getNodeKeyFromDOMTree(dom, editor);
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
@@ -559,15 +580,14 @@ export function getTextNodeOffset(
   return moveSelectionToEnd ? node.getTextContentSize() : 0;
 }
 
-function getNodeKeyFromDOM(
+function getNodeKeyFromDOMTree(
   // Note that node here refers to a DOM Node, not an Lexical Node
   dom: Node,
   editor: LexicalEditor,
 ): NodeKey | null {
   let node: Node | null = dom;
   while (node != null) {
-    // @ts-ignore We intentionally add this to the Node.
-    const key: NodeKey = node[`__lexicalKey_${editor._key}`];
+    const key = getNodeKeyFromDOMNode(node, editor);
     if (key !== undefined) {
       return key;
     }
@@ -1132,7 +1152,9 @@ export function setMutatedNode(
     mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
-
+/**
+ * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
+ */
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();
@@ -1566,13 +1588,11 @@ export function updateDOMBlockCursorElement(
       }
     } else {
       const child = elementNode.getChildAtIndex(offset);
-      if (needsBlockCursor(child)) {
-        const sibling = (child as LexicalNode).getPreviousSibling();
+      if (child !== null && needsBlockCursor(child)) {
+        const sibling = child.getPreviousSibling();
         if (sibling === null || needsBlockCursor(sibling)) {
           isBlockCursor = true;
-          insertBeforeElement = editor.getElementByKey(
-            (child as LexicalNode).__key,
-          );
+          insertBeforeElement = editor.getElementByKey(child.__key);
         }
       }
     }
@@ -1599,6 +1619,13 @@ export function updateDOMBlockCursorElement(
   }
 }
 
+/**
+ * Returns the selection for the given window, or the global window if null.
+ * Will return null if {@link CAN_USE_DOM} is false.
+ *
+ * @param targetWindow The window to get the selection from
+ * @returns a Selection or null
+ */
 export function getDOMSelection(targetWindow: null | Window): null | Selection {
   return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
 }
@@ -1845,4 +1872,25 @@ export function setNodeIndentFromDOM(
   const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
   const indent = indentSize / 40;
   elementNode.setIndent(indent);
+}
+
+/**
+ * @internal
+ *
+ * Mark this node as unmanaged by lexical's mutation observer like
+ * decorator nodes
+ */
+export function setDOMUnmanaged(elementDom: HTMLElement): void {
+  const el: HTMLElement & LexicalPrivateDOM = elementDom;
+  el.__lexicalUnmanaged = true;
+}
+
+/**
+ * @internal
+ *
+ * True if this DOM node was marked with {@link setDOMUnmanaged}
+ */
+export function isDOMUnmanaged(elementDom: Node): boolean {
+  const el: Node & LexicalPrivateDOM = elementDom;
+  return el.__lexicalUnmanaged === true;
 }

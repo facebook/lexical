@@ -50,11 +50,13 @@ import {
   isInsertLink,
   isJustifyAlign,
   isLeftAlign,
+  isLowercase,
   isOutdent,
   isRightAlign,
   isStrikeThrough,
   isSubscript,
   isSuperscript,
+  isUppercase,
 } from './shortcuts';
 
 export default function ShortcutsPlugin({
@@ -96,6 +98,12 @@ export default function ShortcutsPlugin({
       } else if (isStrikeThrough(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+      } else if (isLowercase(event)) {
+        event.preventDefault();
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
+      } else if (isUppercase(event)) {
+        event.preventDefault();
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
       } else if (isIndent(event)) {
         event.preventDefault();
         editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);

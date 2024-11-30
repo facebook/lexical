@@ -13,6 +13,7 @@ import {
   toggleItalic,
   toggleStrikethrough,
   toggleUnderline,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -151,6 +152,133 @@ test.describe('Autocomplete', () => {
             imonials
           </strong>
           <span style="font-size: 15px;" data-lexical-text="true">2024</span>
+        </p>
+      `,
+    );
+  });
+  test('Undo does not cause an exception', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    // Autocomplete has known issues in collab https://github.com/facebook/lexical/issues/6844
+    test.skip(isCollab);
+    await focusEditor(page);
+    await toggleBold(page);
+    await toggleItalic(page);
+    await toggleUnderline(page);
+    await toggleStrikethrough(page);
+    await increaseFontSize(page);
+
+    await page.keyboard.type('Test');
+    await sleep(500);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            Test
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            imonials (TAB)
+          </strong>
+        </p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            Test
+          </strong>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('Tab');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            Test
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            imonials
+          </strong>
+        </p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            Test
+          </strong>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await undo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            Test
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            imonials (TAB)
+          </strong>
+        </p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px;"
+            data-lexical-text="true">
+            Test
+          </strong>
+          <span data-lexical-text="true"></span>
         </p>
       `,
     );

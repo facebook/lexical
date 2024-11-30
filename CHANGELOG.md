@@ -1,3 +1,45 @@
+## v0.20.2 (2024-11-29)
+
+- lexical-playground Fix CSS property (#6886) Ivaylo Pavlov
+- v0.20.1 (#6887) Sherry
+- lexical-table Bug Fix Fix scrollable table exportDOM (#6884) Bob Ippolito
+- lexical-table Bug Fix Fix table tab navigation (#6880) Bob Ippolito
+- lexical-playground Feature Highlight special strings with format (#6860) C.
+- lexical-playground Fix Hidden comment button on narrow screens or vertical monitors (#6871) Oluwasanya Olaoluwa
+- lexical-table Bug Fix Fix left arrow key handling for table selection (#6875) Bob Ippolito
+- positionNodeOnRange fixes (#6873) Gerard Rovira
+- Add SelectionAlwaysOnDisplay plugin (#6872) Gerard Rovira
+- Allow passing params to run-all (#6874) Gerard Rovira
+- lexical-playground Bug Fix Preserve the selection using the link editor from a table (#6865) Bob Ippolito
+- lexical-playground Bug Fix autocomplete format before and after insertion (#6845) Bedru Umer
+- lexical-utils Bug Fix Add feature detection to calculateZoomLevel (#6864) Bob Ippolito
+- Add Documentation for  RootNodes semantic and use case (#6869) C.
+- lexical-selection Bug Fix Wrong selection type in setBlocksType (#6867) Simon
+- lexical-table Bug Fix get table-cell background selection color from a class (#6658) Hamza
+- lexical-table Bug Fix Resolve table selection issue when the mouse crosses over a portal (#6834) Bob Ippolito
+- Lexical Chore Update default skipInitialization to false for registerMutationListener (#6857) Fadekemi Adebayo
+- tests npm upgrade cross-spawn (#6856) Sherry
+- Feature Deprecate nodesOfType function (#6855) Sachin Mahato
+- Lexical Bug Fix backspace bug when deleting nodes with canInsertTextAfter set to false (#6268) Dani Lauzurica
+- lexical-link Test Appending inline element nodes to ListNode  (#6826) Fadekemi Adebayo
+-  Chore npm upgrade cross-spawn (#6848) Sherry
+- Table Action Menu - fix UI issue with Merge Cells item (#6830) Syed Umar Anis
+- lexical-utils Bug Fix Add missing Flow type declarations (#6841) Hadi Hamid
+- lexical-react Fix(lexical-react) ContentEditable props type rename (#6837) (Ivan)
+- lexical-link Test  Removing link from node(children) (#6817) Oluwasanya Olaoluwa
+- lexical-table Bug Fix Fix down arrow key handling in TableObserver (#6839) Bob Ippolito
+- Prevent initial value fn to be called on rerender (#6835) Maksim Horbachevsky
+- Link flow types (#6833) Gerard Rovira
+- lexical-examples Chore Add DOMExportOutputMap type to the exportMap (#6827) Ajaezo Kingsley
+- lexicallexical-table Feature Scrollable tables with experimental getDOMSlot API (#6759) Bob Ippolito
+- lexical-rich-textlexical-plain-text workaround for Korean IME issue on iOS (#6819) wnhlee
+- Fix Aria attributes for ContentEditable are ignored (#6814) Oluwasanya Olaoluwa
+- Mention nodes shouldnt be spellcheckd ) (#6788) Sevki
+- lexical-list Bug Fix Handle appending inline element nodes in ListNode.append (#6791) Aman Harwara
+- lexical-mark Bug Fix Stop MarkNode ids array deep copy in clone (#6810) Ebad
+- v0.20.0 (#6809) Bob Ippolito
+- v0.20.0 Lexical GitHub Actions Bot
+
 ## v0.20.1 (2024-11-29)
 
 - lexical-table Bug Fix Fix table tab navigation (#6880) Bob Ippolito

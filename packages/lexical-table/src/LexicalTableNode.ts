@@ -34,7 +34,10 @@ import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {TableRowNode} from './LexicalTableRowNode';
-import {getTable} from './LexicalTableSelectionHelpers';
+import {
+  $getNearestTableCellInTableFromDOMNode,
+  getTable,
+} from './LexicalTableSelectionHelpers';
 
 export type SerializedTableNode = Spread<
   {
@@ -224,9 +227,12 @@ export class TableNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element, after} = super.exportDOM(editor);
     return {
-      ...super.exportDOM(editor),
       after: (tableElement) => {
+        if (after) {
+          tableElement = after(tableElement);
+        }
         if (
           tableElement &&
           isHTMLElement(tableElement) &&
@@ -246,6 +252,10 @@ export class TableNode extends ElementNode {
         }
         return tableElement;
       },
+      element:
+        element && isHTMLElement(element) && element.nodeName !== 'TABLE'
+          ? element.querySelector('table')
+          : element,
     };
   }
 
@@ -270,17 +280,16 @@ export class TableNode extends ElementNode {
         continue;
       }
 
-      const x = row.findIndex((cell) => {
-        if (!cell) {
-          return;
+      for (let x = 0; x < row.length; x++) {
+        const cell = row[x];
+        if (cell == null) {
+          continue;
         }
         const {elem} = cell;
-        const cellNode = $getNearestNodeFromDOMNode(elem);
-        return cellNode === tableCellNode;
-      });
-
-      if (x !== -1) {
-        return {x, y};
+        const cellNode = $getNearestTableCellInTableFromDOMNode(this, elem);
+        if (cellNode !== null && tableCellNode.is(cellNode)) {
+          return {x, y};
+        }
       }
     }
 

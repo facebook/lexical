@@ -43,7 +43,7 @@ i.add-comment {
   background-image: url(../../images/icons/chat-left-text.svg);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 600px) {
   .CommentPlugin_AddCommentBox {
     display: none;
   }
@@ -164,7 +164,7 @@ i.comments {
   transition: opacity 0.2s linear;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 600px) {
   .CommentPlugin_ShowCommentsButton {
     display: none;
   }

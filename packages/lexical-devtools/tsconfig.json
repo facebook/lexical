@@ -120,6 +120,9 @@
       "@lexical/react/LexicalRichTextPlugin": [
         "../lexical-react/src/LexicalRichTextPlugin.tsx"
       ],
+      "@lexical/react/LexicalSelectionAlwaysOnDisplay": [
+        "../lexical-react/src/LexicalSelectionAlwaysOnDisplay.tsx"
+      ],
       "@lexical/react/LexicalTabIndentationPlugin": [
         "../lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],

@@ -194,14 +194,14 @@ export function $isTokenOrSegmented(node: TextNode): boolean {
   return node.isToken() || node.isSegmented();
 }
 
-function isDOMNodeLexicalTextNode(node: Node): node is Text {
+export function isDOMTextNode(node: Node): node is Text {
   return node.nodeType === DOM_TEXT_TYPE;
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (isDOMNodeLexicalTextNode(node)) {
+    if (isDOMTextNode(node)) {
       return node;
     }
     node = node.firstChild;

@@ -8,6 +8,7 @@
 
 import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 
+import {addClassNamesToElement} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
@@ -49,9 +50,9 @@ export class TabNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.classList.add('PlaygroundEditorTheme__tabNode');
-    return dom;
+    const element = super.createDOM(config);
+    addClassNamesToElement(element, config.theme.tab);
+    return element;
   }
 
   static importJSON(serializedTabNode: SerializedTabNode): TabNode {

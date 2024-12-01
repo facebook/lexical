@@ -607,7 +607,8 @@ export function $commitPendingUpdates(
     editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
-    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
+    (needsUpdate || pendingSelection === null || pendingSelection.dirty) &&
+    !tags.has('skip-dom-selection')
   ) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;

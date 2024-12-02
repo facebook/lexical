@@ -14,6 +14,7 @@ import {replaceCodePlugin} from 'vite-plugin-replace';
 
 import moduleResolution from '../shared/viteModuleResolution';
 import viteCopyEsm from './viteCopyEsm';
+import viteCopyExcalidrawAssets from './viteCopyExcalidrawAssets';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -53,6 +54,10 @@ export default defineConfig({
           from: /__DEV__/g,
           to: 'false',
         },
+        {
+          from: 'process.env.LEXICAL_VERSION',
+          to: JSON.stringify(`${process.env.npm_package_version}+git`),
+        },
       ],
     }),
     babel({
@@ -65,6 +70,7 @@ export default defineConfig({
       presets: [['@babel/preset-react', {runtime: 'automatic'}]],
     }),
     react(),
+    ...viteCopyExcalidrawAssets(),
     viteCopyEsm(),
     commonjs({
       // This is required for React 19 (at least 19.0.0-beta-26f2496093-20240514)

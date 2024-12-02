@@ -20,11 +20,13 @@ import {
   $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
+  $getTableAndElementByKey,
   $isTableCellNode,
-  $isTableNode,
   $isTableRowNode,
   applyTableHandlers,
+  getTableElement,
   INSERT_TABLE_COMMAND,
+  setScrollableTablesActive,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -36,24 +38,49 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getNodeByKey,
   $isTextNode,
-  $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
+export interface TablePluginProps {
+  /**
+   * When `false` (default `true`), merged cell support (colspan and rowspan) will be disabled and all
+   * tables will be forced into a regular grid with 1x1 table cells.
+   */
+  hasCellMerge?: boolean;
+  /**
+   * When `false` (default `true`), the background color of TableCellNode will always be removed.
+   */
+  hasCellBackgroundColor?: boolean;
+  /**
+   * When `true` (default `true`), the tab key can be used to navigate table cells.
+   */
+  hasTabHandler?: boolean;
+  /**
+   * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
+   */
+  hasHorizontalScroll?: boolean;
+}
+
+/**
+ * A plugin to enable all of the features of Lexical's TableNode.
+ *
+ * @param props - See type for documentation
+ * @returns An element to render in your LexicalComposer
+ */
 export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
   hasTabHandler = true,
-}: {
-  hasCellMerge?: boolean;
-  hasCellBackgroundColor?: boolean;
-  hasTabHandler?: boolean;
-}): JSX.Element | null {
+  hasHorizontalScroll = false,
+}: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    setScrollableTablesActive(editor, hasHorizontalScroll);
+  }, [editor, hasHorizontalScroll]);
 
   useEffect(() => {
     if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
@@ -88,22 +115,24 @@ export function TablePlugin({
         const maxRowLength = gridMap.reduce((curLength, row) => {
           return Math.max(curLength, row.length);
         }, 0);
+        const rowNodes = node.getChildren();
         for (let i = 0; i < gridMap.length; ++i) {
-          const rowLength = gridMap[i].length;
+          const rowNode = rowNodes[i];
+          if (!rowNode) {
+            continue;
+          }
+          const rowLength = gridMap[i].reduce(
+            (acc, cell) => (cell ? 1 + acc : acc),
+            0,
+          );
           if (rowLength === maxRowLength) {
             continue;
           }
-          const lastCellMap = gridMap[i][rowLength - 1];
-          const lastRowCell = lastCellMap.cell;
           for (let j = rowLength; j < maxRowLength; ++j) {
             // TODO: inherit header state from another header or body
             const newCell = $createTableCellNode(0);
             newCell.append($createParagraphNode());
-            if (lastRowCell !== null) {
-              lastRowCell.insertAfter(newCell);
-            } else {
-              $insertFirst(lastRowCell, newCell);
-            }
+            (rowNode as TableRowNode).append(newCell);
           }
         }
       }),
@@ -111,63 +140,63 @@ export function TablePlugin({
   }, [editor]);
 
   useEffect(() => {
-    const tableSelections = new Map<NodeKey, TableObserver>();
+    const tableSelections = new Map<
+      NodeKey,
+      [TableObserver, HTMLTableElementWithWithTableSelectionState]
+    >();
 
-    const initializeTableNode = (tableNode: TableNode) => {
-      const nodeKey = tableNode.getKey();
-      const tableElement = editor.getElementByKey(
-        nodeKey,
-      ) as HTMLTableElementWithWithTableSelectionState;
-      if (tableElement && !tableSelections.has(nodeKey)) {
-        const tableSelection = applyTableHandlers(
-          tableNode,
-          tableElement,
-          editor,
-          hasTabHandler,
-        );
-        tableSelections.set(nodeKey, tableSelection);
-      }
+    const initializeTableNode = (
+      tableNode: TableNode,
+      nodeKey: NodeKey,
+      dom: HTMLElement,
+    ) => {
+      const tableElement = getTableElement(tableNode, dom);
+      const tableSelection = applyTableHandlers(
+        tableNode,
+        tableElement,
+        editor,
+        hasTabHandler,
+      );
+      tableSelections.set(nodeKey, [tableSelection, tableElement]);
     };
-
-    // Plugins might be loaded _after_ initial content is set, hence existing table nodes
-    // won't be initialized from mutation[create] listener. Instead doing it here,
-    editor.getEditorState().read(() => {
-      const tableNodes = $nodesOfType(TableNode);
-      for (const tableNode of tableNodes) {
-        if ($isTableNode(tableNode)) {
-          initializeTableNode(tableNode);
-        }
-      }
-    });
 
     const unregisterMutationListener = editor.registerMutationListener(
       TableNode,
       (nodeMutations) => {
-        for (const [nodeKey, mutation] of nodeMutations) {
-          if (mutation === 'created') {
-            editor.getEditorState().read(() => {
-              const tableNode = $getNodeByKey<TableNode>(nodeKey);
-              if ($isTableNode(tableNode)) {
-                initializeTableNode(tableNode);
+        editor.getEditorState().read(
+          () => {
+            for (const [nodeKey, mutation] of nodeMutations) {
+              const tableSelection = tableSelections.get(nodeKey);
+              if (mutation === 'created' || mutation === 'updated') {
+                const {tableNode, tableElement} =
+                  $getTableAndElementByKey(nodeKey);
+                if (tableSelection === undefined) {
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                } else if (tableElement !== tableSelection[1]) {
+                  // The update created a new DOM node, destroy the existing TableObserver
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                }
+              } else if (mutation === 'destroyed') {
+                if (tableSelection !== undefined) {
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                }
               }
-            });
-          } else if (mutation === 'destroyed') {
-            const tableSelection = tableSelections.get(nodeKey);
-
-            if (tableSelection !== undefined) {
-              tableSelection.removeListeners();
-              tableSelections.delete(nodeKey);
             }
-          }
-        }
+          },
+          {editor},
+        );
       },
+      {skipInitialization: false},
     );
 
     return () => {
       unregisterMutationListener();
       // Hook might be called multiple times so cleaning up tables listeners as well,
       // as it'll be reinitialized during recurring call
-      for (const [, tableSelection] of tableSelections) {
+      for (const [, [tableSelection]] of tableSelections) {
         tableSelection.removeListeners();
       }
     };

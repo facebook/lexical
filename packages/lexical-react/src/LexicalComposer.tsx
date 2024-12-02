@@ -39,7 +39,6 @@ export type InitialEditorStateType =
   | ((editor: LexicalEditor) => void);
 
 export type InitialConfigType = Readonly<{
-  editor__DEPRECATED?: LexicalEditor | null;
   namespace: string;
   nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   onError: (error: Error, editor: LexicalEditor) => void;
@@ -59,7 +58,6 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       const {
         theme,
         namespace,
-        editor__DEPRECATED: initialEditor,
         nodes,
         onError,
         editorState: initialEditorState,
@@ -71,21 +69,15 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         theme,
       );
 
-      let editor = initialEditor || null;
-
-      if (editor === null) {
-        const newEditor = createEditor({
-          editable: initialConfig.editable,
-          html,
-          namespace,
-          nodes,
-          onError: (error) => onError(error, newEditor),
-          theme,
-        });
-        initializeEditor(newEditor, initialEditorState);
-
-        editor = newEditor;
-      }
+      const editor = createEditor({
+        editable: initialConfig.editable,
+        html,
+        namespace,
+        nodes,
+        onError: (error) => onError(error, editor),
+        theme,
+      });
+      initializeEditor(editor, initialEditorState);
 
       return [editor, context];
     },

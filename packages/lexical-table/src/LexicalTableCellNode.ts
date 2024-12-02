@@ -26,6 +26,7 @@ import {
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
+  isHTMLElement,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -69,15 +70,18 @@ export class TableCellNode extends ElementNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    const cellNode = new TableCellNode(
+    return new TableCellNode(
       node.__headerState,
       node.__colSpan,
       node.__width,
       node.__key,
     );
-    cellNode.__rowSpan = node.__rowSpan;
-    cellNode.__backgroundColor = node.__backgroundColor;
-    return cellNode;
+  }
+
+  afterCloneFrom(node: this): void {
+    super.afterCloneFrom(node);
+    this.__rowSpan = node.__rowSpan;
+    this.__backgroundColor = node.__backgroundColor;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -96,14 +100,13 @@ export class TableCellNode extends ElementNode {
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
     const colSpan = serializedNode.colSpan || 1;
     const rowSpan = serializedNode.rowSpan || 1;
-    const cellNode = $createTableCellNode(
+    return $createTableCellNode(
       serializedNode.headerState,
       colSpan,
       serializedNode.width || undefined,
-    );
-    cellNode.__rowSpan = rowSpan;
-    cellNode.__backgroundColor = serializedNode.backgroundColor || null;
-    return cellNode;
+    )
+      .setRowSpan(rowSpan)
+      .setBackgroundColor(serializedNode.backgroundColor || null);
   }
 
   constructor(
@@ -120,10 +123,8 @@ export class TableCellNode extends ElementNode {
     this.__backgroundColor = null;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement(
-      this.getTag(),
-    ) as HTMLTableCellElement;
+  createDOM(config: EditorConfig): HTMLTableCellElement {
+    const element = document.createElement(this.getTag());
 
     if (this.__width) {
       element.style.width = `${this.__width}px`;
@@ -148,33 +149,31 @@ export class TableCellNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const {element} = super.exportDOM(editor);
+    const output = super.exportDOM(editor);
 
-    if (element) {
-      const element_ = element as HTMLTableCellElement;
-      element_.style.border = '1px solid black';
+    if (output.element && isHTMLElement(output.element)) {
+      const element = output.element as HTMLTableCellElement;
+      element.setAttribute(
+        'data-temporary-table-cell-lexical-key',
+        this.getKey(),
+      );
+      element.style.border = '1px solid black';
       if (this.__colSpan > 1) {
-        element_.colSpan = this.__colSpan;
+        element.colSpan = this.__colSpan;
       }
       if (this.__rowSpan > 1) {
-        element_.rowSpan = this.__rowSpan;
+        element.rowSpan = this.__rowSpan;
       }
-      element_.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
+      element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
-      element_.style.verticalAlign = 'top';
-      element_.style.textAlign = 'start';
-
-      const backgroundColor = this.getBackgroundColor();
-      if (backgroundColor !== null) {
-        element_.style.backgroundColor = backgroundColor;
-      } else if (this.hasHeader()) {
-        element_.style.backgroundColor = '#f2f3f5';
+      element.style.verticalAlign = 'top';
+      element.style.textAlign = 'start';
+      if (this.__backgroundColor === null && this.hasHeader()) {
+        element.style.backgroundColor = '#f2f3f5';
       }
     }
 
-    return {
-      element,
-    };
+    return output;
   }
 
   exportJSON(): SerializedTableCellNode {
@@ -190,41 +189,46 @@ export class TableCellNode extends ElementNode {
   }
 
   getColSpan(): number {
-    return this.__colSpan;
+    return this.getLatest().__colSpan;
   }
 
   setColSpan(colSpan: number): this {
-    this.getWritable().__colSpan = colSpan;
-    return this;
+    const self = this.getWritable();
+    self.__colSpan = colSpan;
+    return self;
   }
 
   getRowSpan(): number {
-    return this.__rowSpan;
+    return this.getLatest().__rowSpan;
   }
 
   setRowSpan(rowSpan: number): this {
-    this.getWritable().__rowSpan = rowSpan;
-    return this;
+    const self = this.getWritable();
+    self.__rowSpan = rowSpan;
+    return self;
   }
 
-  getTag(): string {
+  getTag(): 'th' | 'td' {
     return this.hasHeader() ? 'th' : 'td';
   }
 
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState {
+  setHeaderStyles(
+    headerState: TableCellHeaderState,
+    mask: TableCellHeaderState = TableCellHeaderStates.BOTH,
+  ): this {
     const self = this.getWritable();
-    self.__headerState = headerState;
-    return this.__headerState;
+    self.__headerState = (headerState & mask) | (self.__headerState & ~mask);
+    return self;
   }
 
   getHeaderStyles(): TableCellHeaderState {
     return this.getLatest().__headerState;
   }
 
-  setWidth(width: number): number | null | undefined {
+  setWidth(width: number): this {
     const self = this.getWritable();
     self.__width = width;
-    return this.__width;
+    return self;
   }
 
   getWidth(): number | undefined {
@@ -235,11 +239,13 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__backgroundColor;
   }
 
-  setBackgroundColor(newBackgroundColor: null | string): void {
-    this.getWritable().__backgroundColor = newBackgroundColor;
+  setBackgroundColor(newBackgroundColor: null | string): this {
+    const self = this.getWritable();
+    self.__backgroundColor = newBackgroundColor;
+    return self;
   }
 
-  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
+  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
     if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {
@@ -313,7 +319,7 @@ export function $convertTableCellNodeElement(
   }
 
   const style = domNode_.style;
-  const textDecoration = style.textDecoration.split(' ');
+  const textDecoration = ((style && style.textDecoration) || '').split(' ');
   const hasBoldFontWeight =
     style.fontWeight === '700' || style.fontWeight === 'bold';
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');

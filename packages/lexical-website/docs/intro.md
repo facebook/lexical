@@ -62,11 +62,11 @@ Editor States are also fully serializable to JSON and can easily be serialized b
 ### Reading and Updating Editor State
 
 When you want to read and/or update the Lexical node tree, you must do it via `editor.update(() => {...})`. You may also do
-read-only operations with the editor state via `editor.getEditorState().read(() => {...})`. The closure passed to the update or read
-call is important, and must be synchronous. It's the only place where you have full "lexical" context of the active editor state,
-and providing you with access to the Editor State's node tree. We promote using the convention of using `$` prefixed functions
-(such as `$getRoot()`) to convey that these functions must be called in this context. Attempting to use them outside of a read
-or update will trigger a runtime error.
+read-only operations with the editor state via `editor.read(() => {...})` or `editor.getEditorState().read(() => {...})`.
+The closure passed to the update or read call is important, and must be synchronous. It's the only place where you have full
+"lexical" context of the active editor state, and providing you with access to the Editor State's node tree. We promote using
+the convention of using `$` prefixed functions (such as `$getRoot()`) to convey that these functions must be called in this
+context. Attempting to use them outside of a read or update will trigger a runtime error.
 
 For those familiar with React Hooks, you can think of these $functions as having similar functionality:
 | *Feature* | React Hooks | Lexical $functions |
@@ -79,8 +79,10 @@ For those familiar with React Hooks, you can think of these $functions as having
 
 Node Transforms and Command Listeners are called with an implicit `editor.update(() => {...})` context.
 
-It is permitted to do nest updates within reads and updates, but an update may not be nested in a read.
-For example, `editor.update(() => editor.update(() => {...}))` is allowed.
+It is permitted to do nested updates, or nested reads, but an update should not be nested in a read
+or vice versa. For example, `editor.update(() => editor.update(() => {...}))` is allowed. It is permitted
+to nest an `editor.read` at the end of an `editor.update`, but this will immediately flush the update
+and any additional update in that callback will throw an error.
 
 All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods
 and access properties of a Lexical Node while in a read or update call (just like `$` functions). Methods
@@ -94,6 +96,16 @@ support efficient time travel (undo/redo and similar use cases). Methods that up
 first call `node.getWritable()`, which will create a writable clone of a frozen node. This would normally
 mean that any existing references (such as local variables) would refer to a stale version of the node, but
 having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
+
+:::tip
+
+If you use `editor.read(() => { /* callback */ })` it will first flush any pending updates, so you will
+always see a consistent state. When you are in an `editor.update`, you will always be working with the
+pending state, where node transforms and DOM reconciliation may not have run yet.
+`editor.getEditorState().read()` will use the latest reconciled `EditorState` (after any node transforms,
+DOM reconciliation, etc. have already run), any pending `editor.update` mutations will not yet be visible.
+
+:::
 
 ### DOM Reconciler
 
@@ -120,5 +132,5 @@ unregisterListener();
 
 Commands are the communication system used to wire everything together in Lexical. Custom commands can be created using `createCommand()` and
 dispatched to an editor using `editor.dispatchCommand(command, payload)`. Lexical dispatches commands internally when key presses are triggered
-and when other important signals occur. Commands can also be handled using `editor.registerCommand(handler, priority)`, and incoming commands are
+and when other important signals occur. Commands can also be handled using `editor.registerCommand(command, handler, priority)`, and incoming commands are
 propagated through all handlers by priority until a handler stops the propagation (in a similar way to event propagation in the browser).

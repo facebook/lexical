@@ -12,6 +12,7 @@ import {
   moveRight,
   moveToLineBeginning,
   moveToLineEnd,
+  paste,
   selectAll,
   selectCharacters,
   STANDARD_KEYPRESS_DELAY_MS,
@@ -25,11 +26,11 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_LINUX,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
   test,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.beforeEach(({isPlainText}) => {
@@ -65,10 +66,10 @@ test.describe.parallel('Links', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
@@ -92,10 +93,10 @@ test.describe.parallel('Links', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
@@ -427,97 +428,101 @@ test.describe.parallel('Links', () => {
     );
   });
 
-  test(`Can create a link with some text after, insert paragraph, then backspace, it should merge correctly`, async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type(' abc def ');
-    await moveLeft(page, 5);
-    await selectCharacters(page, 'left', 3);
+  test(
+    `Can create a link with some text after, insert paragraph, then backspace, it should merge correctly`,
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type(' abc def ');
+      await moveLeft(page, 5);
+      await selectCharacters(page, 'left', 3);
 
-    // link
-    await click(page, '.link');
-    await click(page, '.link-confirm');
+      // link
+      await click(page, '.link');
+      await click(page, '.link-confirm');
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true"></span>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">abc</span>
-          </a>
-          <span data-lexical-text="true">def</span>
-        </p>
-      `,
-    );
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">abc</span>
+            </a>
+            <span data-lexical-text="true">def</span>
+          </p>
+        `,
+      );
 
-    await moveLeft(page, 1);
-    await moveRight(page, 2);
-    await page.keyboard.press('Enter');
+      await moveLeft(page, 1);
+      await moveRight(page, 2);
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph">
-          <span data-lexical-text="true"></span>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">ab</span>
-          </a>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">c</span>
-          </a>
-          <span data-lexical-text="true">def</span>
-        </p>
-      `,
-    );
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">ab</span>
+            </a>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">c</span>
+            </a>
+            <span data-lexical-text="true">def</span>
+          </p>
+        `,
+      );
 
-    await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true"></span>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">ab</span>
-          </a>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">c</span>
-          </a>
-          <span data-lexical-text="true">def</span>
-        </p>
-      `,
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">ab</span>
+            </a>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">c</span>
+            </a>
+            <span data-lexical-text="true">def</span>
+          </p>
+        `,
+      );
+    },
+  );
 
   test(`Can create a link then replace it with plain text`, async ({page}) => {
     await focusEditor(page);
@@ -1499,10 +1504,10 @@ test.describe.parallel('Links', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">An Awesome Website</span>
           </a>
         </p>
@@ -1522,10 +1527,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hey, check this out:</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">An Awesome Website</span>
           </a>
           <span data-lexical-text="true">!</span>
@@ -1591,10 +1596,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">This is an</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">Awesome Website</span>
           </a>
           <span data-lexical-text="true">, right?</span>
@@ -1636,10 +1641,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1662,10 +1667,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1742,10 +1747,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1778,10 +1783,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://facebook.com"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://facebook.com"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1853,10 +1858,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </p>
@@ -1876,10 +1881,10 @@ test.describe.parallel('Links', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://"
-            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
             <span data-lexical-text="true">world</span>
           </a>
         </h1>
@@ -1923,112 +1928,120 @@ test.describe.parallel('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter inside a Link', async ({page}) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello awesome');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type('world');
+  test(
+    'Can handle pressing Enter inside a Link',
+    {tag: '@flaky'},
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type('world');
 
-    await moveToLineBeginning(page);
-    await moveRight(page, 6);
+      await moveToLineBeginning(page);
+      await moveRight(page, 6);
 
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello</span>
-          </a>
-        </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">awesome</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello</span>
+            </a>
+          </p>
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">awesome</span>
+            </a>
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
-  test('Can handle pressing Enter inside a Link containing multiple TextNodes', async ({
-    page,
-    isCollab,
-  }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
-    await focusEditor(page);
-    await page.keyboard.type('Hello ');
-    await toggleBold(page);
-    await page.keyboard.type('awe');
-    await toggleBold(page);
-    await page.keyboard.type('some');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type(' world');
+  test(
+    'Can handle pressing Enter inside a Link containing multiple TextNodes',
+    {tag: '@flaky'},
+    async ({page, isCollab}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello ');
+      await toggleBold(page);
+      await page.keyboard.type('awe');
+      await toggleBold(page);
+      await page.keyboard.type('some');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type(' world');
 
-    await moveToLineBeginning(page);
-    await moveRight(page, 6);
+      await moveToLineBeginning(page);
+      await moveRight(page, 6);
 
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello</span>
-          </a>
-        </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <strong data-lexical-text="true">awe</strong>
-            <span data-lexical-text="true">some</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello</span>
+            </a>
+          </p>
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <strong data-lexical-text="true">awe</strong>
+              <span data-lexical-text="true">some</span>
+            </a>
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
-  test('Can handle pressing Enter at the beginning of a Link', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello awesome');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type(' world');
+  test(
+    'Can handle pressing Enter at the beginning of a Link',
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type(' world');
 
-    await moveToLineBeginning(page);
-    await page.keyboard.press('Enter');
+      await moveToLineBeginning(page);
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p><br /></p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello awesome</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <p dir="ltr">
+            <a dir="ltr" href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello awesome</span>
+            </a>
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    },
+  );
 
   test('Can handle pressing Enter at the end of a Link', async ({
     isCollab,
@@ -2062,6 +2075,50 @@ test.describe.parallel('Links', () => {
       undefined,
       {ignoreClasses: true},
     );
+  });
+});
+
+test.describe('Link attributes', () => {
+  test.use({hasLinkAttributes: true});
+  test.beforeEach(({isCollab, hasLinkAttributes, page}) =>
+    initialize({hasLinkAttributes, isCollab, page}),
+  );
+  test('Can add attributes with paste', async ({
+    page,
+    context,
+    hasLinkAttributes,
+    browserName,
+  }) => {
+    if (browserName === 'chromium') {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await focusEditor(page);
+      await selectAll(page);
+      await withExclusiveClipboardAccess(async () => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await page.evaluate(() =>
+          navigator.clipboard.writeText('https://facebook.com'),
+        );
+        await paste(page);
+      });
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://facebook.com"
+              rel="noopener noreferrer"
+              target="_blank">
+              <span data-lexical-text="true">Hello awesome</span>
+            </a>
+          </p>
+        `,
+      );
+    }
   });
 });
 

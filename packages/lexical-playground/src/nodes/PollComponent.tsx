@@ -146,18 +146,21 @@ export default function PollComponent({
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isPollNode(node)) {
-          node.remove();
-          return true;
-        }
+        editor.update(() => {
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isPollNode(node)) {
+              node.remove();
+            }
+          });
+        });
       }
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   useEffect(() => {

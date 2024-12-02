@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import react from '@vitejs/plugin-react';
+import {defineConfig} from 'vite';
 
-'use strict';
-
-module.exports = {
-  presets: [require.resolve('@docusaurus/core/lib/babel/preset')],
-};
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+});

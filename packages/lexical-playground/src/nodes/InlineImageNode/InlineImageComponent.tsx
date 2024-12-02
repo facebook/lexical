@@ -15,6 +15,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -39,7 +40,6 @@ import LinkPlugin from '../../plugins/LinkPlugin';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 import {DialogActions} from '../../ui/Dialog';
-import Placeholder from '../../ui/Placeholder';
 import Select from '../../ui/Select';
 import TextInput from '../../ui/TextInput';
 import {$isInlineImageNode, InlineImageNode} from './InlineImageNode';
@@ -201,21 +201,27 @@ export default function InlineImageComponent({
   const [editor] = useLexicalComposerContext();
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
+  const isEditable = useLexicalEditable();
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isInlineImageNode(node)) {
-          node.remove();
-          return true;
+        if (isSelected && $isNodeSelection(deleteSelection)) {
+          editor.update(() => {
+            deleteSelection.getNodes().forEach((node) => {
+              if ($isInlineImageNode(node)) {
+                node.remove();
+              }
+            });
+          });
         }
       }
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   const $onEnter = useCallback(
@@ -348,25 +354,27 @@ export default function InlineImageComponent({
   ]);
 
   const draggable = isSelected && $isNodeSelection(selection);
-  const isFocused = isSelected;
+  const isFocused = isSelected && isEditable;
   return (
     <Suspense fallback={null}>
       <>
         <span draggable={draggable}>
-          <button
-            className="image-edit-button"
-            ref={buttonRef}
-            onClick={() => {
-              showModal('Update Inline Image', (onClose) => (
-                <UpdateInlineImageDialog
-                  activeEditor={editor}
-                  nodeKey={nodeKey}
-                  onClose={onClose}
-                />
-              ));
-            }}>
-            Edit
-          </button>
+          {isEditable && (
+            <button
+              className="image-edit-button"
+              ref={buttonRef}
+              onClick={() => {
+                showModal('Update Inline Image', (onClose) => (
+                  <UpdateInlineImageDialog
+                    activeEditor={editor}
+                    nodeKey={nodeKey}
+                    onClose={onClose}
+                  />
+                ));
+              }}>
+              Edit
+            </button>
+          )}
           <LazyImage
             className={
               isFocused
@@ -388,12 +396,11 @@ export default function InlineImageComponent({
               <LinkPlugin />
               <RichTextPlugin
                 contentEditable={
-                  <ContentEditable className="InlineImageNode__contentEditable" />
-                }
-                placeholder={
-                  <Placeholder className="InlineImageNode__placeholder">
-                    Enter a caption...
-                  </Placeholder>
+                  <ContentEditable
+                    placeholder="Enter a caption..."
+                    placeholderClassName="InlineImageNode__placeholder"
+                    className="InlineImageNode__contentEditable"
+                  />
                 }
                 ErrorBoundary={LexicalErrorBoundary}
               />

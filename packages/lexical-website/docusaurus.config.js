@@ -225,6 +225,11 @@ const config = {
 
   favicon: 'img/favicon.ico',
 
+  future: {
+    // See https://docusaurus.io/blog/releases/3.6
+    experimental_faster: true,
+  },
+
   markdown: {
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
@@ -281,7 +286,6 @@ const config = {
         docs: {
           beforeDefaultRemarkPlugins: [slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
-          exclude: process.env.FB_INTERNAL ? ['docs/error/**'] : [],
           path: 'docs',
           sidebarItemsGenerator,
           sidebarPath: require.resolve('./sidebars.js'),
@@ -405,13 +409,11 @@ const config = {
             label: 'iOS',
             position: 'left',
           },
-          process.env.FB_INTERNAL
-            ? {
-                label: 'Gallery',
-                position: 'left',
-                to: '/gallery',
-              }
-            : null,
+          {
+            label: 'Gallery',
+            position: 'left',
+            to: '/gallery',
+          },
           {
             href: GITHUB_REPO_URL,
             label: 'GitHub',

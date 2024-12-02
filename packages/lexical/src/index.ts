@@ -17,6 +17,7 @@ export type {
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
+  EditorUpdateOptions,
   HTMLConfig,
   Klass,
   KlassConstructor,
@@ -29,7 +30,11 @@ export type {
   Spread,
   Transform,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {
+  EditorState,
+  EditorStateReadOptions,
+  SerializedEditorState,
+} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,
@@ -37,6 +42,7 @@ export type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  DOMExportOutputMap,
   LexicalNode,
   NodeKey,
   NodeMap,
@@ -52,6 +58,7 @@ export type {
   TextPointType as TextPoint,
 } from './LexicalSelection';
 export type {
+  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
@@ -151,6 +158,7 @@ export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
+  $cloneWithProperties,
   $copyNode,
   $getAdjacentNode,
   $getEditor,
@@ -164,19 +172,30 @@ export {
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isTokenOrSegmented,
   $nodesOfType,
+  $onUpdate,
   $selectAll,
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getDOMSelection,
+  getDOMTextNode,
+  getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
   isBlockDomNode,
+  isDocumentFragment,
+  isDOMTextNode,
+  isDOMUnmanaged,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
+  isLexicalEditor,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   resetRandomKey,
+  setDOMUnmanaged,
+  setNodeIndentFromDOM,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

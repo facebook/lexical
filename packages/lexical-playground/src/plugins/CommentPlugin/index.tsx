@@ -47,6 +47,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  getDOMSelection,
   KEY_ESCAPE_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -67,7 +68,6 @@ import useModal from '../../hooks/useModal';
 import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
-import Placeholder from '../../ui/Placeholder';
 
 export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_INLINE_COMMAND',
@@ -168,8 +168,9 @@ function PlainTextEditor({
     <LexicalComposer initialConfig={initialConfig}>
       <div className="CommentPlugin_CommentInputBox_EditorContainer">
         <PlainTextPlugin
-          contentEditable={<ContentEditable className={className} />}
-          placeholder={<Placeholder>{placeholder}</Placeholder>}
+          contentEditable={
+            <ContentEditable placeholder={placeholder} className={className} />
+          }
           ErrorBoundary={LexicalErrorBoundary}
         />
         <OnChangePlugin onChange={onChange} />
@@ -466,7 +467,9 @@ function CommentsPanelListComment({
   rtf: Intl.RelativeTimeFormat;
   thread?: Thread;
 }): JSX.Element {
-  const seconds = Math.round((comment.timeStamp - performance.now()) / 1000);
+  const seconds = Math.round(
+    (comment.timeStamp - (performance.timeOrigin + performance.now())) / 1000,
+  );
   const minutes = Math.round(seconds / 60);
   const [modal, showModal] = useModal();
 
@@ -840,43 +843,47 @@ export default function CommentPlugin({
           });
         },
       ),
-      editor.registerMutationListener(MarkNode, (mutations) => {
-        editor.getEditorState().read(() => {
-          for (const [key, mutation] of mutations) {
-            const node: null | MarkNode = $getNodeByKey(key);
-            let ids: NodeKey[] = [];
-
-            if (mutation === 'destroyed') {
-              ids = markNodeKeysToIDs.get(key) || [];
-            } else if ($isMarkNode(node)) {
-              ids = node.getIDs();
-            }
-
-            for (let i = 0; i < ids.length; i++) {
-              const id = ids[i];
-              let markNodeKeys = markNodeMap.get(id);
-              markNodeKeysToIDs.set(key, ids);
+      editor.registerMutationListener(
+        MarkNode,
+        (mutations) => {
+          editor.getEditorState().read(() => {
+            for (const [key, mutation] of mutations) {
+              const node: null | MarkNode = $getNodeByKey(key);
+              let ids: NodeKey[] = [];
 
               if (mutation === 'destroyed') {
-                if (markNodeKeys !== undefined) {
-                  markNodeKeys.delete(key);
-                  if (markNodeKeys.size === 0) {
-                    markNodeMap.delete(id);
+                ids = markNodeKeysToIDs.get(key) || [];
+              } else if ($isMarkNode(node)) {
+                ids = node.getIDs();
+              }
+
+              for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                let markNodeKeys = markNodeMap.get(id);
+                markNodeKeysToIDs.set(key, ids);
+
+                if (mutation === 'destroyed') {
+                  if (markNodeKeys !== undefined) {
+                    markNodeKeys.delete(key);
+                    if (markNodeKeys.size === 0) {
+                      markNodeMap.delete(id);
+                    }
                   }
-                }
-              } else {
-                if (markNodeKeys === undefined) {
-                  markNodeKeys = new Set();
-                  markNodeMap.set(id, markNodeKeys);
-                }
-                if (!markNodeKeys.has(key)) {
-                  markNodeKeys.add(key);
+                } else {
+                  if (markNodeKeys === undefined) {
+                    markNodeKeys = new Set();
+                    markNodeMap.set(id, markNodeKeys);
+                  }
+                  if (!markNodeKeys.has(key)) {
+                    markNodeKeys.add(key);
+                  }
                 }
               }
             }
-          }
-        });
-      }),
+          });
+        },
+        {skipInitialization: false},
+      ),
       editor.registerUpdateListener(({editorState, tags}) => {
         editorState.read(() => {
           const selection = $getSelection();
@@ -917,7 +924,7 @@ export default function CommentPlugin({
       editor.registerCommand(
         INSERT_INLINE_COMMAND,
         () => {
-          const domSelection = window.getSelection();
+          const domSelection = getDOMSelection(editor._window);
           if (domSelection !== null) {
             domSelection.removeAllRanges();
           }

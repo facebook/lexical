@@ -402,56 +402,20 @@ function testSuite(charset) {
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('👨‍👩‍👦‍👦');
-    if (['chromium', 'webkit'].includes(browserName)) {
-      await assertHTML(
-        page,
-        html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span
-              class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">👨‍👩‍👦‍👦</span>
-            </span>
-          </p>
-        `,
-      );
-    } else {
-      if (charset === 'UTF-16') {
-        await assertHTML(
-          page,
-          html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">👨‍👩</span>
-              <span
-                class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">‍👦‍👦</span>
-              </span>
-            </p>
-          `,
-        );
-      } else {
-        await assertHTML(
-          page,
-          html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">👨</span>
-              <span
-                class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">‍👩‍👦‍👦</span>
-              </span>
-            </p>
-          `,
-        );
-      }
-    }
+            <span data-lexical-text="true">👨‍👩‍👦‍👦</span>
+          </span>
+        </p>
+      `,
+    );
   });
 }
 

@@ -26,7 +26,6 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -94,6 +93,7 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMTextNode,
+  getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
   getWindow,
@@ -111,6 +111,7 @@ import {
   isEscape,
   isFirefoxClipboardEvents,
   isItalic,
+  isLexicalEditor,
   isLineBreak,
   isModifier,
   isMoveBackward,
@@ -348,15 +349,16 @@ function onSelectionChange(
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             const lastNode = anchor.getNode();
+            selection.style = '';
             if (
               lastNode instanceof ParagraphNode &&
               lastNode.getChildrenSize() === 0
             ) {
               selection.format = lastNode.getTextFormat();
+              selection.style = lastNode.getTextStyle();
             } else {
               selection.format = 0;
             }
-            selection.style = '';
           }
         }
       } else {
@@ -434,7 +436,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           domSelection.removeAllRanges();
           selection.dirty = true;
         } else if (event.detail === 3 && !selection.isCollapsed()) {
-          // Tripple click causing selection to overflow into the nearest element. In that
+          // Triple click causing selection to overflow into the nearest element. In that
           // case visually it looks like a single element content is selected, focus node
           // is actually at the beginning of the next element (if present) and any manipulations
           // with selection (formatting) are affecting second element as well
@@ -588,14 +590,20 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           // Chromium Android at the moment seems to ignore the preventDefault
           // on 'deleteContentBackward' and still deletes the content. Which leads
           // to multiple deletions. So we let the browser handle the deletion in this case.
-          const selectedNodeText = selection.anchor.getNode().getTextContent();
+          const selectedNode = selection.anchor.getNode();
+          const selectedNodeText = selectedNode.getTextContent();
+          // When the target node has `canInsertTextAfter` set to false, the first deletion
+          // doesn't have an effect, so we need to handle it with Lexical.
+          const selectedNodeCanInsertTextAfter =
+            selectedNode.canInsertTextAfter();
           const hasSelectedAllTextInNode =
             selection.anchor.offset === 0 &&
             selection.focus.offset === selectedNodeText.length;
           const shouldLetBrowserHandleDelete =
             IS_ANDROID_CHROME &&
             isSelectionAnchorSameAsFocus &&
-            !hasSelectedAllTextInNode;
+            !hasSelectedAllTextInNode &&
+            selectedNodeCanInsertTextAfter;
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
@@ -1080,7 +1088,8 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
-    if ($isNodeSelection(prevSelection)) {
+    if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
+      // Only RangeSelection can use the native cut/copy/select all
       if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);
@@ -1328,13 +1337,17 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 
-  // @ts-expect-error: internal field
-  const editor: LexicalEditor | null | undefined = rootElement.__lexicalEditor;
+  const editor = getEditorPropertyFromDOMNode(rootElement);
 
-  if (editor !== null && editor !== undefined) {
+  if (isLexicalEditor(editor)) {
     cleanActiveNestedEditorsMap(editor);
     // @ts-expect-error: internal field
     rootElement.__lexicalEditor = null;
+  } else if (editor) {
+    invariant(
+      false,
+      'Attempted to remove event handlers from a node that does not belong to this build of Lexical',
+    );
   }
 
   const removeHandles = getRootElementRemoveHandles(rootElement);

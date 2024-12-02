@@ -595,6 +595,16 @@ test.describe.parallel('Markdown', () => {
       `,
       text: 'hello [world](https://www.test.com)!',
     },
+    {
+      html: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">10:20:30😄</span>
+        </p>
+      `,
+      text: '10:20:30:smile:',
+    },
   ];
 
   const NESTED_TEXT_FORMAT_SHORTCUTS = [
@@ -909,11 +919,11 @@ test.describe.parallel('Markdown', () => {
       html`
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          spellcheck="false"
           dir="ltr"
-          data-language="markdown"
+          spellcheck="false"
+          data-gutter="12"
           data-highlight-language="markdown"
-          data-gutter="12">
+          data-language="markdown">
           <span data-lexical-text="true">Hello</span>
           <br />
           <span
@@ -951,9 +961,9 @@ test.describe.parallel('Markdown', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 800px; width: inherit" />
             </div>
           </span>
@@ -999,9 +1009,9 @@ test.describe.parallel('Markdown', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 800px; width: inherit" />
             </div>
           </span>
@@ -1010,7 +1020,7 @@ test.describe.parallel('Markdown', () => {
             class="editor-equation"
             contenteditable="false"
             data-lexical-decorator="true">
-            <img src="#" alt="" />
+            <img alt="" src="#" />
             <span role="button" tabindex="-1">
               <span class="katex">
                 <span class="katex-html" aria-hidden="true">
@@ -1021,7 +1031,7 @@ test.describe.parallel('Markdown', () => {
                 </span>
               </span>
             </span>
-            <img src="#" alt="" />
+            <img alt="" src="#" />
           </span>
           <br />
         </p>
@@ -1042,9 +1052,9 @@ test.describe.parallel('Markdown', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
-            href="https://lexical.dev"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="ltr"
+            href="https://lexical.dev">
             <span data-lexical-text="true">link</span>
           </a>
           <span data-lexical-text="true">world</span>
@@ -1137,9 +1147,9 @@ const TYPED_MARKDOWN_HTML = html`
       works
     </strong>
     <a
-      href="https://lexical.io"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.io">
       <strong
         class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
         data-lexical-text="true">
@@ -1184,19 +1194,19 @@ const TYPED_MARKDOWN_HTML = html`
     data-lexical-decorator="true" />
   <ul class="PlaygroundEditorTheme__ul">
     <li
-      value="1"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="1">
       <span data-lexical-text="true">List here</span>
     </li>
     <li
-      value="2"
-      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+      value="2">
       <ul class="PlaygroundEditorTheme__ul">
         <li
-          value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          value="1">
           <span data-lexical-text="true">Nested one</span>
         </li>
       </ul>
@@ -1204,11 +1214,11 @@ const TYPED_MARKDOWN_HTML = html`
   </ul>
   <code
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-    spellcheck="false"
     dir="ltr"
-    data-language="sql"
+    spellcheck="false"
+    data-gutter="1"
     data-highlight-language="sql"
-    data-gutter="1">
+    data-language="sql">
     <span data-lexical-text="true">Code block</span>
   </code>
   <p
@@ -1327,9 +1337,9 @@ const IMPORTED_MARKDOWN_HTML = html`
       works
     </strong>
     <a
-      href="https://lexical.io"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.io">
       <strong
         class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
         data-lexical-text="true">
@@ -1343,16 +1353,16 @@ const IMPORTED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Links</span>
     <a
-      href="https://lexical.io/tag_here_and__here__and___here___too"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.io/tag_here_and__here__and___here___too">
       <span data-lexical-text="true">with underscores</span>
     </a>
     <span data-lexical-text="true">and (</span>
     <a
-      href="https://lexical.dev"
       class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      href="https://lexical.dev">
       <span data-lexical-text="true">parenthesis</span>
     </a>
     <span data-lexical-text="true">)</span>
@@ -1422,9 +1432,9 @@ const IMPORTED_MARKDOWN_HTML = html`
   </h3>
   <ul class="PlaygroundEditorTheme__ul">
     <li
-      value="1"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="1">
       <span data-lexical-text="true">Create a list with</span>
       <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">+</span>
@@ -1439,25 +1449,25 @@ const IMPORTED_MARKDOWN_HTML = html`
       </code>
     </li>
     <li
-      value="2"
-      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+      value="2">
       <ul class="PlaygroundEditorTheme__ul">
         <li
-          value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          value="1">
           <span data-lexical-text="true">
             Lists can be indented with 2 spaces
           </span>
         </li>
         <li
-          value="2"
-          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+          value="2">
           <ul class="PlaygroundEditorTheme__ul">
             <li
-              value="1"
               class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="ltr"
+              value="1">
               <span data-lexical-text="true">Very easy</span>
             </li>
           </ul>
@@ -1470,9 +1480,9 @@ const IMPORTED_MARKDOWN_HTML = html`
   </h3>
   <ol class="PlaygroundEditorTheme__ol1">
     <li
-      value="1"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="1">
       <span data-lexical-text="true">
         Oredered lists started with numbers as
       </span>
@@ -1481,13 +1491,13 @@ const IMPORTED_MARKDOWN_HTML = html`
       </code>
     </li>
     <li
-      value="2"
-      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+      value="2">
       <ol class="PlaygroundEditorTheme__ol2">
         <li
-          value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="ltr"
+          value="1">
           <span data-lexical-text="true">And can be nested</span>
           <br />
           <span data-lexical-text="true">and multiline as well</span>
@@ -1498,11 +1508,11 @@ const IMPORTED_MARKDOWN_HTML = html`
   <p class="PlaygroundEditorTheme__paragraph">
     <span data-lexical-text="true">.</span>
   </p>
-  <ol start="31" class="PlaygroundEditorTheme__ol1">
+  <ol class="PlaygroundEditorTheme__ol1" start="31">
     <li
-      value="31"
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-      dir="ltr">
+      dir="ltr"
+      value="31">
       <span data-lexical-text="true">Have any starting number</span>
     </li>
   </ol>
@@ -1529,11 +1539,11 @@ const IMPORTED_MARKDOWN_HTML = html`
   </h3>
   <code
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-    spellcheck="false"
     dir="ltr"
-    data-language="javascript"
+    spellcheck="false"
+    data-gutter="123"
     data-highlight-language="javascript"
-    data-gutter="123">
+    data-language="javascript">
     <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">
       // Some comments
     </span>

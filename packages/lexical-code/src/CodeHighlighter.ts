@@ -16,8 +16,6 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import './CodeHighlighterPrism';
-
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -44,6 +42,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -69,10 +68,9 @@ export interface Tokenizer {
 export const PrismTokenizer: Tokenizer = {
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   tokenize(code: string, language?: string): (string | Token)[] {
-    return window.Prism.tokenize(
+    return Prism.tokenize(
       code,
-      window.Prism.languages[language || ''] ||
-        window.Prism.languages[this.defaultLanguage],
+      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
     );
   },
 };
@@ -773,7 +771,9 @@ function $handleMoveTo(
   const focusNode = focus.getNode();
   const isMoveToStart = type === MOVE_TO_START;
 
+  // Ensure the selection is within the codeblock
   if (
+    !$isSelectionInCode(selection) ||
     !($isCodeHighlightNode(anchorNode) || $isTabNode(anchorNode)) ||
     !($isCodeHighlightNode(focusNode) || $isTabNode(focusNode))
   ) {
@@ -818,18 +818,22 @@ export function registerCodeHighlighting(
   }
 
   return mergeRegister(
-    editor.registerMutationListener(CodeNode, (mutations) => {
-      editor.update(() => {
-        for (const [key, type] of mutations) {
-          if (type !== 'destroyed') {
-            const node = $getNodeByKey(key);
-            if (node !== null) {
-              updateCodeGutter(node as CodeNode, editor);
+    editor.registerMutationListener(
+      CodeNode,
+      (mutations) => {
+        editor.update(() => {
+          for (const [key, type] of mutations) {
+            if (type !== 'destroyed') {
+              const node = $getNodeByKey(key);
+              if (node !== null) {
+                updateCodeGutter(node as CodeNode, editor);
+              }
             }
           }
-        }
-      });
-    }),
+        });
+      },
+      {skipInitialization: false},
+    ),
     editor.registerNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor, tokenizer as Tokenizer),
     ),

@@ -17,8 +17,6 @@ import type {
   TabNode,
 } from 'lexical';
 
-import './CodeHighlighterPrism';
-
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -30,6 +28,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {Prism} from './CodeHighlighterPrism';
 import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -84,11 +83,11 @@ export function getLanguageFriendlyName(lang: string) {
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 export const getCodeLanguages = (): Array<string> =>
-  Object.keys(window.Prism.languages)
+  Object.keys(Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
       // so filtering them out here to get langs list
-      (language) => typeof window.Prism.languages[language] !== 'function',
+      (language) => typeof Prism.languages[language] !== 'function',
     )
     .sort();
 

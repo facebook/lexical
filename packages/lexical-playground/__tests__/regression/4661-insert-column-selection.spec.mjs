@@ -20,7 +20,9 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Regression test #4661', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page}) =>
+    initialize({isCollab, page, tableHorizontalScroll: false}),
+  );
   test('inserting 2 columns before inserts before selection', async ({
     page,
     isPlainText,
@@ -48,6 +50,12 @@ test.describe('Regression test #4661', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -86,6 +94,7 @@ test.describe('Regression test #4661', () => {
       `,
     );
   });
+
   test('inserting 2 columns after inserts after selection', async ({
     page,
     isPlainText,
@@ -113,6 +122,12 @@ test.describe('Regression test #4661', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">

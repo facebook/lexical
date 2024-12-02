@@ -15,14 +15,19 @@ import {
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isLineBreakNode,
+  $isRangeSelection,
+  $isTextNode,
   $selectAll,
   ParagraphNode,
+  RangeSelection,
   SerializedParagraphNode,
-  TextNode,
-} from 'lexical/src';
+} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -47,20 +52,20 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('/');
+        const linkNode = $createLinkNode('/');
 
         expect(linkNode.__type).toBe('link');
         expect(linkNode.__url).toBe('/');
       });
 
-      expect(() => new LinkNode('')).toThrow();
+      expect(() => $createLinkNode('')).toThrow();
     });
 
     test('LineBreakNode.clone()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('/');
+        const linkNode = $createLinkNode('/');
 
         const linkNodeClone = LinkNode.clone(linkNode);
 
@@ -73,7 +78,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         expect(linkNode.getURL()).toBe('https://example.com/foo');
       });
@@ -83,7 +88,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         expect(linkNode.getURL()).toBe('https://example.com/foo');
 
@@ -97,7 +102,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           target: '_blank',
         });
 
@@ -109,7 +114,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           target: '_blank',
         });
 
@@ -125,7 +130,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           rel: 'noopener noreferrer',
           target: '_blank',
         });
@@ -138,7 +143,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           rel: 'noopener',
           target: '_blank',
         });
@@ -155,7 +160,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           title: 'Hello world',
         });
 
@@ -167,7 +172,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           title: 'Hello world',
         });
 
@@ -183,7 +188,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
           '<a href="https://example.com/foo" class="my-link-class"></a>',
@@ -201,7 +206,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           rel: 'noopener noreferrer',
           target: '_blank',
           title: 'Hello world',
@@ -226,7 +231,7 @@ describe('LexicalLinkNode tests', () => {
 
       await editor.update(() => {
         // eslint-disable-next-line no-script-url
-        const linkNode = new LinkNode('javascript:alert(0)');
+        const linkNode = $createLinkNode('javascript:alert(0)');
         expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
           '<a href="about:blank" class="my-link-class"></a>',
         );
@@ -237,7 +242,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         const domElement = linkNode.createDOM(editorConfig);
 
@@ -245,7 +250,7 @@ describe('LexicalLinkNode tests', () => {
           '<a href="https://example.com/foo" class="my-link-class"></a>',
         );
 
-        const newLinkNode = new LinkNode('https://example.com/bar');
+        const newLinkNode = $createLinkNode('https://example.com/bar');
         const result = newLinkNode.updateDOM(
           linkNode,
           domElement,
@@ -263,7 +268,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           rel: 'noopener noreferrer',
           target: '_blank',
           title: 'Hello world',
@@ -275,7 +280,7 @@ describe('LexicalLinkNode tests', () => {
           '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" title="Hello world" class="my-link-class"></a>',
         );
 
-        const newLinkNode = new LinkNode('https://example.com/bar', {
+        const newLinkNode = $createLinkNode('https://example.com/bar', {
           rel: 'noopener',
           target: '_self',
           title: 'World hello',
@@ -297,7 +302,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           rel: 'noopener noreferrer',
           target: '_blank',
           title: 'Hello world',
@@ -309,7 +314,7 @@ describe('LexicalLinkNode tests', () => {
           '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" title="Hello world" class="my-link-class"></a>',
         );
 
-        const newLinkNode = new LinkNode('https://example.com/bar');
+        const newLinkNode = $createLinkNode('https://example.com/bar');
         const result = newLinkNode.updateDOM(
           linkNode,
           domElement,
@@ -327,7 +332,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         expect(linkNode.canInsertTextBefore()).toBe(false);
       });
@@ -337,7 +342,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         expect(linkNode.canInsertTextAfter()).toBe(false);
       });
@@ -347,7 +352,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo');
+        const linkNode = $createLinkNode('https://example.com/foo');
 
         const createdLinkNode = $createLinkNode('https://example.com/foo');
 
@@ -362,7 +367,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('https://example.com/foo', {
+        const linkNode = $createLinkNode('https://example.com/foo', {
           rel: 'noopener noreferrer',
           target: '_blank',
           title: 'Hello world',
@@ -388,7 +393,7 @@ describe('LexicalLinkNode tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const linkNode = new LinkNode('');
+        const linkNode = $createLinkNode('');
 
         expect($isLinkNode(linkNode)).toBe(true);
       });
@@ -397,14 +402,27 @@ describe('LexicalLinkNode tests', () => {
     test('$toggleLink applies the title attribute when creating', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const p = new ParagraphNode();
-        p.append(new TextNode('Some text'));
+        const p = $createParagraphNode();
+        const textNode = $createTextNode('Some text');
+        p.append(textNode);
         $getRoot().append(p);
-      });
-
-      await editor.update(() => {
         $selectAll();
         $toggleLink('https://lexical.dev/', {title: 'Lexical Website'});
+        const linkNode = p.getFirstChild() as LinkNode;
+        expect($isLinkNode(linkNode)).toBe(true);
+        expect(linkNode.getTitle()).toBe('Lexical Website');
+        const selection = $getSelection() as RangeSelection;
+        expect($isRangeSelection(selection)).toBe(true);
+        expect(selection.anchor).toMatchObject({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+        expect(selection.focus).toMatchObject({
+          key: textNode.getKey(),
+          offset: textNode.getTextContentSize(),
+          type: 'text',
+        });
       });
 
       const paragraph = editor!.getEditorState().toJSON().root
@@ -442,6 +460,7 @@ describe('LexicalLinkNode tests', () => {
         expect(textNode.getTextContent()).toBe('some ');
 
         // Check link node and its nested structure
+        expect($isLinkNode(linkNode)).toBe(true);
         if ($isLinkNode(linkNode)) {
           expect(linkNode.getURL()).toBe('https://example.com/foo');
           expect(linkNode.getRel()).toBe('noreferrer');
@@ -470,11 +489,71 @@ describe('LexicalLinkNode tests', () => {
         expect(textNode.getTextContent()).toBe('some ');
 
         // Check mark node is preserved and moved up to paragraph level
+        expect($isMarkNode(markNode)).toBe(true);
         if ($isMarkNode(markNode)) {
           expect(markNode.getType()).toBe('mark');
           expect(markNode.getIDs()).toEqual(['knetk']);
           expect(markNode.getTextContent()).toBe('text');
         }
+      });
+    });
+
+    test('$toggleLink adds link with embedded LineBreakNode', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const precedingText = $createTextNode('some '); // space after
+        const textNode = $createTextNode('text');
+        paragraph.append(precedingText, textNode, $createLineBreakNode());
+        $getRoot().clear().append(paragraph);
+        paragraph.select(1);
+        $toggleLink('https://example.com/foo', {
+          rel: 'noreferrer',
+        });
+      });
+
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const [precedingText, linkNode] = paragraph.getChildren();
+
+        // Check first text node
+        expect(precedingText.getTextContent()).toBe('some ');
+
+        // Check link node and its nested structure
+        expect($isLinkNode(linkNode)).toBe(true);
+        if ($isLinkNode(linkNode)) {
+          expect(linkNode.getURL()).toBe('https://example.com/foo');
+          expect(linkNode.getRel()).toBe('noreferrer');
+          expect(
+            linkNode.getChildren().map((node) => node.getTextContent()),
+          ).toEqual(['text', '\n']);
+          expect($getSelection()).toMatchObject({
+            anchor: {
+              key: linkNode.getFirstChildOrThrow().getKey(),
+              offset: 0,
+              type: 'text',
+            },
+            focus: {key: linkNode.getKey(), offset: 2, type: 'element'},
+          });
+        }
+      });
+
+      await editor.update(() => {
+        $selectAll();
+        $toggleLink(null);
+      });
+
+      // Verify structure after link removal
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const children = paragraph.getChildren();
+        expect(children.map((node) => node.getTextContent())).toEqual([
+          'some text',
+          '\n',
+        ]);
+        const [textNode, lineBreakNode] = children;
+        expect($isTextNode(textNode)).toBe(true);
+        expect($isLineBreakNode(lineBreakNode)).toBe(true);
       });
     });
   });

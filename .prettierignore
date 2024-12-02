@@ -1,14 +1,20 @@
 # NOTE: In general this should be kept in sync with .eslintignore
 
-packages/**/dist/**
-packages/**/build/**
-packages/**/npm/**
-packages/**/config/**
+**/dist/**
+**/build/**
+**/npm/**
+!scripts/npm/**
+**/.output/**
+**/.browser-profiles/**
+!scripts/npm/**
+**/__tests__/integration/fixtures/**
 packages/**/.wxt/**
 packages/playwright
 packages/playwright-core
 packages/**/vite.config.js
 packages/**/vite.prod.config.js
+packages/lexical-website/docs/api
+packages/lexical-website/fb/*.json
 **/*.md
 **/*.js.flow
 **/node_modules
@@ -16,3 +22,6 @@ packages/**/vite.prod.config.js
 flow-typed
 .github/CODEOWNERS
 .prettierignore
+**/.docusaurus
+/playwright-report
+test-results

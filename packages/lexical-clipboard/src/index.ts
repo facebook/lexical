@@ -1,4 +1,3 @@
-/** @module @lexical/clipboard */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -10,10 +9,13 @@
 export {
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
+  $getClipboardDataFromSelection,
   $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,
   copyToClipboard,
+  type LexicalClipboardData,
+  setLexicalClipboardDataTransfer,
 } from './clipboard';

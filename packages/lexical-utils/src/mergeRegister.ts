@@ -25,13 +25,20 @@ type Func = () => void;
  * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
  * function to be executed after either the useEffect runs again (due to one of its dependencies
  * updating) or the component it resides in unmounts.
- * Note the functions don't neccesarily need to be in an array as all arguements
+ * Note the functions don't neccesarily need to be in an array as all arguments
  * are considered to be the func argument and spread from there.
- * @param func - An array of functions meant to be executed by the returned function.
- * @returns the function which executes all the passed register command functions.
+ * The order of cleanup is the reverse of the argument order. Generally it is
+ * expected that the first "acquire" will be "released" last (LIFO order),
+ * because a later step may have some dependency on an earlier one.
+ * @param func - An array of cleanup functions meant to be executed by the returned function.
+ * @returns the function which executes all the passed cleanup functions.
  */
 export default function mergeRegister(...func: Array<Func>): () => void {
   return () => {
-    func.forEach((f) => f());
+    for (let i = func.length - 1; i >= 0; i--) {
+      func[i]();
+    }
+    // Clean up the references and make future calls a no-op
+    func.length = 0;
   };
 }

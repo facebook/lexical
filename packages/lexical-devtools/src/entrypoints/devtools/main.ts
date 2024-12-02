@@ -9,6 +9,6 @@
 // Create the panel which appears within the browser devtools
 browser.devtools.panels.create(
   'Lexical',
-  'icon/128.png',
+  '/icon/logo.svg',
   'devtools-panel.html',
 );

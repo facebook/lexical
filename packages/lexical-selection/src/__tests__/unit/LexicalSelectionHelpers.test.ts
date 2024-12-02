@@ -25,7 +25,12 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  ParagraphNode,
   RangeSelection,
+  TextModeType,
   TextNode,
 } from 'lexical';
 import {
@@ -38,7 +43,7 @@ import {
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 
-import {setAnchorPoint, setFocusPoint} from '../utils';
+import {$setAnchorPoint, $setFocusPoint} from '../utils';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
   const rect = {
@@ -59,9 +64,12 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
   };
 };
 
-function createParagraphWithNodes(editor, nodes) {
+function $createParagraphWithNodes(
+  editor: LexicalEditor,
+  nodes: {text: string; key: string; mergeable?: boolean}[],
+) {
   const paragraph = $createParagraphNode();
-  const nodeMap = editor._pendingEditorState._nodeMap;
+  const nodeMap = editor._pendingEditorState!._nodeMap;
 
   for (let i = 0; i < nodes.length; i++) {
     const {text, key, mergeable} = nodes[i];
@@ -81,13 +89,15 @@ function createParagraphWithNodes(editor, nodes) {
 describe('LexicalSelectionHelpers tests', () => {
   describe('Collapsed', () => {
     test('Can handle a text point', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, node: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -107,19 +117,19 @@ describe('LexicalSelectionHelpers tests', () => {
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: 'a',
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: 'a',
             offset: 0,
             type: 'text',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -137,7 +147,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a').getTextContent()).toBe('Testa');
+        expect($getNodeByKey('a')!.getTextContent()).toBe('Testa');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -162,7 +172,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -170,7 +180,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -224,11 +234,11 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
 
-        expect(element.getFirstChild().getTextContent()).toBe('Test');
+        expect(element.getFirstChild()!.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -236,15 +246,15 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
         );
 
-        expect(element.getFirstChild().getNextSibling().getTextContent()).toBe(
-          'a',
-        );
+        expect(
+          element.getFirstChild()!.getNextSibling()!.getTextContent(),
+        ).toBe('a');
       });
 
       // Extract selection
@@ -264,7 +274,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -294,13 +304,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: 'bb',
           offset: 1,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: 'cc',
           offset: 1,
           type: 'text',
@@ -345,7 +355,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -370,13 +380,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: 'a',
           offset: 0,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: 'c',
           offset: 1,
           type: 'text',
@@ -414,14 +424,14 @@ describe('LexicalSelectionHelpers tests', () => {
       const editor = createTestEditor();
 
       const domElement = document.createElement('div');
-      let element;
+      let element: ParagraphNode;
 
       editor.setRootElement(domElement);
 
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -431,13 +441,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: 'a',
           offset: 0,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: 'a',
           offset: 0,
           type: 'text',
@@ -482,7 +492,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -497,13 +507,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: element.getKey(),
           offset: 2,
           type: 'element',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: element.getKey(),
           offset: 2,
           type: 'element',
@@ -548,7 +558,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -573,13 +583,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: element.getKey(),
           offset: 4,
           type: 'element',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: element.getKey(),
           offset: 4,
           type: 'element',
@@ -624,7 +634,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -649,13 +659,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: 'd',
           offset: 1,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: 'd',
           offset: 1,
           type: 'text',
@@ -690,29 +700,31 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle an element point on empty element', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, []);
+          const element = $createParagraphWithNodes(editor, []);
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: element.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: element.getKey(),
             offset: 0,
             type: 'element',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -729,7 +741,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -753,7 +765,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const nextElement = element.getNextSibling();
+        const nextElement = element.getNextSibling()!;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -797,7 +809,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -825,13 +837,15 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle a start element point', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -851,19 +865,19 @@ describe('LexicalSelectionHelpers tests', () => {
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: element.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: element.getKey(),
             offset: 0,
             type: 'element',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -880,7 +894,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -948,7 +962,7 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
 
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -976,13 +990,15 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle an end element point', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1002,19 +1018,19 @@ describe('LexicalSelectionHelpers tests', () => {
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: element.getKey(),
             offset: 3,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: element.getKey(),
             offset: 3,
             type: 'element',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -1031,7 +1047,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const lastChild = element.getLastChild();
+        const lastChild = element.getLastChild()!;
 
         expect(lastChild.getTextContent()).toBe('Test');
 
@@ -1055,7 +1071,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const nextSibling = element.getNextSibling();
+        const nextSibling = element.getNextSibling()!;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -1099,7 +1115,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const lastChild = element.getLastChild();
+        const lastChild = element.getLastChild()!;
 
         expect(lastChild.getTextContent()).toBe('Test');
 
@@ -1137,7 +1153,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -1157,13 +1173,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: element.getKey(),
           offset: 2,
           type: 'element',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: element.getKey(),
           offset: 2,
           type: 'element',
@@ -1208,7 +1224,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -1228,13 +1244,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
         root.append(element);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: element.getKey(),
           offset: 3,
           type: 'element',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: element.getKey(),
           offset: 3,
           type: 'element',
@@ -1271,13 +1287,15 @@ describe('LexicalSelectionHelpers tests', () => {
 
   describe('Simple range', () => {
     test('Can handle multiple text points', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1297,13 +1315,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: 'a',
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: 'b',
             offset: 0,
             type: 'text',
@@ -1333,7 +1351,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a').getTextContent()).toBe('Test');
+        expect($getNodeByKey('a')!.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -1358,7 +1376,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -1366,7 +1384,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -1420,11 +1438,11 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
 
-        expect(element.getFirstChild().getTextContent()).toBe('Test');
+        expect(element.getFirstChild()!.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1432,7 +1450,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1446,13 +1464,15 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle multiple element points', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1472,13 +1492,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: element.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: element.getKey(),
             offset: 1,
             type: 'element',
@@ -1504,7 +1524,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1571,7 +1591,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1601,13 +1621,15 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle a mix of text and element points', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1627,13 +1649,13 @@ describe('LexicalSelectionHelpers tests', () => {
 
           root.append(element);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: element.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: 'c',
             offset: 1,
             type: 'text',
@@ -1668,7 +1690,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1692,7 +1714,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const nextElement = element.getNextSibling();
+        const nextElement = element.getNextSibling()!;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -1736,7 +1758,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1783,13 +1805,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraph = $createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
@@ -1822,13 +1844,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraph = $createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
@@ -1863,13 +1885,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraph = $createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
@@ -1908,13 +1930,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraph = $createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: paragraph.getKey(),
             offset: 0,
             type: 'element',
@@ -1956,13 +1978,13 @@ describe('LexicalSelectionHelpers tests', () => {
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 16,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 16,
             type: 'text',
@@ -1997,13 +2019,13 @@ describe('LexicalSelectionHelpers tests', () => {
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 16,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 16,
             type: 'text',
@@ -2042,13 +2064,13 @@ describe('LexicalSelectionHelpers tests', () => {
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 16,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 16,
             type: 'text',
@@ -2089,13 +2111,13 @@ describe('LexicalSelectionHelpers tests', () => {
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 1,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 1,
             type: 'text',
@@ -2121,7 +2143,7 @@ describe('LexicalSelectionHelpers tests', () => {
           expect(selection.anchor).toEqual(
             expect.objectContaining({
               key: paragraph
-                .getChildAtIndex(paragraph.getChildrenSize() - 2)
+                .getChildAtIndex(paragraph.getChildrenSize() - 2)!
                 .getKey(),
               offset: 1,
               type: 'text',
@@ -2131,7 +2153,7 @@ describe('LexicalSelectionHelpers tests', () => {
           expect(selection.focus).toEqual(
             expect.objectContaining({
               key: paragraph
-                .getChildAtIndex(paragraph.getChildrenSize() - 2)
+                .getChildAtIndex(paragraph.getChildrenSize() - 2)!
                 .getKey(),
               offset: 1,
               type: 'text',
@@ -2162,13 +2184,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const text = $createTextNode('Existing text...');
           paragraph.append(text);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 'Existing text...'.length,
             type: 'text',
@@ -2209,13 +2231,13 @@ describe('LexicalSelectionHelpers tests', () => {
           link.append($createTextNode('link'));
           paragraph.append(link);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 'Existing text...'.length,
             type: 'text',
@@ -2256,13 +2278,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const text = $createTextNode('Existing text...');
           paragraph.append(text);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 'Existing text...'.length,
             type: 'text',
@@ -2325,13 +2347,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const text = $createTextNode('Existing text...');
           paragraph.append(text);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 'Existing text...'.length,
             type: 'text',
@@ -2375,13 +2397,13 @@ describe('LexicalSelectionHelpers tests', () => {
           link.append($createTextNode('link'));
           paragraph.append(link);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 'Existing text...'.length,
             type: 'text',
@@ -2425,13 +2447,13 @@ describe('LexicalSelectionHelpers tests', () => {
           const text = $createTextNode('Existing text...');
           paragraph.append(text);
 
-          setAnchorPoint({
+          $setAnchorPoint({
             key: text.getKey(),
             offset: 0,
             type: 'text',
           });
 
-          setFocusPoint({
+          $setFocusPoint({
             key: text.getKey(),
             offset: 'Existing text...'.length,
             type: 'text',
@@ -2532,13 +2554,13 @@ describe('extract', () => {
       paragraph.append(text);
       root.append(paragraph);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: text.getKey(),
         offset: 16,
         type: 'text',
       });
 
-      setFocusPoint({
+      $setFocusPoint({
         key: text.getKey(),
         offset: 16,
         type: 'text',
@@ -2547,7 +2569,7 @@ describe('extract', () => {
       const selection = $getSelection();
       expect($isRangeSelection(selection)).toBeTruthy();
 
-      expect(selection.extract()).toEqual([text]);
+      expect(selection!.extract()).toEqual([text]);
     });
   });
 });
@@ -2605,7 +2627,7 @@ describe('insertNodes', () => {
     });
     await editor.update(() => {
       const selection = $createRangeSelection();
-      const text = $getRoot().getLastDescendant();
+      const text = $getRoot().getLastDescendant()!;
       selection.anchor.set(text.getKey(), 0, 'text');
       selection.focus.set(text.getKey(), 0, 'text');
 
@@ -2629,7 +2651,7 @@ describe('insertNodes', () => {
         $createParagraphNode().append(emptyTextNode, $createTextNode('text')),
       );
       emptyTextNode.select(0, 0);
-      const selection = $getSelection();
+      const selection = $getSelection()!;
       expect($isRangeSelection(selection)).toBeTruthy();
       selection.insertNodes([$createTextNode('foo')]);
 
@@ -2674,7 +2696,7 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph = createParagraphWithNodes(editor, [
+      const paragraph = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
@@ -2692,15 +2714,15 @@ describe('$patchStyleText', () => {
       const link = $createLinkNode('https://');
       link.append($createTextNode('link'));
 
-      const a = $getNodeByKey('a');
+      const a = $getNodeByKey('a')!;
       a.insertAfter(link);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: 'a',
         offset: 1,
         type: 'text',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: 'b',
         offset: 1,
         type: 'text',
@@ -2730,14 +2752,14 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph1 = createParagraphWithNodes(editor, [
+      const paragraph1 = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
           text: 'a',
         },
       ]);
-      const paragraph2 = createParagraphWithNodes(editor, [
+      const paragraph2 = $createParagraphWithNodes(editor, [
         {
           key: 'b',
           mergeable: false,
@@ -2748,12 +2770,12 @@ describe('$patchStyleText', () => {
       root.append(paragraph1);
       root.append(paragraph2);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: 'a',
         offset: 1,
         type: 'text',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: 'b',
         offset: 1,
         type: 'text',
@@ -2780,7 +2802,7 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph = createParagraphWithNodes(editor, [
+      const paragraph = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
@@ -2793,16 +2815,16 @@ describe('$patchStyleText', () => {
       const link = $createLinkNode('https://');
       link.append($createTextNode('link'));
 
-      const a = $getNodeByKey('a');
+      const a = $getNodeByKey('a')!;
       a.insertAfter(link);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: 'a',
         offset: 0,
         type: 'text',
       });
       // Select to end of the link _element_
-      setFocusPoint({
+      $setFocusPoint({
         key: link.getKey(),
         offset: 1,
         type: 'element',
@@ -2833,7 +2855,7 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph = createParagraphWithNodes(editor, [
+      const paragraph = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
@@ -2846,16 +2868,16 @@ describe('$patchStyleText', () => {
       const link = $createLinkNode('https://');
       link.append($createTextNode('link'));
 
-      const a = $getNodeByKey('a');
+      const a = $getNodeByKey('a')!;
       a.insertAfter(link);
 
       // Select from the end of the link _element_
-      setAnchorPoint({
+      $setAnchorPoint({
         key: link.getKey(),
         offset: 1,
         type: 'element',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: 'a',
         offset: 0,
         type: 'text',
@@ -2893,12 +2915,12 @@ describe('$patchStyleText', () => {
       link.append($createTextNode('link'));
       paragraph.append(link);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: link.getKey(),
         offset: 0,
         type: 'element',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: link.getKey(),
         offset: 1,
         type: 'element',
@@ -2934,12 +2956,12 @@ describe('$patchStyleText', () => {
       const text = $createTextNode('text');
       paragraph.append(text);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: text.getKey(),
         offset: 0,
         type: 'text',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: text.getKey(),
         offset: text.getTextContentSize(),
         type: 'text',
@@ -2972,12 +2994,12 @@ describe('$patchStyleText', () => {
       const text = $createTextNode('text');
       paragraph.append(text);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: text.getKey(),
         offset: 0,
         type: 'text',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: text.getKey(),
         offset: 0,
         type: 'text',
@@ -3021,12 +3043,12 @@ describe('$patchStyleText', () => {
       const text = $createTextNode('text');
       paragraph.append(text);
 
-      setAnchorPoint({
+      $setAnchorPoint({
         key: text.getKey(),
         offset: 0,
         type: 'text',
       });
-      setFocusPoint({
+      $setFocusPoint({
         key: text.getKey(),
         offset: 0,
         type: 'text',
@@ -3053,6 +3075,99 @@ describe('$patchStyleText', () => {
         '',
       );
       expect(color).toEqual('');
+    });
+  });
+
+  test.each<TextModeType>(['token', 'segmented'])(
+    'can update style of text node that is in %s mode',
+    async (mode) => {
+      const editor = createTestEditor();
+
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+
+        const text = $createTextNode('first').setFormat('bold');
+        paragraph.append(text);
+
+        const textInMode = $createTextNode('second').setMode(mode);
+        paragraph.append(textInMode);
+
+        $setAnchorPoint({
+          key: text.getKey(),
+          offset: 'fir'.length,
+          type: 'text',
+        });
+
+        $setFocusPoint({
+          key: textInMode.getKey(),
+          offset: 'sec'.length,
+          type: 'text',
+        });
+
+        const selection = $getSelection();
+        $patchStyleText(selection!, {'font-size': '15px'});
+      });
+
+      expect(element.innerHTML).toBe(
+        '<p dir="ltr">' +
+          '<strong data-lexical-text="true">fir</strong>' +
+          '<strong style="font-size: 15px;" data-lexical-text="true">st</strong>' +
+          '<span style="font-size: 15px;" data-lexical-text="true">second</span>' +
+          '</p>',
+      );
+    },
+  );
+
+  test('preserve backward selection when changing style of 2 different text nodes', async () => {
+    const editor = createTestEditor();
+
+    const element = document.createElement('div');
+
+    editor.setRootElement(element);
+
+    editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const firstText = $createTextNode('first ').setFormat('bold');
+      paragraph.append(firstText);
+
+      const secondText = $createTextNode('second').setFormat('italic');
+      paragraph.append(secondText);
+
+      $setAnchorPoint({
+        key: secondText.getKey(),
+        offset: 'sec'.length,
+        type: 'text',
+      });
+
+      $setFocusPoint({
+        key: firstText.getKey(),
+        offset: 'fir'.length,
+        type: 'text',
+      });
+
+      const selection = $getSelection();
+
+      $patchStyleText(selection!, {'font-size': '11px'});
+
+      const [newAnchor, newFocus] = selection!.getStartEndPoints()!;
+
+      const newAnchorNode: LexicalNode = newAnchor.getNode();
+      expect(newAnchorNode.getTextContent()).toBe('sec');
+      expect(newAnchor.offset).toBe('sec'.length);
+
+      const newFocusNode: LexicalNode = newFocus.getNode();
+      expect(newFocusNode.getTextContent()).toBe('st ');
+      expect(newFocus.offset).toBe(0);
     });
   });
 });

@@ -1,4 +1,3 @@
-/** @module @lexical/table */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -23,11 +22,13 @@ export type {SerializedTableNode} from './LexicalTableNode';
 export {
   $createTableNode,
   $getElementForTableNode,
+  $isScrollableTablesActive,
   $isTableNode,
+  setScrollableTablesActive,
   TableNode,
 } from './LexicalTableNode';
 export type {TableDOMCell} from './LexicalTableObserver';
-export {TableObserver} from './LexicalTableObserver';
+export {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 export type {SerializedTableRowNode} from './LexicalTableRowNode';
 export {
   $createTableRowNode,
@@ -35,6 +36,8 @@ export {
   TableRowNode,
 } from './LexicalTableRowNode';
 export type {
+  TableMapType,
+  TableMapValueType,
   TableSelection,
   TableSelectionShape,
 } from './LexicalTableSelection';
@@ -44,12 +47,16 @@ export {
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
+  $findCellNode,
+  $findTableNode,
   applyTableHandlers,
   getDOMCellFromTarget,
+  getTableElement,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,

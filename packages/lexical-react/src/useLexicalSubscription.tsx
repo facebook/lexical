@@ -19,8 +19,9 @@ export type LexicalSubscription<T> = {
 
 /**
  * Shortcut to Lexical subscriptions when values are used for render.
+ * @param subscription - The function to create the {@link LexicalSubscription}. This function's identity must be stable (e.g. defined at module scope or with useCallback).
  */
-export default function useLexicalSubscription<T>(
+export function useLexicalSubscription<T>(
   subscription: (editor: LexicalEditor) => LexicalSubscription<T>,
 ): T {
   const [editor] = useLexicalComposerContext();
@@ -28,8 +29,10 @@ export default function useLexicalSubscription<T>(
     () => subscription(editor),
     [editor, subscription],
   );
-  const valueRef = useRef<T>(initializedSubscription.initialValueFn());
-  const [value, setValue] = useState<T>(valueRef.current);
+  const [value, setValue] = useState<T>(() =>
+    initializedSubscription.initialValueFn(),
+  );
+  const valueRef = useRef<T>(value);
   useLayoutEffect(() => {
     const {initialValueFn, subscribe} = initializedSubscription;
     const currentValue = initialValueFn();
@@ -46,3 +49,7 @@ export default function useLexicalSubscription<T>(
 
   return value;
 }
+
+/** @deprecated use the named export {@link useLexicalSubscription} */
+// eslint-disable-next-line no-restricted-exports
+export default useLexicalSubscription;

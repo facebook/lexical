@@ -1,0 +1,36 @@
+name: (call) Publish to NPM
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      dry-run:
+        required: true
+        type: boolean
+      channel:
+        required: true
+        type: string
+    secrets:
+      NPM_TOKEN:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      DRY_RUN_ARG: ${{ inputs.dry-run && '--dry-run' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: npm run prepare-release
+      - run: node ./scripts/npm/release.js --non-interactive $DRY_RUN_ARG --channel='${{ inputs.channel }}'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

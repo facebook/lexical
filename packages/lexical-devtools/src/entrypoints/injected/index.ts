@@ -6,17 +6,22 @@
  *
  */
 
-import {sendMessage, setNamespace} from 'webext-bridge/window';
+import type {ITabIDService} from '../background/getTabIDService';
 
-import extensionStore from '../../store';
-import storeReadyPromise from '../../store-sync/window';
+import {getRPCService} from '@webext-pegasus/rpc';
+import {initPegasusTransport} from '@webext-pegasus/transport/window';
+
+import {EXTENSION_NAME} from '../../constants';
+import {extensionStoreReady} from '../../store.ts';
 import main from './main';
 
 export default defineUnlistedScript({
   main() {
-    setNamespace('lexical-extension');
-    sendMessage('getTabID', null, 'background').then((tabID) =>
-      storeReadyPromise(extensionStore).then(() => main(tabID, extensionStore)),
+    initPegasusTransport({namespace: EXTENSION_NAME});
+    getRPCService<ITabIDService>('getTabID', 'background')().then((tabID) =>
+      extensionStoreReady().then((extensionStore) =>
+        main(tabID, extensionStore),
+      ),
     );
   },
 });

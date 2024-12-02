@@ -11,6 +11,7 @@ import type {EditorThemeClasses} from 'lexical';
 import './PlaygroundEditorTheme.css';
 
 const theme: EditorThemeClasses = {
+  autocomplete: 'PlaygroundEditorTheme__autocomplete',
   blockCursor: 'PlaygroundEditorTheme__blockCursor',
   characterLimit: 'PlaygroundEditorTheme__characterLimit',
   code: 'PlaygroundEditorTheme__code',
@@ -59,6 +60,7 @@ const theme: EditorThemeClasses = {
     h5: 'PlaygroundEditorTheme__h5',
     h6: 'PlaygroundEditorTheme__h6',
   },
+  hr: 'PlaygroundEditorTheme__hr',
   image: 'editor-image',
   indent: 'PlaygroundEditorTheme__indent',
   inlineImage: 'inline-editor-image',
@@ -88,20 +90,17 @@ const theme: EditorThemeClasses = {
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',
+  specialText: 'PlaygroundEditorTheme__specialText',
   table: 'PlaygroundEditorTheme__table',
-  tableAddColumns: 'PlaygroundEditorTheme__tableAddColumns',
-  tableAddRows: 'PlaygroundEditorTheme__tableAddRows',
   tableCell: 'PlaygroundEditorTheme__tableCell',
   tableCellActionButton: 'PlaygroundEditorTheme__tableCellActionButton',
   tableCellActionButtonContainer:
     'PlaygroundEditorTheme__tableCellActionButtonContainer',
-  tableCellEditing: 'PlaygroundEditorTheme__tableCellEditing',
   tableCellHeader: 'PlaygroundEditorTheme__tableCellHeader',
-  tableCellPrimarySelected: 'PlaygroundEditorTheme__tableCellPrimarySelected',
   tableCellResizer: 'PlaygroundEditorTheme__tableCellResizer',
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
-  tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
-  tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
+  tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
+  tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {

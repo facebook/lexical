@@ -6,7 +6,12 @@
  *
  */
 
-import {LinkNode, TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
+import {
+  $toggleLink,
+  LinkAttributes,
+  LinkNode,
+  TOGGLE_LINK_COMMAND,
+} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
@@ -20,9 +25,10 @@ import {useEffect} from 'react';
 
 type Props = {
   validateUrl?: (url: string) => boolean;
+  attributes?: LinkAttributes;
 };
 
-export function LinkPlugin({validateUrl}: Props): null {
+export function LinkPlugin({validateUrl, attributes}: Props): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -34,17 +40,22 @@ export function LinkPlugin({validateUrl}: Props): null {
         TOGGLE_LINK_COMMAND,
         (payload) => {
           if (payload === null) {
-            toggleLink(payload);
+            $toggleLink(payload);
             return true;
           } else if (typeof payload === 'string') {
             if (validateUrl === undefined || validateUrl(payload)) {
-              toggleLink(payload);
+              $toggleLink(payload, attributes);
               return true;
             }
             return false;
           } else {
             const {url, target, rel, title} = payload;
-            toggleLink(url, {rel, target, title});
+            $toggleLink(url, {
+              ...attributes,
+              rel,
+              target,
+              title,
+            });
             return true;
           }
         },
@@ -73,7 +84,10 @@ export function LinkPlugin({validateUrl}: Props): null {
               }
               // If we select nodes that are elements then avoid applying the link.
               if (!selection.getNodes().some((node) => $isElementNode(node))) {
-                editor.dispatchCommand(TOGGLE_LINK_COMMAND, clipboardText);
+                editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+                  ...attributes,
+                  url: clipboardText,
+                });
                 event.preventDefault();
                 return true;
               }
@@ -82,10 +96,10 @@ export function LinkPlugin({validateUrl}: Props): null {
             COMMAND_PRIORITY_LOW,
           )
         : () => {
-            // Don't paste arbritrary text as a link when there's no validate function
+            // Don't paste arbitrary text as a link when there's no validate function
           },
     );
-  }, [editor, validateUrl]);
+  }, [editor, validateUrl, attributes]);
 
   return null;
 }

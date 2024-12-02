@@ -7,7 +7,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalRichText.js",
   "types": "index.d.ts",
   "repository": {
@@ -21,19 +21,23 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalRichText.dev.mjs",
+        "production": "./LexicalRichText.prod.mjs",
         "node": "./LexicalRichText.node.mjs",
         "default": "./LexicalRichText.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalRichText.dev.js",
+        "production": "./LexicalRichText.prod.js",
         "default": "./LexicalRichText.js"
       }
     }
   },
   "dependencies": {
-    "@lexical/clipboard": "0.14.3",
-    "@lexical/selection": "0.14.3",
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/clipboard": "0.21.0",
+    "@lexical/selection": "0.21.0",
+    "@lexical/utils": "0.21.0",
+    "lexical": "0.21.0"
   }
 }

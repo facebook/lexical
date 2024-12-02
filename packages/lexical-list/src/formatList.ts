@@ -109,7 +109,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           !$isListItemNode(node) &&
           !handled.has(node.getKey())
         ) {
-          createListOrMerge(node, listType);
+          $createListOrMerge(node, listType);
           continue;
         }
 
@@ -132,7 +132,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
               if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
                 handled.add(parentKey);
-                createListOrMerge(parent, listType);
+                $createListOrMerge(parent, listType);
                 break;
               }
 
@@ -149,7 +149,7 @@ function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
   node.splice(node.getChildrenSize(), 0, nodesToAppend);
 }
 
-function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
+function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
   }
@@ -157,36 +157,38 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
-  listItem.setFormat(node.getFormatType());
-  listItem.setIndent(node.getIndent());
   append(listItem, node.getChildren());
 
+  let targetList;
   if (
     $isListNode(previousSibling) &&
     listType === previousSibling.getListType()
   ) {
     previousSibling.append(listItem);
-    node.remove();
     // if the same type of list is on both sides, merge them.
-
     if ($isListNode(nextSibling) && listType === nextSibling.getListType()) {
       append(previousSibling, nextSibling.getChildren());
       nextSibling.remove();
     }
-    return previousSibling;
+    targetList = previousSibling;
   } else if (
     $isListNode(nextSibling) &&
     listType === nextSibling.getListType()
   ) {
     nextSibling.getFirstChildOrThrow().insertBefore(listItem);
-    node.remove();
-    return nextSibling;
+    targetList = nextSibling;
   } else {
     const list = $createListNode(listType);
     list.append(listItem);
     node.replace(list);
-    return list;
+    targetList = list;
   }
+  // listItem needs to be attached to root prior to setting indent
+  listItem.setFormat(node.getFormatType());
+  listItem.setIndent(node.getIndent());
+  node.remove();
+
+  return targetList;
 }
 
 /**
@@ -297,7 +299,7 @@ export function updateChildrenListItemValue(list: ListNode): void {
       if (child.getValue() !== value) {
         child.setValue(value);
       }
-      if (isNotChecklist && child.getChecked() != null) {
+      if (isNotChecklist && child.getLatest().__checked != null) {
         child.setChecked(undefined);
       }
       if (!$isListNode(child.getFirstChild())) {

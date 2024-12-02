@@ -17,16 +17,17 @@ const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
 const json = require('@rollup/plugin-json');
-const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 const compiler = require('@ampproject/rollup-plugin-closure-compiler');
 const terser = require('@rollup/plugin-terser');
 const {exec} = require('child-process-promise');
+const {packagesManager} = require('./shared/packagesManager');
+const npmToWwwName = require('./www/npmToWwwName');
 
-const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.`;
+const headerTemplate = fs.readFileSync(
+  path.resolve(__dirname, 'www', 'headerTemplate.js'),
+  'utf8',
+);
 
 const isProduction = argv.prod;
 const isRelease = argv.release;
@@ -46,29 +47,17 @@ const closureOptions = {
   warning_level: 'QUIET',
 };
 
+const modulePackageMappings = Object.fromEntries(
+  packagesManager.getPublicPackages().flatMap((pkg) => {
+    const pkgName = pkg.getNpmName();
+    return pkg.getExportedNpmModuleNames().map((npm) => [npm, pkgName]);
+  }),
+);
+
 const wwwMappings = {
-  '@lexical/clipboard': 'LexicalClipboard',
-  '@lexical/code': 'LexicalCode',
-  '@lexical/dragon': 'LexicalDragon',
-  '@lexical/file': 'LexicalFile',
-  '@lexical/hashtag': 'LexicalHashtag',
-  '@lexical/headless': 'LexicalHeadless',
-  '@lexical/history': 'LexicalHistory',
-  '@lexical/html': 'LexicalHtml',
-  '@lexical/link': 'LexicalLink',
-  '@lexical/list': 'LexicalList',
-  '@lexical/mark': 'LexicalMark',
-  '@lexical/markdown': 'LexicalMarkdown',
-  '@lexical/offset': 'LexicalOffset',
-  '@lexical/overflow': 'LexicalOverflow',
-  '@lexical/plain-text': 'LexicalPlainText',
-  '@lexical/rich-text': 'LexicalRichText',
-  '@lexical/selection': 'LexicalSelection',
-  '@lexical/table': 'LexicalTable',
-  '@lexical/text': 'LexicalText',
-  '@lexical/utils': 'LexicalUtils',
-  '@lexical/yjs': 'LexicalYjs',
-  lexical: 'Lexical',
+  ...Object.fromEntries(
+    Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
+  ),
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
   'prismjs/components/prism-core': 'prismjs',
@@ -79,30 +68,24 @@ const wwwMappings = {
   'prismjs/components/prism-markdown': 'prism-markdown',
   'prismjs/components/prism-markup': 'prism-markup',
   'prismjs/components/prism-objectivec': 'prism-objectivec',
+  'prismjs/components/prism-powershell': 'prism-powershell',
   'prismjs/components/prism-python': 'prism-python',
   'prismjs/components/prism-rust': 'prism-rust',
   'prismjs/components/prism-sql': 'prism-sql',
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
-  'react-dom': 'ReactDOMComet',
+  'react-dom': 'ReactDOM',
+  // The react entrypoint in fb includes the jsx runtime
+  'react/jsx-runtime': 'react',
 };
 
-const lexicalReactModules = fs
-  .readdirSync(path.resolve('./packages/lexical-react/src'))
-  .filter(
-    (str) =>
-      !str.includes('__tests__') &&
-      !str.includes('shared') &&
-      !str.includes('test-utils'),
-  );
-
-const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
-  const basename = path.basename(path.basename(module, '.ts'), '.tsx');
-  const external = `@lexical/react/${basename}`;
-  wwwMappings[external] = basename;
-  return external;
-});
-
+/**
+ * Fix ESM imports of prismjs components that rely on a wildcard export, these
+ * must have a '.js' extension to be resolved correctly.
+ *
+ * @param {string} id the module id to resolve
+ * @returns {string} the module name with '.js' extension if necessary
+ */
 function resolveExternalEsm(id) {
   if (/^prismjs\/components\/prism-/.test(id)) {
     return `${id}.js`;
@@ -110,57 +93,17 @@ function resolveExternalEsm(id) {
   return id;
 }
 
-const externals = [
-  'lexical',
-  'prismjs/components/prism-core',
-  'prismjs/components/prism-clike',
-  'prismjs/components/prism-javascript',
-  'prismjs/components/prism-markup',
-  'prismjs/components/prism-markdown',
-  'prismjs/components/prism-c',
-  'prismjs/components/prism-css',
-  'prismjs/components/prism-objectivec',
-  'prismjs/components/prism-sql',
-  'prismjs/components/prism-python',
-  'prismjs/components/prism-rust',
-  'prismjs/components/prism-swift',
-  'prismjs/components/prism-typescript',
-  'prismjs/components/prism-java',
-  'prismjs/components/prism-cpp',
-  '@lexical/list',
-  '@lexical/table',
-  '@lexical/file',
-  '@lexical/clipboard',
-  '@lexical/hashtag',
-  '@lexical/headless',
-  '@lexical/html',
-  '@lexical/history',
-  '@lexical/selection',
-  '@lexical/text',
-  '@lexical/offset',
-  '@lexical/utils',
-  '@lexical/code',
-  '@lexical/yjs',
-  '@lexical/plain-text',
-  '@lexical/rich-text',
-  '@lexical/mark',
-  '@lexical/dragon',
-  '@lexical/overflow',
-  '@lexical/link',
-  '@lexical/markdown',
-  'react-dom',
-  'react',
-  'yjs',
-  'y-websocket',
-  ...lexicalReactModuleExternals,
-  ...Object.values(wwwMappings),
-];
-
-const errorCodeOpts = {
-  errorMapFilePath: 'scripts/error-codes/codes.json',
-};
-
-const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
+/**
+ * The set of all modules that should remain external to our published
+ * packages, should include all public monorepo packages and the third
+ * party dependencies or peerDependencies that we do not want to include
+ * in the bundles.
+ */
+const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
+const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternalsRegExp = new RegExp(
+  `^(${thirdPartyExternals.join('|')})(\\/|$)`,
+);
 
 const strictWWWMappings = {};
 
@@ -169,15 +112,62 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
+/**
+ * @param {'esm'|'cjs'} format
+ * @returns {'.mjs'|'.js'} the correct file extension for this export format
+ */
 function getExtension(format) {
   return `.${format === 'esm' ? 'm' : ''}js`;
 }
 
-async function build(name, inputFile, outputPath, outputFile, isProd, format) {
+/**
+ *
+ * @param {string} name
+ * @param {string} inputFile
+ * @param {string} outputPath
+ * @param {string} outputFile
+ * @param {boolean} isProd
+ * @param {'cjs'|'esm'} format
+ * @param {string} version
+ * @param {import('./shared/PackageMetadata').PackageMetadata} pkg
+ * @returns {Promise<Array<string>>} the exports of the built module
+ */
+async function build(
+  name,
+  inputFile,
+  outputPath,
+  outputFile,
+  isProd,
+  format,
+  version,
+  pkg,
+) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
-      return externals.includes(modulePath);
+      const modulePkgName = modulePackageMappings[modulePath];
+      if (
+        typeof modulePkgName === 'string' &&
+        !(
+          modulePkgName in pkg.packageJson.dependencies ||
+          modulePkgName === pkg.getNpmName()
+        )
+      ) {
+        console.error(
+          `Error: ${path.relative(
+            '.',
+            src,
+          )} has an undeclared dependency in its import of ${modulePath}.\nAdd the following to the dependencies in ${path.relative(
+            '.',
+            pkg.resolve('package.json'),
+          )}: "${modulePkgName}": "${version}"`,
+        );
+        process.exit(1);
+      }
+      return (
+        monorepoExternalsSet.has(modulePath) ||
+        thirdPartyExternalsRegExp.test(modulePath)
+      );
     },
     input: inputFile,
     onwarn(warning) {
@@ -214,14 +204,6 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
         ],
       }),
-      // Extract error codes from invariant() messages into a file.
-      {
-        transform(source) {
-          // eslint-disable-next-line no-unused-expressions
-          extractCodes && findAndRecordErrorCodes(source);
-          return source;
-        },
-      },
       nodeResolve({
         extensions,
       }),
@@ -234,7 +216,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
         plugins: [
           [
             require('./error-codes/transform-error-messages'),
-            {noMinify: !isProd},
+            {extractCodes, noMinify: !isProd},
           ],
           '@babel/plugin-transform-optional-catch-binding',
         ],
@@ -245,7 +227,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
-          '@babel/preset-react',
+          ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
       {
@@ -265,6 +247,9 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
             __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
+            'process.env.LEXICAL_VERSION': JSON.stringify(
+              `${version}+${isProd ? 'prod' : 'dev'}.${format}`,
+            ),
           },
           isWWW && strictWWWMappings,
         ),
@@ -288,16 +273,21 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
       },
     ],
     // This ensures PrismJS imports get included in the bundle
-    treeshake: isWWW || name !== 'Lexical Code' ? 'smallest' : undefined,
+    treeshake: name !== 'Lexical Code' ? 'smallest' : false,
   };
+  /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
     esModule: false,
-    exports: 'auto',
+    exports:
+      // Special case for lexical-eslint-plugin which is written in cjs and
+      // requires a default export. Default exports in all other modules are
+      // deprecated.
+      name === 'Lexical Eslint Plugin' ? 'auto' : 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules
     freeze: false,
-    interop: format === 'esm' ? 'esModule' : false,
+    interop: format === 'esm' ? 'esModule' : undefined,
     paths: format === 'esm' ? resolveExternalEsm : undefined,
   };
   const result = await rollup.rollup(inputOptions);
@@ -306,21 +296,29 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
 }
 
 function getComment() {
-  const lines = ['/**', license];
-  if (isWWW) {
-    lines.push(
-      '*',
-      '* @fullSyntaxTransform',
-      '* @generated',
-      '* @noflow',
-      '* @nolint',
-      '* @oncall lexical_web_text_editor',
-      '* @preserve-invariant-messages',
-      '* @preserve-whitespace',
-      '* @preventMunge',
+  if (!isWWW) {
+    return headerTemplate;
+  }
+  const lines = headerTemplate.split(/\n/g);
+  const idx = lines.indexOf(' */');
+  if (idx === -1) {
+    throw new Error(
+      `Expecting scripts/www/headerTemplate.js to have a ' */' line`,
     );
   }
-  lines.push(' */');
+  lines.splice(
+    idx,
+    0,
+    ' *',
+    ' * @fullSyntaxTransform',
+    ' * @generated',
+    ' * @noflow',
+    ' * @nolint',
+    ' * @oncall lexical_web_text_editor',
+    ' * @preserve-invariant-messages',
+    ' * @preserve-whitespace',
+    ' * @preventMunge',
+  );
   return lines.join('\n');
 }
 
@@ -332,308 +330,38 @@ function getFileName(fileName, isProd, format) {
   return `${fileName}${extension}`;
 }
 
-const packages = [
-  {
-    modules: [
-      {
-        outputFileName: 'Lexical',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Core',
-    outputPath: './packages/lexical/dist/',
-    packageName: 'lexical',
-    sourcePath: './packages/lexical/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalList',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical List',
-    outputPath: './packages/lexical-list/dist/',
-    packageName: 'lexical-list',
-    sourcePath: './packages/lexical-list/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalTable',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Table',
-    outputPath: './packages/lexical-table/dist/',
-    packageName: 'lexical-table',
-    sourcePath: './packages/lexical-table/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalFile',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical File',
-    outputPath: './packages/lexical-file/dist/',
-    packageName: 'lexical-file',
-    sourcePath: './packages/lexical-file/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalClipboard',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical File',
-    outputPath: './packages/lexical-clipboard/dist/',
-    packageName: 'lexical-clipboard',
-    sourcePath: './packages/lexical-clipboard/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalHashtag',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Hashtag',
-    outputPath: './packages/lexical-hashtag/dist/',
-    packageName: 'lexical-hashtag',
-    sourcePath: './packages/lexical-hashtag/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalHistory',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical History',
-    outputPath: './packages/lexical-history/dist/',
-    packageName: 'lexical-history',
-    sourcePath: './packages/lexical-history/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalSelection',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Selection',
-    outputPath: './packages/lexical-selection/dist/',
-    packageName: 'lexical-selection',
-    sourcePath: './packages/lexical-selection/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalText',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Text',
-    outputPath: './packages/lexical-text/dist/',
-    packageName: 'lexical-text',
-    sourcePath: './packages/lexical-text/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalOffset',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Offset',
-    outputPath: './packages/lexical-offset/dist/',
-    packageName: 'lexical-offset',
-    sourcePath: './packages/lexical-offset/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalUtils',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Utils',
-    outputPath: './packages/lexical-utils/dist/',
-    packageName: 'lexical-utils',
-    sourcePath: './packages/lexical-utils/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalCode',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Code',
-    outputPath: './packages/lexical-code/dist/',
-    packageName: 'lexical-code',
-    sourcePath: './packages/lexical-code/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalDragon',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Dragon',
-    outputPath: './packages/lexical-dragon/dist/',
-    packageName: 'lexical-dragon',
-    sourcePath: './packages/lexical-dragon/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalLink',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Link',
-    outputPath: './packages/lexical-link/dist/',
-    packageName: 'lexical-link',
-    sourcePath: './packages/lexical-link/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalOverflow',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Overflow',
-    outputPath: './packages/lexical-overflow/dist/',
-    packageName: 'lexical-overflow',
-    sourcePath: './packages/lexical-overflow/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalPlainText',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Plain Text',
-    outputPath: './packages/lexical-plain-text/dist/',
-    packageName: 'lexical-plain-text',
-    sourcePath: './packages/lexical-plain-text/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalRichText',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Rich Text',
-    outputPath: './packages/lexical-rich-text/dist/',
-    packageName: 'lexical-rich-text',
-    sourcePath: './packages/lexical-rich-text/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalMarkdown',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Markdown',
-    outputPath: './packages/lexical-markdown/dist/',
-    packageName: 'lexical-markdown',
-    sourcePath: './packages/lexical-markdown/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalHeadless',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Headless',
-    outputPath: './packages/lexical-headless/dist/',
-    packageName: 'lexical-headless',
-    sourcePath: './packages/lexical-headless/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalHtml',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical HTML',
-    outputPath: './packages/lexical-html/dist/',
-    packageName: 'lexical-html',
-    sourcePath: './packages/lexical-html/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalMark',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Mark',
-    outputPath: './packages/lexical-mark/dist/',
-    packageName: 'lexical-mark',
-    sourcePath: './packages/lexical-mark/src/',
-  },
-  {
-    modules: lexicalReactModules
-      .filter((module) => {
-        // We don't want to sync these modules, as they're bundled in the other
-        // modules already.
-        const ignoredModules = [
-          'useLexicalDragonSupport',
-          'usePlainTextSetup',
-          'useRichTextSetup',
-          'useYjsCollaboration',
-        ];
-
-        return !ignoredModules.includes(module);
-      })
-      .map((module) => {
-        const basename = path.basename(path.basename(module, '.ts'), '.tsx');
-        return {
-          name: basename,
-          outputFileName: basename,
-          sourceFileName: module,
-        };
-      }),
-    name: 'Lexical React',
-    outputPath: './packages/lexical-react/dist/',
-    packageName: 'lexical-react',
-    sourcePath: './packages/lexical-react/src/',
-  },
-  {
-    modules: [
-      {
-        outputFileName: 'LexicalYjs',
-        sourceFileName: 'index.ts',
-      },
-    ],
-    name: 'Lexical Yjs',
-    outputPath: './packages/lexical-yjs/dist/',
-    packageName: 'lexical-yjs',
-    sourcePath: './packages/lexical-yjs/src/',
-  },
-];
-
+/**
+ *
+ * @param {string} packageName
+ * @param {string} outputPath
+ */
 async function buildTSDeclarationFiles(packageName, outputPath) {
   await exec('tsc -p ./tsconfig.build.json');
 }
 
-async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
-  await fs.copy(`./.ts-temp/${packageName}/src`, outputPath);
+/**
+ *
+ * @param {string} packageName
+ * @param {string} outputPath
+ */
+function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
+  fs.copySync(`./.ts-temp/packages/${packageName}/src`, outputPath);
 }
 
+/**
+ * @typedef {Object} ForkModuleContentOptions
+ * @property {string} devFileName
+ * @property {Array<string>} exports
+ * @property {string} outputFileName
+ * @property {string} prodFileName
+ */
+
+/**
+ *
+ * @param {ForkModuleContentOptions} opts
+ * @param {'cjs'|'esm'|'node'} target
+ * @returns {string}
+ */
 function forkModuleContent(
   {devFileName, exports, outputFileName, prodFileName},
   target,
@@ -668,20 +396,25 @@ function forkModuleContent(
   return lines.join('\n');
 }
 
+/**
+ *
+ * @param {string} outputPath
+ * @param {string} outputFileName
+ * @param {'cjs'|'esm'} format
+ * @param {Array<string>} exports
+ */
 function buildForkModules(outputPath, outputFileName, format, exports) {
   const extension = getExtension(format);
   const devFileName = `./${outputFileName}.dev${extension}`;
   const prodFileName = `./${outputFileName}.prod${extension}`;
   const opts = {devFileName, exports, outputFileName, prodFileName};
   fs.outputFileSync(
-    path.resolve(path.join(`${outputPath}${outputFileName}${extension}`)),
+    path.resolve(outputPath, `${outputFileName}${extension}`),
     forkModuleContent(opts, format),
   );
   if (format === 'esm') {
     fs.outputFileSync(
-      path.resolve(
-        path.join(`${outputPath}${outputFileName}.node${extension}`),
-      ),
+      path.resolve(outputPath, `${outputFileName}.node${extension}`),
       forkModuleContent(opts, 'node'),
     );
   }
@@ -692,35 +425,28 @@ async function buildAll() {
     await buildTSDeclarationFiles();
   }
 
-  for (const pkg of packages) {
-    const {name, sourcePath, outputPath, packageName, modules} = pkg;
-
+  const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
+  for (const pkg of packagesManager.getPublicPackages()) {
+    const {name, sourcePath, outputPath, packageName, modules} =
+      pkg.getPackageBuildDefinition();
+    const {version} = pkg.packageJson;
     for (const module of modules) {
-      for (const format of ['cjs', 'esm']) {
-        if (isWWW && format === 'esm') {
-          break;
-        }
-
+      for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
-        let inputFile = path.resolve(
-          path.join(`${sourcePath}${sourceFileName}`),
-        );
+        const inputFile = path.resolve(sourcePath, sourceFileName);
 
         await build(
           `${name}${module.name ? '-' + module.name : ''}`,
           inputFile,
           outputPath,
           path.resolve(
-            path.join(
-              `${outputPath}${getFileName(
-                outputFileName,
-                isProduction,
-                format,
-              )}`,
-            ),
+            outputPath,
+            getFileName(outputFileName, isProduction, format),
           ),
           isProduction,
           format,
+          version,
+          pkg,
         );
 
         if (isRelease) {
@@ -729,12 +455,13 @@ async function buildAll() {
             inputFile,
             outputPath,
             path.resolve(
-              path.join(
-                `${outputPath}${getFileName(outputFileName, false, format)}`,
-              ),
+              outputPath,
+              getFileName(outputFileName, false, format),
             ),
             false,
             format,
+            version,
+            pkg,
           );
           buildForkModules(outputPath, outputFileName, format, exports);
         }
@@ -742,7 +469,7 @@ async function buildAll() {
     }
 
     if (!isWWW && (isRelease || isProduction)) {
-      await moveTSDeclarationFilesIntoDist(packageName, outputPath);
+      moveTSDeclarationFilesIntoDist(packageName, outputPath);
     }
   }
 }

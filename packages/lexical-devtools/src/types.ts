@@ -6,7 +6,13 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {
+  BaseSelection,
+  EditorState,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 export type LexicalKey = `__lexicalKey_${string}`;
 
@@ -17,3 +23,18 @@ export interface LexicalHTMLElement extends HTMLElement {
   [key: LexicalKey]: string;
   __lexicalEditor: LexicalEditor;
 }
+
+/**
+ * Map utility that maps type of all keys in the object to unknown.
+ */
+type MapObjectPropsToUnknown<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof T]: T[K] extends (...args: any) => any ? unknown : T[K];
+};
+
+export type SerializedRawEditorState = {
+  _nodeMap: {
+    [key: NodeKey]: MapObjectPropsToUnknown<LexicalNode>;
+  } & MapObjectPropsToUnknown<Map<unknown, unknown>>;
+  _selection: MapObjectPropsToUnknown<BaseSelection>;
+} & MapObjectPropsToUnknown<EditorState>;

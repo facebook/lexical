@@ -52,20 +52,22 @@ export function BlockWithAlignableContents({
     useLexicalNodeSelection(nodeKey);
   const ref = useRef(null);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isDecoratorNode(node)) {
-          node.remove();
-          return true;
-        }
+        editor.update(() => {
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isDecoratorNode(node)) {
+              node.remove();
+            }
+          });
+        });
       }
-
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   useEffect(() => {
@@ -121,16 +123,16 @@ export function BlockWithAlignableContents({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
 
   return (
     <div

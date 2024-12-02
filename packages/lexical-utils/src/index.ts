@@ -1,4 +1,3 @@
-/** @module @lexical/utils */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -7,8 +6,8 @@
  *
  */
 
-import {$cloneWithProperties} from '@lexical/selection';
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $getPreviousSelection,
   $getRoot,
@@ -25,19 +24,45 @@ import {
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
-import {IS_FIREFOX} from 'shared/environment';
+// This underscore postfixing is used as a hotfix so we do not
+// export shared types from this module #5918
+import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
+import {
+  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
+  IS_ANDROID as IS_ANDROID_,
+  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
+  IS_APPLE as IS_APPLE_,
+  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
+  IS_CHROME as IS_CHROME_,
+  IS_FIREFOX as IS_FIREFOX_,
+  IS_IOS as IS_IOS_,
+  IS_SAFARI as IS_SAFARI_,
+} from 'shared/environment';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
-export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
-
-export type DFSNode = Readonly<{
-  depth: number;
-  node: LexicalNode;
-}>;
+export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
+export {
+  $splitNode,
+  isBlockDomNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
+  isInlineDomNode,
+} from 'lexical';
+// Hotfix to export these with inlined types #5918
+export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
+export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
+export const IS_ANDROID: boolean = IS_ANDROID_;
+export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
+export const IS_APPLE: boolean = IS_APPLE_;
+export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
+export const IS_CHROME: boolean = IS_CHROME_;
+export const IS_FIREFOX: boolean = IS_FIREFOX_;
+export const IS_IOS: boolean = IS_IOS_;
+export const IS_SAFARI: boolean = IS_SAFARI_;
 
 /**
  * Takes an HTML element and adds the classNames passed within an array,
@@ -102,9 +127,9 @@ export function isMimeType(
  *  3. Order aware (respects the order when multiple Files are passed)
  *
  * const filesResult = await mediaFileReader(files, ['image/']);
- * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', {
+ * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', \\{
  *   src: file.result,
- * }));
+ * \\}));
  */
 export function mediaFileReader(
   files: Array<File>,
@@ -137,58 +162,129 @@ export function mediaFileReader(
   });
 }
 
+export type DFSNode = Readonly<{
+  depth: number;
+  node: LexicalNode;
+}>;
+
 /**
  * "Depth-First Search" starts at the root/top node of a tree and goes as far as it can down a branch end
  * before backtracking and finding a new path. Consider solving a maze by hugging either wall, moving down a
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
- * @param startingNode - The node to start the search, if ommitted, it will start at the root node.
- * @param endingNode - The node to end the search, if ommitted, it will find all descendants of the startingNode.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
- * {depth: number, node: LexicalNode} It will always return at least 1 node (the ending node) so long as it exists
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
 export function $dfs(
-  startingNode?: LexicalNode,
-  endingNode?: LexicalNode,
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
 ): Array<DFSNode> {
-  const nodes = [];
-  const start = (startingNode || $getRoot()).getLatest();
-  const end =
-    endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
-  let node: LexicalNode | null = start;
-  let depth = $getDepth(node);
+  return Array.from($dfsIterator(startNode, endNode));
+}
 
-  while (node !== null && !node.is(end)) {
-    nodes.push({depth, node});
+type DFSIterator = {
+  next: () => IteratorResult<DFSNode, void>;
+  [Symbol.iterator]: () => DFSIterator;
+};
 
-    if ($isElementNode(node) && node.getChildrenSize() > 0) {
-      node = node.getFirstChild();
-      depth++;
-    } else {
-      // Find immediate sibling or nearest parent sibling
-      let sibling = null;
+const iteratorDone: Readonly<{done: true; value: void}> = {
+  done: true,
+  value: undefined,
+};
+const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
+  value: T,
+) => ({done: false, value});
 
-      while (sibling === null && node !== null) {
-        sibling = node.getNextSibling();
+/**
+ * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function $dfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator {
+  const start = (startNode || $getRoot()).getLatest();
+  const startDepth = $getDepth(start);
+  const end = endNode;
+  let node: null | LexicalNode = start;
+  let depth = startDepth;
+  let isFirstNext = true;
 
-        if (sibling === null) {
-          node = node.getParent();
-          depth--;
-        } else {
-          node = sibling;
+  const iterator: DFSIterator = {
+    next(): IteratorResult<DFSNode, void> {
+      if (node === null) {
+        return iteratorDone;
+      }
+      if (isFirstNext) {
+        isFirstNext = false;
+        return iteratorNotDone({depth, node});
+      }
+      if (node === end) {
+        return iteratorDone;
+      }
+
+      if ($isElementNode(node) && node.getChildrenSize() > 0) {
+        node = node.getFirstChild();
+        depth++;
+      } else {
+        let depthDiff;
+        [node, depthDiff] = $getNextSiblingOrParentSibling(node) || [null, 0];
+        depth += depthDiff;
+        if (end == null && depth <= startDepth) {
+          node = null;
         }
       }
+
+      if (node === null) {
+        return iteratorDone;
+      }
+      return iteratorNotDone({depth, node});
+    },
+    [Symbol.iterator](): DFSIterator {
+      return iterator;
+    },
+  };
+  return iterator;
+}
+
+/**
+ * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
+ * R -> P -> T1, T2
+ *   -> P2
+ * returns T2 for node T1, P2 for node T2, and null for node P2.
+ * @param node LexicalNode.
+ * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
+export function $getNextSiblingOrParentSibling(
+  node: LexicalNode,
+): null | [LexicalNode, number] {
+  let node_: null | LexicalNode = node;
+  // Find immediate sibling or nearest parent sibling
+  let sibling = null;
+  let depthDiff = 0;
+
+  while (sibling === null && node_ !== null) {
+    sibling = node_.getNextSibling();
+
+    if (sibling === null) {
+      node_ = node_.getParent();
+      depthDiff--;
+    } else {
+      node_ = sibling;
     }
   }
 
-  if (node !== null && node.is(end)) {
-    nodes.push({depth, node});
+  if (node_ === null) {
+    return null;
   }
-
-  return nodes;
+  return [node_, depthDiff];
 }
 
-function $getDepth(node: LexicalNode): number {
+export function $getDepth(node: LexicalNode): number {
   let innerNode: LexicalNode | null = node;
   let depth = 0;
 
@@ -197,6 +293,37 @@ function $getDepth(node: LexicalNode): number {
   }
 
   return depth;
+}
+
+/**
+ * Performs a right-to-left preorder tree traversal.
+ * From the starting node it goes to the rightmost child, than backtracks to paret and finds new rightmost path.
+ * It will return the next node in traversal sequence after the startingNode.
+ * The traversal is similar to $dfs functions above, but the nodes are visited right-to-left, not left-to-right.
+ * @param startingNode - The node to start the search.
+ * @returns The next node in pre-order right to left traversal sequence or `null`, if the node does not exist
+ */
+export function $getNextRightPreorderNode(
+  startingNode: LexicalNode,
+): LexicalNode | null {
+  let node: LexicalNode | null = startingNode;
+
+  if ($isElementNode(node) && node.getChildrenSize() > 0) {
+    node = node.getLastChild();
+  } else {
+    let sibling = null;
+
+    while (sibling === null && node !== null) {
+      sibling = node.getPreviousSibling();
+
+      if (sibling === null) {
+        node = node.getParent();
+      } else {
+        node = sibling;
+      }
+    }
+  }
+  return node;
 }
 
 /**
@@ -333,7 +460,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     return null;
   };
 
-  const elementNodeTransform = (node: N) => {
+  const $elementNodeTransform = (node: N) => {
     const match = $findMatch(node);
 
     if (match !== null) {
@@ -367,7 +494,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     }
   };
 
-  return editor.registerNodeTransform(targetNode, elementNodeTransform);
+  return editor.registerNodeTransform(targetNode, $elementNodeTransform);
 }
 
 /**
@@ -385,12 +512,7 @@ export function $restoreEditorState(
   const activeEditorState = editor._pendingEditorState;
 
   for (const [key, node] of editorState._nodeMap) {
-    const clone = $cloneWithProperties(node);
-    if ($isTextNode(clone)) {
-      invariant($isTextNode(node), 'Expected node be a TextNode');
-      clone.__text = node.__text;
-    }
-    nodeMap.set(key, clone);
+    nodeMap.set(key, $cloneWithProperties(node));
   }
 
   if (activeEditorState) {
@@ -526,19 +648,45 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   }
 }
 
+let NEEDS_MANUAL_ZOOM = IS_FIREFOX || !CAN_USE_DOM ? false : undefined;
+function needsManualZoom(): boolean {
+  if (NEEDS_MANUAL_ZOOM === undefined) {
+    // If the browser implements standardized CSS zoom, then the client rect
+    // will be wider after zoom is applied
+    // https://chromestatus.com/feature/5198254868529152
+    // https://github.com/facebook/lexical/issues/6863
+    const div = document.createElement('div');
+    div.style.cssText =
+      'position: absolute; opacity: 0; width: 100px; left: -1000px;';
+    document.body.appendChild(div);
+    const noZoom = div.getBoundingClientRect();
+    div.style.setProperty('zoom', '2');
+    NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width === noZoom.width;
+    document.body.removeChild(div);
+  }
+  return NEEDS_MANUAL_ZOOM;
+}
+
 /**
  * Calculates the zoom level of an element as a result of using
- * css zoom property.
+ * css zoom property. For browsers that implement standardized CSS
+ * zoom (Firefox, Chrome >= 128), this will always return 1.
  * @param element
  */
 export function calculateZoomLevel(element: Element | null): number {
-  if (IS_FIREFOX) {
-    return 1;
-  }
   let zoom = 1;
-  while (element) {
-    zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
-    element = element.parentElement;
+  if (needsManualZoom()) {
+    while (element) {
+      zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
+      element = element.parentElement;
+    }
   }
   return zoom;
+}
+
+/**
+ * Checks if the editor is a nested editor created by LexicalNestedComposer
+ */
+export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
+  return editor._parentEditor !== null;
 }

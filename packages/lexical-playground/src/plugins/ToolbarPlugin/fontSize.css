@@ -1,14 +1,27 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 .font-size-input {
   font-weight: bold;
   font-size: 14px;
   color: #777;
   border-radius: 5px;
   border-color: grey;
-  height: 21px;
-  margin-top: 5px;
+  height: 15px;
   padding: 2px 4px;
   text-align: center;
   width: 20px;
+  align-self: center;
+}
+
+.font-size-input:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
 }
 
 input[type='number']::-webkit-outer-spin-button,

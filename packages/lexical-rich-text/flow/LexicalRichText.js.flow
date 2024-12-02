@@ -15,6 +15,7 @@ import type {
   ParagraphNode,
   LexicalEditor,
   LexicalCommand,
+  RangeSelection,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
@@ -25,7 +26,10 @@ declare export class QuoteNode extends ElementNode {
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
-  insertNewAfter(): ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode;
   collapseAtStart(): true;
 }
 declare export function $createQuoteNode(): QuoteNode;
@@ -42,7 +46,10 @@ declare export class HeadingNode extends ElementNode {
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean;
   static importDOM(): DOMConversionMap | null;
-  insertNewAfter(): ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode;
   collapseAtStart(): true;
 }
 declare export function $createHeadingNode(

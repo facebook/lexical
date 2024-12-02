@@ -9,7 +9,7 @@
     "selection"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalSelection.js",
   "types": "index.d.ts",
   "repository": {
@@ -23,16 +23,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalSelection.dev.mjs",
+        "production": "./LexicalSelection.prod.mjs",
         "node": "./LexicalSelection.node.mjs",
         "default": "./LexicalSelection.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalSelection.dev.js",
+        "production": "./LexicalSelection.prod.js",
         "default": "./LexicalSelection.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

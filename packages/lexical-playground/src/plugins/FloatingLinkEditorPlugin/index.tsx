@@ -24,6 +24,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getDOMSelection,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
@@ -35,6 +36,12 @@ import {createPortal} from 'react-dom';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {setFloatingElemPositionForLinkEditor} from '../../utils/setFloatingElemPositionForLinkEditor';
 import {sanitizeUrl} from '../../utils/url';
+
+function preventDefault(
+  event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,
+): void {
+  event.preventDefault();
+}
 
 function FloatingLinkEditor({
   editor,
@@ -59,7 +66,7 @@ function FloatingLinkEditor({
     null,
   );
 
-  const updateLinkEditor = useCallback(() => {
+  const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
@@ -77,7 +84,7 @@ function FloatingLinkEditor({
       }
     }
     const editorElem = editorRef.current;
-    const nativeSelection = window.getSelection();
+    const nativeSelection = getDOMSelection(editor._window);
     const activeElement = document.activeElement;
 
     if (editorElem === null) {
@@ -117,7 +124,7 @@ function FloatingLinkEditor({
 
     const update = () => {
       editor.getEditorState().read(() => {
-        updateLinkEditor();
+        $updateLinkEditor();
       });
     };
 
@@ -134,20 +141,20 @@ function FloatingLinkEditor({
         scrollerElem.removeEventListener('scroll', update);
       }
     };
-  }, [anchorElem.parentElement, editor, updateLinkEditor]);
+  }, [anchorElem.parentElement, editor, $updateLinkEditor]);
 
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateLinkEditor();
+          $updateLinkEditor();
         });
       }),
 
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          updateLinkEditor();
+          $updateLinkEditor();
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -164,13 +171,13 @@ function FloatingLinkEditor({
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [editor, updateLinkEditor, setIsLink, isLink]);
+  }, [editor, $updateLinkEditor, setIsLink, isLink]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      updateLinkEditor();
+      $updateLinkEditor();
     });
-  }, [editor, updateLinkEditor]);
+  }, [editor, $updateLinkEditor]);
 
   useEffect(() => {
     if (isLinkEditMode && inputRef.current) {
@@ -182,19 +189,26 @@ function FloatingLinkEditor({
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (event.key === 'Enter') {
-      event.preventDefault();
-      handleLinkSubmission();
+      handleLinkSubmission(event);
     } else if (event.key === 'Escape') {
       event.preventDefault();
       setIsLinkEditMode(false);
     }
   };
 
-  const handleLinkSubmission = () => {
+  const handleLinkSubmission = (
+    event:
+      | React.KeyboardEvent<HTMLInputElement>
+      | React.MouseEvent<HTMLElement>,
+  ) => {
+    event.preventDefault();
     if (lastSelection !== null) {
       if (linkUrl !== '') {
-        editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
         editor.update(() => {
+          editor.dispatchCommand(
+            TOGGLE_LINK_COMMAND,
+            sanitizeUrl(editedLinkUrl),
+          );
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const parent = getSelectedNode(selection).getParent();
@@ -234,7 +248,7 @@ function FloatingLinkEditor({
               className="link-cancel"
               role="button"
               tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={preventDefault}
               onClick={() => {
                 setIsLinkEditMode(false);
               }}
@@ -244,7 +258,7 @@ function FloatingLinkEditor({
               className="link-confirm"
               role="button"
               tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={preventDefault}
               onClick={handleLinkSubmission}
             />
           </div>
@@ -261,8 +275,9 @@ function FloatingLinkEditor({
             className="link-edit"
             role="button"
             tabIndex={0}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
+            onMouseDown={preventDefault}
+            onClick={(event) => {
+              event.preventDefault();
               setEditedLinkUrl(linkUrl);
               setIsLinkEditMode(true);
             }}
@@ -271,7 +286,7 @@ function FloatingLinkEditor({
             className="link-trash"
             role="button"
             tabIndex={0}
-            onMouseDown={(event) => event.preventDefault()}
+            onMouseDown={preventDefault}
             onClick={() => {
               editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
             }}
@@ -292,7 +307,7 @@ function useFloatingLinkEditorToolbar(
   const [isLink, setIsLink] = useState(false);
 
   useEffect(() => {
-    function updateToolbar() {
+    function $updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         const focusNode = getSelectedNode(selection);
@@ -305,19 +320,21 @@ function useFloatingLinkEditorToolbar(
           setIsLink(false);
           return;
         }
-        const badNode = selection.getNodes().find((node) => {
-          const linkNode = $findMatchingParent(node, $isLinkNode);
-          const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
-          if (
-            !linkNode?.is(focusLinkNode) &&
-            !autoLinkNode?.is(focusAutoLinkNode) &&
-            !linkNode &&
-            !autoLinkNode &&
-            !$isLineBreakNode(node)
-          ) {
-            return node;
-          }
-        });
+        const badNode = selection
+          .getNodes()
+          .filter((node) => !$isLineBreakNode(node))
+          .find((node) => {
+            const linkNode = $findMatchingParent(node, $isLinkNode);
+            const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
+            return (
+              (focusLinkNode && !focusLinkNode.is(linkNode)) ||
+              (linkNode && !linkNode.is(focusLinkNode)) ||
+              (focusAutoLinkNode && !focusAutoLinkNode.is(autoLinkNode)) ||
+              (autoLinkNode &&
+                (!autoLinkNode.is(focusAutoLinkNode) ||
+                  autoLinkNode.getIsUnlinked()))
+            );
+          });
         if (!badNode) {
           setIsLink(true);
         } else {
@@ -328,13 +345,13 @@ function useFloatingLinkEditorToolbar(
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateToolbar();
+          $updateToolbar();
         });
       }),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         (_payload, newEditor) => {
-          updateToolbar();
+          $updateToolbar();
           setActiveEditor(newEditor);
           return false;
         },

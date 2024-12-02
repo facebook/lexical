@@ -1,15 +1,15 @@
-name: 'size'
+name: 'Bundles'
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
 jobs:
-  size:
+  size-limit:
     runs-on: ubuntu-latest
     env:
       CI_JOB_NUMBER: 1
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - uses: andresz1/size-limit-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

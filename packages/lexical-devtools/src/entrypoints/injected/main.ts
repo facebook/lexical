@@ -6,60 +6,26 @@
  *
  */
 
-import {onMessage} from 'webext-bridge/window';
+import type {LexicalEditor} from 'lexical';
+
+import {LexicalCommandLog} from '@lexical/devtools-core';
+import {registerRPCService} from '@webext-pegasus/rpc';
 import {StoreApi} from 'zustand';
 
 import {ExtensionState} from '../../store';
-import {LexicalHTMLElement} from '../../types';
+import {InjectedPegasusService} from './InjectedPegasusService';
+import scanAndListenForEditors from './scanAndListenForEditors';
+
+const commandLog = new WeakMap<LexicalEditor, LexicalCommandLog>();
 
 export default async function main(
   tabID: number,
   extensionStore: StoreApi<ExtensionState>,
 ) {
-  onMessage('refreshLexicalEditorsForTabID', () => {
-    scanAndListenForEditors(tabID, extensionStore);
-    return null;
-  });
-  scanAndListenForEditors(tabID, extensionStore);
-}
-
-function scanAndListenForEditors(
-  tabID: number,
-  extensionStore: StoreApi<ExtensionState>,
-) {
-  const {setStatesForTab, lexicalState} = extensionStore.getState();
-  const states = lexicalState[tabID] ?? {};
-
-  const editors = queryLexicalNodes().map((node) => node.__lexicalEditor);
-
-  setStatesForTab(
-    tabID,
-    Object.fromEntries(editors.map((e) => [e._key, e.getEditorState()])),
+  registerRPCService(
+    'InjectedPegasusService',
+    new InjectedPegasusService(tabID, extensionStore, commandLog),
   );
 
-  editors.forEach((editor) => {
-    if (states[editor._key] !== undefined) {
-      // already registered
-      return;
-    }
-    editor.registerUpdateListener((event) => {
-      const oldVal = extensionStore.getState().lexicalState[tabID];
-      setStatesForTab(tabID, {
-        ...oldVal,
-        [editor._key]: event.editorState,
-      });
-    });
-  });
-}
-
-function queryLexicalNodes(): LexicalHTMLElement[] {
-  return Array.from(
-    document.querySelectorAll('div[data-lexical-editor]'),
-  ).filter(isLexicalNode);
-}
-
-function isLexicalNode(
-  node: LexicalHTMLElement | Element,
-): node is LexicalHTMLElement {
-  return (node as LexicalHTMLElement).__lexicalEditor !== undefined;
+  scanAndListenForEditors(tabID, extensionStore, commandLog);
 }

@@ -8,7 +8,7 @@
     "overflow"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalOverflow.js",
   "types": "index.d.ts",
   "repository": {
@@ -22,16 +22,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalOverflow.dev.mjs",
+        "production": "./LexicalOverflow.prod.mjs",
         "node": "./LexicalOverflow.node.mjs",
         "default": "./LexicalOverflow.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalOverflow.dev.js",
+        "production": "./LexicalOverflow.prod.js",
         "default": "./LexicalOverflow.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

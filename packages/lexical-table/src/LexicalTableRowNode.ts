@@ -6,7 +6,7 @@
  *
  */
 
-import type {Spread} from 'lexical';
+import type {BaseSelection, Spread} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
@@ -45,7 +45,7 @@ export class TableRowNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       tr: (node: Node) => ({
-        conversion: convertTableRowElement,
+        conversion: $convertTableRowElement,
         priority: 0,
       }),
     };
@@ -81,6 +81,14 @@ export class TableRowNode extends ElementNode {
     return element;
   }
 
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    return destination === 'html';
+  }
+
   isShadowRoot(): boolean {
     return true;
   }
@@ -108,7 +116,7 @@ export class TableRowNode extends ElementNode {
   }
 }
 
-export function convertTableRowElement(domNode: Node): DOMConversionOutput {
+export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
   let height: number | undefined = undefined;
 

@@ -51,6 +51,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   markdown: 'Markdown',
   objc: 'Objective-C',
   plain: 'Plain Text',
+  powershell: 'PowerShell',
   py: 'Python',
   rust: 'Rust',
   sql: 'SQL',

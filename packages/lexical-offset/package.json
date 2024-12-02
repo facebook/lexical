@@ -8,7 +8,7 @@
     "offset"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalOffset.js",
   "types": "index.d.ts",
   "repository": {
@@ -22,16 +22,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalOffset.dev.mjs",
+        "production": "./LexicalOffset.prod.mjs",
         "node": "./LexicalOffset.node.mjs",
         "default": "./LexicalOffset.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalOffset.dev.js",
+        "production": "./LexicalOffset.prod.js",
         "default": "./LexicalOffset.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

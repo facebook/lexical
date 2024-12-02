@@ -7,11 +7,22 @@
  */
 
 import {expect, test as base} from '@playwright/test';
+import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
+import * as lockfile from 'proper-lockfile';
 import {URLSearchParams} from 'url';
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
+
+function findAsset(pattern) {
+  const prefix = 'packages/lexical-playground/build';
+  const resolvedPattern = `${prefix}/assets/${pattern}`;
+  for (const fn of glob.sync(resolvedPattern, {windowsPathsNoEscape: true})) {
+    return fn.replaceAll('\\', '/').slice(prefix.length);
+  }
+  throw new Error(`Missing asset at ${resolvedPattern}`);
+}
 
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
@@ -23,14 +34,14 @@ export const IS_COLLAB =
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
+export const IS_TABLE_HORIZONTAL_SCROLL =
+  process.env.E2E_TABLE_MODE !== 'legacy';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
-    : '/assets/yellow-flower.a2a7c7a2.jpg';
+    : findAsset('yellow-flower*.jpg');
 export const SAMPLE_LANDSCAPE_IMAGE_URL =
-  E2E_PORT === 3000
-    ? '/src/images/landscape.jpg'
-    : '/assets/landscape.21352c66.jpg';
+  E2E_PORT === 3000 ? '/src/images/landscape.jpg' : findAsset('landscape*.jpg');
 export const LEXICAL_IMAGE_BASE64 =
   'data:image/png;base64,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';
 export const YOUTUBE_SAMPLE_URL =
@@ -43,6 +54,21 @@ function wrapAndSlowDown(method, delay) {
   };
 }
 
+export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
+  return html`
+    ${expected
+      .replace(
+        /<table/g,
+        `<div${
+          ignoreClasses
+            ? ''
+            : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
+        }><table`,
+      )
+      .replace(/<\/table>/g, '</table></div>')}
+  `;
+}
+
 export async function initialize({
   page,
   isCollab,
@@ -50,9 +76,14 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   isMaxLength,
+  hasLinkAttributes,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
+  shouldUseLexicalContextMenu,
+  tableHorizontalScroll,
+  shouldAllowHighlightingWithBrackets,
+  selectionAlwaysOnDisplay,
 }) {
   // Tests with legacy events often fail to register keypress, so
   // slowing it down to reduce flakiness
@@ -65,6 +96,8 @@ export async function initialize({
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
   appSettings.disableBeforeInput = LEGACY_EVENTS;
+  appSettings.tableHorizontalScroll =
+    tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = randomUUID();
@@ -76,12 +109,19 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  appSettings.hasLinkAttributes = !!hasLinkAttributes;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
   if (tableCellBackgroundColor !== undefined) {
     appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
+  appSettings.shouldUseLexicalContextMenu = !!shouldUseLexicalContextMenu;
+
+  appSettings.shouldAllowHighlightingWithBrackets =
+    !!shouldAllowHighlightingWithBrackets;
+
+  appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -112,6 +152,13 @@ async function exposeLexicalEditor(page) {
         ).toBeVisible();
       }),
     );
+    // Ensure that they started up with the correct empty state
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
   }
   const leftFrame = getPageOrFrame(page);
   await leftFrame.waitForSelector('.tree-view-output pre');
@@ -123,6 +170,7 @@ async function exposeLexicalEditor(page) {
 }
 
 export const test = base.extend({
+  hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
@@ -130,6 +178,9 @@ export const test = base.extend({
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,
+  selectionAlwaysOnDisplay: false,
+  shouldAllowHighlightingWithBrackets: false,
+  shouldUseLexicalContextMenu: false,
 });
 
 export {expect} from '@playwright/test';
@@ -153,6 +204,16 @@ export async function clickSelectors(page, selectors) {
     await click(page, selectors[i]);
   }
 }
+
+function removeSafariLinebreakImgHack(actualHtml) {
+  return E2E_BROWSER === 'webkit'
+    ? actualHtml.replaceAll(
+        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        '',
+      )
+    : actualHtml;
+}
+
 /**
  * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
  */
@@ -162,25 +223,49 @@ async function assertHTMLOnPageOrFrame(
   ignoreClasses,
   ignoreInlineStyles,
   frameName,
+  actualHtmlModificationsCallback = (actualHtml) => actualHtml,
 ) {
   const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = await pageOrFrame
-      .locator('div[contenteditable="true"]')
-      .first()
-      .innerHTML();
-    const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
+    const actualHtml = removeSafariLinebreakImgHack(
+      await pageOrFrame
+        .locator('div[contenteditable="true"]')
+        .first()
+        .innerHTML(),
+    );
+    let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
     });
+
+    actual = actualHtmlModificationsCallback(actual);
+
     expect(
       actual,
       `innerHTML of contenteditable in ${frameName} did not match`,
     ).toEqual(expected);
   }).toPass({intervals: [100, 250, 500], timeout: 5000});
+}
+
+/**
+ * @function
+ * @template T
+ * @param {() => T | Promise<T>}
+ * @returns {Promise<T>}
+ */
+export async function withExclusiveClipboardAccess(f) {
+  const release = await lockfile.lock('.', {
+    lockfilePath: '.playwright-clipboard.lock',
+    retries: 5,
+  });
+  try {
+    return f();
+  } finally {
+    await release();
+  }
 }
 
 /**
@@ -191,6 +276,7 @@ export async function assertHTML(
   expectedHtml,
   expectedHtmlFrameRight = expectedHtml,
   {ignoreClasses = false, ignoreInlineStyles = false} = {},
+  actualHtmlModificationsCallback,
 ) {
   if (IS_COLLAB) {
     await Promise.all([
@@ -200,6 +286,7 @@ export async function assertHTML(
         ignoreClasses,
         ignoreInlineStyles,
         'left frame',
+        actualHtmlModificationsCallback,
       ),
       assertHTMLOnPageOrFrame(
         page.frame('right'),
@@ -207,6 +294,7 @@ export async function assertHTML(
         ignoreClasses,
         ignoreInlineStyles,
         'right frame',
+        actualHtmlModificationsCallback,
       ),
     ]);
   } else {
@@ -216,6 +304,7 @@ export async function assertHTML(
       ignoreClasses,
       ignoreInlineStyles,
       'page',
+      actualHtmlModificationsCallback,
     );
   }
 }
@@ -290,16 +379,33 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return path.reverse();
     };
 
+    const fixOffset = (node, offset) => {
+      // If the selection offset is at the br of a webkit img+br linebreak
+      // then move the offset to the img so the tests are consistent across
+      // browsers
+      if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+        const child = node.children[offset - 1];
+        if (
+          child &&
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.getAttribute('data-lexical-linebreak') === 'true'
+        ) {
+          return offset - 1;
+        }
+      }
+      return offset;
+    };
+
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
     return {
-      anchorOffset,
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
       anchorPath: getPathFromNode(anchorNode),
-      focusOffset,
+      focusOffset: fixOffset(focusNode, focusOffset),
       focusPath: getPathFromNode(focusNode),
     };
-  }, expected);
+  });
   expect(selection.anchorPath).toEqual(expected.anchorPath);
   expect(selection.focusPath).toEqual(expected.focusPath);
   if (Array.isArray(expected.anchorOffset)) {
@@ -392,7 +498,10 @@ export async function copyToClipboard(page) {
   return await copyToClipboardPageOrFrame(getPageOrFrame(page));
 }
 
-async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
+async function pasteWithClipboardDataFromPageOrFrame(
+  pageOrFrame,
+  clipboardData,
+) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
     async ({
@@ -463,7 +572,16 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
  * @param {import('@playwright/test').Page} page
  */
 export async function pasteFromClipboard(page, clipboardData) {
-  await pasteFromClipboardPageOrFrame(getPageOrFrame(page), clipboardData);
+  if (clipboardData === undefined) {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('v');
+    await keyUpCtrlOrMeta(page);
+    return;
+  }
+  await pasteWithClipboardDataFromPageOrFrame(
+    getPageOrFrame(page),
+    clipboardData,
+  );
 }
 
 export async function sleep(delay) {
@@ -508,6 +626,12 @@ export async function click(page, selector, options) {
   const frame = getPageOrFrame(page);
   await frame.waitForSelector(selector, options);
   await frame.click(selector, options);
+}
+
+export async function doubleClick(page, selector, options) {
+  const frame = getPageOrFrame(page);
+  await frame.waitForSelector(selector, options);
+  await frame.dblclick(selector, options);
 }
 
 export async function focus(page, selector, options) {
@@ -612,6 +736,7 @@ export async function dragMouse(
   positionStart = 'middle',
   positionEnd = 'middle',
   mouseUp = true,
+  slow = false,
 ) {
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -622,9 +747,6 @@ export async function dragMouse(
     fromX += fromBoundingBox.width;
     fromY += fromBoundingBox.height;
   }
-  await page.mouse.move(fromX, fromY);
-  await page.mouse.down();
-
   let toX = toBoundingBox.x;
   let toY = toBoundingBox.y;
   if (positionEnd === 'middle') {
@@ -635,8 +757,9 @@ export async function dragMouse(
     toY += toBoundingBox.height;
   }
 
-  await page.mouse.move(toX, toY);
-
+  await page.mouse.move(fromX, fromY);
+  await page.mouse.down();
+  await page.mouse.move(toX, toY, slow ? 10 : 1);
   if (mouseUp) {
     await page.mouse.up();
   }
@@ -776,78 +899,85 @@ export async function selectCellsFromTableCords(
   }
 
   const firstRowFirstColumnCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${firstCords.y + 1}) > ${
       isFirstHeader ? 'th' : 'td'
     }:nth-child(${firstCords.x + 1})`,
   );
   const secondRowSecondCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > ${
+    `table:first-of-type > :nth-match(tr, ${secondCords.y + 1}) > ${
       isSecondHeader ? 'th' : 'td'
     }:nth-child(${secondCords.x + 1})`,
   );
 
-  // Focus on inside the iFrame or the boundingBox() below returns null.
   await firstRowFirstColumnCell.click();
+  await page.keyboard.down('Shift');
+  await secondRowSecondCell.click();
+  await page.keyboard.up('Shift');
 
-  await dragMouse(
+  // const firstBox = await firstRowFirstColumnCell.boundingBox();
+  // const secondBox = await secondRowSecondCell.boundingBox();
+  // await dragMouse(page, firstBox, secondBox, 'middle', 'middle', true, true);
+}
+
+export async function clickTableCellActiveButton(page) {
+  await click(
     page,
-    await firstRowFirstColumnCell.boundingBox(),
-    await secondRowSecondCell.boundingBox(),
+    '.table-cell-action-button-container--active > .table-cell-action-button',
   );
 }
 
 export async function insertTableRowAbove(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-row-above"]');
 }
 
 export async function insertTableRowBelow(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-row-below"]');
 }
 
 export async function insertTableColumnBefore(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-column-before"]');
 }
 
 export async function insertTableColumnAfter(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-column-after"]');
 }
 
 export async function mergeTableCells(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-merge-cells"]');
 }
 
 export async function unmergeTableCell(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-unmerge-cells"]');
 }
 
 export async function toggleColumnHeader(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-column-header"]');
 }
 
 export async function deleteTableRows(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete-rows"]');
 }
 
 export async function deleteTableColumns(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete-columns"]');
 }
 
 export async function deleteTable(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete"]');
 }
 
 export async function setBackgroundColor(page) {
-  await click(page, '.table-cell-action-button-container');
+  await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-background-color"]');
 }
 
@@ -879,7 +1009,7 @@ export async function pressToggleBold(page) {
 
 export async function pressToggleItalic(page) {
   await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('b');
+  await page.keyboard.press('i');
   await keyUpCtrlOrMeta(page);
 }
 
@@ -902,4 +1032,41 @@ export async function dragDraggableMenuTo(
     positionStart,
     positionEnd,
   );
+}
+
+export async function pressInsertLinkButton(page) {
+  await click(page, '.toolbar-item[aria-label="Insert link"]');
+}
+
+/**
+ * Creates a selection object to assert against that is human readable and self-describing.
+ *
+ * Selections are composed of an anchorPath (the start) and a focusPath (the end).
+ * Once you traverse each path, you use the respective offsets to find the exact location of the cursor.
+ * So offsets are relative to their path. For example, if the anchorPath is [0, 1, 2] and the anchorOffset is 3,
+ * then the cursor is at the 4th character of the 3rd element of the 2nd element of the 1st element.
+ *
+ * @example
+ * const expectedSelection = createHumanReadableSelection('the full text of the last cell', {
+ *   anchorOffset: {desc: 'beginning of cell', value: 0},
+ *   anchorPath: [
+ *     {desc: 'index of table in root', value: 1},
+ *     {desc: 'first table row', value: 0},
+ *     {desc: 'first cell', value: 0},
+ *   ],
+ *   focusOffset: {desc: 'full text length', value: 9},
+ *   focusPath: [
+ *     {desc: 'index of last paragraph', value: 2},
+ *     {desc: 'index of first span', value: 0},
+ *     {desc: 'index of text block', value: 0},
+ *   ],
+ * });
+ */
+export function createHumanReadableSelection(_overview, dto) {
+  return {
+    anchorOffset: dto.anchorOffset.value,
+    anchorPath: dto.anchorPath.map((p) => p.value),
+    focusOffset: dto.focusOffset.value,
+    focusPath: dto.focusPath.map((p) => p.value),
+  };
 }

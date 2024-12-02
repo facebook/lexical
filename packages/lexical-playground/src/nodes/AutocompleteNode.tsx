@@ -6,40 +6,39 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
-import {
-  DecoratorNode,
+import type {
+  DOMExportOutput,
   EditorConfig,
+  LexicalEditor,
   NodeKey,
-  SerializedLexicalNode,
+  SerializedTextNode,
+  Spread,
 } from 'lexical';
-import * as React from 'react';
 
-import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
+import {TextNode} from 'lexical';
+
 import {uuid as UUID} from '../plugins/AutocompletePlugin';
-
-declare global {
-  interface Navigator {
-    userAgentData?: {
-      mobile: boolean;
-    };
-  }
-}
 
 export type SerializedAutocompleteNode = Spread<
   {
     uuid: string;
   },
-  SerializedLexicalNode
+  SerializedTextNode
 >;
 
-export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
-  // TODO add comment
+export class AutocompleteNode extends TextNode {
+  /**
+   * A unique uuid is generated for each session and assigned to the instance.
+   * This helps to:
+   * - Ensures max one Autocomplete node per session.
+   * - Ensure that when collaboration is enabled, this node is not shown in
+   *   other sessions.
+   * See https://github.com/facebook/lexical/blob/master/packages/lexical-playground/src/plugins/AutocompletePlugin/index.tsx#L39
+   */
   __uuid: string;
 
   static clone(node: AutocompleteNode): AutocompleteNode {
-    return new AutocompleteNode(node.__uuid, node.__key);
+    return new AutocompleteNode(node.__text, node.__uuid, node.__key);
   }
 
   static getType(): 'autocomplete' {
@@ -49,7 +48,14 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   static importJSON(
     serializedNode: SerializedAutocompleteNode,
   ): AutocompleteNode {
-    const node = $createAutocompleteNode(serializedNode.uuid);
+    const node = $createAutocompleteNode(
+      serializedNode.text,
+      serializedNode.uuid,
+    );
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
     return node;
   }
 
@@ -62,8 +68,8 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     };
   }
 
-  constructor(uuid: string, key?: NodeKey) {
-    super(key);
+  constructor(text: string, uuid: string, key?: NodeKey) {
+    super(text, key);
     this.__uuid = uuid;
   }
 
@@ -75,33 +81,23 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     return false;
   }
 
+  exportDOM(_: LexicalEditor): DOMExportOutput {
+    return {element: null};
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
-    return document.createElement('span');
-  }
-
-  decorate(): JSX.Element | null {
     if (this.__uuid !== UUID) {
-      return null;
+      return document.createElement('span');
     }
-    return <AutocompleteComponent />;
+    const dom = super.createDOM(config);
+    dom.classList.add(config.theme.autocomplete);
+    return dom;
   }
 }
 
-export function $createAutocompleteNode(uuid: string): AutocompleteNode {
-  return new AutocompleteNode(uuid);
-}
-
-function AutocompleteComponent(): JSX.Element {
-  const [suggestion] = useSharedAutocompleteContext();
-  const userAgentData = window.navigator.userAgentData;
-  const isMobile =
-    userAgentData !== undefined
-      ? userAgentData.mobile
-      : window.innerWidth <= 800 && window.innerHeight <= 600;
-  // TODO Move to theme
-  return (
-    <span style={{color: '#ccc'}} spellCheck="false">
-      {suggestion} {isMobile ? '(SWIPE \u2B95)' : '(TAB)'}
-    </span>
-  );
+export function $createAutocompleteNode(
+  text: string,
+  uuid: string,
+): AutocompleteNode {
+  return new AutocompleteNode(text, uuid);
 }

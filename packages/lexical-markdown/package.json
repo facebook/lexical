@@ -8,17 +8,17 @@
     "markdown"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalMarkdown.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/code": "0.14.3",
-    "@lexical/link": "0.14.3",
-    "@lexical/list": "0.14.3",
-    "@lexical/rich-text": "0.14.3",
-    "@lexical/text": "0.14.3",
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/code": "0.21.0",
+    "@lexical/link": "0.21.0",
+    "@lexical/list": "0.21.0",
+    "@lexical/rich-text": "0.21.0",
+    "@lexical/text": "0.21.0",
+    "@lexical/utils": "0.21.0",
+    "lexical": "0.21.0"
   },
   "repository": {
     "type": "git",
@@ -31,11 +31,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalMarkdown.dev.mjs",
+        "production": "./LexicalMarkdown.prod.mjs",
         "node": "./LexicalMarkdown.node.mjs",
         "default": "./LexicalMarkdown.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalMarkdown.dev.js",
+        "production": "./LexicalMarkdown.prod.js",
         "default": "./LexicalMarkdown.js"
       }
     }

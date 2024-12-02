@@ -6,9 +6,8 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
 import {
+  $applyNodeReplacement,
   type DOMConversionMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -16,7 +15,7 @@ import {
   type LexicalNode,
   type NodeKey,
   type SerializedTextNode,
-  $applyNodeReplacement,
+  type Spread,
   TextNode,
 } from 'lexical';
 
@@ -27,7 +26,7 @@ export type SerializedMentionNode = Spread<
   SerializedTextNode
 >;
 
-function convertMentionElement(
+function $convertMentionElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const textContent = domNode.textContent;
@@ -81,6 +80,7 @@ export class MentionNode extends TextNode {
     const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
+    dom.spellcheck = false;
     return dom;
   }
 
@@ -98,7 +98,7 @@ export class MentionNode extends TextNode {
           return null;
         }
         return {
-          conversion: convertMentionElement,
+          conversion: $convertMentionElement,
           priority: 1,
         };
       },

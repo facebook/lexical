@@ -5,22 +5,29 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {ITabIDService} from '../background/getTabIDService';
+
 import './style.css';
 
+import {ChakraProvider} from '@chakra-ui/react';
+import {getRPCService} from '@webext-pegasus/rpc';
+import {initPegasusTransport} from '@webext-pegasus/transport/popup';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import {sendMessage} from 'webext-bridge/popup';
 
-import store from '../../store.ts';
-import storeReadyPromise from '../../store-sync/popup';
+import {extensionStoreReady} from '../../store.ts';
 import App from './App.tsx';
 
-sendMessage('getTabID', null, 'background')
+initPegasusTransport();
+
+getRPCService<ITabIDService>('getTabID', 'background')()
   .then((tabID) =>
-    storeReadyPromise(store).then(() =>
+    extensionStoreReady().then(() =>
       ReactDOM.createRoot(document.getElementById('root')!).render(
         <React.StrictMode>
-          <App tabID={tabID} />
+          <ChakraProvider>
+            <App tabID={tabID} />
+          </ChakraProvider>
         </React.StrictMode>,
       ),
     ),

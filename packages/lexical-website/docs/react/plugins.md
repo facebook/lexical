@@ -85,7 +85,7 @@ React wrapper for `@lexical/history` that adds support for history stack managem
 
 ### `LexicalLinkPlugin`
 
-React wrapper for `@lexical/link` that adds support for links, including `toggleLink` command support that toggles link for selected text
+React wrapper for `@lexical/link` that adds support for links, including `$toggleLink` command support that toggles link for selected text
 
 ```jsx
 <LinkPlugin />
@@ -108,6 +108,8 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 ```
 
 ### `LexicalTablePlugin`
+
+[![See API Documentation](/img/see-api-documentation.svg)](/docs/api/modules/lexical_react_LexicalTablePlugin)
 
 React wrapper for `@lexical/table` that adds support for tables
 
@@ -169,27 +171,38 @@ Adds markdown shortcut support: headings, lists, code blocks, quotes, links and 
 <MarkdownShortcutPlugin />
 ```
 
-### `TableOfContentsPlugin`
-This plugin allows you to navigate to certain sections of the page by clicking on headings that exist inside these sections. Once you load the plugin, it automatically collects and injects the headings of the page inside the table of contents, then it listens to any deletions or modifications to those headings and updates the table of contents. Additionally, it's able to track any newly added headings and inserts them in the table of contents once they are created. This plugin also supports lazy loading - so you can defer adding the plugin until when the user needs it.
+### `LexicalTableOfContentsPlugin`
+
+This plugin allows you to render a table of contents for a page from the headings from the editor. It listens to any deletions or modifications to those headings and updates the table of contents. Additionally, it's able to track any newly added headings and inserts them in the table of contents once they are created. This plugin also supports lazy loading - so you can defer adding the plugin until when the user needs it.
+
+In order to use `TableOfContentsPlugin`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
+
+`headingKey`: Unique key that identifies the heading.
+`headingTextContent`: A string of the exact text of the heading.
+`headingTag`: A string that reads either 'h1', 'h2', or 'h3'.
+
 ```jsx
-<TableOfContentsPlugin />
-```
-You can alternatively leverage the use of `LexicalTableOfContents` API, which provides you with all the functionality that `TableOfContentsPlugin` provides, but without any styling.
-In order to use `LexicalTableOfContents`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
-`headingKey`: Unique key that identifies the heading.`headingTextContent`: A string of the exact text of the heading.`headingTag`: A string that reads either 'h1', 'h2', or 'h3'.
-```jsx
-<LexicalTableOfContents>
+<TableOfContentsPlugin>
   {(tableOfContentsArray) => {
-    return <MyCustomTableOfContetsPlugin tableOfContents={tableOfContentsArray} />;
+    return <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />;
   }}
-</LexicalTableOfContents>
+</TableOfContentsPlugin>
 ```
 
 ### `LexicalEditorRefPlugin`
 
 Allows you to get a ref to the underlying editor instance outside of LexicalComposer, which is convenient when you want to interact with the editor
 from a separate part of your application.
+
 ```jsx
   const editorRef = useRef(null);
   <EditorRefPlugin editorRef={editorRef} />
+```
+
+### `LexicalSelectionAlwaysOnDisplay`
+
+By default, browser text selection becomes invisible when clicking away from the editor. This plugin ensures the selection remains visible.
+
+```jsx
+  <SelectionAlwaysOnDisplay />
 ```

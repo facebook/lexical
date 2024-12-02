@@ -19,6 +19,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
+  getDOMSelection,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -109,11 +110,11 @@ function TextFormatFloatingToolbar({
     }
   }, [popupCharStylesEditorRef]);
 
-  const updateTextFormatFloatingToolbar = useCallback(() => {
+  const $updateTextFormatFloatingToolbar = useCallback(() => {
     const selection = $getSelection();
 
     const popupCharStylesEditorElem = popupCharStylesEditorRef.current;
-    const nativeSelection = window.getSelection();
+    const nativeSelection = getDOMSelection(editor._window);
 
     if (popupCharStylesEditorElem === null) {
       return;
@@ -143,7 +144,7 @@ function TextFormatFloatingToolbar({
 
     const update = () => {
       editor.getEditorState().read(() => {
-        updateTextFormatFloatingToolbar();
+        $updateTextFormatFloatingToolbar();
       });
     };
 
@@ -158,29 +159,29 @@ function TextFormatFloatingToolbar({
         scrollerElem.removeEventListener('scroll', update);
       }
     };
-  }, [editor, updateTextFormatFloatingToolbar, anchorElem]);
+  }, [editor, $updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      updateTextFormatFloatingToolbar();
+      $updateTextFormatFloatingToolbar();
     });
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateTextFormatFloatingToolbar();
+          $updateTextFormatFloatingToolbar();
         });
       }),
 
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          updateTextFormatFloatingToolbar();
+          $updateTextFormatFloatingToolbar();
           return false;
         },
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor, updateTextFormatFloatingToolbar]);
+  }, [editor, $updateTextFormatFloatingToolbar]);
 
   return (
     <div ref={popupCharStylesEditorRef} className="floating-text-format-popup">
@@ -293,7 +294,7 @@ function useFloatingTextFormatToolbar(
         return;
       }
       const selection = $getSelection();
-      const nativeSelection = window.getSelection();
+      const nativeSelection = getDOMSelection(editor._window);
       const rootElement = editor.getRootElement();
 
       if (

@@ -13,13 +13,22 @@ import type {
   NodeKey,
   RangeSelection,
   LexicalCommand,
+  SerializedElementNode,
 } from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
-export type LinkAttributes = {
+export type LinkAttributes = $ReadOnly<{
   rel?: null | string,
   target?: null | string,
   title?: null | string,
+}>;
+export type SerializedLinkNode = {
+  ...SerializedElementNode,
+  rel?: null | string,
+  target?: null | string,
+  title?: null | string,
+  url: string,
+  ...
 };
 declare export class LinkNode extends ElementNode {
   __url: string;
@@ -36,6 +45,7 @@ declare export class LinkNode extends ElementNode {
     config: EditorConfig,
   ): boolean;
   static importDOM(): DOMConversionMap | null;
+  exportJSON(): SerializedLinkNode;
   getURL(): string;
   setURL(url: string): void;
   getTarget(): null | string;
@@ -60,6 +70,11 @@ declare export function $createLinkNode(
 declare export function $isLinkNode(
   node: ?LexicalNode,
 ): node is LinkNode;
+export type SerializedAutoLinkNode = {
+  ...SerializedLinkNode,
+  isUnlinked: boolean,
+  ...
+};
 declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
   // $FlowFixMe clone method inheritance
@@ -80,7 +95,9 @@ declare export function $isAutoLinkNode(
 declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
   string | {url: string, ...LinkAttributes} | null,
 >;
-declare export function toggleLink(
+declare export function $toggleLink(
   url: null | string,
   attributes: LinkAttributes,
 ): void;
+/** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
+declare const toggleLink: typeof $toggleLink;

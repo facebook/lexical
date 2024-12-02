@@ -12,6 +12,7 @@ import {
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
+  MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -99,7 +100,7 @@ export const EMOJI: TextMatchTransformer = {
   dependencies: [],
   export: () => null,
   importRegExp: /:([a-z0-9_]+):/,
-  regExp: /:([a-z0-9_]+):/,
+  regExp: /:([a-z0-9_]+):$/,
   replace: (textNode, [, name]) => {
     const emoji = emojiList.find((e) => e.aliases.includes(name))?.emoji;
     if (emoji) {
@@ -211,7 +212,10 @@ export const TABLE: ElementTransformer = {
         if (!$isTableCellNode(cell)) {
           return;
         }
-        cell.toggleHeaderStyle(TableCellHeaderStates.ROW);
+        cell.setHeaderStyles(
+          TableCellHeaderStates.ROW,
+          TableCellHeaderStates.ROW,
+        );
       });
 
       // Remove line
@@ -264,7 +268,7 @@ export const TABLE: ElementTransformer = {
       table.append(tableRow);
 
       for (let i = 0; i < maxCells; i++) {
-        tableRow.append(i < cells.length ? cells[i] : createTableCell(''));
+        tableRow.append(i < cells.length ? cells[i] : $createTableCell(''));
       }
     }
 
@@ -289,7 +293,7 @@ function getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
-const createTableCell = (textContent: string): TableCellNode => {
+const $createTableCell = (textContent: string): TableCellNode => {
   textContent = textContent.replace(/\\n/g, '\n');
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
@@ -301,7 +305,7 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
   if (!match || !match[1]) {
     return null;
   }
-  return match[1].split('|').map((text) => createTableCell(text));
+  return match[1].split('|').map((text) => $createTableCell(text));
 };
 
 export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
@@ -313,6 +317,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   TWEET,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];

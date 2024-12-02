@@ -1,4 +1,3 @@
-/** @module @lexical/rich-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -93,6 +92,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  setNodeIndentFromDOM,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -143,7 +143,7 @@ export class QuoteNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       blockquote: (node: Node) => ({
-        conversion: convertBlockquoteElement,
+        conversion: $convertBlockquoteElement,
         priority: 0,
       }),
     };
@@ -203,6 +203,10 @@ export class QuoteNode extends ElementNode {
     this.replace(paragraph);
     return true;
   }
+
+  canMergeWhenEmpty(): true {
+    return true;
+  }
 }
 
 export function $createQuoteNode(): QuoteNode {
@@ -260,27 +264,27 @@ export class HeadingNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       h1: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h2: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h3: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h4: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h5: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       h6: (node: Node) => ({
-        conversion: convertHeadingElement,
+        conversion: $convertHeadingElement,
         priority: 0,
       }),
       p: (node: Node) => {
@@ -356,8 +360,14 @@ export class HeadingNode extends ElementNode {
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
+    const lastDesc = this.getLastDescendant();
+    const isAtEnd =
+      !lastDesc ||
+      (selection &&
+        selection.anchor.key === lastDesc.getKey() &&
+        anchorOffet === lastDesc.getTextContentSize());
     const newElement =
-      anchorOffet === this.getTextContentSize() || !selection
+      isAtEnd || !selection
         ? $createParagraphNode()
         : $createHeadingNode(this.getTag());
     const direction = this.getDirection();
@@ -393,7 +403,7 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
+function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
@@ -406,16 +416,18 @@ function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   ) {
     node = $createHeadingNode(nodeName);
     if (element.style !== null) {
+      setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
   }
   return {node};
 }
 
-function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
+function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
+    setNodeIndentFromDOM(element, node);
   }
   return {node};
 }
@@ -495,7 +507,7 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-function handleIndentAndOutdent(
+function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
   const selection = $getSelection();
@@ -510,7 +522,14 @@ function handleIndentAndOutdent(
     if (alreadyHandled.has(key)) {
       continue;
     }
-    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    const parentBlock = $findMatchingParent(
+      node,
+      (parentNode): parentNode is ElementNode =>
+        $isElementNode(parentNode) && !parentNode.isInline(),
+    );
+    if (parentBlock === null) {
+      continue;
+    }
     const parentKey = parentBlock.getKey();
     if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
       alreadyHandled.add(parentKey);
@@ -690,7 +709,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           block.setIndent(indent + 1);
         });
@@ -700,7 +719,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           if (indent > 0) {
             block.setIndent(indent - 1);
@@ -841,7 +860,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        event.preventDefault();
+
         const {anchor} = selection;
         const anchorNode = anchor.getNode();
 
@@ -852,9 +871,18 @@ export function registerRichText(editor: LexicalEditor): () => void {
         ) {
           const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
           if (element.getIndent() > 0) {
+            event.preventDefault();
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
         }
+
+        // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
+        // more details - https://github.com/facebook/lexical/issues/5841
+        if (IS_IOS && navigator.language === 'ko-KR') {
+          return false;
+        }
+        event.preventDefault();
+
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
       COMMAND_PRIORITY_EDITOR,

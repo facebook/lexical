@@ -7,7 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import useLexicalEditable from '@lexical/react/useLexicalEditable';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import * as React from 'react';
 
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
@@ -16,11 +16,12 @@ import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
 export function PlainTextPlugin({
   contentEditable,
-  placeholder,
+  // TODO Remove. This property is now part of ContentEditable
+  placeholder = null,
   ErrorBoundary,
 }: {
   contentEditable: JSX.Element;
-  placeholder:
+  placeholder?:
     | ((isEditable: boolean) => null | JSX.Element)
     | null
     | JSX.Element;
@@ -39,6 +40,7 @@ export function PlainTextPlugin({
   );
 }
 
+// TODO Remove
 function Placeholder({
   content,
 }: {

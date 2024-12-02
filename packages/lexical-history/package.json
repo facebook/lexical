@@ -8,12 +8,12 @@
     "history"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalHistory.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/utils": "0.21.0",
+    "lexical": "0.21.0"
   },
   "repository": {
     "type": "git",
@@ -26,11 +26,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalHistory.dev.mjs",
+        "production": "./LexicalHistory.prod.mjs",
         "node": "./LexicalHistory.node.mjs",
         "default": "./LexicalHistory.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalHistory.dev.js",
+        "production": "./LexicalHistory.prod.js",
         "default": "./LexicalHistory.js"
       }
     }

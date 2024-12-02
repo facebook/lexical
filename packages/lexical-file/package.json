@@ -10,7 +10,7 @@
     "export"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalFile.js",
   "types": "index.d.ts",
   "repository": {
@@ -24,16 +24,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalFile.dev.mjs",
+        "production": "./LexicalFile.prod.mjs",
         "node": "./LexicalFile.node.mjs",
         "default": "./LexicalFile.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalFile.dev.js",
+        "production": "./LexicalFile.prod.js",
         "default": "./LexicalFile.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

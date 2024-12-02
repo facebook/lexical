@@ -42,7 +42,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {Prism, reifyPrismLanguages} from './CodeHighlighterPrism';
+import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -199,7 +199,7 @@ export function getEndOfCodeInLine(
   return lastNode;
 }
 
-function textNodeTransform(
+function $textNodeTransform(
   node: TextNode,
   editor: LexicalEditor,
   tokenizer: Tokenizer,
@@ -273,7 +273,7 @@ function codeNodeTransform(
   // in its final state
   editor.update(
     () => {
-      updateAndRetainSelection(nodeKey, () => {
+      $updateAndRetainSelection(nodeKey, () => {
         const currentNode = $getNodeByKey(nodeKey);
 
         if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
@@ -285,7 +285,7 @@ function codeNodeTransform(
           code,
           currentNode.getLanguage() || tokenizer.defaultLanguage,
         );
-        const highlightNodes = getHighlightNodes(tokens);
+        const highlightNodes = $getHighlightNodes(tokens);
         const diffRange = getDiffRange(
           currentNode.getChildren(),
           highlightNodes,
@@ -309,7 +309,7 @@ function codeNodeTransform(
   );
 }
 
-function getHighlightNodes(
+function $getHighlightNodes(
   tokens: Array<string | Token>,
   type?: string,
 ): LexicalNode[] {
@@ -332,9 +332,9 @@ function getHighlightNodes(
     } else {
       const {content} = token;
       if (typeof content === 'string') {
-        nodes.push(...getHighlightNodes([content], token.type));
+        nodes.push(...$getHighlightNodes([content], token.type));
       } else if (Array.isArray(content)) {
-        nodes.push(...getHighlightNodes(content, token.type));
+        nodes.push(...$getHighlightNodes(content, token.type));
       }
     }
   }
@@ -344,7 +344,7 @@ function getHighlightNodes(
 
 // Wrapping update function into selection retainer, that tries to keep cursor at the same
 // position as before.
-function updateAndRetainSelection(
+function $updateAndRetainSelection(
   nodeKey: NodeKey,
   updateFn: () => boolean,
 ): void {
@@ -508,7 +508,7 @@ function $getCodeLines(
   return lines;
 }
 
-function handleTab(shiftKey: boolean): null | LexicalCommand<void> {
+function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
     return null;
@@ -562,7 +562,7 @@ function handleTab(shiftKey: boolean): null | LexicalCommand<void> {
   return tabOrOutdent;
 }
 
-function handleMultilineIndent(type: LexicalCommand<void>): boolean {
+function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
     return false;
@@ -625,7 +625,7 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
   return true;
 }
 
-function handleShiftLines(
+function $handleShiftLines(
   type: LexicalCommand<KeyboardEvent>,
   event: KeyboardEvent,
 ): boolean {
@@ -757,7 +757,7 @@ function handleShiftLines(
   return true;
 }
 
-function handleMoveTo(
+function $handleMoveTo(
   type: LexicalCommand<KeyboardEvent>,
   event: KeyboardEvent,
 ): boolean {
@@ -771,7 +771,9 @@ function handleMoveTo(
   const focusNode = focus.getNode();
   const isMoveToStart = type === MOVE_TO_START;
 
+  // Ensure the selection is within the codeblock
   if (
+    !$isSelectionInCode(selection) ||
     !($isCodeHighlightNode(anchorNode) || $isTabNode(anchorNode)) ||
     !($isCodeHighlightNode(focusNode) || $isTabNode(focusNode))
   ) {
@@ -805,7 +807,6 @@ export function registerCodeHighlighting(
   editor: LexicalEditor,
   tokenizer?: Tokenizer,
 ): () => void {
-  reifyPrismLanguages();
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
       'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
@@ -817,31 +818,35 @@ export function registerCodeHighlighting(
   }
 
   return mergeRegister(
-    editor.registerMutationListener(CodeNode, (mutations) => {
-      editor.update(() => {
-        for (const [key, type] of mutations) {
-          if (type !== 'destroyed') {
-            const node = $getNodeByKey(key);
-            if (node !== null) {
-              updateCodeGutter(node as CodeNode, editor);
+    editor.registerMutationListener(
+      CodeNode,
+      (mutations) => {
+        editor.update(() => {
+          for (const [key, type] of mutations) {
+            if (type !== 'destroyed') {
+              const node = $getNodeByKey(key);
+              if (node !== null) {
+                updateCodeGutter(node as CodeNode, editor);
+              }
             }
           }
-        }
-      });
-    }),
+        });
+      },
+      {skipInitialization: false},
+    ),
     editor.registerNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
     editor.registerNodeTransform(TextNode, (node) =>
-      textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
       (event) => {
-        const command = handleTab(event.shiftKey);
+        const command = $handleTab(event.shiftKey);
         if (command === null) {
           return false;
         }
@@ -865,32 +870,32 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
-      (payload): boolean => handleMultilineIndent(INDENT_CONTENT_COMMAND),
+      (payload): boolean => $handleMultilineIndent(INDENT_CONTENT_COMMAND),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
-      (payload): boolean => handleMultilineIndent(OUTDENT_CONTENT_COMMAND),
+      (payload): boolean => $handleMultilineIndent(OUTDENT_CONTENT_COMMAND),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (payload): boolean => handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      (payload): boolean => $handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
+      (payload): boolean => $handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (payload): boolean => handleMoveTo(MOVE_TO_END, payload),
+      (payload): boolean => $handleMoveTo(MOVE_TO_END, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (payload): boolean => handleMoveTo(MOVE_TO_START, payload),
+      (payload): boolean => $handleMoveTo(MOVE_TO_START, payload),
       COMMAND_PRIORITY_LOW,
     ),
   );

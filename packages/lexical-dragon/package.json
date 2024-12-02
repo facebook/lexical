@@ -9,7 +9,7 @@
     "accessibility"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalDragon.js",
   "types": "index.d.ts",
   "repository": {
@@ -23,16 +23,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalDragon.dev.mjs",
+        "production": "./LexicalDragon.prod.mjs",
         "node": "./LexicalDragon.node.mjs",
         "default": "./LexicalDragon.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalDragon.dev.js",
+        "production": "./LexicalDragon.prod.js",
         "default": "./LexicalDragon.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

@@ -7,63 +7,67 @@
  */
 import './App.css';
 
+import {Box, Flex, Text} from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
-import {sendMessage} from 'webext-bridge/popup';
-
-import lexicalLogo from '@/public/lexical.svg';
 
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
-import useStore from '../../store';
+import {useExtensionStore} from '../../store';
 
 interface Props {
   tabID: number;
 }
 
 function App({tabID}: Props) {
-  const {lexicalState} = useStore();
+  const {lexicalState} = useExtensionStore();
   const [errorMessage, setErrorMessage] = useState('');
 
   const states = lexicalState[tabID];
   const lexicalCount = Object.keys(states ?? {}).length;
 
   return (
-    <>
-      <div>
-        <a href="https://lexical.dev" target="_blank">
-          <img src={lexicalLogo} className="logo" alt="Lexical logo" />
-        </a>
-      </div>
+    <Flex direction="column">
       {errorMessage !== '' ? (
-        <div className="card error">{errorMessage}</div>
+        <Box className="error" mb={2} color="red">
+          <Text fontSize="xs">{errorMessage}</Text>
+        </Box>
       ) : null}
-      <div className="card">
-        {states === undefined ? (
-          <span>Loading...</span>
+      <Box>
+        {states === null ? (
+          <Text fontSize="xs">
+            This is a restricted browser page. Lexical DevTools cannot access
+            this page.
+          </Text>
+        ) : states === undefined ? (
+          <Text fontSize="xs">Loading...</Text>
         ) : (
-          <span>
-            Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
-            the page
-            {lexicalCount > 0 ? (
-              <>
-                {' '}
-                &#x2705;
-                <br />
-                Open the developer tools, and "Lexical" tab will appear to the
-                right.
-              </>
-            ) : null}
-          </span>
+          <>
+            <Box>
+              <Text fontSize="xs">
+                Found <b>{lexicalCount}</b> editor
+                {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page
+                {lexicalCount > 0 ? (
+                  <>
+                    {' '}
+                    &#x2705;
+                    <br />
+                    Open the developer tools, and "Lexical" tab will appear to
+                    the right.
+                  </>
+                ) : null}
+              </Text>
+            </Box>
+
+            <Box mt={1}>
+              <EditorsRefreshCTA
+                tabID={tabID}
+                setErrorMessage={setErrorMessage}
+              />
+            </Box>
+          </>
         )}
-        <p>
-          <EditorsRefreshCTA
-            tabID={tabID}
-            setErrorMessage={setErrorMessage}
-            sendMessage={sendMessage}
-          />
-        </p>
-      </div>
-    </>
+      </Box>
+    </Flex>
   );
 }
 

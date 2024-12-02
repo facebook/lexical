@@ -6,12 +6,6 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
 import {
@@ -22,12 +16,25 @@ import {
   $isTextNode,
 } from 'lexical';
 
-import {transformersByType} from './utils';
+import {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
+import {isEmptyParagraph, transformersByType} from './utils';
 
+/**
+ * Renders string from markdown. The selection is moved to the start after the operation.
+ */
 export function createMarkdownExport(
   transformers: Array<Transformer>,
+  shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
+  const elementTransformers = [...byType.multilineElement, ...byType.element];
+  const isNewlineDelimited = !shouldPreserveNewLines;
 
   // Export only uses text formats that are responsible for single format
   // e.g. it will filter out *** (bold, italic) and instead use separate ** and *
@@ -39,30 +46,43 @@ export function createMarkdownExport(
     const output = [];
     const children = (node || $getRoot()).getChildren();
 
-    for (const child of children) {
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
       const result = exportTopLevelElements(
         child,
-        byType.element,
+        elementTransformers,
         textFormatTransformers,
         byType.textMatch,
       );
 
       if (result != null) {
-        output.push(result);
+        output.push(
+          // separate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
+          isNewlineDelimited &&
+            i > 0 &&
+            !isEmptyParagraph(child) &&
+            !isEmptyParagraph(children[i - 1])
+            ? '\n'.concat(result)
+            : result,
+        );
       }
     }
-
-    return output.join('\n\n');
+    // Ensure consecutive groups of texts are at least \n\n apart while each empty paragraph render as a newline.
+    // Eg. ["hello", "", "", "hi", "\nworld"] -> "hello\n\n\nhi\n\nworld"
+    return output.join('\n');
   };
 }
 
 function exportTopLevelElements(
   node: LexicalNode,
-  elementTransformers: Array<ElementTransformer>,
+  elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
 ): string | null {
   for (const transformer of elementTransformers) {
+    if (!transformer.export) {
+      continue;
+    }
     const result = transformer.export(node, (_node) =>
       exportChildren(_node, textTransformersIndex, textMatchTransformers),
     );
@@ -91,6 +111,10 @@ function exportChildren(
 
   mainLoop: for (const child of children) {
     for (const transformer of textMatchTransformers) {
+      if (!transformer.export) {
+        continue;
+      }
+
       const result = transformer.export(
         child,
         (parentNode) =>
@@ -116,6 +140,7 @@ function exportChildren(
         exportTextFormat(child, child.getTextContent(), textTransformersIndex),
       );
     } else if ($isElementNode(child)) {
+      // empty paragraph returns ""
       output.push(
         exportChildren(child, textTransformersIndex, textMatchTransformers),
       );

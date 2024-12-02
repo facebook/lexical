@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/test.yml"/>
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/>
   <a href="https://www.npmjs.com/package/lexical">
     <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"/>
   </a>
@@ -22,8 +22,8 @@ For documentation and more information about Lexical, be sure to [visit the Lexi
 Here are some examples of what you can do with Lexical:
 
 - [Lexical Playground](https://playground.lexical.dev)
-- [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
-- [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
+- [Plain text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+- [Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
 
 
 ---
@@ -50,7 +50,7 @@ Install `lexical` and `@lexical/react`:
 npm install --save lexical @lexical/react
 ```
 
-Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
+Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)).
 
 ```jsx
 import {$getRoot, $getSelection} from 'lexical';
@@ -62,7 +62,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
@@ -153,11 +153,11 @@ Editor States are also fully serializable to JSON and can easily be serialized b
 ### Reading and Updating Editor State
 
 When you want to read and/or update the Lexical node tree, you must do it via `editor.update(() => {...})`. You may also do
-read-only operations with the editor state via `editor.getEditorState().read(() => {...})`. The closure passed to the update or read
-call is important, and must be synchronous. It's the only place where you have full "lexical" context of the active editor state,
-and providing you with access to the Editor State's node tree. We promote using the convention of using `$` prefixed functions
-(such as `$getRoot()`) to convey that these functions must be called in this context. Attempting to use them outside of a read
-or update will trigger a runtime error.
+read-only operations with the editor state via `editor.read(() => {...})` or `editor.getEditorState().read(() => {...})`.
+The closure passed to the update or read call is important, and must be synchronous. It's the only place where you have full
+"lexical" context of the active editor state, and providing you with access to the Editor State's node tree. We promote using
+the convention of using `$` prefixed functions (such as `$getRoot()`) to convey that these functions must be called in this
+context. Attempting to use them outside of a read or update will trigger a runtime error.
 
 For those familiar with React Hooks, you can think of these $functions as having similar functionality:
 | *Feature* | React Hooks | Lexical $functions |
@@ -170,8 +170,10 @@ For those familiar with React Hooks, you can think of these $functions as having
 
 Node Transforms and Command Listeners are called with an implicit `editor.update(() => {...})` context.
 
-It is permitted to do nest updates within reads and updates, but an update may not be nested in a read.
-For example, `editor.update(() => editor.update(() => {...}))` is allowed.
+It is permitted to do nested updates, or nested reads, but an update should not be nested in a read
+or vice versa. For example, `editor.update(() => editor.update(() => {...}))` is allowed. It is permitted
+to nest nest an `editor.read` at the end of an `editor.update`, but this will immediately flush the update
+and any additional update in that callback will throw an error.
 
 All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods
 and access properties of a Lexical Node while in a read or update call (just like `$` functions). Methods
@@ -185,6 +187,16 @@ support efficient time travel (undo/redo and similar use cases). Methods that up
 first call `node.getWritable()`, which will create a writable clone of a frozen node. This would normally
 mean that any existing references (such as local variables) would refer to a stale version of the node, but
 having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
+
+:::tip
+
+If you use `editor.read(() => { /* callback */ })` it will first flush any pending updates, so you will
+always see a consistent state. When you are in an `editor.update`, you will always be working with the
+pending state, where node transforms and DOM reconciliation may not have run yet.
+`editor.getEditorState().read()` will use the latest reconciled `EditorState` (after any node transforms,
+DOM reconciliation, etc. have already run), any pending `editor.update` mutations will not yet be visible.
+
+:::
 
 ### DOM Reconciler
 
@@ -334,18 +346,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Contributing to Lexical
 
-1. Clone this repository
-
-2. Install dependencies
-
-   - `npm install`
-
-3. Start local server and run tests
-   - `npm run start`
-   - `npm run test-e2e-chromium` to run only chromium e2e tests
-     - The server needs to be running for the e2e tests
-
-`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
+Please read the [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md).
 
 ### Optional but recommended, use VSCode for development
 
@@ -367,6 +368,7 @@ editor.registerUpdateListener(({editorState}) => {
 - [Concepts](https://lexical.dev/docs/concepts/editor-state)
 - [How Lexical was designed](https://lexical.dev/docs/design)
 - [Testing](https://lexical.dev/docs/testing)
+- [Maintainers' Guide](https://lexical.dev/docs/maintainers-guide)
 
 ## Browser Support
 

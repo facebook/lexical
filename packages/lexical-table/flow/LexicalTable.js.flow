@@ -62,12 +62,12 @@ declare export class TableCellNode extends ElementNode {
   getRowSpan(): number;
   setRowSpan(rowSpan: number): this;
   getTag(): string;
-  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
+  setHeaderStyles(headerState: TableCellHeaderState, mask?: TableCellHeaderState): TableCellNode;
   getHeaderStyles(): TableCellHeaderState;
-  setWidth(width: number): ?number;
+  setWidth(width: number): TableCellNode;
   getWidth(): ?number;
   getBackgroundColor(): null | string;
-  setBackgroundColor(newBackgroundColor: null | string): void;
+  setBackgroundColor(newBackgroundColor: null | string): TableCellNode;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
@@ -162,6 +162,7 @@ declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
+  hasTabHandler: boolean,
 ): TableObserver;
 
 declare export function $getElementForTableNode(
@@ -174,6 +175,10 @@ declare export function getTableObserverFromTableElement(
 ): null | TableObserver;
 
 declare export function getDOMCellFromTarget(node: Node): null | TableDOMCell;
+
+declare export function $findTableNode(node: LexicalNode): null | TableNode;
+
+declare export function $findCellNode(node: LexicalNode): null | TableCellNode;
 
 /**
  * LexicalTableUtils
@@ -233,11 +238,11 @@ declare export function $deleteTableColumn(
 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableRowNode | null;
 
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
-): void;
+): TableCellNode | null;
 
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
 
@@ -281,11 +286,11 @@ declare export class TableObserver {
   getTable(): TableDOMTable;
   removeListeners(): void;
   trackTable(): void;
-  clearHighlight(): void;
-  setFocusCellForSelection(cell: TableDOMCell): void;
-  setAnchorCellForSelection(cell: TableDOMCell): void;
-  formatCells(type: TextFormatType): void;
-  clearText(): void;
+  $clearHighlight(): void;
+  $setFocusCellForSelection(cell: TableDOMCell, ignoreStart?: boolean): void;
+  $setAnchorCellForSelection(cell: TableDOMCell): void;
+  $formatCells(type: TextFormatType): void;
+  $clearText(): void;
 }
 
 /**

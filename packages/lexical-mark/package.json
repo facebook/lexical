@@ -8,12 +8,12 @@
     "mark"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalMark.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/utils": "0.21.0",
+    "lexical": "0.21.0"
   },
   "repository": {
     "type": "git",
@@ -26,11 +26,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalMark.dev.mjs",
+        "production": "./LexicalMark.prod.mjs",
         "node": "./LexicalMark.node.mjs",
         "default": "./LexicalMark.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalMark.dev.js",
+        "production": "./LexicalMark.prod.js",
         "default": "./LexicalMark.js"
       }
     }

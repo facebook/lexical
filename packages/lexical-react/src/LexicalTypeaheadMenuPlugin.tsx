@@ -21,6 +21,7 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
+  getDOMSelection,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -28,6 +29,7 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
+import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 
@@ -52,7 +54,7 @@ function tryToPositionRange(
   range: Range,
   editorWindow: Window,
 ): boolean {
-  const domSelection = editorWindow.getSelection();
+  const domSelection = getDOMSelection(editorWindow);
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
@@ -103,14 +105,6 @@ function isSelectionOnEntityBoundary(
     }
     return false;
   });
-}
-
-function startTransition(callback: () => void) {
-  if (React.startTransition) {
-    React.startTransition(callback);
-  } else {
-    callback();
-  }
 }
 
 // Got from https://stackoverflow.com/a/42543908/2013580
@@ -302,7 +296,9 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     openTypeahead,
   ]);
 
-  return resolution === null || editor === null ? null : (
+  return resolution === null ||
+    editor === null ||
+    anchorElementRef.current === null ? null : (
     <LexicalMenu
       close={closeTypeahead}
       resolution={resolution}

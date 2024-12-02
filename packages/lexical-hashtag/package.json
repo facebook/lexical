@@ -8,12 +8,12 @@
     "hashtag"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalHashtag.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/utils": "0.21.0",
+    "lexical": "0.21.0"
   },
   "repository": {
     "type": "git",
@@ -26,11 +26,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalHashtag.dev.mjs",
+        "production": "./LexicalHashtag.prod.mjs",
         "node": "./LexicalHashtag.node.mjs",
         "default": "./LexicalHashtag.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalHashtag.dev.js",
+        "production": "./LexicalHashtag.prod.js",
         "default": "./LexicalHashtag.js"
       }
     }

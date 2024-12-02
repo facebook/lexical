@@ -5,21 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {allowWindowMessaging, sendMessage} from 'webext-bridge/content-script';
 
-import useExtensionStore from '../../store';
-import storeReadyPromise from '../../store-sync/content-script';
+import {initPegasusTransport} from '@webext-pegasus/transport/content-script';
+
+import {EXTENSION_NAME} from '../../constants';
+import {extensionStoreReady} from '../../store.ts';
 import injectScript from './injectScript';
 
 export default defineContentScript({
-  main(ctx) {
-    allowWindowMessaging('lexical-extension');
+  main(_ctx) {
+    initPegasusTransport({allowWindowMessagingForNamespace: EXTENSION_NAME});
 
-    sendMessage('getTabID', null, 'background')
-      .then((tabID) => {
-        return storeReadyPromise(useExtensionStore).then(() => {
-          injectScript('/injected.js');
-        });
+    // Init store for relay between injected script and the rest of the extension to work
+    extensionStoreReady()
+      .then(() => {
+        injectScript('/injected.js');
       })
       .catch(console.error);
   },

@@ -9,7 +9,7 @@
     "text"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalText.js",
   "types": "index.d.ts",
   "repository": {
@@ -23,16 +23,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalText.dev.mjs",
+        "production": "./LexicalText.prod.mjs",
         "node": "./LexicalText.node.mjs",
         "default": "./LexicalText.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalText.dev.js",
+        "production": "./LexicalText.prod.js",
         "default": "./LexicalText.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

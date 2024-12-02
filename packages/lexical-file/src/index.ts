@@ -1,4 +1,3 @@
-/** @module @lexical/file */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -7,6 +6,10 @@
  *
  */
 
-import {exportFile, importFile} from './fileImportExport';
-
-export {exportFile, importFile};
+export {
+  editorStateFromSerializedDocument,
+  exportFile,
+  importFile,
+  type SerializedDocument,
+  serializedDocumentFromEditorState,
+} from './fileImportExport';

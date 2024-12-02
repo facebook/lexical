@@ -5,22 +5,54 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {Alias} from 'vite';
+
+import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
+
+import moduleResolution from '../shared/viteModuleResolution';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   debug: !!process.env.DEBUG_WXT,
   manifest: (configEnv) => {
+    const browserName =
+      configEnv.browser.charAt(0).toUpperCase() + configEnv.browser.slice(1);
+
+    let buildVersion = 0; // For dev purposes
+    if (process.env.BUILD_VERSION) {
+      buildVersion = parseInt(process.env.BUILD_VERSION, 10);
+    }
+    if (isNaN(buildVersion)) {
+      throw new Error('BUILD_VERSION must be a number');
+    }
+
+    let version = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, 'package.json')).toString(),
+    ).version;
+
+    if (configEnv.browser === 'safari') {
+      const [v1, v2, v3] = version.split('.');
+      // App Store requires a version number in the format of X.X.X and we need to fit a build number there as well
+      version = `${v1}${v2}`.replace(/^0+/, '') + `.${v3}`;
+    }
+
     const manifestConf: UserManifest = {
+      author: 'Lexical',
+      description: `Adds Lexical debugging tools to the ${browserName} Developer Tools.`,
+      homepage_url: 'https://lexical.dev/',
       icons: {
         128: '/icon/128.png',
         16: '/icon/16.png',
         32: '/icon/32.png',
         48: '/icon/48.png',
       },
-      permissions: ['scripting', 'storage', 'devtools_page'],
+      name: 'Lexical Developer Tools',
+      permissions: ['tabs', 'storage'],
+      version: version + `.${buildVersion}`,
       web_accessible_resources: [
         {
           extension_ids: [],
@@ -50,6 +82,9 @@ export default defineConfig({
     return manifestConf;
   },
   runner: {
+    binaries: {
+      edge: '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    },
     chromiumArgs: [
       '--auto-open-devtools-for-tabs',
       // Open chrome://version to validate it works
@@ -66,7 +101,46 @@ export default defineConfig({
     ],
   },
   srcDir: './src',
-  vite: () => ({
-    plugins: [react()],
+  vite: (configEnv) => ({
+    define: {
+      __DEV__: configEnv.mode === 'development',
+    },
+    plugins: [
+      babel({
+        babelHelpers: 'bundled',
+        babelrc: false,
+        configFile: false,
+        exclude: '/**/node_modules/**',
+        extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
+        plugins: [
+          '@babel/plugin-transform-flow-strip-types',
+          [
+            require('../../scripts/error-codes/transform-error-messages'),
+            {
+              noMinify: true,
+            },
+          ],
+        ],
+        presets: [['@babel/preset-react', {runtime: 'automatic'}]],
+      }),
+      react(),
+    ],
+    resolve: {
+      alias: [
+        // See lexicalForExtension.ts for more details
+        {
+          find: /lexical$/,
+          replacement: path.resolve('./src/lexicalForExtension.ts'),
+        },
+        {
+          find: 'lexicalOriginal',
+          replacement: path.resolve('../lexical/src/index.ts'),
+        },
+        ...(moduleResolution('source') as Alias[]),
+      ],
+    },
   }),
+  zip: {
+    sourcesRoot: path.resolve('../..'),
+  },
 });

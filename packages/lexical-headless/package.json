@@ -8,7 +8,7 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "LexicalHeadless.js",
   "types": "index.d.ts",
   "repository": {
@@ -22,16 +22,20 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalHeadless.dev.mjs",
+        "production": "./LexicalHeadless.prod.mjs",
         "node": "./LexicalHeadless.node.mjs",
         "default": "./LexicalHeadless.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalHeadless.dev.js",
+        "production": "./LexicalHeadless.prod.js",
         "default": "./LexicalHeadless.js"
       }
     }
   },
   "dependencies": {
-    "lexical": "0.14.3"
+    "lexical": "0.21.0"
   }
 }

@@ -16,7 +16,7 @@ import type {
 
 import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement} from '../LexicalUtils';
+import {$applyNodeReplacement, isBlockDomNode} from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
 
@@ -50,11 +50,11 @@ export class LineBreakNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
-        if (isOnlyChild(node)) {
+        if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
           return null;
         }
         return {
-          conversion: convertLineBreakElement,
+          conversion: $convertLineBreakElement,
           priority: 0,
         };
       },
@@ -75,7 +75,7 @@ export class LineBreakNode extends LexicalNode {
   }
 }
 
-function convertLineBreakElement(node: Node): DOMConversionOutput {
+function $convertLineBreakElement(node: Node): DOMConversionOutput {
   return {node: $createLineBreakNode()};
 }
 
@@ -89,9 +89,9 @@ export function $isLineBreakNode(
   return node instanceof LineBreakNode;
 }
 
-function isOnlyChild(node: Node): boolean {
+function isOnlyChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
-  if (parentElement !== null) {
+  if (parentElement !== null && isBlockDomNode(parentElement)) {
     const firstChild = parentElement.firstChild!;
     if (
       firstChild === node ||
@@ -105,6 +105,30 @@ function isOnlyChild(node: Node): boolean {
       ) {
         return true;
       }
+    }
+  }
+  return false;
+}
+
+function isLastChildInBlockNode(node: Node): boolean {
+  const parentElement = node.parentElement;
+  if (parentElement !== null && isBlockDomNode(parentElement)) {
+    // check if node is first child, because only childs dont count
+    const firstChild = parentElement.firstChild!;
+    if (
+      firstChild === node ||
+      (firstChild.nextSibling === node && isWhitespaceDomTextNode(firstChild))
+    ) {
+      return false;
+    }
+
+    // check if its last child
+    const lastChild = parentElement.lastChild!;
+    if (
+      lastChild === node ||
+      (lastChild.previousSibling === node && isWhitespaceDomTextNode(lastChild))
+    ) {
+      return true;
     }
   }
   return false;

@@ -6,23 +6,64 @@
  *
  */
 
-import type {EditorState} from 'lexical';
-
+import {
+  initPegasusZustandStoreBackend,
+  pegasusZustandStoreReady,
+} from '@webext-pegasus/store-zustand';
 import {create} from 'zustand';
 import {subscribeWithSelector} from 'zustand/middleware';
 
+import {SerializedRawEditorState} from './types';
+
 export interface ExtensionState {
-  lexicalState: {[tabID: number]: {[editorKey: string]: EditorState}};
+  lexicalState: {
+    [tabID: number]: {[editorKey: string]: SerializedRawEditorState} | null;
+  };
+  selectedEditorKey: {
+    [tabID: number]: string | null;
+  };
+  isSelecting: {
+    [tabID: number]: boolean;
+  };
+  markTabAsRestricted: (tabID: number) => void;
   setStatesForTab: (
     id: number,
-    states: {[editorKey: string]: EditorState},
+    states: {[editorKey: string]: SerializedRawEditorState},
   ) => void;
+  setSelectedEditorKey: (tabID: number, editorKey: string | null) => void;
+  setIsSelecting: (tadID: number, isSelecting: boolean) => void;
 }
 
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
+    isSelecting: {},
     lexicalState: {},
-    setStatesForTab: (id: number, states: {[editorKey: string]: EditorState}) =>
+    markTabAsRestricted: (tabID: number) =>
+      set((state) => ({
+        lexicalState: {
+          ...state.lexicalState,
+          [tabID]: null,
+        },
+      })),
+    selectedEditorKey: {},
+    setIsSelecting: (tabID: number, isSelecting: boolean) =>
+      set((state) => ({
+        isSelecting: {
+          ...state.isSelecting,
+          [tabID]: isSelecting,
+        },
+      })),
+    setSelectedEditorKey: (tabID: number, editorKey: string | null) =>
+      set((state) => ({
+        selectedEditorKey: {
+          ...state.selectedEditorKey,
+          [tabID]: editorKey,
+        },
+      })),
+    setStatesForTab: (
+      id: number,
+      states: {[editorKey: string]: SerializedRawEditorState},
+    ) =>
       set((state) => ({
         lexicalState: {
           ...state.lexicalState,
@@ -32,4 +73,11 @@ export const useExtensionStore = create<ExtensionState>()(
   })),
 );
 
-export default useExtensionStore;
+const STORE_NAME = 'ExtensionStore';
+
+export const initExtensionStoreBackend = () =>
+  initPegasusZustandStoreBackend(STORE_NAME, useExtensionStore, {
+    storageStrategy: 'session',
+  });
+export const extensionStoreReady = () =>
+  pegasusZustandStoreReady(STORE_NAME, useExtensionStore);

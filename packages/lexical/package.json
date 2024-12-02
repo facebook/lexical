@@ -9,7 +9,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.21.0",
   "main": "Lexical.js",
   "types": "index.d.ts",
   "repository": {
@@ -23,11 +23,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./Lexical.dev.mjs",
+        "production": "./Lexical.prod.mjs",
         "node": "./Lexical.node.mjs",
         "default": "./Lexical.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./Lexical.dev.js",
+        "production": "./Lexical.prod.js",
         "default": "./Lexical.js"
       }
     }

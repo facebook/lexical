@@ -20,6 +20,7 @@ declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
 };
+declare export function getCSSFromStyleObject(styles: Record<string, string>): string;
 declare export function $patchStyleText(
   selection: BaseSelection,
   patch: {
@@ -50,7 +51,7 @@ declare export function $wrapNodes(
   wrappingElement?: ElementNode,
 ): void;
 declare export function $setBlocksType(
-  selection: RangeSelection,
+  selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void;
 declare export function $isAtNodeEnd(point: Point): boolean;
@@ -72,8 +73,11 @@ declare export function createRectsFromDOMRange(
   range: Range,
 ): Array<ClientRect>;
 
-declare export function trimTextContentFromAnchor(
+declare export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,
 ): void;
+
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
+declare export const trimTextContentFromAnchor: typeof $trimTextContentFromAnchor;

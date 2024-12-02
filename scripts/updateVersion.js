@@ -10,136 +10,199 @@
 
 const fs = require('fs-extra');
 const glob = require('glob');
+const {packagesManager} = require('./shared/packagesManager');
+const {PackageMetadata} = require('./shared/PackageMetadata');
 
-const packages = {
-  '@lexical/clipboard': 'lexical-clipboard',
-  '@lexical/code': 'lexical-code',
-  '@lexical/dragon': 'lexical-dragon',
-  '@lexical/file': 'lexical-file',
-  '@lexical/hashtag': 'lexical-hashtag',
-  '@lexical/headless': 'lexical-headless',
-  '@lexical/history': 'lexical-history',
-  '@lexical/html': 'lexical-html',
-  '@lexical/link': 'lexical-link',
-  '@lexical/list': 'lexical-list',
-  '@lexical/mark': 'lexical-mark',
-  '@lexical/markdown': 'lexical-markdown',
-  '@lexical/offset': 'lexical-offset',
-  '@lexical/overflow': 'lexical-overflow',
-  '@lexical/plain-text': 'lexical-plain-text',
-  '@lexical/react': 'lexical-react',
-  '@lexical/rich-text': 'lexical-rich-text',
-  '@lexical/selection': 'lexical-selection',
-  '@lexical/table': 'lexical-table',
-  '@lexical/text': 'lexical-text',
-  '@lexical/utils': 'lexical-utils',
-  '@lexical/yjs': 'lexical-yjs',
-  lexical: 'lexical',
-  'lexical-playground': 'lexical-playground',
-  shared: 'shared',
-};
+const monorepoPackageJson = require('./shared/readMonorepoPackageJson')();
+// get version from monorepo package.json version
+const version = monorepoPackageJson.version;
 
+const publicNpmNames = new Set(
+  packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
+);
+
+/**
+ * - Set the version to the monorepo ./package.json version
+ * - Update dependencies, devDependencies, and peerDependencies
+ * - Update the exports map and set other required default fields
+ * @param {PackageMetadata} pkg
+ */
+function updatePackage(pkg) {
+  pkg.packageJson.version = version;
+  updateDependencies(pkg);
+  if (!pkg.isPrivate()) {
+    updatePublicPackage(pkg);
+  }
+  pkg.writeSync();
+}
+
+/**
+ * Update every package.json in the packages/ and examples/ directories
+ *
+ * - Set the version to the monorepo ./package.json version
+ * - Update the versions of monorepo dependencies, devDependencies, and peerDependencies
+ * - Update the exports map and set other required default fields
+ *
+ */
 function updateVersion() {
-  // get version from monorepo package.json version
-  const basePackageJSON = fs.readJsonSync(`./package.json`);
-  const version = basePackageJSON.version;
-  // update individual packages
-  Object.values(packages).forEach((pkg) => {
-    const packageJSON = fs.readJsonSync(`./packages/${pkg}/package.json`);
-    packageJSON.version = version;
-    updateDependencies(packageJSON, version);
-    updateModule(packageJSON, pkg);
-    fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON, {
-      spaces: 2,
-    });
-  });
-  // update dependencies in the examples
-  glob.sync('./examples/*/package.json').forEach((fn) => {
-    const packageJSON = fs.readJsonSync(fn);
-    packageJSON.version = version;
-    updateDependencies(packageJSON, version);
-    fs.writeJsonSync(fn, packageJSON, {
-      spaces: 2,
-    });
-  });
+  packagesManager.getPackages().forEach(updatePackage);
+  glob
+    .sync([
+      './examples/*/package.json',
+      './scripts/__tests__/integration/fixtures/*/package.json',
+    ])
+    .forEach((packageJsonPath) =>
+      updatePackage(new PackageMetadata(packageJsonPath)),
+    );
 }
 
-function withEsmExtension(fileName) {
-  return fileName.replace(/\.js$/, '.mjs');
+/**
+ * Replace the extension in a .js or .mjs filename with another extension.
+ * Used to convert between the two or to add a prefix before the extension.
+ *
+ * `ext` may contain $1 to use the original extension in the
+ * replacement, e.g. replaceExtension('foo.js', '.bar$1') -> 'foo.bar.js'
+ *
+ * @param {string} fileName
+ * @param {string} ext
+ * @returns {string} fileName with ext as the new extension
+ */
+function replaceExtension(fileName, ext) {
+  return fileName.replace(/(\.m?js)$/, ext);
 }
 
-function withNodeEsmExtension(fileName) {
-  return fileName.replace(/\.js$/, '.node.mjs');
+/**
+ * webpack can use these conditions to choose a dev or prod
+ * build without a fork module, which is especially helpful
+ * in the ESM build.
+ *
+ * @param {string} fileName may have .js or .mjs extension
+ * @returns {Record<'development'|'production', string>}
+ */
+function withEnvironments(fileName) {
+  return {
+    development: replaceExtension(fileName, '.dev$1'),
+    production: replaceExtension(fileName, '.prod$1'),
+  };
 }
 
-function exportEntry(file, types) {
+/**
+ * Build an export map for a particular entry point in the package.json
+ *
+ * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
+ * @returns {Record<'import'|'require', Record<string,string>>} The export map for this file
+ */
+function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
   // Bundlers such as webpack require 'types' to be first and 'default' to be
   // last per #5731. Keys are in descending priority order.
+  const prefix = `./${basename}`;
+  const types = `./${typesBasename}`;
   return {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
     import: {
-      types: `./${types}`,
-      node: `./${withNodeEsmExtension(file)}`,
-      default: `./${withEsmExtension(file)}`,
+      types,
+      ...withEnvironments(`${prefix}.mjs`),
+      node: `${prefix}.node.mjs`,
+      default: `${prefix}.mjs`,
     },
-    require: {types: `./${types}`, default: `./${file}`},
+    require: {
+      types,
+      ...withEnvironments(`${prefix}.js`),
+      default: `${prefix}.js`,
+    },
     /* eslint-enable sort-keys-fix/sort-keys-fix */
   };
 }
 
-function updateModule(packageJSON, pkg) {
-  if (packageJSON.sideEffects === undefined) {
-    packageJSON.sideEffects = false;
+/**
+ * Update the public package's packageJson in-place to add default configurations
+ * for `sideEffects` and `module` as well as to maintain the `exports` map.
+ *
+ * @param {PackageMetadata} pkg
+ */
+function updatePublicPackage(pkg) {
+  const {packageJson} = pkg;
+  if (packageJson.sideEffects === undefined) {
+    packageJson.sideEffects = false;
   }
-  if (packageJSON.main) {
-    packageJSON.module = withEsmExtension(packageJSON.main);
-    packageJSON.exports = {
-      '.': exportEntry(packageJSON.main, packageJSON.types || 'index.d.ts'),
+  // If there's a main we expect a single entry point
+  if (packageJson.main) {
+    packageJson.module = replaceExtension(packageJson.main, '.mjs');
+    packageJson.exports = {
+      '.': exportEntry(
+        replaceExtension(packageJson.main, ''),
+        packageJson.types,
+      ),
     };
-  } else if (fs.existsSync(`./packages/${pkg}/dist`)) {
+  } else {
     const exports = {};
-    for (const file of fs.readdirSync(`./packages/${pkg}/dist`)) {
-      if (/^[^.]+\.js$/.test(file)) {
-        const entry = exportEntry(file, file.replace(/\.js$/, '.d.ts'));
+    // Export all src/*.tsx? files that do not have a prefix extension (e.g. no .d.ts)
+    for (const fn of fs.readdirSync(pkg.resolve('src'))) {
+      if (/^[^.]+\.tsx?$/.test(fn)) {
+        const basename = fn.replace(/\.tsx?$/, '');
+        const entry = exportEntry(basename);
         // support for import "@lexical/react/LexicalComposer"
-        exports[`./${file.replace(/\.js$/, '')}`] = entry;
+        exports[`./${basename}`] = entry;
         // support for import "@lexical/react/LexicalComposer.js"
         // @mdxeditor/editor uses this at least as of 2.13.1
-        exports[`./${file}`] = entry;
+        exports[`./${basename}.js`] = entry;
       }
     }
-    packageJSON.exports = exports;
+    packageJson.exports = exports;
   }
 }
 
-function sortDependencies(packageJSON, key, deps) {
+/**
+ * Replace the dependency map at packageJson[key] in-place with
+ * deps sorted lexically by key. If deps was empty, it will be removed.
+ *
+ * @param {Record<string, any>} packageJson
+ * @param {'dependencies'|'peerDependencies'} key
+ * @param {Record<string, string>} deps
+ */
+function sortDependencies(packageJson, key, deps) {
   const entries = Object.entries(deps);
   if (entries.length === 0) {
-    delete packageJSON[key];
+    delete packageJson[key];
   } else {
-    packageJSON[key] = Object.fromEntries(
+    packageJson[key] = Object.fromEntries(
       entries.sort((a, b) => a[0].localeCompare(b[0])),
     );
   }
 }
 
-function updateDependencies(packageJSON, version) {
-  const {dependencies = {}, peerDependencies = {}} = packageJSON;
-  Object.keys(dependencies).forEach((dep) => {
-    if (packages[dep] !== undefined) {
-      dependencies[dep] = version;
-    }
+/**
+ * Update depdenencies and peerDependencies in pkg in-place.
+ * All entries for monorepo packages will be updated to version.
+ * All peerDependencies for monorepo packages will be moved to dependencies.
+ *
+ * @param {PackageMetadata} pkg
+ */
+function updateDependencies(pkg) {
+  const {packageJson} = pkg;
+  const {
+    dependencies = {},
+    peerDependencies = {},
+    devDependencies = {},
+  } = packageJson;
+  [dependencies, devDependencies].forEach((deps) => {
+    Object.keys(deps).forEach((dep) => {
+      if (publicNpmNames.has(dep)) {
+        deps[dep] = version;
+      }
+    });
   });
   // Move peerDependencies on lexical monorepo packages to dependencies
   // per #5783
   Object.keys(peerDependencies).forEach((peerDep) => {
-    if (packages[peerDep] !== undefined) {
+    if (publicNpmNames.has(peerDep)) {
       delete peerDependencies[peerDep];
       dependencies[peerDep] = version;
     }
   });
-  sortDependencies(packageJSON, 'dependencies', dependencies);
-  sortDependencies(packageJSON, 'peerDependencies', peerDependencies);
+  sortDependencies(packageJson, 'dependencies', dependencies);
+  sortDependencies(packageJson, 'devDependencies', devDependencies);
+  sortDependencies(packageJson, 'peerDependencies', peerDependencies);
 }
 
 updateVersion();

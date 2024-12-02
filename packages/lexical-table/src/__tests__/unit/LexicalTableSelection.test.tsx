@@ -8,29 +8,32 @@
 
 import {$createTableSelection} from '@lexical/table';
 import {
-  type LexicalEditor,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $setSelection,
+  EditorState,
+  type LexicalEditor,
+  ParagraphNode,
+  RootNode,
+  TextNode,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
-import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
-import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import {createRoot, Root} from 'react-dom/client';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 describe('table selection', () => {
-  let originalText;
-  let parsedParagraph;
-  let parsedRoot;
-  let parsedText;
-  let paragraphKey;
-  let textKey;
-  let parsedEditorState;
-  let reactRoot;
+  let originalText: TextNode;
+  let parsedParagraph: ParagraphNode;
+  let parsedRoot: RootNode;
+  let parsedText: TextNode;
+  let paragraphKey: string;
+  let textKey: string;
+  let parsedEditorState: EditorState;
+  let reactRoot: Root;
   let container: HTMLDivElement | null = null;
-  let editor: LexicalEditor = null;
+  let editor: LexicalEditor | null = null;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -38,7 +41,10 @@ describe('table selection', () => {
     document.body.appendChild(container);
   });
 
-  function useLexicalEditor(rootElementRef, onError) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<HTMLDivElement>,
+    onError?: () => void,
+  ) {
     const editorInHook = useMemo(
       () =>
         createTestEditor({
@@ -78,8 +84,8 @@ describe('table selection', () => {
     });
   }
 
-  async function update(fn) {
-    editor.update(fn);
+  async function update(fn: () => void) {
+    editor!.update(fn);
 
     return Promise.resolve().then();
   }
@@ -102,15 +108,15 @@ describe('table selection', () => {
     });
 
     const stringifiedEditorState = JSON.stringify(
-      editor.getEditorState().toJSON(),
+      editor!.getEditorState().toJSON(),
     );
 
-    parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+    parsedEditorState = editor!.parseEditorState(stringifiedEditorState);
     parsedEditorState.read(() => {
       parsedRoot = $getRoot();
-      parsedParagraph = parsedRoot.getFirstChild();
+      parsedParagraph = parsedRoot.getFirstChild()!;
       paragraphKey = parsedParagraph.getKey();
-      parsedText = parsedParagraph.getFirstChild();
+      parsedText = parsedParagraph.getFirstChild()!;
       textKey = parsedText.getKey();
     });
   });
@@ -128,6 +134,7 @@ describe('table selection', () => {
       __parent: null,
       __prev: null,
       __size: 1,
+      __style: '',
       __type: 'root',
     });
     expect(parsedParagraph).toEqual({
@@ -141,6 +148,9 @@ describe('table selection', () => {
       __parent: 'root',
       __prev: null,
       __size: 1,
+      __style: '',
+      __textFormat: 0,
+      __textStyle: '',
       __type: 'paragraph',
     });
     expect(parsedText).toEqual({

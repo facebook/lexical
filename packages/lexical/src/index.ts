@@ -1,4 +1,3 @@
-/** @module lexical */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -15,7 +14,10 @@ export type {
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
+  EditorSetOptions,
   EditorThemeClasses,
+  EditorThemeClassName,
+  EditorUpdateOptions,
   HTMLConfig,
   Klass,
   KlassConstructor,
@@ -28,7 +30,11 @@ export type {
   Spread,
   Transform,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {
+  EditorState,
+  EditorStateReadOptions,
+  SerializedEditorState,
+} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,
@@ -36,6 +42,7 @@ export type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  DOMExportOutputMap,
   LexicalNode,
   NodeKey,
   NodeMap,
@@ -51,6 +58,7 @@ export type {
   TextPointType as TextPoint,
 } from './LexicalSelection';
 export type {
+  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
@@ -111,6 +119,18 @@ export {
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {
+  IS_ALL_FORMATTING,
+  IS_BOLD,
+  IS_CODE,
+  IS_HIGHLIGHT,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
+  IS_UNDERLINE,
+  TEXT_TYPE_TO_FORMAT,
+} from './LexicalConstants';
+export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
@@ -138,29 +158,46 @@ export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
+  $cloneWithProperties,
   $copyNode,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isTokenOrSegmented,
   $nodesOfType,
+  $onUpdate,
   $selectAll,
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getDOMSelection,
+  getDOMTextNode,
+  getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  isBlockDomNode,
+  isDocumentFragment,
+  isDOMTextNode,
+  isDOMUnmanaged,
   isHTMLAnchorElement,
   isHTMLElement,
+  isInlineDomNode,
+  isLexicalEditor,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  resetRandomKey,
+  setDOMUnmanaged,
+  setNodeIndentFromDOM,
 } from './LexicalUtils';
+export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';

@@ -31,7 +31,7 @@ export type SerializedEquationNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertEquationElement(
+function $convertEquationElement(
   domNode: HTMLElement,
 ): null | DOMConversionOutput {
   let equation = domNode.getAttribute('data-lexical-equation');
@@ -112,7 +112,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
           return null;
         }
         return {
-          conversion: convertEquationElement,
+          conversion: $convertEquationElement,
           priority: 2,
         };
       },
@@ -121,7 +121,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
           return null;
         }
         return {
-          conversion: convertEquationElement,
+          conversion: $convertEquationElement,
           priority: 1,
         };
       },

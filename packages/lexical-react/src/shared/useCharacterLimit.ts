@@ -17,10 +17,13 @@ import {$rootTextContent} from '@lexical/text';
 import {$dfs, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isElementNode,
   $isLeafNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  COMMAND_PRIORITY_LOW,
+  DELETE_CHARACTER_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -92,6 +95,29 @@ export function useCharacterLimit(
 
         lastComputedTextLength = textLength;
       }),
+      editor.registerCommand(
+        DELETE_CHARACTER_COMMAND,
+        (isBackward) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          const anchorNode = selection.anchor.getNode();
+          const overflow = anchorNode.getParent();
+          const overflowParent = overflow ? overflow.getParent() : null;
+          const parentNext = overflowParent
+            ? overflowParent.getNextSibling()
+            : null;
+          selection.deleteCharacter(isBackward);
+          if (overflowParent && overflowParent.isEmpty()) {
+            overflowParent.remove();
+          } else if ($isElementNode(parentNext) && parentNext.isEmpty()) {
+            parentNext.remove();
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [editor, maxCharacters, remainingCharacters, strlen]);
 }
@@ -101,7 +127,6 @@ function findOffset(
   maxCharacters: number,
   strlen: (input: string) => number,
 ): number {
-  // @ts-ignore This is due to be added in a later version of TS
   const Segmenter = Intl.Segmenter;
   let offsetUtf16 = 0;
   let offset = 0;
@@ -216,7 +241,7 @@ function $wrapOverflowedNodes(offset: number): void {
           $setSelection(previousSelection);
         }
 
-        mergePrevious(overflowNode);
+        $mergePrevious(overflowNode);
       }
     }
   }
@@ -224,7 +249,7 @@ function $wrapOverflowedNodes(offset: number): void {
 
 function $wrapNode(node: LexicalNode): OverflowNode {
   const overflowNode = $createOverflowNode();
-  node.insertBefore(overflowNode);
+  node.replace(overflowNode);
   overflowNode.append(node);
   return overflowNode;
 }
@@ -241,7 +266,7 @@ function $unwrapNode(node: OverflowNode): LexicalNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode): void {
+export function $mergePrevious(overflowNode: OverflowNode): void {
   const previousNode = overflowNode.getPreviousSibling();
 
   if (!$isOverflowNode(previousNode)) {

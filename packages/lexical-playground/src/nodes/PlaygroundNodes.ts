@@ -34,6 +34,7 @@ import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
+import {SpecialTextNode} from './SpecialTextNode';
 import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
 import {YouTubeNode} from './YouTubeNode';
@@ -73,6 +74,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   PageBreakNode,
   LayoutContainerNode,
   LayoutItemNode,
+  SpecialTextNode,
 ];
 
 export default PlaygroundNodes;

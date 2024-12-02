@@ -525,6 +525,7 @@ export function syncLexicalSelectionToYjs(
     shouldUpdatePosition(currentFocusPos, focusPos)
   ) {
     awareness.setLocalState({
+      ...localState,
       anchorPos,
       awarenessData,
       color,

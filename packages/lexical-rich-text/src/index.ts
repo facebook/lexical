@@ -92,6 +92,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  setNodeIndentFromDOM,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -200,6 +201,10 @@ export class QuoteNode extends ElementNode {
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     this.replace(paragraph);
+    return true;
+  }
+
+  canMergeWhenEmpty(): true {
     return true;
   }
 }
@@ -355,8 +360,14 @@ export class HeadingNode extends ElementNode {
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
+    const lastDesc = this.getLastDescendant();
+    const isAtEnd =
+      !lastDesc ||
+      (selection &&
+        selection.anchor.key === lastDesc.getKey() &&
+        anchorOffet === lastDesc.getTextContentSize());
     const newElement =
-      anchorOffet === this.getTextContentSize() || !selection
+      isAtEnd || !selection
         ? $createParagraphNode()
         : $createHeadingNode(this.getTag());
     const direction = this.getDirection();
@@ -405,6 +416,7 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   ) {
     node = $createHeadingNode(nodeName);
     if (element.style !== null) {
+      setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
   }
@@ -415,6 +427,7 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
+    setNodeIndentFromDOM(element, node);
   }
   return {node};
 }
@@ -847,7 +860,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        event.preventDefault();
+
         const {anchor} = selection;
         const anchorNode = anchor.getNode();
 
@@ -858,9 +871,18 @@ export function registerRichText(editor: LexicalEditor): () => void {
         ) {
           const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
           if (element.getIndent() > 0) {
+            event.preventDefault();
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
         }
+
+        // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
+        // more details - https://github.com/facebook/lexical/issues/5841
+        if (IS_IOS && navigator.language === 'ko-KR') {
+          return false;
+        }
+        event.preventDefault();
+
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
       COMMAND_PRIORITY_EDITOR,

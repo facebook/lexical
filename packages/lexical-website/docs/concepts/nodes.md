@@ -25,6 +25,23 @@ There is only ever a single `RootNode` in an `EditorState` and it is always at t
 
 - To get the text content of the entire editor, you should use `rootNode.getTextContent()`.
 - To avoid selection issues, Lexical forbids insertion of text nodes directly into a `RootNode`.
+#### Semantics and Use Cases
+
+The `RootNode` has specific characteristics and restrictions to maintain editor integrity:
+
+1. **Non-extensibility**  
+   The `RootNode` cannot be subclassed or replaced with a custom implementation. It is designed as a fixed part of the editor architecture.
+
+2. **Exclusion from Mutation Listeners**  
+   The `RootNode` does not participate in mutation listeners. Instead, use a root-level or update listener to observe changes at the document level.
+
+3. **Compatibility with Node Transforms**  
+   While the `RootNode` is not "part of the document" in the traditional sense, it can still appear to be in some cases, such as during serialization or when applying node transforms.
+
+4. **Document-Level Metadata**  
+   If you are attempting to use the `RootNode` for document-level metadata (e.g., undo/redo support), consider alternative designs. Currently, Lexical does not provide direct facilities for this use case, but solutions like creating a shadow root under the `RootNode` might work.
+
+By design, the `RootNode` serves as a container for the editor's content rather than an active part of the document's logical structure. This approach simplifies operations like serialization and keeps the focus on content nodes.
 
 ### [`LineBreakNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalLineBreakNode.ts)
 
@@ -111,6 +128,8 @@ class MyCustomNode extends SomeOtherNode {
   }
 
   static clone(node: MyCustomNode): MyCustomNode {
+    // If any state needs to be set after construction, it should be
+    // done by overriding the `afterCloneFrom` instance method.
     return new MyCustomNode(node.__foo, node.__key);
   }
 

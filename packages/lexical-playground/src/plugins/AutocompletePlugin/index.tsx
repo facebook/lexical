@@ -6,12 +6,13 @@
  *
  */
 
-import type {BaseSelection, NodeKey} from 'lexical';
+import type {BaseSelection, NodeKey, TextNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $addUpdateTag,
   $createTextNode,
   $getNodeByKey,
   $getSelection,
@@ -24,12 +25,22 @@ import {
 } from 'lexical';
 import {useCallback, useEffect} from 'react';
 
-import {useSharedAutocompleteContext} from '../../context/SharedAutocompleteContext';
+import {useToolbarState} from '../../context/ToolbarContext';
 import {
   $createAutocompleteNode,
   AutocompleteNode,
 } from '../../nodes/AutocompleteNode';
 import {addSwipeRightListener} from '../../utils/swipe';
+
+const HISTORY_MERGE = {tag: 'history-merge'};
+
+declare global {
+  interface Navigator {
+    userAgentData?: {
+      mobile: boolean;
+    };
+  }
+}
 
 type SearchPromise = {
   dismiss: () => void;
@@ -76,16 +87,27 @@ function useQuery(): (searchText: string) => SearchPromise {
   }, []);
 }
 
+function formatSuggestionText(suggestion: string): string {
+  const userAgentData = window.navigator.userAgentData;
+  const isMobile =
+    userAgentData !== undefined
+      ? userAgentData.mobile
+      : window.innerWidth <= 800 && window.innerHeight <= 600;
+
+  return `${suggestion} ${isMobile ? '(SWIPE \u2B95)' : '(TAB)'}`;
+}
+
 export default function AutocompletePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  const [, setSuggestion] = useSharedAutocompleteContext();
   const query = useQuery();
+  const {toolbarState} = useToolbarState();
 
   useEffect(() => {
     let autocompleteNodeKey: null | NodeKey = null;
     let lastMatch: null | string = null;
     let lastSuggestion: null | string = null;
     let searchPromise: null | SearchPromise = null;
+    let prevNodeFormat: number = 0;
     function $clearSuggestion() {
       const autocompleteNode =
         autocompleteNodeKey !== null
@@ -101,7 +123,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
       }
       lastMatch = null;
       lastSuggestion = null;
-      setSuggestion(null);
+      prevNodeFormat = 0;
     }
     function updateAsyncSuggestion(
       refSearchPromise: SearchPromise,
@@ -111,28 +133,27 @@ export default function AutocompletePlugin(): JSX.Element | null {
         // Outdated or no suggestion
         return;
       }
-      editor.update(
-        () => {
-          const selection = $getSelection();
-          const [hasMatch, match] = $search(selection);
-          if (
-            !hasMatch ||
-            match !== lastMatch ||
-            !$isRangeSelection(selection)
-          ) {
-            // Outdated
-            return;
-          }
-          const selectionCopy = selection.clone();
-          const node = $createAutocompleteNode(uuid);
-          autocompleteNodeKey = node.getKey();
-          selection.insertNodes([node]);
-          $setSelection(selectionCopy);
-          lastSuggestion = newSuggestion;
-          setSuggestion(newSuggestion);
-        },
-        {tag: 'history-merge'},
-      );
+      editor.update(() => {
+        const selection = $getSelection();
+        const [hasMatch, match] = $search(selection);
+        if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
+          // Outdated
+          return;
+        }
+        const selectionCopy = selection.clone();
+        const prevNode = selection.getNodes()[0] as TextNode;
+        prevNodeFormat = prevNode.getFormat();
+        const node = $createAutocompleteNode(
+          formatSuggestionText(newSuggestion),
+          uuid,
+        )
+          .setFormat(prevNodeFormat)
+          .setStyle(`font-size: ${toolbarState.fontSize}`);
+        autocompleteNodeKey = node.getKey();
+        selection.insertNodes([node]);
+        $setSelection(selectionCopy);
+        lastSuggestion = newSuggestion;
+      }, HISTORY_MERGE);
     }
 
     function $handleAutocompleteNodeTransform(node: AutocompleteNode) {
@@ -162,10 +183,12 @@ export default function AutocompletePlugin(): JSX.Element | null {
             }
           })
           .catch((e) => {
-            console.error(e);
+            if (e !== 'Dismissed') {
+              console.error(e);
+            }
           });
         lastMatch = match;
-      });
+      }, HISTORY_MERGE);
     }
     function $handleAutocompleteIntent(): boolean {
       if (lastSuggestion === null || autocompleteNodeKey === null) {
@@ -175,7 +198,9 @@ export default function AutocompletePlugin(): JSX.Element | null {
       if (autocompleteNode === null) {
         return false;
       }
-      const textNode = $createTextNode(lastSuggestion);
+      const textNode = $createTextNode(lastSuggestion)
+        .setFormat(prevNodeFormat)
+        .setStyle(`font-size: ${toolbarState.fontSize}`);
       autocompleteNode.replace(textNode);
       textNode.selectNext();
       $clearSuggestion();
@@ -192,13 +217,15 @@ export default function AutocompletePlugin(): JSX.Element | null {
       editor.update(() => {
         if ($handleAutocompleteIntent()) {
           e.preventDefault();
+        } else {
+          $addUpdateTag(HISTORY_MERGE.tag);
         }
       });
     }
     function unmountSuggestion() {
       editor.update(() => {
         $clearSuggestion();
-      });
+      }, HISTORY_MERGE);
     }
 
     const rootElem = editor.getRootElement();
@@ -224,7 +251,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
         : []),
       unmountSuggestion,
     );
-  }, [editor, query, setSuggestion]);
+  }, [editor, query, toolbarState.fontSize]);
 
   return null;
 }

@@ -26,7 +26,6 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $getNodeByKey,
   $getSelection,
   $isNodeSelection,
   CLICK_COMMAND,
@@ -51,17 +50,20 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
 
   const $onDelete = useCallback(
     (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection();
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isHorizontalRuleNode(node)) {
-          node.remove();
-          return true;
-        }
+        editor.update(() => {
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isHorizontalRuleNode(node)) {
+              node.remove();
+            }
+          });
+        });
       }
       return false;
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   );
 
   useEffect(() => {

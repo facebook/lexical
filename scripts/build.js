@@ -47,13 +47,16 @@ const closureOptions = {
   warning_level: 'QUIET',
 };
 
+const modulePackageMappings = Object.fromEntries(
+  packagesManager.getPublicPackages().flatMap((pkg) => {
+    const pkgName = pkg.getNpmName();
+    return pkg.getExportedNpmModuleNames().map((npm) => [npm, pkgName]);
+  }),
+);
+
 const wwwMappings = {
   ...Object.fromEntries(
-    packagesManager
-      .getPublicPackages()
-      .flatMap((pkg) =>
-        pkg.getExportedNpmModuleNames().map((npm) => [npm, npmToWwwName(npm)]),
-      ),
+    Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
   ),
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
@@ -125,12 +128,42 @@ function getExtension(format) {
  * @param {string} outputFile
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
+ * @param {string} version
+ * @param {import('./shared/PackageMetadata').PackageMetadata} pkg
  * @returns {Promise<Array<string>>} the exports of the built module
  */
-async function build(name, inputFile, outputPath, outputFile, isProd, format) {
+async function build(
+  name,
+  inputFile,
+  outputPath,
+  outputFile,
+  isProd,
+  format,
+  version,
+  pkg,
+) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
+      const modulePkgName = modulePackageMappings[modulePath];
+      if (
+        typeof modulePkgName === 'string' &&
+        !(
+          modulePkgName in pkg.packageJson.dependencies ||
+          modulePkgName === pkg.getNpmName()
+        )
+      ) {
+        console.error(
+          `Error: ${path.relative(
+            '.',
+            src,
+          )} has an undeclared dependency in its import of ${modulePath}.\nAdd the following to the dependencies in ${path.relative(
+            '.',
+            pkg.resolve('package.json'),
+          )}: "${modulePkgName}": "${version}"`,
+        );
+        process.exit(1);
+      }
       return (
         monorepoExternalsSet.has(modulePath) ||
         thirdPartyExternalsRegExp.test(modulePath)
@@ -214,6 +247,9 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
             __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
+            'process.env.LEXICAL_VERSION': JSON.stringify(
+              `${version}+${isProd ? 'prod' : 'dev'}.${format}`,
+            ),
           },
           isWWW && strictWWWMappings,
         ),
@@ -393,6 +429,7 @@ async function buildAll() {
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition();
+    const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
@@ -408,6 +445,8 @@ async function buildAll() {
           ),
           isProduction,
           format,
+          version,
+          pkg,
         );
 
         if (isRelease) {
@@ -421,6 +460,8 @@ async function buildAll() {
             ),
             false,
             format,
+            version,
+            pkg,
           );
           buildForkModules(outputPath, outputFileName, format, exports);
         }

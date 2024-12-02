@@ -58,11 +58,18 @@ declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
 declare export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
 declare export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
 declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
+declare export var SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_END: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_START: LexicalCommand<KeyboardEvent>;
+declare export var SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
+  nodes: Array<LexicalNode>;
+  selection: BaseSelection;
+}>;
 
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**
- * LexicalConstnats
+ * LexicalConstants
  */
 
 declare export var IS_ALL_FORMATTING: number;
@@ -215,7 +222,7 @@ type EditorReadOptions = {
 };
 type EditorUpdateOptions = {
   onUpdate?: () => void,
-  tag?: string,
+  tag?: string | Array<string>,
   skipTransforms?: true,
   discrete?: true,
 };
@@ -386,8 +393,8 @@ declare export class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T: ElementNode>(): T | null;
   getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): DecoratorNode<mixed> | ElementNode | null;
+  getTopLevelElementOrThrow(): DecoratorNode<mixed> | ElementNode;
   getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T: LexicalNode>(): T | null;
@@ -426,6 +433,7 @@ declare export class LexicalNode {
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -589,6 +597,8 @@ declare export class TextNode extends LexicalNode {
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
@@ -724,6 +734,8 @@ declare export class ElementNode extends LexicalNode {
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey): void;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
@@ -779,10 +791,37 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
+
+/**
+ * ElementDOMSlot
+ */
+declare export class ElementDOMSlot {
+  element: HTMLElement;
+  before: Node | null;
+  after: Node | null;
+  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): ElementDOMSlot;
+  withAfter(after: Node | null | void): ElementDOMSlot;
+  withElement(element: HTMLElement): ElementDOMSlot;
+  insertChild(dom: Node): this;
+  removeChild(dom: Node): this;
+  replaceChild(dom: Node, prevDom: Node): this;
+  getFirstChild(): Node | null;
+  //
+  getManagedLineBreak(): HTMLElement | null;
+  removeManagedLineBreak(): void;
+  insertManagedLineBreak(webkitHack: boolean): void;
+  getFirstChildOffset(): number;
+  resolveChildIndex(element: ElementNode, elementDOM: HTMLElement, initialDOM: Node, initialOffset: number): [node: ElementNode, idx: number];
+}
+
+declare export function setDOMUnmanaged(elementDOM: HTMLElement): void;
+declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
 
 /**
  * LexicalDecoratorNode
@@ -790,6 +829,10 @@ declare export function $isElementNode(
 
 declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
+  // Not sure how to get flow to agree that the DecoratorNode<mixed> is compatible with this,
+  // so we have a less precise type than in TS
+  // getTopLevelElement(): this | ElementNode | null;
+  // getTopLevelElementOrThrow(): this | ElementNode;
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
   isInline(): boolean;
@@ -829,6 +872,7 @@ declare export function $isParagraphNode(
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 declare export function $hasUpdateTag(tag: string): boolean;
 declare export function $addUpdateTag(tag: string): void;
+declare export function $onUpdate(updateFn: () => void): void;
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
@@ -862,6 +906,7 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function $copyNode(
   node: ElementNode,
   offset: number,

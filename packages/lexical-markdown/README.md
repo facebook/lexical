@@ -81,6 +81,7 @@ LINK
 And bundles of commonly used transformers:
 - `TRANSFORMERS` - all built-in transformers
 - `ELEMENT_TRANSFORMERS` - all built-in element transformers
+- `MULTILINE_ELEMENT_TRANSFORMERS` - all built-in multiline element transformers
 - `TEXT_FORMAT_TRANSFORMERS` - all built-in text format transformers
 - `TEXT_MATCH_TRANSFORMERS` - all built-in text match transformers
 

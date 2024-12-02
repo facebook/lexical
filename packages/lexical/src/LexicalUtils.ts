@@ -20,7 +20,12 @@ import type {
   Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+import type {
+  LexicalNode,
+  LexicalPrivateDOM,
+  NodeKey,
+  NodeMap,
+} from './LexicalNode';
 import type {
   BaseSelection,
   PointType,
@@ -122,8 +127,7 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
     (nodeName === 'INPUT' ||
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
-        // @ts-ignore internal field
-        activeElement.__lexicalEditor == null))
+        getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
 
@@ -148,19 +152,32 @@ export function isSelectionWithinEditor(
   }
 }
 
+/**
+ * @returns true if the given argument is a LexicalEditor instance from this build of Lexical
+ */
+export function isLexicalEditor(editor: unknown): editor is LexicalEditor {
+  // Check instanceof to prevent issues with multiple embedded Lexical installations
+  return editor instanceof LexicalEditor;
+}
+
 export function getNearestEditorFromDOMNode(
   node: Node | null,
 ): LexicalEditor | null {
   let currentNode = node;
   while (currentNode != null) {
-    // @ts-expect-error: internal field
-    const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null) {
+    const editor = getEditorPropertyFromDOMNode(currentNode);
+    if (isLexicalEditor(editor)) {
       return editor;
     }
     currentNode = getParentElement(currentNode);
   }
   return null;
+}
+
+/** @internal */
+export function getEditorPropertyFromDOMNode(node: Node | null): unknown {
+  // @ts-expect-error: internal field
+  return node ? node.__lexicalEditor : null;
 }
 
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
@@ -177,14 +194,14 @@ export function $isTokenOrSegmented(node: TextNode): boolean {
   return node.isToken() || node.isSegmented();
 }
 
-function isDOMNodeLexicalTextNode(node: Node): node is Text {
+export function isDOMTextNode(node: Node): node is Text {
   return node.nodeType === DOM_TEXT_TYPE;
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (isDOMNodeLexicalTextNode(node)) {
+    if (isDOMTextNode(node)) {
       return node;
     }
     node = node.firstChild;
@@ -429,12 +446,28 @@ export function $getNodeFromDOMNode(
   editorState?: EditorState,
 ): LexicalNode | null {
   const editor = getActiveEditor();
-  // @ts-ignore We intentionally add this to the Node.
-  const key = dom[`__lexicalKey_${editor._key}`];
+  const key = getNodeKeyFromDOMNode(dom, editor);
   if (key !== undefined) {
     return $getNodeByKey(key, editorState);
   }
   return null;
+}
+
+export function setNodeKeyOnDOMNode(
+  dom: Node,
+  editor: LexicalEditor,
+  key: NodeKey,
+) {
+  const prop = `__lexicalKey_${editor._key}`;
+  (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop] = key;
+}
+
+export function getNodeKeyFromDOMNode(
+  dom: Node,
+  editor: LexicalEditor,
+): NodeKey | undefined {
+  const prop = `__lexicalKey_${editor._key}`;
+  return (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
 }
 
 export function $getNearestNodeFromDOMNode(
@@ -525,7 +558,7 @@ export function $flushMutations(): void {
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
-  const nodeKey = getNodeKeyFromDOM(dom, editor);
+  const nodeKey = getNodeKeyFromDOMTree(dom, editor);
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
@@ -543,15 +576,14 @@ export function getTextNodeOffset(
   return moveSelectionToEnd ? node.getTextContentSize() : 0;
 }
 
-function getNodeKeyFromDOM(
+function getNodeKeyFromDOMTree(
   // Note that node here refers to a DOM Node, not an Lexical Node
   dom: Node,
   editor: LexicalEditor,
 ): NodeKey | null {
   let node: Node | null = dom;
   while (node != null) {
-    // @ts-ignore We intentionally add this to the Node.
-    const key: NodeKey = node[`__lexicalKey_${editor._key}`];
+    const key = getNodeKeyFromDOMNode(node, editor);
     if (key !== undefined) {
       return key;
     }
@@ -1116,7 +1148,9 @@ export function setMutatedNode(
     mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
-
+/**
+ * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
+ */
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();
@@ -1302,6 +1336,19 @@ export function $addUpdateTag(tag: string): void {
   editor._updateTags.add(tag);
 }
 
+/**
+ * Add a function to run after the current update. This will run after any
+ * `onUpdate` function already supplied to `editor.update()`, as well as any
+ * functions added with previous calls to `$onUpdate`.
+ *
+ * @param updateFn The function to run after the current update.
+ */
+export function $onUpdate(updateFn: () => void): void {
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  editor._deferred.push(updateFn);
+}
+
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
 ): BaseSelection | null {
@@ -1381,37 +1428,65 @@ export function $isRootOrShadowRoot(
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
 
+/**
+ * Returns a shallow clone of node with a new key
+ *
+ * @param node - The node to be copied.
+ * @returns The copy of the node.
+ */
 export function $copyNode<T extends LexicalNode>(node: T): T {
-  const copy = node.constructor.clone(node);
+  const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
-  // @ts-expect-error
   return copy;
 }
 
-export function $applyNodeReplacement<N extends LexicalNode>(
-  node: LexicalNode,
-): N {
+export function $applyNodeReplacement<N extends LexicalNode>(node: N): N {
   const editor = getActiveEditor();
   const nodeType = node.constructor.getType();
   const registeredNode = editor._nodes.get(nodeType);
-  if (registeredNode === undefined) {
-    invariant(
-      false,
-      '$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
-    );
-  }
-  const replaceFunc = registeredNode.replace;
-  if (replaceFunc !== null) {
-    const replacementNode = replaceFunc(node) as N;
-    if (!(replacementNode instanceof node.constructor)) {
+  invariant(
+    registeredNode !== undefined,
+    '$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
+    node.constructor.name,
+    nodeType,
+  );
+  const {replace, replaceWithKlass} = registeredNode;
+  if (replace !== null) {
+    const replacementNode = replace(node);
+    const replacementNodeKlass = replacementNode.constructor;
+    if (replaceWithKlass !== null) {
       invariant(
-        false,
-        '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
+        replacementNode instanceof replaceWithKlass,
+        '$applyNodeReplacement failed. Expected replacement node to be an instance of %s with type %s but returned %s with type %s from original node %s with type %s',
+        replaceWithKlass.name,
+        replaceWithKlass.getType(),
+        replacementNodeKlass.name,
+        replacementNodeKlass.getType(),
+        node.constructor.name,
+        nodeType,
+      );
+    } else {
+      invariant(
+        replacementNode instanceof node.constructor &&
+          replacementNodeKlass !== node.constructor,
+        '$applyNodeReplacement failed. Ensure replacement node %s with type %s is a subclass of the original node %s with type %s.',
+        replacementNodeKlass.name,
+        replacementNodeKlass.getType(),
+        node.constructor.name,
+        nodeType,
       );
     }
-    return replacementNode;
+    invariant(
+      replacementNode.__key !== node.__key,
+      '$applyNodeReplacement failed. Ensure that the key argument is *not* used in your replace function (from node %s with type %s to node %s with type %s), Node keys must never be re-used except by the static clone method.',
+      node.constructor.name,
+      nodeType,
+      replacementNodeKlass.name,
+      replacementNodeKlass.getType(),
+    );
+    return replacementNode as N;
   }
-  return node as N;
+  return node;
 }
 
 export function errorOnInsertTextNodeOnRoot(
@@ -1509,13 +1584,11 @@ export function updateDOMBlockCursorElement(
       }
     } else {
       const child = elementNode.getChildAtIndex(offset);
-      if (needsBlockCursor(child)) {
-        const sibling = (child as LexicalNode).getPreviousSibling();
+      if (child !== null && needsBlockCursor(child)) {
+        const sibling = child.getPreviousSibling();
         if (sibling === null || needsBlockCursor(sibling)) {
           isBlockCursor = true;
-          insertBeforeElement = editor.getElementByKey(
-            (child as LexicalNode).__key,
-          );
+          insertBeforeElement = editor.getElementByKey(child.__key);
         }
       }
     }
@@ -1542,6 +1615,13 @@ export function updateDOMBlockCursorElement(
   }
 }
 
+/**
+ * Returns the selection for the given window, or the global window if null.
+ * Will return null if {@link CAN_USE_DOM} is false.
+ *
+ * @param targetWindow The window to get the selection from
+ * @returns a Selection or null
+ */
 export function getDOMSelection(targetWindow: null | Window): null | Selection {
   return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
 }
@@ -1629,6 +1709,17 @@ export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
 }
 
 /**
+ * @param x - The element being testing
+ * @returns Returns true if x is a document fragment, false otherwise.
+ */
+export function isDocumentFragment(
+  x: Node | EventTarget,
+): x is DocumentFragment {
+  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
+  return x.nodeType === 11;
+}
+
+/**
  *
  * @param node - the Dom Node to check
  * @returns if the Dom Node is an inline node
@@ -1661,7 +1752,7 @@ export function isBlockDomNode(node: Node) {
 export function INTERNAL_$isBlock(
   node: LexicalNode,
 ): node is ElementNode | DecoratorNode<unknown> {
-  if ($isRootNode(node) || ($isDecoratorNode(node) && !node.isInline())) {
+  if ($isDecoratorNode(node) && !node.isInline()) {
     return true;
   }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
@@ -1681,7 +1772,7 @@ export function INTERNAL_$isBlock(
 export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,
   predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
+): NodeType | null {
   let parent = node;
   while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
     parent = parent.getParentOrThrow();
@@ -1704,9 +1795,15 @@ export type TypeToNodeMap = Map<string, NodeMap>;
  * Compute a cached Map of node type to nodes for a frozen EditorState
  */
 const cachedNodeMaps = new WeakMap<EditorState, TypeToNodeMap>();
+const EMPTY_TYPE_TO_NODE_MAP: TypeToNodeMap = new Map();
 export function getCachedTypeToNodeMap(
   editorState: EditorState,
 ): TypeToNodeMap {
+  // If this is a new Editor it may have a writable this._editorState
+  // with only a 'root' entry.
+  if (!editorState._readOnly && editorState.isEmpty()) {
+    return EMPTY_TYPE_TO_NODE_MAP;
+  }
   invariant(
     editorState._readOnly,
     'getCachedTypeToNodeMap called with a writable EditorState',
@@ -1726,4 +1823,70 @@ export function getCachedTypeToNodeMap(
     }
   }
   return typeToNodeMap;
+}
+
+/**
+ * Returns a clone of a node using `node.constructor.clone()` followed by
+ * `clone.afterCloneFrom(node)`. The resulting clone must have the same key,
+ * parent/next/prev pointers, and other properties that are not set by
+ * `node.constructor.clone` (format, style, etc.). This is primarily used by
+ * {@link LexicalNode.getWritable} to create a writable version of an
+ * existing node. The clone is the same logical node as the original node,
+ * do not try and use this function to duplicate or copy an existing node.
+ *
+ * Does not mutate the EditorState.
+ * @param node - The node to be cloned.
+ * @returns The clone of the node.
+ */
+export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
+  const constructor = latestNode.constructor;
+  const mutableNode = constructor.clone(latestNode) as T;
+  mutableNode.afterCloneFrom(latestNode);
+  if (__DEV__) {
+    invariant(
+      mutableNode.__key === latestNode.__key,
+      "$cloneWithProperties: %s.clone(node) (with type '%s') did not return a node with the same key, make sure to specify node.__key as the last argument to the constructor",
+      constructor.name,
+      constructor.getType(),
+    );
+    invariant(
+      mutableNode.__parent === latestNode.__parent &&
+        mutableNode.__next === latestNode.__next &&
+        mutableNode.__prev === latestNode.__prev,
+      "$cloneWithProperties: %s.clone(node) (with type '%s') overrided afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
+      constructor.name,
+      constructor.getType(),
+    );
+  }
+  return mutableNode;
+}
+
+export function setNodeIndentFromDOM(
+  elementDom: HTMLElement,
+  elementNode: ElementNode,
+) {
+  const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
+  const indent = indentSize / 40;
+  elementNode.setIndent(indent);
+}
+
+/**
+ * @internal
+ *
+ * Mark this node as unmanaged by lexical's mutation observer like
+ * decorator nodes
+ */
+export function setDOMUnmanaged(elementDom: HTMLElement): void {
+  const el: HTMLElement & LexicalPrivateDOM = elementDom;
+  el.__lexicalUnmanaged = true;
+}
+
+/**
+ * @internal
+ *
+ * True if this DOM node was marked with {@link setDOMUnmanaged}
+ */
+export function isDOMUnmanaged(elementDom: Node): boolean {
+  const el: Node & LexicalPrivateDOM = elementDom;
+  return el.__lexicalUnmanaged === true;
 }

@@ -109,6 +109,8 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 
 ### `LexicalTablePlugin`
 
+[![See API Documentation](/img/see-api-documentation.svg)](/docs/api/modules/lexical_react_LexicalTablePlugin)
+
 React wrapper for `@lexical/table` that adds support for tables
 
 ```jsx
@@ -191,7 +193,16 @@ In order to use `TableOfContentsPlugin`, you need to pass a callback function in
 
 Allows you to get a ref to the underlying editor instance outside of LexicalComposer, which is convenient when you want to interact with the editor
 from a separate part of your application.
+
 ```jsx
   const editorRef = useRef(null);
   <EditorRefPlugin editorRef={editorRef} />
+```
+
+### `LexicalSelectionAlwaysOnDisplay`
+
+By default, browser text selection becomes invisible when clicking away from the editor. This plugin ensures the selection remains visible.
+
+```jsx
+  <SelectionAlwaysOnDisplay />
 ```

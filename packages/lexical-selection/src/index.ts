@@ -8,7 +8,6 @@
 
 import {
   $addNodeStyle,
-  $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
@@ -27,12 +26,15 @@ import {
 import {
   createDOMRange,
   createRectsFromDOMRange,
+  getCSSFromStyleObject,
   getStyleObjectFromCSS,
 } from './utils';
 
 export {
+  /** @deprecated moved to the lexical package */ $cloneWithProperties,
+} from 'lexical';
+export {
   $addNodeStyle,
-  $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
@@ -52,4 +54,9 @@ export {
   $wrapNodes,
 };
 
-export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};
+export {
+  createDOMRange,
+  createRectsFromDOMRange,
+  getCSSFromStyleObject,
+  getStyleObjectFromCSS,
+};

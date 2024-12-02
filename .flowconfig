@@ -17,6 +17,7 @@ untyped-type-import=error
 [options]
 server.max_workers=4
 exact_by_default=true
+component_syntax=true
 
 ;; [generated-start update-flowconfig]
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
@@ -52,6 +53,7 @@ module.name_mapper='^@lexical/react/LexicalComposerContext$' -> '<PROJECT_ROOT>/
 module.name_mapper='^@lexical/react/LexicalContentEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContentEditable.js.flow'
 module.name_mapper='^@lexical/react/LexicalContextMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContextMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalDecoratorBlockNode$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDecoratorBlockNode.js.flow'
+module.name_mapper='^@lexical/react/LexicalDraggableBlockPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDraggableBlockPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalEditorRefPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalEditorRefPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalErrorBoundary$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalErrorBoundary.js.flow'
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHashtagPlugin.js.flow'
@@ -67,6 +69,7 @@ module.name_mapper='^@lexical/react/LexicalNodeMenuPlugin$' -> '<PROJECT_ROOT>/p
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalPlainTextPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalPlainTextPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalRichTextPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalRichTextPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalSelectionAlwaysOnDisplay$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalSelectionAlwaysOnDisplay.js.flow'
 module.name_mapper='^@lexical/react/LexicalTabIndentationPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTabIndentationPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalTableOfContents$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContents.js.flow'
 module.name_mapper='^@lexical/react/LexicalTableOfContentsPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContentsPlugin.js.flow'
@@ -104,4 +107,4 @@ nonstrict-import
 unclear-type
 
 [version]
-^0.226.0
+^0.250.0

@@ -11,6 +11,7 @@ import type {
   DOMConversion,
   DOMConversionMap,
   DOMExportOutput,
+  DOMExportOutputMap,
   NodeKey,
 } from './LexicalNode';
 
@@ -18,7 +19,7 @@ import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {createEmptyEditorState} from './LexicalEditorState';
+import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
@@ -79,7 +80,7 @@ export type TextNodeThemeClasses = {
 export type EditorUpdateOptions = {
   onUpdate?: () => void;
   skipTransforms?: true;
-  tag?: string;
+  tag?: string | Array<string>;
   discrete?: true;
 };
 
@@ -97,6 +98,7 @@ export type EditorThemeClasses = {
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
   hashtag?: EditorThemeClassName;
+  specialText?: EditorThemeClassName;
   heading?: {
     h1?: EditorThemeClassName;
     h2?: EditorThemeClassName;
@@ -134,16 +136,14 @@ export type EditorThemeClasses = {
   tableAddRows?: EditorThemeClassName;
   tableCellActionButton?: EditorThemeClassName;
   tableCellActionButtonContainer?: EditorThemeClassName;
-  tableCellPrimarySelected?: EditorThemeClassName;
   tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
-  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
   tableCellResizer?: EditorThemeClassName;
-  tableCellSortedIndicator?: EditorThemeClassName;
-  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
+  tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
+  tableSelection?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   embedBlock?: {
     base?: EditorThemeClassName;
@@ -170,10 +170,7 @@ export type LexicalNodeReplacement = {
 };
 
 export type HTMLConfig = {
-  export?: Map<
-    Klass<LexicalNode>,
-    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
-  >;
+  export?: DOMExportOutputMap;
   import?: DOMConversionMap;
 };
 
@@ -216,13 +213,13 @@ export interface MutationListenerOptions {
   /**
    * Skip the initial call of the listener with pre-existing DOM nodes.
    *
-   * The default is currently true for backwards compatibility with <= 0.16.1
-   * but this default is expected to change to false in 0.17.0.
+   * The default was previously true for backwards compatibility with <= 0.16.1
+   * but this default has been changed to false as of 0.21.0.
    */
   skipInitialization?: boolean;
 }
 
-const DEFAULT_SKIP_INITIALIZATION = true;
+const DEFAULT_SKIP_INITIALIZATION = false;
 
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -562,6 +559,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 export class LexicalEditor {
   ['constructor']!: KlassConstructor<typeof LexicalEditor>;
 
+  /** The version with build identifiers for this editor (since 0.17.1) */
+  static version: string | undefined;
+
   /** @internal */
   _headless: boolean;
   /** @internal */
@@ -841,7 +841,7 @@ export class LexicalEditor {
    * If any existing nodes are in the DOM, and skipInitialization is not true, the listener
    * will be called immediately with an updateTag of 'registerMutationListener' where all
    * nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
-   * (default is currently true for backwards compatibility in 0.16.x but will change to false in 0.17.0).
+   * (whose default was previously true for backwards compatibility with &lt;=0.16.1 but has been changed to false as of 0.21.0).
    *
    * @param klass - The class of the node that you want to listen to mutations on.
    * @param listener - The logic you want to run when the node is mutated.
@@ -903,7 +903,7 @@ export class LexicalEditor {
     klass: Klass<LexicalNode>,
   ): void {
     const prevEditorState = this._editorState;
-    const nodeMap = getCachedTypeToNodeMap(this._editorState).get(
+    const nodeMap = getCachedTypeToNodeMap(prevEditorState).get(
       klass.getType(),
     );
     if (!nodeMap) {
@@ -1112,6 +1112,16 @@ export class LexicalEditor {
       );
     }
 
+    // Ensure that we have a writable EditorState so that transforms can run
+    // during a historic operation
+    let writableEditorState = editorState;
+    if (writableEditorState._readOnly) {
+      writableEditorState = cloneEditorState(editorState);
+      writableEditorState._selection = editorState._selection
+        ? editorState._selection.clone()
+        : null;
+    }
+
     $flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
@@ -1121,11 +1131,10 @@ export class LexicalEditor {
       if (tag != null) {
         tags.add(tag);
       }
-
       $commitPendingUpdates(this);
     }
 
-    this._pendingEditorState = editorState;
+    this._pendingEditorState = writableEditorState;
     this._dirtyType = FULL_RECONCILE;
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
@@ -1134,7 +1143,12 @@ export class LexicalEditor {
       tags.add(tag);
     }
 
-    $commitPendingUpdates(this);
+    // Only commit pending updates if not already in an editor.update
+    // (e.g. dispatchCommand) otherwise this will cause a second commit
+    // with an already read-only state and selection
+    if (!this._updating) {
+      $commitPendingUpdates(this);
+    }
   }
 
   /**
@@ -1284,3 +1298,5 @@ export class LexicalEditor {
     };
   }
 }
+
+LexicalEditor.version = process.env.LEXICAL_VERSION;

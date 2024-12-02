@@ -16,12 +16,10 @@ import type {
   LexicalNode,
 } from 'lexical';
 
-import {
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
+  $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
   $getRoot,
@@ -31,6 +29,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  isDocumentFragment,
   isInlineDomNode,
 } from 'lexical';
 
@@ -103,7 +102,7 @@ function $appendNodesToHTML(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = $cloneWithProperties(currentNode);
     clone =
       $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
@@ -149,7 +148,7 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    if (isHTMLElement(element)) {
+    if (isHTMLElement(element) || isDocumentFragment(element)) {
       element.append(fragment);
     }
     parentElement.append(element);
@@ -157,7 +156,11 @@ function $appendNodesToHTML(
     if (after) {
       const newElement = after.call(target, element);
       if (newElement) {
-        element.replaceWith(newElement);
+        if (isDocumentFragment(element)) {
+          element.replaceChildren(newElement);
+        } else {
+          element.replaceWith(newElement);
+        }
       }
     }
   } else {
@@ -183,7 +186,9 @@ function getConversionFunction(
       if (
         domConversion !== null &&
         (currentConversion === null ||
-          (currentConversion.priority || 0) < (domConversion.priority || 0))
+          // Given equal priority, prefer the last registered importer
+          // which is typically an application custom node or HTMLConfig['import']
+          (currentConversion.priority || 0) <= (domConversion.priority || 0))
       ) {
         currentConversion = domConversion;
       }

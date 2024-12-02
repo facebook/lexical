@@ -7,24 +7,30 @@
  */
 
 import {
+  $applyNodeReplacement,
+  $createParagraphNode,
+  $createTextNode,
   $getNodeByKey,
   $getRoot,
   $isTokenOrSegmented,
   $nodesOfType,
+  createEditor,
+  isSelectionWithinEditor,
+  ParagraphNode,
+  resetRandomKey,
+  SerializedTextNode,
+  TextNode,
+} from 'lexical';
+
+import {
+  $onUpdate,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
   getTextDirection,
   isArray,
-  isSelectionWithinEditor,
-  resetRandomKey,
   scheduleMicroTask,
 } from '../../LexicalUtils';
-import {
-  $createParagraphNode,
-  ParagraphNode,
-} from '../../nodes/LexicalParagraphNode';
-import {$createTextNode, TextNode} from '../../nodes/LexicalTextNode';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalUtils tests', () => {
@@ -237,6 +243,43 @@ describe('LexicalUtils tests', () => {
       });
     });
 
+    describe('$onUpdate', () => {
+      test('added fn runs after update, original onUpdate, and prior calls to $onUpdate', () => {
+        const {editor} = testEnv;
+        const runs: string[] = [];
+
+        editor.update(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('foo')),
+            );
+            $onUpdate(() => {
+              runs.push('second');
+            });
+            $onUpdate(() => {
+              runs.push('third');
+            });
+          },
+          {
+            onUpdate: () => {
+              runs.push('first');
+            },
+          },
+        );
+
+        // Flush pending updates
+        editor.read(() => {});
+
+        expect(runs).toEqual(['first', 'second', 'third']);
+      });
+
+      test('adding fn throws outside update', () => {
+        expect(() => {
+          $onUpdate(() => {});
+        }).toThrow();
+      });
+    });
+
     test('getCachedTypeToNodeMap', async () => {
       const {editor} = testEnv;
       const paragraphKeys: string[] = [];
@@ -288,6 +331,286 @@ describe('LexicalUtils tests', () => {
       expect(
         [...textMap.values()].map((node) => (node as TextNode).__text),
       ).toEqual(expect.arrayContaining(['a', 'b']));
+    });
+  });
+});
+describe('$applyNodeReplacement', () => {
+  class ExtendedTextNode extends TextNode {
+    static getType() {
+      return 'extended-text';
+    }
+    static clone(node: ExtendedTextNode): ExtendedTextNode {
+      return new ExtendedTextNode(node.__text, node.getKey());
+    }
+    exportJSON(): SerializedTextNode {
+      return {...super.exportJSON(), type: this.getType()};
+    }
+    initWithTextNode(node: TextNode): this {
+      this.__text = node.__text;
+      TextNode.prototype.afterCloneFrom.call(this, node);
+      return this;
+    }
+    initWithJSON(serializedNode: SerializedTextNode): this {
+      this.setTextContent(serializedNode.text);
+      this.setFormat(serializedNode.format);
+      this.setDetail(serializedNode.detail);
+      this.setMode(serializedNode.mode);
+      this.setStyle(serializedNode.style);
+      return this;
+    }
+    static importJSON(serializedNode: SerializedTextNode): ExtendedTextNode {
+      return $createExtendedTextNode().initWithJSON(serializedNode);
+    }
+  }
+  class ExtendedExtendedTextNode extends ExtendedTextNode {
+    static getType() {
+      return 'extended-extended-text';
+    }
+    static clone(node: ExtendedExtendedTextNode): ExtendedExtendedTextNode {
+      return new ExtendedExtendedTextNode(node.__text, node.getKey());
+    }
+    initWithExtendedTextNode(node: ExtendedTextNode): this {
+      return this.initWithTextNode(node);
+    }
+    static importJSON(
+      serializedNode: SerializedTextNode,
+    ): ExtendedExtendedTextNode {
+      return $createExtendedExtendedTextNode().initWithJSON(serializedNode);
+    }
+    exportJSON(): SerializedTextNode {
+      return {...super.exportJSON(), type: this.getType()};
+    }
+  }
+  function $createExtendedTextNode(text: string = '') {
+    return $applyNodeReplacement(new ExtendedTextNode(text));
+  }
+  function $createExtendedExtendedTextNode(text: string = '') {
+    return $applyNodeReplacement(new ExtendedExtendedTextNode(text));
+  }
+  test('validates replace node configuration', () => {
+    const editor = createEditor({
+      nodes: [
+        {
+          replace: TextNode,
+          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('text')));
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      'Attempted to create node ExtendedTextNode that was not configured to be used on the editor',
+    );
+  });
+  test('validates replace node type withKlass', () => {
+    const editor = createEditor({
+      nodes: [
+        {
+          replace: TextNode,
+          with: (node) => node,
+          withKlass: ExtendedTextNode,
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('text')));
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      '$applyNodeReplacement failed. Expected replacement node to be an instance of ExtendedTextNode with type extended-text but returned TextNode with type text from original node TextNode with type text',
+    );
+  });
+  test('validates replace node type change', () => {
+    const editor = createEditor({
+      nodes: [
+        {
+          replace: TextNode,
+          with: (node: TextNode) => new TextNode(node.__text),
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('text')));
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      '$applyNodeReplacement failed. Ensure replacement node TextNode with type text is a subclass of the original node TextNode with type text',
+    );
+  });
+  test('validates replace node key change', () => {
+    const editor = createEditor({
+      nodes: [
+        {
+          replace: TextNode,
+          with: (node: TextNode) =>
+            new ExtendedTextNode(node.__text, node.getKey()),
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('text')));
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      'Lexical node with constructor ExtendedTextNode attempted to re-use key from node in active editor state with constructor TextNode. Keys must not be re-used when the type is changed.',
+    );
+  });
+  test('validates replace node configuration withKlass', () => {
+    const editor = createEditor({
+      nodes: [
+        {
+          replace: TextNode,
+          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          withKlass: ExtendedTextNode,
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('text')));
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      'Attempted to create node ExtendedTextNode that was not configured to be used on the editor',
+    );
+  });
+  test('validates nested replace node configuration', () => {
+    const editor = createEditor({
+      nodes: [
+        ExtendedTextNode,
+        {
+          replace: ExtendedTextNode,
+          with: (node) =>
+            $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append($createExtendedTextNode('text')),
+            );
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      'Attempted to create node ExtendedExtendedTextNode that was not configured to be used on the editor',
+    );
+  });
+  test('validates nested replace node configuration withKlass', () => {
+    const editor = createEditor({
+      nodes: [
+        ExtendedTextNode,
+        {
+          replace: TextNode,
+          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          withKlass: ExtendedTextNode,
+        },
+        {
+          replace: ExtendedTextNode,
+          with: (node) =>
+            $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
+          withKlass: ExtendedExtendedTextNode,
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    expect(() => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('text')));
+        },
+        {discrete: true},
+      );
+    }).toThrow(
+      'Attempted to create node ExtendedExtendedTextNode that was not configured to be used on the editor',
+    );
+  });
+  test('nested replace node configuration works', () => {
+    const editor = createEditor({
+      nodes: [
+        ExtendedTextNode,
+        ExtendedExtendedTextNode,
+        {
+          replace: TextNode,
+          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          withKlass: ExtendedTextNode,
+        },
+        {
+          replace: ExtendedTextNode,
+          with: (node) =>
+            $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
+          withKlass: ExtendedExtendedTextNode,
+        },
+      ],
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('text')));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const textNodes = $getRoot().getAllTextNodes();
+      expect(textNodes).toHaveLength(1);
+      expect(textNodes[0].constructor).toBe(ExtendedExtendedTextNode);
+      expect(textNodes[0].getTextContent()).toBe('text');
     });
   });
 });

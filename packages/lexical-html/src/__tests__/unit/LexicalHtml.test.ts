@@ -6,9 +6,6 @@
  *
  */
 
-//@ts-ignore-next-line
-import type {RangeSelection} from 'lexical';
-
 import {CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -20,6 +17,8 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  ParagraphNode,
+  RangeSelection,
 } from 'lexical';
 
 describe('HTML', () => {
@@ -210,6 +209,56 @@ describe('HTML', () => {
 
     expect(html).toBe(
       '<p style="text-align: center;"><span style="white-space: pre-wrap;">Hello world!</span></p>',
+    );
+  });
+
+  test('It should output correctly nodes whose export is DocumentFragment', () => {
+    const editor = createHeadlessEditor({
+      html: {
+        export: new Map([
+          [
+            ParagraphNode,
+            () => {
+              const element = document.createDocumentFragment();
+              return {
+                element,
+              };
+            },
+          ],
+        ]),
+      },
+      nodes: [],
+    });
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const p1 = $createParagraphNode();
+        const text1 = $createTextNode('Hello');
+        p1.append(text1);
+        const p2 = $createParagraphNode();
+        const text2 = $createTextNode('World');
+        p2.append(text2);
+        root.append(p1).append(p2);
+        // Root
+        // - ParagraphNode
+        // -- TextNode "Hello"
+        // - ParagraphNode
+        // -- TextNode "World"
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    let html = '';
+
+    editor.update(() => {
+      html = $generateHtmlFromNodes(editor);
+    });
+
+    expect(html).toBe(
+      '<span style="white-space: pre-wrap;">Hello</span><span style="white-space: pre-wrap;">World</span>',
     );
   });
 });

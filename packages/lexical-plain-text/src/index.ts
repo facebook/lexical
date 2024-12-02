@@ -274,6 +274,12 @@ export function registerPlainText(editor: LexicalEditor): () => void {
           return false;
         }
 
+        // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
+        // more details - https://github.com/facebook/lexical/issues/5841
+        if (IS_IOS && navigator.language === 'ko-KR') {
+          return false;
+        }
+
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },

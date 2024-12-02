@@ -18,7 +18,11 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -276,6 +280,16 @@ export class LinkNode extends ElementNode {
       selection.getTextContent().length > 0
     );
   }
+
+  isEmailURI(): boolean {
+    return this.__url.startsWith('mailto:');
+  }
+
+  isWebSiteURI(): boolean {
+    return (
+      this.__url.startsWith('https://') || this.__url.startsWith('http://')
+    );
+  }
 }
 
 function $convertAnchorElement(domNode: Node): DOMConversionOutput {
@@ -485,16 +499,20 @@ export function $toggleLink(
   if (url === null) {
     // Remove LinkNodes
     nodes.forEach((node) => {
-      const parent = node.getParent();
+      const parentLink = $findMatchingParent(
+        node,
+        (parent): parent is LinkNode =>
+          !$isAutoLinkNode(parent) && $isLinkNode(parent),
+      );
 
-      if (!$isAutoLinkNode(parent) && $isLinkNode(parent)) {
-        const children = parent.getChildren();
+      if (parentLink) {
+        const children = parentLink.getChildren();
 
         for (let i = 0; i < children.length; i++) {
-          parent.insertBefore(children[i]);
+          parentLink.insertBefore(children[i]);
         }
 
-        parent.remove();
+        parentLink.remove();
       }
     });
   } else {

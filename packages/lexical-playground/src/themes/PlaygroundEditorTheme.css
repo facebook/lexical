@@ -68,19 +68,46 @@
 
 .PlaygroundEditorTheme__tabNode {
   position: relative;
+  text-decoration: none;
+  padding: 0.1em;
 }
 
-/* affected tabs
-.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderline {
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.15em;
+  border-bottom: 0.1em solid currentColor;
 }
 
-.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough {
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.79em;
+  border-top: 0.1em solid currentColor;
 }
 
-.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough {
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before,
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
 }
 
-*/
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before {
+  top: 0.79em;
+  border-top: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  bottom: 0.15em;
+  border-bottom: 0.1em solid currentColor;
+}
+
 .PlaygroundEditorTheme__textSubscript {
   font-size: 0.8em;
   vertical-align: sub !important;

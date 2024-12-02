@@ -122,14 +122,20 @@ export function isFormatQuote(event: KeyboardEvent): boolean {
 export function isLowercase(event: KeyboardEvent): boolean {
   const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
   return (
-    code === 'Digit1' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    (code === 'Numpad1' || code === 'Digit1') &&
+    shiftKey &&
+    !altKey &&
+    controlOrMeta(metaKey, ctrlKey)
   );
 }
 
 export function isUppercase(event: KeyboardEvent): boolean {
   const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
   return (
-    code === 'Digit2' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    (code === 'Numpad2' || code === 'Digit2') &&
+    shiftKey &&
+    !altKey &&
+    controlOrMeta(metaKey, ctrlKey)
   );
 }
 

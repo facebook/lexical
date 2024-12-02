@@ -552,9 +552,9 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
 }
 
 function $resetCapitalization(selection: RangeSelection): void {
-  for (const type of ['lowercase', 'uppercase'] as const) {
-    if (selection.hasFormat(type)) {
-      selection.toggleFormat(type);
+  for (const format of ['lowercase', 'uppercase'] as const) {
+    if (selection.hasFormat(format)) {
+      selection.toggleFormat(format);
     }
   }
 }
@@ -919,7 +919,9 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         $resetCapitalization(selection);
+
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
@@ -1089,11 +1091,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
       KEY_SPACE_COMMAND,
       (_) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
 
-        $resetCapitalization(selection);
+        if ($isRangeSelection(selection)) {
+          $resetCapitalization(selection);
+        }
 
         return false;
       },
@@ -1103,11 +1104,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
       KEY_TAB_COMMAND,
       (_) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
 
-        $resetCapitalization(selection);
+        if ($isRangeSelection(selection)) {
+          $resetCapitalization(selection);
+        }
 
         return false;
       },

@@ -277,17 +277,18 @@ describe('LexicalTextNode tests', () => {
     ['superscript', 'subscript'],
     ['lowercase', 'uppercase'],
     ['uppercase', 'lowercase'],
-  ])('setting %s clears %s', async (newFormat, previousFormat) => {
+  ])('setting %s clears %s', async (newFormat, otherFormat) => {
     await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      textNode.toggleFormat(previousFormat as TextFormatType);
+      textNode.toggleFormat(otherFormat as TextFormatType);
       textNode.toggleFormat(newFormat as TextFormatType);
+
       expect(textNode.hasFormat(newFormat as TextFormatType)).toBe(true);
-      expect(textNode.hasFormat(previousFormat as TextFormatType)).toBe(false);
+      expect(textNode.hasFormat(otherFormat as TextFormatType)).toBe(false);
     });
   });
 
@@ -305,6 +306,7 @@ describe('LexicalTextNode tests', () => {
 
       textNode.toggleFormat(formatToClear as TextFormatType);
       textNode.toggleFormat(formatToClear as TextFormatType);
+
       expect(textNode.hasFormat(formatToClear as TextFormatType)).toBe(false);
       expect(textNode.hasFormat(otherFormat as TextFormatType)).toBe(false);
     });

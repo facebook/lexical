@@ -18,7 +18,6 @@ import {
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,
-  $selectAll,
   $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
@@ -30,6 +29,9 @@ import {
   getStyleObjectFromCSS,
 } from './utils';
 
+export {
+  /** @deprecated moved to the lexical package */ $selectAll,
+} from 'lexical';
 export {
   /** @deprecated moved to the lexical package */ $cloneWithProperties,
 } from 'lexical';
@@ -48,7 +50,6 @@ export {
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,
-  $selectAll,
   $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,

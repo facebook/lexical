@@ -1084,10 +1084,49 @@ export function isSelectAll(
   return key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey);
 }
 
-export function $selectAll(): void {
+export function $selectAll(selection?: RangeSelection | null): RangeSelection {
   const root = $getRoot();
-  const selection = root.select(0, root.getChildrenSize());
-  $setSelection($normalizeSelection(selection));
+
+  if (selection && $isRangeSelection(selection)) {
+    // Expand the existing RangeSelection
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = anchor.getNode();
+    const topParent = anchorNode.getTopLevelElementOrThrow();
+    const rootNode = topParent.getParentOrThrow();
+    let firstNode = rootNode.getFirstDescendant();
+    let lastNode = rootNode.getLastDescendant();
+    let firstType: 'element' | 'text' = 'element';
+    let lastType: 'element' | 'text' = 'element';
+    let lastOffset = 0;
+
+    if ($isTextNode(firstNode)) {
+      firstType = 'text';
+    } else if (!$isElementNode(firstNode) && firstNode !== null) {
+      firstNode = firstNode.getParentOrThrow();
+    }
+
+    if ($isTextNode(lastNode)) {
+      lastType = 'text';
+      lastOffset = lastNode.getTextContentSize();
+    } else if (!$isElementNode(lastNode) && lastNode !== null) {
+      lastNode = lastNode.getParentOrThrow();
+    }
+
+    if (firstNode && lastNode) {
+      anchor.set(firstNode.getKey(), 0, firstType);
+      focus.set(lastNode.getKey(), lastOffset, lastType);
+    }
+
+    // Normalize and set the updated selection
+    $setSelection($normalizeSelection(selection));
+    return selection;
+  } else {
+    // Create a new RangeSelection
+    const newSelection = root.select(0, root.getChildrenSize());
+    $setSelection($normalizeSelection(newSelection));
+    return newSelection;
+  }
 }
 
 export function getCachedClassNameArray(

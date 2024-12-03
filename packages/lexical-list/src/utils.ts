@@ -7,7 +7,7 @@
  */
 
 import {$findMatchingParent} from '@lexical/utils';
-import {type LexicalNode, type Spread, TEXT_TYPE_TO_FORMAT} from 'lexical';
+import {type LexicalNode, type Spread} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {
@@ -201,25 +201,4 @@ export function $removeHighestEmptyListParent(
 export function $wrapInListItem(node: LexicalNode): ListItemNode {
   const listItemWrapper = $createListItemNode();
   return listItemWrapper.append(node);
-}
-
-export function toggleTextFormatType(
-  format: number,
-  type: TextFormatType,
-  alignWithFormat: null | number,
-): number {
-  const activeFormat = TEXT_TYPE_TO_FORMAT[type];
-  if (
-    alignWithFormat !== null &&
-    (format & activeFormat) === (alignWithFormat & activeFormat)
-  ) {
-    return format;
-  }
-  let newFormat = format ^ activeFormat;
-  if (type === 'subscript') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
-  } else if (type === 'superscript') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
-  }
-  return newFormat;
 }

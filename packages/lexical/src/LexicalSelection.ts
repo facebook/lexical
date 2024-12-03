@@ -689,90 +689,43 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
-    const anchor = this.anchor;
-    const focus = this.focus;
+    // Now that "removeText" has been improved and does not depend on
+    // insertText, insertText can be greatly simplified. The next
+    // commented version is a WIP (about 5 tests fail).
 
-    // Check if selection is collapsed (cursor is just a point, not a range)
-    const isCollapsed =
-      anchor.offset === focus.offset && anchor.key === focus.key;
-
-    // If the text to insert is empty, return early
+    this.removeText();
     if (text === '') {
-      if (!isCollapsed) {
-        this.removeText();
-      }
       return;
     }
 
-    // Create a new text node with the given text and apply the current format and style
+    const anchorNode = this.anchor.getNode();
     const textNode = $createTextNode(text);
     textNode.setFormat(this.format);
     textNode.setStyle(this.style);
 
-    // Get the anchor node and its parent
-    const anchorNode = this.anchor.getNode();
-    const parent = anchorNode.getParentOrThrow();
-
-    // Determine the insertion position based on the anchor offset
     if ($isTextNode(anchorNode)) {
-      const currentOffset = this.anchor.offset;
-
+      const parent = anchorNode.getParentOrThrow();
       if (this.anchor.offset === 0) {
-        // If parent is inline and no previous siblings, insert before parent
         if (parent.isInline() && !anchorNode.__prev) {
           parent.insertBefore(textNode);
-        } else if (anchor.key === focus.key) {
-          // Check if the format has been modified
-          const isFormatModified = this.format !== anchorNode.getFormat();
-
-          if (isFormatModified) {
-            // Create new node with the formatted text
-            const originalContent = anchorNode.getTextContent();
-
-            // Create a new text node with original content
-            const originalNode = $createTextNode(originalContent);
-            // Copy over any existing format/style from the original node
-            originalNode.setFormat(anchorNode.getFormat());
-            originalNode.setStyle(anchorNode.getStyle());
-
-            // Set new content to the formatted node
-            anchorNode.setTextContent(text);
-
-            // Insert the original content after the formatted text
-            anchorNode.insertAfter(originalNode);
-          } else {
-            // Original concatenation behavior
-            const currentContent = anchorNode.getTextContent();
-            const newContent = text + currentContent.slice(currentOffset);
-            anchorNode.setTextContent(newContent);
-          }
-
-          this.anchor.offset = text.length;
-          this.focus.offset = text.length;
-          return;
         } else {
-          anchorNode.setTextContent(text);
+          anchorNode.insertBefore(textNode);
         }
       } else if (this.anchor.offset === anchorNode.getTextContentSize()) {
-        // Handle insertion at the end of node
         if (parent.isInline() && !anchorNode.__next) {
           parent.insertAfter(textNode);
         } else {
           anchorNode.insertAfter(textNode);
         }
       } else {
-        // Handle insertion in middle of node
         const [before] = anchorNode.splitText(this.anchor.offset);
         before.insertAfter(textNode);
       }
     } else {
       anchorNode.splice(this.anchor.offset, 0, [textNode]);
     }
-    // Update the selection to the end of the newly inserted text node
     const nodeToSelect = textNode.isAttached() ? textNode : anchorNode;
     nodeToSelect.selectEnd();
-
-    // Handle special cases like composing text
     if (
       textNode.isComposing() &&
       this.anchor.type === 'text' &&

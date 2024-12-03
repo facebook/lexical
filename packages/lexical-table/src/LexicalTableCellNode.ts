@@ -26,6 +26,7 @@ import {
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
+  isHTMLElement,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -150,8 +151,12 @@ export class TableCellNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const output = super.exportDOM(editor);
 
-    if (output.element) {
+    if (output.element && isHTMLElement(output.element)) {
       const element = output.element as HTMLTableCellElement;
+      element.setAttribute(
+        'data-temporary-table-cell-lexical-key',
+        this.getKey(),
+      );
       element.style.border = '1px solid black';
       if (this.__colSpan > 1) {
         element.colSpan = this.__colSpan;

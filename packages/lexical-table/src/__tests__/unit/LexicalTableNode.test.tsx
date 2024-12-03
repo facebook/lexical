@@ -7,13 +7,16 @@
  */
 
 import {$insertDataTransferForRichText} from '@lexical/clipboard';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableSelection,
   $insertTableColumn__EXPERIMENTAL,
+  $isTableCellNode,
 } from '@lexical/table';
+import {$dfs} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -130,6 +133,133 @@ describe('LexicalTableNode tests', () => {
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup></colgroup>
+                  </table>
+                `,
+              );
+            });
+          });
+
+          test('TableNode.exportDOM() with range selection', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const tableNode = $createTableNodeWithDimensions(
+                2,
+                2,
+              ).setColWidths([100, 200]);
+              tableNode
+                .getAllTextNodes()
+                .forEach((node, i) => node.setTextContent(String(i)));
+              $getRoot().clear().append(tableNode);
+              expectHtmlToBeEqual(
+                $generateHtmlFromNodes(editor, $getRoot().select(0)),
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup>
+                      <col style="width: 100px" />
+                      <col style="width: 200px" />
+                    </colgroup>
+                    <tbody>
+                      <tr>
+                        <th
+                          style="
+                            border: 1px solid black;
+                            width: 75px;
+                            vertical-align: top;
+                            text-align: start;
+                            background-color: rgb(242, 243, 245);
+                          ">
+                          <p><span style="white-space: pre-wrap">0</span></p>
+                        </th>
+                        <th
+                          style="
+                            border: 1px solid black;
+                            width: 75px;
+                            vertical-align: top;
+                            text-align: start;
+                            background-color: rgb(242, 243, 245);
+                          ">
+                          <p><span style="white-space: pre-wrap">1</span></p>
+                        </th>
+                      </tr>
+                      <tr>
+                        <th
+                          style="
+                            border: 1px solid black;
+                            width: 75px;
+                            vertical-align: top;
+                            text-align: start;
+                            background-color: rgb(242, 243, 245);
+                          ">
+                          <p><span style="white-space: pre-wrap">2</span></p>
+                        </th>
+                        <td
+                          style="
+                            border: 1px solid black;
+                            width: 75px;
+                            vertical-align: top;
+                            text-align: start;
+                          ">
+                          <p><span style="white-space: pre-wrap">3</span></p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                `,
+              );
+            });
+          });
+
+          test('TableNode.exportDOM() with partial table selection', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const tableNode = $createTableNodeWithDimensions(
+                2,
+                2,
+              ).setColWidths([100, 200]);
+              tableNode
+                .getAllTextNodes()
+                .forEach((node, i) => node.setTextContent(String(i)));
+              $getRoot().append(tableNode);
+              const tableSelection = $createTableSelection();
+              tableSelection.tableKey = tableNode.getKey();
+              const cells = $dfs(tableNode).flatMap(({node}) =>
+                $isTableCellNode(node) ? [node] : [],
+              );
+              // second column
+              tableSelection.anchor.set(cells[1].getKey(), 0, 'element');
+              tableSelection.focus.set(cells[3].getKey(), 0, 'element');
+              expectHtmlToBeEqual(
+                $generateHtmlFromNodes(editor, tableSelection),
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup><col style="width: 200px" /></colgroup>
+                    <tbody>
+                      <tr>
+                        <th
+                          style="
+                            border: 1px solid black;
+                            width: 75px;
+                            vertical-align: top;
+                            text-align: start;
+                            background-color: rgb(242, 243, 245);
+                          ">
+                          <p><span style="white-space: pre-wrap">1</span></p>
+                        </th>
+                      </tr>
+                      <tr>
+                        <td
+                          style="
+                            border: 1px solid black;
+                            width: 75px;
+                            vertical-align: top;
+                            text-align: start;
+                          ">
+                          <p><span style="white-space: pre-wrap">3</span></p>
+                        </td>
+                      </tr>
+                    </tbody>
                   </table>
                 `,
               );

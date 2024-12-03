@@ -6,6 +6,8 @@
  *
  */
 
+import type {TableRowNode} from './LexicalTableRowNode';
+
 import {
   addClassNamesToElement,
   isHTMLElement,
@@ -15,6 +17,7 @@ import {
   $applyNodeReplacement,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -31,10 +34,13 @@ import {
 import invariant from 'shared/invariant';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
-import {TableRowNode} from './LexicalTableRowNode';
-import {getTable} from './LexicalTableSelectionHelpers';
+import {
+  $getNearestTableCellInTableFromDOMNode,
+  getTable,
+} from './LexicalTableSelectionHelpers';
+import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
 
 export type SerializedTableNode = Spread<
   {
@@ -167,6 +173,14 @@ export class TableNode extends ElementNode {
     };
   }
 
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    return destination === 'html';
+  }
+
   getDOMSlot(element: HTMLElement): ElementDOMSlot {
     const tableElement =
       (element.nodeName !== 'TABLE' && element.querySelector('table')) ||
@@ -224,9 +238,13 @@ export class TableNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const superExport = super.exportDOM(editor);
+    const {element} = superExport;
     return {
-      ...super.exportDOM(editor),
       after: (tableElement) => {
+        if (superExport.after) {
+          tableElement = superExport.after(tableElement);
+        }
         if (
           tableElement &&
           isHTMLElement(tableElement) &&
@@ -237,15 +255,70 @@ export class TableNode extends ElementNode {
         if (!tableElement || !isHTMLElement(tableElement)) {
           return null;
         }
+
+        // Scan the table map to build a map of table cell key to the columns it needs
+        const [tableMap] = $computeTableMapSkipCellCheck(this, null, null);
+        const cellValues = new Map<
+          NodeKey,
+          {startColumn: number; colSpan: number}
+        >();
+        for (const mapRow of tableMap) {
+          for (const mapValue of mapRow) {
+            const key = mapValue.cell.getKey();
+            if (!cellValues.has(key)) {
+              cellValues.set(key, {
+                colSpan: mapValue.cell.getColSpan(),
+                startColumn: mapValue.startColumn,
+              });
+            }
+          }
+        }
+
+        // scan the DOM to find the table cell keys that were used and mark those columns
+        const knownColumns = new Set<number>();
+        for (const cellDOM of tableElement.querySelectorAll(
+          ':scope > tr > [data-temporary-table-cell-lexical-key]',
+        )) {
+          const key = cellDOM.getAttribute(
+            'data-temporary-table-cell-lexical-key',
+          );
+          if (key) {
+            const cellSpan = cellValues.get(key);
+            cellDOM.removeAttribute('data-temporary-table-cell-lexical-key');
+            if (cellSpan) {
+              cellValues.delete(key);
+              for (let i = 0; i < cellSpan.colSpan; i++) {
+                knownColumns.add(i + cellSpan.startColumn);
+              }
+            }
+          }
+        }
+
+        // Compute the colgroup and columns in the export
+        const colGroup = tableElement.querySelector(':scope > colgroup');
+        if (colGroup) {
+          // Only include the <col /> for rows that are in the output
+          const cols = Array.from(
+            tableElement.querySelectorAll(':scope > colgroup > col'),
+          ).filter((dom, i) => knownColumns.has(i));
+          colGroup.replaceChildren(...cols);
+        }
+
         // Wrap direct descendant rows in a tbody for export
         const rows = tableElement.querySelectorAll(':scope > tr');
         if (rows.length > 0) {
           const tBody = document.createElement('tbody');
-          tBody.append(...rows);
+          for (const row of rows) {
+            tBody.appendChild(row);
+          }
           tableElement.append(tBody);
         }
         return tableElement;
       },
+      element:
+        element && isHTMLElement(element) && element.nodeName !== 'TABLE'
+          ? element.querySelector('table')
+          : element,
     };
   }
 
@@ -270,17 +343,16 @@ export class TableNode extends ElementNode {
         continue;
       }
 
-      const x = row.findIndex((cell) => {
-        if (!cell) {
-          return;
+      for (let x = 0; x < row.length; x++) {
+        const cell = row[x];
+        if (cell == null) {
+          continue;
         }
         const {elem} = cell;
-        const cellNode = $getNearestNodeFromDOMNode(elem);
-        return cellNode === tableCellNode;
-      });
-
-      if (x !== -1) {
-        return {x, y};
+        const cellNode = $getNearestTableCellInTableFromDOMNode(this, elem);
+        if (cellNode !== null && tableCellNode.is(cellNode)) {
+          return {x, y};
+        }
       }
     }
 

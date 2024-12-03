@@ -173,8 +173,8 @@
   right: 0;
   bottom: 0;
   top: 0;
-  background-color: rgb(172, 206, 247);
-  opacity: 0.6;
+  background-color: highlight;
+  mix-blend-mode: multiply;
   content: '';
   pointer-events: none;
 }
@@ -447,4 +447,9 @@
 .PlaygroundEditorTheme__hr.selected {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
+}
+
+.PlaygroundEditorTheme__specialText {
+  background-color: yellow;
+  font-weight: bold;
 }

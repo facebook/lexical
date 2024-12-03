@@ -44,6 +44,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
+export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
   $splitNode,
   isBlockDomNode,
@@ -647,19 +648,38 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   }
 }
 
+let NEEDS_MANUAL_ZOOM = IS_FIREFOX || !CAN_USE_DOM ? false : undefined;
+function needsManualZoom(): boolean {
+  if (NEEDS_MANUAL_ZOOM === undefined) {
+    // If the browser implements standardized CSS zoom, then the client rect
+    // will be wider after zoom is applied
+    // https://chromestatus.com/feature/5198254868529152
+    // https://github.com/facebook/lexical/issues/6863
+    const div = document.createElement('div');
+    div.style.cssText =
+      'position: absolute; opacity: 0; width: 100px; left: -1000px;';
+    document.body.appendChild(div);
+    const noZoom = div.getBoundingClientRect();
+    div.style.setProperty('zoom', '2');
+    NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width === noZoom.width;
+    document.body.removeChild(div);
+  }
+  return NEEDS_MANUAL_ZOOM;
+}
+
 /**
  * Calculates the zoom level of an element as a result of using
- * css zoom property.
+ * css zoom property. For browsers that implement standardized CSS
+ * zoom (Firefox, Chrome >= 128), this will always return 1.
  * @param element
  */
 export function calculateZoomLevel(element: Element | null): number {
-  if (IS_FIREFOX) {
-    return 1;
-  }
   let zoom = 1;
-  while (element) {
-    zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
-    element = element.parentElement;
+  if (needsManualZoom()) {
+    while (element) {
+      zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
+      element = element.parentElement;
+    }
   }
   return zoom;
 }

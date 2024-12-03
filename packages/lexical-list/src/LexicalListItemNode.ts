@@ -7,22 +7,6 @@
  */
 
 import type {ListNode, ListType} from './';
-import type {
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  KlassConstructor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-  TextFormatType,
-} from 'lexical';
 
 import {
   addClassNamesToElement,
@@ -34,9 +18,23 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  BaseSelection,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  EditorConfig,
+  EditorThemeClasses,
   ElementNode,
+  KlassConstructor,
   LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  RangeSelection,
+  SerializedElementNode,
+  Spread,
   TEXT_TYPE_TO_FORMAT,
+  TextFormatType,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
@@ -55,7 +53,7 @@ export type SerializedListItemNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class ListItemNode extends ElementNode {
+export class ListItemNode extends ParagraphNode {
   ['constructor']!: KlassConstructor<typeof ListItemNode>;
   /** @internal */
   __value: number;

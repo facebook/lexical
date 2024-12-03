@@ -14,12 +14,14 @@ import type {
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
+  KlassConstructor,
   LexicalNode,
   NodeKey,
   ParagraphNode,
   RangeSelection,
   SerializedElementNode,
   Spread,
+  TextFormatType,
 } from 'lexical';
 
 import {
@@ -34,28 +36,32 @@ import {
   $isRangeSelection,
   ElementNode,
   LexicalEditor,
+  TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {isNestedListNode, toggleTextFormatType} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
+    textFormat: number;
   },
   SerializedElementNode
 >;
 
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
+  ['constructor']!: KlassConstructor<typeof ListItemNode>;
   /** @internal */
   __value: number;
   /** @internal */
   __checked?: boolean;
+  __textFormat: number;
 
   static getType(): string {
     return 'listitem';
@@ -69,6 +75,32 @@ export class ListItemNode extends ElementNode {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
+    this.__textFormat = 0;
+  }
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
+  }
+
+  setTextFormat(type: number): this {
+    const self = this.getWritable();
+    self.__textFormat = type;
+    return self;
+  }
+
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
+  }
+
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+    const self = this.getLatest();
+    const format = self.__textFormat;
+    return toggleTextFormatType(format, type, alignWithFormat);
+  }
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__textFormat = prevNode.__textFormat;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -128,6 +160,7 @@ export class ListItemNode extends ElementNode {
     node.setValue(serializedNode.value);
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
+    node.setTextFormat(serializedNode.textFormat);
     return node;
   }
 
@@ -143,6 +176,7 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
+      textFormat: this.getTextFormat(),
       type: 'listitem',
       value: this.getValue(),
       version: 1,
@@ -256,12 +290,17 @@ export class ListItemNode extends ElementNode {
   }
 
   insertNewAfter(
-    _: RangeSelection,
+    selection: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
     const newElement = $createListItemNode(
       this.__checked == null ? undefined : false,
     );
+
+    const format = selection.format;
+    newElement.setTextFormat(format);
+
+    newElement.setFormat(this.getFormatType());
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;

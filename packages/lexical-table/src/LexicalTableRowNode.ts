@@ -6,7 +6,7 @@
  *
  */
 
-import type {Spread} from 'lexical';
+import type {BaseSelection, Spread} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
@@ -79,6 +79,14 @@ export class TableRowNode extends ElementNode {
     addClassNamesToElement(element, config.theme.tableRow);
 
     return element;
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    return destination === 'html';
   }
 
   isShadowRoot(): boolean {

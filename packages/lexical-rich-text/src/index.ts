@@ -552,7 +552,7 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
 }
 
 function $resetCapitalization(selection: RangeSelection): void {
-  for (const format of ['lowercase', 'uppercase'] as const) {
+  for (const format of ['lowercase', 'uppercase', 'capitalize'] as const) {
     if (selection.hasFormat(format)) {
       selection.toggleFormat(format);
     }

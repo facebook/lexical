@@ -32,6 +32,7 @@ import {
 } from '../../../__tests__/utils';
 import {
   IS_BOLD,
+  IS_CAPITALIZE,
   IS_CODE,
   IS_HIGHLIGHT,
   IS_ITALIC,
@@ -53,6 +54,7 @@ const editorConfig = Object.freeze({
   theme: {
     text: {
       bold: 'my-bold-class',
+      capitalize: 'my-capitalize-class',
       code: 'my-code-class',
       highlight: 'my-highlight-class',
       italic: 'my-italic-class',
@@ -216,6 +218,7 @@ describe('LexicalTextNode tests', () => {
     ['highlight', IS_HIGHLIGHT],
     ['lowercase', IS_LOWERCASE],
     ['uppercase', IS_UPPERCASE],
+    ['capitalize', IS_CAPITALIZE],
   ] as const)('%s flag', (formatFlag: TextFormatType, stateFormat: number) => {
     const flagPredicate = (node: TextNode) => node.hasFormat(formatFlag);
     const flagToggle = (node: TextNode) => node.toggleFormat(formatFlag);
@@ -272,43 +275,54 @@ describe('LexicalTextNode tests', () => {
     });
   });
 
-  test.each([
-    ['subscript', 'superscript'],
-    ['superscript', 'subscript'],
-    ['lowercase', 'uppercase'],
-    ['uppercase', 'lowercase'],
-  ])('setting %s clears %s', async (newFormat, otherFormat) => {
+  test('setting subscript clears superscript', async () => {
     await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
-
-      textNode.toggleFormat(otherFormat as TextFormatType);
-      textNode.toggleFormat(newFormat as TextFormatType);
-
-      expect(textNode.hasFormat(newFormat as TextFormatType)).toBe(true);
-      expect(textNode.hasFormat(otherFormat as TextFormatType)).toBe(false);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(true);
+      expect(textNode.hasFormat('superscript')).toBe(false);
     });
   });
 
-  test.each([
-    ['subscript', 'superscript'],
-    ['superscript', 'subscript'],
-    ['lowercase', 'uppercase'],
-    ['uppercase', 'lowercase'],
-  ])('clearing %s does not set %s', async (formatToClear, otherFormat) => {
+  test('setting superscript clears subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(true);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
+  test('capitalization formats are mutually exclusive', async () => {
+    const capitalizationFormats: TextFormatType[] = [
+      'lowercase',
+      'uppercase',
+      'capitalize',
+    ];
+
     await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
-      textNode.toggleFormat(formatToClear as TextFormatType);
-      textNode.toggleFormat(formatToClear as TextFormatType);
-
-      expect(textNode.hasFormat(formatToClear as TextFormatType)).toBe(false);
-      expect(textNode.hasFormat(otherFormat as TextFormatType)).toBe(false);
+      capitalizationFormats.forEach((formatToSet) => {
+        textNode.toggleFormat(formatToSet as TextFormatType);
+        capitalizationFormats
+          .filter((format) => format !== formatToSet)
+          .forEach((format) =>
+            expect(textNode.hasFormat(format as TextFormatType)).toBe(false),
+          );
+        expect(textNode.hasFormat(formatToSet as TextFormatType)).toBe(true);
+      });
     });
   });
 
@@ -641,6 +655,12 @@ describe('LexicalTextNode tests', () => {
         IS_UPPERCASE,
         'My text node',
         '<span class="my-uppercase-class">My text node</span>',
+      ],
+      [
+        'capitalize',
+        IS_CAPITALIZE,
+        'My text node',
+        '<span class="my-capitalize-class">My text node</span>',
       ],
       [
         'underline + strikethrough',

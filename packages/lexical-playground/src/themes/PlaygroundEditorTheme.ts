@@ -105,6 +105,7 @@ const theme: EditorThemeClasses = {
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
+    capitalize: 'PlaygroundEditorTheme__textCapitalize',
     code: 'PlaygroundEditorTheme__textCode',
     italic: 'PlaygroundEditorTheme__textItalic',
     lowercase: 'PlaygroundEditorTheme__textLowercase',

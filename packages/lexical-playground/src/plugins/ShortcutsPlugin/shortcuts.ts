@@ -29,6 +29,7 @@ export const SHORTCUTS = Object.freeze({
   STRIKETHROUGH: IS_APPLE ? '⌘+Shift+S' : 'Ctrl+Shift+S',
   LOWERCASE: IS_APPLE ? '⌘+Shift+1' : 'Ctrl+Shift+1',
   UPPERCASE: IS_APPLE ? '⌘+Shift+2' : 'Ctrl+Shift+2',
+  CAPITALIZE: IS_APPLE ? '⌘+Shift+3' : 'Ctrl+Shift+3',
   CENTER_ALIGN: IS_APPLE ? '⌘+Shift+E' : 'Ctrl+Shift+E',
   JUSTIFY_ALIGN: IS_APPLE ? '⌘+Shift+J' : 'Ctrl+Shift+J',
   LEFT_ALIGN: IS_APPLE ? '⌘+Shift+L' : 'Ctrl+Shift+L',
@@ -133,6 +134,16 @@ export function isUppercase(event: KeyboardEvent): boolean {
   const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
   return (
     (code === 'Numpad2' || code === 'Digit2') &&
+    shiftKey &&
+    !altKey &&
+    controlOrMeta(metaKey, ctrlKey)
+  );
+}
+
+export function isCapitalize(event: KeyboardEvent): boolean {
+  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  return (
+    (code === 'Numpad3' || code === 'Digit3') &&
     shiftKey &&
     !altKey &&
     controlOrMeta(metaKey, ctrlKey)

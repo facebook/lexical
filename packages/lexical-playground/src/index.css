@@ -403,6 +403,10 @@ i.lowercase {
   background-image: url(images/icons/type-lowercase.svg);
 }
 
+i.capitalize {
+  background-image: url(images/icons/type-capitalize.svg);
+}
+
 i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }

@@ -617,6 +617,7 @@ export default function ToolbarPlugin({
       );
       updateToolbarState('isLowercase', selection.hasFormat('lowercase'));
       updateToolbarState('isUppercase', selection.hasFormat('uppercase'));
+      updateToolbarState('isCapitalize', selection.hasFormat('capitalize'));
     }
   }, [activeEditor, editor, updateToolbarState]);
 
@@ -919,6 +920,21 @@ export default function ToolbarPlugin({
                 <span className="text">Uppercase</span>
               </div>
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
+              }}
+              className={
+                'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
+              }
+              title="Capitalize"
+              aria-label="Format text to capitalize">
+              <div className="icon-text-container">
+                <i className="icon capitalize" />
+                <span className="text">Capitalize</span>
+              </div>
+              <span className="shortcut">{SHORTCUTS.CAPITALIZE}</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

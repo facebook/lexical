@@ -12,7 +12,6 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {$isListItemNode} from '@lexical/list';
 import invariant from 'shared/invariant';
 
 import {
@@ -1215,22 +1214,12 @@ export class RangeSelection implements BaseSelection {
       });
     };
 
-    const applyFormatToListItems = (alignWith: number | null) => {
-      selectedNodes.forEach((node) => {
-        if ($isListItemNode(node)) {
-          const newFormat = node.getFormatFlags(formatType, alignWith);
-          node.setTextFormat(newFormat);
-        }
-      });
-    };
-
     const selectedTextNodesLength = selectedTextNodes.length;
     if (selectedTextNodesLength === 0) {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
       applyFormatToParagraphs(alignWithFormat);
-      applyFormatToListItems(alignWithFormat);
       return;
     }
 
@@ -1263,7 +1252,6 @@ export class RangeSelection implements BaseSelection {
       alignWithFormat,
     );
     applyFormatToParagraphs(firstNextFormat);
-    applyFormatToListItems(firstNextFormat);
 
     const lastIndex = selectedTextNodesLength - 1;
     let lastNode = selectedTextNodes[lastIndex];

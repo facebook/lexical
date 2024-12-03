@@ -35,5 +35,8 @@
         "default": "./Lexical.js"
       }
     }
+  },
+  "dependencies": {
+    "@lexical/utils": "^0.21.0"
   }
 }

@@ -494,17 +494,20 @@ export function $handleListInsertParagraph(): boolean {
 
   const grandparent = parent.getParent();
 
-  let replacementNode;
+  let replacementNode: ParagraphNode | ListItemNode;
 
   if ($isRootOrShadowRoot(grandparent)) {
     replacementNode = $createParagraphNode();
-    topListNode.insertAfter(replacementNode);
+    if (topListNode) {
+      topListNode.insertAfter(replacementNode);
+    }
   } else if ($isListItemNode(grandparent)) {
     replacementNode = $createListItemNode();
     grandparent.insertAfter(replacementNode);
   } else {
     return false;
   }
+
   replacementNode.select();
 
   const nextSiblings = anchor.getNextSiblings();
@@ -514,11 +517,12 @@ export function $handleListInsertParagraph(): boolean {
 
     if ($isParagraphNode(replacementNode)) {
       replacementNode.insertAfter(newList);
-    } else {
+    } else if ($isListItemNode(replacementNode)) {
       const newListItem = $createListItemNode();
       newListItem.append(newList);
-      replacementNode.insertAfter(newListItem);
+      (replacementNode as ListItemNode).insertAfter(newListItem);
     }
+
     nextSiblings.forEach((sibling) => {
       sibling.remove();
       newList.append(sibling);

@@ -47,6 +47,7 @@ export type SerializedListItemNode = Spread<
     checked: boolean | undefined;
     value: number;
     textFormat: number;
+    textStyle: string;
   },
   SerializedElementNode
 >;
@@ -58,6 +59,7 @@ export class ListItemNode extends ParagraphNode {
   /** @internal */
   __checked?: boolean;
   __textFormat: number;
+  __textStyle: string;
 
   static getType(): string {
     return 'listitem';
@@ -72,6 +74,7 @@ export class ListItemNode extends ParagraphNode {
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
     this.__textFormat = 0;
+    this.__textStyle = '';
   }
   getTextFormat(): number {
     const self = this.getLatest();
@@ -88,15 +91,14 @@ export class ListItemNode extends ParagraphNode {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getTextFormat() & formatFlag) !== 0;
   }
-
-  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
-    const self = this.getLatest();
-    const format = self.__textFormat;
-    return toggleTextFormatType(format, type, alignWithFormat);
+  getTextStyle(): string {
+    return super.getTextStyle();
   }
+
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
     this.__textFormat = prevNode.__textFormat;
+    this.__textStyle = prevNode.__textStyle;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -111,12 +113,16 @@ export class ListItemNode extends ParagraphNode {
   }
 
   updateDOM(
-    prevNode: ListItemNode,
+    prevNode: ParagraphNode,
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {
     const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
+    if (
+      $isListNode(parent) &&
+      parent.getListType() === 'check' &&
+      $isListItemNode(prevNode)
+    ) {
       updateListItemChecked(dom, this, prevNode, parent);
     }
     // @ts-expect-error - this is always HTMLListItemElement
@@ -173,6 +179,7 @@ export class ListItemNode extends ParagraphNode {
       ...super.exportJSON(),
       checked: this.getChecked(),
       textFormat: this.getTextFormat(),
+      textStyle: this.getTextStyle(),
       type: 'listitem',
       value: this.getValue(),
       version: 1,
@@ -302,7 +309,7 @@ export class ListItemNode extends ParagraphNode {
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
+  collapseAtStart(selection?: RangeSelection): boolean {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

@@ -6,7 +6,13 @@
  *
  */
 
-import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
+import type {
+  ElementNode,
+  LexicalCommand,
+  LexicalNode,
+  NodeKey,
+  NodeMutation,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -97,7 +103,23 @@ export function LayoutPlugin(): null {
       return false;
     };
 
+    const $fillLayoutItemIfEmpty = (nodes: Map<NodeKey, NodeMutation>) => {
+      editor.update(() => {
+        nodes.forEach((_, key) => {
+          const layoutItem = $getNodeByKey(key) as LayoutItemNode;
+          if (layoutItem) {
+            if (layoutItem.isEmpty()) {
+              layoutItem.append($createParagraphNode());
+            }
+          }
+        });
+      });
+    };
+
     return mergeRegister(
+      // Layout item should always have a child. this function will listen
+      // for any empty layout item and fill it with a paragraph node
+      editor.registerMutationListener(LayoutItemNode, $fillLayoutItemIfEmpty),
       // When layout is the last child pressing down/right arrow will insert paragraph
       // below it to allow adding more content. It's similar what $insertBlockNode
       // (mainly for decorators), except it'll always be possible to continue adding

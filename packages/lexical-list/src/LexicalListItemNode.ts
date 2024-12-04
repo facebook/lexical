@@ -25,7 +25,6 @@ import {
   EditorConfig,
   EditorThemeClasses,
   ElementNode,
-  KlassConstructor,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -41,7 +40,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode, toggleTextFormatType} from './utils';
+import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -54,7 +53,6 @@ export type SerializedListItemNode = Spread<
 
 /** @noInheritDoc */
 export class ListItemNode extends ParagraphNode {
-  ['constructor']!: KlassConstructor<typeof ListItemNode>;
   /** @internal */
   __value: number;
   /** @internal */

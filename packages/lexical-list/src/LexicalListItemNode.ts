@@ -310,6 +310,9 @@ export class ListItemNode extends ParagraphNode {
   }
 
   collapseAtStart(selection?: RangeSelection): boolean {
+    if (!selection) {
+      return super.collapseAtStart();
+    }
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

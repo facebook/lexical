@@ -453,11 +453,6 @@ export function $moveCharacter(
 }
 
 /**
- * @deprecated This function has been moved to the lexical package. Use the $selectAll function from the lexical package instead.
- */
-export {$selectAll} from 'lexical';
-
-/**
  * Returns the current value of a CSS property for Nodes, if set. If not set, it returns the defaultValue.
  * @param node - The node whose style value to get.
  * @param styleProperty - The CSS style property.

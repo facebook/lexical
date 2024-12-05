@@ -30,11 +30,10 @@ import {
 } from './utils';
 
 export {
+  /** @deprecated moved to the lexical package */ $cloneWithProperties,
   /** @deprecated moved to the lexical package */ $selectAll,
 } from 'lexical';
-export {
-  /** @deprecated moved to the lexical package */ $cloneWithProperties,
-} from 'lexical';
+
 export {
   $addNodeStyle,
   $isAtNodeEnd,

@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Creating a React Plugin
 
 In addition to using the Lexical React plugins offered by the core library, you can make your own plugins to extend or alter Lexical's functionality to suit your own use cases.
@@ -18,7 +14,7 @@ If the Plugin introduces new nodes, they have to be registered in `initialConfig
 
 ```js
 const initialConfig = {
-  namespace: "MyEditor",
+  namespace: 'MyEditor',
   nodes: [MyLexicalNode],
 };
 ```

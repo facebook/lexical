@@ -71,7 +71,7 @@ export type TextNodeThemeClasses = {
   italic?: EditorThemeClassName;
   lowercase?: EditorThemeClassName;
   uppercase?: EditorThemeClassName;
-  capitalize: EditorThemeClassName;
+  capitalize?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
   subscript?: EditorThemeClassName;
   superscript?: EditorThemeClassName;

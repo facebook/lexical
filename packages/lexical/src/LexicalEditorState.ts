@@ -59,7 +59,7 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   const serializedNode = node.exportJSON();
   const classes = Object.fromEntries(
     Object.entries(node.__classes).filter(
-      ([_, value]) => value !== undefined || value === false,
+      ([_, value]: [string, unknown]) => value !== undefined || value === false,
     ),
   );
   if (Object.keys(classes).length > 0) {

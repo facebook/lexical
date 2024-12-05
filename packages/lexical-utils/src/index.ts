@@ -690,3 +690,52 @@ export function calculateZoomLevel(element: Element | null): number {
 export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
   return editor._parentEditor !== null;
 }
+
+/**
+ * A depth first last-to-first traversal of root that stops at each node that matches
+ * $predicate and ensures that its parent is root. This is typically used to discard
+ * invalid or unsupported wrapping nodes. For example, a TableNode must only have
+ * TableRowNode as children, but an importer might add invalid nodes based on
+ * caption, tbody, thead, etc. and this will unwrap and discard those.
+ *
+ * @param root The root to start the traversal
+ * @param $predicate Should return true for nodes that are permitted to be children of root
+ * @returns true if this unwrapped or removed any nodes
+ */
+export function $unwrapAndFilterDescendants(
+  root: ElementNode,
+  $predicate: (node: LexicalNode) => boolean,
+): boolean {
+  return $unwrapAndFilterDescendantsImpl(root, $predicate, null);
+}
+
+function $unwrapAndFilterDescendantsImpl(
+  root: ElementNode,
+  $predicate: (node: LexicalNode) => boolean,
+  $onSuccess: null | ((node: LexicalNode) => void),
+): boolean {
+  let didMutate = false;
+  for (
+    let node = root.getLastChild(),
+      prevSibling = node ? node.getPreviousSibling() : null;
+    node !== null;
+    node = prevSibling, prevSibling = node ? node.getPreviousSibling() : null
+  ) {
+    if ($predicate(node)) {
+      if ($onSuccess !== null) {
+        $onSuccess(node);
+      }
+      continue;
+    }
+    didMutate = true;
+    if ($isElementNode(node)) {
+      $unwrapAndFilterDescendantsImpl(
+        node,
+        $predicate,
+        $onSuccess ? $onSuccess : (child) => node.insertAfter(child),
+      );
+    }
+    node.remove();
+  }
+  return didMutate;
+}

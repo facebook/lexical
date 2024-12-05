@@ -125,3 +125,8 @@ declare export function $splitNode(
 declare export function calculateZoomLevel(element: Element | null): number;
 
 declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;
+
+declare export function $unwrapAndFilterDescendants(
+  root: ElementNode,
+  $predicate: (node: LexicalNode) => boolean,
+): boolean;

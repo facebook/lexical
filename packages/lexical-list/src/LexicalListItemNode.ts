@@ -25,7 +25,6 @@ import {
   EditorConfig,
   EditorThemeClasses,
   ElementNode,
-  KlassConstructor,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -54,7 +53,6 @@ export type SerializedListItemNode = Spread<
 
 /** @noInheritDoc */
 export class ListItemNode extends ParagraphNode {
-  ['constructor']!: KlassConstructor<typeof ListItemNode>;
   /** @internal */
   __value: number;
   /** @internal */

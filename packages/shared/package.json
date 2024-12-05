@@ -8,9 +8,9 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.21.0",
+  "version": "0.21.1-nightly.20241205.0",
   "dependencies": {
-    "lexical": "0.21.0"
+    "lexical": "0.21.1-nightly.20241205.0"
   },
   "repository": {
     "type": "git",

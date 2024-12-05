@@ -7,7 +7,11 @@
  */
 
 import type {SerializedEditorState} from './LexicalEditorState';
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  ReadOnlyClasses,
+  SerializedLexicalNode,
+} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
@@ -338,6 +342,7 @@ type InternalSerializedNode = {
   children?: Array<InternalSerializedNode>;
   type: string;
   version: number;
+  classes?: ReadOnlyClasses;
 };
 
 export function $parseSerializedNode(
@@ -374,6 +379,7 @@ function $parseSerializedNodeImpl<
   }
 
   const node = nodeClass.importJSON(serializedNode);
+  node.__classes = serializedNode.classes || {};
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

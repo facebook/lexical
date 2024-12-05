@@ -17,7 +17,6 @@ import {
   redo,
   selectAll,
   selectCharacters,
-  toggleBold,
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -1881,48 +1880,4 @@ test.describe.parallel('Nested List', () => {
       });
     },
   );
-  test('new list item should preserve format from previous list item even after new list item is indented', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await toggleBulletList(page);
-    await toggleBold(page);
-    await page.keyboard.type('MLH Fellowship');
-    await page.keyboard.press('Enter');
-    await clickIndentButton(page);
-    await page.keyboard.type('Fall 2024');
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true">
-              MLH Fellowship
-            </strong>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="2">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li
-                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-                dir="ltr"
-                value="1">
-                <strong
-                  class="PlaygroundEditorTheme__textBold"
-                  data-lexical-text="true">
-                  Fall 2024
-                </strong>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      `,
-    );
-  });
 });

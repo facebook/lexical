@@ -30,7 +30,7 @@ import {
   NodeKey,
   ParagraphNode,
   RangeSelection,
-  SerializedElementNode,
+  SerializedParagraphNode,
   Spread,
   TEXT_TYPE_TO_FORMAT,
   TextFormatType,
@@ -48,7 +48,7 @@ export type SerializedListItemNode = Spread<
     value: number;
     textFormat: number;
   },
-  SerializedElementNode
+  SerializedParagraphNode
 >;
 
 /** @noInheritDoc */
@@ -94,10 +94,6 @@ export class ListItemNode extends ParagraphNode {
     const format = self.__textFormat;
     return toggleTextFormatType(format, type, alignWithFormat);
   }
-  afterCloneFrom(prevNode: this) {
-    super.afterCloneFrom(prevNode);
-    this.__textFormat = prevNode.__textFormat;
-  }
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
@@ -109,21 +105,20 @@ export class ListItemNode extends ParagraphNode {
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
-
   updateDOM(
-    prevNode: ListItemNode,
+    prevNode: ParagraphNode,
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(dom, this, prevNode, parent);
+      const listItemNode = $isListItemNode(prevNode) ? prevNode : null;
+      updateListItemChecked(dom, this, listItemNode, parent);
     }
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-
-    return false;
+    return super.updateDOM(prevNode, dom, config);
   }
 
   static transform(): (node: LexicalNode) => void {
@@ -254,15 +249,11 @@ export class ListItemNode extends ParagraphNode {
     }
 
     const siblings = this.getNextSiblings();
-
-    // Split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
       const newListNode = $createListNode(listNode.getListType());
-
       siblings.forEach((sibling) => newListNode.append(sibling));
-
       node.insertAfter(newListNode, restoreSelection);
     }
 
@@ -302,40 +293,33 @@ export class ListItemNode extends ParagraphNode {
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
+  collapseAtStart(): boolean {
+    const selection = $getSelection();
+
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
+
     const listNode = this.getParentOrThrow();
-    const listNodeParent = listNode.getParentOrThrow();
-    const isIndented = $isListItemNode(listNodeParent);
+    const listNodeParent = listNode.getParent();
+
+    if (!$isListNode(listNode)) {
+      return false;
+    }
 
     if (listNode.getChildrenSize() === 1) {
-      if (isIndented) {
-        // if the list node is nested, we just want to remove it,
-        // effectively unindenting it.
+      if ($isListItemNode(listNodeParent)) {
         listNode.remove();
         listNodeParent.select();
       } else {
         listNode.insertBefore(paragraph);
         listNode.remove();
-        // If we have selection on the list item, we'll need to move it
-        // to the paragraph
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        const key = paragraph.getKey();
-
-        if (anchor.type === 'element' && anchor.getNode().is(this)) {
-          anchor.set(key, anchor.offset, 'element');
-        }
-
-        if (focus.type === 'element' && focus.getNode().is(this)) {
-          focus.set(key, focus.offset, 'element');
-        }
+        paragraph.select();
       }
-    } else {
-      listNode.insertBefore(paragraph);
-      this.remove();
     }
 
     return true;

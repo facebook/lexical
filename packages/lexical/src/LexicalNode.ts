@@ -193,7 +193,7 @@ export class LexicalNode {
    * @internal
    * @ex
    */
-  __classes: ReadOnlyClasses;
+  __classes?: ReadOnlyClasses;
 
   /**
    * Returns an object of classes in the form of `prefix-suffix` for string values, or just `prefix` for true boolean values.
@@ -207,9 +207,9 @@ export class LexicalNode {
    *
    * @returns The classes object.
    */
-  getClasses() {
+  getClasses(): ReadOnlyClasses {
     const self = this.getLatest();
-    return self.__classes;
+    return self.__classes || {};
   }
 
   /**
@@ -226,6 +226,7 @@ export class LexicalNode {
    */
   mutateClasses(fn: (currentClasses: MutableClasses) => void) {
     const self = this.getWritable();
+    self.__classes = self.__classes || {};
     fn(self.__classes);
   }
 
@@ -326,7 +327,6 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
-    this.__classes = {};
     $setNodeKey(this, key);
 
     if (__DEV__) {

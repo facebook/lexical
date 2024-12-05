@@ -379,7 +379,9 @@ function $parseSerializedNodeImpl<
   }
 
   const node = nodeClass.importJSON(serializedNode);
-  node.__classes = serializedNode.classes || {};
+  if (serializedNode.classes) {
+    node.__classes = serializedNode.classes;
+  }
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

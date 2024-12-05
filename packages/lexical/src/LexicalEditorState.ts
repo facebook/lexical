@@ -57,13 +57,16 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
 ): SerializedNode {
   const serializedNode = node.exportJSON();
-  const classes = Object.fromEntries(
-    Object.entries(node.__classes).filter(
-      ([_, value]: [string, unknown]) => value !== undefined || value === false,
-    ),
-  );
-  if (Object.keys(classes).length > 0) {
-    serializedNode.classes = classes;
+  if (node.__classes) {
+    const classes = Object.fromEntries(
+      Object.entries(node.__classes).filter(
+        ([_, value]: [string, unknown]) =>
+          value !== undefined || value === false,
+      ),
+    );
+    if (Object.keys(classes).length > 0) {
+      serializedNode.classes = classes;
+    }
   }
   const nodeClass = node.constructor;
 

@@ -15,6 +15,7 @@ import {
 import {
   $applyNodeReplacement,
   $createParagraphNode,
+  $getSelection,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
@@ -40,7 +41,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode, toggleTextFormatType} from './utils';
+import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -87,12 +88,6 @@ export class ListItemNode extends ParagraphNode {
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getTextFormat() & formatFlag) !== 0;
-  }
-
-  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
-    const self = this.getLatest();
-    const format = self.__textFormat;
-    return toggleTextFormatType(format, type, alignWithFormat);
   }
 
   createDOM(config: EditorConfig): HTMLElement {

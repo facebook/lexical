@@ -3174,7 +3174,7 @@ describe('$patchStyleText', () => {
 });
 
 describe('classes property', () => {
-  test('can update style of text node that is in %s mode', async () => {
+  test('can mutate classes using $forEachSelectedTextNode', async () => {
     const editor = createTestEditor();
     const element = document.createElement('div');
     editor.setRootElement(element);

@@ -902,6 +902,15 @@ export class LexicalNode {
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
+    if (this.__classes) {
+      Object.entries(this.__classes).forEach(([classPrefix, classSufix]) => {
+        if (typeof classSufix === 'string') {
+          element.classList.add(`${classPrefix}-${classSufix}`);
+        } else if (typeof classSufix === 'boolean' && classSufix) {
+          element.classList.add(classPrefix);
+        }
+      });
+    }
     return {element};
   }
 

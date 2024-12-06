@@ -58,7 +58,6 @@ export class ListItemNode extends ParagraphNode {
   __value: number;
   /** @internal */
   __checked?: boolean;
-  __textFormat: number;
 
   static getType(): string {
     return 'listitem';

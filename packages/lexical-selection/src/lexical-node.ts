@@ -10,6 +10,7 @@ import {
   $getCharacterOffsets,
   $getNodeByKey,
   $getPreviousSelection,
+  $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isRootNode,
@@ -290,8 +291,8 @@ export function $patchStyleText(
 ): void {
   if (selection.isCollapsed() && $isRangeSelection(selection)) {
     $patchStyle(selection, patch);
-  } else if ($isRangeSelection(selection)) {
-    $mutateSelectedTextNodes(selection, (textNode) => {
+  } else {
+    $forEachSelectedTextNode((textNode) => {
       $patchStyle(textNode, patch);
     });
   }
@@ -302,10 +303,13 @@ export function $patchStyleText(
  * @param selection - The selected node(s) to update.
  * @param fn - The function to apply to the selected TextNodes.
  */
-export function $mutateSelectedTextNodes(
-  selection: RangeSelection,
+export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
 ): void {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return;
+  }
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
   const {anchor, focus} = selection;

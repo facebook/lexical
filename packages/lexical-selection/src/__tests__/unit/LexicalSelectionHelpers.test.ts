@@ -43,7 +43,7 @@ import {
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 
-import {$mutateSelectedTextNodes} from '../../lexical-node';
+import {$forEachSelectedTextNode} from '../../lexical-node';
 import {$setAnchorPoint, $setFocusPoint} from '../utils';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
@@ -3201,8 +3201,7 @@ describe('classes property', () => {
         type: 'text',
       });
 
-      const selection = $getSelection() as RangeSelection;
-      $mutateSelectedTextNodes(selection, (textNode) => {
+      $forEachSelectedTextNode((textNode) => {
         textNode.mutateClasses((classes) => {
           classes.bg = 'red';
           classes.active = true;

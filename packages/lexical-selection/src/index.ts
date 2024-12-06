@@ -8,6 +8,7 @@
 
 import {
   $addNodeStyle,
+  $forEachSelectedTextNode,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
@@ -35,6 +36,7 @@ export {
 } from 'lexical';
 export {
   $addNodeStyle,
+  $forEachSelectedTextNode,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,

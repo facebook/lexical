@@ -120,11 +120,7 @@ export class ParagraphNode extends ElementNode {
     }
     return dom;
   }
-  updateDOM(
-    prevNode: ParagraphNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     return false;
   }
 

@@ -104,7 +104,7 @@ export class TableRowNode extends ElementNode {
     return this.getLatest().__height;
   }
 
-  updateDOM(prevNode: TableRowNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return prevNode.__height !== this.__height;
   }
 

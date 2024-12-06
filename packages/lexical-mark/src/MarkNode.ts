@@ -78,7 +78,7 @@ export class MarkNode extends ElementNode {
   }
 
   updateDOM(
-    prevNode: MarkNode,
+    prevNode: this,
     element: HTMLElement,
     config: EditorConfig,
   ): boolean {

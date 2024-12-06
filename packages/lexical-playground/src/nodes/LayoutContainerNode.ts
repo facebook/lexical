@@ -73,7 +73,7 @@ export class LayoutContainerNode extends ElementNode {
     return {element};
   }
 
-  updateDOM(prevNode: LayoutContainerNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     if (prevNode.__templateColumns !== this.__templateColumns) {
       dom.style.gridTemplateColumns = this.__templateColumns;
     }

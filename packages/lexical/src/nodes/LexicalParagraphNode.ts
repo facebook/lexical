@@ -38,8 +38,8 @@ import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
   {
-    textFormat?: number;
-    textStyle?: string;
+    textFormat?: number | undefined;
+    textStyle?: string | undefined;
   },
   SerializedElementNode
 >;
@@ -61,9 +61,9 @@ export class ParagraphNode extends ElementNode {
     return 'paragraph';
   }
 
-  getTextFormat(): number | undefined {
+  getTextFormat(): number {
     const self = this.getLatest();
-    return self.__textFormat;
+    return self.__textFormat ?? 0;
   }
 
   setTextFormat(type: number): this {
@@ -74,7 +74,13 @@ export class ParagraphNode extends ElementNode {
 
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    return (this.getTextFormat() & formatFlag) !== 0;
+    const textFormat = this.getTextFormat() ?? 0;
+
+    if (textFormat === 0) {
+      return false;
+    }
+
+    return (textFormat & formatFlag) !== 0;
   }
 
   /**
@@ -82,13 +88,16 @@ export class ParagraphNode extends ElementNode {
    *
    * @returns a number representing the TextFormatTypes applied to the node.
    */
-  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+  getFormatFlags(
+    type: TextFormatType,
+    alignWithFormat: null | number,
+  ): number | undefined {
     const self = this.getLatest();
-    const format = self.__textFormat;
+    const format = self.__textFormat ?? 0;
     return toggleTextFormatType(format, type, alignWithFormat);
   }
 
-  getTextStyle(): string {
+  getTextStyle(): string | undefined {
     const self = this.getLatest();
     return self.__textStyle;
   }
@@ -160,7 +169,9 @@ export class ParagraphNode extends ElementNode {
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
-    node.setTextFormat(serializedNode.textFormat);
+    if (typeof serializedNode.textFormat === 'number') {
+      node.setTextFormat(serializedNode.textFormat);
+    }
     return node;
   }
 
@@ -186,7 +197,10 @@ export class ParagraphNode extends ElementNode {
     const direction = this.getDirection();
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
-    newElement.setStyle(this.getTextStyle());
+    if (typeof this.getStyle() === 'string') {
+      newElement.setStyle(this.getStyle());
+    }
+
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

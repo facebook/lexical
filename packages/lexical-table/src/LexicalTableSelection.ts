@@ -220,7 +220,7 @@ export class TableSelection implements BaseSelection {
     cellNodes.forEach((cellNode: TableCellNode) => {
       const paragraph = cellNode.getFirstChild();
       if ($isParagraphNode(paragraph)) {
-        format |= paragraph.getTextFormat();
+        format |= paragraph.getTextFormat() ?? 0;
       }
     });
 

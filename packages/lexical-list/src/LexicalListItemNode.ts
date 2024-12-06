@@ -33,8 +33,6 @@ import {
   RangeSelection,
   SerializedParagraphNode,
   Spread,
-  TEXT_TYPE_TO_FORMAT,
-  TextFormatType,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
@@ -73,21 +71,6 @@ export class ListItemNode extends ParagraphNode {
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
     this.__textFormat = 0;
-  }
-  getTextFormat(): number {
-    const self = this.getLatest();
-    return self.__textFormat;
-  }
-
-  setTextFormat(type: number): this {
-    const self = this.getWritable();
-    self.__textFormat = type;
-    return self;
-  }
-
-  hasTextFormat(type: TextFormatType): boolean {
-    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    return (this.getTextFormat() & formatFlag) !== 0;
   }
 
   createDOM(config: EditorConfig): HTMLElement {

@@ -224,7 +224,7 @@ export class LexicalNode {
    *
    * @param fn A function that receives the current classes object and allows it to be mutated safely.
    */
-  mutateClasses(fn: (currentClasses: MutableClasses) => void) {
+  mutateClasses(fn: (classes: MutableClasses) => void) {
     const self = this.getWritable();
     self.__classes = self.__classes || {};
     fn(self.__classes);

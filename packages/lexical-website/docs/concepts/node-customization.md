@@ -1,12 +1,48 @@
 
+# Node Customization
 
-# Node Overrides / Node Replacements
+Originally the only way to customize nodes was using the node replacement API. Recently we have introduced a second way with the `classes` property which is easier to implement and is sufficient for most cases.
+
+## Classes Property (New)
+
+Most of the time when users want to customize a node they just want to add a property to it, which ends up being reflected as a class in the dom element.
+
+To satisfy that need we have introduced two new methods to all nodes: `getClasses` and `mutateClasses`. 
+
+```ts
+export function CoolRedPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  return (
+    <button
+      onClick={() => {
+        editor.update(() => {
+          $forEachSelectedTextNode((textNode) => {
+            // Allows mutation of the classes object where the key-value pairs follow the
+            // format prefix-suffix for string values, or just prefix for true boolean values.
+            textNode.mutateClasses((classes) => {
+              classes.bg = 'red'; // adds the class bg-red
+              // Perhaps you don't want to allow the same node to have
+              // both text and background color defined at the same time...
+              delete classes.text; // ...so here you remove the class text-[color].
+              classes.cool = true; // adds the class cool (true values don't add a suffix)
+            });
+          });
+        });
+      }}>
+      Make text red and cool
+    </button>
+  );
+}
+```
+
+## Node Overrides / Node Replacements
 
 Some of the most commonly used Lexical Nodes are owned and maintained by the core library. For example, ParagraphNode, HeadingNode, QuoteNode, List(Item)Node etc - these are all provided by Lexical packages, which provides an easier out-of-the-box experience for some editor features, but makes it difficult to override their behavior. For instance, if you wanted to change the behavior of ListNode, you would typically extend the class and override the methods. However, how would you tell Lexical to use *your* ListNode subclass in the ListPlugin instead of using the core ListNode? That's where Node Overrides can help.
 
 Node Overrides allow you to replace all instances of a given node in your editor with instances of a different node class. This can be done through the nodes array in the Editor config:
 
-```
+```ts
 const editorConfig = {
     ...
     nodes=[

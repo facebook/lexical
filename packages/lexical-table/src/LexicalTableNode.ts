@@ -6,9 +6,8 @@
  *
  */
 
-import type {TableRowNode} from './LexicalTableRowNode';
-
 import {
+  $descendantsMatching,
   addClassNamesToElement,
   isHTMLElement,
   removeClassNamesFromElement,
@@ -36,6 +35,7 @@ import invariant from 'shared/invariant';
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
+import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
@@ -498,7 +498,10 @@ export function $convertTableElement(
       tableNode.setColWidths(columns);
     }
   }
-  return {node: tableNode};
+  return {
+    after: (children) => $descendantsMatching(children, $isTableRowNode),
+    node: tableNode,
+  };
 }
 
 export function $createTableNode(): TableNode {

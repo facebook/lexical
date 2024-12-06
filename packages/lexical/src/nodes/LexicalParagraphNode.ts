@@ -88,13 +88,10 @@ export class ParagraphNode extends ElementNode {
    *
    * @returns a number representing the TextFormatTypes applied to the node.
    */
-  getFormatFlags(
-    type: TextFormatType,
-    alignWithFormat: null | number,
-  ): number | undefined {
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest();
     const format = self.__textFormat ?? 0;
-    return toggleTextFormatType(format, type, alignWithFormat);
+    return toggleTextFormatType(format, type, alignWithFormat) ?? 0;
   }
 
   getTextStyle(): string | undefined {

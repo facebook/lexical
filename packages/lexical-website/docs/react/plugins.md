@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Lexical Plugins
 
 React-based plugins are using Lexical editor instance from `<LexicalComposer>` context:
@@ -29,7 +25,7 @@ const initialConfig = {
   <HistoryPlugin />
   <OnChangePlugin onChange={onChange} />
   ...
-</LexicalComposer>
+</LexicalComposer>;
 ```
 
 > Note: Many plugins might require you to register the one or many Lexical nodes in order for the plugin to work. You can do this by passing a reference to the node to the `nodes` array in your initial editor configuration.
@@ -184,7 +180,9 @@ In order to use `TableOfContentsPlugin`, you need to pass a callback function in
 ```jsx
 <TableOfContentsPlugin>
   {(tableOfContentsArray) => {
-    return <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />;
+    return (
+      <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />
+    );
   }}
 </TableOfContentsPlugin>
 ```
@@ -195,8 +193,8 @@ Allows you to get a ref to the underlying editor instance outside of LexicalComp
 from a separate part of your application.
 
 ```jsx
-  const editorRef = useRef(null);
-  <EditorRefPlugin editorRef={editorRef} />
+const editorRef = useRef(null);
+<EditorRefPlugin editorRef={editorRef} />;
 ```
 
 ### `LexicalSelectionAlwaysOnDisplay`
@@ -204,5 +202,5 @@ from a separate part of your application.
 By default, browser text selection becomes invisible when clicking away from the editor. This plugin ensures the selection remains visible.
 
 ```jsx
-  <SelectionAlwaysOnDisplay />
+<SelectionAlwaysOnDisplay />
 ```

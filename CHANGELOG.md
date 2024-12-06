@@ -1,3 +1,9 @@
+## v0.21.0 (2024-12-01)
+
+- Fix selected table colors (#6892) Gerard Rovira
+- v0.20.2 (#6891) Sherry
+- v0.20.2 Lexical GitHub Actions Bot
+
 ## v0.20.2 (2024-11-30)
 
 - lexicallexical-playground Bug Fix Allow setEditorState to work correctly inside of an update (#6876) Bob Ippolito

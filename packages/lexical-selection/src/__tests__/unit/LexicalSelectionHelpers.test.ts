@@ -3221,4 +3221,47 @@ describe('classes property', () => {
         '</p>',
     );
   });
+  test('exportJSON', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+    const getSerializedParagraph = (_editor: LexicalEditor) => {
+      return _editor.getEditorState().toJSON().root.children[0];
+    };
+    let p: ParagraphNode;
+
+    await editor.update(() => {
+      p = $createParagraphNode();
+      $getRoot().append(p);
+    });
+    expect('classes' in getSerializedParagraph(editor)).toBe(false);
+
+    // should ignore false, numbers or undefined
+    await editor.update(() => {
+      p.mutateClasses((classes) => {
+        classes.bg = 'red';
+        classes.active = true;
+        // @ts-expect-error - just testing what happens if someone ignores the type
+        classes.highlight = false;
+        // @ts-expect-error - just testing what happens if someone ignores the type
+        classes.someNumber = 4;
+        // @ts-ignore
+        classes.somethingUndefined = undefined;
+      });
+    });
+    expect('classes' in getSerializedParagraph(editor)).toBe(true);
+    expect(getSerializedParagraph(editor).classes).toStrictEqual({
+      active: true,
+      bg: 'red',
+    });
+
+    // should not export classes if empty
+    await editor.update(() => {
+      p.mutateClasses((classes) => {
+        delete classes.bg;
+        delete classes.active;
+      });
+    });
+    expect('classes' in getSerializedParagraph(editor)).toBe(false);
+  });
 });

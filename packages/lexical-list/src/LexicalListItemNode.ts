@@ -47,7 +47,8 @@ export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
-    textFormat: number;
+    textFormat?: number;
+    textStyle?: string;
   },
   SerializedParagraphNode
 >;

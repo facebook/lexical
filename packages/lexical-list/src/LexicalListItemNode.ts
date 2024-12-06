@@ -146,7 +146,12 @@ export class ListItemNode extends ParagraphNode {
     node.setValue(serializedNode.value);
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
-    node.setTextFormat(serializedNode.textFormat);
+    if (typeof serializdNode.textFormat === 'number') {
+      node.setTextFormat(serializedNode.textFormat);
+    }
+    if (typeof serializdNode.textStyle === 'string') {
+      node.setTextStyle(serializedNode.textStyle);
+    }
     return node;
   }
 

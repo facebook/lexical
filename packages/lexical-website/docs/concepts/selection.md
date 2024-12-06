@@ -128,7 +128,7 @@ and the browser's focus follows its DOM selection.
 
 If you want to make updates or dispatch commands to the editor without
 changing the selection, can use the `'skip-dom-selection'` update tag
-(added in v0.21.0):
+(added in v0.22.0):
 
 ```js
 // Call this from an editor.update or command listener

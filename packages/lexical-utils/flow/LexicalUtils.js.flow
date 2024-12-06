@@ -130,3 +130,9 @@ declare export function $unwrapAndFilterDescendants(
   root: ElementNode,
   $predicate: (node: LexicalNode) => boolean,
 ): boolean;
+
+declare export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode>;
+
+declare export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode>;
+
+declare export function $unwrapNode(node: ElementNode): void;

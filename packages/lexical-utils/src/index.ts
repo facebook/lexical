@@ -833,3 +833,15 @@ function $childIterator(
     },
   };
 }
+
+/**
+ * Insert all children before this node, and then remove it.
+ *
+ * @param node The ElementNode to unwrap and remove
+ */
+export function $unwrapNode(node: ElementNode): void {
+  for (const child of $firstToLastIterator(node)) {
+    node.insertBefore(child);
+  }
+  node.remove();
+}

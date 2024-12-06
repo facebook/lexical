@@ -2210,7 +2210,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const tableCell = $createTableCellNode(0);
+      const tableCell = $createTableCellNode();
       const tableRow = $createTableRowNode();
       const table = $createTableNode();
 
@@ -2225,7 +2225,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const tableRow = $getNodeByKey(tableRowKey) as TableRowNode;
-      const tableCell = $createTableCellNode(0);
+      const tableCell = $createTableCellNode();
       tableRow.append(tableCell);
     });
 

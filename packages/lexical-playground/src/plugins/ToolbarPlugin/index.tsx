@@ -615,6 +615,9 @@ export default function ToolbarPlugin({
         'fontSize',
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
       );
+      updateToolbarState('isLowercase', selection.hasFormat('lowercase'));
+      updateToolbarState('isUppercase', selection.hasFormat('uppercase'));
+      updateToolbarState('isCapitalize', selection.hasFormat('capitalize'));
     }
   }, [activeEditor, editor, updateToolbarState]);
 
@@ -888,6 +891,51 @@ export default function ToolbarPlugin({
             buttonLabel=""
             buttonAriaLabel="Formatting options for additional text styles"
             buttonIconClassName="icon dropdown-more">
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
+              }}
+              className={
+                'item wide ' + dropDownActiveClass(toolbarState.isLowercase)
+              }
+              title="Lowercase"
+              aria-label="Format text to lowercase">
+              <div className="icon-text-container">
+                <i className="icon lowercase" />
+                <span className="text">Lowercase</span>
+              </div>
+              <span className="shortcut">{SHORTCUTS.LOWERCASE}</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
+              }}
+              className={
+                'item wide ' + dropDownActiveClass(toolbarState.isUppercase)
+              }
+              title="Uppercase"
+              aria-label="Format text to uppercase">
+              <div className="icon-text-container">
+                <i className="icon uppercase" />
+                <span className="text">Uppercase</span>
+              </div>
+              <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
+              }}
+              className={
+                'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
+              }
+              title="Capitalize"
+              aria-label="Format text to capitalize">
+              <div className="icon-text-container">
+                <i className="icon capitalize" />
+                <span className="text">Capitalize</span>
+              </div>
+              <span className="shortcut">{SHORTCUTS.CAPITALIZE}</span>
+            </DropDownItem>
             <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(

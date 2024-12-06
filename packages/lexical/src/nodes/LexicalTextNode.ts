@@ -90,7 +90,10 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
 
 export type TextModeType = 'normal' | 'token' | 'segmented';
 

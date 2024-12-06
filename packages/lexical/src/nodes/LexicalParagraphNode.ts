@@ -38,8 +38,8 @@ import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
   {
-    textFormat?: number | undefined;
-    textStyle?: string | undefined;
+    textFormat?: number;
+    textStyle?: string;
   },
   SerializedElementNode
 >;
@@ -48,8 +48,8 @@ export type SerializedParagraphNode = Spread<
 export class ParagraphNode extends ElementNode {
   ['constructor']!: KlassConstructor<typeof ParagraphNode>;
   /** @internal */
-  __textFormat?: number | undefined;
-  __textStyle?: string | undefined;
+  __textFormat?: number;
+  __textStyle?: string;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -63,7 +63,7 @@ export class ParagraphNode extends ElementNode {
 
   getTextFormat(): number {
     const self = this.getLatest();
-    return self.__textFormat ?? 0;
+    return self.__textFormat || 0;
   }
 
   setTextFormat(type: number): this {
@@ -74,7 +74,7 @@ export class ParagraphNode extends ElementNode {
 
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    const textFormat = this.getTextFormat() ?? 0;
+    const textFormat = this.getTextFormat() || 0;
 
     if (textFormat === 0) {
       return false;
@@ -90,13 +90,13 @@ export class ParagraphNode extends ElementNode {
    */
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest();
-    const format = self.__textFormat ?? 0;
-    return toggleTextFormatType(format, type, alignWithFormat) ?? 0;
+    const format = self.__textFormat;
+    return toggleTextFormatType(format || 0, type, alignWithFormat);
   }
 
-  getTextStyle(): string | undefined {
+  getTextStyle(): string {
     const self = this.getLatest();
-    return self.__textStyle;
+    return self.__textStyle || '';
   }
 
   setTextStyle(style: string): this {

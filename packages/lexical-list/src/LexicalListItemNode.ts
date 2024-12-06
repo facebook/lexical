@@ -45,8 +45,6 @@ export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
-    textFormat?: number | undefined;
-    textStyle?: string | undefined;
   },
   SerializedParagraphNode
 >;
@@ -70,7 +68,6 @@ export class ListItemNode extends ParagraphNode {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
-    this.__textFormat = 0;
   }
 
   createDOM(config: EditorConfig): HTMLElement {

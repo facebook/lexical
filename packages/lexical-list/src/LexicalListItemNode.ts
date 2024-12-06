@@ -47,8 +47,8 @@ export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
-    textFormat?: number;
-    textStyle?: string;
+    textFormat?: number | undefined;
+    textStyle?: string | undefined;
   },
   SerializedParagraphNode
 >;
@@ -100,11 +100,11 @@ export class ListItemNode extends ParagraphNode {
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
-  updateDOM(
-    prevNode: ParagraphNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    if (super.updateDOM(prevNode, dom, config)) {
+      return true;
+    }
+
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
       const listItemNode = $isListItemNode(prevNode) ? prevNode : null;
@@ -113,7 +113,7 @@ export class ListItemNode extends ParagraphNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-    return super.updateDOM(prevNode, dom, config);
+    return false;
   }
 
   static transform(): (node: LexicalNode) => void {
@@ -146,10 +146,10 @@ export class ListItemNode extends ParagraphNode {
     node.setValue(serializedNode.value);
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
-    if (typeof serializdNode.textFormat === 'number') {
+    if (typeof serializedNode.textFormat === 'number') {
       node.setTextFormat(serializedNode.textFormat);
     }
-    if (typeof serializdNode.textStyle === 'string') {
+    if (typeof serializedNode.textStyle === 'string') {
       node.setTextStyle(serializedNode.textStyle);
     }
     return node;
@@ -167,7 +167,6 @@ export class ListItemNode extends ParagraphNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
-      textFormat: this.getTextFormat(),
       type: 'listitem',
       value: this.getValue(),
       version: 1,

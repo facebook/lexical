@@ -38,8 +38,8 @@ import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
   {
-    textFormat: number;
-    textStyle: string;
+    textFormat?: number;
+    textStyle?: string;
   },
   SerializedElementNode
 >;
@@ -48,8 +48,8 @@ export type SerializedParagraphNode = Spread<
 export class ParagraphNode extends ElementNode {
   ['constructor']!: KlassConstructor<typeof ParagraphNode>;
   /** @internal */
-  __textFormat: number;
-  __textStyle: string;
+  __textFormat?: number | undefined;
+  __textStyle?: string | undefined;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -61,7 +61,7 @@ export class ParagraphNode extends ElementNode {
     return 'paragraph';
   }
 
-  getTextFormat(): number {
+  getTextFormat(): number | undefined {
     const self = this.getLatest();
     return self.__textFormat;
   }
@@ -120,11 +120,7 @@ export class ParagraphNode extends ElementNode {
     }
     return dom;
   }
-  updateDOM(
-    prevNode: ParagraphNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     return false;
   }
 

@@ -29,6 +29,11 @@ export {
 } from './LexicalTableNode';
 export type {TableDOMCell} from './LexicalTableObserver';
 export {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
+export {
+  registerTableCellUnmergeTransform,
+  registerTablePlugin,
+  registerTableSelectionObserver,
+} from './LexicalTablePluginHelpers';
 export type {SerializedTableRowNode} from './LexicalTableRowNode';
 export {
   $createTableRowNode,

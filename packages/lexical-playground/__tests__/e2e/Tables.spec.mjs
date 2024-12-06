@@ -1657,7 +1657,7 @@ test.describe.parallel('Tables', () => {
   });
 
   test(
-    'Grid selection: can select multiple cells and insert an image',
+    'Table selection: can select multiple cells and insert an image',
     {
       tag: '@flaky',
     },
@@ -1741,7 +1741,7 @@ test.describe.parallel('Tables', () => {
     },
   );
 
-  test('Grid selection: can backspace lines, backspacing empty cell does not destroy it #3278', async ({
+  test('Table selection: can backspace lines, backspacing empty cell does not destroy it #3278', async ({
     page,
     isPlainText,
     isCollab,

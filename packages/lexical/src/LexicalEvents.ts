@@ -354,8 +354,8 @@ function onSelectionChange(
               lastNode instanceof ParagraphNode &&
               lastNode.getChildrenSize() === 0
             ) {
-              selection.format = lastNode.getTextFormat() ?? 0;
-              selection.style = lastNode.getTextStyle() ?? '';
+              selection.format = lastNode.getTextFormat() || 0;
+              selection.style = lastNode.getTextStyle() || '';
             } else {
               selection.format = 0;
             }

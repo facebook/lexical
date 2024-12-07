@@ -8,9 +8,11 @@
 
 import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 
+import {addClassNamesToElement} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {EditorConfig} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 import {
@@ -45,6 +47,12 @@ export class TabNode extends TextNode {
 
   static importDOM(): DOMConversionMap | null {
     return null;
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = super.createDOM(config);
+    addClassNamesToElement(element, config.theme.tab);
+    return element;
   }
 
   static importJSON(serializedTabNode: SerializedTabNode): TabNode {

@@ -75,7 +75,7 @@ declare export class TableCellNode extends ElementNode {
   canBeEmpty(): false;
 }
 declare export function $createTableCellNode(
-  headerState: TableCellHeaderState,
+  headerState?: TableCellHeaderState,
   colSpan?: number,
   width?: ?number,
 ): TableCellNode;
@@ -351,3 +351,13 @@ export type InsertTableCommandPayload = $ReadOnly<{
 }>;
 
 declare export var INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;
+
+/**
+ * LexicalTablePluginHelpers
+ */
+
+declare export function registerTableCellUnmergeTransform(editor: LexicalEditor): () => void;
+
+declare export function registerTablePlugin(editor: LexicalEditor): () => void;
+
+declare export function registerTableSelectionObserver(editor: LexicalEditor, hasTabHandler?: boolean): () => void;

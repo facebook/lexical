@@ -8,7 +8,7 @@
 
 import type {BaseSelection, Spread} from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   DOMConversionMap,
@@ -21,6 +21,7 @@ import {
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
+import {$isTableCellNode} from './LexicalTableCellNode';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -124,7 +125,10 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
     height = parseFloat(domNode_.style.height);
   }
 
-  return {node: $createTableRowNode(height)};
+  return {
+    after: (children) => $descendantsMatching(children, $isTableCellNode),
+    node: $createTableRowNode(height),
+  };
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {

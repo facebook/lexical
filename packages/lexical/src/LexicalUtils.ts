@@ -1084,10 +1084,25 @@ export function isSelectAll(
   return key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey);
 }
 
-export function $selectAll(): void {
+export function $selectAll(selection?: RangeSelection | null): RangeSelection {
   const root = $getRoot();
-  const selection = root.select(0, root.getChildrenSize());
-  $setSelection($normalizeSelection(selection));
+
+  if ($isRangeSelection(selection)) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = anchor.getNode();
+    const topParent = anchorNode.getTopLevelElementOrThrow();
+    const rootNode = topParent.getParentOrThrow();
+    anchor.set(rootNode.getKey(), 0, 'element');
+    focus.set(rootNode.getKey(), rootNode.getChildrenSize(), 'element');
+    $normalizeSelection(selection);
+    return selection;
+  } else {
+    // Create a new RangeSelection
+    const newSelection = root.select(0, root.getChildrenSize());
+    $setSelection($normalizeSelection(newSelection));
+    return newSelection;
+  }
 }
 
 export function getCachedClassNameArray(

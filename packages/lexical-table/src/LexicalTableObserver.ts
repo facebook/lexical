@@ -462,9 +462,7 @@ export class TableObserver {
 
     const selection = $getSelection();
 
-    if (!$isTableSelection(selection)) {
-      invariant(false, 'Expected grid selection');
-    }
+    invariant($isTableSelection(selection), 'Expected TableSelection');
 
     const selectedNodes = selection.getNodes().filter($isTableCellNode);
 

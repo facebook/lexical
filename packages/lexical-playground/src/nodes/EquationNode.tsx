@@ -128,7 +128,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  updateDOM(prevNode: EquationNode): boolean {
+  updateDOM(prevNode: this): boolean {
     // If the inline property changes, replace the element
     return this.__inline !== prevNode.__inline;
   }

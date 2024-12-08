@@ -225,11 +225,7 @@ export class TableNode extends ElementNode {
     return tableElement;
   }
 
-  updateDOM(
-    prevNode: TableNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__rowStriping !== this.__rowStriping) {
       setRowStriping(dom, config, this.__rowStriping);
     }

@@ -19,7 +19,6 @@ declare export class OverflowNode extends ElementNode {
   static clone(node: OverflowNode): OverflowNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   excludeFromCopy(): boolean;
   static importJSON(serializedNode: SerializedOverflowNode): OverflowNode;

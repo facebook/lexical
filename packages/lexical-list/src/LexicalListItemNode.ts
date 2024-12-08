@@ -82,11 +82,7 @@ export class ListItemNode extends ElementNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: ListItemNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
       updateListItemChecked(dom, this, prevNode, parent);

@@ -74,7 +74,7 @@ export class ParagraphNode extends ElementNode {
 
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-return (this.getTextFormat() & formatFlag) !== 0;
+    return (this.getTextFormat() & formatFlag) !== 0;
   }
 
   /**

@@ -113,7 +113,7 @@ export type MultilineElementTransformer = {
          * Whether the end match is optional. If true, the end match is not required to match for the transformer to be triggered.
          * The entire text from regexpStart to the end of the document will then be matched.
          */
-        optional?: true;
+        optional?: boolean;
         regExp: RegExp;
       };
   /**

@@ -38,8 +38,8 @@ import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
   {
-    textFormat?: number;
-    textStyle?: string;
+    textFormat: number;
+    textStyle: string;
   },
   SerializedElementNode
 >;
@@ -48,8 +48,8 @@ export type SerializedParagraphNode = Spread<
 export class ParagraphNode extends ElementNode {
   ['constructor']!: KlassConstructor<typeof ParagraphNode>;
   /** @internal */
-  __textFormat?: number;
-  __textStyle?: string;
+  __textFormat: number;
+  __textStyle: string;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -63,7 +63,7 @@ export class ParagraphNode extends ElementNode {
 
   getTextFormat(): number {
     const self = this.getLatest();
-    return self.__textFormat || 0;
+    return self.__textFormat;
   }
 
   setTextFormat(type: number): this {
@@ -74,13 +74,7 @@ export class ParagraphNode extends ElementNode {
 
   hasTextFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    const textFormat = this.getTextFormat() || 0;
-
-    if (textFormat === 0) {
-      return false;
-    }
-
-    return (textFormat & formatFlag) !== 0;
+return (this.getTextFormat() & formatFlag) !== 0;
   }
 
   /**
@@ -91,12 +85,12 @@ export class ParagraphNode extends ElementNode {
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest();
     const format = self.__textFormat;
-    return toggleTextFormatType(format || 0, type, alignWithFormat);
+    return toggleTextFormatType(format, type, alignWithFormat);
   }
 
   getTextStyle(): string {
     const self = this.getLatest();
-    return self.__textStyle || '';
+    return self.__textStyle;
   }
 
   setTextStyle(style: string): this {
@@ -194,9 +188,7 @@ export class ParagraphNode extends ElementNode {
     const direction = this.getDirection();
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
-    if (typeof this.getStyle() === 'string') {
-      newElement.setStyle(this.getStyle());
-    }
+    newElement.setStyle(this.getStyle());
 
     this.insertAfter(newElement, restoreSelection);
     return newElement;

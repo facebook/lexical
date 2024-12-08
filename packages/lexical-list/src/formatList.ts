@@ -480,7 +480,7 @@ export function $handleListInsertParagraph(): boolean {
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return false;
   }
-  //Only run this code on empty list items
+  // Only run this code on empty list items
 
   const anchor = selection.anchor.getNode();
 
@@ -526,7 +526,7 @@ export function $handleListInsertParagraph(): boolean {
       newList.append(sibling);
     });
   }
-  //Don't leave hanging nested empty lists
+  // Don't leave hanging nested empty lists
   $removeHighestEmptyListParent(anchor);
   return true;
 }

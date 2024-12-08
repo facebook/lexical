@@ -87,8 +87,7 @@ export class ListItemNode extends ParagraphNode {
 
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
-      const listItemNode = $isListItemNode(prevNode) ? prevNode : null;
-      updateListItemChecked(dom, this, listItemNode, parent);
+      updateListItemChecked(dom, this, prevNode, parent);
     }
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;

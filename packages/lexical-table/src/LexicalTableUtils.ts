@@ -520,6 +520,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
     return;
   }
   const columnCount = gridMap[0].length;
+  const selectedRowCount = anchorCell.__rowSpan;
   const nextRow = gridMap[focusEndRow + 1];
   const nextRowNode: null | TableRowNode = grid.getChildAtIndex(
     focusEndRow + 1,
@@ -537,7 +538,11 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
       }
       // Rows overflowing top have to be trimmed
       if (row === anchorStartRow && cellStartRow < anchorStartRow) {
-        cell.setRowSpan(cell.__rowSpan - (cellStartRow - anchorStartRow));
+        const overflowTop = anchorStartRow - cellStartRow;
+        cell.setRowSpan(
+          cell.__rowSpan -
+            Math.min(selectedRowCount, cell.__rowSpan - overflowTop),
+        );
       }
       // Rows overflowing bottom have to be trimmed and moved to the next row
       if (

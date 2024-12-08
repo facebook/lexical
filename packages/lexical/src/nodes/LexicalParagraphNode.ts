@@ -120,11 +120,7 @@ export class ParagraphNode extends ElementNode {
     }
     return dom;
   }
-  updateDOM(
-    prevNode: ParagraphNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     return false;
   }
 
@@ -164,7 +160,9 @@ export class ParagraphNode extends ElementNode {
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
-    node.setTextFormat(serializedNode.textFormat);
+    if (typeof serializedNode.textFormat === 'number') {
+      node.setTextFormat(serializedNode.textFormat);
+    }
     return node;
   }
 
@@ -190,7 +188,8 @@ export class ParagraphNode extends ElementNode {
     const direction = this.getDirection();
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
-    newElement.setStyle(this.getTextStyle());
+    newElement.setStyle(this.getStyle());
+
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

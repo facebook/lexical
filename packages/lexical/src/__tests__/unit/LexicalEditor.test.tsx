@@ -61,6 +61,7 @@ import {createRoot, Root} from 'react-dom/client';
 import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
+import {emptyFunction} from '../../LexicalUtils';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -2041,6 +2042,28 @@ describe('LexicalEditor tests', () => {
     ]);
   });
 
+  it('multiple update tags', async () => {
+    init();
+    const $mutateSomething = $createTextNode;
+
+    editor.update($mutateSomething, {
+      tag: ['a', 'b'],
+    });
+    expect(editor._updateTags).toEqual(new Set(['a', 'b']));
+    editor.update(
+      () => {
+        editor.update(emptyFunction, {tag: ['e', 'f']});
+      },
+      {
+        tag: ['c', 'd'],
+      },
+    );
+    expect(editor._updateTags).toEqual(new Set(['a', 'b', 'c', 'd', 'e', 'f']));
+
+    await Promise.resolve();
+    expect(editor._updateTags).toEqual(new Set([]));
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
@@ -2187,7 +2210,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const tableCell = $createTableCellNode(0);
+      const tableCell = $createTableCellNode();
       const tableRow = $createTableRowNode();
       const table = $createTableNode();
 
@@ -2202,7 +2225,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const tableRow = $getNodeByKey(tableRowKey) as TableRowNode;
-      const tableCell = $createTableCellNode(0);
+      const tableCell = $createTableCellNode();
       tableRow.append(tableCell);
     });
 
@@ -2526,7 +2549,8 @@ describe('LexicalEditor tests', () => {
       `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
     );
     editor.setEditorState(state);
-    expect(editor._editorState).toBe(state);
+    // A writable version of the EditorState may have been created, we settle for equal serializations
+    expect(editor._editorState.toJSON()).toEqual(state.toJSON());
     expect(editor._pendingEditorState).toBe(null);
   });
 

@@ -11,6 +11,7 @@ import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
+import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {
   InitialConfigType,
@@ -486,6 +487,7 @@ const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   TestInlineElementNode,
   TestShadowRootNode,
   TestTextNode,
+  MarkNode,
 ];
 
 export function TestComposer({
@@ -796,8 +798,25 @@ export function html(
   return output;
 }
 
-export function expectHtmlToBeEqual(expected: string, actual: string): void {
-  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+export function polyfillContentEditable() {
+  const div = document.createElement('div');
+  div.contentEditable = 'true';
+  if (/contenteditable/.test(div.outerHTML)) {
+    return;
+  }
+  Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+    get() {
+      return this.getAttribute('contenteditable');
+    },
+
+    set(value) {
+      this.setAttribute('contenteditable', value);
+    },
+  });
+}
+
+export function expectHtmlToBeEqual(actual: string, expected: string): void {
+  expect(prettifyHtml(actual)).toBe(prettifyHtml(expected));
 }
 
 export function prettifyHtml(s: string): string {

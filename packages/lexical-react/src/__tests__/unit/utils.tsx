@@ -82,6 +82,7 @@ export class Client implements Provider {
     off(): void;
     on(): void;
     setLocalState: (state: UserState) => void;
+    setLocalStateField: (field: string, value: unknown) => void;
   };
 
   constructor(id: Client['_id'], connection: Client['_connection']) {
@@ -104,6 +105,9 @@ export class Client implements Provider {
 
       setLocalState: (state) => {
         this._awarenessState = state;
+      },
+      setLocalStateField: (field: string, value: unknown) => {
+        // TODO
       },
     };
   }

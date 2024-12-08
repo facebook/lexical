@@ -144,7 +144,9 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
     return () => document.removeEventListener('click', handleClick);
   }, [editor, handleClick]);
 
-  return resolution === null || editor === null ? null : (
+  return anchorElementRef.current === null ||
+    resolution === null ||
+    editor === null ? null : (
     <LexicalMenu
       close={closeNodeMenu}
       resolution={resolution}

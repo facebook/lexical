@@ -158,6 +158,9 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
+    if (!transformer.replace || !transformer.regExp) {
+      continue;
+    }
     const match = textContent.match(transformer.regExp);
 
     if (match === null) {
@@ -389,11 +392,11 @@ export function registerMarkdownShortcuts(
   transformers: Array<Transformer> = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
-  const textFormatTransformersIndex = indexBy(
+  const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,
     ({tag}) => tag[tag.length - 1],
   );
-  const textMatchTransformersIndex = indexBy(
+  const textMatchTransformersByTrigger = indexBy(
     byType.textMatch,
     ({trigger}) => trigger,
   );
@@ -403,7 +406,7 @@ export function registerMarkdownShortcuts(
     if (
       type === 'element' ||
       type === 'text-match' ||
-      type === 'multilineElement'
+      type === 'multiline-element'
     ) {
       const dependencies = transformer.dependencies;
       for (const node of dependencies) {
@@ -449,7 +452,7 @@ export function registerMarkdownShortcuts(
       runTextMatchTransformers(
         anchorNode,
         anchorOffset,
-        textMatchTransformersIndex,
+        textMatchTransformersByTrigger,
       )
     ) {
       return;
@@ -458,7 +461,7 @@ export function registerMarkdownShortcuts(
     $runTextFormatTransformers(
       anchorNode,
       anchorOffset,
-      textFormatTransformersIndex,
+      textFormatTransformersByTrigger,
     );
   };
 
@@ -477,10 +480,13 @@ export function registerMarkdownShortcuts(
       const selection = editorState.read($getSelection);
       const prevSelection = prevEditorState.read($getSelection);
 
+      // We expect selection to be a collapsed range and not match previous one (as we want
+      // to trigger transforms only as user types)
       if (
         !$isRangeSelection(prevSelection) ||
         !$isRangeSelection(selection) ||
-        !selection.isCollapsed()
+        !selection.isCollapsed() ||
+        selection.is(prevSelection)
       ) {
         return;
       }

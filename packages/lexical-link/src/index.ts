@@ -14,20 +14,28 @@ import type {
   LexicalCommand,
   LexicalNode,
   NodeKey,
+  Point,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $normalizeSelection__EXPERIMENTAL,
+  $setSelection,
   createCommand,
   ElementNode,
   Spread,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 export type LinkAttributes = {
   rel?: null | string;
@@ -473,6 +481,66 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
   string | ({url: string} & LinkAttributes) | null
 > = createCommand('TOGGLE_LINK_COMMAND');
 
+function $getPointNode(point: Point, offset: number): LexicalNode | null {
+  if (point.type === 'element') {
+    const node = point.getNode();
+    invariant(
+      $isElementNode(node),
+      '$getPointNode: element point is not an ElementNode',
+    );
+    const childNode = node.getChildren()[point.offset + offset];
+    return childNode || null;
+  }
+  return null;
+}
+
+/**
+ * Preserve the logical start/end of a RangeSelection in situations where
+ * the point is an element that may be reparented in the callback.
+ *
+ * @param $fn The function to run
+ * @returns The result of the callback
+ */
+function $withSelectedNodes<T>($fn: () => T): T {
+  const initialSelection = $getSelection();
+  if (!$isRangeSelection(initialSelection)) {
+    return $fn();
+  }
+  const normalized = $normalizeSelection__EXPERIMENTAL(initialSelection);
+  const isBackwards = normalized.isBackward();
+  const anchorNode = $getPointNode(normalized.anchor, isBackwards ? -1 : 0);
+  const focusNode = $getPointNode(normalized.focus, isBackwards ? 0 : -1);
+  const rval = $fn();
+  if (anchorNode || focusNode) {
+    const updatedSelection = $getSelection();
+    if ($isRangeSelection(updatedSelection)) {
+      const finalSelection = updatedSelection.clone();
+      if (anchorNode) {
+        const anchorParent = anchorNode.getParent();
+        if (anchorParent) {
+          finalSelection.anchor.set(
+            anchorParent.getKey(),
+            anchorNode.getIndexWithinParent() + (isBackwards ? 1 : 0),
+            'element',
+          );
+        }
+      }
+      if (focusNode) {
+        const focusParent = focusNode.getParent();
+        if (focusParent) {
+          finalSelection.focus.set(
+            focusParent.getKey(),
+            focusNode.getIndexWithinParent() + (isBackwards ? 0 : 1),
+            'element',
+          );
+        }
+      }
+      $setSelection($normalizeSelection__EXPERIMENTAL(finalSelection));
+    }
+  }
+  return rval;
+}
+
 /**
  * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
  * but saves any children and brings them up to the parent node.
@@ -495,105 +563,98 @@ export function $toggleLink(
   if (url === null) {
     // Remove LinkNodes
     nodes.forEach((node) => {
-      const parent = node.getParent();
+      const parentLink = $findMatchingParent(
+        node,
+        (parent): parent is LinkNode =>
+          !$isAutoLinkNode(parent) && $isLinkNode(parent),
+      );
 
-      if (!$isAutoLinkNode(parent) && $isLinkNode(parent)) {
-        const children = parent.getChildren();
+      if (parentLink) {
+        const children = parentLink.getChildren();
 
         for (let i = 0; i < children.length; i++) {
-          parent.insertBefore(children[i]);
+          parentLink.insertBefore(children[i]);
         }
 
-        parent.remove();
+        parentLink.remove();
       }
     });
-  } else {
-    // Add or merge LinkNodes
-    if (nodes.length === 1) {
-      const firstNode = nodes[0];
-      // if the first node is a LinkNode or if its
-      // parent is a LinkNode, we update the URL, target and rel.
-      const linkNode = $getAncestor(firstNode, $isLinkNode);
-      if (linkNode !== null) {
-        linkNode.setURL(url);
-        if (target !== undefined) {
-          linkNode.setTarget(target);
-        }
-        if (rel !== null) {
-          linkNode.setRel(rel);
-        }
-        if (title !== undefined) {
-          linkNode.setTitle(title);
-        }
-        return;
-      }
-    }
-
-    let prevParent: ElementNode | LinkNode | null = null;
-    let linkNode: LinkNode | null = null;
-
-    nodes.forEach((node) => {
-      const parent = node.getParent();
-
-      if (
-        parent === linkNode ||
-        parent === null ||
-        ($isElementNode(node) && !node.isInline())
-      ) {
-        return;
-      }
-
-      if ($isLinkNode(parent)) {
-        linkNode = parent;
-        parent.setURL(url);
-        if (target !== undefined) {
-          parent.setTarget(target);
-        }
-        if (rel !== null) {
-          linkNode.setRel(rel);
-        }
-        if (title !== undefined) {
-          linkNode.setTitle(title);
-        }
-        return;
-      }
-
-      if (!parent.is(prevParent)) {
-        prevParent = parent;
-        linkNode = $createLinkNode(url, {rel, target, title});
-
-        if ($isLinkNode(parent)) {
-          if (node.getPreviousSibling() === null) {
-            parent.insertBefore(linkNode);
-          } else {
-            parent.insertAfter(linkNode);
-          }
-        } else {
-          node.insertBefore(linkNode);
-        }
-      }
-
-      if ($isLinkNode(node)) {
-        if (node.is(linkNode)) {
-          return;
-        }
-        if (linkNode !== null) {
-          const children = node.getChildren();
-
-          for (let i = 0; i < children.length; i++) {
-            linkNode.append(children[i]);
-          }
-        }
-
-        node.remove();
-        return;
-      }
-
-      if (linkNode !== null) {
-        linkNode.append(node);
-      }
-    });
+    return;
   }
+  const updatedNodes = new Set<NodeKey>();
+  const updateLinkNode = (linkNode: LinkNode) => {
+    if (updatedNodes.has(linkNode.getKey())) {
+      return;
+    }
+    updatedNodes.add(linkNode.getKey());
+    linkNode.setURL(url);
+    if (target !== undefined) {
+      linkNode.setTarget(target);
+    }
+    if (rel !== undefined) {
+      linkNode.setRel(rel);
+    }
+    if (title !== undefined) {
+      linkNode.setTitle(title);
+    }
+  };
+  // Add or merge LinkNodes
+  if (nodes.length === 1) {
+    const firstNode = nodes[0];
+    // if the first node is a LinkNode or if its
+    // parent is a LinkNode, we update the URL, target and rel.
+    const linkNode = $getAncestor(firstNode, $isLinkNode);
+    if (linkNode !== null) {
+      return updateLinkNode(linkNode);
+    }
+  }
+
+  $withSelectedNodes(() => {
+    let linkNode: LinkNode | null = null;
+    for (const node of nodes) {
+      if (!node.isAttached()) {
+        continue;
+      }
+      const parentLinkNode = $getAncestor(node, $isLinkNode);
+      if (parentLinkNode) {
+        updateLinkNode(parentLinkNode);
+        continue;
+      }
+      if ($isElementNode(node)) {
+        if (!node.isInline()) {
+          // Ignore block nodes, if there are any children we will see them
+          // later and wrap in a new LinkNode
+          continue;
+        }
+        if ($isLinkNode(node)) {
+          // If it's not an autolink node and we don't already have a LinkNode
+          // in this block then we can update it and re-use it
+          if (
+            !$isAutoLinkNode(node) &&
+            (linkNode === null || !linkNode.getParentOrThrow().isParentOf(node))
+          ) {
+            updateLinkNode(node);
+            linkNode = node;
+            continue;
+          }
+          // Unwrap LinkNode, we already have one or it's an AutoLinkNode
+          for (const child of node.getChildren()) {
+            node.insertBefore(child);
+          }
+          node.remove();
+          continue;
+        }
+      }
+      const prevLinkNode = node.getPreviousSibling();
+      if ($isLinkNode(prevLinkNode) && prevLinkNode.is(linkNode)) {
+        prevLinkNode.append(node);
+        continue;
+      }
+      linkNode = $createLinkNode(url, {rel, target, title});
+      node.insertAfter(linkNode);
+      linkNode.append(node);
+    }
+  });
 }
 /** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
 export const toggleLink = $toggleLink;

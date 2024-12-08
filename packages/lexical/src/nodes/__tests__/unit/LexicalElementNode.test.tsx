@@ -7,10 +7,13 @@
  */
 
 import {
+  $applyNodeReplacement,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  createEditor,
+  ElementDOMSlot,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -25,6 +28,7 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
+import {SerializedElementNode} from '../../LexicalElementNode';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;
@@ -631,5 +635,89 @@ describe('LexicalElementNode tests', () => {
         });
       });
     });
+  });
+});
+
+describe('getDOMSlot tests', () => {
+  let container: HTMLElement;
+  let editor: LexicalEditor;
+
+  beforeEach(async () => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    editor = createEditor({
+      nodes: [WrapperElementNode],
+      onError: (error) => {
+        throw error;
+      },
+    });
+    editor.setRootElement(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    // @ts-ignore
+    container = null;
+  });
+
+  class WrapperElementNode extends ElementNode {
+    static getType() {
+      return 'wrapper';
+    }
+    static clone(node: WrapperElementNode): WrapperElementNode {
+      return new WrapperElementNode(node.__key);
+    }
+    createDOM() {
+      const el = document.createElement('main');
+      el.appendChild(document.createElement('section'));
+      return el;
+    }
+    updateDOM() {
+      return false;
+    }
+    getDOMSlot(dom: HTMLElement): ElementDOMSlot {
+      return super.getDOMSlot(dom).withElement(dom.querySelector('section')!);
+    }
+    exportJSON(): SerializedElementNode {
+      throw new Error('Not implemented');
+    }
+    static importJSON(): WrapperElementNode {
+      throw new Error('Not implemented');
+    }
+  }
+  function $createWrapperElementNode(): WrapperElementNode {
+    return $applyNodeReplacement(new WrapperElementNode());
+  }
+
+  test('can create wrapper', () => {
+    let wrapper: WrapperElementNode;
+    editor.update(
+      () => {
+        wrapper = $createWrapperElementNode().append(
+          $createTextNode('test text').setMode('token'),
+        );
+        $getRoot().clear().append(wrapper);
+      },
+      {discrete: true},
+    );
+    expect(container.innerHTML).toBe(
+      `<main dir="ltr"><section><span data-lexical-text="true">test text</span></section></main>`,
+    );
+    editor.update(
+      () => {
+        wrapper.append($createTextNode('more text').setMode('token'));
+      },
+      {discrete: true},
+    );
+    expect(container.innerHTML).toBe(
+      `<main dir="ltr"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
+    );
+    editor.update(
+      () => {
+        wrapper.clear();
+      },
+      {discrete: true},
+    );
+    expect(container.innerHTML).toBe(`<main><section><br></section></main>`);
   });
 });

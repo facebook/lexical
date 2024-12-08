@@ -57,9 +57,7 @@ export function useYjsCollaboration(
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
-  const connect = useCallback(() => {
-    provider.connect();
-  }, [provider]);
+  const connect = useCallback(() => provider.connect(), [provider]);
 
   const disconnect = useCallback(() => {
     try {
@@ -152,11 +150,23 @@ export function useYjsCollaboration(
         }
       },
     );
-    connect();
+
+    const connectionPromise = connect();
 
     return () => {
       if (isReloadingDoc.current === false) {
-        disconnect();
+        if (connectionPromise) {
+          connectionPromise.then(disconnect);
+        } else {
+          // Workaround for race condition in StrictMode. It's possible there
+          // is a different race for the above case where connect returns a
+          // promise, but we don't have an example of that in-repo.
+          // It's possible that there is a similar issue with
+          // TOGGLE_CONNECT_COMMAND below when the provider connect returns a
+          // promise.
+          // https://github.com/facebook/lexical/issues/6640
+          disconnect();
+        }
       }
 
       provider.off('sync', onSync);
@@ -197,18 +207,16 @@ export function useYjsCollaboration(
     return editor.registerCommand(
       TOGGLE_CONNECT_COMMAND,
       (payload) => {
-        if (connect !== undefined && disconnect !== undefined) {
-          const shouldConnect = payload;
+        const shouldConnect = payload;
 
-          if (shouldConnect) {
-            // eslint-disable-next-line no-console
-            console.log('Collaboration connected!');
-            connect();
-          } else {
-            // eslint-disable-next-line no-console
-            console.log('Collaboration disconnected!');
-            disconnect();
-          }
+        if (shouldConnect) {
+          // eslint-disable-next-line no-console
+          console.log('Collaboration connected!');
+          connect();
+        } else {
+          // eslint-disable-next-line no-console
+          console.log('Collaboration disconnected!');
+          disconnect();
         }
 
         return true;

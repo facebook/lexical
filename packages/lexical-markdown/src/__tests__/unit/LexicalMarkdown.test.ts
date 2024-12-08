@@ -9,7 +9,7 @@
 import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {LinkNode} from '@lexical/link';
+import {$createLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$createTextNode, $getRoot, $insertNodes} from 'lexical';
@@ -22,7 +22,56 @@ import {
   Transformer,
   TRANSFORMERS,
 } from '../..';
-import {MultilineElementTransformer} from '../../MarkdownTransformers';
+import {
+  CODE,
+  MultilineElementTransformer,
+  normalizeMarkdown,
+} from '../../MarkdownTransformers';
+
+const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
+  dependencies: [LinkNode],
+  getEndIndex(node, match) {
+    // Find the closing tag. Count the number of opening and closing tags to find the correct closing tag.
+    // For simplicity, this will only count the opening and closing tags without checking for "MyTag" specifically.
+    let openedSubStartMatches = 0;
+    const start = (match.index ?? 0) + match[0].length;
+    let endIndex = start;
+    const line = node.getTextContent();
+
+    for (let i = start; i < line.length; i++) {
+      const char = line[i];
+      if (char === '<') {
+        const nextChar = line[i + 1];
+        if (nextChar === '/') {
+          if (openedSubStartMatches === 0) {
+            endIndex = i + '</MyTag>'.length;
+            break;
+          }
+          openedSubStartMatches--;
+        } else {
+          openedSubStartMatches++;
+        }
+      }
+    }
+    return endIndex;
+  },
+  importRegExp: /<(MyTag)\s*>/,
+  regExp: /__ignore__/,
+  replace: (textNode, match) => {
+    const linkNode = $createLinkNode('simple-jsx');
+
+    const textStart = match[0].length + (match.index ?? 0);
+    const textEnd =
+      (match.index ?? 0) + textNode.getTextContent().length - '</MyTag>'.length;
+    const text = match.input?.slice(textStart, textEnd);
+
+    const linkTextNode = $createTextNode(text);
+    linkTextNode.setFormat(textNode.getFormat());
+    linkNode.append(linkTextNode);
+    textNode.replace(linkNode);
+  },
+  type: 'text-match',
+};
 
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
@@ -52,7 +101,116 @@ const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
     }
     return false; // Run next transformer
   },
-  type: 'multilineElement',
+  type: 'multiline-element',
+};
+
+const CODE_TAG_COUNTER_EXAMPLE: MultilineElementTransformer = {
+  dependencies: CODE.dependencies,
+  export: CODE.export,
+  handleImportAfterStartMatch({lines, rootNode, startLineIndex, startMatch}) {
+    const regexpEndRegex: RegExp | undefined = /[ \t]*```$/;
+
+    const isEndOptional = false;
+
+    let endLineIndex = startLineIndex;
+    const linesLength = lines.length;
+
+    let openedSubStartMatches = 0;
+
+    // check every single line for the closing match. It could also be on the same line as the opening match.
+    while (endLineIndex < linesLength) {
+      const potentialSubStartMatch =
+        lines[endLineIndex].match(/^[ \t]*```(\w+)?/);
+
+      const endMatch = regexpEndRegex
+        ? lines[endLineIndex].match(regexpEndRegex)
+        : null;
+
+      if (potentialSubStartMatch) {
+        if (endMatch) {
+          if ((potentialSubStartMatch.index ?? 0) < (endMatch.index ?? 0)) {
+            openedSubStartMatches++;
+          }
+        } else {
+          openedSubStartMatches++;
+        }
+      }
+
+      if (endMatch) {
+        openedSubStartMatches--;
+      }
+
+      if (!endMatch || openedSubStartMatches > 0) {
+        if (
+          !isEndOptional ||
+          (isEndOptional && endLineIndex < linesLength - 1) // Optional end, but didn't reach the end of the document yet => continue searching for potential closing match
+        ) {
+          endLineIndex++;
+          continue; // Search next line for closing match
+        }
+      }
+
+      // Now, check if the closing match matched is the same as the opening match.
+      // If it is, we need to continue searching for the actual closing match.
+      if (
+        endMatch &&
+        startLineIndex === endLineIndex &&
+        endMatch.index === startMatch.index
+      ) {
+        endLineIndex++;
+        continue; // Search next line for closing match
+      }
+
+      // At this point, we have found the closing match. Next: calculate the lines in between open and closing match
+      // This should not include the matches themselves, and be split up by lines
+      const linesInBetween: string[] = [];
+
+      if (endMatch && startLineIndex === endLineIndex) {
+        linesInBetween.push(
+          lines[startLineIndex].slice(
+            startMatch[0].length,
+            -endMatch[0].length,
+          ),
+        );
+      } else {
+        for (let i = startLineIndex; i <= endLineIndex; i++) {
+          if (i === startLineIndex) {
+            const text = lines[i].slice(startMatch[0].length);
+            linesInBetween.push(text); // Also include empty text
+          } else if (i === endLineIndex && endMatch) {
+            const text = lines[i].slice(0, -endMatch[0].length);
+            linesInBetween.push(text); // Also include empty text
+          } else {
+            linesInBetween.push(lines[i]);
+          }
+        }
+      }
+
+      if (
+        CODE.replace(
+          rootNode,
+          null,
+          startMatch,
+          endMatch,
+          linesInBetween,
+          true,
+        ) !== false
+      ) {
+        // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
+        return [true, endLineIndex];
+      }
+
+      // The replace function returned false, despite finding the matching open and close tags => this transformer does not want to handle it.
+      // Thus, we continue letting the remaining transformers handle the passed lines of text from the beginning
+      break;
+    }
+
+    // No multiline transformer handled this line successfully
+    return [false, startLineIndex];
+  },
+  regExpStart: CODE.regExpStart,
+  replace: CODE.replace,
+  type: 'multiline-element',
 };
 
 describe('Markdown', () => {
@@ -62,6 +220,7 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
     shouldPreserveNewLines?: true;
+    shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
   }>;
 
@@ -93,18 +252,37 @@ describe('Markdown', () => {
       md: '###### Hello world',
     },
     {
-      // Multiline paragraphs
-      html: '<p><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></p>',
+      // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
+      html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
+      shouldMergeAdjacentLines: true,
+      skipExport: true,
+    },
+    {
+      // Multiline paragraphs
+      // TO-DO: It would be nice to support also hard line breaks (<br>) as \ or double spaces
+      // See https://spec.commonmark.org/0.31.2/#hard-line-breaks.
+      // Example: '<p><span style="white-space: pre-wrap;">Hello\\\nworld\\\n!</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello<br>world<br>!</span></p>',
+      md: ['Hello', 'world', '!'].join('\n'),
+      skipImport: true,
     },
     {
       html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world!</span></blockquote>',
       md: '> Hello\n> world!',
     },
+    // TO-DO: <br> should be preserved
+    // {
+    //   html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world<br>!<br>!</span></li></ul>',
+    //   md: '- Hello\n- world<br>!<br>!',
+    //   skipImport: true,
+    // },
     {
-      // Multiline list items
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span><br><span style="white-space: pre-wrap;">!</span></li></ul>',
+      // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
+      shouldMergeAdjacentLines: true,
+      skipExport: true,
     },
     {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span></li></ul>',
@@ -181,6 +359,22 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">Hello </em></i><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',
       md: '*Hello **world**!*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
+      md: 'hello\nworld',
+      shouldMergeAdjacentLines: true,
+      skipExport: true,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldMergeAdjacentLines: false,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      md: 'hello\nworld',
+      shouldPreserveNewLines: true,
     },
     {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
@@ -274,9 +468,10 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      // Import only: multiline quote will be prefixed with ">" on each line during export
-      html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></blockquote>',
+      // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
+      html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
       md: '> Hello\nworld\n!',
+      shouldMergeAdjacentLines: true,
       skipExport: true,
     },
     {
@@ -295,11 +490,27 @@ describe('Markdown', () => {
       customTransformers: [MDX_HTML_TRANSFORMER],
       html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Some Text</MyComponent>',
+      shouldMergeAdjacentLines: true,
     },
     {
       customTransformers: [MDX_HTML_TRANSFORMER],
-      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1\nSome Text</span></pre>',
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
+      shouldMergeAdjacentLines: true,
+      skipExport: true,
+    },
+    {
+      customTransformers: [CODE_TAG_COUNTER_EXAMPLE],
+      // Ensure special ``` code block supports nested code blocks
+      html: '<pre spellcheck="false" data-language="ts" data-highlight-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
+      md: '```ts\nCode\n```ts\nSub Code\n```\n```',
+      skipExport: true,
+    },
+    {
+      customTransformers: [SIMPLE_INLINE_JSX_MATCHER],
+      html: '<p><span style="white-space: pre-wrap;">Hello </span><a href="simple-jsx"><span style="white-space: pre-wrap;">One &lt;MyTag&gt;Two&lt;/MyTag&gt;</span></a><span style="white-space: pre-wrap;"> there</span></p>',
+      md: 'Hello <MyTag>One <MyTag>Two</MyTag></MyTag> there',
+      skipExport: true,
     },
   ];
 
@@ -316,6 +527,7 @@ describe('Markdown', () => {
     md,
     skipImport,
     shouldPreserveNewLines,
+    shouldMergeAdjacentLines,
     customTransformers,
   } of IMPORT_AND_EXPORT) {
     if (skipImport) {
@@ -345,6 +557,7 @@ describe('Markdown', () => {
             ],
             undefined,
             shouldPreserveNewLines,
+            shouldMergeAdjacentLines,
           ),
         {
           discrete: true,
@@ -406,4 +619,157 @@ describe('Markdown', () => {
       ).toBe(md);
     });
   }
+});
+
+describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
+  it('should combine lines separated by a single \n unless they are in a codeblock', () => {
+    const markdown = `
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
+`;
+    expect(normalizeMarkdown(markdown, true)).toBe(`
+A1A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1E2
+
+E3
+`);
+  });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+});
+
+describe('normalizeMarkdown - shouldMergeAdjacentLines = false', () => {
+  it('should not combine lines separated by a single \n', () => {
+    const markdown = `
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(`
+A1
+A2
+
+A3
+
+\`\`\`md
+B1
+B2
+
+B3
+\`\`\`
+
+C1
+C2
+
+C3
+
+\`\`\`js
+D1
+D2
+
+D3
+\`\`\`
+
+\`\`\`single line code\`\`\`
+
+E1
+E2
+
+E3
+`);
+  });
+
+  it('tables', () => {
+    const markdown = `
+| a | b |
+| --- | --- |
+| c | d |
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(markdown);
+  });
 });

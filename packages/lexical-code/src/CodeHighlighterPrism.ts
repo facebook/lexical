@@ -30,3 +30,6 @@ declare global {
     Prism: typeof import('prismjs');
   }
 }
+
+export const Prism: typeof import('prismjs') =
+  (globalThis as {Prism?: typeof import('prismjs')}).Prism || window.Prism;

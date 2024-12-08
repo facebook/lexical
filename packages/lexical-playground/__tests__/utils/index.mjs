@@ -225,7 +225,7 @@ async function assertHTMLOnPageOrFrame(
   frameName,
   actualHtmlModificationsCallback = (actualHtml) => actualHtml,
 ) {
-  const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
+  const expected = await prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
     ignoreInlineStyles,
   });
@@ -236,7 +236,7 @@ async function assertHTMLOnPageOrFrame(
         .first()
         .innerHTML(),
     );
-    let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
+    let actual = await prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
     });
@@ -780,7 +780,10 @@ export async function dragImage(
   );
 }
 
-export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
+export async function prettifyHTML(
+  string,
+  {ignoreClasses, ignoreInlineStyles} = {},
+) {
   let output = string;
 
   if (ignoreClasses) {
@@ -793,15 +796,14 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
 
   output = output.replace(/\s__playwright_target__="[^"]+"/, '');
 
-  return prettier
-    .format(output, {
-      attributeGroups: ['$DEFAULT', '^data-'],
-      attributeSort: 'ASC',
-      bracketSameLine: true,
-      htmlWhitespaceSensitivity: 'ignore',
-      parser: 'html',
-    })
-    .trim();
+  return await prettier.format(output, {
+    attributeGroups: ['$DEFAULT', '^data-'],
+    attributeSort: 'asc',
+    bracketSameLine: true,
+    htmlWhitespaceSensitivity: 'ignore',
+    parser: 'html',
+    plugins: ['prettier-plugin-organize-attributes'],
+  });
 }
 
 // This function does not suppose to do anything, it's only used as a trigger

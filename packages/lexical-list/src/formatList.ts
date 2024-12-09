@@ -242,12 +242,9 @@ export function removeList(editor: LexicalEditor): void {
           const node = nodes[i];
 
           if ($isLeafNode(node)) {
-            if ($isListItemNode(node)) {
-              const listItemNode = $getNearestNodeOfType(node, ListItemNode);
-
-              if (listItemNode != null) {
-                listNodes.add($getTopListNode(listItemNode));
-              }
+            const listItemNode = $getNearestNodeOfType(node, ListItemNode);
+            if (listItemNode != null) {
+              listNodes.add($getTopListNode(listItemNode));
             }
           }
         }

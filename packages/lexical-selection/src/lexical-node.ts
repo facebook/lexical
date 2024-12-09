@@ -298,11 +298,6 @@ export function $patchStyleText(
   }
 }
 
-/**
- * Updates styles on selected TextNodes, splitting nodes if partially selected.
- * @param selection - The selected node(s) to update.
- * @param fn - The function to apply to the selected TextNodes.
- */
 export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
 ): void {

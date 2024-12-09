@@ -54,6 +54,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   type: string;
   version: number;
+  classes?: ReadOnlyClasses;
 };
 
 /** @internal */
@@ -170,6 +171,8 @@ export type DOMExportOutput = {
 };
 
 export type NodeKey = string;
+export type MutableClasses = {[classSuffix: string]: true | string};
+export type ReadOnlyClasses = {readonly [classSuffix: string]: true | string};
 
 export class LexicalNode {
   // Allow us to look up the type including static props
@@ -185,6 +188,46 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /**
+   * Don't use this directly, use `this.getClasses()` and `this.mutateClasses()` instead
+   * @internal
+   */
+  __classes?: ReadOnlyClasses;
+
+  /**
+   * Returns an object of classes in the form of `prefix-suffix` for string values, or just `prefix` for true boolean values.
+   * @example
+   * const exampleClassesObject = {
+   *   bg: 'red', // the node is rendered with class `bg-red`
+   *   text: 'green', // node is rendered with class `text-green`,
+   *   active: true, // node is rendered with class `active`,
+   * }
+   * // Resulting classes: 'bg-red', 'text-green', and 'active'
+   *
+   * @returns The classes object.
+   */
+  getClasses(): ReadOnlyClasses {
+    const self = this.getLatest();
+    return self.__classes || {};
+  }
+
+  /**
+   * Allows mutation of the classes object where the key-value pairs follow the format `prefix-suffix` for string values,
+   * or just `prefix` for true boolean values.
+   *
+   * @example
+   * node.mutateClasses((currentClasses) => {
+   *   currentClasses.bg = 'blue'; // the node will now be rendered with class `bg-blue`
+   *   delete currentClasses.active; // the node will no longer have the class `active`
+   * });
+   *
+   * @param fn A function that receives the current classes object and allows it to be mutated safely.
+   */
+  mutateClasses(fn: (classes: MutableClasses) => void) {
+    const self = this.getWritable();
+    self.__classes = self.__classes || {};
+    fn(self.__classes);
+  }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -858,6 +901,15 @@ export class LexicalNode {
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
+    if (this.__classes) {
+      Object.entries(this.__classes).forEach(([classPrefix, classSufix]) => {
+        if (typeof classSufix === 'string') {
+          element.classList.add(`${classPrefix}-${classSufix}`);
+        } else if (typeof classSufix === 'boolean' && classSufix) {
+          element.classList.add(classPrefix);
+        }
+      });
+    }
     return {element};
   }
 

@@ -43,6 +43,7 @@ import {
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 
+import {$forEachSelectedTextNode} from '../../lexical-node';
 import {$setAnchorPoint, $setFocusPoint} from '../utils';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
@@ -3169,5 +3170,98 @@ describe('$patchStyleText', () => {
       expect(newFocusNode.getTextContent()).toBe('st ');
       expect(newFocus.offset).toBe(0);
     });
+  });
+});
+
+describe('classes property', () => {
+  test('can mutate classes using $forEachSelectedTextNode', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      const text = $createTextNode('first').setFormat('bold');
+      paragraph.append(text);
+
+      const textSecond = $createTextNode('second');
+      paragraph.append(textSecond);
+
+      $setAnchorPoint({
+        key: text.getKey(),
+        offset: 'fir'.length,
+        type: 'text',
+      });
+
+      $setFocusPoint({
+        key: textSecond.getKey(),
+        offset: 'sec'.length,
+        type: 'text',
+      });
+
+      $forEachSelectedTextNode((textNode) => {
+        textNode.mutateClasses((classes) => {
+          classes.bg = 'red';
+          classes.active = true;
+          classes.highlight = 'yellow';
+          // @ts-expect-error - just testing what happens if someone ignores the type
+          classes.disabled = false;
+        });
+      });
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr">' +
+        '<strong data-lexical-text="true">fir</strong>' +
+        '<strong class="bg-red active highlight-yellow" data-lexical-text="true">st</strong>' +
+        '<span class="bg-red active highlight-yellow" data-lexical-text="true">sec</span>' +
+        '<span data-lexical-text="true">ond</span>' +
+        '</p>',
+    );
+  });
+  test('exportJSON', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+    const getSerializedParagraph = (_editor: LexicalEditor) => {
+      return _editor.getEditorState().toJSON().root.children[0];
+    };
+    let p: ParagraphNode;
+
+    await editor.update(() => {
+      p = $createParagraphNode();
+      $getRoot().append(p);
+    });
+    expect('classes' in getSerializedParagraph(editor)).toBe(false);
+
+    // should ignore false, numbers or undefined
+    await editor.update(() => {
+      p.mutateClasses((classes) => {
+        classes.bg = 'red';
+        classes.active = true;
+        // @ts-expect-error - just testing what happens if someone ignores the type
+        classes.highlight = false;
+        // @ts-expect-error - just testing what happens if someone ignores the type
+        classes.someNumber = 4;
+        // @ts-ignore
+        classes.somethingUndefined = undefined;
+      });
+    });
+    expect('classes' in getSerializedParagraph(editor)).toBe(true);
+    expect(getSerializedParagraph(editor).classes).toStrictEqual({
+      active: true,
+      bg: 'red',
+    });
+
+    // should not export classes if empty
+    await editor.update(() => {
+      p.mutateClasses((classes) => {
+        delete classes.bg;
+        delete classes.active;
+      });
+    });
+    expect('classes' in getSerializedParagraph(editor)).toBe(false);
   });
 });

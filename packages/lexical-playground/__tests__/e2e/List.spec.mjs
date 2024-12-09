@@ -165,7 +165,6 @@ test.describe.parallel('Nested List', () => {
     await toggleBulletList(page);
 
     await selectFromColorPicker(page);
-    await await focusEditor(page);
     await toggleBold(page);
     await page.keyboard.type('Hello');
     //Double-enter to exit list

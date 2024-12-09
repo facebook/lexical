@@ -355,18 +355,6 @@ pre::-webkit-scrollbar-thumb {
   width: 200px;
 }
 
-.mentions-menu {
-  width: 250px;
-}
-
-.auto-embed-menu {
-  width: 150px;
-}
-
-.emoji-menu {
-  width: 200px;
-}
-
 i.palette {
   background-image: url(images/icons/palette.svg);
 }

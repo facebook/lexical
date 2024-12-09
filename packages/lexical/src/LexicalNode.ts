@@ -191,7 +191,6 @@ export class LexicalNode {
   /**
    * Don't use this directly, use `this.getClasses()` and `this.mutateClasses()` instead
    * @internal
-   * @ex
    */
   __classes?: ReadOnlyClasses;
 

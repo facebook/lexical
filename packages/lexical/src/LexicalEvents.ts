@@ -8,7 +8,6 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {NodeKey} from './LexicalNode';
-import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
@@ -59,7 +58,6 @@ import {
   KEY_TAB_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
-  ParagraphNode,
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -130,6 +128,7 @@ import {
   isUnderline,
   isUndo,
 } from './LexicalUtils';
+import {ElementNode} from './nodes/LexicalElementNode';
 
 type RootElementRemoveHandles = Array<() => void>;
 type RootElementEvents = Array<
@@ -351,7 +350,7 @@ function onSelectionChange(
             const lastNode = anchor.getNode();
             selection.style = '';
             if (
-              lastNode instanceof ParagraphNode &&
+              lastNode instanceof ElementNode &&
               lastNode.getChildrenSize() === 0
             ) {
               selection.format = lastNode.getTextFormat();

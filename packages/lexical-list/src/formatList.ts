@@ -154,9 +154,14 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     return node;
   }
 
+  const selection = $getSelection();
+  const selectionStyle = $isRangeSelection(selection) ? selection.style : '';
+  const selectionFormat = $isRangeSelection(selection) ? selection.format : 0;
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
+  listItem.setTextStyle(selectionStyle);
+  listItem.setTextFormat(selectionFormat);
   append(listItem, node.getChildren());
 
   let targetList;
@@ -183,6 +188,7 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     node.replace(list);
     targetList = list;
   }
+
   // listItem needs to be attached to root prior to setting indent
   listItem.setFormat(node.getFormatType());
   listItem.setIndent(node.getIndent());

@@ -77,7 +77,7 @@ export class RootNode extends ElementNode {
 
   // View
 
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false {
+  updateDOM(prevNode: this, dom: HTMLElement): false {
     return false;
   }
 

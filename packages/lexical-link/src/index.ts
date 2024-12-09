@@ -113,7 +113,7 @@ export class LinkNode extends ElementNode {
   }
 
   updateDOM(
-    prevNode: LinkNode,
+    prevNode: this,
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
@@ -393,7 +393,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   updateDOM(
-    prevNode: AutoLinkNode,
+    prevNode: this,
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {

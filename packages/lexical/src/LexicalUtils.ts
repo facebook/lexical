@@ -1436,6 +1436,7 @@ export function $isRootOrShadowRoot(
  */
 export function $copyNode<T extends LexicalNode>(node: T): T {
   const copy = node.constructor.clone(node) as T;
+  copy.__classes = {...node.__classes};
   $setNodeKey(copy, null);
   return copy;
 }
@@ -1841,6 +1842,7 @@ export function getCachedTypeToNodeMap(
 export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   const constructor = latestNode.constructor;
   const mutableNode = constructor.clone(latestNode) as T;
+  mutableNode.__classes = {...latestNode.__classes};
   mutableNode.afterCloneFrom(latestNode);
   if (__DEV__) {
     invariant(

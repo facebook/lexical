@@ -641,8 +641,16 @@ function $reconcileNode(
     );
   }
 
+  const nextClasses = nextNode.__classes || {};
+  const prevClasses = prevNode.__classes || {};
+  const classesChanged = !(
+    Object.keys(nextClasses).length === Object.keys(prevClasses).length &&
+    Object.keys(nextClasses).every(
+      (_key) => nextClasses[_key] === prevClasses[_key],
+    )
+  );
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
+  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig) || classesChanged) {
     const replacementDOM = $createNode(key, null);
 
     if (parentDOM === null) {

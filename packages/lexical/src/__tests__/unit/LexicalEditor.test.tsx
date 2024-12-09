@@ -2902,7 +2902,7 @@ describe('LexicalEditor tests', () => {
         onError: onError,
       });
       const text = 'initial content';
-      let textNode: TextNode;
+      let textNode!: TextNode;
       await newEditor.update(
         () => {
           textNode = $createTextNode(text);
@@ -2944,7 +2944,7 @@ describe('LexicalEditor tests', () => {
         onError: onError,
       });
       const text = 'initial content';
-      let textNode: TextNode;
+      let textNode!: TextNode;
       await newEditor.update(
         () => {
           textNode = $createTextNode(text);

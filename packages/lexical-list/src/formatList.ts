@@ -12,7 +12,6 @@ import {
   $getSelection,
   $isElementNode,
   $isLeafNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   ElementNode,
@@ -494,7 +493,7 @@ export function $handleListInsertParagraph(): boolean {
   );
 
   const grandparent = parent.getParent();
-  let replacementNode: ElementNode;
+  let replacementNode: ParagraphNode | ListItemNode;
 
   if ($isRootOrShadowRoot(grandparent)) {
     replacementNode = $createParagraphNode();
@@ -513,17 +512,14 @@ export function $handleListInsertParagraph(): boolean {
   const nextSiblings = anchor.getNextSiblings();
   if (nextSiblings.length > 0) {
     const newList = $createListNode(parent.getListType());
-    if ($isParagraphNode(replacementNode)) {
-      replacementNode.insertAfter(newList);
-    } else {
+    if ($isListItemNode(replacementNode)) {
       const newListItem = $createListItemNode();
       newListItem.append(newList);
       replacementNode.insertAfter(newListItem);
+    } else {
+      replacementNode.insertAfter(newList);
     }
-    nextSiblings.forEach((sibling) => {
-      sibling.remove();
-      newList.append(sibling);
-    });
+    newList.append(...nextSiblings);
   }
   // Don't leave hanging nested empty lists
   $removeHighestEmptyListParent(anchor);

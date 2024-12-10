@@ -579,11 +579,22 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
       ) {
         cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
         invariant(nextRowNode !== null, 'Expected nextRowNode not to be null');
-        if (column === 0) {
+        let insertAfterCell: null | TableCellNode = null;
+        for (let columnIndex = 0; columnIndex < column; columnIndex++) {
+          const currentCellMap = nextRow[columnIndex];
+          const currentCell = currentCellMap.cell;
+          // Checking the cell having startRow as same as nextRow
+          if (currentCellMap.startRow === row + 1) {
+            insertAfterCell = currentCell;
+          }
+          if (currentCell.__colSpan > 1) {
+            columnIndex += currentCell.__colSpan - 1;
+          }
+        }
+        if (insertAfterCell === null) {
           $insertFirst(nextRowNode, cell);
         } else {
-          const {cell: previousCell} = nextRow[column - 1];
-          previousCell.insertAfter(cell);
+          insertAfterCell.insertAfter(cell);
         }
       }
     }

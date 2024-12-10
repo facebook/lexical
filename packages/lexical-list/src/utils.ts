@@ -6,9 +6,8 @@
  *
  */
 
-import type {LexicalNode, Spread} from 'lexical';
-
 import {$findMatchingParent} from '@lexical/utils';
+import {type LexicalNode, type Spread} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {

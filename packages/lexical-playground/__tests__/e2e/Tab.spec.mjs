@@ -81,7 +81,9 @@ test.describe('Tab', () => {
             dir="ltr"
             style="padding-inline-start: calc(40px)">
             <span data-lexical-text="true">すし</span>
-            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tabNode"
+              data-lexical-text="true"></span>
             <span data-lexical-text="true">すし</span>
           </p>
         `,
@@ -106,7 +108,9 @@ test.describe('Tab', () => {
           data-gutter="1"
           data-highlight-language="javascript"
           data-language="javascript">
-          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">

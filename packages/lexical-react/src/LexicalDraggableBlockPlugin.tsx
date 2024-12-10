@@ -191,9 +191,15 @@ function setMenuPosition(
   const floatingElemRect = floatingElem.getBoundingClientRect();
   const anchorElementRect = anchorElem.getBoundingClientRect();
 
+  // top left
+  let targetCalculateHeight: number = parseInt(targetStyle.lineHeight, 10);
+  if (isNaN(targetCalculateHeight)) {
+    // middle
+    targetCalculateHeight = targetRect.bottom - targetRect.top;
+  }
   const top =
     targetRect.top +
-    (parseInt(targetStyle.lineHeight, 10) - floatingElemRect.height) / 2 -
+    (targetCalculateHeight - floatingElemRect.height) / 2 -
     anchorElementRect.top;
 
   const left = SPACE;

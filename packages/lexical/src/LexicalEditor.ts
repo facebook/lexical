@@ -131,6 +131,7 @@ export type EditorThemeClasses = {
   quote?: EditorThemeClassName;
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
+  tab?: EditorThemeClassName;
   table?: EditorThemeClassName;
   tableAddColumns?: EditorThemeClassName;
   tableAddRows?: EditorThemeClassName;

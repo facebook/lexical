@@ -382,7 +382,7 @@ export class ListItemNode extends ParagraphNode {
   }
 
   canMergeWith(node: LexicalNode): boolean {
-    return $isParagraphNode(node) || $isListItemNode(node);
+    return $isListItemNode(node) || $isParagraphNode(node);
   }
 
   extractWithChild(child: LexicalNode, selection: BaseSelection): boolean {

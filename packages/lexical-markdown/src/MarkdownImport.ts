@@ -117,14 +117,28 @@ function $importMultiline(
   multilineElementTransformers: Array<MultilineElementTransformer>,
   rootNode: ElementNode,
 ): [boolean, number] {
-  for (const {
-    regExpStart,
-    regExpEnd,
-    replace,
-  } of multilineElementTransformers) {
+  for (const transformer of multilineElementTransformers) {
+    const {handleImportAfterStartMatch, regExpEnd, regExpStart, replace} =
+      transformer;
+
     const startMatch = lines[startLineIndex].match(regExpStart);
     if (!startMatch) {
       continue; // Try next transformer
+    }
+
+    if (handleImportAfterStartMatch) {
+      const result = handleImportAfterStartMatch({
+        lines,
+        rootNode,
+        startLineIndex,
+        startMatch,
+        transformer,
+      });
+      if (result === null) {
+        continue;
+      } else if (result) {
+        return result;
+      }
     }
 
     const regexpEndRegex: RegExp | undefined =
@@ -359,6 +373,9 @@ function importTextMatchTransformers(
 
   mainLoop: while (textNode) {
     for (const transformer of textMatchTransformers) {
+      if (!transformer.replace || !transformer.importRegExp) {
+        continue;
+      }
       const match = textNode.getTextContent().match(transformer.importRegExp);
 
       if (!match) {
@@ -366,7 +383,14 @@ function importTextMatchTransformers(
       }
 
       const startIndex = match.index || 0;
-      const endIndex = startIndex + match[0].length;
+      const endIndex = transformer.getEndIndex
+        ? transformer.getEndIndex(textNode, match)
+        : startIndex + match[0].length;
+
+      if (endIndex === false) {
+        continue;
+      }
+
       let replaceNode, newTextNode;
 
       if (startIndex === 0) {

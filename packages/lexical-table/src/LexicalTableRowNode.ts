@@ -6,9 +6,9 @@
  *
  */
 
-import type {Spread} from 'lexical';
+import type {BaseSelection, Spread} from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   DOMConversionMap,
@@ -21,6 +21,7 @@ import {
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
+import {$isTableCellNode} from './LexicalTableCellNode';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -81,6 +82,14 @@ export class TableRowNode extends ElementNode {
     return element;
   }
 
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    return destination === 'html';
+  }
+
   isShadowRoot(): boolean {
     return true;
   }
@@ -116,7 +125,10 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
     height = parseFloat(domNode_.style.height);
   }
 
-  return {node: $createTableRowNode(height)};
+  return {
+    after: (children) => $descendantsMatching(children, $isTableCellNode),
+    node: $createTableRowNode(height),
+  };
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {

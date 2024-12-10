@@ -18,7 +18,6 @@ import {
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,
-  $selectAll,
   $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
@@ -26,12 +25,15 @@ import {
 import {
   createDOMRange,
   createRectsFromDOMRange,
+  getCSSFromStyleObject,
   getStyleObjectFromCSS,
 } from './utils';
 
 export {
   /** @deprecated moved to the lexical package */ $cloneWithProperties,
+  /** @deprecated moved to the lexical package */ $selectAll,
 } from 'lexical';
+
 export {
   $addNodeStyle,
   $isAtNodeEnd,
@@ -47,10 +49,14 @@ export {
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,
-  $selectAll,
   $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
 };
 
-export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};
+export {
+  createDOMRange,
+  createRectsFromDOMRange,
+  getCSSFromStyleObject,
+  getStyleObjectFromCSS,
+};

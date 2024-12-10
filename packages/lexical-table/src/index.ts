@@ -22,11 +22,18 @@ export type {SerializedTableNode} from './LexicalTableNode';
 export {
   $createTableNode,
   $getElementForTableNode,
+  $isScrollableTablesActive,
   $isTableNode,
+  setScrollableTablesActive,
   TableNode,
 } from './LexicalTableNode';
 export type {TableDOMCell} from './LexicalTableObserver';
-export {TableObserver} from './LexicalTableObserver';
+export {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
+export {
+  registerTableCellUnmergeTransform,
+  registerTablePlugin,
+  registerTableSelectionObserver,
+} from './LexicalTablePluginHelpers';
 export type {SerializedTableRowNode} from './LexicalTableRowNode';
 export {
   $createTableRowNode,
@@ -49,6 +56,7 @@ export {
   $findTableNode,
   applyTableHandlers,
   getDOMCellFromTarget,
+  getTableElement,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {

@@ -31,7 +31,12 @@ import {
 
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>
-    initialize({isCollab, page, showNestedEditorTreeView: false}),
+    initialize({
+      isCollab,
+      page,
+      showNestedEditorTreeView: false,
+      tableHorizontalScroll: false,
+    }),
   );
 
   test(
@@ -157,6 +162,13 @@ test.describe('Toolbar', () => {
             <br />
           </p>
           <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
             <tr>
               <th>
                 <p><br /></p>

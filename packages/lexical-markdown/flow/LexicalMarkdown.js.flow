@@ -17,6 +17,7 @@ import type {
 
 export type Transformer =
   | ElementTransformer
+  | MultilineElementTransformer
   | TextFormatTransformer
   | TextMatchTransformer;
 
@@ -32,8 +33,32 @@ export type ElementTransformer = {
     children: Array<LexicalNode>,
     match: Array<string>,
     isImport: boolean,
-  ) => void,
+  ) => boolean | void,
   type: 'element',
+};
+
+export type MultilineElementTransformer = {
+  dependencies: Array<Class<LexicalNode>>;
+  export?: (
+    node: LexicalNode,
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null;
+  regExpStart: RegExp;
+  regExpEnd?:
+    | RegExp
+    | {
+        optional?: true;
+        regExp: RegExp;
+      };
+  replace: (
+    rootNode: ElementNode,
+    children: Array<LexicalNode> | null,
+    startMatch: Array<string>,
+    endMatch: Array<string> | null,
+    linesInBetween: Array<string> | null,
+    isImport: boolean,
+  ) => boolean | void;
+  type: 'multiline-element';
 };
 
 export type TextFormatTransformer = $ReadOnly<{
@@ -70,6 +95,7 @@ declare export function $convertFromMarkdownString(
   transformers?: Array<Transformer>,
   node?: ElementNode,
   shouldPreserveNewLines?: boolean,
+  shouldMergeAdjacentLines?: boolean,
 ): void;
 
 // TODO:
@@ -90,7 +116,7 @@ declare export var ITALIC_UNDERSCORE: TextFormatTransformer;
 declare export var STRIKETHROUGH: TextFormatTransformer;
 
 declare export var UNORDERED_LIST: ElementTransformer;
-declare export var CODE: ElementTransformer;
+declare export var CODE: MultilineElementTransformer;
 declare export var HEADING: ElementTransformer;
 declare export var ORDERED_LIST: ElementTransformer;
 declare export var QUOTE: ElementTransformer;

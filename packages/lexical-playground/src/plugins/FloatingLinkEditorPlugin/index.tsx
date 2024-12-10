@@ -24,6 +24,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getDOMSelection,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
@@ -35,6 +36,12 @@ import {createPortal} from 'react-dom';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {setFloatingElemPositionForLinkEditor} from '../../utils/setFloatingElemPositionForLinkEditor';
 import {sanitizeUrl} from '../../utils/url';
+
+function preventDefault(
+  event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,
+): void {
+  event.preventDefault();
+}
 
 function FloatingLinkEditor({
   editor,
@@ -77,7 +84,7 @@ function FloatingLinkEditor({
       }
     }
     const editorElem = editorRef.current;
-    const nativeSelection = window.getSelection();
+    const nativeSelection = getDOMSelection(editor._window);
     const activeElement = document.activeElement;
 
     if (editorElem === null) {
@@ -182,19 +189,26 @@ function FloatingLinkEditor({
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (event.key === 'Enter') {
-      event.preventDefault();
-      handleLinkSubmission();
+      handleLinkSubmission(event);
     } else if (event.key === 'Escape') {
       event.preventDefault();
       setIsLinkEditMode(false);
     }
   };
 
-  const handleLinkSubmission = () => {
+  const handleLinkSubmission = (
+    event:
+      | React.KeyboardEvent<HTMLInputElement>
+      | React.MouseEvent<HTMLElement>,
+  ) => {
+    event.preventDefault();
     if (lastSelection !== null) {
       if (linkUrl !== '') {
-        editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
         editor.update(() => {
+          editor.dispatchCommand(
+            TOGGLE_LINK_COMMAND,
+            sanitizeUrl(editedLinkUrl),
+          );
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const parent = getSelectedNode(selection).getParent();
@@ -234,7 +248,7 @@ function FloatingLinkEditor({
               className="link-cancel"
               role="button"
               tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={preventDefault}
               onClick={() => {
                 setIsLinkEditMode(false);
               }}
@@ -244,7 +258,7 @@ function FloatingLinkEditor({
               className="link-confirm"
               role="button"
               tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={preventDefault}
               onClick={handleLinkSubmission}
             />
           </div>
@@ -261,8 +275,9 @@ function FloatingLinkEditor({
             className="link-edit"
             role="button"
             tabIndex={0}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
+            onMouseDown={preventDefault}
+            onClick={(event) => {
+              event.preventDefault();
               setEditedLinkUrl(linkUrl);
               setIsLinkEditMode(true);
             }}
@@ -271,7 +286,7 @@ function FloatingLinkEditor({
             className="link-trash"
             role="button"
             tabIndex={0}
-            onMouseDown={(event) => event.preventDefault()}
+            onMouseDown={preventDefault}
             onClick={() => {
               editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
             }}

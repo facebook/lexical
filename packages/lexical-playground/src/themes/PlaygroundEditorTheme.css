@@ -103,6 +103,11 @@
   border-top: 1px solid black;
   animation: CursorBlink 1.1s steps(2, start) infinite;
 }
+@keyframes CursorBlink {
+  to {
+    visibility: hidden;
+  }
+}
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);
   font-family: Menlo, Consolas, Monaco, monospace;

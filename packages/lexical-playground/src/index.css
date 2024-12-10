@@ -1766,12 +1766,6 @@ button.item.dropdown-item-active i {
   z-index: 3;
 }
 
-@keyframes CursorBlink {
-  to {
-    visibility: hidden;
-  }
-}
-
 .dialog-dropdown {
   background-color: #eee !important;
   margin-bottom: 10px;

@@ -7,7 +7,7 @@ Originally the only way to customize nodes was using the node replacement API. R
 
 Most of the time when users want to customize a node they just want to add a property to it, which ends up being reflected as a class in the dom element.
 
-To satisfy that need we have introduced two new methods to all nodes: `getClasses` and `mutateClasses`. 
+To satisfy that need we have introduced two new methods to all nodes: `getClasses` and `setClass`. 
 
 ```ts
 export function CoolRedPlugin() {
@@ -18,15 +18,13 @@ export function CoolRedPlugin() {
       onClick={() => {
         editor.update(() => {
           $forEachSelectedTextNode((textNode) => {
-            // Allows mutation of the classes object where the key-value pairs follow the
-            // format prefix-suffix for string values, or just prefix for true boolean values.
-            textNode.mutateClasses((classes) => {
-              classes.bg = 'red'; // adds the class bg-red
-              // Perhaps you don't want to allow the same node to have
-              // both text and background color defined at the same time...
-              delete classes.text; // ...so here you remove the class text-[color].
-              classes.cool = true; // adds the class cool (true values don't add a suffix)
-            });
+            // setClass mutates the classes object where the key-value pairs follow the
+            // format prefix-suffix for string values, or just prefix for boolean values.
+            textNode.setClass('bg', 'red'); // adds the class bg-red
+            // Perhaps you don't want to allow the same node to have
+            // both text and background color defined at the same time...
+            textNode.setClass('text', false); // ...so here you remove the class text-[color].
+            textNode.setClass('cool', true); // adds the class cool (true values don't add a suffix)
           });
         });
       }}>

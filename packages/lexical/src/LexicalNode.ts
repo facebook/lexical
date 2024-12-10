@@ -323,7 +323,9 @@ export class LexicalNode {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
-    this.__classes = {...prevNode.__classes};
+    if (prevNode.__classes) {
+      this.__classes = {...prevNode.__classes};
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

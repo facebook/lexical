@@ -1315,7 +1315,7 @@ export class LexicalEditor {
    * You still must call JSON.stringify (or something else) to turn the
    * state into a string you can transfer over the wire and store in a database.
    *
-   * See {@link LexicalNode#exportJSON}
+   * See {@link LexicalNode.exportJSON}
    *
    * @returns A JSON-serializable javascript object
    */

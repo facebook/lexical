@@ -208,7 +208,7 @@ export class LexicalNode {
    */
   getClasses(): ReadonlyClasses {
     const self = this.getLatest();
-    return {...self.__classes};
+    return self.__classes || {};
   }
 
   /**
@@ -233,9 +233,7 @@ export class LexicalNode {
     } else {
       classes[key] = value;
     }
-    if (Object.keys(classes).length > 0) {
-      self.__classes = classes;
-    }
+    self.__classes = classes;
   }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -325,6 +323,7 @@ export class LexicalNode {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
+    this.__classes = {...prevNode.__classes};
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

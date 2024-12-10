@@ -956,7 +956,7 @@ export class TextNode extends LexicalNode {
       writableNode = $createTextNode(firstPart);
       writableNode.__format = format;
       writableNode.__style = style;
-      writableNode.__classes = {...classes};
+      writableNode.__classes = classes;
       writableNode.__detail = detail;
       hasReplacedSelf = true;
     } else {
@@ -978,7 +978,7 @@ export class TextNode extends LexicalNode {
       const sibling = $createTextNode(part).getWritable();
       sibling.__format = format;
       sibling.__style = style;
-      sibling.__classes = {...classes};
+      sibling.__classes = classes;
       sibling.__detail = detail;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;

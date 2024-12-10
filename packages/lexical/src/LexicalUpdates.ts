@@ -9,7 +9,7 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {
   LexicalNode,
-  ReadOnlyClasses,
+  ReadonlyClasses,
   SerializedLexicalNode,
 } from './LexicalNode';
 
@@ -342,7 +342,7 @@ type InternalSerializedNode = {
   children?: Array<InternalSerializedNode>;
   type: string;
   version: number;
-  classes?: ReadOnlyClasses;
+  classes?: ReadonlyClasses;
 };
 
 export function $parseSerializedNode(

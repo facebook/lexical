@@ -54,7 +54,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   type: string;
   version: number;
-  classes?: ReadOnlyClasses;
+  classes?: ReadonlyClasses;
 };
 
 /** @internal */
@@ -172,7 +172,7 @@ export type DOMExportOutput = {
 
 export type NodeKey = string;
 export type MutableClasses = {[classSuffix: string]: true | string};
-export type ReadOnlyClasses = {readonly [classSuffix: string]: true | string};
+export type ReadonlyClasses = {readonly [classSuffix: string]: true | string};
 
 export class LexicalNode {
   // Allow us to look up the type including static props
@@ -192,7 +192,7 @@ export class LexicalNode {
    * Don't use this directly, use `this.getClasses()` and `this.mutateClasses()` instead
    * @internal
    */
-  __classes?: ReadOnlyClasses;
+  __classes?: ReadonlyClasses;
 
   /**
    * Returns an object of classes in the form of `prefix-suffix` for string values, or just `prefix` for true boolean values.
@@ -206,27 +206,36 @@ export class LexicalNode {
    *
    * @returns The classes object.
    */
-  getClasses(): ReadOnlyClasses {
+  getClasses(): ReadonlyClasses {
     const self = this.getLatest();
-    return self.__classes || {};
+    return {...self.__classes};
   }
 
   /**
-   * Allows mutation of the classes object where the key-value pairs follow the format `prefix-suffix` for string values,
-   * or just `prefix` for true boolean values.
+   * Sets a class based on the provided key and value.
+   *
+   * @param key - The class key to set or modify.
+   * @param value - The class value. Possible options:
+   * - `true`: add the class if it doesn't exist.
+   * - `false`: remove the class if it exists.
+   * - `string`: Adds a class in the format `key-value` (e.g., `bg-blue`), useful for overwriting existing classes with the same key.
    *
    * @example
-   * node.mutateClasses((currentClasses) => {
-   *   currentClasses.bg = 'blue'; // the node will now be rendered with class `bg-blue`
-   *   delete currentClasses.active; // the node will no longer have the class `active`
-   * });
-   *
-   * @param fn A function that receives the current classes object and allows it to be mutated safely.
+   * node.setClass('active', true); // Adds the class `active`, replacing the one with the key `active` if it exists.
+   * node.setClass('active', false); // Removes any class with the key `active` (e.g., `active` or `active-blue`).
+   * node.setClass('bg', 'blue'); // Adds the class `bg-blue`
    */
-  mutateClasses(fn: (classes: MutableClasses) => void) {
+  setClass(key: string, value: boolean | string) {
     const self = this.getWritable();
-    self.__classes = self.__classes || {};
-    fn(self.__classes);
+    const classes = {...self.__classes};
+    if (value === false) {
+      delete classes[key];
+    } else {
+      classes[key] = value;
+    }
+    if (Object.keys(classes).length > 0) {
+      self.__classes = classes;
+    }
   }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_

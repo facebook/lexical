@@ -3202,13 +3202,10 @@ describe('classes property', () => {
       });
 
       $forEachSelectedTextNode((textNode) => {
-        textNode.mutateClasses((classes) => {
-          classes.bg = 'red';
-          classes.active = true;
-          classes.highlight = 'yellow';
-          // @ts-expect-error - just testing what happens if someone ignores the type
-          classes.disabled = false;
-        });
+        textNode.setClass('bg', 'red');
+        textNode.setClass('active', true);
+        textNode.setClass('highlight', 'yellow');
+        textNode.setClass('disabled', false);
       });
     });
 
@@ -3238,16 +3235,9 @@ describe('classes property', () => {
 
     // should ignore false, numbers or undefined
     await editor.update(() => {
-      p.mutateClasses((classes) => {
-        classes.bg = 'red';
-        classes.active = true;
-        // @ts-expect-error - just testing what happens if someone ignores the type
-        classes.highlight = false;
-        // @ts-expect-error - just testing what happens if someone ignores the type
-        classes.someNumber = 4;
-        // @ts-ignore
-        classes.somethingUndefined = undefined;
-      });
+      p.setClass('bg', 'red');
+      p.setClass('active', true);
+      p.setClass('highlight', false);
     });
     expect('classes' in getSerializedParagraph(editor)).toBe(true);
     expect(getSerializedParagraph(editor).classes).toStrictEqual({
@@ -3257,10 +3247,8 @@ describe('classes property', () => {
 
     // should not export classes if empty
     await editor.update(() => {
-      p.mutateClasses((classes) => {
-        delete classes.bg;
-        delete classes.active;
-      });
+      p.setClass('bg', false);
+      p.setClass('active', false);
     });
     expect('classes' in getSerializedParagraph(editor)).toBe(false);
   });

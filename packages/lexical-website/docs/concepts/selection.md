@@ -132,7 +132,7 @@ changing the selection, can use the `'skip-dom-selection'` update tag
 
 ```js
 // Call this from an editor.update or command listener
-$addTag('skip-dom-selection');
+$addUpdateTag('skip-dom-selection');
 ```
 
 If you want to add this tag during processing of a `dispatchCommand`,
@@ -144,7 +144,7 @@ you can wrap it in an `editor.update`:
 //       confusing semantics (dispatchCommand will re-use the
 //       current update without nesting)
 editor.update(() => {
-  $addTag('skip-dom-selection');
+  $addUpdateTag('skip-dom-selection');
   editor.dispatchCommand(/* … */);
 });
 ```

@@ -22,10 +22,16 @@ function $canSimpleTextNodesBeMerged(
   const node2Mode = node2.__mode;
   const node2Format = node2.__format;
   const node2Style = node2.__style;
+  const node1Classes = node1.__classes || {};
+  const node2Classes = node2.__classes || {};
   return (
     (node1Mode === null || node1Mode === node2Mode) &&
     (node1Format === null || node1Format === node2Format) &&
-    (node1Style === null || node1Style === node2Style)
+    (node1Style === null || node1Style === node2Style) &&
+    Object.keys(node1Classes).length === Object.keys(node2Classes).length &&
+    Object.keys(node1Classes).every(
+      (key) => node1Classes[key] === node2Classes[key],
+    )
   );
 }
 

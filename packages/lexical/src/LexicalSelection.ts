@@ -1180,6 +1180,7 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  // TO-DO: Migrate this method to the new utility function $forEachSelectedTextNode (share similar logic)
   /**
    * Applies the provided format to the TextNodes in the Selection, splitting or
    * merging nodes as necessary.

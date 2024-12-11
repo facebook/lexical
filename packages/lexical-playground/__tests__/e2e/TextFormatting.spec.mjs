@@ -13,6 +13,7 @@ import {
   moveToLineEnd,
   selectCharacters,
   toggleBold,
+  toggleCapitalize,
   toggleItalic,
   toggleLowercase,
   toggleUnderline,
@@ -440,6 +441,11 @@ test.describe.parallel('TextFormatting', () => {
       applyCapitalization: toggleUppercase,
       className: 'PlaygroundEditorTheme__textUppercase',
       format: 'uppercase',
+    },
+    {
+      applyCapitalization: toggleCapitalize,
+      className: 'PlaygroundEditorTheme__textCapitalize',
+      format: 'capitalize',
     },
   ];
 

@@ -15,8 +15,6 @@ import {
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {TextNode} from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 
 import {$createMentionNode} from '../../nodes/MentionNode';
 
@@ -563,46 +561,18 @@ function getPossibleQueryMatch(text: string): MenuTextMatch | null {
 class MentionTypeaheadOption extends MenuOption {
   name: string;
   picture: JSX.Element;
+  title: JSX.Element;
 
   constructor(name: string, picture: JSX.Element) {
     super(name);
     this.name = name;
     this.picture = picture;
+    this.title = (
+      <>
+        {picture} {name}
+      </>
+    );
   }
-}
-
-function MentionsTypeaheadMenuItem({
-  index,
-  isSelected,
-  onClick,
-  onMouseEnter,
-  option,
-}: {
-  index: number;
-  isSelected: boolean;
-  onClick: () => void;
-  onMouseEnter: () => void;
-  option: MentionTypeaheadOption;
-}) {
-  let className = 'item';
-  if (isSelected) {
-    className += ' selected';
-  }
-  return (
-    <li
-      key={option.key}
-      tabIndex={-1}
-      className={className}
-      ref={option.setRefElement}
-      role="option"
-      aria-selected={isSelected}
-      id={'typeahead-item-' + index}
-      onMouseEnter={onMouseEnter}
-      onClick={onClick}>
-      {option.picture}
-      <span className="text">{option.name}</span>
-    </li>
-  );
 }
 
 export default function NewMentionsPlugin(): JSX.Element | null {
@@ -662,35 +632,6 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       onSelectOption={onSelectOption}
       triggerFn={checkForMentionMatch}
       options={options}
-      menuRenderFn={(
-        anchorElementRef,
-        {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
-      ) =>
-        anchorElementRef.current && results.length
-          ? ReactDOM.createPortal(
-              <div className="typeahead-popover mentions-menu">
-                <ul>
-                  {options.map((option, i: number) => (
-                    <MentionsTypeaheadMenuItem
-                      index={i}
-                      isSelected={selectedIndex === i}
-                      onClick={() => {
-                        setHighlightedIndex(i);
-                        selectOptionAndCleanUp(option);
-                      }}
-                      onMouseEnter={() => {
-                        setHighlightedIndex(i);
-                      }}
-                      key={option.key}
-                      option={option}
-                    />
-                  ))}
-                </ul>
-              </div>,
-              anchorElementRef.current,
-            )
-          : null
-      }
     />
   );
 }

@@ -41,14 +41,14 @@ export default function KatexRenderer({
     // inner text from Katex. There didn't seem to be any other way of making this work,
     // without having a physical space.
     <>
-      <img src="#" alt="" />
+      <span style={{display: 'inline-block', height: '1px', width: '1px'}} />
       <span
         role="button"
         tabIndex={-1}
         onDoubleClick={onDoubleClick}
         ref={katexElementRef}
       />
-      <img src="#" alt="" />
+      <span style={{display: 'inline-block', height: '1px', width: '1px'}} />
     </>
   );
 }

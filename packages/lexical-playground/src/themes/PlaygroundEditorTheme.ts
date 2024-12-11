@@ -106,13 +106,16 @@ const theme: EditorThemeClasses = {
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
+    capitalize: 'PlaygroundEditorTheme__textCapitalize',
     code: 'PlaygroundEditorTheme__textCode',
     italic: 'PlaygroundEditorTheme__textItalic',
+    lowercase: 'PlaygroundEditorTheme__textLowercase',
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',
     subscript: 'PlaygroundEditorTheme__textSubscript',
     superscript: 'PlaygroundEditorTheme__textSuperscript',
     underline: 'PlaygroundEditorTheme__textUnderline',
     underlineStrikethrough: 'PlaygroundEditorTheme__textUnderlineStrikethrough',
+    uppercase: 'PlaygroundEditorTheme__textUppercase',
   },
 };
 

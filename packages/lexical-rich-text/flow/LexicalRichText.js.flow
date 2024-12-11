@@ -25,7 +25,6 @@ declare export class QuoteNode extends ElementNode {
   static clone(node: QuoteNode): QuoteNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,
@@ -44,7 +43,6 @@ declare export class HeadingNode extends ElementNode {
   constructor(tag: HeadingTagType, key?: NodeKey): void;
   getTag(): HeadingTagType;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean;
   static importDOM(): DOMConversionMap | null;
   insertNewAfter(
     selection: RangeSelection,

@@ -183,7 +183,7 @@ export class CustomParagraph extends ElementNode {
     return dom;
   }
 
-  updateDOM(prevNode: CustomParagraph, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     // Returning false tells Lexical that this node does not need its
     // DOM element replacing with a new copy from createDOM.
     return false;
@@ -231,7 +231,7 @@ export class ColoredNode extends TextNode {
   }
 
   updateDOM(
-    prevNode: ColoredNode,
+    prevNode: this,
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {

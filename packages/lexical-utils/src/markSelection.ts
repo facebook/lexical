@@ -67,11 +67,12 @@ export default function markSelection(
         currentAnchorNodeKey !== previousAnchorNode.getKey() ||
         (currentAnchorNode !== previousAnchorNode &&
           (!$isTextNode(previousAnchorNode) ||
-            currentAnchorNode.updateDOM(
-              previousAnchorNode,
-              currentAnchorNodeDOM,
-              editor._config,
-            )));
+            ($isTextNode(currentAnchorNode) &&
+              currentAnchorNode.updateDOM(
+                previousAnchorNode,
+                currentAnchorNodeDOM,
+                editor._config,
+              ))));
       const differentFocusDOM =
         previousFocusNode === null ||
         currentFocusNodeDOM === null ||
@@ -79,11 +80,12 @@ export default function markSelection(
         currentFocusNodeKey !== previousFocusNode.getKey() ||
         (currentFocusNode !== previousFocusNode &&
           (!$isTextNode(previousFocusNode) ||
-            currentFocusNode.updateDOM(
-              previousFocusNode,
-              currentFocusNodeDOM,
-              editor._config,
-            )));
+            ($isTextNode(currentFocusNode) &&
+              currentFocusNode.updateDOM(
+                previousFocusNode,
+                currentFocusNodeDOM,
+                editor._config,
+              ))));
       if (differentAnchorDOM || differentFocusDOM) {
         const anchorHTMLElement = editor.getElementByKey(
           anchor.getNode().getKey(),

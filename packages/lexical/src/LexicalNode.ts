@@ -208,7 +208,7 @@ export class LexicalNode {
    */
   getClasses(): ReadonlyClasses {
     const self = this.getLatest();
-    return self.__classes || {};
+    return self.__classes;
   }
 
   /**

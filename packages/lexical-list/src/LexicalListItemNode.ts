@@ -7,6 +7,20 @@
  */
 
 import type {ListNode, ListType} from './';
+import type {
+  BaseSelection,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  EditorConfig,
+  EditorThemeClasses,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  RangeSelection,
+  SerializedElementNode,
+  Spread,
+} from 'lexical';
 
 import {
   addClassNamesToElement,
@@ -15,24 +29,11 @@ import {
 import {
   $applyNodeReplacement,
   $createParagraphNode,
-  $getSelection,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
   ElementNode,
   LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedParagraphNode,
-  Spread,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
@@ -46,11 +47,11 @@ export type SerializedListItemNode = Spread<
     checked: boolean | undefined;
     value: number;
   },
-  SerializedParagraphNode
+  SerializedElementNode
 >;
 
 /** @noInheritDoc */
-export class ListItemNode extends ParagraphNode {
+export class ListItemNode extends ElementNode {
   /** @internal */
   __value: number;
   /** @internal */
@@ -80,11 +81,12 @@ export class ListItemNode extends ParagraphNode {
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (super.updateDOM(prevNode, dom, config)) {
-      return true;
-    }
 
+  updateDOM(
+    prevNode: ListItemNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
       updateListItemChecked(dom, this, prevNode, parent);
@@ -92,6 +94,7 @@ export class ListItemNode extends ParagraphNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
+
     return false;
   }
 
@@ -125,12 +128,6 @@ export class ListItemNode extends ParagraphNode {
     node.setValue(serializedNode.value);
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
-    if (typeof serializedNode.textFormat === 'number') {
-      node.setTextFormat(serializedNode.textFormat);
-    }
-    if (typeof serializedNode.textStyle === 'string') {
-      node.setTextStyle(serializedNode.textStyle);
-    }
     return node;
   }
 
@@ -227,11 +224,15 @@ export class ListItemNode extends ParagraphNode {
     }
 
     const siblings = this.getNextSiblings();
+
+    // Split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
       const newListNode = $createListNode(listNode.getListType());
+
       siblings.forEach((sibling) => newListNode.append(sibling));
+
       node.insertAfter(newListNode, restoreSelection);
     }
 
@@ -255,49 +256,51 @@ export class ListItemNode extends ParagraphNode {
   }
 
   insertNewAfter(
-    selection: RangeSelection,
+    _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
     const newElement = $createListItemNode(
       this.__checked == null ? undefined : false,
     );
-
-    const format = selection.format;
-    newElement.setTextFormat(format);
-
-    newElement.setFormat(this.getFormatType());
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;
   }
 
-  collapseAtStart(): boolean {
-    const selection = $getSelection();
-
-    if (!$isRangeSelection(selection)) {
-      return false;
-    }
-
+  collapseAtStart(selection: RangeSelection): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
-
     const listNode = this.getParentOrThrow();
-    const listNodeParent = listNode.getParent();
-
-    if (!$isListNode(listNode)) {
-      return false;
-    }
+    const listNodeParent = listNode.getParentOrThrow();
+    const isIndented = $isListItemNode(listNodeParent);
 
     if (listNode.getChildrenSize() === 1) {
-      if ($isListItemNode(listNodeParent)) {
+      if (isIndented) {
+        // if the list node is nested, we just want to remove it,
+        // effectively unindenting it.
         listNode.remove();
         listNodeParent.select();
       } else {
         listNode.insertBefore(paragraph);
         listNode.remove();
-        paragraph.select();
+        // If we have selection on the list item, we'll need to move it
+        // to the paragraph
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        const key = paragraph.getKey();
+
+        if (anchor.type === 'element' && anchor.getNode().is(this)) {
+          anchor.set(key, anchor.offset, 'element');
+        }
+
+        if (focus.type === 'element' && focus.getNode().is(this)) {
+          focus.set(key, focus.offset, 'element');
+        }
       }
+    } else {
+      listNode.insertBefore(paragraph);
+      this.remove();
     }
 
     return true;

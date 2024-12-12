@@ -64,6 +64,10 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     this.__inline = inline ?? false;
   }
 
+  isInline(): boolean {
+    return this.__inline;
+  }
+
   static importJSON(serializedNode: SerializedEquationNode): EquationNode {
     const node = $createEquationNode(
       serializedNode.equation,

@@ -17,6 +17,7 @@ import {
   redo,
   selectAll,
   selectCharacters,
+  toggleBold,
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {

@@ -9,7 +9,6 @@
 import {
   $getSelection,
   $isRangeSelection,
-  $isTextNode,
   type EditorState,
   ElementNode,
   getDOMTextNode,
@@ -65,25 +64,13 @@ export default function markSelection(
         currentAnchorNodeDOM === null ||
         currentAnchorOffset !== previousAnchorOffset ||
         currentAnchorNodeKey !== previousAnchorNode.getKey() ||
-        (currentAnchorNode !== previousAnchorNode &&
-          (!$isTextNode(previousAnchorNode) ||
-            currentAnchorNode.updateDOM(
-              previousAnchorNode,
-              currentAnchorNodeDOM,
-              editor._config,
-            )));
+        currentAnchorNode !== previousAnchorNode;
       const differentFocusDOM =
         previousFocusNode === null ||
         currentFocusNodeDOM === null ||
         currentFocusOffset !== previousFocusOffset ||
         currentFocusNodeKey !== previousFocusNode.getKey() ||
-        (currentFocusNode !== previousFocusNode &&
-          (!$isTextNode(previousFocusNode) ||
-            currentFocusNode.updateDOM(
-              previousFocusNode,
-              currentFocusNodeDOM,
-              editor._config,
-            )));
+        currentFocusNode !== previousFocusNode;
       if (differentAnchorDOM || differentFocusDOM) {
         const anchorHTMLElement = editor.getElementByKey(
           anchor.getNode().getKey(),

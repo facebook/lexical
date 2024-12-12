@@ -31,6 +31,7 @@ import {
   pasteFromClipboard,
   repeat,
   selectFromAlignDropdown,
+  selectFromColorPicker,
   selectFromFormatDropdown,
   test,
   waitForSelector,
@@ -156,6 +157,24 @@ test.describe.parallel('Nested List', () => {
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul></li></ul>',
+    );
+  });
+
+  test('Should retain selection style when exiting list', async ({page}) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+
+    await selectFromColorPicker(page);
+    await toggleBold(page);
+    await page.keyboard.type('Hello');
+    //Double-enter to exit list
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('World');
+
+    await assertHTML(
+      page,
+      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">Hello</strong></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">World</strong></p>',
     );
   });
 

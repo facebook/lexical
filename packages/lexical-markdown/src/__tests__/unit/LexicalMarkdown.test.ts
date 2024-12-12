@@ -213,7 +213,7 @@ const CODE_TAG_COUNTER_EXAMPLE: MultilineElementTransformer = {
   type: 'multiline-element',
 };
 
-describe('Markdown', () => {
+describe('Markn', () => {
   type Input = Array<{
     html: string;
     md: string;

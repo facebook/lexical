@@ -1117,6 +1117,8 @@ export class RangeSelection implements BaseSelection {
     const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
     const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
 
+    console.log(firstPoint.offset, firstNode.getTextContentSize(), lastPoint.offset, lastNode.getTextContentSize());
+console.log('selected nodes', firstPoint, lastPoint);
     selectedNodes.forEach((node) => {
       if (
         !$hasAncestor(firstNode, node) &&
@@ -1124,7 +1126,10 @@ export class RangeSelection implements BaseSelection {
         node.getKey() !== firstNode.getKey() &&
         node.getKey() !== lastNode.getKey()
       ) {
-        node.remove();
+        console.log('node before remove', node);
+        if (firstPoint.offset !== lastPoint.offset) {
+          node.remove();
+        }
       }
     });
 
@@ -1138,30 +1143,39 @@ export class RangeSelection implements BaseSelection {
         return node.replace(textNode);
       }
     };
+    console.log(focus, anchor);
     if (firstNode === lastNode && $isTextNode(firstNode)) {
+      console.log('a');
       const del = Math.abs(focus.offset - anchor.offset);
       firstNode.spliceText(firstPoint.offset, del, '', true);
       fixText(firstNode, del);
       return;
     }
     if ($isTextNode(firstNode)) {
-      const del = firstNode.getTextContentSize() - firstPoint.offset;
+      console.log('b');
+      const del = firstNode.getTextContentSize() - firstPoint.offset + 2;
       firstNode.spliceText(firstPoint.offset, del, '');
       firstNode = fixText(firstNode, del) || firstNode;
     }
     if ($isTextNode(lastNode)) {
-      lastNode.spliceText(0, lastPoint.offset, '');
-      lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
+
+      console.log('c', lastNode);
+      // lastNode.spliceText(0, lastPoint.offset, '');
+      // lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
     }
     if (firstNode.isAttached() && $isTextNode(firstNode)) {
+      console.log('d');
       firstNode.selectEnd();
     } else if (lastNode.isAttached() && $isTextNode(lastNode)) {
+      console.log('e');
       lastNode.selectStart();
     }
 
     // Merge blocks
     const bothElem = $isElementNode(firstBlock) && $isElementNode(lastBlock);
-    if (bothElem && firstBlock !== lastBlock) {
+    console.log('merge', bothElem, firstBlock, lastBlock, firstBlock !== lastBlock, firstPoint, lastPoint);
+    if (bothElem && firstBlock !== lastBlock && firstPoint.offset != lastPoint.offset) {
+      console.log('f');
       firstBlock.append(...lastBlock.getChildren());
       lastBlock.remove();
       lastPoint.set(firstPoint.key, firstPoint.offset, firstPoint.type);
@@ -1802,6 +1816,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
+    console.log(this);
     if (this.isCollapsed()) {
       // Since `domSelection.modify('extend', ..., 'lineboundary')` works well for text selections
       // but doesn't properly handle selections which end on elements, a space character is added

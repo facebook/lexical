@@ -242,6 +242,7 @@ export function removeList(editor: LexicalEditor): void {
 
           if ($isLeafNode(node)) {
             const listItemNode = $getNearestNodeOfType(node, ListItemNode);
+
             if (listItemNode != null) {
               listNodes.add($getTopListNode(listItemNode));
             }
@@ -477,13 +478,11 @@ export function $handleListInsertParagraph(): boolean {
     return false;
   }
   // Only run this code on empty list items
-
   const anchor = selection.anchor.getNode();
 
   if (!$isListItemNode(anchor) || anchor.getChildrenSize() !== 0) {
     return false;
   }
-
   const topListNode = $getTopListNode(anchor);
   const parent = anchor.getParent();
 
@@ -493,6 +492,7 @@ export function $handleListInsertParagraph(): boolean {
   );
 
   const grandparent = parent.getParent();
+
   let replacementNode: ParagraphNode | ListItemNode;
 
   if ($isRootOrShadowRoot(grandparent)) {
@@ -506,10 +506,10 @@ export function $handleListInsertParagraph(): boolean {
   } else {
     return false;
   }
-
   replacementNode.select();
 
   const nextSiblings = anchor.getNextSiblings();
+
   if (nextSiblings.length > 0) {
     const newList = $createListNode(parent.getListType());
     if ($isListItemNode(replacementNode)) {
@@ -521,7 +521,9 @@ export function $handleListInsertParagraph(): boolean {
     }
     newList.append(...nextSiblings);
   }
+
   // Don't leave hanging nested empty lists
   $removeHighestEmptyListParent(anchor);
+
   return true;
 }

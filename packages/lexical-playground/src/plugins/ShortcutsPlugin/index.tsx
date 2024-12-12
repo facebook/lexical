@@ -34,6 +34,7 @@ import {
   UpdateFontSizeType,
 } from '../ToolbarPlugin/utils';
 import {
+  isCapitalize,
   isCenterAlign,
   isClearFormatting,
   isDecreaseFontSize,
@@ -104,6 +105,9 @@ export default function ShortcutsPlugin({
       } else if (isUppercase(event)) {
         event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
+      } else if (isCapitalize(event)) {
+        event.preventDefault();
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
       } else if (isIndent(event)) {
         event.preventDefault();
         editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);

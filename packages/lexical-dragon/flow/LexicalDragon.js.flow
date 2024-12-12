@@ -11,5 +11,3 @@ import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 declare export function registerDragonSupport(
   editor: LexicalEditor,
 ): () => void;
-
-// test comment for pr testing

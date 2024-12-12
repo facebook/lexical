@@ -40,3 +40,5 @@ declare export function registerLexicalCommandLogger(
 declare export function useLexicalCommandsLog(
   editor: LexicalEditor,
 ): LexicalCommandLog;
+
+// test comment

@@ -37,7 +37,7 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
-  markAllNodesAsDirty,
+  markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
@@ -970,7 +970,10 @@ export class LexicalEditor {
       registeredNodes.push(registeredReplaceWithNode);
     }
 
-    markAllNodesAsDirty(this, klass.getType());
+    markNodesWithTypesAsDirty(
+      this,
+      registeredNodes.map((node) => node.klass.getType()),
+    );
     return () => {
       registeredNodes.forEach((node) =>
         node.transforms.delete(listener as Transform<LexicalNode>),

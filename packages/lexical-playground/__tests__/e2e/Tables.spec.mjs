@@ -34,6 +34,7 @@ import {
   insertSampleImage,
   insertTable,
   insertTableColumnBefore,
+  insertTableRowAbove,
   insertTableRowBelow,
   IS_COLLAB,
   IS_LINUX,
@@ -4638,6 +4639,408 @@ test.describe.parallel('Tables', () => {
             </td>
           </tr>
           <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can insert multiple rows above the selection', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 5, 5);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 1},
+      {x: 4, y: 3},
+      true,
+      false,
+    );
+
+    await insertTableRowAbove(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+          </colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can insert multiple rows below the selection', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 5, 5);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 1},
+      {x: 4, y: 3},
+      true,
+      false,
+    );
+
+    await insertTableRowBelow(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+          <colgroup>
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+          </colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>

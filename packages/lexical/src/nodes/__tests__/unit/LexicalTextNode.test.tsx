@@ -301,6 +301,32 @@ describe('LexicalTextNode tests', () => {
     });
   });
 
+  test('clearing subscript does not set superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(false);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('clearing superscript does not set subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(false);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
   test('capitalization formats are mutually exclusive', async () => {
     const capitalizationFormats: TextFormatType[] = [
       'lowercase',
@@ -314,13 +340,16 @@ describe('LexicalTextNode tests', () => {
       paragraphNode.append(textNode);
       $getRoot().append(paragraphNode);
 
+      // Set each format and ensure that the other formats are cleared
       capitalizationFormats.forEach((formatToSet) => {
         textNode.toggleFormat(formatToSet as TextFormatType);
+
         capitalizationFormats
           .filter((format) => format !== formatToSet)
           .forEach((format) =>
             expect(textNode.hasFormat(format as TextFormatType)).toBe(false),
           );
+
         expect(textNode.hasFormat(formatToSet as TextFormatType)).toBe(true);
       });
     });

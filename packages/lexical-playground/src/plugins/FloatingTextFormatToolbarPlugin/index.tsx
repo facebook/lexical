@@ -199,6 +199,7 @@ function TextFormatFloatingToolbar({
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
             className={'popup-item spaced ' + (isBold ? 'active' : '')}
+            title="Bold"
             aria-label="Format text as bold">
             <i className="format bold" />
           </button>
@@ -208,6 +209,7 @@ function TextFormatFloatingToolbar({
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
             className={'popup-item spaced ' + (isItalic ? 'active' : '')}
+            title="Italic"
             aria-label="Format text as italics">
             <i className="format italic" />
           </button>
@@ -217,35 +219,9 @@ function TextFormatFloatingToolbar({
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
             className={'popup-item spaced ' + (isUnderline ? 'active' : '')}
+            title="Underline"
             aria-label="Format text to underlined">
             <i className="format underline" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
-            }}
-            className={'popup-item spaced ' + (isUppercase ? 'active' : '')}
-            aria-label="Format text to uppercase">
-            <i className="format uppercase" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
-            }}
-            className={'popup-item spaced ' + (isLowercase ? 'active' : '')}
-            aria-label="Format text to lowercase">
-            <i className="format lowercase" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
-            }}
-            className={'popup-item spaced ' + (isCapitalize ? 'active' : '')}
-            aria-label="Format text to capitalize">
-            <i className="format capitalize" />
           </button>
           <button
             type="button"
@@ -253,6 +229,7 @@ function TextFormatFloatingToolbar({
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
             }}
             className={'popup-item spaced ' + (isStrikethrough ? 'active' : '')}
+            title="Strikethrough"
             aria-label="Format text with a strikethrough">
             <i className="format strikethrough" />
           </button>
@@ -279,9 +256,40 @@ function TextFormatFloatingToolbar({
           <button
             type="button"
             onClick={() => {
+              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
+            }}
+            className={'popup-item spaced ' + (isUppercase ? 'active' : '')}
+            title="Uppercase"
+            aria-label="Format text to uppercase">
+            <i className="format uppercase" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
+            }}
+            className={'popup-item spaced ' + (isLowercase ? 'active' : '')}
+            title="Lowercase"
+            aria-label="Format text to lowercase">
+            <i className="format lowercase" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
+            }}
+            className={'popup-item spaced ' + (isCapitalize ? 'active' : '')}
+            title="Capitalize"
+            aria-label="Format text to capitalize">
+            <i className="format capitalize" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'popup-item spaced ' + (isCode ? 'active' : '')}
+            title="Insert code block"
             aria-label="Insert code block">
             <i className="format code" />
           </button>
@@ -289,6 +297,7 @@ function TextFormatFloatingToolbar({
             type="button"
             onClick={insertLink}
             className={'popup-item spaced ' + (isLink ? 'active' : '')}
+            title="Insert link"
             aria-label="Insert link">
             <i className="format link" />
           </button>
@@ -298,6 +307,7 @@ function TextFormatFloatingToolbar({
         type="button"
         onClick={insertComment}
         className={'popup-item spaced insert-comment'}
+        title="Insert comment"
         aria-label="Insert comment">
         <i className="format add-comment" />
       </button>

@@ -509,7 +509,9 @@ test.describe.parallel('TextFormatting', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span class="$formatClassName" data-lexical-text="true">Hello</span>
-          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
           <span data-lexical-text="true">world!</span>
         </p>
       `,

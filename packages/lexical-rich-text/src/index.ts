@@ -551,6 +551,11 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
   return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
 }
 
+/**
+ * Resets the capitalization of the selection to default.
+ * Called when the user presses space, tab, or enter key.
+ * @param selection The selection to reset the capitalization of.
+ */
 function $resetCapitalization(selection: RangeSelection): void {
   for (const format of ['lowercase', 'uppercase', 'capitalize'] as const) {
     if (selection.hasFormat(format)) {

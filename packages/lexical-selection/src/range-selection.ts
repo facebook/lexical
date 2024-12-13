@@ -453,41 +453,6 @@ export function $moveCharacter(
 }
 
 /**
- * Expands the current Selection to cover all of the content in the editor.
- * @param selection - The current selection.
- */
-export function $selectAll(selection: RangeSelection): void {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorNode = anchor.getNode();
-  const topParent = anchorNode.getTopLevelElementOrThrow();
-  const root = topParent.getParentOrThrow();
-  let firstNode = root.getFirstDescendant();
-  let lastNode = root.getLastDescendant();
-  let firstType: 'element' | 'text' = 'element';
-  let lastType: 'element' | 'text' = 'element';
-  let lastOffset = 0;
-
-  if ($isTextNode(firstNode)) {
-    firstType = 'text';
-  } else if (!$isElementNode(firstNode) && firstNode !== null) {
-    firstNode = firstNode.getParentOrThrow();
-  }
-
-  if ($isTextNode(lastNode)) {
-    lastType = 'text';
-    lastOffset = lastNode.getTextContentSize();
-  } else if (!$isElementNode(lastNode) && lastNode !== null) {
-    lastNode = lastNode.getParentOrThrow();
-  }
-
-  if (firstNode && lastNode) {
-    anchor.set(firstNode.getKey(), 0, firstType);
-    focus.set(lastNode.getKey(), lastOffset, lastType);
-  }
-}
-
-/**
  * Returns the current value of a CSS property for Nodes, if set. If not set, it returns the defaultValue.
  * @param node - The node whose style value to get.
  * @param styleProperty - The CSS style property.

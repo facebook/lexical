@@ -134,6 +134,7 @@ export type EditorThemeClasses = {
   quote?: EditorThemeClassName;
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
+  tab?: EditorThemeClassName;
   table?: EditorThemeClassName;
   tableAddColumns?: EditorThemeClassName;
   tableAddRows?: EditorThemeClassName;
@@ -1072,6 +1073,19 @@ export class LexicalEditor {
         }
         if (classNames != null) {
           nextRootElement.classList.add(...classNames);
+        }
+        if (__DEV__) {
+          const nextRootElementParent = nextRootElement.parentElement;
+          if (
+            nextRootElementParent != null &&
+            ['flex', 'inline-flex'].includes(
+              getComputedStyle(nextRootElementParent).display,
+            )
+          ) {
+            console.warn(
+              `When using "display: flex" or "display: inline-flex" on an element containing content editable, Chrome may have unwanted focusing behavior when clicking outside of it. Consider wrapping the content editable within a non-flex element.`,
+            );
+          }
         }
       } else {
         // If content editable is unmounted we'll reset editor state back to original

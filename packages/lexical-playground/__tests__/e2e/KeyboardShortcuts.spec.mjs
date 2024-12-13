@@ -23,6 +23,7 @@ import {
   selectCharacters,
   toggleBold,
   toggleBulletList,
+  toggleCapitalize,
   toggleChecklist,
   toggleInsertCodeBlock,
   toggleItalic,
@@ -121,6 +122,10 @@ const additionalStylesTestCases = [
   {
     applyShortcut: (page) => toggleUppercase(page),
     style: 'Uppercase',
+  },
+  {
+    applyShortcut: (page) => toggleCapitalize(page),
+    style: 'Capitalize',
   },
   {
     applyShortcut: (page) => toggleStrikethrough(page),

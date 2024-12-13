@@ -43,6 +43,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_CRITICAL,
   getDOMSelection,
+  isDOMNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -219,8 +220,9 @@ function TableActionMenu({
       if (
         dropDownRef.current != null &&
         contextRef.current != null &&
-        !dropDownRef.current.contains(event.target as Node) &&
-        !contextRef.current.contains(event.target as Node)
+        isDOMNode(event.target) &&
+        !dropDownRef.current.contains(event.target) &&
+        !contextRef.current.contains(event.target)
       ) {
         setIsMenuOpen(false);
       }

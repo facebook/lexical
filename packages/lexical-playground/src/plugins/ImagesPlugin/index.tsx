@@ -23,6 +23,7 @@ import {
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   getDOMSelection,
+  isHTMLElement,
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
@@ -357,10 +358,9 @@ declare global {
 function canDropImage(event: DragEvent): boolean {
   const target = event.target;
   return !!(
-    target &&
-    target instanceof HTMLElement &&
+    isHTMLElement(target) &&
     !target.closest('code, span.editor-image') &&
-    target.parentElement &&
+    isHTMLElement(target.parentElement) &&
     target.parentElement.closest('div.ContentEditable__root')
   );
 }

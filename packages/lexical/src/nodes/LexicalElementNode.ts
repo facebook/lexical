@@ -769,7 +769,7 @@ export class ElementNode extends LexicalNode {
   }
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       const indent = this.getIndent();
       if (indent > 0) {
         // padding-inline-start is not widely supported in email HTML

@@ -151,7 +151,7 @@ export class TableCellNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const output = super.exportDOM(editor);
 
-    if (output.element && isHTMLElement(output.element)) {
+    if (isHTMLElement(output.element)) {
       const element = output.element as HTMLTableCellElement;
       element.setAttribute(
         'data-temporary-table-cell-lexical-key',

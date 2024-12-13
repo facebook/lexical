@@ -186,6 +186,7 @@ export {
   getNearestEditorFromDOMNode,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMNode,
   isDOMTextNode,
   isDOMUnmanaged,
   isHTMLAnchorElement,

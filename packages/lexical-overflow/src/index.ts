@@ -58,7 +58,7 @@ export class OverflowNode extends ElementNode {
     return div;
   }
 
-  updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 

@@ -490,11 +490,7 @@ export class TextNode extends LexicalNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const nextText = this.__text;
     const prevFormat = prevNode.__format;
     const nextFormat = this.__format;

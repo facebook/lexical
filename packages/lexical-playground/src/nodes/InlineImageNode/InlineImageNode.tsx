@@ -230,11 +230,7 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
     return span;
   }
 
-  updateDOM(
-    prevNode: InlineImageNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): false {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): false {
     const position = this.__position;
     if (position !== prevNode.__position) {
       const className = `${config.theme.inlineImage} position-${position}`;

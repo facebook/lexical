@@ -29,6 +29,7 @@ export type {
   SerializedEditor,
   Spread,
   Transform,
+  UpdateListener,
 } from './LexicalEditor';
 export type {
   EditorState,

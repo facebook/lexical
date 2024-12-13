@@ -265,7 +265,7 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
-  updateDOM(prevNode: TableCellNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return (
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width ||

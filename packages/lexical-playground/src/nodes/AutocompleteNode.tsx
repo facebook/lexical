@@ -73,11 +73,7 @@ export class AutocompleteNode extends TextNode {
     this.__uuid = uuid;
   }
 
-  updateDOM(
-    prevNode: unknown,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     return false;
   }
 
@@ -85,12 +81,16 @@ export class AutocompleteNode extends TextNode {
     return {element: null};
   }
 
+  excludeFromCopy() {
+    return true;
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
-    if (this.__uuid !== UUID) {
-      return document.createElement('span');
-    }
     const dom = super.createDOM(config);
     dom.classList.add(config.theme.autocomplete);
+    if (this.__uuid !== UUID) {
+      dom.style.display = 'none';
+    }
     return dom;
   }
 }
@@ -99,5 +99,5 @@ export function $createAutocompleteNode(
   text: string,
   uuid: string,
 ): AutocompleteNode {
-  return new AutocompleteNode(text, uuid);
+  return new AutocompleteNode(text, uuid).setMode('token');
 }

@@ -31,6 +31,8 @@ editor.registerCommand(
 
 Commands can be dispatched from anywhere you have access to the `editor` such as a Toolbar Button, an event listener, or a Plugin, but most of the core commands are dispatched from [`LexicalEvents.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.ts).
 
+Calling `dispatchCommand` will implicitly call `editor.update` to trigger its command listeners if it was not called from inside `editor.update`.
+
 ```js
 editor.dispatchCommand(command, payload);
 ```
@@ -69,6 +71,10 @@ editor.registerCommand(
 ## `editor.registerCommand(...)`
 
 You can register a command from anywhere you have access to the `editor` object, but it's important that you remember to clean up the listener with its remove listener callback when it's no longer needed.
+
+The command listener will always be called from an `editor.update`, so you may use dollar functions. You should not use
+`editor.update` (and *never* call `editor.read`) synchronously from within a command listener. It is safe to call
+`editor.getEditorState().read` if you need to read the previous state after updates have already been made.
 
 ```js
 const removeListener = editor.registerCommand(

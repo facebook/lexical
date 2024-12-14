@@ -15,6 +15,7 @@
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
   position: relative;
+  overflow: inherit;
 }
 .PlaygroundEditorTheme__quote {
   margin: 0;
@@ -213,6 +214,7 @@
   padding: 6px 8px;
   position: relative;
   outline: none;
+  overflow: auto;
 }
 .PlaygroundEditorTheme__tableCellResizer {
   position: absolute;

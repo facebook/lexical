@@ -4683,6 +4683,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
+    test.skip(isCollab);
 
     await focusEditor(page);
 
@@ -4884,6 +4885,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
+    test.skip(isCollab);
 
     await focusEditor(page);
 

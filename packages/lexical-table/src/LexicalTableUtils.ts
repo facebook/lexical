@@ -258,20 +258,31 @@ export function $insertTableRow__EXPERIMENTAL(
     $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or TableSelection',
   );
+  const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
+  const [anchorCell] = $getNodeTriplet(anchor);
   const [focusCell, , grid] = $getNodeTriplet(focus);
-  const [gridMap, focusCellMap] = $computeTableMap(grid, focusCell, focusCell);
+  const [gridMap, focusCellMap, anchorCellMap] = $computeTableMap(
+    grid,
+    focusCell,
+    anchorCell,
+  );
   const columnCount = gridMap[0].length;
+  const {startRow: anchorStartRow} = anchorCellMap;
   const {startRow: focusStartRow} = focusCellMap;
   let insertedRow: TableRowNode | null = null;
   if (insertAfter) {
-    const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
-    const focusEndRowMap = gridMap[focusEndRow];
+    const insertAfterEndRow =
+      Math.max(
+        focusStartRow + focusCell.__rowSpan,
+        anchorStartRow + anchorCell.__rowSpan,
+      ) - 1;
+    const insertAfterEndRowMap = gridMap[insertAfterEndRow];
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
-      const {cell, startRow} = focusEndRowMap[i];
-      if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
-        const currentCell = focusEndRowMap[i].cell as TableCellNode;
+      const {cell, startRow} = insertAfterEndRowMap[i];
+      if (startRow + cell.__rowSpan - 1 <= insertAfterEndRow) {
+        const currentCell = insertAfterEndRowMap[i].cell as TableCellNode;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -286,20 +297,21 @@ export function $insertTableRow__EXPERIMENTAL(
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
+    const insertAfterEndRowNode = grid.getChildAtIndex(insertAfterEndRow);
     invariant(
-      $isTableRowNode(focusEndRowNode),
-      'focusEndRow is not a TableRowNode',
+      $isTableRowNode(insertAfterEndRowNode),
+      'insertAfterEndRow is not a TableRowNode',
     );
-    focusEndRowNode.insertAfter(newRow);
+    insertAfterEndRowNode.insertAfter(newRow);
     insertedRow = newRow;
   } else {
-    const focusStartRowMap = gridMap[focusStartRow];
+    const insertBeforeStartRow = Math.min(focusStartRow, anchorStartRow);
+    const insertBeforeStartRowMap = gridMap[insertBeforeStartRow];
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
-      const {cell, startRow} = focusStartRowMap[i];
-      if (startRow === focusStartRow) {
-        const currentCell = focusStartRowMap[i].cell as TableCellNode;
+      const {cell, startRow} = insertBeforeStartRowMap[i];
+      if (startRow === insertBeforeStartRow) {
+        const currentCell = insertBeforeStartRowMap[i].cell as TableCellNode;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -314,12 +326,12 @@ export function $insertTableRow__EXPERIMENTAL(
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
+    const insertBeforeStartRowNode = grid.getChildAtIndex(insertBeforeStartRow);
     invariant(
-      $isTableRowNode(focusStartRowNode),
-      'focusEndRow is not a TableRowNode',
+      $isTableRowNode(insertBeforeStartRowNode),
+      'insertBeforeStartRow is not a TableRowNode',
     );
-    focusStartRowNode.insertBefore(newRow);
+    insertBeforeStartRowNode.insertBefore(newRow);
     insertedRow = newRow;
   }
   return insertedRow;

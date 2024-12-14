@@ -111,11 +111,7 @@ export class ListNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: ListNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__tag !== this.__tag) {
       return true;
     }

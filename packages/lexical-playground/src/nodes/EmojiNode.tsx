@@ -48,11 +48,7 @@ export class EmojiNode extends TextNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const inner = dom.firstChild;
     if (inner === null) {
       return true;

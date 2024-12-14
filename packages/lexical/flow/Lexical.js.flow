@@ -421,8 +421,7 @@ declare export class LexicalNode {
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
-    // $FlowFixMe
-    prevNode: any,
+    prevNode: this,
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
@@ -621,11 +620,6 @@ declare export class TextNode extends LexicalNode {
   getTextContent(): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   selectionTransform(
     prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
@@ -717,7 +711,6 @@ declare export class RootNode extends ElementNode {
   replace<N: LexicalNode>(node: N): N;
   insertBefore<T: LexicalNode>(nodeToInsert: T): T;
   insertAfter<T: LexicalNode>(nodeToInsert: T): T;
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
 }
@@ -860,7 +853,6 @@ declare export class ParagraphNode extends ElementNode {
   static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

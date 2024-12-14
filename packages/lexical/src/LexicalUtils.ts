@@ -72,7 +72,6 @@ import {
   internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
-  updateEditor,
 } from './LexicalUpdates';
 
 export const emptyFunction = () => {
@@ -507,22 +506,31 @@ export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read(() => $getRoot().getTextContent());
 }
 
-export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
-  // Mark all existing text nodes as dirty
-  updateEditor(
-    editor,
+export function markNodesWithTypesAsDirty(
+  editor: LexicalEditor,
+  types: string[],
+): void {
+  // We only need to mark nodes dirty if they were in the previous state.
+  // If they aren't, then they are by definition dirty already.
+  const cachedMap = getCachedTypeToNodeMap(editor.getEditorState());
+  const dirtyNodeMaps: NodeMap[] = [];
+  for (const type of types) {
+    const nodeMap = cachedMap.get(type);
+    if (nodeMap) {
+      // By construction these are non-empty
+      dirtyNodeMaps.push(nodeMap);
+    }
+  }
+  // Nothing to mark dirty, no update necessary
+  if (dirtyNodeMaps.length === 0) {
+    return;
+  }
+  editor.update(
     () => {
-      const editorState = getActiveEditorState();
-      if (editorState.isEmpty()) {
-        return;
-      }
-      if (type === 'root') {
-        $getRoot().markDirty();
-        return;
-      }
-      const nodeMap = editorState._nodeMap;
-      for (const [, node] of nodeMap) {
-        node.markDirty();
+      for (const nodeMap of dirtyNodeMaps) {
+        for (const node of nodeMap.values()) {
+          node.markDirty();
+        }
       }
     },
     editor._pendingEditorState === null
@@ -1834,17 +1842,26 @@ export function getCachedTypeToNodeMap(
   );
   let typeToNodeMap = cachedNodeMaps.get(editorState);
   if (!typeToNodeMap) {
-    typeToNodeMap = new Map();
+    typeToNodeMap = computeTypeToNodeMap(editorState);
     cachedNodeMaps.set(editorState, typeToNodeMap);
-    for (const [nodeKey, node] of editorState._nodeMap) {
-      const nodeType = node.__type;
-      let nodeMap = typeToNodeMap.get(nodeType);
-      if (!nodeMap) {
-        nodeMap = new Map();
-        typeToNodeMap.set(nodeType, nodeMap);
-      }
-      nodeMap.set(nodeKey, node);
+  }
+  return typeToNodeMap;
+}
+
+/**
+ * @internal
+ * Compute a Map of node type to nodes for an EditorState
+ */
+function computeTypeToNodeMap(editorState: EditorState): TypeToNodeMap {
+  const typeToNodeMap = new Map();
+  for (const [nodeKey, node] of editorState._nodeMap) {
+    const nodeType = node.__type;
+    let nodeMap = typeToNodeMap.get(nodeType);
+    if (!nodeMap) {
+      nodeMap = new Map();
+      typeToNodeMap.set(nodeType, nodeMap);
     }
+    nodeMap.set(nodeKey, node);
   }
   return typeToNodeMap;
 }

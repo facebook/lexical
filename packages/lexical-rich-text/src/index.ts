@@ -138,7 +138,7 @@ export class QuoteNode extends ElementNode {
     addClassNamesToElement(element, config.theme.quote);
     return element;
   }
-  updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 
@@ -259,7 +259,7 @@ export class HeadingNode extends ElementNode {
     return element;
   }
 
-  updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 

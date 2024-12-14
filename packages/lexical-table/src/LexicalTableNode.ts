@@ -241,14 +241,10 @@ export class TableNode extends ElementNode {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
         }
-        if (
-          tableElement &&
-          isHTMLElement(tableElement) &&
-          tableElement.nodeName !== 'TABLE'
-        ) {
+        if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {
           tableElement = tableElement.querySelector('table');
         }
-        if (!tableElement || !isHTMLElement(tableElement)) {
+        if (!isHTMLElement(tableElement)) {
           return null;
         }
 
@@ -312,7 +308,7 @@ export class TableNode extends ElementNode {
         return tableElement;
       },
       element:
-        element && isHTMLElement(element) && element.nodeName !== 'TABLE'
+        isHTMLElement(element) && element.nodeName !== 'TABLE'
           ? element.querySelector('table')
           : element,
     };

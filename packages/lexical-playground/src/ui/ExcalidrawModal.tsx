@@ -15,6 +15,7 @@ import {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
 } from '@excalidraw/excalidraw/types/types';
+import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -105,7 +106,8 @@ export default function ExcalidrawModal({
       const target = event.target;
       if (
         excaliDrawModelRef.current !== null &&
-        !excaliDrawModelRef.current.contains(target as Node) &&
+        isDOMNode(target) &&
+        !excaliDrawModelRef.current.contains(target) &&
         closeOnClickOutside
       ) {
         onDelete();

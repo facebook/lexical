@@ -114,9 +114,9 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement as HTMLElement;
+  const activeElement = document.activeElement;
 
-  if (activeElement === null) {
+  if (!isHTMLElement(activeElement)) {
     return false;
   }
   const nodeName = activeElement.nodeName;
@@ -143,7 +143,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      !isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
+      !isSelectionCapturedInDecoratorInput(anchorDOM) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
@@ -1299,7 +1299,7 @@ export function getElementByKeyOrThrow(
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return parentElement !== null && parentElement.nodeType === 11
+  return isDocumentFragment(parentElement)
     ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
     : parentElement;
 }
@@ -1727,28 +1727,37 @@ export function $findMatchingParent(
  * @param x - The element being tested
  * @returns Returns true if x is an HTML anchor tag, false otherwise
  */
-export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
+export function isHTMLAnchorElement(x: unknown): x is HTMLAnchorElement {
   return isHTMLElement(x) && x.tagName === 'A';
 }
 
 /**
- * @param x - The element being testing
+ * @param x - The element being tested
  * @returns Returns true if x is an HTML element, false otherwise.
  */
-export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
+export function isHTMLElement(x: unknown): x is HTMLElement {
+  return isDOMNode(x) && x.nodeType === 1;
+}
+
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is a DOM Node, false otherwise.
+ */
+export function isDOMNode(x: unknown): x is Node {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'nodeType' in x &&
+    typeof x.nodeType === 'number'
+  );
 }
 
 /**
  * @param x - The element being testing
  * @returns Returns true if x is a document fragment, false otherwise.
  */
-export function isDocumentFragment(
-  x: Node | EventTarget,
-): x is DocumentFragment {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 11;
+export function isDocumentFragment(x: unknown): x is DocumentFragment {
+  return isDOMNode(x) && x.nodeType === 11;
 }
 
 /**

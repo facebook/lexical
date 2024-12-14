@@ -117,7 +117,7 @@ export class LinkNode extends ElementNode {
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
-    if (anchor instanceof HTMLAnchorElement) {
+    if (isHTMLAnchorElement(anchor)) {
       const url = this.__url;
       const target = this.__target;
       const rel = this.__rel;

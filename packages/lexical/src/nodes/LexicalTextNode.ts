@@ -620,7 +620,7 @@ export class TextNode extends LexicalNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     let {element} = super.exportDOM(editor);
     invariant(
-      element !== null && isHTMLElement(element),
+      isHTMLElement(element),
       'Expected TextNode createDOM to always return a HTMLElement',
     );
     element.style.whiteSpace = 'pre-wrap';

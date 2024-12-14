@@ -79,6 +79,7 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  isDOMNode,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -154,7 +155,7 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }
@@ -320,7 +321,7 @@ export class HeadingNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }
@@ -1078,7 +1079,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         // if inputs then paste within the input ignore creating a new node on paste event
-        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
+        if (
+          isDOMNode(event.target) &&
+          isSelectionCapturedInDecoratorInput(event.target)
+        ) {
           return false;
         }
 

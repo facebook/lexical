@@ -121,7 +121,7 @@ export default function mlcPositionNodeOnRange(
       return stop();
     }
     const currentParentDOMNode = currentRootDOMNode.parentElement;
-    if (currentParentDOMNode === null || !isHTMLElement(currentParentDOMNode)) {
+    if (!isHTMLElement(currentParentDOMNode)) {
       return stop();
     }
     stop();

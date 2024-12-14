@@ -22,7 +22,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
+import {$getNearestNodeFromDOMNode, isHTMLElement, NodeKey} from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -257,7 +257,7 @@ function getMouseInfo(event: MouseEvent): {
 } {
   const target = event.target;
 
-  if (target && target instanceof HTMLElement) {
+  if (isHTMLElement(target)) {
     const tableDOMNode = target.closest<HTMLElement>(
       'td.PlaygroundEditorTheme__tableCell, th.PlaygroundEditorTheme__tableCell',
     );

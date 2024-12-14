@@ -4701,8 +4701,12 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
       shouldUseLexicalContextMenu,
+      browserName,
     }) => {
       test.skip(isPlainText);
+      // The way that the clicks happen in test doesn't work in firefox for some reason
+      // but it does seem to work when you do it by hand
+      test.fixme(browserName === 'firefox');
       await initialize({isCollab, page, shouldUseLexicalContextMenu});
 
       await focusEditor(page);
@@ -4789,9 +4793,6 @@ test.describe.parallel('Tables', () => {
       );
 
       await withExclusiveClipboardAccess(async () => {
-        await page
-          .context()
-          .grantPermissions(['clipboard-read', 'clipboard-write']);
         await click(page, 'div[contenteditable] th p', {
           button: 'right',
         });

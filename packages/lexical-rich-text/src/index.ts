@@ -88,6 +88,8 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  KEY_SPACE_COMMAND,
+  KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -549,6 +551,19 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
   return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
 }
 
+/**
+ * Resets the capitalization of the selection to default.
+ * Called when the user presses space, tab, or enter key.
+ * @param selection The selection to reset the capitalization of.
+ */
+function $resetCapitalization(selection: RangeSelection): void {
+  for (const format of ['lowercase', 'uppercase', 'capitalize'] as const) {
+    if (selection.hasFormat(format)) {
+      selection.toggleFormat(format);
+    }
+  }
+}
+
 export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -909,6 +924,9 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
+        $resetCapitalization(selection);
+
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
@@ -1068,6 +1086,32 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_SPACE_COMMAND,
+      (_) => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $resetCapitalization(selection);
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_TAB_COMMAND,
+      (_) => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $resetCapitalization(selection);
         }
 
         return false;

@@ -80,7 +80,10 @@ declare export var IS_ITALIC: number;
 declare export var IS_STRIKETHROUGH: number;
 declare export var IS_SUBSCRIPT: number;
 declare export var IS_SUPERSCRIPT: number;
-declare export var IS_UNDERLIN: number;
+declare export var IS_UNDERLINE: number;
+declare export var IS_UPPERCASE: number;
+declare export var IS_LOWERCASE: number;
+declare export var IS_CAPITALIZE: number;
 declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
 
 /**
@@ -243,6 +246,9 @@ type TextNodeThemeClasses = {
   code?: EditorThemeClassName,
   subscript?: EditorThemeClassName,
   superscript?: EditorThemeClassName,
+  lowercase?: EditorThemeClassName,
+  uppercase?: EditorThemeClassName,
+  capitalize?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName,
@@ -584,7 +590,11 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
+
 type TextModeType = 'normal' | 'token' | 'segmented';
 
 declare export class TextNode extends LexicalNode {

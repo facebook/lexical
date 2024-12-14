@@ -105,8 +105,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
     await focusEditor(page);
 
     await insertTable(page, 2, 2);
@@ -149,8 +149,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 2, 2);
@@ -197,8 +197,8 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -243,8 +243,8 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -288,8 +288,8 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -316,8 +316,8 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -348,8 +348,9 @@ test.describe.parallel('Tables', () => {
     browserName,
     legacyEvents,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
+
     // Table edge cursor doesn't show up in Firefox.
     test.fixme(browserName === 'firefox');
     test.fixme(
@@ -473,12 +474,13 @@ test.describe.parallel('Tables', () => {
     isCollab,
     browserName,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
     // Table edge cursor doesn't show up in Firefox.
     test.fixme(browserName === 'firefox');
     // After typing, the dom selection gets set back to the internal previous selection during the update.
     test.fixme(LEGACY_EVENTS);
+
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 2, 2);
@@ -533,8 +535,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 2, 2);
@@ -562,8 +564,8 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -661,8 +663,8 @@ test.describe.parallel('Tables', () => {
       isPlainText,
       isCollab,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -696,8 +698,8 @@ test.describe.parallel('Tables', () => {
       isCollab,
       isPlainText,
     }) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 2);
@@ -733,8 +735,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 3);
@@ -827,8 +829,8 @@ test.describe.parallel('Tables', () => {
     isCollab,
     browserName,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 3, 3);
@@ -837,7 +839,7 @@ test.describe.parallel('Tables', () => {
 
     let p = page;
 
-    if (IS_COLLAB) {
+    if (isCollab) {
       await focusEditor(page);
       p = await page.frame('left');
     }
@@ -958,8 +960,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 3);
@@ -1056,8 +1058,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 2, 3);
@@ -1151,8 +1153,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 2, 3);
@@ -1256,8 +1258,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 3);
@@ -1351,8 +1353,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 3);
@@ -1415,8 +1417,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await insertTable(page, 1, 2);
@@ -1473,8 +1475,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
     await page.keyboard.type('Hello World');
@@ -1560,8 +1562,8 @@ test.describe.parallel('Tables', () => {
     isCollab,
     isPlainText,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
     await focusEditor(page);
     await page.keyboard.type('Text before');
     await page.keyboard.press('Enter');
@@ -1621,8 +1623,8 @@ test.describe.parallel('Tables', () => {
   });
 
   test(`Horizontal rule inside cell`, async ({page, isPlainText, isCollab}) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
     await focusEditor(page);
 
     await insertTable(page, 1, 2);
@@ -1662,8 +1664,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab, browserName}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
 
@@ -1746,8 +1748,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
 
@@ -1833,8 +1835,8 @@ test.describe.parallel('Tables', () => {
     isCollab,
     browserName,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
 
@@ -1938,13 +1940,14 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.fixme(
       isCollab && IS_LINUX && browserName === 'firefox',
       'Flaky on Linux + Collab',
     );
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -2024,9 +2027,10 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
-      if (IS_COLLAB) {
+      await initialize({isCollab, page});
+
+      if (isCollab) {
         // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
         page.setViewportSize({height: 1000, width: 3000});
       }
@@ -2107,10 +2111,11 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
     test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -2196,9 +2201,10 @@ test.describe.parallel('Tables', () => {
   });
 
   test('Merge/unmerge cells (1)', async ({page, isPlainText, isCollab}) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -2295,9 +2301,10 @@ test.describe.parallel('Tables', () => {
   });
 
   test('Merge/unmerge cells (2)', async ({page, isPlainText, isCollab}) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -2442,9 +2449,9 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
     test.skip(isCollab);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
 
@@ -2590,9 +2597,9 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
     test.skip(isCollab);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
 
@@ -2736,9 +2743,10 @@ test.describe.parallel('Tables', () => {
   });
 
   test('Merge with content', async ({page, isPlainText, isCollab}) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -2837,8 +2845,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
 
@@ -2974,8 +2982,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
 
@@ -3118,9 +3126,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3185,9 +3194,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3250,9 +3260,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3309,9 +3320,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3386,9 +3398,10 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
-      if (IS_COLLAB) {
+      await initialize({isCollab, page});
+
+      if (isCollab) {
         // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
         page.setViewportSize({height: 1000, width: 3000});
       }
@@ -3452,9 +3465,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3518,9 +3532,10 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
-      if (IS_COLLAB) {
+      await initialize({isCollab, page});
+
+      if (isCollab) {
         // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
         page.setViewportSize({height: 1000, width: 3000});
       }
@@ -3571,9 +3586,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3623,9 +3639,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3647,9 +3664,10 @@ test.describe.parallel('Tables', () => {
   });
 
   test('Background color to cell', async ({page, isPlainText, isCollab}) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3683,8 +3701,8 @@ test.describe.parallel('Tables', () => {
   });
 
   test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
-    await initialize({isCollab, page, tableCellMerge: false});
     test.skip(isPlainText);
+    await initialize({isCollab, page, tableCellMerge: false});
 
     await focusEditor(page);
     await pasteFromClipboard(page, {
@@ -3796,8 +3814,8 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page, tableCellBackgroundColor: false});
     test.skip(isPlainText);
+    await initialize({isCollab, page, tableCellBackgroundColor: false});
 
     await focusEditor(page);
     await pasteFromClipboard(page, {
@@ -3840,9 +3858,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -3941,8 +3960,8 @@ test.describe.parallel('Tables', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText, isCollab}) => {
-      await initialize({isCollab, page});
       test.skip(isPlainText);
+      await initialize({isCollab, page});
 
       await focusEditor(page);
       await insertTable(page, 2, 3);
@@ -4060,9 +4079,10 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
-    if (IS_COLLAB) {
+    await initialize({isCollab, page});
+
+    if (isCollab) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
       page.setViewportSize({height: 1000, width: 3000});
     }
@@ -4237,8 +4257,8 @@ test.describe.parallel('Tables', () => {
     isCollab,
     isPlainText,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
 
@@ -4462,8 +4482,8 @@ test.describe.parallel('Tables', () => {
     isCollab,
     isPlainText,
   }) => {
-    await initialize({isCollab, page});
     test.skip(isPlainText);
+    await initialize({isCollab, page});
 
     await focusEditor(page);
 
@@ -4673,5 +4693,149 @@ test.describe.parallel('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
+  });
+  test.describe('with context menu', () => {
+    test.use({shouldUseLexicalContextMenu: true});
+    test(`Can select cells using Table selection and cut them with the context menu`, async ({
+      page,
+      isPlainText,
+      isCollab,
+      shouldUseLexicalContextMenu,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({isCollab, page, shouldUseLexicalContextMenu});
+
+      await focusEditor(page);
+      await insertTable(page, 2, 3);
+
+      await fillTablePartiallyWithText(page);
+      await selectCellsFromTableCords(
+        page,
+        {x: 0, y: 0},
+        {x: 1, y: 1},
+        true,
+        false,
+      );
+
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th class="PlaygroundEditorTheme__tableCellSelected">
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th class="PlaygroundEditorTheme__tableCellSelected">
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th class="PlaygroundEditorTheme__tableCellSelected">
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td class="PlaygroundEditorTheme__tableCellSelected">
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        html`
+          <p><br /></p>
+          <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        {ignoreClasses: true},
+      );
+
+      await withExclusiveClipboardAccess(async () => {
+        await page
+          .context()
+          .grantPermissions(['clipboard-read', 'clipboard-write']);
+        await click(page, 'div[contenteditable] th p', {
+          button: 'right',
+        });
+        await click(page, '#typeahead-menu [role="option"] :text("Cut")');
+      });
+
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <table>
+            <colgroup>
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+              <col style="width: 92px" />
+            </colgroup>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+    });
   });
 });

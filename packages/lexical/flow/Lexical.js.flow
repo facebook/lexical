@@ -593,7 +593,8 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript'
   | 'lowercase'
-  | 'uppercase';
+  | 'uppercase'
+  | 'capitalize';
 
 type TextModeType = 'normal' | 'token' | 'segmented';
 

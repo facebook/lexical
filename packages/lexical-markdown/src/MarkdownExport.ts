@@ -108,6 +108,8 @@ function exportChildren(
 ): string {
   const output = [];
   const children = node.getChildren();
+  // keep track of unclosed tags from the very beginning
+  const unclosedTags: {format: TextFormatType; tag: string}[] = [];
 
   mainLoop: for (const child of children) {
     for (const transformer of textMatchTransformers) {
@@ -124,7 +126,12 @@ function exportChildren(
             textMatchTransformers,
           ),
         (textNode, textContent) =>
-          exportTextFormat(textNode, textContent, textTransformersIndex),
+          exportTextFormat(
+            textNode,
+            textContent,
+            textTransformersIndex,
+            unclosedTags,
+          ),
       );
 
       if (result != null) {
@@ -137,7 +144,12 @@ function exportChildren(
       output.push('\n');
     } else if ($isTextNode(child)) {
       output.push(
-        exportTextFormat(child, child.getTextContent(), textTransformersIndex),
+        exportTextFormat(
+          child,
+          child.getTextContent(),
+          textTransformersIndex,
+          unclosedTags,
+        ),
       );
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
@@ -156,6 +168,8 @@ function exportTextFormat(
   node: TextNode,
   textContent: string,
   textTransformers: Array<TextFormatTransformer>,
+  // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
+  unclosedTags: Array<{format: TextFormatType; tag: string}>,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
@@ -163,6 +177,13 @@ function exportTextFormat(
   // bring the whitespace back. So our returned string looks like this: "   **foo**   "
   const frozenString = textContent.trim();
   let output = frozenString;
+  // the opening tags to be added to the result
+  let openingTags = '';
+  // the closing tags to be added to the result
+  let closingTags = '';
+
+  const prevNode = getTextSibling(node, true);
+  const nextNode = getTextSibling(node, false);
 
   const applied = new Set();
 
@@ -170,25 +191,40 @@ function exportTextFormat(
     const format = transformer.format[0];
     const tag = transformer.tag;
 
+    // dedup applied formats
     if (hasFormat(node, format) && !applied.has(format)) {
       // Multiple tags might be used for the same format (*, _)
       applied.add(format);
-      // Prevent adding opening tag is already opened by the previous sibling
-      const previousNode = getTextSibling(node, true);
 
-      if (!hasFormat(previousNode, format)) {
-        output = tag + output;
-      }
-
-      // Prevent adding closing tag if next sibling will do it
-      const nextNode = getTextSibling(node, false);
-
-      if (!hasFormat(nextNode, format)) {
-        output += tag;
+      // append the tag to openningTags, if it's not applied to the previous nodes,
+      // or the nodes before that (which would result in an unclosed tag)
+      if (
+        !hasFormat(prevNode, format) ||
+        !unclosedTags.find((element) => element.tag === tag)
+      ) {
+        unclosedTags.push({format, tag});
+        openingTags += tag;
       }
     }
   }
 
+  // close any tags in the same order they were applied, if necessary
+  for (let i = 0; i < unclosedTags.length; i++) {
+    // prevent adding closing tag if next sibling will do it
+    if (hasFormat(nextNode, unclosedTags[i].format)) {
+      continue;
+    }
+
+    while (unclosedTags.length > i) {
+      const unclosedTag = unclosedTags.pop();
+      if (unclosedTag && typeof unclosedTag.tag === 'string') {
+        closingTags += unclosedTag.tag;
+      }
+    }
+    break;
+  }
+
+  output = openingTags + output + closingTags;
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
   return textContent.replace(frozenString, () => output);
 }

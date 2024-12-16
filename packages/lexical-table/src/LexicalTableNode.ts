@@ -488,10 +488,14 @@ export function $convertTableElement(
   if (colGroup) {
     let columns: number[] | undefined = [];
     for (const col of colGroup.querySelectorAll(':scope > col')) {
-      const width = (col as HTMLElement).style.width;
-      if (!width || !PIXEL_VALUE_REG_EXP.test(width)) {
-        columns = undefined;
-        break;
+      let width = (col as HTMLElement).style.width || '';
+      if (!PIXEL_VALUE_REG_EXP.test(width)) {
+        // Also support deprecated width attribute for google docs
+        width = col.getAttribute('width') || '';
+        if (!/^\d+$/.test(width)) {
+          columns = undefined;
+          break;
+        }
       }
       columns.push(parseFloat(width));
     }

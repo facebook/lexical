@@ -650,9 +650,9 @@ describe('LexicalTableNode tests', () => {
               html`
                 <table class="test-table-class">
                   <colgroup>
-                    <col />
-                    <col />
-                    <col />
+                    <col style="width: 100px" />
+                    <col style="width: 189px" />
+                    <col style="width: 171px" />
                   </colgroup>
                   <tr style="height: 21px;">
                     <td>

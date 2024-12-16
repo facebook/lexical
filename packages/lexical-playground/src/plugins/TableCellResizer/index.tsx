@@ -23,7 +23,7 @@ import {
   TableNode,
 } from '@lexical/table';
 import {calculateZoomLevel} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode} from 'lexical';
+import {$getNearestNodeFromDOMNode, isHTMLElement} from 'lexical';
 import * as React from 'react';
 import {
   MouseEventHandler,
@@ -89,6 +89,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
       const target = event.target;
+      if (!isHTMLElement(target)) {
+        return;
+      }
 
       if (draggingDirection) {
         updateMouseCurrentPos({
@@ -98,13 +101,13 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         return;
       }
       updateIsMouseDown(isMouseDownOnEvent(event));
-      if (resizerRef.current && resizerRef.current.contains(target as Node)) {
+      if (resizerRef.current && resizerRef.current.contains(target)) {
         return;
       }
 
       if (targetRef.current !== target) {
-        targetRef.current = target as HTMLElement;
-        const cell = getDOMCellFromTarget(target as HTMLElement);
+        targetRef.current = target;
+        const cell = getDOMCellFromTarget(target);
 
         if (cell && activeCell !== cell) {
           editor.getEditorState().read(

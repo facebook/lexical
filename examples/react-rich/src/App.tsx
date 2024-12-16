@@ -17,6 +17,7 @@ import {
   DOMConversionMap,
   DOMExportOutput,
   DOMExportOutputMap,
+  isHTMLElement,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -36,7 +37,7 @@ const removeStylesExportDOM = (
   target: LexicalNode,
 ): DOMExportOutput => {
   const output = target.exportDOM(editor);
-  if (output && output.element instanceof HTMLElement) {
+  if (output && isHTMLElement(output.element)) {
     // Remove all inline styles and classes if the element is an HTMLElement
     // Children are checked as well since TextNode can be nested
     // in i, b, and strong tags.

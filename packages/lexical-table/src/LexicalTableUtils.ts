@@ -258,20 +258,31 @@ export function $insertTableRow__EXPERIMENTAL(
     $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or TableSelection',
   );
+  const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
+  const [anchorCell] = $getNodeTriplet(anchor);
   const [focusCell, , grid] = $getNodeTriplet(focus);
-  const [gridMap, focusCellMap] = $computeTableMap(grid, focusCell, focusCell);
+  const [gridMap, focusCellMap, anchorCellMap] = $computeTableMap(
+    grid,
+    focusCell,
+    anchorCell,
+  );
   const columnCount = gridMap[0].length;
+  const {startRow: anchorStartRow} = anchorCellMap;
   const {startRow: focusStartRow} = focusCellMap;
   let insertedRow: TableRowNode | null = null;
   if (insertAfter) {
-    const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
-    const focusEndRowMap = gridMap[focusEndRow];
+    const insertAfterEndRow =
+      Math.max(
+        focusStartRow + focusCell.__rowSpan,
+        anchorStartRow + anchorCell.__rowSpan,
+      ) - 1;
+    const insertAfterEndRowMap = gridMap[insertAfterEndRow];
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
-      const {cell, startRow} = focusEndRowMap[i];
-      if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
-        const currentCell = focusEndRowMap[i].cell as TableCellNode;
+      const {cell, startRow} = insertAfterEndRowMap[i];
+      if (startRow + cell.__rowSpan - 1 <= insertAfterEndRow) {
+        const currentCell = insertAfterEndRowMap[i].cell as TableCellNode;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -286,20 +297,21 @@ export function $insertTableRow__EXPERIMENTAL(
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
+    const insertAfterEndRowNode = grid.getChildAtIndex(insertAfterEndRow);
     invariant(
-      $isTableRowNode(focusEndRowNode),
-      'focusEndRow is not a TableRowNode',
+      $isTableRowNode(insertAfterEndRowNode),
+      'insertAfterEndRow is not a TableRowNode',
     );
-    focusEndRowNode.insertAfter(newRow);
+    insertAfterEndRowNode.insertAfter(newRow);
     insertedRow = newRow;
   } else {
-    const focusStartRowMap = gridMap[focusStartRow];
+    const insertBeforeStartRow = Math.min(focusStartRow, anchorStartRow);
+    const insertBeforeStartRowMap = gridMap[insertBeforeStartRow];
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
-      const {cell, startRow} = focusStartRowMap[i];
-      if (startRow === focusStartRow) {
-        const currentCell = focusStartRowMap[i].cell as TableCellNode;
+      const {cell, startRow} = insertBeforeStartRowMap[i];
+      if (startRow === insertBeforeStartRow) {
+        const currentCell = insertBeforeStartRowMap[i].cell as TableCellNode;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -314,12 +326,12 @@ export function $insertTableRow__EXPERIMENTAL(
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
+    const insertBeforeStartRowNode = grid.getChildAtIndex(insertBeforeStartRow);
     invariant(
-      $isTableRowNode(focusStartRowNode),
-      'focusEndRow is not a TableRowNode',
+      $isTableRowNode(insertBeforeStartRowNode),
+      'insertBeforeStartRow is not a TableRowNode',
     );
-    focusStartRowNode.insertBefore(newRow);
+    insertBeforeStartRowNode.insertBefore(newRow);
     insertedRow = newRow;
   }
   return insertedRow;
@@ -548,6 +560,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
     return;
   }
   const columnCount = gridMap[0].length;
+  const selectedRowCount = anchorCell.__rowSpan;
   const nextRow = gridMap[focusEndRow + 1];
   const nextRowNode: null | TableRowNode = grid.getChildAtIndex(
     focusEndRow + 1,
@@ -565,7 +578,11 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
       }
       // Rows overflowing top have to be trimmed
       if (row === anchorStartRow && cellStartRow < anchorStartRow) {
-        cell.setRowSpan(cell.__rowSpan - (cellStartRow - anchorStartRow));
+        const overflowTop = anchorStartRow - cellStartRow;
+        cell.setRowSpan(
+          cell.__rowSpan -
+            Math.min(selectedRowCount, cell.__rowSpan - overflowTop),
+        );
       }
       // Rows overflowing bottom have to be trimmed and moved to the next row
       if (
@@ -574,11 +591,22 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
       ) {
         cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
         invariant(nextRowNode !== null, 'Expected nextRowNode not to be null');
-        if (column === 0) {
+        let insertAfterCell: null | TableCellNode = null;
+        for (let columnIndex = 0; columnIndex < column; columnIndex++) {
+          const currentCellMap = nextRow[columnIndex];
+          const currentCell = currentCellMap.cell;
+          // Checking the cell having startRow as same as nextRow
+          if (currentCellMap.startRow === row + 1) {
+            insertAfterCell = currentCell;
+          }
+          if (currentCell.__colSpan > 1) {
+            columnIndex += currentCell.__colSpan - 1;
+          }
+        }
+        if (insertAfterCell === null) {
           $insertFirst(nextRowNode, cell);
         } else {
-          const {cell: previousCell} = nextRow[column - 1];
-          previousCell.insertAfter(cell);
+          insertAfterCell.insertAfter(cell);
         }
       }
     }

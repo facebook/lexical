@@ -77,12 +77,6 @@ declare export class CodeHighlightNode extends TextNode {
   // $FlowFixMe
   static clone(node: CodeHighlightNode): CodeHighlightNode;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    // $FlowFixMe
-    prevNode: CodeHighlightNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   setFormat(format: number): this;
 }
 
@@ -125,7 +119,6 @@ declare export class CodeNode extends ElementNode {
   static clone(node: CodeNode): CodeNode;
   constructor(language: ?string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

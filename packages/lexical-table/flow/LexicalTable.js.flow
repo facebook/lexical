@@ -52,7 +52,6 @@ declare export class TableCellNode extends ElementNode {
     key?: NodeKey,
   ): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
   ): null | ParagraphNode | TableCellNode;
@@ -70,12 +69,11 @@ declare export class TableCellNode extends ElementNode {
   setBackgroundColor(newBackgroundColor: null | string): TableCellNode;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
-  updateDOM(prevNode: TableCellNode): boolean;
   collapseAtStart(): true;
   canBeEmpty(): false;
 }
 declare export function $createTableCellNode(
-  headerState: TableCellHeaderState,
+  headerState?: TableCellHeaderState,
   colSpan?: number,
   width?: ?number,
 ): TableCellNode;
@@ -99,7 +97,6 @@ declare export class TableNode extends ElementNode {
   static clone(node: TableNode): TableNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   collapseAtStart(): true;
   getCordsFromCellNode(
@@ -126,7 +123,6 @@ declare export class TableRowNode extends ElementNode {
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
   setHeight(height: number): ?number;
   getHeight(): ?number;
   insertNewAfter(
@@ -351,3 +347,13 @@ export type InsertTableCommandPayload = $ReadOnly<{
 }>;
 
 declare export var INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;
+
+/**
+ * LexicalTablePluginHelpers
+ */
+
+declare export function registerTableCellUnmergeTransform(editor: LexicalEditor): () => void;
+
+declare export function registerTablePlugin(editor: LexicalEditor): () => void;
+
+declare export function registerTableSelectionObserver(editor: LexicalEditor, hasTabHandler?: boolean): () => void;

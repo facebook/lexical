@@ -6,9 +6,8 @@
  *
  */
 
-import type {TableRowNode} from './LexicalTableRowNode';
-
 import {
+  $descendantsMatching,
   addClassNamesToElement,
   isHTMLElement,
   removeClassNamesFromElement,
@@ -36,6 +35,7 @@ import invariant from 'shared/invariant';
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
+import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
@@ -225,11 +225,7 @@ export class TableNode extends ElementNode {
     return tableElement;
   }
 
-  updateDOM(
-    prevNode: TableNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__rowStriping !== this.__rowStriping) {
       setRowStriping(dom, config, this.__rowStriping);
     }
@@ -245,14 +241,10 @@ export class TableNode extends ElementNode {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
         }
-        if (
-          tableElement &&
-          isHTMLElement(tableElement) &&
-          tableElement.nodeName !== 'TABLE'
-        ) {
+        if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {
           tableElement = tableElement.querySelector('table');
         }
-        if (!tableElement || !isHTMLElement(tableElement)) {
+        if (!isHTMLElement(tableElement)) {
           return null;
         }
 
@@ -316,7 +308,7 @@ export class TableNode extends ElementNode {
         return tableElement;
       },
       element:
-        element && isHTMLElement(element) && element.nodeName !== 'TABLE'
+        isHTMLElement(element) && element.nodeName !== 'TABLE'
           ? element.querySelector('table')
           : element,
     };
@@ -498,7 +490,10 @@ export function $convertTableElement(
       tableNode.setColWidths(columns);
     }
   }
-  return {node: tableNode};
+  return {
+    after: (children) => $descendantsMatching(children, $isTableRowNode),
+    node: tableNode,
+  };
 }
 
 export function $createTableNode(): TableNode {

@@ -69,7 +69,7 @@ export class ListNode extends ElementNode {
     return new ListNode(listType, node.__start, node.__key);
   }
 
-  constructor(listType: ListType, start: number, key?: NodeKey) {
+  constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
     super(key);
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
@@ -81,10 +81,11 @@ export class ListNode extends ElementNode {
     return this.__tag;
   }
 
-  setListType(type: ListType): void {
+  setListType(type: ListType): this {
     const writable = this.getWritable();
     writable.__listType = type;
     writable.__tag = type === 'number' ? 'ol' : 'ul';
+    return writable;
   }
 
   getListType(): ListType {
@@ -93,6 +94,12 @@ export class ListNode extends ElementNode {
 
   getStart(): number {
     return this.__start;
+  }
+
+  setStart(start: number): this {
+    const self = this.getWritable();
+    self.__start = start;
+    return self;
   }
 
   // View
@@ -143,11 +150,16 @@ export class ListNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedListNode): ListNode {
-    const node = $createListNode(serializedNode.listType, serializedNode.start);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createListNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<SerializedListNode, 'type' | 'children' | 'version'>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setListType(serializedNode.listType)
+      .setStart(serializedNode.start);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -351,7 +363,10 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
  * @param start - Where an ordered list starts its count, start = 1 if left undefined.
  * @returns The new ListNode
  */
-export function $createListNode(listType: ListType, start = 1): ListNode {
+export function $createListNode(
+  listType: ListType = 'number',
+  start = 1,
+): ListNode {
   return $applyNodeReplacement(new ListNode(listType, start));
 }
 

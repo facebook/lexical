@@ -308,13 +308,14 @@ export class TextNode extends LexicalNode {
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
+    this.__text = prevNode.__text;
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
     this.__mode = prevNode.__mode;
     this.__detail = prevNode.__detail;
   }
 
-  constructor(text: string, key?: NodeKey) {
+  constructor(text: string = '', key?: NodeKey) {
     super(key);
     this.__text = text;
     this.__format = 0;
@@ -606,12 +607,17 @@ export class TextNode extends LexicalNode {
   }
 
   static importJSON(serializedNode: SerializedTextNode): TextNode {
-    const node = $createTextNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    return $createTextNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<SerializedTextNode, 'type' | 'version'>,
+  ): this {
+    return this.setTextContent(serializedNode.text)
+      .setFormat(serializedNode.format)
+      .setDetail(serializedNode.detail)
+      .setMode(serializedNode.mode)
+      .setStyle(serializedNode.style);
   }
 
   // This improves Lexical's basic text output in copy+paste plus

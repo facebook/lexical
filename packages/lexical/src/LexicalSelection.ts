@@ -21,7 +21,6 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
@@ -1205,9 +1204,9 @@ export class RangeSelection implements BaseSelection {
         selectedTextNodes.push(selectedNode);
       }
     }
-    const applyFormatToParagraphs = (alignWith: number | null) => {
+    const applyFormatToElements = (alignWith: number | null) => {
       selectedNodes.forEach((node) => {
-        if ($isParagraphNode(node)) {
+        if ($isElementNode(node)) {
           const newFormat = node.getFormatFlags(formatType, alignWith);
           node.setTextFormat(newFormat);
         }
@@ -1219,7 +1218,7 @@ export class RangeSelection implements BaseSelection {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
-      applyFormatToParagraphs(alignWithFormat);
+      applyFormatToElements(alignWithFormat);
       return;
     }
 
@@ -1251,7 +1250,7 @@ export class RangeSelection implements BaseSelection {
       formatType,
       alignWithFormat,
     );
-    applyFormatToParagraphs(firstNextFormat);
+    applyFormatToElements(firstNextFormat);
 
     const lastIndex = selectedTextNodesLength - 1;
     let lastNode = selectedTextNodes[lastIndex];

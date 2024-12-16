@@ -128,10 +128,6 @@ export class QuoteNode extends ElementNode {
     return new QuoteNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
-    super(key);
-  }
-
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -175,11 +171,7 @@ export class QuoteNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
-    const node = $createQuoteNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedElementNode {
@@ -246,6 +238,12 @@ export class HeadingNode extends ElementNode {
     return this.__tag;
   }
 
+  setTag(tag: HeadingTagType): this {
+    const self = this.getWritable();
+    this.__tag = tag;
+    return self;
+  }
+
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -260,8 +258,8 @@ export class HeadingNode extends ElementNode {
     return element;
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement): boolean {
-    return false;
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    return prevNode.__tag !== this.__tag;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -341,11 +339,18 @@ export class HeadingNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-    const node = $createHeadingNode(serializedNode.tag);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createHeadingNode(serializedNode.tag).updateFromJSON(
+      serializedNode,
+    );
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<
+      SerializedHeadingNode,
+      'type' | 'children' | 'version'
+    >,
+  ): this {
+    return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
   }
 
   exportJSON(): SerializedHeadingNode {
@@ -435,7 +440,9 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   return {node};
 }
 
-export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode {
+export function $createHeadingNode(
+  headingTag: HeadingTagType = 'h1',
+): HeadingNode {
   return $applyNodeReplacement(new HeadingNode(headingTag));
 }
 

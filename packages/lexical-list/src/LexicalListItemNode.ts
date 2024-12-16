@@ -266,9 +266,10 @@ export class ListItemNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = $createListItemNode(
-      this.__checked == null ? undefined : false,
-    );
+    const newElement = $createListItemNode()
+      .updateFromJSON(this.exportJSON())
+      .setChecked(this.getChecked() ? false : undefined);
+
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;

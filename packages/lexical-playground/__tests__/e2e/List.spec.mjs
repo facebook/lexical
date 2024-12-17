@@ -9,6 +9,7 @@
 import {expect} from '@playwright/test';
 
 import {
+  indent,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
@@ -1909,7 +1910,7 @@ test.describe.parallel('Nested List', () => {
     await toggleBold(page);
     await page.keyboard.type('MLH Fellowship');
     await page.keyboard.press('Enter');
-    await clickIndentButton(page);
+    await indent(page, 1);
     await page.keyboard.type('Fall 2024');
     await assertHTML(
       page,

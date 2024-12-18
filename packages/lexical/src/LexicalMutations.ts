@@ -21,7 +21,6 @@ import {
   $isTextNode,
   $setSelection,
 } from '.';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNodeByKey,
@@ -32,6 +31,7 @@ import {
   getParentElement,
   getWindow,
   internalGetRoot,
+  isDOMTextNode,
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
   isHTMLElement,
@@ -112,7 +112,7 @@ function shouldUpdateTextNodeFromMutation(
       return false;
     }
   }
-  return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
+  return isDOMTextNode(targetDOM) && targetNode.isAttached();
 }
 
 function $getNearestManagedNodePairFromDOMNode(
@@ -183,14 +183,10 @@ export function $flushMutations(
           if (
             shouldFlushTextMutations &&
             $isTextNode(targetNode) &&
+            isDOMTextNode(targetDOM) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            $handleTextMutation(
-              // nodeType === DOM_TEXT_TYPE is a Text DOM node
-              targetDOM as Text,
-              targetNode,
-              editor,
-            );
+            $handleTextMutation(targetDOM, targetNode, editor);
           }
         } else if (type === 'childList') {
           shouldRevertSelection = true;

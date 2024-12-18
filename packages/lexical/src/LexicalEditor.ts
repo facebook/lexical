@@ -37,7 +37,7 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
-  markAllNodesAsDirty,
+  markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
@@ -69,6 +69,9 @@ export type TextNodeThemeClasses = {
   code?: EditorThemeClassName;
   highlight?: EditorThemeClassName;
   italic?: EditorThemeClassName;
+  lowercase?: EditorThemeClassName;
+  uppercase?: EditorThemeClassName;
+  capitalize?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
   subscript?: EditorThemeClassName;
   superscript?: EditorThemeClassName;
@@ -279,11 +282,11 @@ export type LexicalCommand<TPayload> = {
  *
  * editor.registerCommand(MY_COMMAND, payload => {
  *   // Type of `payload` is inferred here. But lets say we want to extract a function to delegate to
- *   handleMyCommand(editor, payload);
+ *   $handleMyCommand(editor, payload);
  *   return true;
  * });
  *
- * function handleMyCommand(editor: LexicalEditor, payload: CommandPayloadType<typeof MY_COMMAND>) {
+ * function $handleMyCommand(editor: LexicalEditor, payload: CommandPayloadType<typeof MY_COMMAND>) {
  *   // `payload` is of type `SomeType`, extracted from the command.
  * }
  * ```
@@ -775,14 +778,24 @@ export class LexicalEditor {
   }
   /**
    * Registers a listener that will trigger anytime the provided command
-   * is dispatched, subject to priority. Listeners that run at a higher priority can "intercept"
-   * commands and prevent them from propagating to other handlers by returning true.
+   * is dispatched with {@link LexicalEditor.dispatch}, subject to priority.
+   * Listeners that run at a higher priority can "intercept" commands and
+   * prevent them from propagating to other handlers by returning true.
    *
-   * Listeners registered at the same priority level will run deterministically in the order of registration.
+   * Listeners are always invoked in an {@link LexicalEditor.update} and can
+   * call dollar functions.
+   *
+   * Listeners registered at the same priority level will run
+   * deterministically in the order of registration.
    *
    * @param command - the command that will trigger the callback.
    * @param listener - the function that will execute when the command is dispatched.
    * @param priority - the relative priority of the listener. 0 | 1 | 2 | 3 | 4
+   *   (or {@link COMMAND_PRIORITY_EDITOR} |
+   *     {@link COMMAND_PRIORITY_LOW} |
+   *     {@link COMMAND_PRIORITY_NORMAL} |
+   *     {@link COMMAND_PRIORITY_HIGH} |
+   *     {@link COMMAND_PRIORITY_CRITICAL})
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerCommand<P>(
@@ -960,7 +973,10 @@ export class LexicalEditor {
       registeredNodes.push(registeredReplaceWithNode);
     }
 
-    markAllNodesAsDirty(this, klass.getType());
+    markNodesWithTypesAsDirty(
+      this,
+      registeredNodes.map((node) => node.klass.getType()),
+    );
     return () => {
       registeredNodes.forEach((node) =>
         node.transforms.delete(listener as Transform<LexicalNode>),
@@ -989,7 +1005,10 @@ export class LexicalEditor {
   /**
    * Dispatches a command of the specified type with the specified payload.
    * This triggers all command listeners (set by {@link LexicalEditor.registerCommand})
-   * for this type, passing them the provided payload.
+   * for this type, passing them the provided payload. The command listeners
+   * will be triggered in an implicit {@link LexicalEditor.update}, unless
+   * this was invoked from inside an update in which case that update context
+   * will be re-used (as if this was a dollar function itself).
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */

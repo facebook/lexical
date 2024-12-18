@@ -8,12 +8,13 @@
 
 import {
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
-  $isTextNode,
   type EditorState,
   ElementNode,
   getDOMTextNode,
   type LexicalEditor,
+  Point,
   TextNode,
 } from 'lexical';
 
@@ -21,6 +22,40 @@ import mergeRegister from './mergeRegister';
 import positionNodeOnRange from './positionNodeOnRange';
 import px from './px';
 
+function rangeTargetFromPoint(
+  point: Point,
+  node: ElementNode | TextNode,
+  dom: HTMLElement,
+): [HTMLElement | Text, number] {
+  if (point.type === 'text' || !$isElementNode(node)) {
+    const textDOM = getDOMTextNode(dom) || dom;
+    return [textDOM, point.offset];
+  } else {
+    const slot = node.getDOMSlot(dom);
+    return [slot.element, slot.getFirstChildOffset() + point.offset];
+  }
+}
+
+function rangeFromPoints(
+  editor: LexicalEditor,
+  anchor: Point,
+  anchorNode: ElementNode | TextNode,
+  anchorDOM: HTMLElement,
+  focus: Point,
+  focusNode: ElementNode | TextNode,
+  focusDOM: HTMLElement,
+): Range {
+  const editorDocument = editor._window ? editor._window.document : document;
+  const range = editorDocument.createRange();
+  if (focusNode.isBefore(anchorNode)) {
+    range.setStart(...rangeTargetFromPoint(focus, focusNode, focusDOM));
+    range.setEnd(...rangeTargetFromPoint(anchor, anchorNode, anchorDOM));
+  } else {
+    range.setStart(...rangeTargetFromPoint(anchor, anchorNode, anchorDOM));
+    range.setEnd(...rangeTargetFromPoint(focus, focusNode, focusDOM));
+  }
+  return range;
+}
 /**
  * Place one or multiple newly created Nodes at the current selection. Multiple
  * nodes will only be created when the selection spans multiple lines (aka
@@ -34,8 +69,10 @@ export default function markSelection(
   onReposition?: (node: Array<HTMLElement>) => void,
 ): () => void {
   let previousAnchorNode: null | TextNode | ElementNode = null;
+  let previousAnchorNodeDOM: null | HTMLElement = null;
   let previousAnchorOffset: null | number = null;
   let previousFocusNode: null | TextNode | ElementNode = null;
+  let previousFocusNodeDOM: null | HTMLElement = null;
   let previousFocusOffset: null | number = null;
   let removeRangeListener: () => void = () => {};
   function compute(editorState: EditorState) {
@@ -62,101 +99,66 @@ export default function markSelection(
       const currentFocusNodeDOM = editor.getElementByKey(currentFocusNodeKey);
       const differentAnchorDOM =
         previousAnchorNode === null ||
-        currentAnchorNodeDOM === null ||
+        currentAnchorNodeDOM !== previousAnchorNodeDOM ||
         currentAnchorOffset !== previousAnchorOffset ||
-        currentAnchorNodeKey !== previousAnchorNode.getKey() ||
-        (currentAnchorNode !== previousAnchorNode &&
-          (!$isTextNode(previousAnchorNode) ||
-            currentAnchorNode.updateDOM(
-              previousAnchorNode,
-              currentAnchorNodeDOM,
-              editor._config,
-            )));
+        currentAnchorNodeKey !== previousAnchorNode.getKey();
       const differentFocusDOM =
         previousFocusNode === null ||
-        currentFocusNodeDOM === null ||
+        currentFocusNodeDOM !== previousFocusNodeDOM ||
         currentFocusOffset !== previousFocusOffset ||
-        currentFocusNodeKey !== previousFocusNode.getKey() ||
-        (currentFocusNode !== previousFocusNode &&
-          (!$isTextNode(previousFocusNode) ||
-            currentFocusNode.updateDOM(
-              previousFocusNode,
-              currentFocusNodeDOM,
-              editor._config,
-            )));
-      if (differentAnchorDOM || differentFocusDOM) {
-        const anchorHTMLElement = editor.getElementByKey(
-          anchor.getNode().getKey(),
+        currentFocusNodeKey !== previousFocusNode.getKey();
+      if (
+        (differentAnchorDOM || differentFocusDOM) &&
+        currentAnchorNodeDOM !== null &&
+        currentFocusNodeDOM !== null
+      ) {
+        const range = rangeFromPoints(
+          editor,
+          anchor,
+          currentAnchorNode,
+          currentAnchorNodeDOM,
+          focus,
+          currentFocusNode,
+          currentFocusNodeDOM,
         );
-        const focusHTMLElement = editor.getElementByKey(
-          focus.getNode().getKey(),
-        );
-        if (anchorHTMLElement !== null && focusHTMLElement !== null) {
-          const range = document.createRange();
-          let firstHTMLElement;
-          let firstOffset;
-          let lastHTMLElement;
-          let lastOffset;
-          if (focus.isBefore(anchor)) {
-            firstHTMLElement = focusHTMLElement;
-            firstOffset = focus.offset;
-            lastHTMLElement = anchorHTMLElement;
-            lastOffset = anchor.offset;
-          } else {
-            firstHTMLElement = anchorHTMLElement;
-            firstOffset = anchor.offset;
-            lastHTMLElement = focusHTMLElement;
-            lastOffset = focus.offset;
-          }
-          const firstHTMLElementTextChild = getDOMTextNode(firstHTMLElement);
-          const lastHTMLElementtextChild = getDOMTextNode(lastHTMLElement);
-          range.setStart(
-            firstHTMLElementTextChild || firstHTMLElement,
-            firstOffset,
-          );
-          range.setEnd(lastHTMLElementtextChild || lastHTMLElement, lastOffset);
-          removeRangeListener();
-          removeRangeListener = positionNodeOnRange(
-            editor,
-            range,
-            (domNodes) => {
-              if (onReposition === undefined) {
-                for (const domNode of domNodes) {
-                  const domNodeStyle = domNode.style;
+        removeRangeListener();
+        removeRangeListener = positionNodeOnRange(editor, range, (domNodes) => {
+          if (onReposition === undefined) {
+            for (const domNode of domNodes) {
+              const domNodeStyle = domNode.style;
 
-                  if (domNodeStyle.background !== 'Highlight') {
-                    domNodeStyle.background = 'Highlight';
-                  }
-                  if (domNodeStyle.color !== 'HighlightText') {
-                    domNodeStyle.color = 'HighlightText';
-                  }
-                  if (domNodeStyle.marginTop !== px(-1.5)) {
-                    domNodeStyle.marginTop = px(-1.5);
-                  }
-                  if (domNodeStyle.paddingTop !== px(4)) {
-                    domNodeStyle.paddingTop = px(4);
-                  }
-                  if (domNodeStyle.paddingBottom !== px(0)) {
-                    domNodeStyle.paddingBottom = px(0);
-                  }
-                }
-              } else {
-                onReposition(domNodes);
+              if (domNodeStyle.background !== 'Highlight') {
+                domNodeStyle.background = 'Highlight';
               }
-            },
-          );
-        }
+              if (domNodeStyle.color !== 'HighlightText') {
+                domNodeStyle.color = 'HighlightText';
+              }
+              if (domNodeStyle.marginTop !== px(-1.5)) {
+                domNodeStyle.marginTop = px(-1.5);
+              }
+              if (domNodeStyle.paddingTop !== px(4)) {
+                domNodeStyle.paddingTop = px(4);
+              }
+              if (domNodeStyle.paddingBottom !== px(0)) {
+                domNodeStyle.paddingBottom = px(0);
+              }
+            }
+          } else {
+            onReposition(domNodes);
+          }
+        });
       }
       previousAnchorNode = currentAnchorNode;
+      previousAnchorNodeDOM = currentAnchorNodeDOM;
       previousAnchorOffset = currentAnchorOffset;
       previousFocusNode = currentFocusNode;
+      previousFocusNodeDOM = currentFocusNodeDOM;
       previousFocusOffset = currentFocusOffset;
     });
   }
   compute(editor.getEditorState());
   return mergeRegister(
     editor.registerUpdateListener(({editorState}) => compute(editorState)),
-    removeRangeListener,
     () => {
       removeRangeListener();
     },

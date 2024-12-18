@@ -10,7 +10,7 @@ import type {Ref, RefObject} from 'react';
 
 import './EquationEditor.css';
 
-import * as React from 'react';
+import {isHTMLElement} from 'lexical';
 import {ChangeEvent, forwardRef} from 'react';
 
 type BaseEquationEditorProps = {
@@ -27,7 +27,7 @@ function EquationEditor(
     setEquation((event.target as HTMLInputElement).value);
   };
 
-  return inline && forwardedRef instanceof HTMLInputElement ? (
+  return inline && isHTMLElement(forwardedRef) ? (
     <span className="EquationEditor_inputBackground">
       <span className="EquationEditor_dollarSign">$</span>
       <input

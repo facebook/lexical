@@ -34,6 +34,7 @@ import {
   internalGetRoot,
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
+  isHTMLElement,
 } from './LexicalUtils';
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -130,7 +131,9 @@ function $getNearestManagedNodePairFromDOMNode(
       const node = $getNodeByKey(key, editorState);
       if (node) {
         // All decorator nodes are unmanaged
-        return $isDecoratorNode(node) ? undefined : [dom as HTMLElement, node];
+        return $isDecoratorNode(node) || !isHTMLElement(dom)
+          ? undefined
+          : [dom, node];
       }
     } else if (dom === rootElement) {
       return [rootElement, internalGetRoot(editorState)];
@@ -209,7 +212,8 @@ export function $flushMutations(
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
-                  (addedDOM as HTMLElement).innerText || addedDOM.nodeValue;
+                  (isHTMLElement(addedDOM) ? addedDOM.innerText : null) ||
+                  addedDOM.nodeValue;
 
                 if (possibleText) {
                   possibleTextForFirefoxPaste += possibleText;

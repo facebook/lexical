@@ -121,6 +121,15 @@
   font-family: Menlo, Consolas, Monaco, monospace;
   font-size: 94%;
 }
+.PlaygroundEditorTheme__textLowercase {
+  text-transform: lowercase;
+}
+.PlaygroundEditorTheme__textUppercase {
+  text-transform: uppercase;
+}
+.PlaygroundEditorTheme__textCapitalize {
+  text-transform: capitalize;
+}
 .PlaygroundEditorTheme__hashtag {
   background-color: rgba(88, 144, 255, 0.15);
   border-bottom: 1px solid rgba(88, 144, 255, 0.3);
@@ -213,6 +222,14 @@
   padding: 6px 8px;
   position: relative;
   outline: none;
+  overflow: auto;
+}
+/*
+  A firefox workaround to allow scrolling of overflowing table cell
+  ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1904159
+*/
+.PlaygroundEditorTheme__tableCell > * {
+  overflow: inherit;
 }
 .PlaygroundEditorTheme__tableCellResizer {
   position: absolute;

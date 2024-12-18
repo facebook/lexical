@@ -80,7 +80,10 @@ declare export var IS_ITALIC: number;
 declare export var IS_STRIKETHROUGH: number;
 declare export var IS_SUBSCRIPT: number;
 declare export var IS_SUPERSCRIPT: number;
-declare export var IS_UNDERLIN: number;
+declare export var IS_UNDERLINE: number;
+declare export var IS_UPPERCASE: number;
+declare export var IS_LOWERCASE: number;
+declare export var IS_CAPITALIZE: number;
 declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
 
 /**
@@ -243,6 +246,9 @@ type TextNodeThemeClasses = {
   code?: EditorThemeClassName,
   subscript?: EditorThemeClassName,
   superscript?: EditorThemeClassName,
+  lowercase?: EditorThemeClassName,
+  uppercase?: EditorThemeClassName,
+  capitalize?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName,
@@ -415,8 +421,7 @@ declare export class LexicalNode {
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
-    // $FlowFixMe
-    prevNode: any,
+    prevNode: this,
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
@@ -585,7 +590,11 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
+
 type TextModeType = 'normal' | 'token' | 'segmented';
 
 declare export class TextNode extends LexicalNode {
@@ -611,11 +620,6 @@ declare export class TextNode extends LexicalNode {
   getTextContent(): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   selectionTransform(
     prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
@@ -707,7 +711,6 @@ declare export class RootNode extends ElementNode {
   replace<N: LexicalNode>(node: N): N;
   insertBefore<T: LexicalNode>(nodeToInsert: T): T;
   insertAfter<T: LexicalNode>(nodeToInsert: T): T;
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
 }
@@ -850,7 +853,6 @@ declare export class ParagraphNode extends ElementNode {
   static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

@@ -140,7 +140,7 @@ export class ParagraphNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }

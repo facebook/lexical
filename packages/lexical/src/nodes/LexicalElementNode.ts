@@ -17,7 +17,12 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
+import type {
+  KlassConstructor,
+  LexicalEditor,
+  Spread,
+  TextFormatType,
+} from 'lexical';
 
 import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -27,6 +32,7 @@ import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
   ELEMENT_TYPE_TO_FORMAT,
+  TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
@@ -51,6 +57,8 @@ export type SerializedElementNode<
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
+    textStyle: string;
+    textFormat: number;
   },
   SerializedLexicalNode
 >;
@@ -307,6 +315,10 @@ export class ElementNode extends LexicalNode {
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
+  /** @internal */
+  __textStyle: string;
+  /** @internal */
+  __textFormat: number;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -317,6 +329,8 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+    this.__textStyle = '';
+    this.__textFormat = 0;
   }
 
   afterCloneFrom(prevNode: this) {
@@ -328,6 +342,8 @@ export class ElementNode extends LexicalNode {
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
     this.__dir = prevNode.__dir;
+    this.__textStyle = prevNode.__textStyle;
+    this.__textFormat = prevNode.__textFormat;
   }
 
   getFormat(): number {
@@ -341,6 +357,14 @@ export class ElementNode extends LexicalNode {
   getStyle(): string {
     const self = this.getLatest();
     return self.__style;
+  }
+  getTextStyle(): string {
+    const self = this.getLatest();
+    return self.__textStyle;
+  }
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
   }
   getIndent(): number {
     const self = this.getLatest();
@@ -614,6 +638,21 @@ export class ElementNode extends LexicalNode {
     self.__style = style || '';
     return this;
   }
+  setTextStyle(style: string): this {
+    const self = this.getWritable();
+    self.__textStyle = style || '';
+    return this;
+  }
+  setTextFormat(format: number): this {
+    const self = this.getWritable();
+    self.__textFormat = format;
+    return this;
+  }
+
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
+  }
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
     self.__indent = indentLevel;
@@ -792,6 +831,8 @@ export class ElementNode extends LexicalNode {
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
+      textFormat: this.getTextFormat(),
+      textStyle: this.getTextStyle(),
       type: 'element',
       version: 1,
     };

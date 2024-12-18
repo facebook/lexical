@@ -111,6 +111,8 @@ export class RootNode extends ElementNode {
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
+      textFormat: 0,
+      textStyle: '',
       type: 'root',
       version: 1,
     };

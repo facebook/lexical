@@ -10,7 +10,6 @@ import type {
   EditorConfig,
   KlassConstructor,
   LexicalEditor,
-  Spread,
 } from '../LexicalEditor';
 import type {
   DOMConversionMap,
@@ -25,7 +24,6 @@ import type {
 } from './LexicalElementNode';
 import type {RangeSelection} from 'lexical';
 
-import {TEXT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   getCachedClassNameArray,
@@ -36,45 +34,18 @@ import {
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
-export type SerializedParagraphNode = Spread<
-  {
-    textFormat: number;
-    textStyle: string;
-  },
-  SerializedElementNode
->;
+export type SerializedParagraphNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
   ['constructor']!: KlassConstructor<typeof ParagraphNode>;
-  /** @internal */
-  __textFormat: number;
-  __textStyle: string;
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__textFormat = 0;
-    this.__textStyle = '';
   }
 
   static getType(): string {
     return 'paragraph';
-  }
-
-  getTextFormat(): number {
-    const self = this.getLatest();
-    return self.__textFormat;
-  }
-
-  setTextFormat(type: number): this {
-    const self = this.getWritable();
-    self.__textFormat = type;
-    return self;
-  }
-
-  hasTextFormat(type: TextFormatType): boolean {
-    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    return (this.getTextFormat() & formatFlag) !== 0;
   }
 
   /**
@@ -88,25 +59,12 @@ export class ParagraphNode extends ElementNode {
     return toggleTextFormatType(format, type, alignWithFormat);
   }
 
-  getTextStyle(): string {
-    const self = this.getLatest();
-    return self.__textStyle;
-  }
-
-  setTextStyle(style: string): this {
-    const self = this.getWritable();
-    self.__textStyle = style;
-    return self;
-  }
-
   static clone(node: ParagraphNode): ParagraphNode {
     return new ParagraphNode(node.__key);
   }
 
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
-    this.__textFormat = prevNode.__textFormat;
-    this.__textStyle = prevNode.__textStyle;
   }
 
   // View
@@ -171,8 +129,6 @@ export class ParagraphNode extends ElementNode {
   exportJSON(): SerializedParagraphNode {
     return {
       ...super.exportJSON(),
-      textFormat: this.getTextFormat(),
-      textStyle: this.getTextStyle(),
       type: 'paragraph',
       version: 1,
     };

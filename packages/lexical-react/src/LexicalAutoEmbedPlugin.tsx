@@ -16,7 +16,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
   MenuOption,
-  MenuRenderFn,
 } from '@lexical/react/LexicalNodeMenuPlugin';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -82,7 +81,6 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
-  menuRenderFn: MenuRenderFn<AutoEmbedOption>;
   menuCommandPriority?: CommandListenerPriority;
 };
 
@@ -90,7 +88,6 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   embedConfigs,
   onOpenEmbedModalForConfig,
   getMenuOptions,
-  menuRenderFn,
   menuCommandPriority = COMMAND_PRIORITY_LOW,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
@@ -233,7 +230,6 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       onClose={reset}
       onSelectOption={onSelectOption}
       options={options}
-      menuRenderFn={menuRenderFn}
       commandPriority={menuCommandPriority}
     />
   ) : null;

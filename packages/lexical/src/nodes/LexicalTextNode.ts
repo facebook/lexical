@@ -29,8 +29,6 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
-  DOM_ELEMENT_TYPE,
-  DOM_TEXT_TYPE,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -62,6 +60,7 @@ import {
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
+  isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
   toggleTextFormatType,
@@ -1142,13 +1141,13 @@ function convertBringAttentionToElement(
 const preParentCache = new WeakMap<Node, null | Node>();
 
 function isNodePre(node: Node): boolean {
-  return (
-    node.nodeName === 'PRE' ||
-    (node.nodeType === DOM_ELEMENT_TYPE &&
-      (node as HTMLElement).style !== undefined &&
-      (node as HTMLElement).style.whiteSpace !== undefined &&
-      (node as HTMLElement).style.whiteSpace.startsWith('pre'))
-  );
+  if (!isHTMLElement(node)) {
+    return false;
+  } else if (node.nodeName === 'PRE') {
+    return true;
+  }
+  const whiteSpace = node.style.whiteSpace;
+  return typeof whiteSpace === 'string' && whiteSpace.startsWith('pre');
 }
 
 export function findParentPreDOMNode(node: Node) {
@@ -1264,8 +1263,8 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
       node = parentElement;
     }
     node = sibling;
-    if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = (node as HTMLElement).style.display;
+    if (isHTMLElement(node)) {
+      const display = node.style.display;
       if (
         (display === '' && !isInlineDomNode(node)) ||
         (display !== '' && !display.startsWith('inline'))
@@ -1277,8 +1276,8 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
     while ((descendant = forward ? node.firstChild : node.lastChild) !== null) {
       node = descendant;
     }
-    if (node.nodeType === DOM_TEXT_TYPE) {
-      return node as Text;
+    if (isDOMTextNode(node)) {
+      return node;
     } else if (node.nodeName === 'BR') {
       return null;
     }

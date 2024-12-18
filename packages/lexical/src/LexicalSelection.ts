@@ -27,7 +27,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
-import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -56,6 +56,7 @@ import {
   getElementByKeyOrThrow,
   getTextNodeOffset,
   INTERNAL_$isBlock,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
@@ -2065,7 +2066,7 @@ function $internalResolveSelectionPoint(
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (dom.nodeType === DOM_ELEMENT_TYPE) {
+  if (isHTMLElement(dom)) {
     // Resolve element to a ElementNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
@@ -2903,7 +2904,7 @@ export function updateDOMSelection(
     rootElement === document.activeElement
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
-      nextSelection instanceof RangeSelection &&
+      $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null

@@ -51,9 +51,9 @@ export type PlaceholderProps =
   | $ReadOnly<{
       'aria-placeholder': string,
       placeholder:
-        | ((isEditable: boolean) => null | React$Node)
+        | ((isEditable: boolean) => null | React.Node)
         | null
-        | React$Node,
+        | React.Node,
     }>;
 
 export type Props = $ReadOnly<{

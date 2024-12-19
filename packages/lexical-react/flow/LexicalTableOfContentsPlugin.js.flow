@@ -14,5 +14,5 @@ declare export function TableOfContentsPlugin({
   children: (
     tableOfContents: Array<[NodeKey, string, HeadingTagType]>,
     editor: LexicalEditor,
-  ) => React$Node,
-}): React$Node;
+  ) => React.Node,
+}): React.Node;

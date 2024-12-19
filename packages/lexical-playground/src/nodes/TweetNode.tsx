@@ -151,8 +151,6 @@ export class TweetNode extends DecoratorBlockNode {
     return {
       ...super.exportJSON(),
       id: this.getId(),
-      type: 'tweet',
-      version: 1,
     };
   }
 

@@ -97,8 +97,6 @@ export class YouTubeNode extends DecoratorBlockNode {
   exportJSON(): SerializedYouTubeNode {
     return {
       ...super.exportJSON(),
-      type: 'youtube',
-      version: 1,
       videoID: this.__id,
     };
   }

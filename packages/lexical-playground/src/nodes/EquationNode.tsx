@@ -74,10 +74,9 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedEquationNode {
     return {
+      ...super.exportJSON(),
       equation: this.getEquation(),
       inline: this.__inline,
-      type: 'equation',
-      version: 1,
     };
   }
 

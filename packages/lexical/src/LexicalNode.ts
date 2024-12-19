@@ -54,6 +54,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   type: string;
   version: number;
+  state?: State;
 };
 
 /** @internal */
@@ -171,6 +172,8 @@ export type DOMExportOutput = {
 
 export type NodeKey = string;
 
+export type State = {[Key in string]?: string | number | boolean | State};
+
 export class LexicalNode {
   // Allow us to look up the type including static props
   ['constructor']!: KlassConstructor<typeof LexicalNode>;
@@ -185,6 +188,25 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /** @internal */
+  __state: State = {};
+
+  getState<T extends State = State>(key: keyof T): T[keyof T] | undefined {
+    const self = this.getLatest();
+    return (self.__state as T)[key];
+  }
+
+  setState<T extends State = State>(
+    key: keyof T,
+    value: T[keyof T] | undefined,
+  ) {
+    const self = this.getWritable();
+    if (value === undefined) {
+      delete (self.__state as T)[key];
+      return;
+    }
+    (self.__state as T)[key] = value;
+  }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -869,7 +891,11 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
-    invariant(false, 'exportJSON: base method not extended');
+    return {
+      type: this.constructor.getType(),
+      version: 1,
+      ...(objetcIsEmpty(this.__state) ? {} : {state: this.__state}),
+    };
   }
 
   /**
@@ -1237,4 +1263,15 @@ export function insertRangeAfter(
   for (const nodeToInsert of nodesToInsert) {
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
+}
+
+/**
+ * The best way to check if an object is empty in O(1)
+ * @see https://stackoverflow.com/a/59787784/10476393
+ */
+function objetcIsEmpty(obj: object) {
+  for (const key in obj) {
+    return false;
+  }
+  return true;
 }

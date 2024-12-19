@@ -54,7 +54,6 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   type: string;
   version: number;
-  classes?: ReadonlyClasses;
 };
 
 /** @internal */
@@ -171,8 +170,6 @@ export type DOMExportOutput = {
 };
 
 export type NodeKey = string;
-export type MutableClasses = {[classSuffix: string]: true | string};
-export type ReadonlyClasses = {readonly [classSuffix: string]: true | string};
 
 export class LexicalNode {
   // Allow us to look up the type including static props
@@ -188,53 +185,6 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
-  /**
-   * Don't use this directly, use `this.getClasses()` and `this.mutateClasses()` instead
-   * @internal
-   */
-  __classes?: ReadonlyClasses;
-
-  /**
-   * Returns an object of classes in the form of `prefix-suffix` for string values, or just `prefix` for true boolean values.
-   * @example
-   * const exampleClassesObject = {
-   *   bg: 'red', // the node is rendered with class `bg-red`
-   *   text: 'green', // node is rendered with class `text-green`,
-   *   active: true, // node is rendered with class `active`,
-   * }
-   * // Resulting classes: 'bg-red', 'text-green', and 'active'
-   *
-   * @returns The classes object.
-   */
-  getClasses() {
-    const self = this.getLatest();
-    return self.__classes;
-  }
-
-  /**
-   * Sets a class based on the provided key and value.
-   *
-   * @param key - The class key to set or modify.
-   * @param value - The class value. Possible options:
-   * - `true`: add the class if it doesn't exist.
-   * - `false`: remove the class if it exists.
-   * - `string`: Adds a class in the format `key-value` (e.g., `bg-blue`), useful for overwriting existing classes with the same key.
-   *
-   * @example
-   * node.setClass('active', true); // Adds the class `active`, replacing the one with the key `active` if it exists.
-   * node.setClass('active', false); // Removes any class with the key `active` (e.g., `active` or `active-blue`).
-   * node.setClass('bg', 'blue'); // Adds the class `bg-blue`
-   */
-  setClass(key: string, value: boolean | string) {
-    const self = this.getWritable();
-    const classes = {...self.__classes};
-    if (value === false) {
-      delete classes[key];
-    } else {
-      classes[key] = value;
-    }
-    self.__classes = classes;
-  }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -323,7 +273,6 @@ export class LexicalNode {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
-    this.__classes = prevNode.__classes;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -909,15 +858,6 @@ export class LexicalNode {
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
-    if (this.__classes) {
-      Object.entries(this.__classes).forEach(([classPrefix, classSufix]) => {
-        if (typeof classSufix === 'string') {
-          element.classList.add(`${classPrefix}-${classSufix}`);
-        } else if (typeof classSufix === 'boolean' && classSufix) {
-          element.classList.add(classPrefix);
-        }
-      });
-    }
     return {element};
   }
 

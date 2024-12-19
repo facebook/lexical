@@ -44,52 +44,49 @@ import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
 type SerializedCustomTextNode = Spread<
-  {type: ReturnType<typeof CustomTextNode.getType>; classList: string[]},
+  {type: ReturnType<typeof CustomTextNode.getType>; classes: string[]},
   SerializedTextNode
 >;
 
 class CustomTextNode extends TextNode {
   ['constructor']!: KlassConstructor<typeof CustomTextNode>;
 
-  __classlist: Set<string>;
+  __classes: Set<string>;
   constructor(text: string, classes: Iterable<string>, key?: NodeKey) {
     super(text, key);
-    this.__classlist = new Set(classes);
+    this.__classes = new Set(classes);
   }
   static getType(): 'custom-text' {
     return 'custom-text';
   }
   static clone(node: CustomTextNode): CustomTextNode {
-    return new CustomTextNode(node.__text, node.__classlist, node.__key);
+    return new CustomTextNode(node.__text, node.__classes, node.__key);
   }
   addClass(className: string): this {
     const self = this.getWritable();
-    self.__classlist.add(className);
+    self.__classes.add(className);
     return self;
   }
   removeClass(className: string): this {
     const self = this.getWritable();
-    self.__classlist.delete(className);
+    self.__classes.delete(className);
     return self;
   }
   setClasses(classes: Iterable<string>): this {
     const self = this.getWritable();
-    self.__classlist = new Set(classes);
+    self.__classes = new Set(classes);
     return self;
   }
-  getClassList(): ReadonlySet<string> {
-    return this.getLatest().__classlist;
+  getClasses(): ReadonlySet<string> {
+    return this.getLatest().__classes;
   }
-  static importJSON({
-    text,
-    classList,
-  }: SerializedCustomTextNode): CustomTextNode {
-    return $createCustomTextNode(text, classList);
+  static importJSON({text, classes}: SerializedCustomTextNode): CustomTextNode {
+    return $createCustomTextNode(text, classes);
   }
   exportJSON(): SerializedCustomTextNode {
     return {
       ...super.exportJSON(),
-      classList: Array.from(this.getClassList()),
+      classes: Array.from(this.getClasses()),
       type: this.constructor.getType(),
     };
   }

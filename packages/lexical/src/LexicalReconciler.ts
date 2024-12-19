@@ -173,15 +173,6 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
   const dom = node.createDOM(activeEditorConfig, activeEditor);
-  if (node.__classes) {
-    Object.entries(node.__classes).forEach(([classPrefix, classSufix]) => {
-      if (typeof classSufix === 'string') {
-        dom.classList.add(`${classPrefix}-${classSufix}`);
-      } else if (typeof classSufix === 'boolean' && classSufix) {
-        dom.classList.add(classPrefix);
-      }
-    });
-  }
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -641,16 +632,8 @@ function $reconcileNode(
     );
   }
 
-  const nextClasses = nextNode.__classes || {};
-  const prevClasses = prevNode.__classes || {};
-  const classesChanged = !(
-    Object.keys(nextClasses).length === Object.keys(prevClasses).length &&
-    Object.keys(nextClasses).every(
-      (_key) => nextClasses[_key] === prevClasses[_key],
-    )
-  );
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig) || classesChanged) {
+  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
     const replacementDOM = $createNode(key, null);
 
     if (parentDOM === null) {

@@ -8,6 +8,7 @@
 
 import {
   $addNodeStyle,
+  $forEachSelectedTextNode,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
@@ -36,6 +37,7 @@ export {
 
 export {
   $addNodeStyle,
+  $forEachSelectedTextNode,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,

@@ -19,7 +19,6 @@ import {
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,
-  $selectAll,
   $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
@@ -33,7 +32,9 @@ import {
 
 export {
   /** @deprecated moved to the lexical package */ $cloneWithProperties,
+  /** @deprecated moved to the lexical package */ $selectAll,
 } from 'lexical';
+
 export {
   $addNodeStyle,
   $forEachSelectedTextNode,
@@ -50,7 +51,6 @@ export {
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,
-  $selectAll,
   $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,

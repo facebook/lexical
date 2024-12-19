@@ -151,7 +151,7 @@ export class TableCellNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const output = super.exportDOM(editor);
 
-    if (output.element && isHTMLElement(output.element)) {
+    if (isHTMLElement(output.element)) {
       const element = output.element as HTMLTableCellElement;
       element.setAttribute(
         'data-temporary-table-cell-lexical-key',
@@ -265,7 +265,7 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
-  updateDOM(prevNode: TableCellNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return (
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width ||
@@ -366,7 +366,7 @@ export function $convertTableCellNodeElement(
 }
 
 export function $createTableCellNode(
-  headerState: TableCellHeaderState,
+  headerState: TableCellHeaderState = TableCellHeaderStates.NO_STATUS,
   colSpan = 1,
   width?: number,
 ): TableCellNode {

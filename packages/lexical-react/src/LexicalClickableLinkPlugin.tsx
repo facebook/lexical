@@ -15,6 +15,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   getNearestEditorFromDOMNode,
+  isDOMNode,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -44,7 +45,7 @@ export function ClickableLinkPlugin({
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const target = event.target;
-      if (!(target instanceof Node)) {
+      if (!isDOMNode(target)) {
         return;
       }
       const nearestEditor = getNearestEditorFromDOMNode(target);

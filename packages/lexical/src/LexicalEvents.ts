@@ -108,6 +108,7 @@ import {
   isDeleteLineForward,
   isDeleteWordBackward,
   isDeleteWordForward,
+  isDOMNode,
   isEscape,
   isFirefoxClipboardEvents,
   isItalic,
@@ -481,7 +482,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // TODO implement text drag & drop
   const target = event.target;
   const pointerType = event.pointerType;
-  if (target instanceof Node && pointerType !== 'touch') {
+  if (isDOMNode(target) && pointerType !== 'touch' && event.button === 0) {
     updateEditor(editor, () => {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.

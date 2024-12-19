@@ -191,9 +191,15 @@ function setMenuPosition(
   const floatingElemRect = floatingElem.getBoundingClientRect();
   const anchorElementRect = anchorElem.getBoundingClientRect();
 
+  // top left
+  let targetCalculateHeight: number = parseInt(targetStyle.lineHeight, 10);
+  if (isNaN(targetCalculateHeight)) {
+    // middle
+    targetCalculateHeight = targetRect.bottom - targetRect.top;
+  }
   const top =
     targetRect.top +
-    (parseInt(targetStyle.lineHeight, 10) - floatingElemRect.height) / 2 -
+    (targetCalculateHeight - floatingElemRect.height) / 2 -
     anchorElementRect.top;
 
   const left = SPACE;
@@ -271,12 +277,12 @@ function useDraggableBlockMenu(
   useEffect(() => {
     function onMouseMove(event: MouseEvent) {
       const target = event.target;
-      if (target != null && !isHTMLElement(target)) {
+      if (!isHTMLElement(target)) {
         setDraggableBlockElem(null);
         return;
       }
 
-      if (target != null && isOnMenu(target as HTMLElement)) {
+      if (isOnMenu(target as HTMLElement)) {
         return;
       }
 
@@ -318,7 +324,7 @@ function useDraggableBlockMenu(
         return false;
       }
       const {pageY, target} = event;
-      if (target != null && !isHTMLElement(target)) {
+      if (!isHTMLElement(target)) {
         return false;
       }
       const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
@@ -352,7 +358,7 @@ function useDraggableBlockMenu(
       if (!draggedNode) {
         return false;
       }
-      if (target != null && !isHTMLElement(target)) {
+      if (!isHTMLElement(target)) {
         return false;
       }
       const targetBlockElem = getBlockElement(anchorElem, editor, event, true);

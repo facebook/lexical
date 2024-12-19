@@ -354,7 +354,15 @@ describe('Markdown', () => {
     },
     {
       html: '<p><span style="white-space: pre-wrap;">Hello </span><s><i><b><strong style="white-space: pre-wrap;">world</strong></b></i></s><span style="white-space: pre-wrap;">!</span></p>',
-      md: 'Hello ~~***world***~~!',
+      md: 'Hello ***~~world~~***!',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">Hello </strong></b><s><b><strong style="white-space: pre-wrap;">world</strong></b></s><span style="white-space: pre-wrap;">!</span></p>',
+      md: '**Hello ~~world~~**!',
+    },
+    {
+      html: '<p><s><b><strong style="white-space: pre-wrap;">Hello </strong></b></s><s><i><b><strong style="white-space: pre-wrap;">world</strong></b></i></s><s><span style="white-space: pre-wrap;">!</span></s></p>',
+      md: '**~~Hello *world*~~**~~!~~',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">Hello </em></i><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',

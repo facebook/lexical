@@ -289,31 +289,20 @@ export function $patchStyleText(
       ) => string)
   >,
 ): void {
-  $forEachSelectedTextNode((textNode) => {
-    $patchStyle(textNode, patch);
-  });
+  if (selection.isCollapsed() && $isRangeSelection(selection)) {
+    $patchStyle(selection, patch);
+  } else {
+    $forEachSelectedTextNode((textNode) => {
+      $patchStyle(textNode, patch);
+    });
+  }
 }
 
-/**
- * @param fn - The function to apply to each selected TextNode.
- * @param includeIfCollapsed - Whether to include the TextNode if the selection is collapsed. Defaults to false.
- */
 export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
-  includeIfCollapsed = false,
 ): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
-    return;
-  }
-  if (selection.isCollapsed()) {
-    if (!includeIfCollapsed) {
-      return;
-    }
-    const node = selection.anchor.getNode();
-    if ($isTextNode(node)) {
-      fn(node);
-    }
     return;
   }
   const selectedNodes = selection.getNodes();

@@ -18,6 +18,7 @@ import {
   $getNodeByKey,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  isDOMNode,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
@@ -86,7 +87,11 @@ export default function ExcalidrawComponent({
             return true;
           }
 
-          if (buttonElem !== null && buttonElem.contains(eventTarget as Node)) {
+          if (
+            buttonElem !== null &&
+            isDOMNode(eventTarget) &&
+            buttonElem.contains(eventTarget)
+          ) {
             if (!event.shiftKey) {
               clearSelection();
             }

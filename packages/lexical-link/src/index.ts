@@ -113,11 +113,11 @@ export class LinkNode extends ElementNode {
   }
 
   updateDOM(
-    prevNode: LinkNode,
+    prevNode: this,
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
-    if (anchor instanceof HTMLAnchorElement) {
+    if (isHTMLAnchorElement(anchor)) {
       const url = this.__url;
       const target = this.__target;
       const rel = this.__rel;
@@ -393,7 +393,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   updateDOM(
-    prevNode: AutoLinkNode,
+    prevNode: this,
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {

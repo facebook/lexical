@@ -41,7 +41,7 @@ const initialConfig = {
 
 ### `LexicalPlainTextPlugin`
 
-React wrapper for `@lexical/plain-text` that adds major features for plain text editing, including typing, deletion and copy/pasting
+React wrapper for `@lexical/plain-text` that adds major features for plain text editing, including typing, deletion and copy/pasting.
 
 ```jsx
 <PlainTextPlugin
@@ -53,7 +53,7 @@ React wrapper for `@lexical/plain-text` that adds major features for plain text 
 
 ### `LexicalRichTextPlugin`
 
-React wrapper for `@lexical/rich-text` that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting
+React wrapper for `@lexical/rich-text` that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting.
 
 ```jsx
 <RichTextPlugin
@@ -65,7 +65,7 @@ React wrapper for `@lexical/rich-text` that adds major features for rich text ed
 
 ### `LexicalOnChangePlugin`
 
-Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHistoryMergeTagChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call
+Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHistoryMergeTagChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call.
 
 ```jsx
 <OnChangePlugin onChange={onChange} />
@@ -73,7 +73,7 @@ Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHis
 
 ### `LexicalHistoryPlugin`
 
-React wrapper for `@lexical/history` that adds support for history stack management and `undo` / `redo` commands
+React wrapper for `@lexical/history` that adds support for history stack management and `undo` / `redo` commands.
 
 ```jsx
 <HistoryPlugin />
@@ -81,7 +81,7 @@ React wrapper for `@lexical/history` that adds support for history stack managem
 
 ### `LexicalLinkPlugin`
 
-React wrapper for `@lexical/link` that adds support for links, including `$toggleLink` command support that toggles link for selected text
+React wrapper for `@lexical/link` that adds support for links, including `$toggleLink` command support that toggles link for selected text.
 
 ```jsx
 <LinkPlugin />
@@ -107,7 +107,7 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 
 [![See API Documentation](/img/see-api-documentation.svg)](/docs/api/modules/lexical_react_LexicalTablePlugin)
 
-React wrapper for `@lexical/table` that adds support for tables
+React wrapper for `@lexical/table` that adds support for tables.
 
 ```jsx
 <TablePlugin />
@@ -153,7 +153,7 @@ const MATCHERS = [
 
 ### `LexicalClearEditorPlugin`
 
-Adds `clearEditor` command support to clear editor's content
+Adds `clearEditor` command support to clear editor's content.
 
 ```jsx
 <ClearEditorPlugin />
@@ -161,7 +161,7 @@ Adds `clearEditor` command support to clear editor's content
 
 ### `LexicalMarkdownShortcutPlugin`
 
-Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)
+Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough).
 
 ```jsx
 <MarkdownShortcutPlugin />

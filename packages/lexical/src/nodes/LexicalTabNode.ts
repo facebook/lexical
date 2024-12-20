@@ -11,8 +11,9 @@ import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {EditorConfig} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement} from '../LexicalUtils';
+import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
   SerializedTextNode,
   TextDetailType,
@@ -45,6 +46,17 @@ export class TabNode extends TextNode {
 
   static importDOM(): DOMConversionMap | null {
     return null;
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    const classNames = getCachedClassNameArray(config.theme, 'tab');
+
+    if (classNames !== undefined) {
+      const domClassList = dom.classList;
+      domClassList.add(...classNames);
+    }
+    return dom;
   }
 
   static importJSON(serializedTabNode: SerializedTabNode): TabNode {

@@ -12,6 +12,7 @@ import {calculateZoomLevel} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
+  isDOMNode,
   LexicalNode,
 } from 'lexical';
 import {
@@ -107,7 +108,8 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
         resolution !== null &&
         menuRef.current != null &&
         event.target != null &&
-        !menuRef.current.contains(event.target as Node)
+        isDOMNode(event.target) &&
+        !menuRef.current.contains(event.target)
       ) {
         closeNodeMenu();
       }

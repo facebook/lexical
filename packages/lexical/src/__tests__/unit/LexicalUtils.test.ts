@@ -244,6 +244,36 @@ describe('LexicalUtils tests', () => {
     });
 
     describe('$onUpdate', () => {
+      test('deferred even when there are no dirty nodes', () => {
+        const {editor} = testEnv;
+        const runs: string[] = [];
+
+        editor.update(
+          () => {
+            $onUpdate(() => {
+              runs.push('second');
+            });
+          },
+          {
+            onUpdate: () => {
+              runs.push('first');
+            },
+          },
+        );
+        expect(runs).toEqual([]);
+        editor.update(() => {
+          $onUpdate(() => {
+            runs.push('third');
+          });
+        });
+        expect(runs).toEqual([]);
+
+        // Flush pending updates
+        editor.read(() => {});
+
+        expect(runs).toEqual(['first', 'second', 'third']);
+      });
+
       test('added fn runs after update, original onUpdate, and prior calls to $onUpdate', () => {
         const {editor} = testEnv;
         const runs: string[] = [];

@@ -107,11 +107,7 @@ export class CodeNode extends ElementNode {
     }
     return element;
   }
-  updateDOM(
-    prevNode: CodeNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const language = this.__language;
     const prevLanguage = prevNode.__language;
 

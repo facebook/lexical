@@ -558,7 +558,7 @@ export function $commitPendingUpdates(
 
       return;
     } finally {
-      observer.observe(rootElement as Node, observerOptions);
+      observer.observe(rootElement, observerOptions);
       editor._updating = previouslyUpdating;
       activeEditorState = previousActiveEditorState;
       isReadOnlyMode = previousReadOnlyMode;
@@ -607,7 +607,9 @@ export function $commitPendingUpdates(
     editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
-    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
+    (needsUpdate || pendingSelection === null || pendingSelection.dirty) &&
+    rootElement !== null &&
+    !tags.has('skip-dom-selection')
   ) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
@@ -618,11 +620,7 @@ export function $commitPendingUpdates(
       if (needsUpdate || pendingSelection === null || pendingSelection.dirty) {
         const blockCursorElement = editor._blockCursorElement;
         if (blockCursorElement !== null) {
-          removeDOMBlockCursorElement(
-            blockCursorElement,
-            editor,
-            rootElement as HTMLElement,
-          );
+          removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
         }
         updateDOMSelection(
           currentSelection,
@@ -630,17 +628,13 @@ export function $commitPendingUpdates(
           editor,
           domSelection,
           tags,
-          rootElement as HTMLElement,
+          rootElement,
           nodeCount,
         );
       }
-      updateDOMBlockCursorElement(
-        editor,
-        rootElement as HTMLElement,
-        pendingSelection,
-      );
+      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
       if (observer !== null) {
-        observer.observe(rootElement as Node, observerOptions);
+        observer.observe(rootElement, observerOptions);
       }
     } finally {
       activeEditor = previousActiveEditor;
@@ -1005,6 +999,7 @@ function $beginUpdate(
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
+    editor._deferred.length > 0 ||
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {

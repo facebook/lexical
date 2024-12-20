@@ -111,11 +111,7 @@ export class ListNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: ListNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__tag !== this.__tag) {
       return true;
     }
@@ -156,7 +152,7 @@ export class ListNode extends ElementNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.__start !== 1) {
         element.setAttribute('start', String(this.__start));
       }

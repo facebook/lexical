@@ -29,6 +29,7 @@ export type {
   SerializedEditor,
   Spread,
   Transform,
+  UpdateListener,
 } from './LexicalEditor';
 export type {
   EditorState,
@@ -185,6 +186,7 @@ export {
   getNearestEditorFromDOMNode,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMNode,
   isDOMTextNode,
   isDOMUnmanaged,
   isHTMLAnchorElement,

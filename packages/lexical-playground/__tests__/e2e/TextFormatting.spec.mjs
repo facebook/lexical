@@ -13,8 +13,11 @@ import {
   moveToLineEnd,
   selectCharacters,
   toggleBold,
+  toggleCapitalize,
   toggleItalic,
+  toggleLowercase,
   toggleUnderline,
+  toggleUppercase,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -425,6 +428,145 @@ test.describe.parallel('TextFormatting', () => {
       anchorPath: [0, 1, 0],
       focusOffset: 0,
       focusPath: [0, 1, 0],
+    });
+  });
+
+  const capitalizationFormats = [
+    {
+      applyCapitalization: toggleLowercase,
+      className: 'PlaygroundEditorTheme__textLowercase',
+      format: 'lowercase',
+    },
+    {
+      applyCapitalization: toggleUppercase,
+      className: 'PlaygroundEditorTheme__textUppercase',
+      format: 'uppercase',
+    },
+    {
+      applyCapitalization: toggleCapitalize,
+      className: 'PlaygroundEditorTheme__textCapitalize',
+      format: 'capitalize',
+    },
+  ];
+
+  capitalizationFormats.forEach(({className, format, applyCapitalization}) => {
+    test(`Can select text and change it to ${format}`, async ({
+      page,
+      isPlainText,
+    }) => {
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await page.keyboard.type('Hello world!');
+      await moveLeft(page);
+      await selectCharacters(page, 'left', 5);
+
+      await assertSelection(page, {
+        anchorOffset: 11,
+        anchorPath: [0, 0, 0],
+        focusOffset: 6,
+        focusPath: [0, 0, 0],
+      });
+
+      await applyCapitalization(page);
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+            <span class="${className}" data-lexical-text="true">world</span>
+            <span data-lexical-text="true">!</span>
+          </p>
+        `,
+      );
+
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 1, 0],
+        focusOffset: 0,
+        focusPath: [0, 1, 0],
+      });
+    });
+  });
+
+  const capitalizationResettingTestCases = [
+    {
+      expectedFinalHTML: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span class="$formatClassName" data-lexical-text="true">Hello</span>
+          <span data-lexical-text="true">world!</span>
+        </p>
+      `,
+      key: 'Space',
+    },
+    {
+      expectedFinalHTML: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span class="$formatClassName" data-lexical-text="true">Hello</span>
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
+          <span data-lexical-text="true">world!</span>
+        </p>
+      `,
+      key: 'Tab',
+    },
+    {
+      expectedFinalHTML: html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span class="$formatClassName" data-lexical-text="true">Hello</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">world!</span>
+        </p>
+      `,
+      key: 'Enter',
+    },
+  ];
+
+  capitalizationFormats.forEach(({format, className, applyCapitalization}) => {
+    capitalizationResettingTestCases.forEach(({key, expectedFinalHTML}) => {
+      test(`Pressing ${key} resets ${format} format`, async ({
+        page,
+        isPlainText,
+      }) => {
+        test.skip(isPlainText);
+
+        await focusEditor(page);
+
+        await applyCapitalization(page);
+        await page.keyboard.type('Hello');
+
+        await assertHTML(
+          page,
+          html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span class="${className}" data-lexical-text="true">Hello</span>
+            </p>
+          `,
+        );
+
+        // Pressing the key should reset the format
+        await page.keyboard.press(key);
+        await page.keyboard.type(' world!');
+
+        await assertHTML(
+          page,
+          expectedFinalHTML.replace('$formatClassName', className),
+        );
+      });
     });
   });
 

@@ -336,6 +336,10 @@ const config = {
           {
             items: [
               {
+                href: 'https://discord.gg/KmG4wQnnD9',
+                label: 'Discord',
+              },
+              {
                 href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
                 label: 'Stack Overflow',
               },

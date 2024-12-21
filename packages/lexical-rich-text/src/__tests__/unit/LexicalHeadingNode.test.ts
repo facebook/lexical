@@ -74,12 +74,25 @@ describe('LexicalHeadingNode tests', () => {
     test('HeadingNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const headingNode = new HeadingNode('h1');
+        const headingNode = $createHeadingNode('h1');
         const domElement = headingNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<h1 class="my-h1-class"></h1>');
-        const newHeadingNode = new HeadingNode('h2');
-        const result = newHeadingNode.updateDOM(headingNode, domElement);
+        const newHeadingNode = $createHeadingNode('h1');
+        const result = newHeadingNode.updateDOM(
+          headingNode,
+          domElement,
+          editor._config,
+        );
         expect(result).toBe(false);
+        expect(domElement.outerHTML).toBe('<h1 class="my-h1-class"></h1>');
+        // When the HTML tag changes we must return true and not update the DOM, as createDOM will be called
+        const newTag = $createHeadingNode('h2');
+        const newTagResult = newTag.updateDOM(
+          headingNode,
+          domElement,
+          editor._config,
+        );
+        expect(newTagResult).toBe(true);
         expect(domElement.outerHTML).toBe('<h1 class="my-h1-class"></h1>');
       });
     });

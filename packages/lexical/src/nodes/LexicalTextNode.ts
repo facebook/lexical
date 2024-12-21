@@ -29,8 +29,6 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
-  DOM_ELEMENT_TYPE,
-  DOM_TEXT_TYPE,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -62,6 +60,7 @@ import {
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
+  isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
   toggleTextFormatType,
@@ -308,13 +307,14 @@ export class TextNode extends LexicalNode {
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
+    this.__text = prevNode.__text;
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
     this.__mode = prevNode.__mode;
     this.__detail = prevNode.__detail;
   }
 
-  constructor(text: string, key?: NodeKey) {
+  constructor(text: string = '', key?: NodeKey) {
     super(key);
     this.__text = text;
     this.__format = 0;
@@ -606,12 +606,17 @@ export class TextNode extends LexicalNode {
   }
 
   static importJSON(serializedNode: SerializedTextNode): TextNode {
-    const node = $createTextNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    return $createTextNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<SerializedTextNode, 'type' | 'version'>,
+  ): this {
+    return this.setTextContent(serializedNode.text)
+      .setFormat(serializedNode.format)
+      .setDetail(serializedNode.detail)
+      .setMode(serializedNode.mode)
+      .setStyle(serializedNode.style);
   }
 
   // This improves Lexical's basic text output in copy+paste plus
@@ -1136,13 +1141,13 @@ function convertBringAttentionToElement(
 const preParentCache = new WeakMap<Node, null | Node>();
 
 function isNodePre(node: Node): boolean {
-  return (
-    node.nodeName === 'PRE' ||
-    (node.nodeType === DOM_ELEMENT_TYPE &&
-      (node as HTMLElement).style !== undefined &&
-      (node as HTMLElement).style.whiteSpace !== undefined &&
-      (node as HTMLElement).style.whiteSpace.startsWith('pre'))
-  );
+  if (!isHTMLElement(node)) {
+    return false;
+  } else if (node.nodeName === 'PRE') {
+    return true;
+  }
+  const whiteSpace = node.style.whiteSpace;
+  return typeof whiteSpace === 'string' && whiteSpace.startsWith('pre');
 }
 
 export function findParentPreDOMNode(node: Node) {
@@ -1258,8 +1263,8 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
       node = parentElement;
     }
     node = sibling;
-    if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = (node as HTMLElement).style.display;
+    if (isHTMLElement(node)) {
+      const display = node.style.display;
       if (
         (display === '' && !isInlineDomNode(node)) ||
         (display !== '' && !display.startsWith('inline'))
@@ -1271,8 +1276,8 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
     while ((descendant = forward ? node.firstChild : node.lastChild) !== null) {
       node = descendant;
     }
-    if (node.nodeType === DOM_TEXT_TYPE) {
-      return node as Text;
+    if (isDOMTextNode(node)) {
+      return node;
     } else if (node.nodeName === 'BR') {
       return null;
     }

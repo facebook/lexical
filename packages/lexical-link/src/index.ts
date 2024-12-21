@@ -87,7 +87,11 @@ export class LinkNode extends ElementNode {
     );
   }
 
-  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
+  constructor(
+    url: string = '',
+    attributes: LinkAttributes = {},
+    key?: NodeKey,
+  ) {
     super(key);
     const {target = null, rel = null, title = null} = attributes;
     this.__url = url;
@@ -162,18 +166,19 @@ export class LinkNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
-  ): LinkNode {
-    const node = $createLinkNode(serializedNode.url, {
-      rel: serializedNode.rel,
-      target: serializedNode.target,
-      title: serializedNode.title,
-    });
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
+    return $createLinkNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<SerializedLinkNode, 'type' | 'children' | 'version'>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setURL(serializedNode.url)
+      .setRel(serializedNode.rel || null)
+      .setTarget(serializedNode.target || null)
+      .setTitle(serializedNode.title || null);
   }
 
   sanitizeUrl(url: string): string {
@@ -205,36 +210,40 @@ export class LinkNode extends ElementNode {
     return this.getLatest().__url;
   }
 
-  setURL(url: string): void {
+  setURL(url: string): this {
     const writable = this.getWritable();
     writable.__url = url;
+    return writable;
   }
 
   getTarget(): null | string {
     return this.getLatest().__target;
   }
 
-  setTarget(target: null | string): void {
+  setTarget(target: null | string): this {
     const writable = this.getWritable();
     writable.__target = target;
+    return writable;
   }
 
   getRel(): null | string {
     return this.getLatest().__rel;
   }
 
-  setRel(rel: null | string): void {
+  setRel(rel: null | string): this {
     const writable = this.getWritable();
     writable.__rel = rel;
+    return writable;
   }
 
   getTitle(): null | string {
     return this.getLatest().__title;
   }
 
-  setTitle(title: null | string): void {
+  setTitle(title: null | string): this {
     const writable = this.getWritable();
     writable.__title = title;
+    return writable;
   }
 
   insertNewAfter(
@@ -318,7 +327,7 @@ function $convertAnchorElement(domNode: Node): DOMConversionOutput {
  * @returns The LinkNode.
  */
 export function $createLinkNode(
-  url: string,
+  url: string = '',
   attributes?: LinkAttributes,
 ): LinkNode {
   return $applyNodeReplacement(new LinkNode(url, attributes));
@@ -349,7 +358,11 @@ export class AutoLinkNode extends LinkNode {
   /** Indicates whether the autolink was ever unlinked. **/
   __isUnlinked: boolean;
 
-  constructor(url: string, attributes: AutoLinkAttributes = {}, key?: NodeKey) {
+  constructor(
+    url: string = '',
+    attributes: AutoLinkAttributes = {},
+    key?: NodeKey,
+  ) {
     super(url, attributes, key);
     this.__isUnlinked =
       attributes.isUnlinked !== undefined && attributes.isUnlinked !== null
@@ -378,7 +391,7 @@ export class AutoLinkNode extends LinkNode {
     return this.__isUnlinked;
   }
 
-  setIsUnlinked(value: boolean) {
+  setIsUnlinked(value: boolean): this {
     const self = this.getWritable();
     self.__isUnlinked = value;
     return self;
@@ -404,16 +417,18 @@ export class AutoLinkNode extends LinkNode {
   }
 
   static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    const node = $createAutoLinkNode(serializedNode.url, {
-      isUnlinked: serializedNode.isUnlinked,
-      rel: serializedNode.rel,
-      target: serializedNode.target,
-      title: serializedNode.title,
-    });
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createAutoLinkNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<
+      SerializedAutoLinkNode,
+      'type' | 'children' | 'version'
+    >,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setIsUnlinked(serializedNode.isUnlinked || false);
   }
 
   static importDOM(): null {
@@ -460,7 +475,7 @@ export class AutoLinkNode extends LinkNode {
  * @returns The LinkNode.
  */
 export function $createAutoLinkNode(
-  url: string,
+  url: string = '',
   attributes?: AutoLinkAttributes,
 ): AutoLinkNode {
   return $applyNodeReplacement(new AutoLinkNode(url, attributes));

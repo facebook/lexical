@@ -53,7 +53,18 @@ export class TableRowNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
-    return $createTableRowNode(serializedNode.height);
+    return $createTableRowNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: Omit<
+      SerializedTableRowNode,
+      'type' | 'children' | 'version'
+    >,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHeight(serializedNode.height);
   }
 
   constructor(height?: number, key?: NodeKey) {
@@ -62,9 +73,10 @@ export class TableRowNode extends ElementNode {
   }
 
   exportJSON(): SerializedTableRowNode {
+    const height = this.getHeight();
     return {
       ...super.exportJSON(),
-      ...(this.getHeight() && {height: this.getHeight()}),
+      ...(height === undefined ? undefined : {height: this.getHeight()}),
       type: 'tablerow',
       version: 1,
     };
@@ -94,10 +106,10 @@ export class TableRowNode extends ElementNode {
     return true;
   }
 
-  setHeight(height: number): number | null | undefined {
+  setHeight(height?: number | undefined): this {
     const self = this.getWritable();
     self.__height = height;
-    return this.__height;
+    return self;
   }
 
   getHeight(): number | undefined {

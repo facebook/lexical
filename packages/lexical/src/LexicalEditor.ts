@@ -40,7 +40,7 @@ import {
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {DecoratorNode} from './nodes/LexicalDecoratorNode';
+import {$isDecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -498,7 +498,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
-          if (proto instanceof DecoratorNode) {
+          if ($isDecoratorNode(proto)) {
             // eslint-disable-next-line no-prototype-builtins
             if (!proto.hasOwnProperty('decorate')) {
               console.warn(

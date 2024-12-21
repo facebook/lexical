@@ -218,15 +218,23 @@ importJSON(jsonNode: SerializedLexicalNode): LexicalNode
 
 This method works in the opposite way to how `exportJSON` works. Lexical uses the `type` field on the JSON object to determine what Lexical node class it needs to map to, so keeping the `type` field consistent with the `getType()` of the LexicalNode is essential.
 
+If your node inherits from `TextNode` or `ElementNode` you should use the `updateFromJSON` method in your `importJSON`
+to simplify the implementation and allow for future extension by the base classes.
+
 Here's an example of `importJSON` for the `HeadingNode`:
 
-```js
+```ts
 static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-  const node = $createHeadingNode(serializedNode.tag);
-  node.setFormat(serializedNode.format);
-  node.setIndent(serializedNode.indent);
-  node.setDirection(serializedNode.direction);
-  return node;
+  return $createHeadingNode().updateFromJSON(serializedNode);
+}
+
+updateFromJSON(
+  serializedNode: Omit<
+    SerializedHeadingNode,
+    'type' | 'children' | 'version'
+  >,
+): this {
+  return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
 }
 ```
 
@@ -366,7 +374,7 @@ export class ExtendedTextNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedTextNode): TextNode {
-    return TextNode.importJSON(serializedNode);
+    return $createExtendedTextNode().updateFromJSON(serializedNode);
   }
 
   isSimpleText() {
@@ -382,7 +390,7 @@ export class ExtendedTextNode extends TextNode {
   }
 }
 
-export function $createExtendedTextNode(text: string): ExtendedTextNode {
+export function $createExtendedTextNode(text: string = ''): ExtendedTextNode {
   return $applyNodeReplacement(new ExtendedTextNode(text));
 }
 

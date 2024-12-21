@@ -18,4 +18,4 @@ declare export function TreeView(props: {
   viewClassName: string,
   editor: LexicalEditor,
   customPrintNode?: CustomPrintNodeFn,
-}): React$Node;
+}): React.Node;

@@ -47,4 +47,4 @@ declare export function CollaborationPlugin(arg0: {
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
-}): React$Node;
+}): React.Node;

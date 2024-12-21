@@ -15,8 +15,8 @@ import type {
 } from 'lexical';
 
 declare export function LexicalNestedComposer({
-  children: React$Node,
+  children: React.Node,
   initialEditor: LexicalEditor,
   initialTheme?: EditorThemeClasses,
   initialNodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
-}): React$Node;
+}): React.Node;

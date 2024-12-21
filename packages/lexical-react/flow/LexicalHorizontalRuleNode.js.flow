@@ -11,13 +11,13 @@ import type {LexicalNode, LexicalCommand} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 
-declare export class HorizontalRuleNode extends DecoratorNode<React$Node> {
+declare export class HorizontalRuleNode extends DecoratorNode<React.Node> {
   static getType(): string;
   static clone(node: HorizontalRuleNode): HorizontalRuleNode;
   createDOM(): HTMLElement;
   getTextContent(): '\n';
   updateDOM(): false;
-  decorate(): React$Node;
+  decorate(): React.Node;
 }
 
 declare export function $createHorizontalRuleNode(): HorizontalRuleNode;

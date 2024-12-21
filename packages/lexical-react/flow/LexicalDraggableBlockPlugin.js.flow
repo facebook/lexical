@@ -20,4 +20,4 @@ type Props = $ReadOnly<{
 	
 declare export function DraggableBlockPlugin_EXPERIMENTAL(
   props: Props,
-): React$MixedElement;
+): React.MixedElement;

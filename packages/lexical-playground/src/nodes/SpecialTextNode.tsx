@@ -57,13 +57,6 @@ export class SpecialTextNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'specialText',
-    };
-  }
-
   isTextEntity(): true {
     return true;
   }

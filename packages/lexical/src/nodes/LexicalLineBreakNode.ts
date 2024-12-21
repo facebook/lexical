@@ -66,13 +66,6 @@ export class LineBreakNode extends LexicalNode {
   ): LineBreakNode {
     return $createLineBreakNode();
   }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'linebreak',
-      version: 1,
-    };
-  }
 }
 
 function $convertLineBreakElement(node: Node): DOMConversionOutput {

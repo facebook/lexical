@@ -45,13 +45,6 @@ export class HashtagNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'hashtag',
-    };
-  }
-
   canInsertTextBefore(): boolean {
     return false;
   }

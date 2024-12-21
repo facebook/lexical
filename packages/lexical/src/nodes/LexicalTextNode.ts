@@ -652,8 +652,7 @@ export class TextNode extends LexicalNode {
       mode: this.getMode(),
       style: this.getStyle(),
       text: this.getTextContent(),
-      type: 'text',
-      version: 1,
+      ...super.exportJSON(),
     };
   }
 

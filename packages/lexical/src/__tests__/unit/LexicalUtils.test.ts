@@ -372,9 +372,6 @@ describe('$applyNodeReplacement', () => {
     static clone(node: ExtendedTextNode): ExtendedTextNode {
       return new ExtendedTextNode(node.__text, node.getKey());
     }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
-    }
     initWithTextNode(node: TextNode): this {
       this.__text = node.__text;
       TextNode.prototype.afterCloneFrom.call(this, node);
@@ -406,9 +403,6 @@ describe('$applyNodeReplacement', () => {
       serializedNode: SerializedTextNode,
     ): ExtendedExtendedTextNode {
       return $createExtendedExtendedTextNode().initWithJSON(serializedNode);
-    }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
     }
   }
   function $createExtendedTextNode(text: string = '') {

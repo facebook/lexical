@@ -183,7 +183,6 @@ export class TableCellNode extends ElementNode {
       colSpan: this.__colSpan,
       headerState: this.__headerState,
       rowSpan: this.__rowSpan,
-      type: 'tablecell',
       width: this.getWidth(),
     };
   }

@@ -60,7 +60,6 @@ export class EmojiNode extends TextNode {
   exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),
-      type: 'emoji',
       unifiedID: this.__unifiedID,
     };
   }

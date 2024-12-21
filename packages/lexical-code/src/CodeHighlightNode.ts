@@ -175,8 +175,6 @@ export class CodeHighlightNode extends TextNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
-      type: 'code-highlight',
-      version: 1,
     };
   }
 

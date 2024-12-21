@@ -51,10 +51,6 @@ class TestNode extends LexicalNode {
   static importJSON() {
     return new TestNode();
   }
-
-  exportJSON() {
-    return {type: 'test', version: 1};
-  }
 }
 
 class InlineDecoratorNode extends DecoratorNode<string> {
@@ -68,10 +64,6 @@ class InlineDecoratorNode extends DecoratorNode<string> {
 
   static importJSON() {
     return new InlineDecoratorNode();
-  }
-
-  exportJSON() {
-    return {type: 'inline-decorator', version: 1};
   }
 
   createDOM(): HTMLElement {
@@ -164,9 +156,6 @@ describe('LexicalNode tests', () => {
             return new VersionedTextNode(node.__text, node.__key);
           }
           static importJSON(node: SerializedTextNode): VersionedTextNode {
-            throw new Error('Not implemented');
-          }
-          exportJSON(): SerializedTextNode {
             throw new Error('Not implemented');
           }
           afterCloneFrom(node: this): void {

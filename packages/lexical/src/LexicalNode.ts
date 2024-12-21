@@ -869,7 +869,10 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
-    invariant(false, 'exportJSON: base method not extended');
+    return {
+      type: this.__type,
+      version: 1,
+    };
   }
 
   /**

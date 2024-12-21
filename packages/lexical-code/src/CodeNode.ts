@@ -223,8 +223,6 @@ export class CodeNode extends ElementNode {
     return {
       ...super.exportJSON(),
       language: this.getLanguage(),
-      type: 'code',
-      version: 1,
     };
   }
 

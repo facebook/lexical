@@ -124,13 +124,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: this.getType(),
-      version: 1,
-    };
-  }
-
   createDOM(): HTMLElement {
     const el = document.createElement('figure');
     el.style.pageBreakAfter = 'always';

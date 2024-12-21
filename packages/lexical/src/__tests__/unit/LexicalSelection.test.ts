@@ -807,9 +807,6 @@ describe('Regression tests for #6701', () => {
       isInline() {
         return true;
       }
-      exportJSON() {
-        return {...super.exportJSON(), type: this.getType()};
-      }
       createDOM() {
         return document.createElement('span');
       }

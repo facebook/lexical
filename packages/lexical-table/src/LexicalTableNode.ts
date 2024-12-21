@@ -168,8 +168,6 @@ export class TableNode extends ElementNode {
       ...super.exportJSON(),
       colWidths: this.getColWidths(),
       rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
-      type: 'table',
-      version: 1,
     };
   }
 

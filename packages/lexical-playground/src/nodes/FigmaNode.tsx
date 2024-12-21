@@ -82,8 +82,6 @@ export class FigmaNode extends DecoratorBlockNode {
     return {
       ...super.exportJSON(),
       documentID: this.__id,
-      type: 'figma',
-      version: 1,
     };
   }
 

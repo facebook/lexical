@@ -182,13 +182,12 @@ export class TestElementNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedTestElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
-  }
+  // exportJSON(): SerializedTestElementNode {
+  //   return {
+  //     ...super.exportJSON(),
+  //     type: 'test_block',
+  //   };
+  // }
 
   createDOM() {
     return document.createElement('div');
@@ -222,7 +221,6 @@ export class TestTextNode extends TextNode {
     return {
       ...super.exportJSON(),
       type: 'test_text',
-      version: 1,
     };
   }
 }
@@ -252,7 +250,6 @@ export class TestInlineElementNode extends ElementNode {
     return {
       ...super.exportJSON(),
       type: 'test_inline_block',
-      version: 1,
     };
   }
 
@@ -298,7 +295,6 @@ export class TestShadowRootNode extends ElementNode {
     return {
       ...super.exportJSON(),
       type: 'test_block',
-      version: 1,
     };
   }
 
@@ -345,7 +341,6 @@ export class TestSegmentedNode extends TextNode {
     return {
       ...super.exportJSON(),
       type: 'test_segmented',
-      version: 1,
     };
   }
 }
@@ -379,7 +374,6 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
     return {
       ...super.exportJSON(),
       type: 'test_exclude_from_copy_block',
-      version: 1,
     };
   }
 
@@ -421,7 +415,6 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
     return {
       ...super.exportJSON(),
       type: 'test_decorator',
-      version: 1,
     };
   }
 

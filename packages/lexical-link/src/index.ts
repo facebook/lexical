@@ -195,9 +195,7 @@ export class LinkNode extends ElementNode {
       rel: this.getRel(),
       target: this.getTarget(),
       title: this.getTitle(),
-      type: 'link',
       url: this.getURL(),
-      version: 1,
     };
   }
 
@@ -425,8 +423,6 @@ export class AutoLinkNode extends LinkNode {
     return {
       ...super.exportJSON(),
       isUnlinked: this.__isUnlinked,
-      type: 'autolink',
-      version: 1,
     };
   }
 

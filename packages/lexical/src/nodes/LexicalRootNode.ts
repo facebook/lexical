@@ -107,12 +107,11 @@ export class RootNode extends ElementNode {
 
   exportJSON(): SerializedRootNode {
     return {
+      ...super.exportJSON(),
       children: [],
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-      type: 'root',
-      version: 1,
     };
   }
 

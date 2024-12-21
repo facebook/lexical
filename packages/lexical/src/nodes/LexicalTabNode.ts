@@ -66,14 +66,6 @@ export class TabNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedTabNode {
-    return {
-      ...super.exportJSON(),
-      type: 'tab',
-      version: 1,
-    };
-  }
-
   setTextContent(_text: string): this {
     invariant(false, 'TabNode does not support setTextContent');
   }

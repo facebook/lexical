@@ -792,8 +792,7 @@ export class ElementNode extends LexicalNode {
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-      type: 'element',
-      version: 1,
+      ...super.exportJSON(),
     };
   }
   // These are intended to be extends for specific element heuristics.

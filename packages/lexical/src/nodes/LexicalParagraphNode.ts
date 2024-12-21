@@ -173,8 +173,6 @@ export class ParagraphNode extends ElementNode {
       ...super.exportJSON(),
       textFormat: this.getTextFormat(),
       textStyle: this.getTextStyle(),
-      type: 'paragraph',
-      version: 1,
     };
   }
 

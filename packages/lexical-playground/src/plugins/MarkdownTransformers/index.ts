@@ -117,14 +117,17 @@ export const EQUATION: TextMatchTransformer = {
     if (!$isEquationNode(node)) {
       return null;
     }
-
-    return `$${node.getEquation()}$`;
+    const equation = node.getEquation();
+    const isInline = node.isInline();
+    return isInline ? `$${equation}$` : `$$${equation}$$`;
   },
-  importRegExp: /\$([^$]+?)\$/,
-  regExp: /\$([^$]+?)\$$/,
+  importRegExp: /\$([^$]+?)\$|\$\$([^$]+?)\$\$/, // regex issue
+  regExp: /\$([^$]+?)\$$|\$\$([^$]+?)\$\$$/, // regex issue
   replace: (textNode, match) => {
-    const [, equation] = match;
-    const equationNode = $createEquationNode(equation, true);
+    const [, inlineEquation, blockEquation] = match;
+    const equation = inlineEquation || blockEquation;
+    const isInline = !!inlineEquation;
+    const equationNode = $createEquationNode(equation, isInline);
     textNode.replace(equationNode);
   },
   trigger: '$',

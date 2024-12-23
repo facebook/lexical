@@ -163,14 +163,13 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedImageNode {
     return {
+      ...super.exportJSON(),
       altText: this.getAltText(),
       caption: this.__caption.toJSON(),
       height: this.__height === 'inherit' ? 0 : this.__height,
       maxWidth: this.__maxWidth,
       showCaption: this.__showCaption,
       src: this.getSrc(),
-      type: 'image',
-      version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
     };
   }

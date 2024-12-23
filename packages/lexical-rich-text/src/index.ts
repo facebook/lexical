@@ -174,13 +174,6 @@ export class QuoteNode extends ElementNode {
     return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'quote',
-    };
-  }
-
   // Mutation
 
   insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
@@ -357,8 +350,6 @@ export class HeadingNode extends ElementNode {
     return {
       ...super.exportJSON(),
       tag: this.getTag(),
-      type: 'heading',
-      version: 1,
     };
   }
 

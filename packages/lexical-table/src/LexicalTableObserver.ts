@@ -18,7 +18,6 @@ import {
   $createTextNode,
   $getEditor,
   $getNodeByKey,
-  $getRoot,
   $getSelection,
   $isElementNode,
   $isParagraphNode,
@@ -470,8 +469,6 @@ export class TableObserver {
       tableNode.selectPrevious();
       // Delete entire table
       tableNode.remove();
-      const rootNode = $getRoot();
-      rootNode.selectStart();
       return;
     }
 

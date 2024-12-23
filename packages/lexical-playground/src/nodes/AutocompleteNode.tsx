@@ -57,9 +57,7 @@ export class AutocompleteNode extends TextNode {
   exportJSON(): SerializedAutocompleteNode {
     return {
       ...super.exportJSON(),
-      type: 'autocomplete',
       uuid: this.__uuid,
-      version: 1,
     };
   }
 

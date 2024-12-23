@@ -113,8 +113,6 @@ export class ParagraphNode extends ElementNode {
       // These are included explicitly for backwards compatibility
       textFormat: this.getTextFormat(),
       textStyle: this.getTextStyle(),
-      type: 'paragraph',
-      version: 1,
     };
   }
 

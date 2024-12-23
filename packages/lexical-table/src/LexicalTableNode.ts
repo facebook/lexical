@@ -174,9 +174,7 @@ export class TableNode extends ElementNode {
     return {
       ...super.exportJSON(),
       colWidths: this.getColWidths(),
-      rowStriping: this.__rowStriping || undefined,
-      type: 'table',
-      version: 1,
+      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
     };
   }
 

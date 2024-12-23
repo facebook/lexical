@@ -183,8 +183,6 @@ export class ListNode extends ElementNode {
       listType: this.getListType(),
       start: this.getStart(),
       tag: this.getTag(),
-      type: 'list',
-      version: 1,
     };
   }
 

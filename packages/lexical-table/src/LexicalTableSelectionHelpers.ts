@@ -456,6 +456,10 @@ export function applyTableHandlers(
       return false;
     }
 
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
+
     if ($isTableSelection(selection)) {
       if (event) {
         event.preventDefault();

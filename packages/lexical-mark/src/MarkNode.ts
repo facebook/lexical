@@ -62,8 +62,6 @@ export class MarkNode extends ElementNode {
     return {
       ...super.exportJSON(),
       ids: this.getIDs(),
-      type: 'mark',
-      version: 1,
     };
   }
 

@@ -57,14 +57,6 @@ export class TabNode extends TextNode {
     return $createTabNode().updateFromJSON(serializedTabNode);
   }
 
-  exportJSON(): SerializedTabNode {
-    return {
-      ...super.exportJSON(),
-      type: 'tab',
-      version: 1,
-    };
-  }
-
   setTextContent(text: string): this {
     invariant(
       text === '\t' || text === '',

@@ -36,13 +36,6 @@ export class OverflowNode extends ElementNode {
     return null;
   }
 
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'overflow',
-    };
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement('span');
     const className = config.theme.characterLimit;

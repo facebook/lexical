@@ -9,4 +9,4 @@
 
 declare export function CharacterLimitPlugin(props: {
   charset: 'UTF-8' | 'UTF-16',
-}): React$Node;
+}): React.Node;

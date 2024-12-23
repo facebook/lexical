@@ -106,14 +106,6 @@ export class CollapsibleContentNode extends ElementNode {
   isShadowRoot(): boolean {
     return true;
   }
-
-  exportJSON(): SerializedCollapsibleContentNode {
-    return {
-      ...super.exportJSON(),
-      type: 'collapsible-content',
-      version: 1,
-    };
-  }
 }
 
 export function $createCollapsibleContentNode(): CollapsibleContentNode {

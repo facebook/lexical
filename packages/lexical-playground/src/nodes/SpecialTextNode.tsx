@@ -43,13 +43,6 @@ export class SpecialTextNode extends TextNode {
     return $createSpecialTextNode().updateFromJSON(serializedNode);
   }
 
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'specialText',
-    };
-  }
-
   isTextEntity(): true {
     return true;
   }

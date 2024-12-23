@@ -150,9 +150,7 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
-      type: 'listitem',
       value: this.getValue(),
-      version: 1,
     };
   }
 

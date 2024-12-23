@@ -101,14 +101,6 @@ export class RootNode extends ElementNode {
     return $getRoot().updateFromJSON(serializedNode);
   }
 
-  exportJSON(): SerializedRootNode {
-    return {
-      ...super.exportJSON(),
-      type: 'root',
-      version: 1,
-    };
-  }
-
   collapseAtStart(): true {
     return true;
   }

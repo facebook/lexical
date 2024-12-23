@@ -170,7 +170,7 @@ const jsonString = JSON.stringify(editorState);
 
 #### `LexicalNode.exportJSON()`
 
-You can control how a `LexicalNode` is represented as JSON by adding an `exportJSON()` method. It's important to ensure your serialized JSON node has a `type` field and a `children` field if it's an `ElementNode`.
+You can control how a `LexicalNode` is represented as JSON by adding an `exportJSON()` method. It's important that you extend the serialization of the superclass by invoking `super`: e.g. `{ ...super.exportJSON(), /* your other properties */ }`.
 
 ```js
 export type SerializedLexicalNode = {
@@ -197,8 +197,6 @@ exportJSON(): SerializedHeadingNode {
   return {
     ...super.exportJSON(),
     tag: this.getTag(),
-    type: 'heading',
-    version: 1,
   };
 }
 ```
@@ -381,13 +379,7 @@ export class ExtendedTextNode extends TextNode {
     return this.__type === 'extended-text' && this.__mode === 0;
   }
 
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'extended-text',
-      version: 1,
-    }
-  }
+  // no need to add exportJSON here, since we are not adding any new properties
 }
 
 export function $createExtendedTextNode(text: string = ''): ExtendedTextNode {

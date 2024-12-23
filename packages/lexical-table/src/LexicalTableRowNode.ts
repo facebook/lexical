@@ -76,9 +76,7 @@ export class TableRowNode extends ElementNode {
     const height = this.getHeight();
     return {
       ...super.exportJSON(),
-      ...(height === undefined ? undefined : {height: this.getHeight()}),
-      type: 'tablerow',
-      version: 1,
+      ...(height === undefined ? undefined : {height}),
     };
   }
 

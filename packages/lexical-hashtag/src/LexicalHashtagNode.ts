@@ -31,13 +31,6 @@ export class HashtagNode extends TextNode {
     return $createHashtagNode().updateFromJSON(serializedNode);
   }
 
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'hashtag',
-    };
-  }
-
   canInsertTextBefore(): boolean {
     return false;
   }

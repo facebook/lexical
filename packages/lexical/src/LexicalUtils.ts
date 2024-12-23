@@ -72,7 +72,6 @@ import {
   internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
-  updateEditor,
 } from './LexicalUpdates';
 
 export const emptyFunction = () => {
@@ -115,9 +114,9 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement as HTMLElement;
+  const activeElement = document.activeElement;
 
-  if (activeElement === null) {
+  if (!isHTMLElement(activeElement)) {
     return false;
   }
   const nodeName = activeElement.nodeName;
@@ -144,7 +143,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      !isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
+      !isSelectionCapturedInDecoratorInput(anchorDOM) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
@@ -226,6 +225,15 @@ export function toggleTextFormatType(
     newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
   } else if (type === 'superscript') {
     newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
+  } else if (type === 'lowercase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.capitalize;
+  } else if (type === 'uppercase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.capitalize;
+  } else if (type === 'capitalize') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
   }
   return newFormat;
 }
@@ -498,22 +506,31 @@ export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read(() => $getRoot().getTextContent());
 }
 
-export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
-  // Mark all existing text nodes as dirty
-  updateEditor(
-    editor,
+export function markNodesWithTypesAsDirty(
+  editor: LexicalEditor,
+  types: string[],
+): void {
+  // We only need to mark nodes dirty if they were in the previous state.
+  // If they aren't, then they are by definition dirty already.
+  const cachedMap = getCachedTypeToNodeMap(editor.getEditorState());
+  const dirtyNodeMaps: NodeMap[] = [];
+  for (const type of types) {
+    const nodeMap = cachedMap.get(type);
+    if (nodeMap) {
+      // By construction these are non-empty
+      dirtyNodeMaps.push(nodeMap);
+    }
+  }
+  // Nothing to mark dirty, no update necessary
+  if (dirtyNodeMaps.length === 0) {
+    return;
+  }
+  editor.update(
     () => {
-      const editorState = getActiveEditorState();
-      if (editorState.isEmpty()) {
-        return;
-      }
-      if (type === 'root') {
-        $getRoot().markDirty();
-        return;
-      }
-      const nodeMap = editorState._nodeMap;
-      for (const [, node] of nodeMap) {
-        node.markDirty();
+      for (const nodeMap of dirtyNodeMaps) {
+        for (const node of nodeMap.values()) {
+          node.markDirty();
+        }
       }
     },
     editor._pendingEditorState === null
@@ -1282,7 +1299,7 @@ export function getElementByKeyOrThrow(
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return parentElement !== null && parentElement.nodeType === 11
+  return isDocumentFragment(parentElement)
     ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
     : parentElement;
 }
@@ -1710,28 +1727,37 @@ export function $findMatchingParent(
  * @param x - The element being tested
  * @returns Returns true if x is an HTML anchor tag, false otherwise
  */
-export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
+export function isHTMLAnchorElement(x: unknown): x is HTMLAnchorElement {
   return isHTMLElement(x) && x.tagName === 'A';
 }
 
 /**
- * @param x - The element being testing
+ * @param x - The element being tested
  * @returns Returns true if x is an HTML element, false otherwise.
  */
-export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
+export function isHTMLElement(x: unknown): x is HTMLElement {
+  return isDOMNode(x) && x.nodeType === 1;
+}
+
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is a DOM Node, false otherwise.
+ */
+export function isDOMNode(x: unknown): x is Node {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'nodeType' in x &&
+    typeof x.nodeType === 'number'
+  );
 }
 
 /**
  * @param x - The element being testing
  * @returns Returns true if x is a document fragment, false otherwise.
  */
-export function isDocumentFragment(
-  x: Node | EventTarget,
-): x is DocumentFragment {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 11;
+export function isDocumentFragment(x: unknown): x is DocumentFragment {
+  return isDOMNode(x) && x.nodeType === 11;
 }
 
 /**
@@ -1825,17 +1851,26 @@ export function getCachedTypeToNodeMap(
   );
   let typeToNodeMap = cachedNodeMaps.get(editorState);
   if (!typeToNodeMap) {
-    typeToNodeMap = new Map();
+    typeToNodeMap = computeTypeToNodeMap(editorState);
     cachedNodeMaps.set(editorState, typeToNodeMap);
-    for (const [nodeKey, node] of editorState._nodeMap) {
-      const nodeType = node.__type;
-      let nodeMap = typeToNodeMap.get(nodeType);
-      if (!nodeMap) {
-        nodeMap = new Map();
-        typeToNodeMap.set(nodeType, nodeMap);
-      }
-      nodeMap.set(nodeKey, node);
+  }
+  return typeToNodeMap;
+}
+
+/**
+ * @internal
+ * Compute a Map of node type to nodes for an EditorState
+ */
+function computeTypeToNodeMap(editorState: EditorState): TypeToNodeMap {
+  const typeToNodeMap = new Map();
+  for (const [nodeKey, node] of editorState._nodeMap) {
+    const nodeType = node.__type;
+    let nodeMap = typeToNodeMap.get(nodeType);
+    if (!nodeMap) {
+      nodeMap = new Map();
+      typeToNodeMap.set(nodeType, nodeMap);
     }
+    nodeMap.set(nodeKey, node);
   }
   return typeToNodeMap;
 }

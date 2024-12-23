@@ -37,11 +37,7 @@ export class SpecialTextNode extends TextNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__text.startsWith('[') && prevNode.__text.endsWith(']')) {
       const strippedText = this.__text.substring(1, this.__text.length - 1); // Strip brackets again
       dom.textContent = strippedText; // Update the text content
@@ -59,13 +55,6 @@ export class SpecialTextNode extends TextNode {
     node.setDetail(serializedNode.detail);
     node.setMode(serializedNode.mode);
     return node;
-  }
-
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'specialText',
-    };
   }
 
   isTextEntity(): true {

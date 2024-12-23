@@ -77,7 +77,7 @@ export class RootNode extends ElementNode {
 
   // View
 
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false {
+  updateDOM(prevNode: this, dom: HTMLElement): false {
     return false;
   }
 
@@ -103,17 +103,6 @@ export class RootNode extends ElementNode {
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
     return node;
-  }
-
-  exportJSON(): SerializedRootNode {
-    return {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      type: 'root',
-      version: 1,
-    };
   }
 
   collapseAtStart(): true {

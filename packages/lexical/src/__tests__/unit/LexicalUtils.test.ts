@@ -244,6 +244,36 @@ describe('LexicalUtils tests', () => {
     });
 
     describe('$onUpdate', () => {
+      test('deferred even when there are no dirty nodes', () => {
+        const {editor} = testEnv;
+        const runs: string[] = [];
+
+        editor.update(
+          () => {
+            $onUpdate(() => {
+              runs.push('second');
+            });
+          },
+          {
+            onUpdate: () => {
+              runs.push('first');
+            },
+          },
+        );
+        expect(runs).toEqual([]);
+        editor.update(() => {
+          $onUpdate(() => {
+            runs.push('third');
+          });
+        });
+        expect(runs).toEqual([]);
+
+        // Flush pending updates
+        editor.read(() => {});
+
+        expect(runs).toEqual(['first', 'second', 'third']);
+      });
+
       test('added fn runs after update, original onUpdate, and prior calls to $onUpdate', () => {
         const {editor} = testEnv;
         const runs: string[] = [];
@@ -342,9 +372,6 @@ describe('$applyNodeReplacement', () => {
     static clone(node: ExtendedTextNode): ExtendedTextNode {
       return new ExtendedTextNode(node.__text, node.getKey());
     }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
-    }
     initWithTextNode(node: TextNode): this {
       this.__text = node.__text;
       TextNode.prototype.afterCloneFrom.call(this, node);
@@ -376,9 +403,6 @@ describe('$applyNodeReplacement', () => {
       serializedNode: SerializedTextNode,
     ): ExtendedExtendedTextNode {
       return $createExtendedExtendedTextNode().initWithJSON(serializedNode);
-    }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
     }
   }
   function $createExtendedTextNode(text: string = '') {

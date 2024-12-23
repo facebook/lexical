@@ -136,11 +136,7 @@ export class CodeHighlightNode extends TextNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: CodeHighlightNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const update = super.updateDOM(prevNode, dom, config);
     const prevClassName = getHighlightThemeClass(
       config.theme,
@@ -179,8 +175,6 @@ export class CodeHighlightNode extends TextNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
-      type: 'code-highlight',
-      version: 1,
     };
   }
 

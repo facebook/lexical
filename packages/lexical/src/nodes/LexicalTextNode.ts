@@ -90,7 +90,10 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
 
 export type TextModeType = 'normal' | 'token' | 'segmented';
 
@@ -490,11 +493,7 @@ export class TextNode extends LexicalNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const nextText = this.__text;
     const prevFormat = prevNode.__format;
     const nextFormat = this.__format;
@@ -621,7 +620,7 @@ export class TextNode extends LexicalNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     let {element} = super.exportDOM(editor);
     invariant(
-      element !== null && isHTMLElement(element),
+      isHTMLElement(element),
       'Expected TextNode createDOM to always return a HTMLElement',
     );
     element.style.whiteSpace = 'pre-wrap';
@@ -653,8 +652,10 @@ export class TextNode extends LexicalNode {
       mode: this.getMode(),
       style: this.getStyle(),
       text: this.getTextContent(),
-      type: 'text',
-      version: 1,
+      // As an exception here we invoke super at the end for historical reasons.
+      // Namely, to preserve the order of the properties and not to break the tests
+      // that use the serialized string representation.
+      ...super.exportJSON(),
     };
   }
 

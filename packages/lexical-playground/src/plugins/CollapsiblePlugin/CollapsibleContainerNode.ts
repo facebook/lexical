@@ -79,10 +79,7 @@ export class CollapsibleContainerNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: CollapsibleContainerNode,
-    dom: HTMLDetailsElement,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLDetailsElement): boolean {
     const currentOpen = this.__open;
     if (prevNode.__open !== currentOpen) {
       // details is not well supported in Chrome #5582
@@ -136,8 +133,6 @@ export class CollapsibleContainerNode extends ElementNode {
     return {
       ...super.exportJSON(),
       open: this.__open,
-      type: 'collapsible-container',
-      version: 1,
     };
   }
 

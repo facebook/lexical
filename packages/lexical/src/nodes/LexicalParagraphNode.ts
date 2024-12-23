@@ -120,7 +120,11 @@ export class ParagraphNode extends ElementNode {
     }
     return dom;
   }
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+  updateDOM(
+    prevNode: ParagraphNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
     return false;
   }
 
@@ -136,7 +140,7 @@ export class ParagraphNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }
@@ -160,9 +164,7 @@ export class ParagraphNode extends ElementNode {
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
-    if (typeof serializedNode.textFormat === 'number') {
-      node.setTextFormat(serializedNode.textFormat);
-    }
+    node.setTextFormat(serializedNode.textFormat);
     return node;
   }
 
@@ -171,8 +173,6 @@ export class ParagraphNode extends ElementNode {
       ...super.exportJSON(),
       textFormat: this.getTextFormat(),
       textStyle: this.getTextStyle(),
-      type: 'paragraph',
-      version: 1,
     };
   }
 
@@ -188,8 +188,7 @@ export class ParagraphNode extends ElementNode {
     const direction = this.getDirection();
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
-    newElement.setStyle(this.getStyle());
-
+    newElement.setStyle(this.getTextStyle());
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

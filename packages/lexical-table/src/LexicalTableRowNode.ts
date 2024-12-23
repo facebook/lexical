@@ -65,8 +65,6 @@ export class TableRowNode extends ElementNode {
     return {
       ...super.exportJSON(),
       ...(this.getHeight() && {height: this.getHeight()}),
-      type: 'tablerow',
-      version: 1,
     };
   }
 
@@ -104,7 +102,7 @@ export class TableRowNode extends ElementNode {
     return this.getLatest().__height;
   }
 
-  updateDOM(prevNode: TableRowNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return prevNode.__height !== this.__height;
   }
 

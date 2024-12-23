@@ -60,6 +60,7 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
+  isDOMNode,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -185,16 +186,19 @@ export function applyTableHandlers(
     };
 
     const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDOMNode(moveEvent.target)) {
+        return;
+      }
       if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
         tableObserver.isSelecting = false;
         editorWindow.removeEventListener('mouseup', onMouseUp);
         editorWindow.removeEventListener('mousemove', onMouseMove);
         return;
       }
-      const override = !tableElement.contains(moveEvent.target as Node);
+      const override = !tableElement.contains(moveEvent.target);
       let focusCell: null | TableDOMCell = null;
       if (!override) {
-        focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+        focusCell = getDOMCellFromTarget(moveEvent.target);
       } else {
         for (const el of document.elementsFromPoint(
           moveEvent.clientX,
@@ -231,15 +235,11 @@ export function applyTableHandlers(
   };
 
   const onMouseDown = (event: MouseEvent) => {
-    if (event.button !== 0) {
+    if (event.button !== 0 || !isDOMNode(event.target) || !editorWindow) {
       return;
     }
 
-    if (!editorWindow) {
-      return;
-    }
-
-    const targetCell = getDOMCellFromTarget(event.target as Node);
+    const targetCell = getDOMCellFromTarget(event.target);
     if (targetCell !== null) {
       editor.update(() => {
         const prevSelection = $getPreviousSelection();
@@ -292,13 +292,13 @@ export function applyTableHandlers(
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event: MouseEvent) => {
-    if (event.button !== 0) {
+    const target = event.target;
+    if (event.button !== 0 || !isDOMNode(target)) {
       return;
     }
 
     editor.update(() => {
       const selection = $getSelection();
-      const target = event.target as Node;
       if (
         $isTableSelection(selection) &&
         selection.tableKey === tableObserver.tableNodeKey &&
@@ -453,6 +453,10 @@ export function applyTableHandlers(
       // Restore the outer point of the selection
       newSelection[outerPoint].set(key, offset, type);
       // Let the base implementation handle the rest
+      return false;
+    }
+
+    if (!$isSelectionInTable(selection, tableNode)) {
       return false;
     }
 

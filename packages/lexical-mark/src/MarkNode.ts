@@ -58,8 +58,6 @@ export class MarkNode extends ElementNode {
     return {
       ...super.exportJSON(),
       ids: Array.from(this.getIDs()),
-      type: 'mark',
-      version: 1,
     };
   }
 
@@ -78,7 +76,7 @@ export class MarkNode extends ElementNode {
   }
 
   updateDOM(
-    prevNode: MarkNode,
+    prevNode: this,
     element: HTMLElement,
     config: EditorConfig,
   ): boolean {

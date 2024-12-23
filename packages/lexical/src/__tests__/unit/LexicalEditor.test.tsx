@@ -39,6 +39,7 @@ import {
   createEditor,
   EditorState,
   ElementNode,
+  getDOMSelection,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -1026,7 +1027,7 @@ describe('LexicalEditor tests', () => {
       editable ? 'editable' : 'non-editable'
     })`, async () => {
       const JSON_EDITOR_STATE =
-        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
       init();
       const contentEditable = editor.getRootElement();
       editor.setEditable(editable);
@@ -2777,10 +2778,6 @@ describe('LexicalEditor tests', () => {
       static importJSON() {
         return new CustomParagraphNode();
       }
-
-      exportJSON() {
-        return {...super.exportJSON(), type: 'custom-paragraph'};
-      }
     }
 
     createTestEditor({nodes: [CustomParagraphNode]});
@@ -2890,6 +2887,96 @@ describe('LexicalEditor tests', () => {
         });
       });
 
+      expect(onError).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('selection', () => {
+    it('updates the DOM selection', async () => {
+      const onError = jest.fn();
+      const newEditor = createTestEditor({
+        onError: onError,
+      });
+      const text = 'initial content';
+      let textNode!: TextNode;
+      await newEditor.update(
+        () => {
+          textNode = $createTextNode(text);
+          $getRoot().append($createParagraphNode().append(textNode));
+          textNode.select();
+        },
+        {tag: 'history-merge'},
+      );
+      await newEditor.setRootElement(container);
+      const domText = newEditor.getElementByKey(textNode.getKey())
+        ?.firstChild as Text;
+      expect(domText).not.toBe(null);
+      let selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      let range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(true);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(text.length);
+      expect(range.endOffset).toBe(text.length);
+      await newEditor.update(() => {
+        textNode.select(0);
+      });
+      selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(false);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(0);
+      expect(range.endOffset).toBe(text.length);
+      expect(onError).not.toHaveBeenCalled();
+    });
+    it('does not update the Lexical->DOM selection with skip-dom-selection', async () => {
+      const onError = jest.fn();
+      const newEditor = createTestEditor({
+        onError: onError,
+      });
+      const text = 'initial content';
+      let textNode!: TextNode;
+      await newEditor.update(
+        () => {
+          textNode = $createTextNode(text);
+          $getRoot().append($createParagraphNode().append(textNode));
+          textNode.select();
+        },
+        {tag: 'history-merge'},
+      );
+      await newEditor.setRootElement(container);
+      const domText = newEditor.getElementByKey(textNode.getKey())
+        ?.firstChild as Text;
+      expect(domText).not.toBe(null);
+      let selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      let range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(true);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(text.length);
+      expect(range.endOffset).toBe(text.length);
+      await newEditor.update(
+        () => {
+          textNode.select(0);
+        },
+        {tag: 'skip-dom-selection'},
+      );
+      selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(true);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(text.length);
+      expect(range.endOffset).toBe(text.length);
       expect(onError).not.toHaveBeenCalled();
     });
   });

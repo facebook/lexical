@@ -103,10 +103,9 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedPollNode {
     return {
+      ...super.exportJSON(),
       options: this.__options,
       question: this.__question,
-      type: 'poll',
-      version: 1,
     };
   }
 

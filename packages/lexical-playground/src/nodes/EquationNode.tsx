@@ -74,10 +74,9 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedEquationNode {
     return {
+      ...super.exportJSON(),
       equation: this.getEquation(),
       inline: this.__inline,
-      type: 'equation',
-      version: 1,
     };
   }
 
@@ -128,7 +127,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  updateDOM(prevNode: EquationNode): boolean {
+  updateDOM(prevNode: this): boolean {
     // If the inline property changes, replace the element
     return this.__inline !== prevNode.__inline;
   }

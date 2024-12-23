@@ -62,7 +62,7 @@ export class CollapsibleTitleNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(prevNode: CollapsibleTitleNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 
@@ -81,14 +81,6 @@ export class CollapsibleTitleNode extends ElementNode {
     serializedNode: SerializedCollapsibleTitleNode,
   ): CollapsibleTitleNode {
     return $createCollapsibleTitleNode();
-  }
-
-  exportJSON(): SerializedCollapsibleTitleNode {
-    return {
-      ...super.exportJSON(),
-      type: 'collapsible-title',
-      version: 1,
-    };
   }
 
   collapseAtStart(_selection: RangeSelection): boolean {

@@ -113,11 +113,11 @@ export class LinkNode extends ElementNode {
   }
 
   updateDOM(
-    prevNode: LinkNode,
+    prevNode: this,
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
-    if (anchor instanceof HTMLAnchorElement) {
+    if (isHTMLAnchorElement(anchor)) {
       const url = this.__url;
       const target = this.__target;
       const rel = this.__rel;
@@ -195,9 +195,7 @@ export class LinkNode extends ElementNode {
       rel: this.getRel(),
       target: this.getTarget(),
       title: this.getTitle(),
-      type: 'link',
       url: this.getURL(),
-      version: 1,
     };
   }
 
@@ -393,7 +391,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   updateDOM(
-    prevNode: AutoLinkNode,
+    prevNode: this,
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
@@ -425,8 +423,6 @@ export class AutoLinkNode extends LinkNode {
     return {
       ...super.exportJSON(),
       isUnlinked: this.__isUnlinked,
-      type: 'autolink',
-      version: 1,
     };
   }
 

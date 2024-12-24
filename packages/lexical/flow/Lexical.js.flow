@@ -421,7 +421,8 @@ declare export class LexicalNode {
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
-    prevNode: this,
+    // $FlowFixMe[unclear-type]
+    prevNode: any,
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;

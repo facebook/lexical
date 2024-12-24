@@ -9,11 +9,13 @@
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getRoot,
   $getSelection,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $setSelection,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -73,6 +75,20 @@ export function $insertList(listType: ListType): void {
       const [anchor] = anchorAndFocus;
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
+
+      if (anchor.key === 'root') {
+        const root = $getRoot();
+        const firstChild = root.getFirstChild();
+        if (firstChild) {
+          $setSelection(firstChild.selectStart());
+        } else {
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          $setSelection(paragraph.select());
+        }
+        insertList(editor, listType);
+        return;
+      }
 
       if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         const list = $createListNode(listType);

@@ -113,7 +113,7 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
   }
 
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+    serializedNode: LexicalUpdateJSON<SerializedInlineImageNode>,
   ): this {
     const {caption} = serializedNode;
     const node = super.updateFromJSON(serializedNode);

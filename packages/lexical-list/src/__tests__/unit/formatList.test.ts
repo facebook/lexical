@@ -12,11 +12,11 @@ import {
   $createTableRowNode,
   TableCellNode,
   TableNode,
+  TableRowNode,
 } from '@lexical/table';
 import {$getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {TableRowNode} from '../../../../lexical-table/LexicalTable';
 import {insertList} from '../../formatList';
 import {$isListNode} from '../../LexicalListNode';
 

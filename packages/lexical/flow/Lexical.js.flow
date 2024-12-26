@@ -262,6 +262,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>,
     ol?: EditorThemeClassName,
     olDepth?: Array<EditorThemeClassName>,
+    checklist?: EditorThemeClassName,
     listitem?: EditorThemeClassName,
     listitemChecked?: EditorThemeClassName,
     listitemUnchecked?: EditorThemeClassName,
@@ -361,7 +362,7 @@ export type DOMConversion = {
   conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
 };
-export type DOMConversionFn = (element: Node) => DOMConversionOutput;
+export type DOMConversionFn = (element: Node) => DOMConversionOutput | null;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: ?LexicalNode | null,
@@ -453,13 +454,16 @@ declare export function $isBlockElementNode(
 ): node is ElementNode;
 
 export interface BaseSelection {
-  clone(): BaseSelection;
   dirty: boolean;
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null | [PointType, PointType];
   getTextContent(): string;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   insertText(text: string): void;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -471,6 +475,8 @@ declare export class NodeSelection implements BaseSelection {
   dirty: boolean;
   constructor(objects: Set<NodeKey>): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   add(key: NodeKey): void;
   delete(key: NodeKey): void;
   clear(): void;
@@ -480,6 +486,7 @@ declare export class NodeSelection implements BaseSelection {
   insertRawText(): void;
   insertText(): void;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null;
   getTextContent(): string;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -495,6 +502,7 @@ declare export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  style: string;
   constructor(anchor: PointType, focus: PointType, format: number): void;
   is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
@@ -532,6 +540,8 @@ declare export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  forwardDeletion(anchor: PointType, anchorNode: ElementNode | TextNode, isBackward: boolean): boolean;
+  getStartEndPoints(): null | [PointType, PointType];
 }
 export type TextPoint = TextPointType;
 type TextPointType = {

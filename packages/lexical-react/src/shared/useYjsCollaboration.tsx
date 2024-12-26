@@ -201,7 +201,7 @@ export function useYjsCollaboration(
       <div ref={ref} />,
       (cursorsContainerRef && cursorsContainerRef.current) || document.body,
     );
-  }, [binding, cursorsContainerRef]);
+  }, [binding.cursorsContainer, cursorsContainerRef]);
 
   useEffect(() => {
     return editor.registerCommand(

@@ -10,6 +10,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LexicalUpdateJSON,
   LineBreakNode,
   NodeKey,
   SerializedTextNode,
@@ -170,7 +171,7 @@ export class CodeHighlightNode extends TextNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<SerializedCodeHighlightNode, 'type' | 'version'>,
+    serializedNode: LexicalUpdateJSON<SerializedCodeHighlightNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)

@@ -25,6 +25,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   setDOMUnmanaged,
@@ -156,9 +157,7 @@ export class TableNode extends ElementNode {
     return $createTableNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: Omit<SerializedTableNode, 'type' | 'children' | 'version'>,
-  ): this {
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
     return super
       .updateFromJSON(serializedNode)
       .setRowStriping(serializedNode.rowStriping || false)

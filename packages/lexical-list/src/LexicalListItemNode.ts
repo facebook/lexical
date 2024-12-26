@@ -15,6 +15,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -127,10 +128,7 @@ export class ListItemNode extends ElementNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedListItemNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)

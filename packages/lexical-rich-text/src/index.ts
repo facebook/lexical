@@ -16,6 +16,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   PasteCommandType,
@@ -338,10 +339,7 @@ export class HeadingNode extends ElementNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedHeadingNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedHeadingNode>,
   ): this {
     return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
   }

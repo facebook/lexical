@@ -17,6 +17,7 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
@@ -609,10 +610,10 @@ export class TextNode extends LexicalNode {
     return $createTextNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: Omit<SerializedTextNode, 'type' | 'version'>,
-  ): this {
-    return this.setTextContent(serializedNode.text)
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTextNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setTextContent(serializedNode.text)
       .setFormat(serializedNode.format)
       .setDetail(serializedNode.detail)
       .setMode(serializedNode.mode)

@@ -6,7 +6,7 @@
  *
  */
 
-import type {BaseSelection, Spread} from 'lexical';
+import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
 
 import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
 import {
@@ -57,10 +57,7 @@ export class TableRowNode extends ElementNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedTableRowNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedTableRowNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)

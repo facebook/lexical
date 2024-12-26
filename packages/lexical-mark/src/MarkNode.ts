@@ -10,6 +10,7 @@ import type {
   BaseSelection,
   EditorConfig,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   RangeSelection,
   SerializedElementNode,
@@ -52,9 +53,7 @@ export class MarkNode extends ElementNode {
     return $createMarkNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: Omit<SerializedMarkNode, 'type' | 'children' | 'version'>,
-  ): this {
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
     return super.updateFromJSON(serializedNode).setIDs(serializedNode.ids);
   }
 

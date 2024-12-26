@@ -373,20 +373,12 @@ describe('$applyNodeReplacement', () => {
       return new ExtendedTextNode(node.__text, node.getKey());
     }
     initWithTextNode(node: TextNode): this {
-      this.__text = node.__text;
-      TextNode.prototype.afterCloneFrom.call(this, node);
-      return this;
-    }
-    initWithJSON(serializedNode: SerializedTextNode): this {
-      this.setTextContent(serializedNode.text);
-      this.setFormat(serializedNode.format);
-      this.setDetail(serializedNode.detail);
-      this.setMode(serializedNode.mode);
-      this.setStyle(serializedNode.style);
-      return this;
+      const self = this.getWritable();
+      TextNode.prototype.updateFromJSON.call(self, node.exportJSON());
+      return self;
     }
     static importJSON(serializedNode: SerializedTextNode): ExtendedTextNode {
-      return $createExtendedTextNode().initWithJSON(serializedNode);
+      return $createExtendedTextNode().updateFromJSON(serializedNode);
     }
   }
   class ExtendedExtendedTextNode extends ExtendedTextNode {
@@ -402,7 +394,7 @@ describe('$applyNodeReplacement', () => {
     static importJSON(
       serializedNode: SerializedTextNode,
     ): ExtendedExtendedTextNode {
-      return $createExtendedExtendedTextNode().initWithJSON(serializedNode);
+      return $createExtendedExtendedTextNode().updateFromJSON(serializedNode);
     }
   }
   function $createExtendedTextNode(text: string = '') {

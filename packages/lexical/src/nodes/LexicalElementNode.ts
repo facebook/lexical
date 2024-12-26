@@ -20,6 +20,7 @@ import type {
 import type {
   KlassConstructor,
   LexicalEditor,
+  LexicalUpdateJSON,
   Spread,
   TextFormatType,
 } from 'lexical';
@@ -858,12 +859,11 @@ export class ElementNode extends LexicalNode {
     return json;
   }
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedElementNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
   ): this {
-    return this.setFormat(serializedNode.format)
+    return super
+      .updateFromJSON(serializedNode)
+      .setFormat(serializedNode.format)
       .setIndent(serializedNode.indent)
       .setDirection(serializedNode.direction)
       .setTextFormat(serializedNode.textFormat || 0)

@@ -13,6 +13,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
@@ -102,10 +103,7 @@ export class TableCellNode extends ElementNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedTableCellNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedTableCellNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)

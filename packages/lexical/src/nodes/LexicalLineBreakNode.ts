@@ -67,7 +67,7 @@ export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode {
-    return $createLineBreakNode();
+    return $createLineBreakNode().updateFromJSON(serializedLineBreakNode);
   }
 }
 

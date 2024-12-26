@@ -14,6 +14,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -215,9 +216,7 @@ export class CodeNode extends ElementNode {
     return $createCodeNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: Omit<SerializedCodeNode, 'type' | 'children' | 'version'>,
-  ): this {
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
     return super
       .updateFromJSON(serializedNode)
       .setLanguage(serializedNode.language);

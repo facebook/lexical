@@ -13,6 +13,7 @@ import type {
   EditorConfig,
   LexicalCommand,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   Point,
   RangeSelection,
@@ -170,9 +171,7 @@ export class LinkNode extends ElementNode {
     return $createLinkNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: Omit<SerializedLinkNode, 'type' | 'children' | 'version'>,
-  ): this {
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedLinkNode>): this {
     return super
       .updateFromJSON(serializedNode)
       .setURL(serializedNode.url)
@@ -419,10 +418,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedAutoLinkNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedAutoLinkNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)

@@ -12,6 +12,7 @@ import type {
   DOMExportOutput,
   EditorConfig,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
@@ -99,10 +100,7 @@ export class LayoutContainerNode extends ElementNode {
   }
 
   updateFromJSON(
-    serializedNode: Omit<
-      SerializedLayoutContainerNode,
-      'type' | 'children' | 'version'
-    >,
+    serializedNode: LexicalUpdateJSON<SerializedLayoutContainerNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)

@@ -45,6 +45,7 @@ export type {
   DOMExportOutput,
   DOMExportOutputMap,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   NodeMap,
   SerializedLexicalNode,

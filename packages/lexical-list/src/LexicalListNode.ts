@@ -23,6 +23,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
@@ -153,9 +154,7 @@ export class ListNode extends ElementNode {
     return $createListNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: Omit<SerializedListNode, 'type' | 'children' | 'version'>,
-  ): this {
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedListNode>): this {
     return super
       .updateFromJSON(serializedNode)
       .setListType(serializedNode.listType)

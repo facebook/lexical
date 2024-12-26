@@ -9,6 +9,7 @@
 import type {
   ElementFormatType,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedLexicalNode,
   Spread,
@@ -38,6 +39,14 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     };
   }
 
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedDecoratorBlockNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setFormat(serializedNode.format || '');
+  }
+
   canIndent(): false {
     return false;
   }
@@ -50,9 +59,10 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  setFormat(format: ElementFormatType): void {
+  setFormat(format: ElementFormatType): this {
     const self = this.getWritable();
     self.__format = format;
+    return self;
   }
 
   isInline(): false {

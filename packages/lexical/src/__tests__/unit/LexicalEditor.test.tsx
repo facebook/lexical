@@ -63,6 +63,7 @@ import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {emptyFunction} from '../../LexicalUtils';
+import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -2781,8 +2782,8 @@ describe('LexicalEditor tests', () => {
         return new CustomParagraphNode(node.__key);
       }
 
-      static importJSON() {
-        return new CustomParagraphNode();
+      static importJSON(serializedNode: SerializedParagraphNode) {
+        return new CustomParagraphNode().updateFromJSON(serializedNode);
       }
     }
 

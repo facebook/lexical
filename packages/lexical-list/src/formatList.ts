@@ -9,13 +9,11 @@
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getRoot,
   $getSelection,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
-  $setSelection,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -68,7 +66,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
     const selection = $getSelection();
 
     if (selection !== null) {
-      const nodes = selection.getNodes();
+      let nodes = selection.getNodes();
       if ($isRangeSelection(selection)) {
         const anchorAndFocus = selection.getStartEndPoints();
         invariant(
@@ -79,18 +77,15 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
         const anchorNode = anchor.getNode();
         const anchorNodeParent = anchorNode.getParent();
 
-        if (anchor.key === 'root') {
-          const root = $getRoot();
-          const firstChild = root.getFirstChild();
+        if ($isRootOrShadowRoot(anchorNode)) {
+          const firstChild = anchorNode.getFirstChild();
           if (firstChild) {
-            $setSelection(firstChild.selectStart());
+            nodes = firstChild.selectStart().getNodes();
           } else {
             const paragraph = $createParagraphNode();
-            root.append(paragraph);
-            $setSelection(paragraph.select());
+            anchorNode.append(paragraph);
+            nodes = paragraph.select().getNodes();
           }
-          insertList(editor, listType);
-          return;
         }
 
         if ($isSelectingEmptyListItem(anchorNode, nodes)) {

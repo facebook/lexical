@@ -14,7 +14,7 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$getRoot} from 'lexical';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {insertList} from '../../formatList';
@@ -27,6 +27,29 @@ describe('insertList', () => {
 
       await editor.update(() => {
         $getRoot().select();
+      });
+
+      insertList(editor, 'number');
+
+      editor.read(() => {
+        const root = $getRoot();
+
+        expect(root.getChildrenSize()).toBe(1);
+
+        const firstChild = root.getFirstChildOrThrow();
+
+        expect($isListNode(firstChild)).toBe(true);
+      });
+    });
+
+    test('inserting in root selection with existing child', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        $getRoot().select();
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('hello')),
+        );
       });
 
       insertList(editor, 'number');

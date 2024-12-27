@@ -86,9 +86,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
             anchorNode.append(paragraph);
             nodes = paragraph.select().getNodes();
           }
-        }
-
-        if ($isSelectingEmptyListItem(anchorNode, nodes)) {
+        } else if ($isSelectingEmptyListItem(anchorNode, nodes)) {
           const list = $createListNode(listType);
 
           if ($isRootOrShadowRoot(anchorNodeParent)) {

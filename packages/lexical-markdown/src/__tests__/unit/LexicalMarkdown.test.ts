@@ -222,6 +222,7 @@ describe('Markdown', () => {
     shouldPreserveNewLines?: true;
     shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
+    mdAfterExport?: string;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -552,6 +553,16 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>text</strong></code></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [`text`](https://lexical.dev) boldend** text',
     },
+    {
+      html: '<p><span style="white-space: pre-wrap;">It </span><s><i><b><strong style="white-space: pre-wrap;">works </strong></b></i></s><a href="https://lexical.io"><s><i><b><strong style="white-space: pre-wrap;">with links</strong></b></i></s></a><span style="white-space: pre-wrap;"> too</span></p>',
+      md: 'It ~~___works [with links](https://lexical.io)___~~ too',
+      mdAfterExport: 'It ***~~works [with links](https://lexical.io)~~*** too',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">It </span><s><i><b><strong style="white-space: pre-wrap;">works </strong></b></i></s><a href="https://lexical.io"><s><i><b><strong style="white-space: pre-wrap;">with links</strong></b></i></s></a><s><i><b><strong style="white-space: pre-wrap;"> too</strong></b></i></s><span style="white-space: pre-wrap;">!</span></p>',
+      md: 'It ~~___works [with links](https://lexical.io) too___~~!',
+      mdAfterExport: 'It ***~~works [with links](https://lexical.io) too~~***!',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -616,6 +627,7 @@ describe('Markdown', () => {
     skipExport,
     shouldPreserveNewLines,
     customTransformers,
+    mdAfterExport,
   } of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
@@ -656,7 +668,7 @@ describe('Markdown', () => {
               shouldPreserveNewLines,
             ),
           ),
-      ).toBe(md);
+      ).toBe(mdAfterExport ?? md);
     });
   }
 });

@@ -363,16 +363,21 @@ export class HeadingNode extends ElementNode {
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
-    const lastDesc = this.getLastDescendant();
-    const isAtEnd =
-      !lastDesc ||
-      (selection &&
-        selection.anchor.key === lastDesc.getKey() &&
-        anchorOffet === lastDesc.getTextContentSize());
-    const newElement =
-      isAtEnd || !selection
-        ? $createParagraphNode()
-        : $createHeadingNode(this.getTag());
+    // const lastDesc = this.getLastDescendant();
+    // const isAtEnd =
+    //   !lastDesc ||
+    //   (selection &&
+    //     selection.anchor.key === lastDesc.getKey() &&
+    //     anchorOffet === lastDesc.getTextContentSize());
+    // const newElement =
+    //   isAtEnd || !selection
+    //     ? $createParagraphNode()
+    //     : $createHeadingNode(this.getTag());
+
+    const newElement = $createHeadingNode(this.getTag());
+    newElement.setFormat(this.getFormatType());
+    newElement.setIndent(this.getIndent());
+
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);
@@ -385,12 +390,12 @@ export class HeadingNode extends ElementNode {
   }
 
   collapseAtStart(): true {
-    const newElement = !this.isEmpty()
-      ? $createHeadingNode(this.getTag())
-      : $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach((child) => newElement.append(child));
-    this.replace(newElement);
+    // const newElement = !this.isEmpty()
+    //   ? $createHeadingNode(this.getTag())
+    //   : $createParagraphNode();
+    // const children = this.getChildren();
+    // children.forEach((child) => newElement.append(child));
+    // this.replace(newElement);
     return true;
   }
 

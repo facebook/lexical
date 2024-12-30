@@ -25,8 +25,14 @@ const rootTypeToRootName = {
   table: 'Table',
 };
 
-export const blockTypeToBlockName = {
+export const listTypeToBlockName = {
   bullet: 'Bulleted List',
+  number: 'Numbered List',
+};
+
+export const blockTypeToBlockName = {
+  // number: 'Numbered List',
+  // bullet: 'Bulleted List',
   check: 'Check List',
   code: 'Code Block',
   h1: 'Heading 1',
@@ -35,7 +41,6 @@ export const blockTypeToBlockName = {
   h4: 'Heading 4',
   h5: 'Heading 5',
   h6: 'Heading 6',
-  number: 'Numbered List',
   paragraph: 'Normal',
   quote: 'Quote',
 };
@@ -45,6 +50,9 @@ export const blockTypeToBlockName = {
 const INITIAL_TOOLBAR_STATE = {
   bgColor: '#fff',
   blockType: 'paragraph' as keyof typeof blockTypeToBlockName,
+  listType: 'bullet' as keyof typeof listTypeToBlockName,
+  lineHeight: '1.5',
+  letterSpacing: '0px',
   canRedo: false,
   canUndo: false,
   codeLanguage: '',

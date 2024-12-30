@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+import {$isListItemNode, ListItemNode} from '@lexical/list';
 import {
   $createTextNode,
   $getCharacterOffsets,
@@ -240,7 +242,7 @@ export function $addNodeStyle(node: TextNode): void {
 }
 
 function $patchStyle(
-  target: TextNode | RangeSelection,
+  target: TextNode | ListItemNode | RangeSelection,
   patch: Record<
     string,
     | string
@@ -422,6 +424,38 @@ export function $patchStyleText(
       ) {
         $patchStyle(selectedNode, patch);
       }
+    }
+  }
+
+  let selectedNodesTextLength = 0;
+  let isListSelected = false;
+  // style the list items
+  for (let i = 0; i < selectedNodes.length; i++) {
+    const selectedNode = selectedNodes[i];
+    // No actual text is selected, so do nothing.
+    if (startOffset === endOffset) {
+      return;
+    }
+    if ($isListItemNode(selectedNode)) {
+      $patchStyle(selectedNode, patch);
+      isListSelected = true;
+    }
+    selectedNodesTextLength += selectedNode.getTextContentSize();
+  }
+
+  const listNode = firstNode.getParent();
+
+  if ($isListItemNode(listNode)) {
+    // No actual text is selected, so do nothing.
+    if (startOffset === endOffset) {
+      return;
+    }
+
+    if (
+      !isListSelected &&
+      listNode.getTextContentSize() === selectedNodesTextLength
+    ) {
+      $patchStyle(listNode, patch);
     }
   }
 }

@@ -79,6 +79,10 @@ export class ListItemNode extends ElementNode {
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
+    const style = this.__style;
+    if (style !== '') {
+      element.style.cssText = style;
+    }
     return element;
   }
 
@@ -94,6 +98,13 @@ export class ListItemNode extends ElementNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
+
+    const prevStyle = prevNode.__style;
+
+    const nextStyle = this.__style;
+    if (prevStyle !== nextStyle) {
+      dom.style.cssText = nextStyle;
+    }
 
     return false;
   }
@@ -128,6 +139,7 @@ export class ListItemNode extends ElementNode {
     node.setValue(serializedNode.value);
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
+    // node.setStyle(serializedNode.style);
     return node;
   }
 
@@ -145,6 +157,7 @@ export class ListItemNode extends ElementNode {
       checked: this.getChecked(),
       type: 'listitem',
       value: this.getValue(),
+      // style: this.getStyle(),
       version: 1,
     };
   }
@@ -262,6 +275,8 @@ export class ListItemNode extends ElementNode {
     const newElement = $createListItemNode(
       this.__checked == null ? undefined : false,
     );
+    newElement.setStyle(this.getStyle());
+    newElement.setFormat(this.getFormatType());
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;

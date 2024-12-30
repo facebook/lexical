@@ -86,6 +86,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
             if ($isElementNode(anchorNode)) {
               listItem.setFormat(anchorNode.getFormatType());
               listItem.setIndent(anchorNode.getIndent());
+              listItem.setStyle(anchorNode.getStyle());
             }
             list.append(listItem);
           } else if ($isListItemNode(anchorNode)) {

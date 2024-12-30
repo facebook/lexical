@@ -37,6 +37,7 @@
     }
   },
   "dependencies": {
-    "lexical": "0.21.0"
+    "lexical": "0.21.0",
+    "@lexical/list": "0.21.0"
   }
 }

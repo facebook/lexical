@@ -56,6 +56,7 @@ import {IS_APPLE} from 'shared/environment';
 
 import {
   blockTypeToBlockName,
+  listTypeToBlockName,
   useToolbarState,
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
@@ -91,6 +92,7 @@ import {
   formatParagraph,
   formatQuote,
 } from './utils';
+// import { $generateHtmlFromNodes } from '@lexical/html';
 
 const rootTypeToRootName = {
   root: 'Root',
@@ -181,6 +183,46 @@ function dropDownActiveClass(active: boolean) {
   }
 }
 
+function ListFormatDropDown({
+  editor,
+  listType,
+  rootType,
+  disabled = false,
+}: {
+  listType: keyof typeof listTypeToBlockName;
+  rootType: keyof typeof rootTypeToRootName;
+  editor: LexicalEditor;
+  disabled?: boolean;
+}): JSX.Element {
+  return (
+    <DropDown
+      disabled={disabled}
+      buttonClassName="toolbar-item block-controls"
+      buttonIconClassName={'icon block-type ' + listType}
+      buttonLabel={listTypeToBlockName[listType]}
+      buttonAriaLabel="Formatting options for text style">
+      <DropDownItem
+        className={'item wide ' + dropDownActiveClass(listType === 'bullet')}
+        onClick={() => formatBulletList(editor, listType)}>
+        <div className="icon-text-container">
+          <i className="icon bullet-list" />
+          <span className="text">Bullet List</span>
+        </div>
+        <span className="shortcut">{SHORTCUTS.BULLET_LIST}</span>
+      </DropDownItem>
+      <DropDownItem
+        className={'item wide ' + dropDownActiveClass(listType === 'number')}
+        onClick={() => formatNumberedList(editor, listType)}>
+        <div className="icon-text-container">
+          <i className="icon numbered-list" />
+          <span className="text">Numbered List</span>
+        </div>
+        <span className="shortcut">{SHORTCUTS.NUMBERED_LIST}</span>
+      </DropDownItem>
+    </DropDown>
+  );
+}
+
 function BlockFormatDropDown({
   editor,
   blockType,
@@ -237,7 +279,7 @@ function BlockFormatDropDown({
         </div>
         <span className="shortcut">{SHORTCUTS.HEADING3}</span>
       </DropDownItem>
-      <DropDownItem
+      {/* <DropDownItem
         className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
         onClick={() => formatBulletList(editor, blockType)}>
         <div className="icon-text-container">
@@ -254,7 +296,7 @@ function BlockFormatDropDown({
           <span className="text">Numbered List</span>
         </div>
         <span className="shortcut">{SHORTCUTS.NUMBERED_LIST}</span>
-      </DropDownItem>
+      </DropDownItem> */}
       <DropDownItem
         className={'item wide ' + dropDownActiveClass(blockType === 'check')}
         onClick={() => formatCheckList(editor, blockType)}>
@@ -477,6 +519,17 @@ export default function ToolbarPlugin({
   setActiveEditor: Dispatch<LexicalEditor>;
   setIsLinkEditMode: Dispatch<boolean>;
 }): JSX.Element {
+  // console.log("editor Json", editor.toJSON());
+  const handleGetHtmlClick = () => {
+    // editor.update(() => {
+    //   // const editorState = editor.getEditorState();
+    //   // const jsonString = JSON.stringify(editorState);
+    //   // console.log('jsonString', jsonString);
+    //   const htmlString = $generateHtmlFromNodes(editor, null);
+    //   console.log('htmlString', htmlString);
+    // });
+  };
+
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
   );
@@ -485,6 +538,7 @@ export default function ToolbarPlugin({
   const {toolbarState, updateToolbarState} = useToolbarState();
 
   const $updateToolbar = useCallback(() => {
+    // localStorage.setItem("editorData", JSON.stringify(editor.toJSON()));
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       if (activeEditor !== editor && $isEditorIsNestedEditor(activeEditor)) {
@@ -540,8 +594,7 @@ export default function ToolbarPlugin({
           const type = parentList
             ? parentList.getListType()
             : element.getListType();
-
-          updateToolbarState('blockType', type);
+          updateToolbarState('listType', type);
         } else {
           const type = $isHeadingNode(element)
             ? element.getTag()
@@ -614,6 +667,10 @@ export default function ToolbarPlugin({
       updateToolbarState(
         'fontSize',
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+      );
+      updateToolbarState(
+        'lineHeight',
+        $getSelectionStyleValueForProperty(selection, 'line-height', '1.5'),
       );
       updateToolbarState('isLowercase', selection.hasFormat('lowercase'));
       updateToolbarState('isUppercase', selection.hasFormat('uppercase'));
@@ -697,6 +754,20 @@ export default function ToolbarPlugin({
     [applyStyleText],
   );
 
+  const handleLineHeightChange = useCallback(
+    (value: string) => {
+      applyStyleText({'line-height': value});
+    },
+    [applyStyleText],
+  );
+
+  // const handleLetterSpacingChange = useCallback(
+  //   (value: string) => {
+  //     applyStyleText({ 'letter-spacing': `${value}px` });
+  //   },
+  //   [applyStyleText]
+  // );
+
   const insertLink = useCallback(() => {
     if (!toolbarState.isLink) {
       setIsLinkEditMode(true);
@@ -767,6 +838,17 @@ export default function ToolbarPlugin({
             <Divider />
           </>
         )}
+      {toolbarState.listType in listTypeToBlockName && activeEditor === editor && (
+        <>
+          <ListFormatDropDown
+            disabled={!isEditable}
+            listType={toolbarState.listType}
+            rootType={toolbarState.rootType}
+            editor={activeEditor}
+          />
+          <Divider />
+        </>
+      )}
       {toolbarState.blockType === 'code' ? (
         <DropDown
           disabled={!isEditable}
@@ -1177,8 +1259,20 @@ export default function ToolbarPlugin({
         editor={activeEditor}
         isRTL={toolbarState.isRTL}
       />
+      <input
+        type="range"
+        min="0"
+        max="10"
+        step="0.2"
+        value={toolbarState.lineHeight}
+        onChange={(event) => {
+          // console.log("lineHeight", event.target.value)
+          handleLineHeightChange(event.target.value);
+        }}
+      />
 
       {modal}
+      <button onClick={handleGetHtmlClick}>Save</button>
     </div>
   );
 }

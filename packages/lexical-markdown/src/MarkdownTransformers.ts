@@ -540,24 +540,19 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 // - then longer tags match (e.g. ** or __ should go before * or _)
 export const LINK: TextMatchTransformer = {
   dependencies: [LinkNode],
-  // @ts-expect-error
-  debug: true,
   export: (node, exportChildren, exportFormat) => {
     if (!$isLinkNode(node)) {
       return null;
     }
     const title = node.getTitle();
+
+    const textContent = exportChildren(node);
+
     const linkContent = title
-      ? `[${node.getTextContent()}](${node.getURL()} "${title}")`
-      : `[${node.getTextContent()}](${node.getURL()})`;
-    const firstChild = node.getFirstChild();
-    // Add text styles only if link has single text node inside. If it's more
-    // then one we ignore it as markdown does not support nested styles for links
-    if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
-      return exportFormat(firstChild, linkContent);
-    } else {
-      return linkContent;
-    }
+      ? `[${textContent}](${node.getURL()} "${title}")`
+      : `[${textContent}](${node.getURL()})`;
+
+    return linkContent;
   },
   importRegExp:
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,

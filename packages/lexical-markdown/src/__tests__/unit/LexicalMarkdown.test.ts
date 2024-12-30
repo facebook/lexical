@@ -531,12 +531,18 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>text</span></code></a></p>',
       md: '[`text`](https://lexical.dev)',
-      skipExport: true,
     },
     {
       html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>text</span></code></a><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 2</strong></b></p>',
       md: '**Bold** [`text`](https://lexical.dev) **Bold 2**',
-      skipExport: true,
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>text</span></code><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 2</strong></b></a><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
+      md: '**Bold** [`text` **Bold 2**](https://lexical.dev) **Bold 3**',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>text **Bold in code**</span></code></a><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
+      md: '**Bold** [`text **Bold in code**`](https://lexical.dev) **Bold 3**',
     },
   ];
 

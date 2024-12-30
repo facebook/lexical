@@ -547,12 +547,10 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">text</strong></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [text](https://lexical.dev) boldend** text',
-      skipExport: true,
     },
     {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>text</strong></code></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [`text`](https://lexical.dev) boldend** text',
-      skipExport: true,
     },
   ];
 

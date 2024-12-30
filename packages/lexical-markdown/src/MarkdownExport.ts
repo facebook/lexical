@@ -105,11 +105,14 @@ function exportChildren(
   node: ElementNode,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
+  unclosedTags?: Array<{format: TextFormatType; tag: string}>,
 ): string {
   const output = [];
   const children = node.getChildren();
   // keep track of unclosed tags from the very beginning
-  const unclosedTags: {format: TextFormatType; tag: string}[] = [];
+  if (!unclosedTags) {
+    unclosedTags = [];
+  }
 
   mainLoop: for (const child of children) {
     for (const transformer of textMatchTransformers) {
@@ -124,6 +127,7 @@ function exportChildren(
             parentNode,
             textTransformersIndex,
             textMatchTransformers,
+            unclosedTags,
           ),
         (textNode, textContent) =>
           exportTextFormat(
@@ -154,7 +158,12 @@ function exportChildren(
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
       output.push(
-        exportChildren(child, textTransformersIndex, textMatchTransformers),
+        exportChildren(
+          child,
+          textTransformersIndex,
+          textMatchTransformers,
+          unclosedTags,
+        ),
       );
     } else if ($isDecoratorNode(child)) {
       output.push(child.getTextContent());
@@ -171,6 +180,7 @@ function exportTextFormat(
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
   unclosedTags: Array<{format: TextFormatType; tag: string}>,
 ): string {
+  console.log('exportTextFormat', {node, textContent});
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
   // We instead want to trim the whitespace out, apply formatting, and then

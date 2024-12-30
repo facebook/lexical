@@ -25,6 +25,7 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isTextNode,
   ElementNode,
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
@@ -296,13 +297,16 @@ function importTextFormatTransformers(
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
+  importTextMatchTransformers(
+    textNode,
+    textFormatTransformersIndex,
+    textMatchTransformers,
+  );
+
   const textContent = textNode.getTextContent();
   const match = findOutermostMatch(textContent, textFormatTransformersIndex);
 
   if (!match) {
-    // Once text format processing is done run text match transformers, as it
-    // only can span within single text node (unline formats that can cover multiple nodes)
-    importTextMatchTransformers(textNode, textMatchTransformers);
     return;
   }
 
@@ -367,8 +371,9 @@ function importTextFormatTransformers(
 
 function importTextMatchTransformers(
   textNode_: TextNode,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
-) {
+): void {
   let textNode = textNode_;
 
   mainLoop: while (textNode) {
@@ -400,14 +405,29 @@ function importTextMatchTransformers(
       }
 
       if (newTextNode) {
-        importTextMatchTransformers(newTextNode, textMatchTransformers);
+        importTextFormatTransformers(
+          newTextNode,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+        );
       }
-      transformer.replace(replaceNode, match);
+      const potentialTextNode: any = transformer.replace(replaceNode, match);
+
+      // If a TextNode is returned from the replace function, we need to run the text format transformers on it.
+      // This is used in the Link transformer, where the link text is a separate TextNode that needs to be processed.
+      if (potentialTextNode && $isTextNode(potentialTextNode)) {
+        importTextFormatTransformers(
+          potentialTextNode,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+        );
+      }
       continue mainLoop;
     }
 
     break;
   }
+  return;
 }
 
 // Finds first "<tag>content<tag>" match that is not nested into another tag

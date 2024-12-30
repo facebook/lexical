@@ -520,6 +520,24 @@ describe('Markdown', () => {
       md: 'Hello <MyTag>One <MyTag>Two</MyTag></MyTag> there',
       skipExport: true,
     },
+    {
+      html: '<p><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang"><span style="white-space: pre-wrap;">lang</span></a></p>',
+      md: '[lang](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang)',
+    },
+    {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>lang</span></code></p>',
+      md: '`lang`',
+    },
+    {
+      html: '<p><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang"><code spellcheck="false" style="white-space: pre-wrap;"><span>lang</span></code></a></p>',
+      md: '[`lang`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang)',
+      skipExport: true,
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang"><code spellcheck="false" style="white-space: pre-wrap;"><span>lang</span></code></a><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 2</strong></b></p>',
+      md: '**Bold** [`lang`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang) **Bold 2**',
+      skipExport: true,
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

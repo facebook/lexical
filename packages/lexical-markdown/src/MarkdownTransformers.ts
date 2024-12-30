@@ -172,8 +172,11 @@ export type TextMatchTransformer = Readonly<{
   regExp: RegExp;
   /**
    * Determines how the matched markdown text should be transformed into a node during the markdown import process
+   *
+   * @returns nothing, or a TextNode that may be a child of the new node that is created.
+   * If a TextNode is returned, text format matching will be applied to it (e.g. bold, italic, etc.)
    */
-  replace?: (node: TextNode, match: RegExpMatchArray) => void;
+  replace?: (node: TextNode, match: RegExpMatchArray) => void | TextNode;
   /**
    * For import operations, this function can be used to determine the end index of the match, after `importRegExp` has matched.
    * Without this function, the end index will be determined by the length of the match from `importRegExp`. Manually determining the end index can be useful if
@@ -537,6 +540,8 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 // - then longer tags match (e.g. ** or __ should go before * or _)
 export const LINK: TextMatchTransformer = {
   dependencies: [LinkNode],
+  // @ts-expect-error
+  debug: true,
   export: (node, exportChildren, exportFormat) => {
     if (!$isLinkNode(node)) {
       return null;
@@ -565,6 +570,8 @@ export const LINK: TextMatchTransformer = {
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);
     textNode.replace(linkNode);
+
+    return linkTextNode;
   },
   trigger: ')',
   type: 'text-match',

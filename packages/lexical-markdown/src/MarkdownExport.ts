@@ -180,7 +180,6 @@ function exportTextFormat(
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
   unclosedTags: Array<{format: TextFormatType; tag: string}>,
 ): string {
-  console.log('exportTextFormat', {node, textContent});
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
   // We instead want to trim the whitespace out, apply formatting, and then

@@ -563,6 +563,10 @@ describe('Markdown', () => {
       md: 'It ~~___works [with links](https://lexical.io) too___~~!',
       mdAfterExport: 'It ***~~works [with links](https://lexical.io) too~~***!',
     },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">link</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">link2</span></a></p>',
+      md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

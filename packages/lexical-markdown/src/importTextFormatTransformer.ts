@@ -28,7 +28,7 @@ export function findOutermostTextFormatTransformer(
     return null;
   }
 
-  const textFormatMatchStart: number = match.index ?? 0;
+  const textFormatMatchStart: number = match.index || 0;
   const textFormatMatchEnd = textFormatMatchStart + match[0].length;
 
   const transformer: TextFormatTransformer =

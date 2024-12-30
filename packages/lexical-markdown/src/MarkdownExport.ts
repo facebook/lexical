@@ -259,8 +259,10 @@ function exportTextFormat(
 
       if (unclosedTag && typeof unclosedTag.tag === 'string') {
         if (!nodeHasFormat) {
+          // Handles cases where the tag has not been closed before, e.g. if the previous node
+          // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
           closingTagsBefore += unclosedTag.tag;
-        } else {
+        } else if (!nextNodeHasFormat) {
           closingTagsAfter += unclosedTag.tag;
         }
       }

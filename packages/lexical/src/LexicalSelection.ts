@@ -96,6 +96,14 @@ export class Point {
   _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
+    if (__DEV__) {
+      // This prevents a circular reference error when serialized as JSON,
+      // which happens on unit test failures
+      Object.defineProperty(this, '_selection', {
+        enumerable: false,
+        writable: true,
+      });
+    }
     this._selection = null;
     this.key = key;
     this.offset = offset;
@@ -473,6 +481,10 @@ export class RangeSelection implements BaseSelection {
     const lastPoint = isBefore ? focus : anchor;
     let firstNode = firstPoint.getNode();
     let lastNode = lastPoint.getNode();
+    const overselectedFirstNode =
+      $isElementNode(firstNode) &&
+      firstPoint.offset > 0 &&
+      firstPoint.offset >= firstNode.getChildrenSize();
     const startOffset = firstPoint.offset;
     const endOffset = lastPoint.offset;
 
@@ -506,6 +518,13 @@ export class RangeSelection implements BaseSelection {
       }
     } else {
       nodes = firstNode.getNodesBetween(lastNode);
+      // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
+      if (overselectedFirstNode) {
+        const deleteCount = nodes.findIndex(
+          (node) => !node.is(firstNode) && !node.isBefore(firstNode),
+        );
+        nodes.splice(0, deleteCount);
+      }
     }
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
@@ -1129,7 +1148,7 @@ export class RangeSelection implements BaseSelection {
       lastPoint.offset = lastNode.getTextContentSize();
     }
 
-    selectedNodes.forEach((node) => {
+    for (const node of selectedNodes) {
       if (
         !$hasAncestor(firstNode, node) &&
         !$hasAncestor(lastNode, node) &&
@@ -1138,7 +1157,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         node.remove();
       }
-    });
+    }
 
     const fixText = (node: TextNode, del: number) => {
       if (node.getTextContent() === '') {

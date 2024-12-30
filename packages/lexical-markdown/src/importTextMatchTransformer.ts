@@ -1,5 +1,13 @@
-import {type TextNode} from 'lexical';
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 import type {TextMatchTransformer} from './MarkdownTransformers';
+
+import {type TextNode} from 'lexical';
 
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
@@ -10,7 +18,7 @@ export function findOutermostTextMatchTransformer(
   transformer: TextMatchTransformer;
   match: RegExpMatchArray;
 } | null {
-  let textNode = textNode_;
+  const textNode = textNode_;
 
   let foundMatchStartIndex: number | undefined = undefined;
   let foundMatchEndIndex: number | undefined = undefined;
@@ -58,10 +66,10 @@ export function findOutermostTextMatchTransformer(
   }
 
   return {
-    startIndex: foundMatchStartIndex,
     endIndex: foundMatchEndIndex,
-    transformer: foundMatchTransformer,
     match: foundMatch,
+    startIndex: foundMatchStartIndex,
+    transformer: foundMatchTransformer,
   };
 }
 
@@ -72,7 +80,7 @@ export function importFoundTextMatchTransformer(
   transformer: TextMatchTransformer,
   match: RegExpMatchArray,
 ): {
-  transformedNode: TextNode;
+  transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
 } | null {
@@ -87,17 +95,14 @@ export function importFoundTextMatchTransformer(
     );
   }
 
-  if (!transformer?.replace) {
+  if (!transformer.replace) {
     return null;
   }
-  const potentialTransformedNode: any = transformer.replace(
-    transformedNode,
-    match,
-  );
+  const potentialTransformedNode = transformer.replace(transformedNode, match);
 
   return {
     nodeAfter,
     nodeBefore,
-    transformedNode: potentialTransformedNode,
+    transformedNode: potentialTransformedNode ?? undefined,
   };
 }

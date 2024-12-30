@@ -1,6 +1,15 @@
-import {$isTextNode, type TextNode} from 'lexical';
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextMatchTransformer} from './MarkdownTransformers';
+
+import {$isTextNode, type TextNode} from 'lexical';
+
 import {
   findOutermostTextFormatTransformer,
   importTextFormatTransformer,
@@ -55,7 +64,7 @@ export function importTextTransformers(
     );
 
     if (
-      result?.nodeAfter &&
+      result.nodeAfter &&
       $isTextNode(result.nodeAfter) &&
       !result.nodeAfter.hasFormat('code')
     ) {
@@ -66,7 +75,7 @@ export function importTextTransformers(
       );
     }
     if (
-      result?.nodeBefore &&
+      result.nodeBefore &&
       $isTextNode(result.nodeBefore) &&
       !result.nodeBefore.hasFormat('code')
     ) {
@@ -77,7 +86,7 @@ export function importTextTransformers(
       );
     }
     if (
-      result?.transformedNode &&
+      result.transformedNode &&
       $isTextNode(result.transformedNode) &&
       !result.transformedNode.hasFormat('code')
     ) {
@@ -96,8 +105,12 @@ export function importTextTransformers(
       foundTextMatch.transformer,
       foundTextMatch.match,
     );
+    if (!result) {
+      return;
+    }
+
     if (
-      result?.nodeAfter &&
+      result.nodeAfter &&
       $isTextNode(result.nodeAfter) &&
       !result.nodeAfter.hasFormat('code')
     ) {
@@ -108,7 +121,7 @@ export function importTextTransformers(
       );
     }
     if (
-      result?.nodeBefore &&
+      result.nodeBefore &&
       $isTextNode(result.nodeBefore) &&
       !result.nodeBefore.hasFormat('code')
     ) {
@@ -119,7 +132,7 @@ export function importTextTransformers(
       );
     }
     if (
-      result?.transformedNode &&
+      result.transformedNode &&
       $isTextNode(result.transformedNode) &&
       !result.transformedNode.hasFormat('code')
     ) {

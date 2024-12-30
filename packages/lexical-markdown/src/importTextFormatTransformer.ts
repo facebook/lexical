@@ -1,16 +1,17 @@
-// Processing text content and replaces text format tags.
-// It takes outermost tag match and its content, creates text node with
-// format based on tag and then recursively executed over node's content
-//
-// E.g. for "*Hello **world**!*" string it will create text node with
-// "Hello **world**!" content and italic format and run recursively over
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
-import type {TextNode} from 'lexical';
 import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextFormatTransformer} from './MarkdownTransformers';
+import type {TextNode} from 'lexical';
+
 import {PUNCTUATION_OR_SPACE} from './utils';
 
-// its content to transform "**world**" part
 export function findOutermostTextFormatTransformer(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
@@ -34,10 +35,10 @@ export function findOutermostTextFormatTransformer(
     textFormatTransformersIndex.transformersByTag[match[1]];
 
   return {
-    startIndex: textFormatMatchStart,
     endIndex: textFormatMatchEnd,
-    transformer,
     match,
+    startIndex: textFormatMatchStart,
+    transformer,
   };
 }
 
@@ -129,8 +130,8 @@ export function importTextFormatTransformer(
   }
 
   return {
-    transformedNode: transformedNode,
-    nodeBefore: nodeBefore,
     nodeAfter: nodeAfter,
+    nodeBefore: nodeBefore,
+    transformedNode: transformedNode,
   };
 }

@@ -30,7 +30,6 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
-  $isTextNode,
   ElementNode,
   Klass,
   LexicalNode,

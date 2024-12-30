@@ -28,8 +28,8 @@ import {
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-import {isEmptyParagraph, transformersByType} from './utils';
 import {importTextTransformers} from './importTextTransformers';
+import {isEmptyParagraph, transformersByType} from './utils';
 
 export type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;

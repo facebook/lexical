@@ -792,8 +792,10 @@ export class ElementNode extends LexicalNode {
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-      type: 'element',
-      version: 1,
+      // As an exception here we invoke super at the end for historical reasons.
+      // Namely, to preserve the order of the properties and not to break the tests
+      // that use the serialized string representation.
+      ...super.exportJSON(),
     };
   }
   // These are intended to be extends for specific element heuristics.

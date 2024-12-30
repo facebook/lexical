@@ -514,14 +514,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !proto.hasOwnProperty('exportJSON')
-          ) {
-            console.warn(
-              `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
-          }
         }
       }
       const type = klass.getType();

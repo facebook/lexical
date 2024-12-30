@@ -30,14 +30,6 @@ export class KeywordNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedKeywordNode {
-    return {
-      ...super.exportJSON(),
-      type: 'keyword',
-      version: 1,
-    };
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cursor = 'default';

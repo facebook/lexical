@@ -65,8 +65,6 @@ export class TableRowNode extends ElementNode {
     return {
       ...super.exportJSON(),
       ...(this.getHeight() && {height: this.getHeight()}),
-      type: 'tablerow',
-      version: 1,
     };
   }
 

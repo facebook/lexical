@@ -2778,10 +2778,6 @@ describe('LexicalEditor tests', () => {
       static importJSON() {
         return new CustomParagraphNode();
       }
-
-      exportJSON() {
-        return {...super.exportJSON(), type: 'custom-paragraph'};
-      }
     }
 
     createTestEditor({nodes: [CustomParagraphNode]});

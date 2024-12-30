@@ -103,6 +103,6 @@ export function importFoundTextMatchTransformer(
   return {
     nodeAfter,
     nodeBefore,
-    transformedNode: potentialTransformedNode ?? undefined,
+    transformedNode: potentialTransformedNode || undefined,
   };
 }

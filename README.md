@@ -172,7 +172,7 @@ Node Transforms and Command Listeners are called with an implicit `editor.update
 
 It is permitted to do nested updates, or nested reads, but an update should not be nested in a read
 or vice versa. For example, `editor.update(() => editor.update(() => {...}))` is allowed. It is permitted
-to nest nest an `editor.read` at the end of an `editor.update`, but this will immediately flush the update
+to nest an `editor.read` at the end of an `editor.update`, but this will immediately flush the update
 and any additional update in that callback will throw an error.
 
 All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods

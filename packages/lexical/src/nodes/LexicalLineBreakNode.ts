@@ -14,9 +14,12 @@ import type {
   SerializedLexicalNode,
 } from '../LexicalNode';
 
-import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement, isBlockDomNode} from '../LexicalUtils';
+import {
+  $applyNodeReplacement,
+  isBlockDomNode,
+  isDOMTextNode,
+} from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
 
@@ -64,7 +67,7 @@ export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode {
-    return $createLineBreakNode();
+    return $createLineBreakNode().updateFromJSON(serializedLineBreakNode);
   }
 }
 
@@ -128,8 +131,5 @@ function isLastChildInBlockNode(node: Node): boolean {
 }
 
 function isWhitespaceDomTextNode(node: Node): boolean {
-  return (
-    node.nodeType === DOM_TEXT_TYPE &&
-    /^( |\t|\r?\n)+$/.test(node.textContent || '')
-  );
+  return isDOMTextNode(node) && /^( |\t|\r?\n)+$/.test(node.textContent || '');
 }

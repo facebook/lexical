@@ -24,6 +24,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {SerializedElementNode} from '../..';
 import {$assertRangeSelection, initializeUnitTest, invariant} from '../utils';
 
 describe('LexicalSelection tests', () => {
@@ -801,8 +802,8 @@ describe('Regression tests for #6701', () => {
       static getType() {
         return 'inline-element-node';
       }
-      static importJSON() {
-        return new InlineElementNode();
+      static importJSON(serializedNode: SerializedElementNode) {
+        return new InlineElementNode().updateFromJSON(serializedNode);
       }
       isInline() {
         return true;

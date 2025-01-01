@@ -17,7 +17,13 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
+import type {
+  KlassConstructor,
+  LexicalEditor,
+  LexicalUpdateJSON,
+  Spread,
+  TextFormatType,
+} from 'lexical';
 
 import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -27,6 +33,7 @@ import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
   ELEMENT_TYPE_TO_FORMAT,
+  TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
@@ -41,6 +48,7 @@ import {
   $isRootOrShadowRoot,
   isHTMLElement,
   removeFromParent,
+  toggleTextFormatType,
 } from '../LexicalUtils';
 
 export type SerializedElementNode<
@@ -51,6 +59,8 @@ export type SerializedElementNode<
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
+    textFormat?: number;
+    textStyle?: string;
   },
   SerializedLexicalNode
 >;
@@ -307,6 +317,10 @@ export class ElementNode extends LexicalNode {
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
+  /** @internal */
+  __textFormat: number;
+  /** @internal */
+  __textStyle: string;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -317,6 +331,8 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+    this.__textFormat = 0;
+    this.__textStyle = '';
   }
 
   afterCloneFrom(prevNode: this) {
@@ -328,6 +344,8 @@ export class ElementNode extends LexicalNode {
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
     this.__dir = prevNode.__dir;
+    this.__textFormat = prevNode.__textFormat;
+    this.__textStyle = prevNode.__textStyle;
   }
 
   getFormat(): number {
@@ -527,12 +545,35 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__dir;
   }
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
+  }
   hasFormat(type: ElementFormatType): boolean {
     if (type !== '') {
       const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
       return (this.getFormat() & formatFlag) !== 0;
     }
     return false;
+  }
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
+  }
+  /**
+   * Returns the format flags applied to the node as a 32-bit integer.
+   *
+   * @returns a number representing the TextFormatTypes applied to the node.
+   */
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+    const self = this.getLatest();
+    const format = self.__textFormat;
+    return toggleTextFormatType(format, type, alignWithFormat);
+  }
+
+  getTextStyle(): string {
+    const self = this.getLatest();
+    return self.__textStyle;
   }
 
   // Mutators
@@ -613,6 +654,16 @@ export class ElementNode extends LexicalNode {
     const self = this.getWritable();
     self.__style = style || '';
     return this;
+  }
+  setTextFormat(type: number): this {
+    const self = this.getWritable();
+    self.__textFormat = type;
+    return self;
+  }
+  setTextStyle(style: string): this {
+    const self = this.getWritable();
+    self.__textStyle = style;
+    return self;
   }
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
@@ -787,7 +838,7 @@ export class ElementNode extends LexicalNode {
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {
-    return {
+    const json: SerializedElementNode = {
       children: [],
       direction: this.getDirection(),
       format: this.getFormatType(),
@@ -797,6 +848,26 @@ export class ElementNode extends LexicalNode {
       // that use the serialized string representation.
       ...super.exportJSON(),
     };
+    const textFormat = this.getTextFormat();
+    const textStyle = this.getTextStyle();
+    if (textFormat !== 0) {
+      json.textFormat = textFormat;
+    }
+    if (textStyle !== '') {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setFormat(serializedNode.format)
+      .setIndent(serializedNode.indent)
+      .setDirection(serializedNode.direction)
+      .setTextFormat(serializedNode.textFormat || 0)
+      .setTextStyle(serializedNode.textStyle || '');
   }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(

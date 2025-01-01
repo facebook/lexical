@@ -13,6 +13,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
@@ -100,16 +101,22 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedInlineImageNode,
   ): InlineImageNode {
-    const {altText, height, width, caption, src, showCaption, position} =
-      serializedNode;
-    const node = $createInlineImageNode({
+    const {altText, height, width, src, showCaption, position} = serializedNode;
+    return $createInlineImageNode({
       altText,
       height,
       position,
       showCaption,
       src,
       width,
-    });
+    }).updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedInlineImageNode>,
+  ): this {
+    const {caption} = serializedNode;
+    const node = super.updateFromJSON(serializedNode);
     const nestedEditor = node.__caption;
     const editorState = nestedEditor.parseEditorState(caption.editorState);
     if (!editorState.isEmpty()) {

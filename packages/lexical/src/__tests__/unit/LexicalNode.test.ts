@@ -21,6 +21,7 @@ import {
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  SerializedLexicalNode,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
@@ -48,8 +49,8 @@ class TestNode extends LexicalNode {
     return document.createElement('div');
   }
 
-  static importJSON() {
-    return new TestNode();
+  static importJSON(serializedNode: SerializedLexicalNode) {
+    return new TestNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -62,8 +63,8 @@ class InlineDecoratorNode extends DecoratorNode<string> {
     return new InlineDecoratorNode();
   }
 
-  static importJSON() {
-    return new InlineDecoratorNode();
+  static importJSON(serializedNode: SerializedLexicalNode) {
+    return new InlineDecoratorNode().updateFromJSON(serializedNode);
   }
 
   createDOM(): HTMLElement {

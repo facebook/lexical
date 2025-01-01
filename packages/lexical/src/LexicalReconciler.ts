@@ -23,7 +23,6 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
 } from '.';
@@ -332,9 +331,8 @@ function reconcileElementTerminatingLineBreak(
   }
 }
 
-function reconcileParagraphFormat(element: ElementNode): void {
+function reconcileTextFormat(element: ElementNode): void {
   if (
-    $isParagraphNode(element) &&
     subTreeTextFormat != null &&
     subTreeTextFormat !== element.__textFormat &&
     !activeEditorStateReadOnly
@@ -344,9 +342,8 @@ function reconcileParagraphFormat(element: ElementNode): void {
   }
 }
 
-function reconcileParagraphStyle(element: ElementNode): void {
+function reconcileTextStyle(element: ElementNode): void {
   if (
-    $isParagraphNode(element) &&
     subTreeTextStyle !== '' &&
     subTreeTextStyle !== element.__textStyle &&
     !activeEditorStateReadOnly
@@ -438,8 +435,8 @@ function $reconcileChildrenWithDirection(
   subTreeTextStyle = '';
   $reconcileChildren(prevElement, nextElement, nextElement.getDOMSlot(dom));
   reconcileBlockDirection(nextElement, dom);
-  reconcileParagraphFormat(nextElement);
-  reconcileParagraphStyle(nextElement);
+  reconcileTextFormat(nextElement);
+  reconcileTextStyle(nextElement);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 

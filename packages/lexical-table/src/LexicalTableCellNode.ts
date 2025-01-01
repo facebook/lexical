@@ -13,6 +13,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
@@ -61,7 +62,7 @@ export class TableCellNode extends ElementNode {
   /** @internal */
   __headerState: TableCellHeaderState;
   /** @internal */
-  __width?: number;
+  __width?: number | undefined;
   /** @internal */
   __backgroundColor: null | string;
 
@@ -98,14 +99,18 @@ export class TableCellNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    const colSpan = serializedNode.colSpan || 1;
-    const rowSpan = serializedNode.rowSpan || 1;
-    return $createTableCellNode(
-      serializedNode.headerState,
-      colSpan,
-      serializedNode.width || undefined,
-    )
-      .setRowSpan(rowSpan)
+    return $createTableCellNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTableCellNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHeaderStyles(serializedNode.headerState)
+      .setColSpan(serializedNode.colSpan || 1)
+      .setRowSpan(serializedNode.rowSpan || 1)
+      .setWidth(serializedNode.width || undefined)
       .setBackgroundColor(serializedNode.backgroundColor || null);
   }
 
@@ -224,7 +229,7 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState;
   }
 
-  setWidth(width: number): this {
+  setWidth(width: number | undefined): this {
     const self = this.getWritable();
     self.__width = width;
     return self;

@@ -203,7 +203,7 @@ exportJSON(): SerializedHeadingNode {
 
 #### `LexicalNode.importJSON()`
 
-You can control how a `LexicalNode` is serialized back into a node from JSON by adding an `importJSON()` method.
+You can control how a `LexicalNode` is deserialized back into a node from JSON by adding an `importJSON()` method.
 
 ```js
 export type SerializedLexicalNode = {
@@ -216,23 +216,62 @@ importJSON(jsonNode: SerializedLexicalNode): LexicalNode
 
 This method works in the opposite way to how `exportJSON` works. Lexical uses the `type` field on the JSON object to determine what Lexical node class it needs to map to, so keeping the `type` field consistent with the `getType()` of the LexicalNode is essential.
 
+You should use the `updateFromJSON` method in your `importJSON` to simplify the implementation and allow for future extension by the base classes.
+
 Here's an example of `importJSON` for the `HeadingNode`:
 
-```js
+```ts
 static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-  const node = $createHeadingNode(serializedNode.tag);
-  node.setFormat(serializedNode.format);
-  node.setIndent(serializedNode.indent);
-  node.setDirection(serializedNode.direction);
-  return node;
+  return $createHeadingNode().updateFromJSON(serializedNode);
+}
+
+updateFromJSON(
+  serializedNode: LexicalUpdateJSON<SerializedHeadingNode>,
+): this {
+  return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
 }
 ```
+
+#### `LexicalNode.updateFromJSON()`
+
+`updateFromJSON` is a method introduced in Lexical 0.23 to simplify the implementation of `importJSON`, so that a base class can expose the code that it is using to set all of the node's properties based on the JSON to any subclass.
+
+:::note
+
+The input type used in this method is not sound in the general case, but it is safe if subclasses only add optional properties to the JSON. Even though it is not sound, the usage in this library is safe as long as your `importJSON` method does not upcast the node before calling `updateFromJSON`.
+
+```ts
+export type SerializedExtendedTextNode = Spread<
+  // UNSAFE. This property is not optional
+  { newProperty: string },
+  SerializedTextNode
+>;
+```
+
+```ts
+export type SerializedExtendedTextNode = Spread<
+  // SAFE. This property is not optional
+  { newProperty?: string },
+  SerializedTextNode
+>;
+```
+
+This is because it's possible to cast to a more general type, e.g.
+
+```ts
+const serializedNode: SerializedTextNode = { /* ... */ };
+const newNode: TextNode = $createExtendedTextNode();
+// This passes the type check, but would fail at runtime if the updateFromJSON method required newProperty
+newNode.updateFromJSON(serializedNode);
+```
+
+:::
 
 ### Versioning & Breaking Changes
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:
 
-```js
+```ts
 import type {Spread} from 'lexical';
 
 // Spread is a Typescript utility that allows us to spread the properties
@@ -249,21 +288,10 @@ export type SerializedTextNode = Spread<
 >;
 ```
 
-If we wanted to make changes to the above `TextNode`, we should be sure to not remove or change an existing property, as this can cause data corruption. Instead, opt to add the functionality as a new property field instead, and use the version to determine how to handle the differences in your node.
+If we wanted to make changes to the above `TextNode`, we should be sure to not remove or change an existing property, as this can cause data corruption. Instead, opt to add the functionality as a new optional property field instead.
 
-```js
-export type SerializedTextNodeV1 = Spread<
-  {
-    detail: number;
-    format: number;
-    mode: TextModeType;
-    style: string;
-    text: string;
-  },
-  SerializedLexicalNode
->;
-
-export type SerializedTextNodeV2 = Spread<
+```ts
+export type SerializedTextNode = Spread<
   {
     detail: number;
     format: number;
@@ -271,15 +299,53 @@ export type SerializedTextNodeV2 = Spread<
     style: string;
     text: string;
     // Our new field we've added
-    newField: string,
-    // Notice the version is now 2
-    version: 2,
+    newField?: string,
   },
   SerializedLexicalNode
 >;
-
-export type SerializedTextNode = SerializedTextNodeV1 | SerializedTextNodeV2;
 ```
+
+### Dangers of a flat version property
+
+The `updateFromJSON` method should ignore `type` and `version`, to support subclassing and code re-use. Ideally, you should only evolve your types in a backwards compatible way (new fields are optional), and/or have a uniquely named property to store the version in your class. Generally speaking, it's best if nearly all properties are optional and the node provides defaults for each property. This allows you to write less boilerplate code and produce smaller JSON.
+
+The reason that `version` is no longer recommended is that it does not compose with subclasses. Consider this hierarchy:
+
+```ts
+class TextNode {
+  exportJSON() {
+    return { /* ... */, version: 1 };
+  }
+}
+class ExtendedTextNode extends TextNode {
+  exportJSON() {
+    return { ...super.exportJSON() };
+  }
+}
+```
+
+If `TextNode` is updated to `version: 2` then this version and new serialization will propagate to `ExtendedTextNode` via the `super.exportJSON()` call, but this leaves nowhere to store a version for `ExtendedTextNode` or vice versa. If the `ExtendedTextNode` explicitly specified a `version`, then the version of the base class will be ignored even though the representation of the JSON from the base class may change:
+
+```ts
+class TextNode {
+  exportJSON() {
+    return { /* ... */, version: 2 };
+  }
+}
+class ExtendedTextNode extends TextNode {
+  exportJSON() {
+    // The super's layout has changed, but the version information is lost
+    return { ...super.exportJSON(), version: 1 };
+  }
+}
+```
+
+So then you have a situation where there are possibly two JSON layouts for `ExtendedTextNode` with the same version, because the base class version changed due to a package upgrade.
+
+If you do have incompatible representations, it's probably best to choose a new type. This is basically the only way that will force old configurations to fail, as `importJSON` implementations often don't do runtime validation and dangerously assume that the values are the correct type.
+
+There are other schemes that would allow for composable versions, such as nesting the superclass data, or choosing a different name for a version property in each subclass. In practice, explicit versioning is generally redundant if the serialization is properly parsed, so it is recommended that you use the simpler approach with a flat representation with mostly optional properties.
+
 ### Handling extended HTML styling
 
 Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON \<-\> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
@@ -364,7 +430,7 @@ export class ExtendedTextNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedTextNode): TextNode {
-    return TextNode.importJSON(serializedNode);
+    return $createExtendedTextNode().updateFromJSON(serializedNode);
   }
 
   isSimpleText() {
@@ -374,7 +440,7 @@ export class ExtendedTextNode extends TextNode {
   // no need to add exportJSON here, since we are not adding any new properties
 }
 
-export function $createExtendedTextNode(text: string): ExtendedTextNode {
+export function $createExtendedTextNode(text: string = ''): ExtendedTextNode {
   return $applyNodeReplacement(new ExtendedTextNode(text));
 }
 

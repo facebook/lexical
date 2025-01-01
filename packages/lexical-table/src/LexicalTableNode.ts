@@ -25,6 +25,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   setDOMUnmanaged,
@@ -114,21 +115,22 @@ export function setScrollableTablesActive(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
-  __colWidths?: number[] | readonly number[];
+  __colWidths?: readonly number[];
 
   static getType(): string {
     return 'table';
   }
 
-  getColWidths(): number[] | readonly number[] | undefined {
+  getColWidths(): readonly number[] | undefined {
     const self = this.getLatest();
     return self.__colWidths;
   }
 
-  setColWidths(colWidths: readonly number[]): this {
+  setColWidths(colWidths: readonly number[] | undefined): this {
     const self = this.getWritable();
     // NOTE: Node properties should be immutable. Freeze to prevent accidental mutation.
-    self.__colWidths = __DEV__ ? Object.freeze(colWidths) : colWidths;
+    self.__colWidths =
+      colWidths !== undefined && __DEV__ ? Object.freeze(colWidths) : colWidths;
     return self;
   }
 
@@ -152,10 +154,14 @@ export class TableNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableNode): TableNode {
-    const tableNode = $createTableNode();
-    tableNode.__rowStriping = serializedNode.rowStriping || false;
-    tableNode.__colWidths = serializedNode.colWidths;
-    return tableNode;
+    return $createTableNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setRowStriping(serializedNode.rowStriping || false)
+      .setColWidths(serializedNode.colWidths);
   }
 
   constructor(key?: NodeKey) {
@@ -425,8 +431,10 @@ export class TableNode extends ElementNode {
     return Boolean(this.getLatest().__rowStriping);
   }
 
-  setRowStriping(newRowStriping: boolean): void {
-    this.getWritable().__rowStriping = newRowStriping;
+  setRowStriping(newRowStriping: boolean): this {
+    const self = this.getWritable();
+    self.__rowStriping = newRowStriping;
+    return self;
   }
 
   canSelectBefore(): true {

@@ -175,11 +175,7 @@ export class TestElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -207,7 +203,7 @@ export class TestTextNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    return new TestTextNode(serializedNode.text);
+    return new TestTextNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -225,11 +221,7 @@ export class TestInlineElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestInlineElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -263,11 +255,7 @@ export class TestShadowRootNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestShadowRootNode,
   ): TestShadowRootNode {
-    const node = $createTestShadowRootNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createTestShadowRootNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -301,16 +289,11 @@ export class TestSegmentedNode extends TextNode {
   static importJSON(
     serializedNode: SerializedTestSegmentedNode,
   ): TestSegmentedNode {
-    const node = $createTestSegmentedNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    return $createTestSegmentedNode().updateFromJSON(serializedNode);
   }
 }
 
-export function $createTestSegmentedNode(text: string): TestSegmentedNode {
+export function $createTestSegmentedNode(text: string = ''): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
@@ -328,11 +311,9 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestExcludeFromCopyElementNode,
   ): TestExcludeFromCopyElementNode {
-    const node = $createTestExcludeFromCopyElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createTestExcludeFromCopyElementNode().updateFromJSON(
+      serializedNode,
+    );
   }
 
   createDOM() {
@@ -366,7 +347,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedTestDecoratorNode,
   ): TestDecoratorNode {
-    return $createTestDecoratorNode();
+    return $createTestDecoratorNode().updateFromJSON(serializedNode);
   }
 
   static importDOM() {

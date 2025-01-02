@@ -708,10 +708,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
-      () => {
+      (maxIndent) => {
         return $handleIndentAndOutdent((block) => {
-          const indent = block.getIndent();
-          block.setIndent(indent + 1);
+          const indent = block.getIndent() + 1;
+          block.setIndent(
+            maxIndent == null ? indent : Math.min(indent, maxIndent as number),
+          );
         });
       },
       COMMAND_PRIORITY_EDITOR,

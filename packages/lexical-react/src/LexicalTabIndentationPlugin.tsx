@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$filter, $getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
@@ -57,7 +57,10 @@ function $indentOverTab(selection: RangeSelection): boolean {
   return false;
 }
 
-export function registerTabIndentation(editor: LexicalEditor) {
+export function registerTabIndentation(
+  editor: LexicalEditor,
+  maxIndent?: number,
+) {
   return editor.registerCommand<KeyboardEvent>(
     KEY_TAB_COMMAND,
     (event) => {
@@ -67,12 +70,11 @@ export function registerTabIndentation(editor: LexicalEditor) {
       }
 
       event.preventDefault();
-      const command: LexicalCommand<void> = $indentOverTab(selection)
+      return $indentOverTab(selection)
         ? event.shiftKey
-          ? OUTDENT_CONTENT_COMMAND
-          : INDENT_CONTENT_COMMAND
-        : INSERT_TAB_COMMAND;
-      return editor.dispatchCommand(command, undefined);
+          ? editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined)
+          : editor.dispatchCommand(INDENT_CONTENT_COMMAND, maxIndent)
+        : editor.dispatchCommand(INSERT_TAB_COMMAND, undefined);
     },
     COMMAND_PRIORITY_EDITOR,
   );
@@ -83,11 +85,11 @@ export function registerTabIndentation(editor: LexicalEditor) {
  * recommend using this plugin as it could negatively affect acessibility for keyboard
  * users, causing focus to become trapped within the editor.
  */
-export function TabIndentationPlugin(): null {
+export function TabIndentationPlugin({maxIndent}: {maxIndent?: number}): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return registerTabIndentation(editor);
-  }, [editor]);
+    return registerTabIndentation(editor, maxIndent);
+  }, [editor, maxIndent]);
 
   return null;
 }

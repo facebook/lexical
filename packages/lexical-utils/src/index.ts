@@ -9,6 +9,9 @@
 import {
   $cloneWithProperties,
   $createParagraphNode,
+  $getBreadthCaret,
+  $getChildCaretAtIndex,
+  $getDepthCaret,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
@@ -18,11 +21,14 @@ import {
   $isTextNode,
   $setSelection,
   $splitNode,
+  BreadthNodeCaret,
+  CaretDirection,
   EditorState,
   ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
+  NodeCaret,
   NodeKey,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
@@ -199,6 +205,18 @@ const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
 ) => ({done: false, value});
 
 /**
+ * Get the adjacent caret in the same direction
+ *
+ * @param caret A caret or null
+ * @returns `caret.getAdjacentCaret()` or `null`
+ */
+export function $getAdjacentCaret<D extends CaretDirection>(
+  caret: null | NodeCaret<D>,
+): null | BreadthNodeCaret<LexicalNode, D> {
+  return caret ? caret.getAdjacentCaret() : null;
+}
+
+/**
  * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
  * @param startNode - The node to start the search, if omitted, it will start at the root node.
  * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
@@ -208,42 +226,41 @@ export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): DFSIterator {
-  const start = (startNode || $getRoot()).getLatest();
-  const startDepth = $getDepth(start);
-  const end = endNode;
-  let node: null | LexicalNode = start;
+  const root = $getRoot();
+  const start = startNode || root;
+  const startCaret = $isElementNode(start)
+    ? $getDepthCaret(start, 'next')
+    : $getBreadthCaret(start, 'previous').getFlipped();
+  const startDepth = $getDepth(startCaret.getParentAtCaret());
+  const endDepth = endNode == null ? startDepth : 0;
+  const rootMode = 'root';
+
   let depth = startDepth;
-  let isFirstNext = true;
+  let caret: null | NodeCaret<'next'> = startCaret;
 
   const iterator: DFSIterator = {
     next(): IteratorResult<DFSNode, void> {
-      if (node === null) {
+      if (caret === null) {
         return iteratorDone;
       }
-      if (isFirstNext) {
-        isFirstNext = false;
-        return iteratorNotDone({depth, node});
-      }
-      if (node === end) {
-        return iteratorDone;
-      }
-
-      if ($isElementNode(node) && node.getChildrenSize() > 0) {
-        node = node.getFirstChild();
+      const rval = iteratorNotDone({depth, node: caret.origin});
+      if (caret.type === 'depth') {
         depth++;
-      } else {
-        let depthDiff;
-        [node, depthDiff] = $getNextSiblingOrParentSibling(node) || [null, 0];
-        depth += depthDiff;
-        if (end == null && depth <= startDepth) {
-          node = null;
+      }
+      if (caret && caret.origin.is(endNode)) {
+        caret = null;
+      }
+      let nextCaret = $getAdjacentCaret(caret);
+      while (caret !== null && nextCaret === null) {
+        depth--;
+        caret = depth > endDepth ? caret.getParentCaret(rootMode) : null;
+        if (caret && caret.origin.is(endNode)) {
+          caret = null;
         }
+        nextCaret = $getAdjacentCaret(caret);
       }
-
-      if (node === null) {
-        return iteratorDone;
-      }
-      return iteratorNotDone({depth, node});
+      caret = nextCaret ? nextCaret.getChildCaret() || nextCaret : null;
+      return rval;
     },
     [Symbol.iterator](): DFSIterator {
       return iterator;
@@ -542,12 +559,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
     const focusOffset = focus.offset;
 
     if ($isRootOrShadowRoot(focusNode)) {
-      const focusChild = focusNode.getChildAtIndex(focusOffset);
-      if (focusChild == null) {
-        focusNode.append(node);
-      } else {
-        focusChild.insertBefore(node);
-      }
+      $getChildCaretAtIndex(focusNode, focusOffset).insert(node);
       node.selectNext();
     } else {
       let splitNode: ElementNode;
@@ -572,8 +584,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       const nodes = selection.getNodes();
       nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
     } else {
-      const root = $getRoot();
-      root.append(node);
+      $getRoot().append(node);
     }
     const paragraphNode = $createParagraphNode();
     node.insertAfter(paragraphNode);
@@ -641,12 +652,7 @@ export function $filter<T>(
  * @param node Node that needs to be appended
  */
 export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
-  const firstChild = parent.getFirstChild();
-  if (firstChild !== null) {
-    firstChild.insertBefore(node);
-  } else {
-    parent.append(node);
-  }
+  $getDepthCaret(parent, 'next').insert(node);
 }
 
 let NEEDS_MANUAL_ZOOM = IS_FIREFOX || !CAN_USE_DOM ? false : undefined;
@@ -784,10 +790,7 @@ export function $descendantsMatching(
  * @returns An iterator of the node's children
  */
 export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
-  return {
-    [Symbol.iterator]: () =>
-      $childIterator(node.getFirstChild(), (child) => child.getNextSibling()),
-  };
+  return $caretNodeIterator($getDepthCaret(node, 'next'));
 }
 
 /**
@@ -799,28 +802,26 @@ export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
  * @returns An iterator of the node's children
  */
 export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
-  return {
-    [Symbol.iterator]: () =>
-      $childIterator(node.getLastChild(), (child) =>
-        child.getPreviousSibling(),
-      ),
-  };
+  return $caretNodeIterator($getDepthCaret(node, 'previous'));
 }
 
-function $childIterator(
-  initialNode: LexicalNode | null,
-  nextNode: (node: LexicalNode) => LexicalNode | null,
-): Iterator<LexicalNode> {
-  let state = initialNode;
+function $caretNodeIterator<D extends CaretDirection>(
+  startCaret: NodeCaret<D>,
+): IterableIterator<LexicalNode> {
+  const iter = startCaret[Symbol.iterator]();
   const seen = __DEV__ ? new Set<NodeKey>() : null;
   return {
+    [Symbol.iterator]() {
+      return this;
+    },
     next() {
-      if (state === null) {
+      const step = iter.next();
+      if (step.done) {
         return iteratorDone;
       }
-      const rval = iteratorNotDone(state);
+      const {origin} = step.value;
       if (__DEV__ && seen !== null) {
-        const key = state.getKey();
+        const key = origin.getKey();
         invariant(
           !seen.has(key),
           '$childIterator: Cycle detected, node with key %s has already been traversed',
@@ -828,8 +829,7 @@ function $childIterator(
         );
         seen.add(key);
       }
-      state = nextNode(state);
-      return rval;
+      return iteratorNotDone(origin);
     },
   };
 }

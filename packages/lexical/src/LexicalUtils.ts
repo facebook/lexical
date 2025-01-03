@@ -543,8 +543,13 @@ export function markNodesWithTypesAsDirty(
   editor.update(
     () => {
       for (const nodeMap of dirtyNodeMaps) {
-        for (const node of nodeMap.values()) {
-          node.markDirty();
+        for (const nodeKey of nodeMap.keys()) {
+          // We are only concerned with nodes that are still in the latest NodeMap,
+          // if they no longer exist then markDirty would raise an exception
+          const latest = $getNodeByKey(nodeKey);
+          if (latest) {
+            latest.markDirty();
+          }
         }
       }
     },

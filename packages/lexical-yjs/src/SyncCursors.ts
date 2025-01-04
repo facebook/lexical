@@ -359,11 +359,9 @@ export function $syncLocalCursorPosition(
     if (!$isRangeSelection(selection)) {
       return;
     }
-    const anchor = selection.anchor;
-    const focus = selection.focus;
 
-    $setPoint(anchor, anchorKey, anchorOffset);
-    $setPoint(focus, focusKey, focusOffset);
+    $setPoint(selection.anchor, anchorKey, anchorOffset);
+    $setPoint(selection.focus, focusKey, focusOffset);
   }
 }
 
@@ -388,16 +386,7 @@ function getCollabNodeAndOffset(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharedType: any,
   offset: number,
-): [
-  (
-    | null
-    | CollabDecoratorNode
-    | CollabElementNode
-    | CollabTextNode
-    | CollabLineBreakNode
-  ),
-  number,
-] {
+): [null | AnyCollabNode, number] {
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {

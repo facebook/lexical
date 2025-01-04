@@ -1,9 +1,7 @@
-/**
+/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
+ * Licensed under the MIT license. See LICENSE file in the root directory.
  */
 
 'use strict';
@@ -11,29 +9,38 @@
 const fs = require('fs-extra');
 const glob = require('glob');
 const path = require('node:path');
-const {packagesManager} = require('../shared/packagesManager');
+const { packagesManager } = require('../shared/packagesManager');
 const transformFlowFileContents = require('./transformFlowFileContents');
 
-// This script attempts to find all Flow definition modules, and makes
-// them compatible with www. Specifically, it finds any imports that
-// reference lower case 'lexical' -> 'Lexical' and package references,
-// such as 'lexical/Foo' -> 'LexicalFoo' and '@lexical/react/LexicalFoo' ->
-// 'LexicalFoo'. Lastly, it creates these files in the 'dist' directory
-// for each package so they can easily be copied to www.
+/**
+ * Modernizes Flow definition modules by adapting imports for www compatibility.
+ *
+ * Key Enhancements:
+ * - Converts 'lexical' -> 'Lexical' imports.
+ * - Standardizes package references:
+ *   'lexical/Foo' -> 'LexicalFoo'
+ *   '@lexical/react/LexicalFoo' -> 'LexicalFoo'
+ * - Outputs polished files to 'dist' for streamlined deployment.
+ */
 async function rewriteImports() {
-  for (const pkg of packagesManager.getPackages()) {
-    for (const flowFile of glob.sync(pkg.resolve('flow', '*.flow'), {
+  const packages = packagesManager.getPackages();
+
+  for (const pkg of packages) {
+    const flowFiles = glob.sync(pkg.resolve('flow', '*.flow'), {
       windowsPathsNoEscape: true,
-    })) {
-      const data = fs.readFileSync(flowFile, 'utf8');
-      const result = await transformFlowFileContents(data);
-      fs.writeFileSync(
-        pkg.resolve('dist', path.basename(flowFile)),
-        result,
-        'utf8',
-      );
-    }
+    });
+
+    await Promise.all(flowFiles.map(async (flowFile) => {
+      const sourceCode = fs.readFileSync(flowFile, 'utf8');
+      const transformedCode = await transformFlowFileContents(sourceCode);
+      const outputPath = pkg.resolve('dist', path.basename(flowFile));
+
+      fs.writeFileSync(outputPath, transformedCode, 'utf8');
+    }));
   }
 }
 
-rewriteImports();
+// Execute the transformation process
+rewriteImports().catch(err => {
+  console.error('Failed to rewrite imports:', err);
+});

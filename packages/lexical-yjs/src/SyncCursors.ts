@@ -7,11 +7,18 @@
  */
 
 import type {Binding} from './Bindings';
-import type {BaseSelection, NodeKey, NodeMap, Point} from 'lexical';
+import type {
+  BaseSelection,
+  LexicalEditor,
+  NodeKey,
+  NodeMap,
+  Point,
+} from 'lexical';
 import type {AbsolutePosition, RelativePosition} from 'yjs';
 
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
+  $createPoint,
   $getNodeByKey,
   $getSelection,
   $isElementNode,
@@ -34,16 +41,10 @@ import {CollabTextNode} from './CollabTextNode';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
-  anchor: {
-    key: NodeKey;
-    offset: number;
-  };
+  anchor: Point;
   caret: HTMLElement;
   color: string;
-  focus: {
-    key: NodeKey;
-    offset: number;
-  };
+  focus: Point;
   name: HTMLSpanElement;
   selections: Array<HTMLElement>;
 };
@@ -153,7 +154,8 @@ function destroyCursor(binding: Binding, cursor: Cursor) {
   }
 }
 
-function createCursorSelection(
+function $createCursorSelection(
+  editor: LexicalEditor,
   cursor: Cursor,
   anchorKey: NodeKey,
   anchorOffset: number,
@@ -167,17 +169,24 @@ function createCursorSelection(
   name.textContent = cursor.name;
   name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
   caret.appendChild(name);
+
+  const editorState = editor.getEditorState();
+  const anchorNode = editorState.read(() => $getNodeByKey(anchorKey));
+  const focusNode = editorState.read(() => $getNodeByKey(focusKey));
+
   return {
-    anchor: {
-      key: anchorKey,
-      offset: anchorOffset,
-    },
+    anchor: $createPoint(
+      anchorKey,
+      anchorOffset,
+      $isElementNode(anchorNode) ? 'element' : 'text',
+    ),
     caret,
     color,
-    focus: {
-      key: focusKey,
-      offset: focusOffset,
-    },
+    focus: $createPoint(
+      focusKey,
+      focusOffset,
+      $isElementNode(focusNode) ? 'element' : 'text',
+    ),
     name,
     selections: [],
   };
@@ -410,7 +419,7 @@ function getCollabNodeAndOffset(
   return [null, 0];
 }
 
-export function syncCursorPositions(
+export function $syncCursorPositions(
   binding: Binding,
   provider: Provider,
 ): void {
@@ -447,7 +456,8 @@ export function syncCursorPositions(
           selection = cursor.selection;
 
           if (selection === null) {
-            selection = createCursorSelection(
+            selection = $createCursorSelection(
+              editor,
               cursor,
               anchorKey,
               anchorOffset,
@@ -455,12 +465,8 @@ export function syncCursorPositions(
               focusOffset,
             );
           } else {
-            const anchor = selection.anchor;
-            const focus = selection.focus;
-            anchor.key = anchorKey;
-            anchor.offset = anchorOffset;
-            focus.key = focusKey;
-            focus.offset = focusOffset;
+            $setPoint(selection.anchor, anchorKey, anchorOffset);
+            $setPoint(selection.focus, focusKey, focusOffset);
           }
         }
       }
@@ -484,6 +490,8 @@ export function syncCursorPositions(
     }
   }
 }
+/** @deprecated renamed to {@link $syncCursorPositions} by @lexical/eslint-plugin rules-of-lexical */
+export const syncCursorPositions = $syncCursorPositions;
 
 export function syncLexicalSelectionToYjs(
   binding: Binding,

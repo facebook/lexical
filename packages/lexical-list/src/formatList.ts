@@ -66,7 +66,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
     const selection = $getSelection();
 
     if (selection !== null) {
-      const nodes = selection.getNodes();
+      let nodes = selection.getNodes();
       if ($isRangeSelection(selection)) {
         const anchorAndFocus = selection.getStartEndPoints();
         invariant(
@@ -77,7 +77,16 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
         const anchorNode = anchor.getNode();
         const anchorNodeParent = anchorNode.getParent();
 
-        if ($isSelectingEmptyListItem(anchorNode, nodes)) {
+        if ($isRootOrShadowRoot(anchorNode)) {
+          const firstChild = anchorNode.getFirstChild();
+          if (firstChild) {
+            nodes = firstChild.selectStart().getNodes();
+          } else {
+            const paragraph = $createParagraphNode();
+            anchorNode.append(paragraph);
+            nodes = paragraph.select().getNodes();
+          }
+        } else if ($isSelectingEmptyListItem(anchorNode, nodes)) {
           const list = $createListNode(listType);
 
           if ($isRootOrShadowRoot(anchorNodeParent)) {

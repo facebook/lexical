@@ -8,12 +8,12 @@
     "history"
   ],
   "license": "MIT",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "main": "LexicalHistory.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.22.0",
-    "lexical": "0.22.0"
+    "@lexical/utils": "0.23.0",
+    "lexical": "0.23.0"
   },
   "repository": {
     "type": "git",

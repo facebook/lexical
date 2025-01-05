@@ -257,5 +257,6 @@
   "255": "TablePlugin: TableNode is not registered on editor",
   "256": "insertAfterEndRow is not a TableRowNode",
   "257": "insertBeforeStartRow is not a TableRowNode",
-  "258": "$childIterator: Cycle detected, node with key %s has already been traversed"
+  "258": "$childIterator: Cycle detected, node with key %s has already been traversed",
+  "259": "Point.getNode() must return ElementNode when type is element"
 }

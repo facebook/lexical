@@ -28,7 +28,6 @@ import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 
-import {MAX_INDENT} from './appSettings';
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
@@ -218,7 +217,7 @@ export default function Editor(): JSX.Element {
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />
-            <TabIndentationPlugin maxIndent={MAX_INDENT} />
+            <TabIndentationPlugin maxIndent={7} />
             <CollapsiblePlugin />
             <PageBreakPlugin />
             <LayoutPlugin />

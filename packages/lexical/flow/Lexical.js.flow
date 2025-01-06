@@ -39,7 +39,7 @@ declare export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var INSERT_TAB_COMMAND: LexicalCommand<void>;
 declare export var KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent>;
-declare export var INDENT_CONTENT_COMMAND: LexicalCommand<number | void>;
+declare export var INDENT_CONTENT_COMMAND: LexicalCommand<void>;
 declare export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
 declare export var DROP_COMMAND: LexicalCommand<DragEvent>;
 declare export var FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType>;

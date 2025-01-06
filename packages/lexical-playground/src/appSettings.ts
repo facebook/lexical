@@ -42,5 +42,3 @@ export const INITIAL_SETTINGS: Record<SettingName, boolean> = {
 export type SettingName = keyof typeof DEFAULT_SETTINGS;
 
 export type Settings = typeof INITIAL_SETTINGS;
-
-export const MAX_INDENT = 7;

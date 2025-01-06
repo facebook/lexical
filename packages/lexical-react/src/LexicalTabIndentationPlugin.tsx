@@ -6,16 +6,21 @@
  *
  */
 
-import type {LexicalEditor, RangeSelection} from 'lexical';
+import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$filter, $getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
+import {
+  $filter,
+  $getNearestBlockElementAncestorOrThrow,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getSelection,
   $isBlockElementNode,
   $isRangeSelection,
   $normalizeSelection__EXPERIMENTAL,
+  COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
@@ -61,22 +66,47 @@ export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number,
 ) {
-  return editor.registerCommand<KeyboardEvent>(
-    KEY_TAB_COMMAND,
-    (event) => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection)) {
-        return false;
-      }
+  return mergeRegister(
+    editor.registerCommand<KeyboardEvent>(
+      KEY_TAB_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        event.preventDefault();
+        const command: LexicalCommand<void> = $indentOverTab(selection)
+          ? event.shiftKey
+            ? OUTDENT_CONTENT_COMMAND
+            : INDENT_CONTENT_COMMAND
+          : INSERT_TAB_COMMAND;
+        return editor.dispatchCommand(command, undefined);
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
 
-      event.preventDefault();
-      return $indentOverTab(selection)
-        ? event.shiftKey
-          ? editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined)
-          : editor.dispatchCommand(INDENT_CONTENT_COMMAND, maxIndent)
-        : editor.dispatchCommand(INSERT_TAB_COMMAND, undefined);
-    },
-    COMMAND_PRIORITY_EDITOR,
+    editor.registerCommand(
+      INDENT_CONTENT_COMMAND,
+      () => {
+        if (maxIndent == null) {
+          return false;
+        }
+
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+
+        const indents = selection
+          .getNodes()
+          .map((node) =>
+            $getNearestBlockElementAncestorOrThrow(node).getIndent(),
+          );
+
+        return Math.max(...indents) + 1 >= maxIndent;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
   );
 }
 

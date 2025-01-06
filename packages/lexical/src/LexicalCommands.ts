@@ -83,8 +83,9 @@ export const KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_TAB_COMMAND');
 export const INSERT_TAB_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_TAB_COMMAND');
-export const INDENT_CONTENT_COMMAND: LexicalCommand<number | void> =
-  createCommand('INDENT_CONTENT_COMMAND');
+export const INDENT_CONTENT_COMMAND: LexicalCommand<void> = createCommand(
+  'INDENT_CONTENT_COMMAND',
+);
 export const OUTDENT_CONTENT_COMMAND: LexicalCommand<void> = createCommand(
   'OUTDENT_CONTENT_COMMAND',
 );

@@ -19,7 +19,6 @@ import {
 } from 'lexical';
 import {Dispatch, useEffect} from 'react';
 
-import {MAX_INDENT} from '../../appSettings';
 import {useToolbarState} from '../../context/ToolbarContext';
 import {sanitizeUrl} from '../../utils/url';
 import {
@@ -99,7 +98,7 @@ export default function ShortcutsPlugin({
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
       } else if (isIndent(event)) {
         event.preventDefault();
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, MAX_INDENT);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
       } else if (isOutdent(event)) {
         event.preventDefault();
         editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);

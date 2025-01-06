@@ -13,6 +13,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
@@ -61,7 +62,7 @@ export class TableCellNode extends ElementNode {
   /** @internal */
   __headerState: TableCellHeaderState;
   /** @internal */
-  __width?: number;
+  __width?: number | undefined;
   /** @internal */
   __backgroundColor: null | string;
 
@@ -98,14 +99,18 @@ export class TableCellNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    const colSpan = serializedNode.colSpan || 1;
-    const rowSpan = serializedNode.rowSpan || 1;
-    return $createTableCellNode(
-      serializedNode.headerState,
-      colSpan,
-      serializedNode.width || undefined,
-    )
-      .setRowSpan(rowSpan)
+    return $createTableCellNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTableCellNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHeaderStyles(serializedNode.headerState)
+      .setColSpan(serializedNode.colSpan || 1)
+      .setRowSpan(serializedNode.rowSpan || 1)
+      .setWidth(serializedNode.width || undefined)
       .setBackgroundColor(serializedNode.backgroundColor || null);
   }
 
@@ -151,7 +156,7 @@ export class TableCellNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const output = super.exportDOM(editor);
 
-    if (output.element && isHTMLElement(output.element)) {
+    if (isHTMLElement(output.element)) {
       const element = output.element as HTMLTableCellElement;
       element.setAttribute(
         'data-temporary-table-cell-lexical-key',
@@ -183,7 +188,6 @@ export class TableCellNode extends ElementNode {
       colSpan: this.__colSpan,
       headerState: this.__headerState,
       rowSpan: this.__rowSpan,
-      type: 'tablecell',
       width: this.getWidth(),
     };
   }
@@ -225,7 +229,7 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState;
   }
 
-  setWidth(width: number): this {
+  setWidth(width: number | undefined): this {
     const self = this.getWritable();
     self.__width = width;
     return self;
@@ -265,7 +269,7 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
-  updateDOM(prevNode: TableCellNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return (
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width ||
@@ -366,7 +370,7 @@ export function $convertTableCellNodeElement(
 }
 
 export function $createTableCellNode(
-  headerState: TableCellHeaderState,
+  headerState: TableCellHeaderState = TableCellHeaderStates.NO_STATUS,
   colSpan = 1,
   width?: number,
 ): TableCellNode {

@@ -21,7 +21,6 @@ import {
   $isTextNode,
   $setSelection,
 } from '.';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNodeByKey,
@@ -32,8 +31,10 @@ import {
   getParentElement,
   getWindow,
   internalGetRoot,
+  isDOMTextNode,
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
+  isHTMLElement,
 } from './LexicalUtils';
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -111,7 +112,7 @@ function shouldUpdateTextNodeFromMutation(
       return false;
     }
   }
-  return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
+  return isDOMTextNode(targetDOM) && targetNode.isAttached();
 }
 
 function $getNearestManagedNodePairFromDOMNode(
@@ -130,7 +131,9 @@ function $getNearestManagedNodePairFromDOMNode(
       const node = $getNodeByKey(key, editorState);
       if (node) {
         // All decorator nodes are unmanaged
-        return $isDecoratorNode(node) ? undefined : [dom as HTMLElement, node];
+        return $isDecoratorNode(node) || !isHTMLElement(dom)
+          ? undefined
+          : [dom, node];
       }
     } else if (dom === rootElement) {
       return [rootElement, internalGetRoot(editorState)];
@@ -180,14 +183,10 @@ export function $flushMutations(
           if (
             shouldFlushTextMutations &&
             $isTextNode(targetNode) &&
+            isDOMTextNode(targetDOM) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            $handleTextMutation(
-              // nodeType === DOM_TEXT_TYPE is a Text DOM node
-              targetDOM as Text,
-              targetNode,
-              editor,
-            );
+            $handleTextMutation(targetDOM, targetNode, editor);
           }
         } else if (type === 'childList') {
           shouldRevertSelection = true;
@@ -209,7 +208,8 @@ export function $flushMutations(
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
-                  (addedDOM as HTMLElement).innerText || addedDOM.nodeValue;
+                  (isHTMLElement(addedDOM) ? addedDOM.innerText : null) ||
+                  addedDOM.nodeValue;
 
                 if (possibleText) {
                   possibleTextForFirefoxPaste += possibleText;

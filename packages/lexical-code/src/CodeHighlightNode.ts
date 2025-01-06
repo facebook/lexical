@@ -10,6 +10,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LexicalUpdateJSON,
   LineBreakNode,
   NodeKey,
   SerializedTextNode,
@@ -97,7 +98,7 @@ export class CodeHighlightNode extends TextNode {
   __highlightType: string | null | undefined;
 
   constructor(
-    text: string,
+    text: string = '',
     highlightType?: string | null | undefined,
     key?: NodeKey,
   ) {
@@ -122,6 +123,12 @@ export class CodeHighlightNode extends TextNode {
     return self.__highlightType;
   }
 
+  setHighlightType(highlightType?: string | null | undefined): this {
+    const self = this.getWritable();
+    self.__highlightType = highlightType || undefined;
+    return self;
+  }
+
   canHaveFormat(): boolean {
     return false;
   }
@@ -136,11 +143,7 @@ export class CodeHighlightNode extends TextNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: CodeHighlightNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const update = super.updateDOM(prevNode, dom, config);
     const prevClassName = getHighlightThemeClass(
       config.theme,
@@ -164,23 +167,21 @@ export class CodeHighlightNode extends TextNode {
   static importJSON(
     serializedNode: SerializedCodeHighlightNode,
   ): CodeHighlightNode {
-    const node = $createCodeHighlightNode(
-      serializedNode.text,
-      serializedNode.highlightType,
-    );
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    return $createCodeHighlightNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedCodeHighlightNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHighlightType(serializedNode.highlightType);
   }
 
   exportJSON(): SerializedCodeHighlightNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
-      type: 'code-highlight',
-      version: 1,
     };
   }
 
@@ -211,7 +212,7 @@ function getHighlightThemeClass(
 }
 
 export function $createCodeHighlightNode(
-  text: string,
+  text: string = '',
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
   return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));

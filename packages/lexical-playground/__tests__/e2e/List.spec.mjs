@@ -9,6 +9,7 @@
 import {expect} from '@playwright/test';
 
 import {
+  indent,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
@@ -17,6 +18,7 @@ import {
   redo,
   selectAll,
   selectCharacters,
+  toggleBold,
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -28,10 +30,10 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_LINUX,
   pasteFromClipboard,
   repeat,
   selectFromAlignDropdown,
+  selectFromColorPicker,
   selectFromFormatDropdown,
   test,
   waitForSelector,
@@ -72,60 +74,62 @@ test.beforeEach(({isPlainText}) => {
 test.describe.parallel('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test(`Can create a list and partially copy some content out of it`, async ({
-    page,
-    isCollab,
-  }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
-    await focusEditor(page);
-    await page.keyboard.type(
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam venenatis risus ac cursus efficitur. Cras efficitur magna odio, lacinia posuere mauris placerat in. Etiam eu congue nisl. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla vulputate justo id eros convallis, vel pellentesque orci hendrerit. Pellentesque accumsan molestie eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor, et bibendum quam feugiat eget. Praesent vestibulum libero sed enim ornare, in consequat dui posuere. Maecenas ornare vestibulum felis, non elementum urna imperdiet sit amet.',
-    );
-    await toggleBulletList(page);
-    await moveToEditorBeginning(page);
-    await moveRight(page, 6);
-    await selectCharacters(page, 'right', 11);
+  test(
+    `Can create a list and partially copy some content out of it`,
+    {
+      tag: '@flaky',
+    },
+    async ({page, isCollab}) => {
+      await focusEditor(page);
+      await page.keyboard.type(
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam venenatis risus ac cursus efficitur. Cras efficitur magna odio, lacinia posuere mauris placerat in. Etiam eu congue nisl. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla vulputate justo id eros convallis, vel pellentesque orci hendrerit. Pellentesque accumsan molestie eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor, et bibendum quam feugiat eget. Praesent vestibulum libero sed enim ornare, in consequat dui posuere. Maecenas ornare vestibulum felis, non elementum urna imperdiet sit amet.',
+      );
+      await toggleBulletList(page);
+      await moveToEditorBeginning(page);
+      await moveRight(page, 6);
+      await selectCharacters(page, 'right', 11);
 
-    await withExclusiveClipboardAccess(async () => {
-      const clipboard = await copyToClipboard(page);
+      await withExclusiveClipboardAccess(async () => {
+        const clipboard = await copyToClipboard(page);
 
-      await moveToEditorEnd(page);
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Enter');
+        await moveToEditorEnd(page);
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Enter');
 
-      await pasteFromClipboard(page, clipboard);
-    });
+        await pasteFromClipboard(page, clipboard);
+      });
 
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
-              venenatis risus ac cursus efficitur. Cras efficitur magna odio,
-              lacinia posuere mauris placerat in. Etiam eu congue nisl.
-              Vestibulum ante ipsum primis in faucibus orci luctus et ultrices
-              posuere cubilia curae; Nulla vulputate justo id eros convallis,
-              vel pellentesque orci hendrerit. Pellentesque accumsan molestie
-              eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor,
-              et bibendum quam feugiat eget. Praesent vestibulum libero sed enim
-              ornare, in consequat dui posuere. Maecenas ornare vestibulum
-              felis, non elementum urna imperdiet sit amet.
-            </span>
-          </li>
-        </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">ipsum dolor</span>
-        </p>
-      `,
-    );
-  });
+      await assertHTML(
+        page,
+        html`
+          <ul class="PlaygroundEditorTheme__ul">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              value="1">
+              <span data-lexical-text="true">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
+                venenatis risus ac cursus efficitur. Cras efficitur magna odio,
+                lacinia posuere mauris placerat in. Etiam eu congue nisl.
+                Vestibulum ante ipsum primis in faucibus orci luctus et ultrices
+                posuere cubilia curae; Nulla vulputate justo id eros convallis,
+                vel pellentesque orci hendrerit. Pellentesque accumsan molestie
+                eros, vitae tempor nisl semper sit amet. Sed vulputate leo
+                dolor, et bibendum quam feugiat eget. Praesent vestibulum libero
+                sed enim ornare, in consequat dui posuere. Maecenas ornare
+                vestibulum felis, non elementum urna imperdiet sit amet.
+              </span>
+            </li>
+          </ul>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">ipsum dolor</span>
+          </p>
+        `,
+      );
+    },
+  );
 
   test('Should outdent if indented when the backspace key is pressed', async ({
     page,
@@ -155,6 +159,24 @@ test.describe.parallel('Nested List', () => {
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul></li></ul>',
+    );
+  });
+
+  test('Should retain selection style when exiting list', async ({page}) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+
+    await selectFromColorPicker(page);
+    await toggleBold(page);
+    await page.keyboard.type('Hello');
+    //Double-enter to exit list
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('World');
+
+    await assertHTML(
+      page,
+      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">Hello</strong></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">World</strong></p>',
     );
   });
 
@@ -1880,4 +1902,48 @@ test.describe.parallel('Nested List', () => {
       });
     },
   );
+  test('new list item should preserve format from previous list item even after new list item is indented', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await toggleBold(page);
+    await page.keyboard.type('MLH Fellowship');
+    await page.keyboard.press('Enter');
+    await indent(page, 1);
+    await page.keyboard.type('Fall 2024');
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              MLH Fellowship
+            </strong>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <strong
+                  class="PlaygroundEditorTheme__textBold"
+                  data-lexical-text="true">
+                  Fall 2024
+                </strong>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+  });
 });

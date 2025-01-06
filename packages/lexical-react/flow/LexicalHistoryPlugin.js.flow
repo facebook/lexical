@@ -23,6 +23,6 @@ export type HistoryState = {
 
 declare export function HistoryPlugin({
   externalHistoryState?: HistoryState,
-}): React$Node;
+}): React.Node;
 
 declare export function createEmptyHistoryState(): HistoryState;

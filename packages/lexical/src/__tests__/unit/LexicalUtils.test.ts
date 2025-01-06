@@ -244,6 +244,36 @@ describe('LexicalUtils tests', () => {
     });
 
     describe('$onUpdate', () => {
+      test('deferred even when there are no dirty nodes', () => {
+        const {editor} = testEnv;
+        const runs: string[] = [];
+
+        editor.update(
+          () => {
+            $onUpdate(() => {
+              runs.push('second');
+            });
+          },
+          {
+            onUpdate: () => {
+              runs.push('first');
+            },
+          },
+        );
+        expect(runs).toEqual([]);
+        editor.update(() => {
+          $onUpdate(() => {
+            runs.push('third');
+          });
+        });
+        expect(runs).toEqual([]);
+
+        // Flush pending updates
+        editor.read(() => {});
+
+        expect(runs).toEqual(['first', 'second', 'third']);
+      });
+
       test('added fn runs after update, original onUpdate, and prior calls to $onUpdate', () => {
         const {editor} = testEnv;
         const runs: string[] = [];
@@ -342,24 +372,13 @@ describe('$applyNodeReplacement', () => {
     static clone(node: ExtendedTextNode): ExtendedTextNode {
       return new ExtendedTextNode(node.__text, node.getKey());
     }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
-    }
     initWithTextNode(node: TextNode): this {
-      this.__text = node.__text;
-      TextNode.prototype.afterCloneFrom.call(this, node);
-      return this;
-    }
-    initWithJSON(serializedNode: SerializedTextNode): this {
-      this.setTextContent(serializedNode.text);
-      this.setFormat(serializedNode.format);
-      this.setDetail(serializedNode.detail);
-      this.setMode(serializedNode.mode);
-      this.setStyle(serializedNode.style);
-      return this;
+      const self = this.getWritable();
+      TextNode.prototype.updateFromJSON.call(self, node.exportJSON());
+      return self;
     }
     static importJSON(serializedNode: SerializedTextNode): ExtendedTextNode {
-      return $createExtendedTextNode().initWithJSON(serializedNode);
+      return $createExtendedTextNode().updateFromJSON(serializedNode);
     }
   }
   class ExtendedExtendedTextNode extends ExtendedTextNode {
@@ -375,10 +394,7 @@ describe('$applyNodeReplacement', () => {
     static importJSON(
       serializedNode: SerializedTextNode,
     ): ExtendedExtendedTextNode {
-      return $createExtendedExtendedTextNode().initWithJSON(serializedNode);
-    }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
+      return $createExtendedExtendedTextNode().updateFromJSON(serializedNode);
     }
   }
   function $createExtendedTextNode(text: string = '') {

@@ -39,11 +39,6 @@ declare export class LinkNode extends ElementNode {
   static clone(node: LinkNode): LinkNode;
   constructor(url: string, attributes?: LinkAttributes, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: LinkNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   static importDOM(): DOMConversionMap | null;
   exportJSON(): SerializedLinkNode;
   getURL(): string;

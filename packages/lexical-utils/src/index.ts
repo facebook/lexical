@@ -23,6 +23,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -689,4 +690,158 @@ export function calculateZoomLevel(element: Element | null): number {
  */
 export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean {
   return editor._parentEditor !== null;
+}
+
+/**
+ * A depth first last-to-first traversal of root that stops at each node that matches
+ * $predicate and ensures that its parent is root. This is typically used to discard
+ * invalid or unsupported wrapping nodes. For example, a TableNode must only have
+ * TableRowNode as children, but an importer might add invalid nodes based on
+ * caption, tbody, thead, etc. and this will unwrap and discard those.
+ *
+ * @param root The root to start the traversal
+ * @param $predicate Should return true for nodes that are permitted to be children of root
+ * @returns true if this unwrapped or removed any nodes
+ */
+export function $unwrapAndFilterDescendants(
+  root: ElementNode,
+  $predicate: (node: LexicalNode) => boolean,
+): boolean {
+  return $unwrapAndFilterDescendantsImpl(root, $predicate, null);
+}
+
+function $unwrapAndFilterDescendantsImpl(
+  root: ElementNode,
+  $predicate: (node: LexicalNode) => boolean,
+  $onSuccess: null | ((node: LexicalNode) => void),
+): boolean {
+  let didMutate = false;
+  for (const node of $lastToFirstIterator(root)) {
+    if ($predicate(node)) {
+      if ($onSuccess !== null) {
+        $onSuccess(node);
+      }
+      continue;
+    }
+    didMutate = true;
+    if ($isElementNode(node)) {
+      $unwrapAndFilterDescendantsImpl(
+        node,
+        $predicate,
+        $onSuccess ? $onSuccess : (child) => node.insertAfter(child),
+      );
+    }
+    node.remove();
+  }
+  return didMutate;
+}
+
+/**
+ * A depth first traversal of the children array that stops at and collects
+ * each node that `$predicate` matches. This is typically used to discard
+ * invalid or unsupported wrapping nodes on a children array in the `after`
+ * of an {@link lexical!DOMConversionOutput}. For example, a TableNode must only have
+ * TableRowNode as children, but an importer might add invalid nodes based on
+ * caption, tbody, thead, etc. and this will unwrap and discard those.
+ *
+ * This function is read-only and performs no mutation operations, which makes
+ * it suitable for import and export purposes but likely not for any in-place
+ * mutation. You should use {@link $unwrapAndFilterDescendants} for in-place
+ * mutations such as node transforms.
+ *
+ * @param children The children to traverse
+ * @param $predicate Should return true for nodes that are permitted to be children of root
+ * @returns The children or their descendants that match $predicate
+ */
+export function $descendantsMatching<T extends LexicalNode>(
+  children: LexicalNode[],
+  $predicate: (node: LexicalNode) => node is T,
+): T[];
+export function $descendantsMatching(
+  children: LexicalNode[],
+  $predicate: (node: LexicalNode) => boolean,
+): LexicalNode[] {
+  const result: LexicalNode[] = [];
+  const stack = [...children].reverse();
+  for (let child = stack.pop(); child !== undefined; child = stack.pop()) {
+    if ($predicate(child)) {
+      result.push(child);
+    } else if ($isElementNode(child)) {
+      for (const grandchild of $lastToFirstIterator(child)) {
+        stack.push(grandchild);
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Return an iterator that yields each child of node from first to last, taking
+ * care to preserve the next sibling before yielding the value in case the caller
+ * removes the yielded node.
+ *
+ * @param node The node whose children to iterate
+ * @returns An iterator of the node's children
+ */
+export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
+  return {
+    [Symbol.iterator]: () =>
+      $childIterator(node.getFirstChild(), (child) => child.getNextSibling()),
+  };
+}
+
+/**
+ * Return an iterator that yields each child of node from last to first, taking
+ * care to preserve the previous sibling before yielding the value in case the caller
+ * removes the yielded node.
+ *
+ * @param node The node whose children to iterate
+ * @returns An iterator of the node's children
+ */
+export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
+  return {
+    [Symbol.iterator]: () =>
+      $childIterator(node.getLastChild(), (child) =>
+        child.getPreviousSibling(),
+      ),
+  };
+}
+
+function $childIterator(
+  initialNode: LexicalNode | null,
+  nextNode: (node: LexicalNode) => LexicalNode | null,
+): Iterator<LexicalNode> {
+  let state = initialNode;
+  const seen = __DEV__ ? new Set<NodeKey>() : null;
+  return {
+    next() {
+      if (state === null) {
+        return iteratorDone;
+      }
+      const rval = iteratorNotDone(state);
+      if (__DEV__ && seen !== null) {
+        const key = state.getKey();
+        invariant(
+          !seen.has(key),
+          '$childIterator: Cycle detected, node with key %s has already been traversed',
+          String(key),
+        );
+        seen.add(key);
+      }
+      state = nextNode(state);
+      return rval;
+    },
+  };
+}
+
+/**
+ * Insert all children before this node, and then remove it.
+ *
+ * @param node The ElementNode to unwrap and remove
+ */
+export function $unwrapNode(node: ElementNode): void {
+  for (const child of $firstToLastIterator(node)) {
+    node.insertBefore(child);
+  }
+  node.remove();
 }

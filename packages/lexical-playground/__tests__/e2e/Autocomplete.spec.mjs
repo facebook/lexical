@@ -52,7 +52,12 @@ test.describe('Autocomplete', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Sort by alpha</span>
-          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__autocomplete"
+            style="font-size: 15px; display: none"
+            data-lexical-text="true">
+            betical (TAB)
+          </span>
         </p>
       `,
     );
@@ -118,7 +123,12 @@ test.describe('Autocomplete', () => {
             data-lexical-text="true">
             Test
           </strong>
-          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
+            style="font-size: 17px; display: none"
+            data-lexical-text="true">
+            imonials (TAB)
+          </strong>
         </p>
       `,
     );
@@ -204,7 +214,12 @@ test.describe('Autocomplete', () => {
             data-lexical-text="true">
             Test
           </strong>
-          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
+            style="font-size: 17px; display: none"
+            data-lexical-text="true">
+            imonials (TAB)
+          </strong>
         </p>
       `,
     );
@@ -241,7 +256,12 @@ test.describe('Autocomplete', () => {
             data-lexical-text="true">
             Test
           </strong>
-          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 17px; display: none"
+            data-lexical-text="true">
+            imonials
+          </strong>
         </p>
       `,
     );
@@ -278,7 +298,12 @@ test.describe('Autocomplete', () => {
             data-lexical-text="true">
             Test
           </strong>
-          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
+            style="font-size: 17px; display: none"
+            data-lexical-text="true">
+            imonials (TAB)
+          </strong>
         </p>
       `,
     );

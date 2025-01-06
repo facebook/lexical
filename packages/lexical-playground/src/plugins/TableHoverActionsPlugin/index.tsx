@@ -22,7 +22,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
+import {$getNearestNodeFromDOMNode, isHTMLElement, NodeKey} from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -115,6 +115,19 @@ function TableHoverActionsContainer({
           height: tableElemHeight,
         } = (tableDOMElement as HTMLTableElement).getBoundingClientRect();
 
+        // Adjust for using the scrollable table container
+        const parentElement = (tableDOMElement as HTMLTableElement)
+          .parentElement;
+        let tableHasScroll = false;
+        if (
+          parentElement &&
+          parentElement.classList.contains(
+            'PlaygroundEditorTheme__tableScrollableWrapper',
+          )
+        ) {
+          tableHasScroll =
+            parentElement.scrollWidth > parentElement.clientWidth;
+        }
         const {y: editorElemY, left: editorElemLeft} =
           anchorElem.getBoundingClientRect();
 
@@ -123,9 +136,15 @@ function TableHoverActionsContainer({
           setShownRow(true);
           setPosition({
             height: BUTTON_WIDTH_PX,
-            left: tableElemLeft - editorElemLeft,
+            left:
+              tableHasScroll && parentElement
+                ? parentElement.offsetLeft
+                : tableElemLeft - editorElemLeft,
             top: tableElemBottom - editorElemY + 5,
-            width: tableElemWidth,
+            width:
+              tableHasScroll && parentElement
+                ? parentElement.offsetWidth
+                : tableElemWidth,
           });
         } else if (hoveredColumnNode) {
           setShownColumn(true);
@@ -257,7 +276,7 @@ function getMouseInfo(event: MouseEvent): {
 } {
   const target = event.target;
 
-  if (target && target instanceof HTMLElement) {
+  if (isHTMLElement(target)) {
     const tableDOMNode = target.closest<HTMLElement>(
       'td.PlaygroundEditorTheme__tableCell, th.PlaygroundEditorTheme__tableCell',
     );

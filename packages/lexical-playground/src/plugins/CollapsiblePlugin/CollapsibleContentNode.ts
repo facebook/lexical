@@ -72,7 +72,7 @@ export class CollapsibleContentNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(prevNode: CollapsibleContentNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 
@@ -100,19 +100,11 @@ export class CollapsibleContentNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedCollapsibleContentNode,
   ): CollapsibleContentNode {
-    return $createCollapsibleContentNode();
+    return $createCollapsibleContentNode().updateFromJSON(serializedNode);
   }
 
   isShadowRoot(): boolean {
     return true;
-  }
-
-  exportJSON(): SerializedCollapsibleContentNode {
-    return {
-      ...super.exportJSON(),
-      type: 'collapsible-content',
-      version: 1,
-    };
   }
 }
 

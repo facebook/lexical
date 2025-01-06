@@ -80,7 +80,10 @@ declare export var IS_ITALIC: number;
 declare export var IS_STRIKETHROUGH: number;
 declare export var IS_SUBSCRIPT: number;
 declare export var IS_SUPERSCRIPT: number;
-declare export var IS_UNDERLIN: number;
+declare export var IS_UNDERLINE: number;
+declare export var IS_UPPERCASE: number;
+declare export var IS_LOWERCASE: number;
+declare export var IS_CAPITALIZE: number;
 declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
 
 /**
@@ -243,6 +246,9 @@ type TextNodeThemeClasses = {
   code?: EditorThemeClassName,
   subscript?: EditorThemeClassName,
   superscript?: EditorThemeClassName,
+  lowercase?: EditorThemeClassName,
+  uppercase?: EditorThemeClassName,
+  capitalize?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName,
@@ -256,6 +262,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>,
     ol?: EditorThemeClassName,
     olDepth?: Array<EditorThemeClassName>,
+    checklist?: EditorThemeClassName,
     listitem?: EditorThemeClassName,
     listitemChecked?: EditorThemeClassName,
     listitemUnchecked?: EditorThemeClassName,
@@ -355,7 +362,7 @@ export type DOMConversion = {
   conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
 };
-export type DOMConversionFn = (element: Node) => DOMConversionOutput;
+export type DOMConversionFn = (element: Node) => DOMConversionOutput | null;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: ?LexicalNode | null,
@@ -386,6 +393,7 @@ declare export class LexicalNode {
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
+  updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -415,7 +423,7 @@ declare export class LexicalNode {
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
-    // $FlowFixMe
+    // $FlowFixMe[unclear-type]
     prevNode: any,
     dom: HTMLElement,
     config: EditorConfig,
@@ -446,13 +454,16 @@ declare export function $isBlockElementNode(
 ): node is ElementNode;
 
 export interface BaseSelection {
-  clone(): BaseSelection;
   dirty: boolean;
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null | [PointType, PointType];
   getTextContent(): string;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   insertText(text: string): void;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -464,6 +475,8 @@ declare export class NodeSelection implements BaseSelection {
   dirty: boolean;
   constructor(objects: Set<NodeKey>): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   add(key: NodeKey): void;
   delete(key: NodeKey): void;
   clear(): void;
@@ -473,6 +486,7 @@ declare export class NodeSelection implements BaseSelection {
   insertRawText(): void;
   insertText(): void;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null;
   getTextContent(): string;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -488,6 +502,7 @@ declare export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  style: string;
   constructor(anchor: PointType, focus: PointType, format: number): void;
   is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
@@ -525,6 +540,8 @@ declare export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  forwardDeletion(anchor: PointType, anchorNode: ElementNode | TextNode, isBackward: boolean): boolean;
+  getStartEndPoints(): null | [PointType, PointType];
 }
 export type TextPoint = TextPointType;
 type TextPointType = {
@@ -585,7 +602,11 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
+
 type TextModeType = 'normal' | 'token' | 'segmented';
 
 declare export class TextNode extends LexicalNode {
@@ -611,11 +632,6 @@ declare export class TextNode extends LexicalNode {
   getTextContent(): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   selectionTransform(
     prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
@@ -707,7 +723,6 @@ declare export class RootNode extends ElementNode {
   replace<N: LexicalNode>(node: N): N;
   insertBefore<T: LexicalNode>(nodeToInsert: T): T;
   insertAfter<T: LexicalNode>(nodeToInsert: T): T;
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
 }
@@ -850,7 +865,6 @@ declare export class ParagraphNode extends ElementNode {
   static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

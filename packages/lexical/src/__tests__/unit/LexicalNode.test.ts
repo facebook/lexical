@@ -21,6 +21,7 @@ import {
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  SerializedLexicalNode,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
@@ -48,12 +49,8 @@ class TestNode extends LexicalNode {
     return document.createElement('div');
   }
 
-  static importJSON() {
-    return new TestNode();
-  }
-
-  exportJSON() {
-    return {type: 'test', version: 1};
+  static importJSON(serializedNode: SerializedLexicalNode) {
+    return new TestNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -66,12 +63,8 @@ class InlineDecoratorNode extends DecoratorNode<string> {
     return new InlineDecoratorNode();
   }
 
-  static importJSON() {
-    return new InlineDecoratorNode();
-  }
-
-  exportJSON() {
-    return {type: 'inline-decorator', version: 1};
+  static importJSON(serializedNode: SerializedLexicalNode) {
+    return new InlineDecoratorNode().updateFromJSON(serializedNode);
   }
 
   createDOM(): HTMLElement {
@@ -164,9 +157,6 @@ describe('LexicalNode tests', () => {
             return new VersionedTextNode(node.__text, node.__key);
           }
           static importJSON(node: SerializedTextNode): VersionedTextNode {
-            throw new Error('Not implemented');
-          }
-          exportJSON(): SerializedTextNode {
             throw new Error('Not implemented');
           }
           afterCloneFrom(node: this): void {

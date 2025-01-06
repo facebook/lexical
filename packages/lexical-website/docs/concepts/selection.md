@@ -117,3 +117,53 @@ editor.update(() => {
   $setSelection(null);
 });
 ```
+
+## Focus
+
+You may notice that when you issue an `editor.update` or
+`editor.dispatchCommand` then the editor can "steal focus" if there is
+a selection and the editor is editable. This is because the Lexical
+selection is reconciled to the DOM selection during reconciliation,
+and the browser's focus follows its DOM selection.
+
+If you want to make updates or dispatch commands to the editor without
+changing the selection, can use the `'skip-dom-selection'` update tag
+(added in v0.22.0):
+
+```js
+// Call this from an editor.update or command listener
+$addUpdateTag('skip-dom-selection');
+```
+
+If you want to add this tag during processing of a `dispatchCommand`,
+you can wrap it in an `editor.update`:
+
+```js
+// NOTE: If you are already in a command listener or editor.update,
+//       do *not* nest a second editor.update! Nested updates have
+//       confusing semantics (dispatchCommand will re-use the
+//       current update without nesting)
+editor.update(() => {
+  $addUpdateTag('skip-dom-selection');
+  editor.dispatchCommand(/* … */);
+});
+```
+
+If you have to support older versions of Lexical, you can mark the editor
+as not editable during the update or dispatch.
+
+```js
+// NOTE: This code should be *outside* of your update or command listener, e.g.
+//       directly in the DOM event listener
+const prevEditable = editor.isEditable();
+editor.setEditable(false);
+editor.update(
+  () => {
+    // run your update code or editor.dispatchCommand in here
+  }, {
+    onUpdate: () => {
+      editor.setEditable(prevEditable);
+    },
+  },
+);
+```

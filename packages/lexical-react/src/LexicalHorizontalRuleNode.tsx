@@ -126,7 +126,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedHorizontalRuleNode,
   ): HorizontalRuleNode {
-    return $createHorizontalRuleNode();
+    return $createHorizontalRuleNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -135,13 +135,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
         conversion: $convertHorizontalRuleElement,
         priority: 0,
       }),
-    };
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'horizontalrule',
-      version: 1,
     };
   }
 

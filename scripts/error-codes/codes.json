@@ -250,5 +250,13 @@
   "248": "selectAdjacentCell: Row not in table",
   "249": "getCornerOrThrow: cell %s is not at a corner of rect",
   "250": "cellAtCornerOrThrow: %s = %s missing in tableMap",
-  "251": "$handleArrowKey: TableSelection.getNodes()[0] expected to be TableNode"
+  "251": "$handleArrowKey: TableSelection.getNodes()[0] expected to be TableNode",
+  "252": "$getPointNode: element point is not an ElementNode",
+  "253": "Expected TableSelection",
+  "254": "TablePlugin: Expecting all children of TableNode to be TableRowNode, found %s (type %s)",
+  "255": "TablePlugin: TableNode is not registered on editor",
+  "256": "insertAfterEndRow is not a TableRowNode",
+  "257": "insertBeforeStartRow is not a TableRowNode",
+  "258": "$childIterator: Cycle detected, node with key %s has already been traversed",
+  "259": "Point.getNode() must return ElementNode when type is element"
 }

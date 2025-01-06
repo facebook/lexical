@@ -26,7 +26,8 @@ import {
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
-  getDOMSelection,
+  getDOMSelectionFromTarget,
+  isHTMLElement,
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
@@ -309,24 +310,16 @@ declare global {
 function canDropImage(event: DragEvent): boolean {
   const target = event.target;
   return !!(
-    target &&
-    target instanceof HTMLElement &&
+    isHTMLElement(target) &&
     !target.closest('code, span.editor-image') &&
-    target.parentElement &&
+    isHTMLElement(target.parentElement) &&
     target.parentElement.closest('div.ContentEditable__root')
   );
 }
 
 function getDragSelection(event: DragEvent): Range | null | undefined {
   let range;
-  const target = event.target as null | Element | Document;
-  const targetWindow =
-    target == null
-      ? null
-      : target.nodeType === 9
-      ? (target as Document).defaultView
-      : (target as Element).ownerDocument.defaultView;
-  const domSelection = getDOMSelection(targetWindow);
+  const domSelection = getDOMSelectionFromTarget(event.target);
   if (document.caretRangeFromPoint) {
     range = document.caretRangeFromPoint(event.clientX, event.clientY);
   } else if (event.rangeParent && domSelection !== null) {

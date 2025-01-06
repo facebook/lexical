@@ -91,6 +91,7 @@ const theme: EditorThemeClasses = {
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',
   specialText: 'PlaygroundEditorTheme__specialText',
+  tab: 'PlaygroundEditorTheme__tabNode',
   table: 'PlaygroundEditorTheme__table',
   tableCell: 'PlaygroundEditorTheme__tableCell',
   tableCellActionButton: 'PlaygroundEditorTheme__tableCellActionButton',
@@ -105,13 +106,16 @@ const theme: EditorThemeClasses = {
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
+    capitalize: 'PlaygroundEditorTheme__textCapitalize',
     code: 'PlaygroundEditorTheme__textCode',
     italic: 'PlaygroundEditorTheme__textItalic',
+    lowercase: 'PlaygroundEditorTheme__textLowercase',
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',
     subscript: 'PlaygroundEditorTheme__textSubscript',
     superscript: 'PlaygroundEditorTheme__textSuperscript',
     underline: 'PlaygroundEditorTheme__textUnderline',
     underlineStrikethrough: 'PlaygroundEditorTheme__textUnderlineStrikethrough',
+    uppercase: 'PlaygroundEditorTheme__textUppercase',
   },
 };
 

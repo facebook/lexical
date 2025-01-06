@@ -175,19 +175,7 @@ export class TestElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -215,15 +203,7 @@ export class TestTextNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    return new TestTextNode(serializedNode.text);
-  }
-
-  exportJSON(): SerializedTestTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_text',
-      version: 1,
-    };
+    return new TestTextNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -241,19 +221,7 @@ export class TestInlineElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestInlineElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestInlineElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_inline_block',
-      version: 1,
-    };
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -287,19 +255,7 @@ export class TestShadowRootNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestShadowRootNode,
   ): TestShadowRootNode {
-    const node = $createTestShadowRootNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestShadowRootNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+    return $createTestShadowRootNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -333,24 +289,11 @@ export class TestSegmentedNode extends TextNode {
   static importJSON(
     serializedNode: SerializedTestSegmentedNode,
   ): TestSegmentedNode {
-    const node = $createTestSegmentedNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
-  exportJSON(): SerializedTestSegmentedNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_segmented',
-      version: 1,
-    };
+    return $createTestSegmentedNode().updateFromJSON(serializedNode);
   }
 }
 
-export function $createTestSegmentedNode(text: string): TestSegmentedNode {
+export function $createTestSegmentedNode(text: string = ''): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
@@ -368,19 +311,9 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestExcludeFromCopyElementNode,
   ): TestExcludeFromCopyElementNode {
-    const node = $createTestExcludeFromCopyElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestExcludeFromCopyElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_exclude_from_copy_block',
-      version: 1,
-    };
+    return $createTestExcludeFromCopyElementNode().updateFromJSON(
+      serializedNode,
+    );
   }
 
   createDOM() {
@@ -414,15 +347,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedTestDecoratorNode,
   ): TestDecoratorNode {
-    return $createTestDecoratorNode();
-  }
-
-  exportJSON(): SerializedTestDecoratorNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_decorator',
-      version: 1,
-    };
+    return $createTestDecoratorNode().updateFromJSON(serializedNode);
   }
 
   static importDOM() {

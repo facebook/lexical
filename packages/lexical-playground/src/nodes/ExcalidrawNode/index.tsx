@@ -79,15 +79,14 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
       serializedNode.data,
       serializedNode.width ?? 'inherit',
       serializedNode.height ?? 'inherit',
-    );
+    ).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedExcalidrawNode {
     return {
+      ...super.exportJSON(),
       data: this.__data,
       height: this.__height === 'inherit' ? undefined : this.__height,
-      type: 'excalidraw',
-      version: 1,
       width: this.__width === 'inherit' ? undefined : this.__width,
     };
   }

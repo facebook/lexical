@@ -105,7 +105,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode();
+    return $createPageBreakNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -121,13 +121,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
           priority: COMMAND_PRIORITY_HIGH,
         };
       },
-    };
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: this.getType(),
-      version: 1,
     };
   }
 

@@ -534,6 +534,7 @@ export function markNodesWithTypesAsDirty(
   // We only need to mark nodes dirty if they were in the previous state.
   // If they aren't, then they are by definition dirty already.
   const cachedMap = getCachedTypeToNodeMap(editor.getEditorState());
+  editor.setEditable(originalIsEditable);
   const dirtyNodeMaps: NodeMap[] = [];
   for (const type of types) {
     const nodeMap = cachedMap.get(type);
@@ -565,7 +566,6 @@ export function markNodesWithTypesAsDirty(
         }
       : undefined,
   );
-  editor.setEditable(originalIsEditable);
 }
 
 export function $getRoot(): RootNode {

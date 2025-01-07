@@ -10,6 +10,7 @@ import type {
   BaseSelection,
   EditorConfig,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   RangeSelection,
   SerializedElementNode,
@@ -29,6 +30,8 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
+const NO_IDS: readonly string[] = [];
+
 /** @noInheritDoc */
 export class MarkNode extends ElementNode {
   /** @internal */
@@ -47,23 +50,23 @@ export class MarkNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    const node = $createMarkNode(serializedNode.ids);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createMarkNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
+    return super.updateFromJSON(serializedNode).setIDs(serializedNode.ids);
   }
 
   exportJSON(): SerializedMarkNode {
     return {
       ...super.exportJSON(),
-      ids: Array.from(this.getIDs()),
+      ids: this.getIDs(),
     };
   }
 
-  constructor(ids: readonly string[], key?: NodeKey) {
+  constructor(ids: readonly string[] = NO_IDS, key?: NodeKey) {
     super(key);
-    this.__ids = ids || [];
+    this.__ids = ids;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -99,47 +102,33 @@ export class MarkNode extends ElementNode {
   }
 
   hasID(id: string): boolean {
-    const ids = this.getIDs();
-    for (let i = 0; i < ids.length; i++) {
-      if (id === ids[i]) {
-        return true;
-      }
-    }
-    return false;
+    return this.getIDs().includes(id);
   }
 
   getIDs(): Array<string> {
-    const self = this.getLatest();
-    return $isMarkNode(self) ? Array.from(self.__ids) : [];
+    return Array.from(this.getLatest().__ids);
   }
 
-  addID(id: string): void {
+  setIDs(ids: readonly string[]): this {
     const self = this.getWritable();
-    if ($isMarkNode(self)) {
-      const ids = Array.from(self.__ids);
-      self.__ids = ids;
-      for (let i = 0; i < ids.length; i++) {
-        // If we already have it, don't add again
-        if (id === ids[i]) {
-          return;
-        }
-      }
-      ids.push(id);
-    }
+    self.__ids = ids;
+    return self;
   }
 
-  deleteID(id: string): void {
+  addID(id: string): this {
     const self = this.getWritable();
-    if ($isMarkNode(self)) {
-      const ids = Array.from(self.__ids);
-      self.__ids = ids;
-      for (let i = 0; i < ids.length; i++) {
-        if (id === ids[i]) {
-          ids.splice(i, 1);
-          return;
-        }
-      }
+    return self.__ids.includes(id) ? self.setIDs([...self.__ids, id]) : self;
+  }
+
+  deleteID(id: string): this {
+    const self = this.getWritable();
+    const idx = self.__ids.indexOf(id);
+    if (idx === -1) {
+      return self;
     }
+    const ids = Array.from(self.__ids);
+    ids.splice(idx, 1);
+    return self.setIDs(ids);
   }
 
   insertNewAfter(
@@ -195,7 +184,7 @@ export class MarkNode extends ElementNode {
   }
 }
 
-export function $createMarkNode(ids: readonly string[]): MarkNode {
+export function $createMarkNode(ids: readonly string[] = NO_IDS): MarkNode {
   return $applyNodeReplacement(new MarkNode(ids));
 }
 

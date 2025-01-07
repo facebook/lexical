@@ -21,14 +21,13 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
-import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -57,6 +56,7 @@ import {
   getElementByKeyOrThrow,
   getTextNodeOffset,
   INTERNAL_$isBlock,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
@@ -96,6 +96,14 @@ export class Point {
   _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
+    if (__DEV__) {
+      // This prevents a circular reference error when serialized as JSON,
+      // which happens on unit test failures
+      Object.defineProperty(this, '_selection', {
+        enumerable: false,
+        writable: true,
+      });
+    }
     this._selection = null;
     this.key = key;
     this.offset = offset;
@@ -473,6 +481,10 @@ export class RangeSelection implements BaseSelection {
     const lastPoint = isBefore ? focus : anchor;
     let firstNode = firstPoint.getNode();
     let lastNode = lastPoint.getNode();
+    const overselectedFirstNode =
+      $isElementNode(firstNode) &&
+      firstPoint.offset > 0 &&
+      firstPoint.offset >= firstNode.getChildrenSize();
     const startOffset = firstPoint.offset;
     const endOffset = lastPoint.offset;
 
@@ -506,6 +518,13 @@ export class RangeSelection implements BaseSelection {
       }
     } else {
       nodes = firstNode.getNodesBetween(lastNode);
+      // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
+      if (overselectedFirstNode) {
+        const deleteCount = nodes.findIndex(
+          (node) => !node.is(firstNode) && !node.isBefore(firstNode),
+        );
+        nodes.splice(0, deleteCount);
+      }
     }
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
@@ -1129,7 +1148,7 @@ export class RangeSelection implements BaseSelection {
       lastPoint.offset = lastNode.getTextContentSize();
     }
 
-    selectedNodes.forEach((node) => {
+    for (const node of selectedNodes) {
       if (
         !$hasAncestor(firstNode, node) &&
         !$hasAncestor(lastNode, node) &&
@@ -1138,7 +1157,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         node.remove();
       }
-    });
+    }
 
     const fixText = (node: TextNode, del: number) => {
       if (node.getTextContent() === '') {
@@ -1206,9 +1225,9 @@ export class RangeSelection implements BaseSelection {
         selectedTextNodes.push(selectedNode);
       }
     }
-    const applyFormatToParagraphs = (alignWith: number | null) => {
+    const applyFormatToElements = (alignWith: number | null) => {
       selectedNodes.forEach((node) => {
-        if ($isParagraphNode(node)) {
+        if ($isElementNode(node)) {
           const newFormat = node.getFormatFlags(formatType, alignWith);
           node.setTextFormat(newFormat);
         }
@@ -1220,7 +1239,7 @@ export class RangeSelection implements BaseSelection {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
-      applyFormatToParagraphs(alignWithFormat);
+      applyFormatToElements(alignWithFormat);
       return;
     }
 
@@ -1252,7 +1271,7 @@ export class RangeSelection implements BaseSelection {
       formatType,
       alignWithFormat,
     );
-    applyFormatToParagraphs(firstNextFormat);
+    applyFormatToElements(firstNextFormat);
 
     const lastIndex = selectedTextNodesLength - 1;
     let lastNode = selectedTextNodes[lastIndex];
@@ -2067,7 +2086,7 @@ function $internalResolveSelectionPoint(
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (dom.nodeType === DOM_ELEMENT_TYPE) {
+  if (isHTMLElement(dom)) {
     // Resolve element to a ElementNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
@@ -2905,7 +2924,7 @@ export function updateDOMSelection(
     rootElement === document.activeElement
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
-      nextSelection instanceof RangeSelection &&
+      $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null

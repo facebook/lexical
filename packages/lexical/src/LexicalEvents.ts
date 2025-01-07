@@ -59,7 +59,6 @@ import {
   KEY_TAB_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
-  ParagraphNode,
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -69,8 +68,6 @@ import {
 import {KEY_MODIFIER_COMMAND, SELECT_ALL_COMMAND} from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
-  DOM_ELEMENT_TYPE,
-  DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
@@ -92,6 +89,7 @@ import {
   doesContainGrapheme,
   getAnchorTextFromDOM,
   getDOMSelection,
+  getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
@@ -109,8 +107,10 @@ import {
   isDeleteWordBackward,
   isDeleteWordForward,
   isDOMNode,
+  isDOMTextNode,
   isEscape,
   isFirefoxClipboardEvents,
+  isHTMLElement,
   isItalic,
   isLexicalEditor,
   isLineBreak,
@@ -254,9 +254,8 @@ function shouldSkipSelectionChange(
   offset: number,
 ): boolean {
   return (
-    domNode !== null &&
+    isDOMTextNode(domNode) &&
     domNode.nodeValue !== null &&
-    domNode.nodeType === DOM_TEXT_TYPE &&
     offset !== 0 &&
     offset !== domNode.nodeValue.length
   );
@@ -349,11 +348,15 @@ function onSelectionChange(
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
+            invariant(
+              $isElementNode(anchorNode),
+              'Point.getNode() must return ElementNode when type is element',
+            );
             const lastNode = anchor.getNode();
             selection.style = '';
             if (
-              lastNode instanceof ParagraphNode &&
-              lastNode.getChildrenSize() === 0
+              // This previously applied to all ParagraphNode
+              lastNode.isEmpty()
             ) {
               selection.format = lastNode.getTextFormat();
               selection.style = lastNode.getTextStyle();
@@ -455,21 +458,18 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
         // This is used to update the selection on touch devices when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
         const domAnchorNode = domSelection.anchorNode;
-        if (domAnchorNode !== null) {
-          const nodeType = domAnchorNode.nodeType;
-          // If the user is attempting to click selection back onto text, then
-          // we should attempt create a range selection.
-          // When we click on an empty paragraph node or the end of a paragraph that ends
-          // with an image/poll, the nodeType will be ELEMENT_NODE
-          if (nodeType === DOM_ELEMENT_TYPE || nodeType === DOM_TEXT_TYPE) {
-            const newSelection = $internalCreateRangeSelection(
-              lastSelection,
-              domSelection,
-              editor,
-              event,
-            );
-            $setSelection(newSelection);
-          }
+        // If the user is attempting to click selection back onto text, then
+        // we should attempt create a range selection.
+        // When we click on an empty paragraph node or the end of a paragraph that ends
+        // with an image/poll, the nodeType will be ELEMENT_NODE
+        if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
+          const newSelection = $internalCreateRangeSelection(
+            lastSelection,
+            domSelection,
+            editor,
+            event,
+          );
+          $setSelection(newSelection);
         }
       }
     }
@@ -1133,14 +1133,7 @@ function getRootElementRemoveHandles(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const target = event.target as null | Element | Document;
-  const targetWindow =
-    target == null
-      ? null
-      : target.nodeType === 9
-      ? (target as Document).defaultView
-      : (target as Element).ownerDocument.defaultView;
-  const domSelection = getDOMSelection(targetWindow);
+  const domSelection = getDOMSelectionFromTarget(event.target);
   if (domSelection === null) {
     return;
   }
@@ -1154,24 +1147,19 @@ function onDocumentSelectionChange(event: Event): void {
     updateEditor(nextActiveEditor, () => {
       const lastSelection = $getPreviousSelection();
       const domAnchorNode = domSelection.anchorNode;
-      if (domAnchorNode === null) {
-        return;
+      if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
+        // If the user is attempting to click selection back onto text, then
+        // we should attempt create a range selection.
+        // When we click on an empty paragraph node or the end of a paragraph that ends
+        // with an image/poll, the nodeType will be ELEMENT_NODE
+        const newSelection = $internalCreateRangeSelection(
+          lastSelection,
+          domSelection,
+          nextActiveEditor,
+          event,
+        );
+        $setSelection(newSelection);
       }
-      const nodeType = domAnchorNode.nodeType;
-      // If the user is attempting to click selection back onto text, then
-      // we should attempt create a range selection.
-      // When we click on an empty paragraph node or the end of a paragraph that ends
-      // with an image/poll, the nodeType will be ELEMENT_NODE
-      if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
-        return;
-      }
-      const newSelection = $internalCreateRangeSelection(
-        lastSelection,
-        domSelection,
-        nextActiveEditor,
-        event,
-      );
-      $setSelection(newSelection);
     });
   }
 

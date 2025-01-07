@@ -105,7 +105,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode();
+    return $createPageBreakNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): DOMConversionMap | null {

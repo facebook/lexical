@@ -1,7 +1,7 @@
 {
   "name": "@lexical/vanilla-js-example",
   "private": true,
-  "version": "0.22.0",
+  "version": "0.23.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/dragon": "0.22.0",
-    "@lexical/history": "0.22.0",
-    "@lexical/rich-text": "0.22.0",
-    "@lexical/utils": "0.22.0",
-    "lexical": "0.22.0"
+    "@lexical/dragon": "0.23.0",
+    "@lexical/history": "0.23.0",
+    "@lexical/rich-text": "0.23.0",
+    "@lexical/utils": "0.23.0",
+    "lexical": "0.23.0"
   },
   "devDependencies": {
     "typescript": "^5.2.2",

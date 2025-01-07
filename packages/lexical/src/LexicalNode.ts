@@ -51,10 +51,23 @@ import {
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
+/**
+ * The base type for all serialized nodes
+ */
 export type SerializedLexicalNode = {
+  /** The type string used by the Node class */
   type: string;
+  /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
 };
+
+/**
+ * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
+ */
+export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
+  T,
+  'children' | 'type' | 'version'
+>;
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -889,6 +902,41 @@ export class LexicalNode {
       this.name,
     );
   }
+
+  /**
+   * Update this LexicalNode instance from serialized JSON. It's recommended
+   * to implement as much logic as possible in this method instead of the
+   * static importJSON method, so that the functionality can be inherited in subclasses.
+   *
+   * The LexicalUpdateJSON utility type should be used to ignore any type, version,
+   * or children properties in the JSON so that the extended JSON from subclasses
+   * are acceptable parameters for the super call.
+   *
+   * If overridden, this method must call super.
+   *
+   * @example
+   * ```ts
+   * class MyTextNode extends TextNode {
+   *   // ...
+   *   static importJSON(serializedNode: SerializedMyTextNode): MyTextNode {
+   *     return $createMyTextNode()
+   *       .updateFromJSON(serializedNode);
+   *   }
+   *   updateFromJSON(
+   *     serializedNode: LexicalUpdateJSON<SerializedMyTextNode>,
+   *   ): this {
+   *     return super.updateFromJSON(serializedNode)
+   *       .setMyProperty(serializedNode.myProperty);
+   *   }
+   * }
+   * ```
+   **/
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+  ): this {
+    return this;
+  }
+
   /**
    * @experimental
    *

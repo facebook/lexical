@@ -425,6 +425,20 @@ export function $getDepthCaret(
 }
 
 /**
+ * Gets the adjacent caret, if not-null and if the origin of the adjacent caret is an ElementNode, then return
+ * the DepthNodeCaret. This can be used along with the getParentAdjacentCaret method to perform a full DFS
+ * style traversal of the tree.
+ *
+ * @param caret The caret to start at
+ */
+export function $getAdjacentDepthCaret<D extends CaretDirection>(
+  origin: NodeCaret<D>,
+): null | NodeCaret<D> {
+  const caret = origin.getAdjacentCaret();
+  return (caret && caret.getChildCaret()) || caret;
+}
+
+/**
  * Get a 'next' caret for the child at the given index, or the last
  * caret in that node if out of bounds
  *
@@ -448,8 +462,10 @@ export function $getChildCaretAtIndex<T extends ElementNode>(
   return caret;
 }
 
-class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
-  readonly type = 'caret-range';
+class NodeCaretRangeImpl<D extends CaretDirection>
+  implements NodeCaretRange<D>
+{
+  readonly type = 'node-caret-range';
   readonly direction: D;
   anchor: NodeCaret<D>;
   focus: NodeCaret<D>;
@@ -461,17 +477,37 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
+  iterCarets(rootMode: RootMode): Iterator<NodeCaret<D>> {
+    let caret = $getAdjacentDepthCaret(this.anchor);
+    const stopCaret = $getAdjacentDepthCaret(this.focus);
+    return {
+      next() {
+        if (caret === null) {
+          return {done: true, value: undefined};
+        }
+        const rval = {done: false, value: caret};
+        caret = $getAdjacentDepthCaret(caret) || caret.getParentCaret(rootMode);
+        if (stopCaret && stopCaret.is(caret)) {
+          caret = null;
+        }
+        return rval;
+      },
+    };
+  }
+  [Symbol.iterator](): Iterator<NodeCaret<D>> {
+    return this.iterCarets('root');
+  }
 }
 
 function $caretRangeFromStartEnd(
   startCaret: NodeCaret<'next'>,
   endCaret: NodeCaret<'next'>,
   direction: CaretDirection,
-): CaretRange {
+): NodeCaretRange {
   if (direction === 'next') {
-    return new CaretRangeImpl(startCaret, endCaret, direction);
+    return new NodeCaretRangeImpl(startCaret, endCaret, direction);
   } else {
-    return new CaretRangeImpl(
+    return new NodeCaretRangeImpl(
       endCaret.getFlipped(),
       startCaret.getFlipped(),
       direction,
@@ -482,12 +518,19 @@ function $caretRangeFromStartEnd(
 /**
  * A RangeSelection expressed as a pair of Carets
  */
-export interface CaretRange<D extends CaretDirection = CaretDirection> {
-  readonly type: 'caret-range';
+export interface NodeCaretRange<D extends CaretDirection = CaretDirection>
+  extends Iterable<NodeCaret<D>> {
+  readonly type: 'node-caret-range';
   readonly direction: D;
   anchor: NodeCaret<D>;
   focus: NodeCaret<D>;
+  /** Return true if anchor and focus are the same caret */
   isCollapsed(): boolean;
+  /**
+   * Iterate the carets between anchor and focus in a pre-order fashion. Note that
+   *
+   */
+  iterCarets(rootMode: RootMode): Iterator<NodeCaret<D>>;
 }
 
 /**
@@ -532,7 +575,7 @@ export function $caretFromPoint(point: PointType): NodeCaret<'next'> {
  */
 export function $caretRangeFromSelection(
   selection: RangeSelection,
-): CaretRange {
+): NodeCaretRange {
   const direction = selection.isBackward() ? 'previous' : 'next';
   let startCaret: NodeCaret<'next'>;
   let endCaret: NodeCaret<'next'>;

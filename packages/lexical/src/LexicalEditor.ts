@@ -909,9 +909,15 @@ export class LexicalEditor {
     klass: Klass<LexicalNode>,
   ): void {
     const prevEditorState = this._editorState;
+    const originalIsEditable = this.isEditable();
+    // Temporarily freeze the editor before calling getCachedTypeToNodeMap
+    if (originalIsEditable) {
+      this.setEditable(false);
+    }
     const nodeMap = getCachedTypeToNodeMap(prevEditorState).get(
       klass.getType(),
     );
+    this.setEditable(originalIsEditable);
     if (!nodeMap) {
       return;
     }

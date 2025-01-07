@@ -1892,6 +1892,10 @@ export function getCachedTypeToNodeMap(
   if (!editorState._readOnly && editorState.isEmpty()) {
     return EMPTY_TYPE_TO_NODE_MAP;
   }
+  invariant(
+    editorState._readOnly,
+    'getCachedTypeToNodeMap called with a writable EditorState',
+  );
   let typeToNodeMap = cachedNodeMaps.get(editorState);
   if (!typeToNodeMap) {
     typeToNodeMap = computeTypeToNodeMap(editorState);

@@ -525,6 +525,12 @@ export function markNodesWithTypesAsDirty(
   editor: LexicalEditor,
   types: string[],
 ): void {
+  // Temporarily freeze the editor to call getCachedTypeToNodeMap.
+  // It cannot be called on a writable editor.
+  const originalIsEditable = editor.isEditable();
+  if (originalIsEditable) {
+    editor.setEditable(false);
+  }
   // We only need to mark nodes dirty if they were in the previous state.
   // If they aren't, then they are by definition dirty already.
   const cachedMap = getCachedTypeToNodeMap(editor.getEditorState());
@@ -559,6 +565,7 @@ export function markNodesWithTypesAsDirty(
         }
       : undefined,
   );
+  editor.setEditable(originalIsEditable);
 }
 
 export function $getRoot(): RootNode {
@@ -1885,10 +1892,6 @@ export function getCachedTypeToNodeMap(
   if (!editorState._readOnly && editorState.isEmpty()) {
     return EMPTY_TYPE_TO_NODE_MAP;
   }
-  invariant(
-    editorState._readOnly,
-    'getCachedTypeToNodeMap called with a writable EditorState',
-  );
   let typeToNodeMap = cachedNodeMaps.get(editorState);
   if (!typeToNodeMap) {
     typeToNodeMap = computeTypeToNodeMap(editorState);

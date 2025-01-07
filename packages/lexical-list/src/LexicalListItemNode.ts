@@ -95,7 +95,9 @@ export class ListItemNode extends ElementNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-
+    if (dom.childNodes.length > 0) {
+      dom.style.color = dom.lastChild.style.color;
+    }
     return false;
   }
 

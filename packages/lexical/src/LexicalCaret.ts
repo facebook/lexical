@@ -133,6 +133,8 @@ export interface DepthNodeCaret<
   readonly type: 'depth';
   getParentCaret(mode: RootMode): null | BreadthNodeCaret<T, D>;
   getParentAtCaret(): T;
+  /** Return this, the DepthNode is already a child caret of its origin */
+  getChildCaret(): this;
 }
 
 abstract class AbstractCaret<T extends LexicalNode, D extends CaretDirection>
@@ -157,17 +159,13 @@ abstract class AbstractCaret<T extends LexicalNode, D extends CaretDirection>
     );
   }
   [Symbol.iterator](): Iterator<BreadthNodeCaret<LexicalNode, D>> {
-    let caret = this.getAdjacentCaret();
-    return {
-      next(): IteratorResult<BreadthNodeCaret<LexicalNode, D>> {
-        if (!caret) {
-          return {done: true, value: undefined};
-        }
-        const rval = {done: false, value: caret};
-        caret = caret.getAdjacentCaret();
-        return rval;
-      },
-    };
+    return $makeStepwiseIterator({
+      initial: this.getAdjacentCaret(),
+      map: (caret) => caret,
+      step: (caret: BreadthNodeCaret<LexicalNode, D>) =>
+        caret.getAdjacentCaret(),
+      stop: (v): v is null => v === null,
+    });
   }
   getAdjacentCaret(): null | BreadthNodeCaret<LexicalNode, D> {
     return $getBreadthCaret(this.getNodeAtCaret(), this.direction);
@@ -273,6 +271,9 @@ abstract class AbstractDepthNodeCaret<
   }
   getParentAtCaret(): T {
     return this.origin;
+  }
+  getChildCaret(): this {
+    return this;
   }
 }
 
@@ -425,6 +426,16 @@ export function $getDepthCaret(
 }
 
 /**
+ * Gets the DepthNodeCaret if one is possible at this caret origin, otherwise return the caret
+ */
+export function $getChildCaretOrSelf<
+  D extends CaretDirection,
+  Null extends null = never,
+>(caret: NodeCaret<D> | Null): NodeCaret<D> | Null {
+  return (caret && caret.getChildCaret()) || caret;
+}
+
+/**
  * Gets the adjacent caret, if not-null and if the origin of the adjacent caret is an ElementNode, then return
  * the DepthNodeCaret. This can be used along with the getParentAdjacentCaret method to perform a full DFS
  * style traversal of the tree.
@@ -434,8 +445,7 @@ export function $getDepthCaret(
 export function $getAdjacentDepthCaret<D extends CaretDirection>(
   origin: NodeCaret<D>,
 ): null | NodeCaret<D> {
-  const caret = origin.getAdjacentCaret();
-  return (caret && caret.getChildCaret()) || caret;
+  return $getChildCaretOrSelf(origin.getAdjacentCaret());
 }
 
 /**
@@ -446,8 +456,8 @@ export function $getAdjacentDepthCaret<D extends CaretDirection>(
  * @param index The index of the origin for the caret
  * @returns A next caret with the arrow at that index
  */
-export function $getChildCaretAtIndex<T extends ElementNode>(
-  parent: T,
+export function $getChildCaretAtIndex(
+  parent: ElementNode,
   index: number,
 ): NodeCaret<'next'> {
   let caret: NodeCaret<'next'> = $getDepthCaret(parent, 'next');
@@ -478,21 +488,17 @@ class NodeCaretRangeImpl<D extends CaretDirection>
     return this.anchor.is(this.focus);
   }
   iterCarets(rootMode: RootMode): Iterator<NodeCaret<D>> {
-    let caret = $getAdjacentDepthCaret(this.anchor);
     const stopCaret = $getAdjacentDepthCaret(this.focus);
-    return {
-      next() {
-        if (caret === null) {
-          return {done: true, value: undefined};
-        }
-        const rval = {done: false, value: caret};
-        caret = $getAdjacentDepthCaret(caret) || caret.getParentCaret(rootMode);
-        if (stopCaret && stopCaret.is(caret)) {
-          caret = null;
-        }
-        return rval;
+    return $makeStepwiseIterator({
+      initial: $getAdjacentDepthCaret(this.anchor),
+      map: (state) => state,
+      step: (state: NodeCaret<D>) => {
+        const caret =
+          $getAdjacentDepthCaret(state) || state.getParentCaret(rootMode);
+        return stopCaret && stopCaret.is(caret) ? null : caret;
       },
-    };
+      stop: (state): state is null => state === null,
+    });
   }
   [Symbol.iterator](): Iterator<NodeCaret<D>> {
     return this.iterCarets('root');
@@ -598,4 +604,33 @@ export function $caretRangeFromSelection(
     endCaret = $caretFromPoint(endPoint);
   }
   return $caretRangeFromStartEnd(startCaret, endCaret, direction);
+}
+
+export interface StepwiseIteratorConfig<State, Stop, Value> {
+  readonly initial: State | Stop;
+  readonly stop: (value: State | Stop) => value is Stop;
+  readonly step: (value: State) => State | Stop;
+  readonly map: (value: State) => Value;
+}
+
+export function $makeStepwiseIterator<State, Stop, Value>({
+  initial,
+  stop,
+  step,
+  map,
+}: StepwiseIteratorConfig<State, Stop, Value>): IterableIterator<Value> {
+  let state = initial;
+  return {
+    [Symbol.iterator]() {
+      return this;
+    },
+    next(): IteratorResult<Value> {
+      if (stop(state)) {
+        return {done: true, value: undefined};
+      }
+      const rval = {done: false, value: map(state)};
+      state = step(state);
+      return rval;
+    },
+  };
 }

@@ -16,6 +16,9 @@ export type {
   RootMode,
 } from './LexicalCaret';
 export {
+  $caretFromPoint,
+  $caretRangeFromSelection,
+  $getAdjacentDepthCaret,
   $getBreadthCaret,
   $getChildCaretAtIndex,
   $getDepthCaret,

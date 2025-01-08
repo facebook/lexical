@@ -9,8 +9,10 @@
 import {
   $cloneWithProperties,
   $createParagraphNode,
+  $getAdjacentDepthCaret,
   $getBreadthCaret,
   $getChildCaretAtIndex,
+  $getChildCaretOrSelf,
   $getDepthCaret,
   $getPreviousSelection,
   $getRoot,
@@ -28,6 +30,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  makeStepwiseIterator,
   NodeCaret,
   NodeKey,
 } from 'lexical';
@@ -226,47 +229,43 @@ export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): DFSIterator {
+  const rootMode = 'root';
   const root = $getRoot();
   const start = startNode || root;
   const startCaret = $isElementNode(start)
     ? $getDepthCaret(start, 'next')
     : $getBreadthCaret(start, 'previous').getFlipped();
   const startDepth = $getDepth(startCaret.getParentAtCaret());
-  const endDepth = endNode == null ? startDepth : 0;
-  const rootMode = 'root';
+  const endCaret = endNode
+    ? $getChildCaretOrSelf($getBreadthCaret(endNode, 'next'))
+    : $getAdjacentDepthCaret(startCaret.getParentCaret(rootMode));
 
   let depth = startDepth;
-  let caret: null | NodeCaret<'next'> = startCaret;
-
-  const iterator: DFSIterator = {
-    next(): IteratorResult<DFSNode, void> {
-      if (caret === null) {
-        return iteratorDone;
+  return makeStepwiseIterator({
+    initial: startCaret,
+    map: (state) => ({depth, node: state.origin}),
+    step: (state: NodeCaret<'next'>) => {
+      if (state.is(endCaret)) {
+        return null;
       }
-      const rval = iteratorNotDone({depth, node: caret.origin});
-      if (caret.type === 'depth') {
+      if (state.type === 'depth') {
         depth++;
       }
-      if (caret && caret.origin.is(endNode)) {
-        caret = null;
-      }
-      let nextCaret = $getAdjacentCaret(caret);
-      while (caret !== null && nextCaret === null) {
+      let caret = state;
+      let nextCaret = $getAdjacentDepthCaret(caret);
+      while (nextCaret === null) {
         depth--;
-        caret = depth > endDepth ? caret.getParentCaret(rootMode) : null;
-        if (caret && caret.origin.is(endNode)) {
-          caret = null;
+        nextCaret = caret.getParentCaret(rootMode);
+        if (!nextCaret || nextCaret.is(endCaret)) {
+          return null;
         }
-        nextCaret = $getAdjacentCaret(caret);
+        caret = nextCaret;
+        nextCaret = $getAdjacentDepthCaret(caret);
       }
-      caret = nextCaret ? nextCaret.getChildCaret() || nextCaret : null;
-      return rval;
+      return nextCaret;
     },
-    [Symbol.iterator](): DFSIterator {
-      return iterator;
-    },
-  };
-  return iterator;
+    stop: (state): state is null => state === null,
+  });
 }
 
 /**

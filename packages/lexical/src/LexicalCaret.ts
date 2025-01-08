@@ -159,7 +159,7 @@ abstract class AbstractCaret<T extends LexicalNode, D extends CaretDirection>
     );
   }
   [Symbol.iterator](): Iterator<BreadthNodeCaret<LexicalNode, D>> {
-    return $makeStepwiseIterator({
+    return makeStepwiseIterator({
       initial: this.getAdjacentCaret(),
       map: (caret) => caret,
       step: (caret: BreadthNodeCaret<LexicalNode, D>) =>
@@ -443,9 +443,9 @@ export function $getChildCaretOrSelf<
  * @param caret The caret to start at
  */
 export function $getAdjacentDepthCaret<D extends CaretDirection>(
-  origin: NodeCaret<D>,
+  origin: null | NodeCaret<D>,
 ): null | NodeCaret<D> {
-  return $getChildCaretOrSelf(origin.getAdjacentCaret());
+  return origin && $getChildCaretOrSelf(origin.getAdjacentCaret());
 }
 
 /**
@@ -489,7 +489,7 @@ class NodeCaretRangeImpl<D extends CaretDirection>
   }
   iterCarets(rootMode: RootMode): Iterator<NodeCaret<D>> {
     const stopCaret = $getAdjacentDepthCaret(this.focus);
-    return $makeStepwiseIterator({
+    return makeStepwiseIterator({
       initial: $getAdjacentDepthCaret(this.anchor),
       map: (state) => state,
       step: (state: NodeCaret<D>) => {
@@ -613,7 +613,7 @@ export interface StepwiseIteratorConfig<State, Stop, Value> {
   readonly map: (value: State) => Value;
 }
 
-export function $makeStepwiseIterator<State, Stop, Value>({
+export function makeStepwiseIterator<State, Stop, Value>({
   initial,
   stop,
   step,

@@ -14,6 +14,7 @@ export type {
   FlipDirection,
   NodeCaret,
   RootMode,
+  StepwiseIteratorConfig,
 } from './LexicalCaret';
 export {
   $caretFromPoint,
@@ -21,7 +22,9 @@ export {
   $getAdjacentDepthCaret,
   $getBreadthCaret,
   $getChildCaretAtIndex,
+  $getChildCaretOrSelf,
   $getDepthCaret,
+  makeStepwiseIterator,
 } from './LexicalCaret';
 export type {PasteCommandType} from './LexicalCommands';
 export {

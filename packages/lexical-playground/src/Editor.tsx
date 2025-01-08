@@ -55,7 +55,6 @@ import InlineImagePlugin from './plugins/InlineImagePlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import LinkPlugin from './plugins/LinkPlugin';
-import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import {MaxLengthPlugin} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
@@ -200,7 +199,6 @@ export default function Editor(): JSX.Element {
             <CodeHighlightPlugin />
             <ListPlugin />
             <CheckListPlugin />
-            <ListMaxIndentLevelPlugin maxDepth={7} />
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
@@ -219,7 +217,7 @@ export default function Editor(): JSX.Element {
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />
-            <TabIndentationPlugin />
+            <TabIndentationPlugin maxIndent={7} />
             <CollapsiblePlugin />
             <PageBreakPlugin />
             <LayoutPlugin />

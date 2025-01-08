@@ -71,7 +71,7 @@ export class TabNode extends TextNode {
   }
 
   setMode(type: TextModeType): this {
-    invariant(type !== 'normal', 'TabNode does not support setMode');
+    invariant(type === 'normal', 'TabNode does not support setMode');
     return this;
   }
 

@@ -1,3 +1,11 @@
+## v0.23.1 (2025-01-09)
+
+- lexical Fix TabNode deserialization regression  (#7031) Bob Ippolito
+- lexical-react Feature Merge TabIndentionPlugin and ListMaxIndentLevelPlugin plugins (#7018) Maksim Horbachevsky
+- lexical-mark Bug Fix reverse ternary in MarkNode.addID (#7020) James Fitzsimmons
+- v0.23.0 (#7017) Bob Ippolito
+- v0.23.0 Lexical GitHub Actions Bot
+
 ## v0.23.0 (2025-01-04)
 
 - lexical-playground Fix table hover actions button position (#7011) Ivaylo Pavlov

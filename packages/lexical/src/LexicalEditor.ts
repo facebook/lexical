@@ -19,12 +19,13 @@ import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
+import {createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
   $commitPendingUpdates,
+  INTERNAL_$setEditorState,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -1140,44 +1141,8 @@ export class LexicalEditor {
         "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
       );
     }
-
-    // Ensure that we have a writable EditorState so that transforms can run
-    // during a historic operation
-    let writableEditorState = editorState;
-    if (writableEditorState._readOnly) {
-      writableEditorState = cloneEditorState(editorState);
-      writableEditorState._selection = editorState._selection
-        ? editorState._selection.clone()
-        : null;
-    }
-
     $flushRootMutations(this);
-    const pendingEditorState = this._pendingEditorState;
-    const tags = this._updateTags;
-    const tag = options !== undefined ? options.tag : null;
-
-    if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
-      if (tag != null) {
-        tags.add(tag);
-      }
-      $commitPendingUpdates(this);
-    }
-
-    this._pendingEditorState = writableEditorState;
-    this._dirtyType = FULL_RECONCILE;
-    this._dirtyElements.set('root', false);
-    this._compositionKey = null;
-
-    if (tag != null) {
-      tags.add(tag);
-    }
-
-    // Only commit pending updates if not already in an editor.update
-    // (e.g. dispatchCommand) otherwise this will cause a second commit
-    // with an already read-only state and selection
-    if (!this._updating) {
-      $commitPendingUpdates(this);
-    }
+    INTERNAL_$setEditorState(editorState, this, options);
   }
 
   /**

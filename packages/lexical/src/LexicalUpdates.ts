@@ -11,7 +11,12 @@ import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isTextNode, SELECTION_CHANGE_COMMAND} from '.';
+import {
+  $isElementNode,
+  $isTextNode,
+  EditorSetOptions,
+  SELECTION_CHANGE_COMMAND,
+} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
   CommandPayloadType,
@@ -388,6 +393,62 @@ function $parseSerializedNodeImpl<
   }
 
   return node;
+}
+
+export function INTERNAL_$setEditorState(
+  editorState: EditorState,
+  editor: LexicalEditor,
+  options?: EditorSetOptions,
+): void {
+  if (editorState.isEmpty()) {
+    invariant(
+      false,
+      "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
+    );
+  }
+
+  // Ensure that we have a writable EditorState so that transforms can run
+  // during a historic operation
+  let writableEditorState = editorState;
+  if (writableEditorState._readOnly) {
+    writableEditorState = cloneEditorState(editorState);
+    writableEditorState._selection = editorState._selection
+      ? editorState._selection.clone()
+      : null;
+  }
+
+  const pendingEditorState = editor._pendingEditorState;
+  const tags = editor._updateTags;
+  const tag = options !== undefined ? options.tag : null;
+
+  if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
+    if (tag != null) {
+      tags.add(tag);
+    }
+    $commitPendingUpdates(editor);
+  }
+
+  editor._pendingEditorState = writableEditorState;
+  editor._dirtyType = FULL_RECONCILE;
+  editor._dirtyElements.set('root', false);
+  editor._compositionKey = null;
+
+  if (tag != null) {
+    tags.add(tag);
+  }
+
+  // Only commit pending updates if not already in an editor.update
+  // (e.g. dispatchCommand) otherwise this will cause a second commit
+  // with an already read-only state and selection
+  if (!editor._updating) {
+    $commitPendingUpdates(editor);
+  } else {
+    invariant(
+      activeEditorState === pendingEditorState,
+      'setEditorState: The previous activeEditorState must be the pendingEditorState',
+    );
+    activeEditorState = writableEditorState;
+  }
 }
 
 export function parseEditorState(

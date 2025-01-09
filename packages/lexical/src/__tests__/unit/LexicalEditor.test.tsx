@@ -2568,6 +2568,31 @@ describe('LexicalEditor tests', () => {
     expect(editor._pendingEditorState).toBe(null);
   });
 
+  it('sets the EditorState from a deferred update', async () => {
+    editor = createTestEditor({});
+    const state = editor.parseEditorState(
+      `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+    );
+    editor.update(() => {
+      $getRoot().clear().append($createParagraphNode());
+    });
+    editor.update(() => {
+      expect($getRoot().getTextContent()).toBe('');
+      editor.setEditorState(state);
+      // Ensure that the activeEditorState has changed accordingly
+      expect($getRoot().getTextContent()).toBe('Hello world');
+    });
+    await editor.update(() => {
+      // This happens before the update is reconciled
+      expect($getRoot().getTextContent()).toBe('Hello world');
+    });
+    expect(editor._editorState.toJSON()).toEqual(state.toJSON());
+    expect(editor._pendingEditorState).toBe(null);
+    expect(
+      editor.getEditorState().read(() => $getRoot().getTextContent()),
+    ).toBe('Hello world');
+  });
+
   describe('node replacement', () => {
     it('should work correctly', async () => {
       const onError = jest.fn();

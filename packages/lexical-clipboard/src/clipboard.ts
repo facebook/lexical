@@ -153,7 +153,7 @@ export function $insertDataTransferForRichText(
   // Skip HTML handling if it matches the plain text representation.
   // This avoids unnecessary processing for plain text strings created by
   // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
-  if (htmlString && !(plainString && plainString === htmlString)) {
+  if (htmlString && plainString !== htmlString) {
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(

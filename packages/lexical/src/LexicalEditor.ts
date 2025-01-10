@@ -29,8 +29,11 @@ import {
   parseEditorState,
   triggerListeners,
   updateEditor,
+  updateEditorSync,
 } from './LexicalUpdates';
 import {
+  $addUpdateTag,
+  $onUpdate,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -1243,33 +1246,28 @@ export class LexicalEditor {
     if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
-      updateEditor(
-        this,
-        () => {
-          const selection = $getSelection();
-          const root = $getRoot();
+      updateEditorSync(this, () => {
+        const selection = $getSelection();
+        const root = $getRoot();
 
-          if (selection !== null) {
-            // Marking the selection dirty will force the selection back to it
-            selection.dirty = true;
-          } else if (root.getChildrenSize() !== 0) {
-            if (options.defaultSelection === 'rootStart') {
-              root.selectStart();
-            } else {
-              root.selectEnd();
-            }
+        if (selection !== null) {
+          // Marking the selection dirty will force the selection back to it
+          selection.dirty = true;
+        } else if (root.getChildrenSize() !== 0) {
+          if (options.defaultSelection === 'rootStart') {
+            root.selectStart();
+          } else {
+            root.selectEnd();
           }
-        },
-        {
-          onUpdate: () => {
-            rootElement.removeAttribute('autocapitalize');
-            if (callbackFn) {
-              callbackFn();
-            }
-          },
-          tag: 'focus',
-        },
-      );
+        }
+        $addUpdateTag('focus');
+        $onUpdate(() => {
+          rootElement.removeAttribute('autocapitalize');
+          if (callbackFn) {
+            callbackFn();
+          }
+        });
+      });
       // In the case where onUpdate doesn't fire (due to the focus update not
       // occuring).
       if (this._pendingEditorState === null) {

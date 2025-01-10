@@ -1022,6 +1022,22 @@ function $beginUpdate(
   }
 }
 
+/**
+ * A variant of updateEditor that will not defer if it is nested in an update
+ * to the same editor, much like if it was an editor.dispatchCommand issued
+ * within an update
+ */
+export function updateEditorSync(
+  editor: LexicalEditor,
+  updateFn: () => void,
+): void {
+  if (editor._updating === false || activeEditor !== editor) {
+    updateEditor(editor, updateFn);
+  } else {
+    updateFn();
+  }
+}
+
 export function updateEditor(
   editor: LexicalEditor,
   updateFn: () => void,

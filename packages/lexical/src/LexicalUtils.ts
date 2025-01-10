@@ -1827,8 +1827,17 @@ export function isBlockDomNode(node: Node) {
 }
 
 /**
+ * @internal
+ *
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
+ *
+ * This function returns true for a DecoratorNode that is not inline OR
+ * an ElementNode that is:
+ * - not a root or shadow root
+ * - not inline
+ * - can't be empty
+ * - has no children or an inline first child
  */
 export function INTERNAL_$isBlock(
   node: LexicalNode,

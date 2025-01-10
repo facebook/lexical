@@ -1197,7 +1197,10 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
     }
     return {node: nodes};
   }
-  textContent = textContent.replace(/\r/g, '').replace(/[ \t\n]+/g, ' ');
+  textContent = textContent
+    .replace(/\r/g, '')
+    .replace(/[\t\n]+/g, ' ')
+    .replace(/[ ]/g, ' ');
   if (textContent === '') {
     return {node: null};
   }

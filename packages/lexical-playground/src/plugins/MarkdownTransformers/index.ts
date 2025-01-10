@@ -173,10 +173,9 @@ export const TABLE: ElementTransformer = {
         // It's TableCellNode so it's just to make flow happy
         if ($isTableCellNode(cell)) {
           rowOutput.push(
-            $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell).replace(
-              /\n/g,
-              '\\n',
-            ),
+            $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell)
+              .replace(/\n/g, '\\n')
+              .trim(),
           );
           if (cell.__headerState === TableCellHeaderStates.ROW) {
             isHeaderRow = true;

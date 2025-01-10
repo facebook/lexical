@@ -8,7 +8,7 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.23.1",
+  "version": "0.23.2-nightly.20250110.0",
   "main": "LexicalHeadless.js",
   "types": "index.d.ts",
   "repository": {
@@ -36,6 +36,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.23.1"
+    "lexical": "0.23.2-nightly.20250110.0"
   }
 }

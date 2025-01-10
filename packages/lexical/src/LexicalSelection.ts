@@ -2986,7 +2986,11 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let offset = anchor.offset;
 
   while (!INTERNAL_$isBlock(node)) {
+    const prevNode = node;
     [node, offset] = $splitNodeAtPoint(node, offset);
+    if (prevNode.is(node)) {
+      break;
+    }
   }
 
   return offset;

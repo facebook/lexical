@@ -57,17 +57,15 @@ export function BlockWithAlignableContents({
       const deleteSelection = $getSelection();
       if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isDecoratorNode(node)) {
-              node.remove();
-            }
-          });
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isDecoratorNode(node)) {
+            node.remove();
+          }
         });
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   useEffect(() => {

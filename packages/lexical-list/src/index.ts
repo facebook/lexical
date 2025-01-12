@@ -8,13 +8,17 @@
 
 import type {SerializedListItemNode} from './LexicalListItemNode';
 import type {ListType, SerializedListNode} from './LexicalListNode';
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $getNodeByKey,
+  $getSelection,
+  $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
+  TextNode,
 } from 'lexical';
 
 import {
@@ -96,6 +100,74 @@ export function registerList(editor: LexicalEditor): () => void {
         return false;
       },
       COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerMutationListener(
+      ListItemNode,
+      (mutations) => {
+        editor.update(() => {
+          for (const [key, type] of mutations) {
+            if (type === 'created') {
+              const listItemElement = editor.getElementByKey(key);
+              if (listItemElement !== null) {
+                const selection = $getSelection();
+                if ($isRangeSelection(selection)) {
+                  listItemElement.setAttribute('style', selection.style || '');
+                }
+              }
+            }
+            if (type === 'updated') {
+              const node = $getNodeByKey<ListItemNode>(key);
+              const listItemElement = editor.getElementByKey(key);
+              if (node !== null) {
+                const firstChild = node.getFirstChild<LexicalNode>();
+                if (firstChild) {
+                  const textElement = editor.getElementByKey(
+                    firstChild.getKey(),
+                  );
+                  if (listItemElement && textElement) {
+                    listItemElement.setAttribute(
+                      'style',
+                      textElement.style.cssText,
+                    );
+                  }
+                }
+              }
+            }
+          }
+        });
+      },
+      {skipInitialization: false},
+    ),
+    editor.registerMutationListener(
+      TextNode,
+      (mutations) => {
+        editor.update(() => {
+          for (const [key, type] of mutations) {
+            if (type === 'updated') {
+              const node = $getNodeByKey<ListItemNode>(key);
+              if (node) {
+                const listItemParentNode = $findMatchingParent(
+                  node,
+                  $isListItemNode,
+                );
+                if (listItemParentNode) {
+                  const textElement = editor.getElementByKey(key);
+                  const listItemElement = editor.getElementByKey(
+                    listItemParentNode.getKey(),
+                  );
+                  if (listItemElement && textElement) {
+                    listItemElement.setAttribute(
+                      'style',
+                      textElement.style.cssText,
+                    );
+                  }
+                }
+              }
+            }
+          }
+        });
+      },
+      {skipInitialization: false},
     ),
   );
   return removeListener;

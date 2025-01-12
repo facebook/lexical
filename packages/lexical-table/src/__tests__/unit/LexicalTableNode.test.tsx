@@ -1064,8 +1064,7 @@ describe('LexicalTableNode tests', () => {
                 html`
                   <table
                     class="${editorConfig.theme.table}"
-                    style="margin-left: auto; margin-right: auto;"
-                    data-lexical-row-striping="true">
+                    style="margin-left: auto; margin-right: auto">
                     <colgroup>
                       <col />
                       <col />

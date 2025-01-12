@@ -1034,7 +1034,7 @@ function $beginUpdate(
  * to the same editor, much like if it was an editor.dispatchCommand issued
  * within an update
  */
-export function $updateEditorSync(
+export function updateEditorSync(
   editor: LexicalEditor,
   updateFn: () => void,
   options?: EditorUpdateOptions,
@@ -1047,8 +1047,6 @@ export function $updateEditorSync(
     editor._updates.push([updateFn, options]);
   }
 }
-/** @deprecated renamed to {@link $updateEditorSync} by @lexical/eslint-plugin rules-of-lexical */
-export const updateEditorSync = $updateEditorSync;
 
 export function updateEditor(
   editor: LexicalEditor,

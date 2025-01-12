@@ -22,6 +22,7 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementDOMSlot,
+  type ElementFormatType,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -77,13 +78,27 @@ function setRowStriping(
   dom: HTMLElement,
   config: EditorConfig,
   rowStriping: boolean,
-) {
+): void {
   if (rowStriping) {
     addClassNamesToElement(dom, config.theme.tableRowStriping);
     dom.setAttribute('data-lexical-row-striping', 'true');
   } else {
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
+  }
+}
+
+function alignTableElement(
+  dom: HTMLElement,
+  formatType: ElementFormatType,
+): void {
+  if (formatType === 'center') {
+    dom.style.marginLeft = 'auto';
+    dom.style.marginRight = 'auto';
+  } else if (formatType === 'right') {
+    dom.style.marginLeft = 'auto';
+  } else {
+    dom.style.marginLeft = '';
   }
 }
 
@@ -211,6 +226,9 @@ export class TableNode extends ElementNode {
     setDOMUnmanaged(colGroup);
 
     addClassNamesToElement(tableElement, config.theme.table);
+    if (this.__format) {
+      alignTableElement(tableElement, this.getFormatType());
+    }
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
@@ -234,7 +252,7 @@ export class TableNode extends ElementNode {
       setRowStriping(dom, config, this.__rowStriping);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
-    return false;
+    return prevNode.__format !== this.__format;
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {

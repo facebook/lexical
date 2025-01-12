@@ -82,7 +82,7 @@ import {
   TableNode,
 } from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
-import {$isTableRowNode} from './LexicalTableRowNode';
+import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {$isTableSelection} from './LexicalTableSelection';
 import {
   $computeTableCellRectBoundary,
@@ -561,6 +561,12 @@ export function applyTableHandlers(
         const focusNode = selection.focus.getNode();
         if (!$isTableCellNode(anchorNode) || !$isTableCellNode(focusNode)) {
           return false;
+        }
+
+        // Align table if exact full table selection
+        if ($isFullTableSelection(selection, tableNode)) {
+          tableNode.setFormat(formatType);
+          return true;
         }
 
         const [tableMap, anchorCell, focusCell] = $computeTableMap(
@@ -1577,6 +1583,31 @@ function $isSelectionInTable(
     return isAnchorInside && isFocusInside;
   }
 
+  return false;
+}
+
+function $isFullTableSelection(
+  selection: null | BaseSelection,
+  tableNode: TableNode,
+): boolean {
+  if ($isTableSelection(selection)) {
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    if (tableNode && anchorNode && focusNode) {
+      const firstRow = tableNode.getFirstChild<TableRowNode>();
+      const lastRow = tableNode.getLastChild<TableRowNode>();
+      if (firstRow && lastRow) {
+        const firstCell = firstRow.getFirstChild<TableCellNode>();
+        const lastCell = lastRow.getLastChild<TableCellNode>();
+        if (firstCell && lastCell) {
+          return (
+            anchorNode.getKey() === firstCell.getKey() &&
+            focusNode.getKey() === lastCell.getKey()
+          );
+        }
+      }
+    }
+  }
   return false;
 }
 

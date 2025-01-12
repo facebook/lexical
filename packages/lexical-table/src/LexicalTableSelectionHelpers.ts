@@ -563,7 +563,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        // Align table if exact full table selection
+        // Align the table if the entire table is selected
         if ($isFullTableSelection(selection, tableNode)) {
           tableNode.setFormat(formatType);
           return true;

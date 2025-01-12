@@ -1040,6 +1040,70 @@ describe('LexicalTableNode tests', () => {
             });
           });
 
+          test('Change Table-level alignment', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = $createTableNodeWithDimensions(4, 4, true);
+              root.append(table);
+            });
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFormat('center');
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="margin-left: auto; margin-right: auto;"
+                    data-lexical-row-striping="true">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFormat('left');
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+          });
+
           test('Update column widths', async () => {
             const {editor} = testEnv;
 

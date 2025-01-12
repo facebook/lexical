@@ -73,6 +73,10 @@ const editorConfig = Object.freeze({
   namespace: '',
   theme: {
     table: 'test-table-class',
+    tableAlignment: {
+      center: 'test-table-alignment-center',
+      right: 'test-table-alignment-right',
+    },
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },
@@ -1063,8 +1067,8 @@ describe('LexicalTableNode tests', () => {
                 table!.createDOM(editorConfig).outerHTML,
                 html`
                   <table
-                    class="${editorConfig.theme.table}"
-                    style="margin-left: auto; margin-right: auto">
+                    class="${editorConfig.theme.table} ${editorConfig.theme
+                      .tableAlignment.center}">
                     <colgroup>
                       <col />
                       <col />

@@ -196,6 +196,13 @@
   /* Remove the table's margin and put it on the wrapper */
   margin: 0;
 }
+.PlaygroundEditorTheme__tableAlignmentCenter {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.PlaygroundEditorTheme__tableAlignmentRight {
+  margin-left: auto !important;
+}
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
   border-spacing: 0;

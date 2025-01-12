@@ -90,18 +90,24 @@ function setRowStriping(
 
 function alignTableElement(
   dom: HTMLElement,
+  config: EditorConfig,
   formatType: ElementFormatType,
 ): void {
   if (!dom) {
     return;
   }
   if (formatType === 'center') {
-    dom.style.marginLeft = 'auto';
-    dom.style.marginRight = 'auto';
+    addClassNamesToElement(dom, config.theme.tableAlignment.center);
   } else if (formatType === 'right') {
-    dom.style.marginLeft = 'auto';
+    addClassNamesToElement(dom, config.theme.tableAlignment.right);
   } else {
-    dom.style.marginLeft = '';
+    removeClassNamesFromElement(
+      dom,
+      ...[
+        config.theme.tableAlignment.center,
+        config.theme.tableAlignment.right,
+      ],
+    );
   }
 }
 
@@ -230,7 +236,7 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(tableElement, config.theme.table);
     if (this.__format) {
-      alignTableElement(tableElement, this.getFormatType());
+      alignTableElement(tableElement, config, this.getFormatType());
     }
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
@@ -268,6 +274,7 @@ export class TableNode extends ElementNode {
           if (this.__format) {
             alignTableElement(
               tableElement as HTMLElement,
+              editor._config,
               this.getFormatType(),
             );
           }

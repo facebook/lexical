@@ -89,7 +89,7 @@ function setRowStriping(
 }
 
 function alignTableElement(
-  dom: HTMLElement | Text | null | undefined,
+  dom: HTMLElement,
   formatType: ElementFormatType,
 ): void {
   if (!dom) {
@@ -266,7 +266,10 @@ export class TableNode extends ElementNode {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
           if (this.__format) {
-            alignTableElement(tableElement, this.getFormatType());
+            alignTableElement(
+              tableElement as HTMLElement,
+              this.getFormatType(),
+            );
           }
         }
         if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {

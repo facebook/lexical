@@ -213,7 +213,8 @@ abstract class AbstractCaret<T extends LexicalNode, D extends CaretDirection>
     // TODO: Optimize this to work directly with node internals
     for (const node of nodeIter) {
       if (nodesToRemove.size > 0) {
-        const target = caret.getNodeAtCaret();
+        // TODO: For some reason `npm run tsc-extension` needs this annotation?
+        const target: null | LexicalNode = caret.getNodeAtCaret();
         invariant(
           target !== null,
           'NodeCaret.splice: Underflow of expected nodesToRemove during splice (keys: %s)',

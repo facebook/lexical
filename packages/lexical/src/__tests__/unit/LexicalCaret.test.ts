@@ -83,7 +83,7 @@ describe('LexicalCaret', () => {
               ];
               expect(root.getChildrenKeys()).toEqual(
                 direction === 'next'
-                  ? paragraphKeys.toReversed()
+                  ? [...paragraphKeys].reverse()
                   : paragraphKeys,
               );
 
@@ -93,13 +93,13 @@ describe('LexicalCaret', () => {
               expect(root.getChildrenKeys()).toEqual(paragraphKeys);
               caret.splice(0, [secondParagraph, paragraph]);
               expect(root.getChildrenKeys()).toEqual(
-                paragraphKeys.toReversed(),
+                [...paragraphKeys].reverse(),
               );
               caret.splice(0, [paragraph, secondParagraph]);
               expect(root.getChildrenKeys()).toEqual(paragraphKeys);
               caret.splice(2, [secondParagraph, paragraph]);
               expect(root.getChildrenKeys()).toEqual(
-                paragraphKeys.toReversed(),
+                [...paragraphKeys].reverse(),
               );
               caret.splice(2, [paragraph, secondParagraph]);
               expect(root.getChildrenKeys()).toEqual(paragraphKeys);
@@ -108,14 +108,14 @@ describe('LexicalCaret', () => {
               caret.splice(-1, [secondParagraph]);
               expect(root.getChildrenKeys()).toEqual(
                 direction === 'next'
-                  ? paragraphKeys.toReversed()
+                  ? [...paragraphKeys].reverse()
                   : paragraphKeys,
               );
               caret.splice(Infinity, [paragraph, secondParagraph], direction);
               expect(root.getChildrenKeys()).toEqual(
                 direction === 'next'
                   ? paragraphKeys
-                  : paragraphKeys.toReversed(),
+                  : [...paragraphKeys].reverse(),
               );
 
               expect(
@@ -123,7 +123,7 @@ describe('LexicalCaret', () => {
               ).toEqual(
                 direction === 'next'
                   ? root.getChildrenKeys()
-                  : root.getChildrenKeys().toReversed(),
+                  : [...root.getChildrenKeys()].reverse(),
               );
             },
             {discrete: true},

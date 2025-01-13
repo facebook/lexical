@@ -65,7 +65,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
-import {$flushRootMutations} from './LexicalMutations';
+import {flushRootMutations} from './LexicalMutations';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
@@ -590,7 +590,7 @@ export function $setSelection(selection: null | BaseSelection): void {
 export function $flushMutations(): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  $flushRootMutations(editor);
+  flushRootMutations(editor);
 }
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
@@ -662,7 +662,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
   if (domSelection === null) {
     return;
   }

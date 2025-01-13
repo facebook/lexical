@@ -82,7 +82,7 @@ import {
   TableNode,
 } from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
-import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {$isTableSelection} from './LexicalTableSelection';
 import {
   $computeTableCellRectBoundary,
@@ -1591,21 +1591,14 @@ function $isFullTableSelection(
   tableNode: TableNode,
 ): boolean {
   if ($isTableSelection(selection)) {
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const anchorNode = selection.anchor.getNode() as TableCellNode;
+    const focusNode = selection.focus.getNode() as TableCellNode;
     if (tableNode && anchorNode && focusNode) {
-      const firstRow = tableNode.getFirstChild<TableRowNode>();
-      const lastRow = tableNode.getLastChild<TableRowNode>();
-      if (firstRow && lastRow) {
-        const firstCell = firstRow.getFirstChild<TableCellNode>();
-        const lastCell = lastRow.getLastChild<TableCellNode>();
-        if (firstCell && lastCell) {
-          return (
-            anchorNode.getKey() === firstCell.getKey() &&
-            focusNode.getKey() === lastCell.getKey()
-          );
-        }
-      }
+      const [map] = $computeTableMap(tableNode, anchorNode, focusNode);
+      return (
+        anchorNode.getKey() === map[0][0].cell.getKey() &&
+        focusNode.getKey() === map[map.length - 1].at(-1)!.cell.getKey()
+      );
     }
   }
   return false;

@@ -193,8 +193,9 @@
   margin: 0px 25px 30px 0px;
 }
 .PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
-  /* Remove the table's margin and put it on the wrapper */
-  margin: 0;
+  /* Remove the table's vertical margin and put it on the wrapper */
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .PlaygroundEditorTheme__tableAlignmentCenter {
   margin-left: auto !important;

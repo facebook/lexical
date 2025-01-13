@@ -93,22 +93,17 @@ function alignTableElement(
   config: EditorConfig,
   formatType: ElementFormatType,
 ): void {
-  if (!dom) {
-    return;
+  const removeClasses: string[] = [];
+  const addClasses: string[] = [];
+  for (const format of ['center', 'right'] as const) {
+    const classes = config.theme.tableAlignment[format];
+    if (!classes) {
+      continue;
+    }
+    (format === formatType ? addClasses : removeClasses).push(classes);
   }
-  if (formatType === 'center') {
-    addClassNamesToElement(dom, config.theme.tableAlignment.center);
-  } else if (formatType === 'right') {
-    addClassNamesToElement(dom, config.theme.tableAlignment.right);
-  } else {
-    removeClassNamesFromElement(
-      dom,
-      ...[
-        config.theme.tableAlignment.center,
-        config.theme.tableAlignment.right,
-      ],
-    );
-  }
+  removeClassNamesFromElement(dom, ...removeClasses);
+  addClassNamesToElement(dom, ...addClasses);
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
@@ -235,9 +230,7 @@ export class TableNode extends ElementNode {
     setDOMUnmanaged(colGroup);
 
     addClassNamesToElement(tableElement, config.theme.table);
-    if (this.__format) {
-      alignTableElement(tableElement, config, this.getFormatType());
-    }
+    alignTableElement(tableElement, config, this.getFormatType());
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
@@ -261,7 +254,12 @@ export class TableNode extends ElementNode {
       setRowStriping(dom, config, this.__rowStriping);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
-    return prevNode.__format !== this.__format;
+    alignTableElement(
+      this.getDOMSlot(dom).element,
+      config,
+      this.getFormatType(),
+    );
+    return false;
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {

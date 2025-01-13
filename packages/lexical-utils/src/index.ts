@@ -236,9 +236,11 @@ export function $dfsIterator(
     ? $getDepthCaret(start, 'next')
     : $getBreadthCaret(start, 'previous').getFlipped();
   const startDepth = $getDepth(startCaret.getParentAtCaret());
-  const endCaret = endNode
-    ? $getChildCaretOrSelf($getBreadthCaret(endNode, 'next'))
-    : $getAdjacentDepthCaret(startCaret.getParentCaret(rootMode));
+  const endCaret = $getAdjacentDepthCaret(
+    endNode
+      ? $getChildCaretOrSelf($getBreadthCaret(endNode, 'next'))
+      : startCaret.getParentCaret(rootMode),
+  );
 
   let depth = startDepth;
   return makeStepwiseIterator({
@@ -261,6 +263,9 @@ export function $dfsIterator(
         }
         caret = nextCaret;
         nextCaret = $getAdjacentDepthCaret(caret);
+      }
+      if (nextCaret && nextCaret.is(endCaret)) {
+        return null;
       }
       return nextCaret;
     },

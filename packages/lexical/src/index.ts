@@ -194,6 +194,7 @@ export {
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,

@@ -420,9 +420,9 @@ export async function copyToClipboard(
   }
 
   const rootElement = editor.getRootElement();
-  const windowDocument =
-    editor._window == null ? window.document : editor._window.document;
-  const domSelection = getDOMSelection(editor._window);
+  const editorWindow = editor._window || window;
+  const windowDocument = window.document;
+  const domSelection = getDOMSelection(editorWindow);
   if (rootElement === null || domSelection === null) {
     return false;
   }

@@ -55,6 +55,7 @@ import {
   getDOMTextNode,
   getElementByKeyOrThrow,
   getTextNodeOffset,
+  getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
@@ -1632,7 +1633,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(editor._window);
+    const domSelection = getDOMSelection(getWindow(editor));
 
     if (!domSelection) {
       return;
@@ -2340,9 +2341,6 @@ function $internalResolveSelectionPoints(
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  if (__DEV__) {
-    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
-  }
   const resolvedFocusPoint = $internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
@@ -2353,6 +2351,7 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
+    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
     $validatePoint(editor, 'focus', resolvedAnchorPoint);
   }
   if (
@@ -2421,17 +2420,18 @@ export function $createNodeSelection(): NodeSelection {
 
 export function $internalCreateSelection(
   editor: LexicalEditor,
+  event: UIEvent | Event | null,
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(
       lastSelection,
       domSelection,
       editor,
-      null,
+      event,
     );
   }
   return lastSelection.clone();
@@ -2986,7 +2986,11 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let offset = anchor.offset;
 
   while (!INTERNAL_$isBlock(node)) {
+    const prevNode = node;
     [node, offset] = $splitNodeAtPoint(node, offset);
+    if (prevNode.is(node)) {
+      break;
+    }
   }
 
   return offset;

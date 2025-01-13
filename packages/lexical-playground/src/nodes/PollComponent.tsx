@@ -150,17 +150,15 @@ export default function PollComponent({
       if (isSelected && $isNodeSelection(deleteSelection)) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isPollNode(node)) {
-              node.remove();
-            }
-          });
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isPollNode(node)) {
+            node.remove();
+          }
         });
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   useEffect(() => {

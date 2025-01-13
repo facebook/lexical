@@ -11,6 +11,11 @@ import type {LexicalEditor} from 'lexical';
 
 declare export function registerTabIndentation(
   editor: LexicalEditor,
+  maxIndent?: number,
 ): () => void;
 
-declare export function TabIndentationPlugin(): null;
+type Props = $ReadOnly<{
+  maxIndent?: number,
+}>;
+
+declare export function TabIndentationPlugin(props: Props): null;

@@ -890,10 +890,7 @@ export function $setAnchorPoint(
     return;
   }
 
-  const anchor = selection.anchor;
-  anchor.type = point.type;
-  anchor.offset = point.offset;
-  anchor.key = point.key;
+  selection.anchor.set(point.key, point.offset, point.type);
 }
 
 export function $setFocusPoint(
@@ -911,8 +908,5 @@ export function $setFocusPoint(
     return;
   }
 
-  const focus = selection.focus;
-  focus.type = point.type;
-  focus.offset = point.offset;
-  focus.key = point.key;
+  selection.focus.set(point.key, point.offset, point.type);
 }

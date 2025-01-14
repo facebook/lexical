@@ -78,11 +78,14 @@ function $syncEvent(binding: Binding, event: any): void {
   }
 }
 
+type SyncCursorPositionsFn = (binding: Binding, provider: Provider) => void;
+
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
+  syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -129,7 +132,7 @@ export function syncYjsChangesToLexical(
     },
     {
       onUpdate: () => {
-        syncCursorPositions(binding, provider);
+        syncCursorPositionsFn(binding, provider);
         // If there was a collision on the top level paragraph
         // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
         // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.

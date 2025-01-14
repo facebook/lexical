@@ -10,8 +10,9 @@ import './index.css';
 
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {$getNearestNodeOfType, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isParagraphNode,
@@ -47,6 +48,8 @@ function TextFormatFloatingToolbar({
   isSubscript,
   isSuperscript,
   setIsLinkEditMode,
+  isContinuousNumbering,
+  isNumberedList,
 }: {
   editor: LexicalEditor;
   anchorElem: HTMLElement;
@@ -62,6 +65,8 @@ function TextFormatFloatingToolbar({
   isSuperscript: boolean;
   isUnderline: boolean;
   setIsLinkEditMode: Dispatch<boolean>;
+  isContinuousNumbering: boolean;
+  isNumberedList: boolean;
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
 
@@ -189,6 +194,23 @@ function TextFormatFloatingToolbar({
     );
   }, [editor, $updateTextFormatFloatingToolbar]);
 
+  const toggleContinuousNumbering = useCallback(() => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+
+      const node = getSelectedNode(selection);
+      const listNode = $getNearestNodeOfType(node, ListNode);
+      if (!listNode) {
+        return;
+      }
+
+      listNode.setContinuePreviousNumbering(!isContinuousNumbering);
+    });
+  }, [editor, isContinuousNumbering]);
+
   return (
     <div ref={popupCharStylesEditorRef} className="floating-text-format-popup">
       {editor.isEditable() && (
@@ -301,6 +323,18 @@ function TextFormatFloatingToolbar({
             aria-label="Insert link">
             <i className="format link" />
           </button>
+          {isNumberedList && (
+            <button
+              type="button"
+              onClick={toggleContinuousNumbering}
+              className={
+                'popup-item spaced ' + (isContinuousNumbering ? 'active' : '')
+              }
+              title="Continue numbering from previous list"
+              aria-label="Continue numbering from previous list">
+              <i className="format numbered-list" />
+            </button>
+          )}
         </>
       )}
       <button
@@ -332,6 +366,8 @@ function useFloatingTextFormatToolbar(
   const [isSubscript, setIsSubscript] = useState(false);
   const [isSuperscript, setIsSuperscript] = useState(false);
   const [isCode, setIsCode] = useState(false);
+  const [isNumberedList, setIsNumberedList] = useState(false);
+  const [isContinuousNumbering, setIsContinuousNumbering] = useState(false);
 
   const updatePopup = useCallback(() => {
     editor.getEditorState().read(() => {
@@ -358,6 +394,13 @@ function useFloatingTextFormatToolbar(
       }
 
       const node = getSelectedNode(selection);
+
+      // Update list numbering strategy
+      const listNode = $getNearestNodeOfType(node, ListNode);
+      setIsNumberedList(!!listNode && listNode.getListType() === 'number');
+      if (listNode) {
+        setIsContinuousNumbering(listNode.getContinuePreviousNumbering());
+      }
 
       // Update text format
       setIsBold(selection.hasFormat('bold'));
@@ -436,6 +479,8 @@ function useFloatingTextFormatToolbar(
       isUnderline={isUnderline}
       isCode={isCode}
       setIsLinkEditMode={setIsLinkEditMode}
+      isContinuousNumbering={isContinuousNumbering}
+      isNumberedList={isNumberedList}
     />,
     anchorElem,
   );

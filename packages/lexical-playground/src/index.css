@@ -884,7 +884,8 @@ i.page-break,
 }
 
 .icon.numbered-list,
-.icon.number {
+.icon.number,
+i.numbered-list {
   background-image: url(images/icons/list-ol.svg);
 }
 

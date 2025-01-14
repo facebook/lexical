@@ -23,16 +23,17 @@ import {
   $isTextNode,
   $setSelection,
   $splitNode,
-  BreadthNodeCaret,
-  CaretDirection,
-  EditorState,
+  type BreadthNodeCaret,
+  type CaretDirection,
+  type EditorState,
   ElementNode,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   makeStepwiseIterator,
-  NodeCaret,
-  NodeKey,
+  type NodeCaret,
+  type NodeKey,
+  type RootMode,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -172,10 +173,10 @@ export function mediaFileReader(
   });
 }
 
-export type DFSNode = Readonly<{
-  depth: number;
-  node: LexicalNode;
-}>;
+export interface DFSNode {
+  readonly depth: number;
+  readonly node: LexicalNode;
+}
 
 /**
  * "Depth-First Search" starts at the root/top node of a tree and goes as far as it can down a branch end
@@ -193,19 +194,6 @@ export function $dfs(
 ): Array<DFSNode> {
   return Array.from($dfsIterator(startNode, endNode));
 }
-
-type DFSIterator = {
-  next: () => IteratorResult<DFSNode, void>;
-  [Symbol.iterator]: () => DFSIterator;
-};
-
-const iteratorDone: Readonly<{done: true; value: void}> = {
-  done: true,
-  value: undefined,
-};
-const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
-  value: T,
-) => ({done: false, value});
 
 /**
  * Get the adjacent caret in the same direction
@@ -228,7 +216,7 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): DFSIterator {
+): IterableIterator<DFSNode> {
   const rootMode = 'root';
   const root = $getRoot();
   const start = startNode || root;
@@ -253,21 +241,12 @@ export function $dfsIterator(
       if (state.type === 'depth') {
         depth++;
       }
-      let caret = state;
-      let nextCaret = $getAdjacentDepthCaret(caret);
-      while (nextCaret === null) {
-        depth--;
-        nextCaret = caret.getParentCaret(rootMode);
-        if (!nextCaret || nextCaret.is(endCaret)) {
-          return null;
-        }
-        caret = nextCaret;
-        nextCaret = $getAdjacentDepthCaret(caret);
-      }
-      if (nextCaret && nextCaret.is(endCaret)) {
+      const rval = $getNextSiblingOrParentSiblingCaret(state);
+      if (!rval || rval[0].is(endCaret)) {
         return null;
       }
-      return nextCaret;
+      depth += rval[1];
+      return rval[0];
     },
     stop: (state): state is null => state === null,
   });
@@ -284,26 +263,29 @@ export function $dfsIterator(
 export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number] {
-  let node_: null | LexicalNode = node;
-  // Find immediate sibling or nearest parent sibling
-  let sibling = null;
+  const rval = $getNextSiblingOrParentSiblingCaret(
+    $getBreadthCaret(node, 'next'),
+  );
+  return rval && [rval[0].origin, rval[1]];
+}
+
+function $getNextSiblingOrParentSiblingCaret(
+  startCaret: NodeCaret<'next'>,
+  rootMode: RootMode = 'root',
+): null | [NodeCaret<'next'>, number] {
   let depthDiff = 0;
-
-  while (sibling === null && node_ !== null) {
-    sibling = node_.getNextSibling();
-
-    if (sibling === null) {
-      node_ = node_.getParent();
-      depthDiff--;
-    } else {
-      node_ = sibling;
+  let caret = startCaret;
+  let nextCaret = $getAdjacentDepthCaret(caret);
+  while (nextCaret === null) {
+    depthDiff--;
+    nextCaret = caret.getParentCaret(rootMode);
+    if (!nextCaret) {
+      return null;
     }
+    caret = nextCaret;
+    nextCaret = $getAdjacentDepthCaret(caret);
   }
-
-  if (node_ === null) {
-    return null;
-  }
-  return [node_, depthDiff];
+  return nextCaret && [nextCaret, depthDiff];
 }
 
 export function $getDepth(node: LexicalNode): number {
@@ -319,7 +301,7 @@ export function $getDepth(node: LexicalNode): number {
 
 /**
  * Performs a right-to-left preorder tree traversal.
- * From the starting node it goes to the rightmost child, than backtracks to paret and finds new rightmost path.
+ * From the starting node it goes to the rightmost child, than backtracks to parent and finds new rightmost path.
  * It will return the next node in traversal sequence after the startingNode.
  * The traversal is similar to $dfs functions above, but the nodes are visited right-to-left, not left-to-right.
  * @param startingNode - The node to start the search.
@@ -328,24 +310,10 @@ export function $getDepth(node: LexicalNode): number {
 export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null {
-  let node: LexicalNode | null = startingNode;
-
-  if ($isElementNode(node) && node.getChildrenSize() > 0) {
-    node = node.getLastChild();
-  } else {
-    let sibling = null;
-
-    while (sibling === null && node !== null) {
-      sibling = node.getPreviousSibling();
-
-      if (sibling === null) {
-        node = node.getParent();
-      } else {
-        node = sibling;
-      }
-    }
-  }
-  return node;
+  const caret = $getAdjacentDepthCaret(
+    $getChildCaretOrSelf($getBreadthCaret(startingNode, 'previous')),
+  );
+  return caret && caret.origin;
 }
 
 /**
@@ -614,7 +582,7 @@ export function $wrapNodeInElement(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ObjectKlass<T> = new (...args: any[]) => T;
+export type ObjectKlass<T> = new (...args: any[]) => T;
 
 /**
  * @param object = The instance of the type
@@ -738,7 +706,7 @@ function $unwrapAndFilterDescendantsImpl(
       $unwrapAndFilterDescendantsImpl(
         node,
         $predicate,
-        $onSuccess ? $onSuccess : (child) => node.insertAfter(child),
+        $onSuccess || ((child) => node.insertAfter(child)),
       );
     }
     node.remove();
@@ -772,7 +740,7 @@ export function $descendantsMatching(
   $predicate: (node: LexicalNode) => boolean,
 ): LexicalNode[] {
   const result: LexicalNode[] = [];
-  const stack = [...children].reverse();
+  const stack = Array.from(children).reverse();
   for (let child = stack.pop(); child !== undefined; child = stack.pop()) {
     if ($predicate(child)) {
       result.push(child);
@@ -794,7 +762,7 @@ export function $descendantsMatching(
  * @returns An iterator of the node's children
  */
 export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
-  return $caretNodeIterator($getDepthCaret(node, 'next'));
+  return $childIterator($getDepthCaret(node, 'next'));
 }
 
 /**
@@ -806,24 +774,17 @@ export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
  * @returns An iterator of the node's children
  */
 export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
-  return $caretNodeIterator($getDepthCaret(node, 'previous'));
+  return $childIterator($getDepthCaret(node, 'previous'));
 }
 
-function $caretNodeIterator<D extends CaretDirection>(
+function $childIterator<D extends CaretDirection>(
   startCaret: NodeCaret<D>,
 ): IterableIterator<LexicalNode> {
-  const iter = startCaret[Symbol.iterator]();
   const seen = __DEV__ ? new Set<NodeKey>() : null;
-  return {
-    [Symbol.iterator]() {
-      return this;
-    },
-    next() {
-      const step = iter.next();
-      if (step.done) {
-        return iteratorDone;
-      }
-      const {origin} = step.value;
+  return makeStepwiseIterator({
+    initial: startCaret.getAdjacentCaret(),
+    map: (caret) => {
+      const origin = caret.origin.getLatest();
       if (__DEV__ && seen !== null) {
         const key = origin.getKey();
         invariant(
@@ -833,19 +794,18 @@ function $caretNodeIterator<D extends CaretDirection>(
         );
         seen.add(key);
       }
-      return iteratorNotDone(origin);
+      return origin;
     },
-  };
+    step: (caret: BreadthNodeCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
+    stop: (v): v is null => v === null,
+  });
 }
 
 /**
- * Insert all children before this node, and then remove it.
+ * Replace this node with its children
  *
  * @param node The ElementNode to unwrap and remove
  */
 export function $unwrapNode(node: ElementNode): void {
-  for (const child of $firstToLastIterator(node)) {
-    node.insertBefore(child);
-  }
-  node.remove();
+  $getBreadthCaret(node, 'next').getFlipped().splice(1, node.getChildren());
 }

@@ -34,6 +34,7 @@ import {
 } from './LexicalEvents';
 import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, LexicalNode} from './LexicalNode';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
   getActiveEditorState,
@@ -626,7 +627,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @param range a DOM Selection range conforming to the StaticRange interface.
    */
-  applyDOMRange(range: StaticRange): void {
+  applyDOMRange(range: StaticRange, normalize = true): void {
     const editor = getActiveEditor();
     const currentEditorState = editor.getEditorState();
     const lastSelection = currentEditorState._selection;
@@ -654,6 +655,11 @@ export class RangeSelection implements BaseSelection {
       focusPoint.offset,
       focusPoint.type,
     );
+    if (normalize) {
+      // Firefox will use an element point rather than a text point in some cases,
+      // so we normalize for that
+      $normalizeSelection(this);
+    }
     this._cachedNodes = null;
   }
 

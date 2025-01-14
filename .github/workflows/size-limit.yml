@@ -70,7 +70,7 @@ jobs:
             # If it's still not canceled after a minute, something probably went wrong, just exit
             exit 1
           fi
-          echo "mergedSha=$mergedSha" >> "$GITHUB_ENV"
+          echo "mergedSha=$mergedSha" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
           # pull_request_target checks out the base branch by default

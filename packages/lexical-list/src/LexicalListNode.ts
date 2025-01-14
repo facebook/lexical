@@ -43,6 +43,7 @@ export type SerializedListNode = Spread<
     listType: ListType;
     start: number;
     tag: ListNodeTagType;
+    continuePreviousNumbering?: boolean;
   },
   SerializedElementNode
 >;
@@ -59,6 +60,8 @@ export class ListNode extends ElementNode {
   __start: number;
   /** @internal */
   __listType: ListType;
+  /** @internal */
+  __continuePreviousNumbering: boolean;
 
   static getType(): string {
     return 'list';
@@ -67,15 +70,26 @@ export class ListNode extends ElementNode {
   static clone(node: ListNode): ListNode {
     const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
 
-    return new ListNode(listType, node.__start, node.__key);
+    return new ListNode(
+      listType,
+      node.__start,
+      node.__continuePreviousNumbering,
+      node.__key,
+    );
   }
 
-  constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
+  constructor(
+    listType: ListType = 'number',
+    start: number = 1,
+    continuePreviousNumbering: boolean = false,
+    key?: NodeKey,
+  ) {
     super(key);
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';
     this.__start = start;
+    this.__continuePreviousNumbering = continuePreviousNumbering;
   }
 
   getTag(): ListNodeTagType {
@@ -100,6 +114,19 @@ export class ListNode extends ElementNode {
   setStart(start: number): this {
     const self = this.getWritable();
     self.__start = start;
+    return self;
+  }
+
+  getContinuePreviousNumbering(): boolean {
+    return this.__continuePreviousNumbering;
+  }
+
+  setContinuePreviousNumbering(value: boolean): this {
+    const self = this.getWritable();
+    self.__continuePreviousNumbering = value;
+    if (!value) {
+      self.__start = 1;
+    }
     return self;
   }
 
@@ -158,7 +185,8 @@ export class ListNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setListType(serializedNode.listType)
-      .setStart(serializedNode.start);
+      .setStart(serializedNode.start)
+      .setContinuePreviousNumbering(!!serializedNode.continuePreviousNumbering);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -179,6 +207,7 @@ export class ListNode extends ElementNode {
   exportJSON(): SerializedListNode {
     return {
       ...super.exportJSON(),
+      continuePreviousNumbering: this.getContinuePreviousNumbering(),
       listType: this.getListType(),
       start: this.getStart(),
       tag: this.getTag(),
@@ -222,6 +251,21 @@ export class ListNode extends ElementNode {
 
   extractWithChild(child: LexicalNode): boolean {
     return $isListItemNode(child);
+  }
+
+  updateStartFromPreviousList(previousList: ListNode) {
+    if (
+      this.__continuePreviousNumbering &&
+      this.__listType === 'number' &&
+      previousList.getListType() === 'number'
+    ) {
+      const listItemCount = previousList.getChildrenSize();
+      const lastNumber = previousList.getStart() + listItemCount - 1;
+      const nextNumber = lastNumber + 1;
+      if (this.__start !== nextNumber && lastNumber > 0) {
+        this.setStart(nextNumber);
+      }
+    }
   }
 }
 
@@ -363,8 +407,11 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
 export function $createListNode(
   listType: ListType = 'number',
   start = 1,
+  continuePreviousNumbering = false,
 ): ListNode {
-  return $applyNodeReplacement(new ListNode(listType, start));
+  return $applyNodeReplacement(
+    new ListNode(listType, start, continuePreviousNumbering),
+  );
 }
 
 /**

@@ -10,8 +10,9 @@ import type {SerializedListItemNode} from './LexicalListItemNode';
 import type {ListType, SerializedListNode} from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
+import {$dfs, mergeRegister} from '@lexical/utils';
 import {
+  $getRoot,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
@@ -97,6 +98,18 @@ export function registerList(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_LOW,
     ),
+    editor.registerNodeTransform(ListNode, () => {
+      let previousList: ListNode | null = null;
+      $dfs($getRoot()).forEach(({node}) => {
+        if (!$isListNode(node) || node.getListType() !== 'number') {
+          return;
+        }
+        if (previousList) {
+          node.updateStartFromPreviousList(previousList);
+        }
+        previousList = node;
+      });
+    }),
   );
   return removeListener;
 }

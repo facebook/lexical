@@ -93,6 +93,9 @@ function alignTableElement(
   config: EditorConfig,
   formatType: ElementFormatType,
 ): void {
+  if (!config.theme.tableAlignment) {
+    return;
+  }
   const removeClasses: string[] = [];
   const addClasses: string[] = [];
   for (const format of ['center', 'right'] as const) {

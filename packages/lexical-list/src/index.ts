@@ -10,7 +10,7 @@ import type {SerializedListItemNode} from './LexicalListItemNode';
 import type {ListType, SerializedListNode} from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
+import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -106,28 +106,27 @@ export function registerList(editor: LexicalEditor): () => void {
       (mutations) => {
         editor.update(() => {
           for (const [key, type] of mutations) {
-            if (type === 'created') {
-              const listItemElement = editor.getElementByKey(key);
-              if (listItemElement !== null) {
-                const selection = $getSelection();
-                if ($isRangeSelection(selection)) {
-                  listItemElement.setAttribute('style', selection.style || '');
-                }
-              }
-            }
-            if (type === 'updated') {
+            if (type !== 'destroyed') {
               const node = $getNodeByKey<ListItemNode>(key);
               const listItemElement = editor.getElementByKey(key);
-              if (node !== null) {
+              if (node && listItemElement) {
                 const firstChild = node.getFirstChild<LexicalNode>();
                 if (firstChild) {
                   const textElement = editor.getElementByKey(
                     firstChild.getKey(),
                   );
-                  if (listItemElement && textElement) {
+                  if (textElement) {
                     listItemElement.setAttribute(
                       'style',
                       textElement.style.cssText,
+                    );
+                  }
+                } else {
+                  const selection = $getSelection();
+                  if ($isRangeSelection(selection)) {
+                    listItemElement.setAttribute(
+                      'style',
+                      selection.style || '',
                     );
                   }
                 }
@@ -138,37 +137,12 @@ export function registerList(editor: LexicalEditor): () => void {
       },
       {skipInitialization: false},
     ),
-    editor.registerMutationListener(
-      TextNode,
-      (mutations) => {
-        editor.update(() => {
-          for (const [key, type] of mutations) {
-            if (type === 'updated') {
-              const node = $getNodeByKey<ListItemNode>(key);
-              if (node) {
-                const listItemParentNode = $findMatchingParent(
-                  node,
-                  $isListItemNode,
-                );
-                if (listItemParentNode) {
-                  const textElement = editor.getElementByKey(key);
-                  const listItemElement = editor.getElementByKey(
-                    listItemParentNode.getKey(),
-                  );
-                  if (listItemElement && textElement) {
-                    listItemElement.setAttribute(
-                      'style',
-                      textElement.style.cssText,
-                    );
-                  }
-                }
-              }
-            }
-          }
-        });
-      },
-      {skipInitialization: false},
-    ),
+    editor.registerNodeTransform(TextNode, (node) => {
+      const listItemParentNode = node.getParent();
+      if ($isListItemNode(listItemParentNode)) {
+        listItemParentNode.markDirty();
+      }
+    }),
   );
   return removeListener;
 }

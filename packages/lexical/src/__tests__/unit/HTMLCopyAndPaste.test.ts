@@ -119,8 +119,8 @@ describe('HTMLCopyAndPaste tests', () => {
 
         // we simulate choosing an iOS Safari `autocorrect` or `word prediction`
         // which pastes the word into the editor with both the `text/plain` and `text/html` data types
-        dataTransfer.setData('text/plain', 'Hello world');
-        dataTransfer.setData('text/html', 'Hello world');
+        dataTransfer.setData('text/plain', 'Prediction');
+        dataTransfer.setData('text/html', 'Prediction');
 
         // to compensate, the clipboard content will only be inserted as HTML if the `text/html` content differs from the `text/plain` content
         await editor.update(() => {
@@ -135,7 +135,7 @@ describe('HTMLCopyAndPaste tests', () => {
 
         // the editor's selection formatting is maintained because the text has been inserted as plain text
         expect(testEnv.innerHTML).toBe(
-          '<p dir="ltr"><span style="background-color: rgb(255, 170, 45);" data-lexical-text="true">Hello world</span></p>',
+          '<p dir="ltr"><span style="background-color: rgb(255, 170, 45);" data-lexical-text="true">Prediction</span></p>',
         );
       });
     },

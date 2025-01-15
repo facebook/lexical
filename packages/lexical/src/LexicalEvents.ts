@@ -1017,7 +1017,9 @@ function onCompositionEnd(
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
-  if (isSafariStartComposition && isBackspace(event.key)) {
+  lastKeyDownTimeStamp = event.timeStamp;
+  lastKeyCode = event.key;
+  if (isSafariStartComposition && isBackspace(lastKeyCode)) {
     updateEditorSync(editor, () => {
       $onCompositionEndImpl(editor, safariCompositionEndEventData);
     });
@@ -1025,8 +1027,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     safariCompositionEndEventData = '';
     return;
   }
-  lastKeyDownTimeStamp = event.timeStamp;
-  lastKeyCode = event.key;
   if (editor.isComposing()) {
     return;
   }

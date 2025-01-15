@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -15,11 +20,14 @@ import {$setBlocksType} from '@lexical/selection';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
+  $getRoot,
   $getSelection,
   $insertNodes,
   INDENT_CONTENT_COMMAND,
   KEY_ENTER_COMMAND,
   LexicalEditor,
+  NodeKey,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
@@ -290,6 +298,120 @@ describe('@lexical/list tests', () => {
             <span data-lexical-text="true">more text</span>
           </p>
           <p dir="ltr"><span data-lexical-text="true">even more text</span></p>
+        </div>
+      `,
+    );
+  });
+
+  test('Second list continues numbering from first list when continuePreviousNumbering is true', async () => {
+    ReactTestUtils.act(() => {
+      reactRoot.render(<Test key="list-numbering-test" />);
+    });
+    let list1Key: NodeKey | null = null;
+
+    await ReactTestUtils.act(async () => {
+      editor.update(() => {
+        const root = $getRoot();
+        const list1 = $createListNode('number');
+        list1Key = list1.getKey();
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        listItem1.append($createTextNode('First'));
+        listItem2.append($createTextNode('Second'));
+        list1.append(listItem1, listItem2);
+
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('Middle paragraph'));
+
+        const list2 = $createListNode('number');
+        list2.setContinuePreviousNumbering(true);
+        const listItem3 = $createListItemNode();
+        const listItem4 = $createListItemNode();
+        listItem3.append($createTextNode('Third'));
+        listItem4.append($createTextNode('Fourth'));
+        list2.append(listItem3, listItem4);
+
+        root.append(list1, paragraph, list2);
+      });
+    });
+
+    expect(container.querySelectorAll('ol')[1].getAttribute('start')).toBe('3');
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <p><br /></p>
+          <ol>
+            <li dir="ltr" value="1">
+              <span data-lexical-text="true">First</span>
+            </li>
+            <li dir="ltr" value="2">
+              <span data-lexical-text="true">Second</span>
+            </li>
+          </ol>
+          <p dir="ltr">
+            <span data-lexical-text="true">Middle paragraph</span>
+          </p>
+          <ol start="3">
+            <li dir="ltr" value="3">
+              <span data-lexical-text="true">Third</span>
+            </li>
+            <li dir="ltr" value="4">
+              <span data-lexical-text="true">Fourth</span>
+            </li>
+          </ol>
+        </div>
+      `,
+    );
+
+    // Add a new item to the first list
+    await ReactTestUtils.act(async () => {
+      editor.update(() => {
+        const list1 = $getNodeByKey<ListNode>(list1Key!);
+        const newItem = $createListItemNode();
+        newItem.append($createTextNode('Added to first list'));
+        list1?.append(newItem);
+      });
+    });
+
+    expect(container.querySelectorAll('ol')[1].getAttribute('start')).toBe('4');
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <p><br /></p>
+          <ol>
+            <li dir="ltr" value="1">
+              <span data-lexical-text="true">First</span>
+            </li>
+            <li dir="ltr" value="2">
+              <span data-lexical-text="true">Second</span>
+            </li>
+            <li dir="ltr" value="3">
+              <span data-lexical-text="true">Added to first list</span>
+            </li>
+          </ol>
+          <p dir="ltr">
+            <span data-lexical-text="true">Middle paragraph</span>
+          </p>
+          <ol start="4">
+            <li dir="ltr" value="4">
+              <span data-lexical-text="true">Third</span>
+            </li>
+            <li dir="ltr" value="5">
+              <span data-lexical-text="true">Fourth</span>
+            </li>
+          </ol>
         </div>
       `,
     );

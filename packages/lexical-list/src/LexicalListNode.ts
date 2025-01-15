@@ -151,6 +151,10 @@ export class ListNode extends ElementNode {
       return true;
     }
 
+    if (prevNode.__start !== this.__start) {
+      return true;
+    }
+
     $setListThemeClassNames(dom, config.theme, this);
 
     return false;

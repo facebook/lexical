@@ -1947,3 +1947,119 @@ test.describe.parallel('Nested List', () => {
     );
   });
 });
+
+test.describe('List Continue Previous Numbering', () => {
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+
+  test('continues numbering from previous list when continuePreviousNumbering is true', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    // Create first numbered list
+    await toggleNumberedList(page);
+    await page.keyboard.type('First');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Second');
+
+    // Exit list and add paragraph
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Separating paragraph');
+    await page.keyboard.press('Enter');
+
+    // Create second numbered list
+    await toggleNumberedList(page);
+    await page.keyboard.type('Fourth');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Fifth');
+
+    await assertHTML(
+      page,
+      html`
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">First</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">Second</span>
+          </li>
+        </ol>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Separating paragraph</span>
+        </p>
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Fourth</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">Fifth</span>
+          </li>
+        </ol>
+      `,
+    );
+
+    // Partially select text in second list to trigger floating menu
+    await page.keyboard.press('Shift+ArrowLeft');
+
+    // Click continue numbering button in floating menu
+    await click(
+      page,
+      'button[aria-label="Continue numbering from previous list"]',
+    );
+
+    // Verify the second list now continues numbering
+    await assertHTML(
+      page,
+      html`
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">First</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">Second</span>
+          </li>
+        </ol>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Separating paragraph</span>
+        </p>
+        <ol class="PlaygroundEditorTheme__ol1" start="3">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="3">
+            <span data-lexical-text="true">Fourth</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="4">
+            <span data-lexical-text="true">Fifth</span>
+          </li>
+        </ol>
+      `,
+    );
+  });
+});

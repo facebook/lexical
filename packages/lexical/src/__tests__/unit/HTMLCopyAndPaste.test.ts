@@ -125,11 +125,9 @@ describe('HTMLCopyAndPaste tests', () => {
         // to compensate, the clipboard content will only be inserted as HTML if the `text/html` content differs from the `text/plain` content
         await editor.update(() => {
           const selection = $getSelection();
-          if (null !== selection) {
-            $patchStyleText(selection, {
-              'background-color': 'rgb(255,170,45)',
-            });
-          }
+          $patchStyleText(selection, {
+            'background-color': 'rgb(255,170,45)',
+          });
           $insertDataTransferForRichText(dataTransfer, selection, editor);
         });
 

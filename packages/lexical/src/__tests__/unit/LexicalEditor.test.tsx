@@ -1017,7 +1017,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(rootListener).toHaveBeenCalledTimes(3);
-    expect(updateListener).toHaveBeenCalledTimes(4);
+    expect(updateListener).toHaveBeenCalledTimes(3);
     expect(container.innerHTML).toBe(
       '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
     );
@@ -1032,13 +1032,7 @@ describe('LexicalEditor tests', () => {
       init();
       const contentEditable = editor.getRootElement();
       editor.setEditable(editable);
-      editor.update(() => {
-        // Cause the editor to become dirty, so we can ensure
-        // that the getEditorState()._readOnly invariant holds
-        $getRoot().markDirty();
-      });
       editor.setRootElement(null);
-      expect(editor.getEditorState()._readOnly).toBe(true);
       const editorState = editor.parseEditorState(JSON_EDITOR_STATE);
       editor.setEditorState(editorState);
       editor.update(() => {

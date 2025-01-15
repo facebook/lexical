@@ -125,6 +125,10 @@ describe('HTMLCopyAndPaste tests', () => {
         // to compensate, the clipboard content will only be inserted as HTML if the `text/html` content differs from the `text/plain` content
         await editor.update(() => {
           const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
           $patchStyleText(selection, {
             'background-color': 'rgb(255,170,45)',
           });

@@ -1006,7 +1006,7 @@ function onCompositionEnd(
   // the logic in onInput.
   if (IS_FIREFOX) {
     isFirefoxEndingComposition = true;
-  } else if ((!IS_IOS && IS_SAFARI) || IS_APPLE_WEBKIT) {
+  } else if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
     isSafariStartComposition = true;
     safariCompositionEndEventData = event.data;
   } else {

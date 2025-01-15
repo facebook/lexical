@@ -26,6 +26,7 @@ import {CollabTextNode} from './CollabTextNode';
 import {
   $syncLocalCursorPosition,
   syncCursorPositions,
+  SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
 import {
@@ -77,8 +78,6 @@ function $syncEvent(binding: Binding, event: any): void {
     invariant(false, 'Expected text, element, or decorator event');
   }
 }
-
-type SyncCursorPositionsFn = (binding: Binding, provider: Provider) => void;
 
 export function syncYjsChangesToLexical(
   binding: Binding,

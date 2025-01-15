@@ -410,6 +410,11 @@ function getCollabNodeAndOffset(
   return [null, 0];
 }
 
+export type SyncCursorPositionsFn = (
+  binding: Binding,
+  provider: Provider,
+) => void;
+
 export function syncCursorPositions(
   binding: Binding,
   provider: Provider,

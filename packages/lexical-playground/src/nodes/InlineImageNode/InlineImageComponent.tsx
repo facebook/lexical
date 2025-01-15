@@ -210,18 +210,16 @@ export default function InlineImageComponent({
         const event: KeyboardEvent = payload;
         event.preventDefault();
         if (isSelected && $isNodeSelection(deleteSelection)) {
-          editor.update(() => {
-            deleteSelection.getNodes().forEach((node) => {
-              if ($isInlineImageNode(node)) {
-                node.remove();
-              }
-            });
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isInlineImageNode(node)) {
+              node.remove();
+            }
           });
         }
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   const $onEnter = useCallback(

@@ -57,16 +57,14 @@ export default function ExcalidrawComponent({
     (event: KeyboardEvent) => {
       if (isSelected) {
         event.preventDefault();
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if (node) {
-            node.remove();
-          }
-        });
+        const node = $getNodeByKey(nodeKey);
+        if (node) {
+          node.remove();
+        }
       }
       return false;
     },
-    [editor, isSelected, nodeKey],
+    [isSelected, nodeKey],
   );
 
   useEffect(() => {

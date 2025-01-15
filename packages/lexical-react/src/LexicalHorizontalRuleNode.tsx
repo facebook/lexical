@@ -53,17 +53,15 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
       const deleteSelection = $getSelection();
       if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isHorizontalRuleNode(node)) {
-              node.remove();
-            }
-          });
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isHorizontalRuleNode(node)) {
+            node.remove();
+          }
         });
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   useEffect(() => {

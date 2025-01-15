@@ -574,7 +574,7 @@ declare class _Point {
   is(point: PointType): boolean;
   isBefore(b: PointType): boolean;
   getNode(): LexicalNode;
-  set(key: NodeKey, offset: number, type: 'text' | 'element'): void;
+  set(key: NodeKey, offset: number, type: 'text' | 'element', onlyIfChanged?: boolean): void;
 }
 
 declare export function $createRangeSelection(): RangeSelection;

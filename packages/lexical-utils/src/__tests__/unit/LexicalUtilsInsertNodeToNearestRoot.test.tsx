@@ -163,10 +163,16 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
         // to use whatever was passed (e.g. keep selection on root node)
         const selection = $createRangeSelection();
         const type = $isElementNode(selectionNode) ? 'element' : 'text';
-        selection.anchor.key = selection.focus.key = selectionNode.getKey();
-        selection.anchor.offset = selection.focus.offset =
-          testCase.selectionOffset;
-        selection.anchor.type = selection.focus.type = type;
+        selection.anchor.set(
+          selectionNode.getKey(),
+          testCase.selectionOffset,
+          type,
+        );
+        selection.focus.set(
+          selectionNode.getKey(),
+          testCase.selectionOffset,
+          type,
+        );
         $setSelection(selection);
 
         $insertNodeToNearestRoot($createTestDecoratorNode());

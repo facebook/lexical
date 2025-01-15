@@ -288,7 +288,6 @@ function flushMutations(
 
       if (selection !== null) {
         if (shouldRevertSelection) {
-          selection.dirty = true;
           $setSelection(selection);
         }
 

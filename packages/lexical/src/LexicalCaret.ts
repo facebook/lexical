@@ -25,6 +25,7 @@ const FLIP_DIRECTION = {
   previous: 'next',
 } as const;
 
+/** @noInheritDoc */
 export interface BaseNodeCaret<
   T extends LexicalNode,
   D extends CaretDirection,
@@ -544,14 +545,14 @@ export function $getTextSliceCaret<
  * @returns null if origin is null or not an ElementNode, otherwise a DepthNodeCaret for this origin and direction
  */
 export function $getDepthCaret<T extends ElementNode, D extends CaretDirection>(
-  node: T,
+  origin: T,
   direction: D,
 ): DepthNodeCaret<T, D>;
 export function $getDepthCaret(
-  node: LexicalNode | null,
+  origin: null | LexicalNode,
   direction: CaretDirection,
 ): null | DepthNodeCaret<ElementNode, CaretDirection> {
-  return $isElementNode(node) ? new DEPTH_CTOR[direction](node) : null;
+  return $isElementNode(origin) ? new DEPTH_CTOR[direction](origin) : null;
 }
 
 /**
@@ -572,9 +573,9 @@ export function $getChildCaretOrSelf<
  * @param caret The caret to start at
  */
 export function $getAdjacentDepthCaret<D extends CaretDirection>(
-  origin: null | NodeCaret<D>,
+  caret: null | NodeCaret<D>,
 ): null | NodeCaret<D> {
-  return origin && $getChildCaretOrSelf(origin.getAdjacentCaret());
+  return caret && $getChildCaretOrSelf(caret.getAdjacentCaret());
 }
 
 /**

@@ -175,7 +175,7 @@ let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
-let isSafariStartComposition = false;
+let isSafariEndComposition = false;
 let safariCompositionEndEventData = '';
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
@@ -1007,7 +1007,7 @@ function onCompositionEnd(
   if (IS_FIREFOX) {
     isFirefoxEndingComposition = true;
   } else if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
-    isSafariStartComposition = true;
+    isSafariEndComposition = true;
     safariCompositionEndEventData = event.data;
   } else {
     updateEditorSync(editor, () => {
@@ -1019,11 +1019,11 @@ function onCompositionEnd(
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.key;
-  if (isSafariStartComposition && isBackspace(lastKeyCode)) {
+  if (isSafariEndComposition && isBackspace(lastKeyCode)) {
     updateEditorSync(editor, () => {
       $onCompositionEndImpl(editor, safariCompositionEndEventData);
     });
-    isSafariStartComposition = false;
+    isSafariEndComposition = false;
     safariCompositionEndEventData = '';
     return;
   }

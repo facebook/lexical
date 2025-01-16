@@ -7,10 +7,13 @@
  */
 
 import {
+  $caretRangeFromSelection,
   $createParagraphNode,
   $createTextNode,
   $getBreadthCaret,
+  $getDepthCaret,
   $getRoot,
+  $isTextSliceCaret,
   BreadthNodeCaret,
   DepthNodeCaret,
   LexicalNode,
@@ -18,7 +21,6 @@ import {
   TextNode,
 } from 'lexical';
 
-import {$getDepthCaret} from '../..';
 import {initializeUnitTest, invariant} from '../utils';
 
 describe('LexicalCaret', () => {
@@ -370,6 +372,104 @@ describe('LexicalCaret', () => {
           );
         });
       }
+    });
+    describe('$caretRangeFromSelection', () => {
+      test('collapsed text point selection', async () => {
+        await testEnv.editor.update(() => {
+          const textNodes = ['first', 'second', 'third'].map((text) =>
+            $createTextNode(text).setMode('token'),
+          );
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...textNodes));
+          const node = textNodes[1];
+          const cases = [
+            [() => node.selectStart(), 0],
+            [() => node.selectEnd(), node.getTextContentSize()],
+            [() => node.select(3, 3), 3],
+          ] as const;
+          for (const [$makeSelection, offset] of cases) {
+            const key = node.getKey();
+            const selection = $makeSelection();
+            expect(selection).toMatchObject({
+              anchor: {key, offset, type: 'text'},
+              focus: {key, offset, type: 'text'},
+            });
+            const range = $caretRangeFromSelection(selection);
+            expect(range.isCollapsed()).toBe(true);
+            invariant(
+              $isTextSliceCaret(range.anchor),
+              '$isTextSliceCaret(range.anchor)',
+            );
+            invariant(
+              $isTextSliceCaret(range.focus),
+              '$isTextSliceCaret(range.anchor)',
+            );
+            expect(range).toMatchObject({
+              anchor: {
+                indexEnd: textNodes[1].getTextContentSize(),
+                indexStart: offset,
+              },
+              focus: {
+                indexEnd: textNodes[1].getTextContentSize(),
+                indexStart: offset,
+              },
+            });
+            expect(range.textSliceCarets()).toEqual([]);
+            expect([...range.internalCarets('root')]).toEqual([]);
+          }
+        });
+      });
+      test('full text node selection', async () => {
+        await testEnv.editor.update(() => {
+          const textNodes = ['first', 'second', 'third'].map((text) =>
+            $createTextNode(text).setMode('token'),
+          );
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...textNodes));
+          for (const direction of ['next', 'previous'] as const) {
+            for (const node of textNodes) {
+              const key = node.getKey();
+              const size = node.getTextContentSize();
+              const [anchorOffset, focusOffset] =
+                direction === 'next' ? [0, size] : [size, 0];
+              const selection = node.select(anchorOffset, focusOffset);
+              expect(selection).toMatchObject({
+                anchor: {key, offset: anchorOffset, type: 'text'},
+                focus: {key, offset: focusOffset, type: 'text'},
+              });
+              const range = $caretRangeFromSelection(selection);
+              invariant(
+                $isTextSliceCaret(range.anchor),
+                '$isTextSliceCaret(range.anchor)',
+              );
+              invariant(
+                $isTextSliceCaret(range.focus),
+                '$isTextSliceCaret(range.anchor)',
+              );
+              const pt = (offset: number) =>
+                direction === 'next'
+                  ? {indexEnd: size, indexStart: offset}
+                  : {indexEnd: offset, indexStart: 0};
+              expect(range).toMatchObject({
+                anchor: pt(anchorOffset),
+                direction,
+                focus: pt(focusOffset),
+              });
+              expect(range.textSliceCarets()).toMatchObject([
+                {
+                  indexEnd: size,
+                  indexStart: 0,
+                  origin: node,
+                },
+              ]);
+              expect([...range.internalCarets('root')]).toEqual([]);
+              expect(range.isCollapsed()).toBe(false);
+            }
+          }
+        });
+      });
     });
   });
 });

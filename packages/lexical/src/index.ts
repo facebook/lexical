@@ -7,14 +7,18 @@
  */
 
 export type {
+  BaseNodeCaret,
   BreadthNodeCaret,
   CaretDirection,
   CaretType,
   DepthNodeCaret,
   FlipDirection,
   NodeCaret,
+  NodeCaretRange,
+  RangeNodeCaret,
   RootMode,
   StepwiseIteratorConfig,
+  TextSliceCaret,
 } from './LexicalCaret';
 export {
   $caretFromPoint,
@@ -24,6 +28,11 @@ export {
   $getChildCaretAtIndex,
   $getChildCaretOrSelf,
   $getDepthCaret,
+  $getTextSliceCaret,
+  $getTextSliceContent,
+  $isTextSliceCaret,
+  $removeTextSlice,
+  $splitTextSlice,
   makeStepwiseIterator,
 } from './LexicalCaret';
 export type {PasteCommandType} from './LexicalCommands';

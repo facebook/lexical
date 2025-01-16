@@ -96,7 +96,7 @@ export interface NodeCaretRange<D extends CaretDirection = CaretDirection>
   /**
    * Iterate the carets between anchor and focus in a pre-order fashion
    */
-  internalCarets: (rootMode: RootMode) => Iterator<NodeCaret<D>>;
+  internalCarets: (rootMode: RootMode) => IterableIterator<NodeCaret<D>>;
   /**
    * There are between zero and two TextSliceCarets for a NodeCaretRange
    *
@@ -214,7 +214,7 @@ abstract class AbstractCaret<
       this.origin.is(other.origin)
     );
   }
-  [Symbol.iterator](): Iterator<BreadthNodeCaret<LexicalNode, D>> {
+  [Symbol.iterator](): IterableIterator<BreadthNodeCaret<LexicalNode, D>> {
     return makeStepwiseIterator({
       initial: this.getAdjacentCaret(),
       map: (caret) => caret,
@@ -450,8 +450,7 @@ export function $isTextSliceCaret<D extends CaretDirection>(
     caret instanceof AbstractBreadthNodeCaret &&
     $isTextNode(caret.origin) &&
     typeof caret.indexEnd === 'number' &&
-    typeof caret.indexStart === 'number' &&
-    caret.indexEnd !== caret.indexStart
+    typeof caret.indexStart === 'number'
   );
 }
 
@@ -625,35 +624,36 @@ class NodeCaretRangeImpl<D extends CaretDirection>
     this.direction = direction;
   }
   isCollapsed(): boolean {
-    return this.anchor.is(this.focus);
+    return this.anchor.is(this.focus) && this.textSliceCarets().length === 0;
   }
   textSliceCarets(): TextSliceCaretTuple<D> {
-    const slices = [this.anchor, this.focus].filter(
-      $isTextSliceCaret,
-    ) as TextSliceCaretTuple<D>;
+    const slices = [this.anchor, this.focus].filter($isTextSliceCaret);
     if (slices.length === 2 && slices[0].origin.is(slices[1].origin)) {
       const {direction} = this;
-      const [l, r] = direction === 'next' ? slices : slices.reverse();
-      return l.indexStart === r.indexStart
+      const [k, l, r] =
+        direction === 'next'
+          ? (['indexStart', ...slices] as const)
+          : (['indexEnd', ...slices.reverse()] as const);
+      return l[k] === r[k]
         ? []
-        : [$getTextSliceCaret(l.origin, direction, l.indexStart, r.indexStart)];
+        : [$getTextSliceCaret(l.origin, direction, l[k], r[k])];
     }
-    return slices;
+    return slices.filter(
+      (caret) => caret.indexEnd !== caret.indexStart,
+    ) as TextSliceCaretTuple<D>;
   }
-  internalCarets(rootMode: RootMode): Iterator<NodeCaret<D>> {
-    const stopCaret = $getAdjacentDepthCaret(this.focus);
+  internalCarets(rootMode: RootMode): IterableIterator<NodeCaret<D>> {
+    const step = (state: NodeCaret<D>) =>
+      $getAdjacentDepthCaret(state) || state.getParentCaret(rootMode);
+    const stopCaret = step(this.focus);
     return makeStepwiseIterator({
-      initial: $getAdjacentDepthCaret(this.anchor),
+      initial: step(this.anchor),
       map: (state) => state,
-      step: (state: NodeCaret<D>) => {
-        const caret =
-          $getAdjacentDepthCaret(state) || state.getParentCaret(rootMode);
-        return stopCaret && stopCaret.is(caret) ? null : caret;
-      },
-      stop: (state): state is null => state === null,
+      step,
+      stop: (state): state is null => state === null || state.is(stopCaret),
     });
   }
-  [Symbol.iterator](): Iterator<NodeCaret<D>> {
+  [Symbol.iterator](): IterableIterator<NodeCaret<D>> {
     return this.internalCarets('root');
   }
 }

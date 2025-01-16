@@ -17,7 +17,7 @@ import {
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {insertList} from '../../formatList';
+import {$insertList} from '../../formatList';
 import {$isListNode} from '../../LexicalListNode';
 
 describe('insertList', () => {
@@ -29,7 +29,9 @@ describe('insertList', () => {
         $getRoot().select();
       });
 
-      insertList(editor, 'number');
+      await editor.update(() => {
+        $insertList('number');
+      });
 
       editor.read(() => {
         const root = $getRoot();
@@ -52,7 +54,9 @@ describe('insertList', () => {
         );
       });
 
-      insertList(editor, 'number');
+      await editor.update(() => {
+        $insertList('number');
+      });
 
       editor.read(() => {
         const root = $getRoot();
@@ -76,7 +80,9 @@ describe('insertList', () => {
         cell.select();
       });
 
-      insertList(editor, 'number');
+      await editor.update(() => {
+        $insertList('number');
+      });
 
       editor.read(() => {
         const cell = $getRoot()

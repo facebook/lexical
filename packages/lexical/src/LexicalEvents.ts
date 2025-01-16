@@ -1019,14 +1019,6 @@ function onCompositionEnd(
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.key;
-  if (isSafariEndComposition && isBackspace(lastKeyCode)) {
-    updateEditorSync(editor, () => {
-      $onCompositionEndImpl(editor, safariEndCompositionEventData);
-    });
-    isSafariEndComposition = false;
-    safariEndCompositionEventData = '';
-    return;
-  }
   if (editor.isComposing()) {
     return;
   }
@@ -1038,6 +1030,14 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
 
   if (key == null) {
+    return;
+  }
+  if (isSafariEndComposition && isBackspace(lastKeyCode)) {
+    updateEditorSync(editor, () => {
+      $onCompositionEndImpl(editor, safariEndCompositionEventData);
+    });
+    isSafariEndComposition = false;
+    safariEndCompositionEventData = '';
     return;
   }
 

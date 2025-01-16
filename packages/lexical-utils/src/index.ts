@@ -531,7 +531,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
     const focusOffset = focus.offset;
 
     if ($isRootOrShadowRoot(focusNode)) {
-      $getChildCaretAtIndex(focusNode, focusOffset).insert(node);
+      $getChildCaretAtIndex(focusNode, focusOffset, 'next').insert(node);
       node.selectNext();
     } else {
       let splitNode: ElementNode;

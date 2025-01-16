@@ -856,6 +856,9 @@ export function $computeTableMapSkipCellCheck(
       $isTableRowNode(row),
       'Expected TableNode children to be TableRowNode',
     );
+    if (row.getChildrenSize() === 0) {
+      tableMap[rowIdx] = [];
+    }
     for (
       let cell = row.getFirstChild(), colIdx = 0;
       cell != null;

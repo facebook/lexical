@@ -257,12 +257,25 @@ export class ListNode extends ElementNode {
     return $isListItemNode(child);
   }
 
-  updateStartFromPreviousList(previousList: ListNode) {
+  updateStartFromPreviousList(previousList: ListNode | null) {
     if (
+      !previousList &&
       this.__continuePreviousNumbering &&
       this.__listType === 'number' &&
-      previousList.getListType() === 'number'
+      this.__start !== 1
     ) {
+      // Previous list was deleted, reset numbering
+      this.setStart(1);
+      return;
+    }
+
+    if (
+      this.__continuePreviousNumbering &&
+      previousList &&
+      previousList.getListType() === 'number' &&
+      this.__listType === 'number'
+    ) {
+      // Continue previous numbering
       const listItemCount = previousList.getChildrenSize();
       const lastNumber = previousList.getStart() + listItemCount - 1;
       const nextNumber = lastNumber + 1;

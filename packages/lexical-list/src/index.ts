@@ -12,7 +12,6 @@ import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {$dfs, mergeRegister} from '@lexical/utils';
 import {
-  $getRoot,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
@@ -98,20 +97,33 @@ export function registerList(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerNodeTransform(ListNode, () => {
-      let previousList: ListNode | null = null;
-      $dfs($getRoot()).forEach(({node}) => {
-        if (!$isListNode(node) || node.getListType() !== 'number') {
-          return;
+    editor.registerNodeTransform(ListNode, $updateListNumbering),
+    editor.registerMutationListener(ListNode, (mutations) => {
+      let shouldUpdate = false;
+      for (const [, type] of mutations) {
+        if (type === 'destroyed') {
+          shouldUpdate = true;
+          break;
         }
-        if (previousList) {
-          node.updateStartFromPreviousList(previousList);
-        }
-        previousList = node;
-      });
+      }
+
+      if (shouldUpdate) {
+        editor.update($updateListNumbering);
+      }
     }),
   );
   return removeListener;
+}
+
+function $updateListNumbering() {
+  let previousList: ListNode | null = null;
+  $dfs().forEach(({node}) => {
+    if (!$isListNode(node) || node.getListType() !== 'number') {
+      return;
+    }
+    node.updateStartFromPreviousList(previousList);
+    previousList = node;
+  });
 }
 
 /**

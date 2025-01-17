@@ -10,7 +10,7 @@ import './index.css';
 
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {ListNode} from '@lexical/list';
+import {$isListItemNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNearestNodeOfType, mergeRegister} from '@lexical/utils';
 import {
@@ -49,7 +49,7 @@ function TextFormatFloatingToolbar({
   isSuperscript,
   setIsLinkEditMode,
   isContinuousNumbering,
-  isNumberedList,
+  canUpdateListNumbering,
 }: {
   editor: LexicalEditor;
   anchorElem: HTMLElement;
@@ -66,7 +66,7 @@ function TextFormatFloatingToolbar({
   isUnderline: boolean;
   setIsLinkEditMode: Dispatch<boolean>;
   isContinuousNumbering: boolean;
-  isNumberedList: boolean;
+  canUpdateListNumbering: boolean;
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
 
@@ -323,7 +323,7 @@ function TextFormatFloatingToolbar({
             aria-label="Insert link">
             <i className="format link" />
           </button>
-          {isNumberedList && (
+          {canUpdateListNumbering && (
             <button
               type="button"
               onClick={toggleContinuousNumbering}
@@ -366,8 +366,8 @@ function useFloatingTextFormatToolbar(
   const [isSubscript, setIsSubscript] = useState(false);
   const [isSuperscript, setIsSuperscript] = useState(false);
   const [isCode, setIsCode] = useState(false);
-  const [isNumberedList, setIsNumberedList] = useState(false);
   const [isContinuousNumbering, setIsContinuousNumbering] = useState(false);
+  const [canUpdateListNumbering, setCanUpdateListNumbering] = useState(false);
 
   const updatePopup = useCallback(() => {
     editor.getEditorState().read(() => {
@@ -397,7 +397,11 @@ function useFloatingTextFormatToolbar(
 
       // Update list numbering strategy
       const listNode = $getNearestNodeOfType(node, ListNode);
-      setIsNumberedList(!!listNode && listNode.getListType() === 'number');
+      setCanUpdateListNumbering(
+        !!listNode &&
+          listNode.getListType() === 'number' &&
+          !$isListItemNode(listNode.getParentOrThrow()),
+      );
       if (listNode) {
         setIsContinuousNumbering(listNode.getContinuePreviousNumbering());
       }
@@ -480,7 +484,7 @@ function useFloatingTextFormatToolbar(
       isCode={isCode}
       setIsLinkEditMode={setIsLinkEditMode}
       isContinuousNumbering={isContinuousNumbering}
-      isNumberedList={isNumberedList}
+      canUpdateListNumbering={canUpdateListNumbering}
     />,
     anchorElem,
   );

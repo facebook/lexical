@@ -259,22 +259,21 @@ export class ListNode extends ElementNode {
 
   updateStartFromPreviousList(previousList: ListNode | null) {
     if (
-      !previousList &&
-      this.__continuePreviousNumbering &&
-      this.__listType === 'number' &&
-      this.__start !== 1
+      this.__listType !== 'number' ||
+      !this.__continuePreviousNumbering ||
+      this.getParentOrThrow().getType() === 'listitem'
     ) {
+      // Numbering update not applicable
+      return;
+    }
+
+    if (!previousList && this.__start !== 1) {
       // Previous list was deleted, reset numbering
       this.setStart(1);
       return;
     }
 
-    if (
-      this.__continuePreviousNumbering &&
-      previousList &&
-      previousList.getListType() === 'number' &&
-      this.__listType === 'number'
-    ) {
+    if (previousList && previousList.getListType() === 'number') {
       // Continue previous numbering
       const listItemCount = previousList.getChildrenSize();
       const lastNumber = previousList.getStart() + listItemCount - 1;

@@ -77,6 +77,7 @@ import {
 } from './LexicalSelection';
 import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
+  $findMatchingParent,
   $flushMutations,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
@@ -191,7 +192,6 @@ let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
 // work as intended between different browsers and across word, line and character
 // boundary/formats. It also is important for text replacement, node schemas and
 // composition mechanics.
-
 function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   domTargetRange: null | StaticRange,
@@ -449,10 +449,12 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           const focus = selection.focus;
           const focusNode = focus.getNode();
           if (anchorNode !== focusNode) {
-            if ($isElementNode(anchorNode)) {
-              anchorNode.select(0);
-            } else {
-              anchorNode.getParentOrThrow().select(0);
+            const parentNode = $findMatchingParent(
+              anchorNode,
+              (node) => $isElementNode(node) && !node.isInline(),
+            );
+            if ($isElementNode(parentNode)) {
+              parentNode.select(0);
             }
           }
         }

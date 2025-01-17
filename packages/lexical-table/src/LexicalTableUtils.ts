@@ -856,6 +856,7 @@ export function $computeTableMapSkipCellCheck(
       $isTableRowNode(row),
       'Expected TableNode children to be TableRowNode',
     );
+    const startMapRow = getMapRow(rowIdx);
     for (
       let cell = row.getFirstChild(), colIdx = 0;
       cell != null;
@@ -866,7 +867,6 @@ export function $computeTableMapSkipCellCheck(
         'Expected TableRowNode children to be TableCellNode',
       );
       // Skip past any columns that were merged from a higher row
-      const startMapRow = getMapRow(rowIdx);
       while (startMapRow[colIdx] !== undefined) {
         colIdx++;
       }

@@ -148,7 +148,12 @@ export function $insertDataTransferForRichText(
   }
 
   const htmlString = dataTransfer.getData('text/html');
-  if (htmlString) {
+  const plainString = dataTransfer.getData('text/plain');
+
+  // Skip HTML handling if it matches the plain text representation.
+  // This avoids unnecessary processing for plain text strings created by
+  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
+  if (htmlString && plainString !== htmlString) {
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(
@@ -165,8 +170,7 @@ export function $insertDataTransferForRichText(
   // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
   // Webkit-specific: Supports read 'text/uri-list' in clipboard.
-  const text =
-    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
+  const text = plainString || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
       const parts = text.split(/(\r?\n|\t)/);

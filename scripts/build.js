@@ -353,7 +353,7 @@ function forkModuleContent(
   if (target === 'cjs') {
     lines.push(
       `'use strict'`,
-      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}');`,
+      `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
       `module.exports = ${outputFileName};`,
     );
   } else {
@@ -361,11 +361,11 @@ function forkModuleContent(
       lines.push(
         `import * as modDev from '${devFileName}';`,
         `import * as modProd from '${prodFileName}';`,
-        `const mod = process.env.NODE_ENV === 'development' ? modDev : modProd;`,
+        `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
       );
     } else if (target === 'node') {
       lines.push(
-        `const mod = await (process.env.NODE_ENV === 'development' ? import('${devFileName}') : import('${prodFileName}'));`,
+        `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
       );
     }
     for (const name of exports) {

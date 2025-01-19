@@ -176,7 +176,7 @@ test.describe.parallel('Nested List', () => {
 
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">Hello</strong></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">World</strong></p>',
+      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" style="color: rgb(208, 2, 27)"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">Hello</strong></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">World</strong></p>',
     );
   });
 

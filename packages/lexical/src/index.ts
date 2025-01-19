@@ -30,9 +30,12 @@ export {
   $getDepthCaret,
   $getTextSliceCaret,
   $getTextSliceContent,
+  $isBreadthNodeCaret,
+  $isDepthNodeCaret,
   $isTextSliceCaret,
   $removeTextSlice,
   $splitTextSlice,
+  flipDirection,
   makeStepwiseIterator,
 } from './LexicalCaret';
 export type {PasteCommandType} from './LexicalCommands';

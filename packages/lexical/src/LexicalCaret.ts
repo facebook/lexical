@@ -320,8 +320,8 @@ abstract class AbstractDepthNodeCaret<
       this.direction,
     );
   }
-  getFlipped(): NodeCaret<typeof FLIP_DIRECTION[D]> {
-    const dir = FLIP_DIRECTION[this.direction];
+  getFlipped(): NodeCaret<FlipDirection<D>> {
+    const dir = flipDirection(this.direction);
     return (
       $getBreadthCaret(this.getNodeAtCaret(), dir) ||
       $getDepthCaret(this.origin, dir)
@@ -368,6 +368,12 @@ const MODE_PREDICATE = {
   shadowRoot: $isRootOrShadowRoot,
 } as const;
 
+export function flipDirection<D extends CaretDirection>(
+  direction: D,
+): FlipDirection<D> {
+  return FLIP_DIRECTION[direction];
+}
+
 function $filterByMode<T extends ElementNode>(
   node: T | null,
   mode: RootMode,
@@ -400,7 +406,7 @@ abstract class AbstractBreadthNodeCaret<
     );
   }
   getFlipped(): NodeCaret<FlipDirection<D>> {
-    const dir = FLIP_DIRECTION[this.direction];
+    const dir = flipDirection(this.direction);
     return (
       $getBreadthCaret(this.getNodeAtCaret(), dir) ||
       $getDepthCaret(this.origin.getParentOrThrow(), dir)
@@ -445,7 +451,7 @@ export function $getTextSliceContent<
 }
 
 export function $isTextSliceCaret<D extends CaretDirection>(
-  caret: NodeCaret<D>,
+  caret: null | undefined | NodeCaret<D>,
 ): caret is TextSliceCaret<TextNode, D> {
   return (
     caret instanceof AbstractBreadthNodeCaret &&
@@ -453,6 +459,24 @@ export function $isTextSliceCaret<D extends CaretDirection>(
     typeof caret.indexEnd === 'number' &&
     typeof caret.indexStart === 'number'
   );
+}
+
+export function $isNodeCaret<D extends CaretDirection>(
+  caret: null | undefined | NodeCaret<D>,
+) {
+  return caret instanceof AbstractCaret;
+}
+
+export function $isBreadthNodeCaret<D extends CaretDirection>(
+  caret: null | undefined | NodeCaret<D>,
+): caret is BreadthNodeCaret<LexicalNode, D> {
+  return caret instanceof AbstractBreadthNodeCaret;
+}
+
+export function $isDepthNodeCaret<D extends CaretDirection>(
+  caret: null | undefined | NodeCaret<D>,
+): caret is DepthNodeCaret<ElementNode, D> {
+  return caret instanceof AbstractDepthNodeCaret;
 }
 
 class BreadthNodeCaretNext<
@@ -558,10 +582,9 @@ export function $getDepthCaret(
 /**
  * Gets the DepthNodeCaret if one is possible at this caret origin, otherwise return the caret
  */
-export function $getChildCaretOrSelf<
-  D extends CaretDirection,
-  Null extends null = never,
->(caret: NodeCaret<D> | Null): NodeCaret<D> | Null {
+export function $getChildCaretOrSelf<Caret extends NodeCaret | null>(
+  caret: Caret,
+): NodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
   return (caret && caret.getChildCaret()) || caret;
 }
 
@@ -691,6 +714,57 @@ export function $caretFromPoint<D extends CaretDirection>(
     key,
   );
   return $getChildCaretAtIndex(node, point.offset, direction);
+}
+
+function $normalizeCaretForPoint<D extends CaretDirection>(
+  caret: RangeNodeCaret<D>,
+): RangeNodeCaret<D> {
+  if ($isTextSliceCaret(caret)) {
+    return caret;
+  }
+  let current = $getChildCaretOrSelf(caret);
+  while ($isDepthNodeCaret(current)) {
+    const next = $getAdjacentDepthCaret(current);
+    if (!next) {
+      return current;
+    }
+    current = next;
+  }
+  const {origin} = current;
+  if ($isTextNode(origin)) {
+    const {direction} = caret;
+    const index = direction === 'next' ? 0 : origin.getTextContentSize();
+    return $getTextSliceCaret(origin, direction, index, index);
+  }
+  return current;
+}
+
+export function $setPointFromCaret<D extends CaretDirection>(
+  point: PointType,
+  caret: RangeNodeCaret<D>,
+  normalize = true,
+): void {
+  const normCaret = normalize ? $normalizeCaretForPoint(caret) : caret;
+  const {origin, direction} = normCaret;
+  if ($isTextSliceCaret(normCaret)) {
+    point.set(
+      origin.getKey(),
+      normCaret[direction === 'next' ? 'indexEnd' : 'indexStart'],
+      'text',
+    );
+  } else if ($isDepthNodeCaret(normCaret)) {
+    point.set(
+      origin.getKey(),
+      direction === 'next' ? 0 : normCaret.origin.getChildrenSize(),
+      'element',
+    );
+  } else {
+    point.set(
+      origin.getParentOrThrow().getKey(),
+      origin.getIndexWithinParent(),
+      'element',
+    );
+  }
 }
 
 /**

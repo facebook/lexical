@@ -115,7 +115,7 @@ export function registerList(editor: LexicalEditor): () => void {
                   const textElement = editor.getElementByKey(
                     firstChild.getKey(),
                   );
-                  if (textElement) {
+                  if (textElement && textElement.style.cssText) {
                     listItemElement.setAttribute(
                       'style',
                       textElement.style.cssText,
@@ -123,11 +123,12 @@ export function registerList(editor: LexicalEditor): () => void {
                   }
                 } else {
                   const selection = $getSelection();
-                  if ($isRangeSelection(selection)) {
-                    listItemElement.setAttribute(
-                      'style',
-                      selection.style || '',
-                    );
+                  if (
+                    $isRangeSelection(selection) &&
+                    selection.isCollapsed() &&
+                    selection.style
+                  ) {
+                    listItemElement.setAttribute('style', selection.style);
                   }
                 }
               }

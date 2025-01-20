@@ -22,6 +22,7 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementDOMSlot,
+  type ElementFormatType,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -77,7 +78,7 @@ function setRowStriping(
   dom: HTMLElement,
   config: EditorConfig,
   rowStriping: boolean,
-) {
+): void {
   if (rowStriping) {
     addClassNamesToElement(dom, config.theme.tableRowStriping);
     dom.setAttribute('data-lexical-row-striping', 'true');
@@ -85,6 +86,27 @@ function setRowStriping(
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
   }
+}
+
+function alignTableElement(
+  dom: HTMLElement,
+  config: EditorConfig,
+  formatType: ElementFormatType,
+): void {
+  if (!config.theme.tableAlignment) {
+    return;
+  }
+  const removeClasses: string[] = [];
+  const addClasses: string[] = [];
+  for (const format of ['center', 'right'] as const) {
+    const classes = config.theme.tableAlignment[format];
+    if (!classes) {
+      continue;
+    }
+    (format === formatType ? addClasses : removeClasses).push(classes);
+  }
+  removeClassNamesFromElement(dom, ...removeClasses);
+  addClassNamesToElement(dom, ...addClasses);
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
@@ -211,6 +233,7 @@ export class TableNode extends ElementNode {
     setDOMUnmanaged(colGroup);
 
     addClassNamesToElement(tableElement, config.theme.table);
+    alignTableElement(tableElement, config, this.getFormatType());
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
@@ -234,6 +257,11 @@ export class TableNode extends ElementNode {
       setRowStriping(dom, config, this.__rowStriping);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
+    alignTableElement(
+      this.getDOMSlot(dom).element,
+      config,
+      this.getFormatType(),
+    );
     return false;
   }
 
@@ -244,6 +272,13 @@ export class TableNode extends ElementNode {
       after: (tableElement) => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
+          if (this.__format) {
+            alignTableElement(
+              tableElement as HTMLElement,
+              editor._config,
+              this.getFormatType(),
+            );
+          }
         }
         if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {
           tableElement = tableElement.querySelector('table');

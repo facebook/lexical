@@ -35,6 +35,10 @@ declare export function $isListNode(
   node: ?LexicalNode,
 ): node is ListNode;
 declare export function indentList(): void;
+declare export function $insertList(
+  listType: ListType,
+): void;
+/** @deprecated use {@link $insertList} from an update or command listener */
 declare export function insertList(
   editor: LexicalEditor,
   listType: ListType,
@@ -72,7 +76,9 @@ declare export class ListNode extends ElementNode {
   static importJSON(serializedNode: SerializedListNode): ListNode;
 }
 declare export function outdentList(): void;
-declare export function removeList(editor: LexicalEditor): boolean;
+/** @deprecated use {@link $removeList} from an update or command listener */
+declare export function removeList(editor: LexicalEditor): void;
+declare export function $removeList(): void;
 
 declare export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;
 declare export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;

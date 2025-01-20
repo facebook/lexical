@@ -21,7 +21,7 @@ import {
   $isTextNode,
   $setSelection,
 } from '.';
-import {updateEditor} from './LexicalUpdates';
+import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
   $getNodeFromDOMNode,
@@ -83,7 +83,7 @@ function $handleTextMutation(
   node: TextNode,
   editor: LexicalEditor,
 ): void {
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
   let anchorOffset = null;
   let focusOffset = null;
 
@@ -141,7 +141,7 @@ function $getNearestManagedNodePairFromDOMNode(
   }
 }
 
-export function $flushMutations(
+function flushMutations(
   editor: LexicalEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
@@ -149,9 +149,8 @@ export function $flushMutations(
   isProcessingMutations = true;
   const shouldFlushTextMutations =
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
-
   try {
-    updateEditor(editor, () => {
+    updateEditorSync(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map<HTMLElement, LexicalNode>();
       const rootElement = editor.getRootElement();
@@ -289,7 +288,6 @@ export function $flushMutations(
 
       if (selection !== null) {
         if (shouldRevertSelection) {
-          selection.dirty = true;
           $setSelection(selection);
         }
 
@@ -303,12 +301,12 @@ export function $flushMutations(
   }
 }
 
-export function $flushRootMutations(editor: LexicalEditor): void {
+export function flushRootMutations(editor: LexicalEditor): void {
   const observer = editor._observer;
 
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    $flushMutations(editor, mutations, observer);
+    flushMutations(editor, mutations, observer);
   }
 }
 
@@ -316,7 +314,7 @@ export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      $flushMutations(editor, mutations, observer);
+      flushMutations(editor, mutations, observer);
     },
   );
 }

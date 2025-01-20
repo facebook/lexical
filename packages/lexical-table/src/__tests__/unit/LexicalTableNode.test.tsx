@@ -73,6 +73,10 @@ const editorConfig = Object.freeze({
   namespace: '',
   theme: {
     table: 'test-table-class',
+    tableAlignment: {
+      center: 'test-table-alignment-center',
+      right: 'test-table-alignment-right',
+    },
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },
@@ -1018,6 +1022,69 @@ describe('LexicalTableNode tests', () => {
               const table = root.getLastChild<TableNode>();
               if (table) {
                 table.setRowStriping(false);
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+          });
+
+          test('Change Table-level alignment', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = $createTableNodeWithDimensions(4, 4, true);
+              root.append(table);
+            });
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFormat('center');
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table} ${editorConfig.theme
+                      .tableAlignment.center}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFormat('left');
               }
             });
 

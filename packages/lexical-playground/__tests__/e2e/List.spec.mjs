@@ -1895,10 +1895,10 @@ test.describe.parallel('Nested List', () => {
       );
       await page.pause();
       await assertSelection(page, {
-        anchorOffset: 1,
-        anchorPath: [1, 0],
-        focusOffset: 1,
-        focusPath: [1, 0],
+        anchorOffset: 0,
+        anchorPath: [2],
+        focusOffset: 0,
+        focusPath: [2],
       });
     },
   );

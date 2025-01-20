@@ -1080,7 +1080,6 @@ export class TextNode extends LexicalNode {
           target,
           textLength,
         );
-        selection.dirty = true;
       }
       if (focus !== null && focus.key === targetKey) {
         adjustPointOffsetForMergedSibling(
@@ -1090,7 +1089,6 @@ export class TextNode extends LexicalNode {
           target,
           textLength,
         );
-        selection.dirty = true;
       }
     }
     const targetText = target.__text;

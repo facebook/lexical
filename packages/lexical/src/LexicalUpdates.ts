@@ -51,6 +51,7 @@ import {
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
+  getWindow,
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
@@ -599,7 +600,9 @@ export function $commitPendingUpdates(
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = shouldSkipDOM ? null : getDOMSelection(editor._window);
+  const domSelection = shouldSkipDOM
+    ? null
+    : getDOMSelection(getWindow(editor));
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
@@ -633,10 +636,10 @@ export function $commitPendingUpdates(
         );
       }
       updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
+    } finally {
       if (observer !== null) {
         observer.observe(rootElement, observerOptions);
       }
-    } finally {
       activeEditor = previousActiveEditor;
       activeEditorState = previousActiveEditorState;
     }
@@ -909,15 +912,19 @@ function $beginUpdate(
   isReadOnlyMode = false;
   editor._updating = true;
   activeEditor = editor;
+  const headless = editor._headless || editor.getRootElement() === null;
 
   try {
     if (editorStateWasCloned) {
-      if (editor._headless) {
+      if (headless) {
         if (currentEditorState._selection !== null) {
           pendingEditorState._selection = currentEditorState._selection.clone();
         }
       } else {
-        pendingEditorState._selection = $internalCreateSelection(editor);
+        pendingEditorState._selection = $internalCreateSelection(
+          editor,
+          (options && options.event) || null,
+        );
       }
     }
 
@@ -1019,6 +1026,25 @@ function $beginUpdate(
       editor._deferred = [];
       editor._pendingEditorState = null;
     }
+  }
+}
+
+/**
+ * A variant of updateEditor that will not defer if it is nested in an update
+ * to the same editor, much like if it was an editor.dispatchCommand issued
+ * within an update
+ */
+export function updateEditorSync(
+  editor: LexicalEditor,
+  updateFn: () => void,
+  options?: EditorUpdateOptions,
+): void {
+  if (!editor._updating) {
+    $beginUpdate(editor, updateFn, options);
+  } else if (activeEditor === editor) {
+    updateFn();
+  } else {
+    editor._updates.push([updateFn, options]);
   }
 }
 

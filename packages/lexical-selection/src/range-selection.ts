@@ -21,16 +21,17 @@ import {
   $getAdjacentNode,
   $getPreviousSelection,
   $getRoot,
+  $getSelection,
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  INTERNAL_$isBlock,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -50,6 +51,8 @@ export function $setBlocksType(
   }
   const anchorAndFocus = selection.getStartEndPoints();
   const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
+  const isCollapsedSelection =
+    selection.is($getSelection()) && selection.isCollapsed();
 
   if (anchor !== null && anchor.key === 'root') {
     const element = createElement();
@@ -61,29 +64,33 @@ export function $setBlocksType(
     } else {
       root.append(element);
     }
-
+    if (isCollapsedSelection) {
+      element.select();
+    }
     return;
   }
 
-  const nodes = selection.getNodes();
-  const firstSelectedBlock =
-    anchor !== null ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock) : false;
-  if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
+  const nodes = selection
+    .getNodes()
+    .filter(INTERNAL_$isBlock)
+    .filter($isElementNode);
+  const firstSelectedBlock = anchor
+    ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock)
+    : null;
+  if (
+    $isElementNode(firstSelectedBlock) &&
+    !nodes.find((node) => node.is(firstSelectedBlock))
+  ) {
     nodes.push(firstSelectedBlock);
   }
-
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-
-    if (!INTERNAL_$isBlock(node)) {
-      continue;
-    }
-    invariant($isElementNode(node), 'Expected block node to be an ElementNode');
-
+  for (const node of nodes) {
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
     targetElement.setIndent(node.getIndent());
     node.replace(targetElement, true);
+    if (node.is(firstSelectedBlock) && isCollapsedSelection) {
+      targetElement.select();
+    }
   }
 }
 
@@ -537,28 +544,6 @@ export function $getSelectionStyleValueForProperty(
   }
 
   return styleValue === null ? defaultValue : styleValue;
-}
-
-/**
- * This function is for internal use of the library.
- * Please do not use it as it may change in the future.
- */
-export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
-  if ($isDecoratorNode(node)) {
-    return false;
-  }
-  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
-    return false;
-  }
-
-  const firstChild = node.getFirstChild();
-  const isLeafElement =
-    firstChild === null ||
-    $isLineBreakNode(firstChild) ||
-    $isTextNode(firstChild) ||
-    firstChild.isInline();
-
-  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
 export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(

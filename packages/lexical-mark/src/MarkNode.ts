@@ -117,7 +117,7 @@ export class MarkNode extends ElementNode {
 
   addID(id: string): this {
     const self = this.getWritable();
-    return self.__ids.includes(id) ? self.setIDs([...self.__ids, id]) : self;
+    return self.__ids.includes(id) ? self : self.setIDs([...self.__ids, id]);
   }
 
   deleteID(id: string): this {

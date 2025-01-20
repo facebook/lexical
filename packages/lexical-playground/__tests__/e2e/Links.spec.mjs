@@ -524,6 +524,68 @@ test.describe.parallel('Links', () => {
     },
   );
 
+  test(
+    `Can backspace across a link and it deletes text, not the whole link`,
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type(' abc def ');
+      await moveLeft(page, 5);
+      await selectCharacters(page, 'left', 3);
+
+      // link
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">abc</span>
+            </a>
+            <span data-lexical-text="true">def</span>
+          </p>
+        `,
+      );
+
+      await moveRight(page, 4);
+
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">ab</span>
+            </a>
+            <span data-lexical-text="true">f</span>
+          </p>
+        `,
+      );
+    },
+  );
+
   test(`Can create a link then replace it with plain text`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type(' abc ');

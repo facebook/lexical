@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -110,7 +110,6 @@
     "size": "npm run build-prod && size-limit"
   },
   "devDependencies": {
-    "@ampproject/rollup-plugin-closure-compiler": "^0.27.0",
     "@babel/core": "^7.24.5",
     "@babel/eslint-parser": "^7.24.5",
     "@babel/plugin-transform-optional-catch-binding": "^7.24.1",

@@ -110,6 +110,7 @@ function $normalizePoint(point: PointType): void {
         nextNode.__key,
         nextOffsetAtEnd ? nextNode.getTextContentSize() : 0,
         'text',
+        true,
       );
       break;
     } else if (!$isElementNode(nextNode)) {
@@ -119,6 +120,7 @@ function $normalizePoint(point: PointType): void {
       nextNode.__key,
       nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,
       'element',
+      true,
     );
   }
 }

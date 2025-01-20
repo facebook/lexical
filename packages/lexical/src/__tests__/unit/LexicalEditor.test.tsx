@@ -103,6 +103,10 @@ describe('LexicalEditor tests', () => {
           nodes: nodes ?? [],
           onError: onError || jest.fn(),
           theme: {
+            tableAlignment: {
+              center: 'editor-table-alignment-center',
+              right: 'editor-table-alignment-right',
+            },
             text: {
               bold: 'editor-text-bold',
               italic: 'editor-text-italic',

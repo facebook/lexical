@@ -16,9 +16,7 @@ import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  isDOMNode,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
@@ -75,35 +73,6 @@ export default function ExcalidrawComponent({
       return;
     }
     return mergeRegister(
-      editor.registerCommand(
-        CLICK_COMMAND,
-        (event: MouseEvent) => {
-          const buttonElem = buttonRef.current;
-          const eventTarget = event.target;
-
-          if (isResizing) {
-            return true;
-          }
-
-          if (
-            buttonElem !== null &&
-            isDOMNode(eventTarget) &&
-            buttonElem.contains(eventTarget)
-          ) {
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-            setSelected(!isSelected);
-            if (event.detail > 1) {
-              setModalOpen(true);
-            }
-            return true;
-          }
-
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
         $onDelete,

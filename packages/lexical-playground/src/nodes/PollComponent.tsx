@@ -19,7 +19,6 @@ import {
   $getSelection,
   $isNodeSelection,
   BaseSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
@@ -166,23 +165,6 @@ export default function PollComponent({
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        (payload) => {
-          const event = payload;
-
-          if (event.target === ref.current) {
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-            setSelected(!isSelected);
-            return true;
-          }
-
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
         $onDelete,

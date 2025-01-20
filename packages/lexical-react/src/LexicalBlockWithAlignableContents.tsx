@@ -21,7 +21,6 @@ import {
   $isDecoratorNode,
   $isNodeSelection,
   $isRangeSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -95,23 +94,6 @@ export function BlockWithAlignableContents({
               }
             }
 
-            return true;
-          }
-
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        (event) => {
-          if (event.target === ref.current) {
-            event.preventDefault();
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-
-            setSelected(!isSelected);
             return true;
           }
 

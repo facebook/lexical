@@ -23,7 +23,6 @@ import {
   $getSelection,
   $isNodeSelection,
   $setSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DRAGSTART_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -284,24 +283,6 @@ export default function InlineImageComponent({
         SELECTION_CHANGE_COMMAND,
         (_, activeEditor) => {
           activeEditorRef.current = activeEditor;
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        (payload) => {
-          const event = payload;
-          if (event.target === imageRef.current) {
-            if (event.shiftKey) {
-              setSelected(!isSelected);
-            } else {
-              clearSelection();
-              setSelected(true);
-            }
-            return true;
-          }
-
           return false;
         },
         COMMAND_PRIORITY_LOW,

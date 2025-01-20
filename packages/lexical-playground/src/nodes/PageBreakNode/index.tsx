@@ -13,7 +13,6 @@ import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isNodeSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
@@ -53,23 +52,6 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
-        CLICK_COMMAND,
-        (event: MouseEvent) => {
-          const pbElem = editor.getElementByKey(nodeKey);
-
-          if (event.target === pbElem) {
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-            setSelected(!isSelected);
-            return true;
-          }
-
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
         $onDelete,

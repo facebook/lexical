@@ -28,7 +28,6 @@ import {
   $applyNodeReplacement,
   $getSelection,
   $isNodeSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DecoratorNode,
@@ -66,23 +65,6 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
-        CLICK_COMMAND,
-        (event: MouseEvent) => {
-          const hrElem = editor.getElementByKey(nodeKey);
-
-          if (event.target === hrElem) {
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-            setSelected(!isSelected);
-            return true;
-          }
-
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
         $onDelete,

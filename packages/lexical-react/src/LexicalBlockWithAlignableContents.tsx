@@ -27,7 +27,7 @@ import {
   KEY_DELETE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useCallback, useEffect, useRef} from 'react';
+import {ReactNode, useCallback, useEffect} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
@@ -49,7 +49,6 @@ export function BlockWithAlignableContents({
 
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
-  const ref = useRef(null);
 
   const $onDelete = useCallback(
     (event: KeyboardEvent) => {
@@ -119,7 +118,6 @@ export function BlockWithAlignableContents({
       className={[className.base, isSelected ? className.focus : null]
         .filter(Boolean)
         .join(' ')}
-      ref={ref}
       style={{
         textAlign: format ? format : undefined,
       }}>

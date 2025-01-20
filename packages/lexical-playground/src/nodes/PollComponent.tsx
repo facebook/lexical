@@ -141,7 +141,6 @@ export default function PollComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [selection, setSelection] = useState<BaseSelection | null>(null);
-  const ref = useRef(null);
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
@@ -202,9 +201,7 @@ export default function PollComponent({
   const isFocused = $isNodeSelection(selection) && isSelected;
 
   return (
-    <div
-      className={`PollNode__container ${isFocused ? 'focused' : ''}`}
-      ref={ref}>
+    <div className={`PollNode__container ${isFocused ? 'focused' : ''}`}>
       <div className="PollNode__inner">
         <h2 className="PollNode__heading">{question}</h2>
         {options.map((option, index) => {

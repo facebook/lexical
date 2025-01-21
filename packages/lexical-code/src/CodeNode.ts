@@ -14,6 +14,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -88,7 +89,7 @@ export class CodeNode extends ElementNode {
 
   constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
-    this.__language = language;
+    this.__language = language || undefined;
     this.__isSyntaxHighlightSupported = isLanguageSupportedByPrism(language);
   }
 
@@ -212,11 +213,13 @@ export class CodeNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedCodeNode): CodeNode {
-    const node = $createCodeNode(serializedNode.language);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createCodeNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setLanguage(serializedNode.language);
   }
 
   exportJSON(): SerializedCodeNode {
@@ -317,11 +320,12 @@ export class CodeNode extends ElementNode {
     return true;
   }
 
-  setLanguage(language: string): void {
+  setLanguage(language: string | null | undefined): this {
     const writable = this.getWritable();
-    writable.__language = language;
+    writable.__language = language || undefined;
     writable.__isSyntaxHighlightSupported =
       isLanguageSupportedByPrism(language);
+    return writable;
   }
 
   getLanguage(): string | null | undefined {

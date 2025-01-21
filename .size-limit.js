@@ -24,12 +24,9 @@ const path = require('node:path');
  * Looks like:
  *
  *   {
- *     lexical: 'packages/lexical/dist/index.js',
- *     '@lexical/rich-text': 'packages/lexical-rich-text/dist/index.js',
+ *     lexical: 'packages/lexical/dist/Lexical.js',
+ *     '@lexical/rich-text': 'packages/lexical-rich-text/dist/LexicalRichText.js',
  *   }
- *
- * Currently this alias map points at the cjs version of the build product,
- * as that is what was measured previously in #3600.
  */
 const {packagesManager} = require('./scripts/shared/packagesManager');
 const getAliasType = (type) =>

@@ -111,7 +111,11 @@ export function setLocalStateFocus(
   localState.focusing = focusing;
   awareness.setLocalState(localState);
 }
-export {syncCursorPositions} from './SyncCursors';
+export {
+  getAnchorAndFocusCollabNodesForUserState,
+  syncCursorPositions,
+  type SyncCursorPositionsFn,
+} from './SyncCursors';
 export {
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,

@@ -1,3 +1,25 @@
+## v0.23.1 (2025-01-09)
+
+- lexical Fix TabNode deserialization regression  (#7031) Bob Ippolito
+- lexical-react Feature Merge TabIndentionPlugin and ListMaxIndentLevelPlugin plugins (#7018) Maksim Horbachevsky
+- lexical-mark Bug Fix reverse ternary in MarkNode.addID (#7020) James Fitzsimmons
+- v0.23.0 (#7017) Bob Ippolito
+- v0.23.0 Lexical GitHub Actions Bot
+
+## v0.23.0 (2025-01-04)
+
+- lexical-playground Fix table hover actions button position (#7011) Ivaylo Pavlov
+- lexical Bug Fix Fix registerNodeTransform regression introduced in #6894 (#7016) Bob Ippolito
+- lexical-playground Refactor switch headings test file names (#7008) Christian Grngaard
+- Breaking Changelexical Feature Add updateFromJSON and move more textFormattextStyle to ElementNode (#6970) Bob Ippolito
+- lexical Bug Fix Fix getNodes over-selection (#7006) Bob Ippolito
+- test npm upgrade astro (#7001) Sherry
+- Documentation Fix typo nest nest-nest in README.md (#7000) Christian Grngaard
+- tests npm upgrade next (#6996) Sherry
+- lexical Bug Fix Flow is missing some variables and functions (#6977) Simon
+- v0.22.0 (#6993) Sherry
+- v0.22.0 Lexical GitHub Actions Bot
+
 ## v0.22.0 (2024-12-23)
 
 - lexical Fix flow error change this to any (#6992) Sherry

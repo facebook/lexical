@@ -48,15 +48,10 @@ export class AutocompleteNode extends TextNode {
   static importJSON(
     serializedNode: SerializedAutocompleteNode,
   ): AutocompleteNode {
-    const node = $createAutocompleteNode(
+    return $createAutocompleteNode(
       serializedNode.text,
       serializedNode.uuid,
-    );
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    ).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedAutocompleteNode {

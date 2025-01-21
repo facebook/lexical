@@ -818,4 +818,58 @@ test.describe('HTML Tables CopyAndPaste', () => {
       `,
     );
   });
+
+  test('Copy + paste table with empty row', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <table>
+          <tr><td>1</td></tr>
+          <tr></tr>
+          <tr><td>2</td></tr>
+        </table>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">1</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <br />
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">2</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+  });
 });

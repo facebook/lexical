@@ -63,6 +63,7 @@ import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {emptyFunction} from '../../LexicalUtils';
+import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -102,6 +103,10 @@ describe('LexicalEditor tests', () => {
           nodes: nodes ?? [],
           onError: onError || jest.fn(),
           theme: {
+            tableAlignment: {
+              center: 'editor-table-alignment-center',
+              right: 'editor-table-alignment-right',
+            },
             text: {
               bold: 'editor-text-bold',
               italic: 'editor-text-italic',
@@ -1016,7 +1021,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(rootListener).toHaveBeenCalledTimes(3);
-    expect(updateListener).toHaveBeenCalledTimes(3);
+    expect(updateListener).toHaveBeenCalledTimes(4);
     expect(container.innerHTML).toBe(
       '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
     );
@@ -1027,11 +1032,17 @@ describe('LexicalEditor tests', () => {
       editable ? 'editable' : 'non-editable'
     })`, async () => {
       const JSON_EDITOR_STATE =
-        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
       init();
       const contentEditable = editor.getRootElement();
       editor.setEditable(editable);
+      editor.update(() => {
+        // Cause the editor to become dirty, so we can ensure
+        // that the getEditorState()._readOnly invariant holds
+        $getRoot().markDirty();
+      });
       editor.setRootElement(null);
+      expect(editor.getEditorState()._readOnly).toBe(true);
       const editorState = editor.parseEditorState(JSON_EDITOR_STATE);
       editor.setEditorState(editorState);
       editor.update(() => {
@@ -1194,6 +1205,8 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
+          __textFormat: 0,
+          __textStyle: '',
           __type: 'root',
         });
         expect(paragraph).toEqual({
@@ -1281,6 +1294,8 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
+          __textFormat: 0,
+          __textStyle: '',
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -1363,6 +1378,8 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
+          __textFormat: 0,
+          __textStyle: '',
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -2775,8 +2792,8 @@ describe('LexicalEditor tests', () => {
         return new CustomParagraphNode(node.__key);
       }
 
-      static importJSON() {
-        return new CustomParagraphNode();
+      static importJSON(serializedNode: SerializedParagraphNode) {
+        return new CustomParagraphNode().updateFromJSON(serializedNode);
       }
     }
 

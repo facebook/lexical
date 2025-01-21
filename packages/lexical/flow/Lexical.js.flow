@@ -393,6 +393,7 @@ declare export class LexicalNode {
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
+  updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -573,7 +574,7 @@ declare class _Point {
   is(point: PointType): boolean;
   isBefore(b: PointType): boolean;
   getNode(): LexicalNode;
-  set(key: NodeKey, offset: number, type: 'text' | 'element'): void;
+  set(key: NodeKey, offset: number, type: 'text' | 'element', onlyIfChanged?: boolean): void;
 }
 
 declare export function $createRangeSelection(): RangeSelection;

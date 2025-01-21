@@ -21,20 +21,20 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
-import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, LexicalNode} from './LexicalNode';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
   getActiveEditorState,
@@ -56,7 +56,9 @@ import {
   getDOMTextNode,
   getElementByKeyOrThrow,
   getTextNodeOffset,
+  getWindow,
   INTERNAL_$isBlock,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
@@ -72,7 +74,12 @@ export type TextPointType = {
   isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
-  set: (key: NodeKey, offset: number, type: 'text' | 'element') => void;
+  set: (
+    key: NodeKey,
+    offset: number,
+    type: 'text' | 'element',
+    onlyIfChanged?: boolean,
+  ) => void;
   type: 'text';
 };
 
@@ -83,7 +90,12 @@ export type ElementPointType = {
   isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
-  set: (key: NodeKey, offset: number, type: 'text' | 'element') => void;
+  set: (
+    key: NodeKey,
+    offset: number,
+    type: 'text' | 'element',
+    onlyIfChanged?: boolean,
+  ) => void;
   type: 'element';
 };
 
@@ -96,6 +108,14 @@ export class Point {
   _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
+    if (__DEV__) {
+      // This prevents a circular reference error when serialized as JSON,
+      // which happens on unit test failures
+      Object.defineProperty(this, '_selection', {
+        enumerable: false,
+        writable: true,
+      });
+    }
     this._selection = null;
     this.key = key;
     this.offset = offset;
@@ -139,9 +159,22 @@ export class Point {
     return node;
   }
 
-  set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
+  set(
+    key: NodeKey,
+    offset: number,
+    type: 'text' | 'element',
+    onlyIfChanged?: boolean,
+  ): void {
     const selection = this._selection;
     const oldKey = this.key;
+    if (
+      onlyIfChanged &&
+      this.key === key &&
+      this.offset === offset &&
+      this.type === type
+    ) {
+      return;
+    }
     this.key = key;
     this.offset = offset;
     this.type = type;
@@ -233,17 +266,6 @@ function $transferStartingElementPointToTextPoint(
     end.set(textNode.__key, 0, 'text');
   }
   start.set(textNode.__key, 0, 'text');
-}
-
-function $setPointValues(
-  point: PointType,
-  key: NodeKey,
-  offset: number,
-  type: 'text' | 'element',
-): void {
-  point.key = key;
-  point.offset = offset;
-  point.type = type;
 }
 
 export interface BaseSelection {
@@ -473,6 +495,10 @@ export class RangeSelection implements BaseSelection {
     const lastPoint = isBefore ? focus : anchor;
     let firstNode = firstPoint.getNode();
     let lastNode = lastPoint.getNode();
+    const overselectedFirstNode =
+      $isElementNode(firstNode) &&
+      firstPoint.offset > 0 &&
+      firstPoint.offset >= firstNode.getChildrenSize();
     const startOffset = firstPoint.offset;
     const endOffset = lastPoint.offset;
 
@@ -506,6 +532,13 @@ export class RangeSelection implements BaseSelection {
       }
     } else {
       nodes = firstNode.getNodesBetween(lastNode);
+      // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
+      if (overselectedFirstNode) {
+        const deleteCount = nodes.findIndex(
+          (node) => !node.is(firstNode) && !node.isBefore(firstNode),
+        );
+        nodes.splice(0, deleteCount);
+      }
     }
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
@@ -527,10 +560,8 @@ export class RangeSelection implements BaseSelection {
     focusNode: TextNode,
     focusOffset: number,
   ): void {
-    $setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'text');
-    $setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
-    this._cachedNodes = null;
-    this.dirty = true;
+    this.anchor.set(anchorNode.__key, anchorOffset, 'text');
+    this.focus.set(focusNode.__key, focusOffset, 'text');
   }
 
   /**
@@ -622,19 +653,16 @@ export class RangeSelection implements BaseSelection {
       return;
     }
     const [anchorPoint, focusPoint] = resolvedSelectionPoints;
-    $setPointValues(
-      this.anchor,
+    this.anchor.set(
       anchorPoint.key,
       anchorPoint.offset,
       anchorPoint.type,
+      true,
     );
-    $setPointValues(
-      this.focus,
-      focusPoint.key,
-      focusPoint.offset,
-      focusPoint.type,
-    );
-    this._cachedNodes = null;
+    this.focus.set(focusPoint.key, focusPoint.offset, focusPoint.type, true);
+    // Firefox will use an element point rather than a text point in some cases,
+    // so we normalize for that
+    $normalizeSelection(this);
   }
 
   /**
@@ -1123,13 +1151,13 @@ export class RangeSelection implements BaseSelection {
       firstNode.isToken() &&
       firstPoint.offset < firstNode.getTextContentSize()
     ) {
-      firstPoint.offset = 0;
+      firstPoint.set(firstNode.getKey(), 0, 'text');
     }
     if (lastPoint.offset > 0 && $isTextNode(lastNode) && lastNode.isToken()) {
-      lastPoint.offset = lastNode.getTextContentSize();
+      lastPoint.set(lastNode.getKey(), lastNode.getTextContentSize(), 'text');
     }
 
-    selectedNodes.forEach((node) => {
+    for (const node of selectedNodes) {
       if (
         !$hasAncestor(firstNode, node) &&
         !$hasAncestor(lastNode, node) &&
@@ -1138,7 +1166,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         node.remove();
       }
-    });
+    }
 
     const fixText = (node: TextNode, del: number) => {
       if (node.getTextContent() === '') {
@@ -1206,9 +1234,9 @@ export class RangeSelection implements BaseSelection {
         selectedTextNodes.push(selectedNode);
       }
     }
-    const applyFormatToParagraphs = (alignWith: number | null) => {
+    const applyFormatToElements = (alignWith: number | null) => {
       selectedNodes.forEach((node) => {
-        if ($isParagraphNode(node)) {
+        if ($isElementNode(node)) {
           const newFormat = node.getFormatFlags(formatType, alignWith);
           node.setTextFormat(newFormat);
         }
@@ -1220,7 +1248,7 @@ export class RangeSelection implements BaseSelection {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
-      applyFormatToParagraphs(alignWithFormat);
+      applyFormatToElements(alignWithFormat);
       return;
     }
 
@@ -1252,7 +1280,7 @@ export class RangeSelection implements BaseSelection {
       formatType,
       alignWithFormat,
     );
-    applyFormatToParagraphs(firstNextFormat);
+    applyFormatToElements(firstNextFormat);
 
     const lastIndex = selectedTextNodesLength - 1;
     let lastNode = selectedTextNodes[lastIndex];
@@ -1613,7 +1641,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(editor._window);
+    const domSelection = getDOMSelection(getWindow(editor));
 
     if (!domSelection) {
       return;
@@ -1948,9 +1976,8 @@ function $swapPoints(selection: RangeSelection): void {
   const anchorOffset = anchor.offset;
   const anchorType = anchor.type;
 
-  $setPointValues(anchor, focus.key, focus.offset, focus.type);
-  $setPointValues(focus, anchorKey, anchorOffset, anchorType);
-  selection._cachedNodes = null;
+  anchor.set(focus.key, focus.offset, focus.type, true);
+  focus.set(anchorKey, anchorOffset, anchorType, true);
 }
 
 function moveNativeSelection(
@@ -1990,9 +2017,9 @@ function $updateCaretSelectionForUnicodeCharacter(
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
       if (!doesContainGrapheme(text)) {
         if (isBackward) {
-          focus.offset = characterOffset;
+          focus.set(focus.key, characterOffset, focus.type);
         } else {
-          anchor.offset = characterOffset;
+          anchor.set(anchor.key, characterOffset, anchor.type);
         }
       }
     }
@@ -2067,7 +2094,7 @@ function $internalResolveSelectionPoint(
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (dom.nodeType === DOM_ELEMENT_TYPE) {
+  if (isHTMLElement(dom)) {
     // Resolve element to a ElementNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
@@ -2213,13 +2240,13 @@ function resolveSelectionPointOnBoundary(
         !isCollapsed &&
         prevSibling.isInline()
       ) {
-        point.key = prevSibling.__key;
-        point.offset = prevSibling.getChildrenSize();
-        // @ts-expect-error: intentional
-        point.type = 'element';
+        point.set(prevSibling.__key, prevSibling.getChildrenSize(), 'element');
       } else if ($isTextNode(prevSibling)) {
-        point.key = prevSibling.__key;
-        point.offset = prevSibling.getTextContent().length;
+        point.set(
+          prevSibling.__key,
+          prevSibling.getTextContent().length,
+          'text',
+        );
       }
     } else if (
       (isCollapsed || !isBackward) &&
@@ -2229,8 +2256,11 @@ function resolveSelectionPointOnBoundary(
     ) {
       const parentSibling = parent.getPreviousSibling();
       if ($isTextNode(parentSibling)) {
-        point.key = parentSibling.__key;
-        point.offset = parentSibling.getTextContent().length;
+        point.set(
+          parentSibling.__key,
+          parentSibling.getTextContent().length,
+          'text',
+        );
       }
     }
   } else if (offset === node.getTextContent().length) {
@@ -2238,10 +2268,7 @@ function resolveSelectionPointOnBoundary(
     const parent = node.getParent();
 
     if (isBackward && $isElementNode(nextSibling) && nextSibling.isInline()) {
-      point.key = nextSibling.__key;
-      point.offset = 0;
-      // @ts-expect-error: intentional
-      point.type = 'element';
+      point.set(nextSibling.__key, 0, 'element');
     } else if (
       (isCollapsed || isBackward) &&
       nextSibling === null &&
@@ -2251,8 +2278,7 @@ function resolveSelectionPointOnBoundary(
     ) {
       const parentSibling = parent.getNextSibling();
       if ($isTextNode(parentSibling)) {
-        point.key = parentSibling.__key;
-        point.offset = 0;
+        point.set(parentSibling.__key, 0, 'text');
       }
     }
   }
@@ -2273,9 +2299,7 @@ function $normalizeSelectionPointsForBoundaries(
     resolveSelectionPointOnBoundary(focus, !isBackward, isCollapsed);
 
     if (isCollapsed) {
-      focus.key = anchor.key;
-      focus.offset = anchor.offset;
-      focus.type = anchor.type;
+      focus.set(anchor.key, anchor.offset, anchor.type);
     }
     const editor = getActiveEditor();
 
@@ -2286,13 +2310,8 @@ function $normalizeSelectionPointsForBoundaries(
     ) {
       const lastAnchor = lastSelection.anchor;
       const lastFocus = lastSelection.focus;
-      $setPointValues(
-        anchor,
-        lastAnchor.key,
-        lastAnchor.offset,
-        lastAnchor.type,
-      );
-      $setPointValues(focus, lastFocus.key, lastFocus.offset, lastFocus.type);
+      anchor.set(lastAnchor.key, lastAnchor.offset, lastAnchor.type, true);
+      focus.set(lastFocus.key, lastFocus.offset, lastFocus.type, true);
     }
   }
 }
@@ -2321,9 +2340,6 @@ function $internalResolveSelectionPoints(
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  if (__DEV__) {
-    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
-  }
   const resolvedFocusPoint = $internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
@@ -2334,6 +2350,7 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
+    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
     $validatePoint(editor, 'focus', resolvedAnchorPoint);
   }
   if (
@@ -2402,17 +2419,18 @@ export function $createNodeSelection(): NodeSelection {
 
 export function $internalCreateSelection(
   editor: LexicalEditor,
+  event: UIEvent | Event | null,
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(
       lastSelection,
       domSelection,
       editor,
-      null,
+      event,
     );
   }
   return lastSelection.clone();
@@ -2755,12 +2773,9 @@ export function adjustPointOffsetForMergedSibling(
   textLength: number,
 ): void {
   if (point.type === 'text') {
-    point.key = key;
-    if (!isBefore) {
-      point.offset += textLength;
-    }
+    point.set(key, point.offset + (isBefore ? 0 : textLength), 'text');
   } else if (point.offset > target.getIndexWithinParent()) {
-    point.offset -= 1;
+    point.set(point.key, point.offset - 1, 'element');
   }
 }
 
@@ -2905,7 +2920,7 @@ export function updateDOMSelection(
     rootElement === document.activeElement
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
-      nextSelection instanceof RangeSelection &&
+      $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
@@ -2967,7 +2982,11 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let offset = anchor.offset;
 
   while (!INTERNAL_$isBlock(node)) {
+    const prevNode = node;
     [node, offset] = $splitNodeAtPoint(node, offset);
+    if (prevNode.is(node)) {
+      break;
+    }
   }
 
   return offset;

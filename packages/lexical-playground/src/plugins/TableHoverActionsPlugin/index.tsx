@@ -115,6 +115,19 @@ function TableHoverActionsContainer({
           height: tableElemHeight,
         } = (tableDOMElement as HTMLTableElement).getBoundingClientRect();
 
+        // Adjust for using the scrollable table container
+        const parentElement = (tableDOMElement as HTMLTableElement)
+          .parentElement;
+        let tableHasScroll = false;
+        if (
+          parentElement &&
+          parentElement.classList.contains(
+            'PlaygroundEditorTheme__tableScrollableWrapper',
+          )
+        ) {
+          tableHasScroll =
+            parentElement.scrollWidth > parentElement.clientWidth;
+        }
         const {y: editorElemY, left: editorElemLeft} =
           anchorElem.getBoundingClientRect();
 
@@ -123,9 +136,15 @@ function TableHoverActionsContainer({
           setShownRow(true);
           setPosition({
             height: BUTTON_WIDTH_PX,
-            left: tableElemLeft - editorElemLeft,
+            left:
+              tableHasScroll && parentElement
+                ? parentElement.offsetLeft
+                : tableElemLeft - editorElemLeft,
             top: tableElemBottom - editorElemY + 5,
-            width: tableElemWidth,
+            width:
+              tableHasScroll && parentElement
+                ? parentElement.offsetWidth
+                : tableElemWidth,
           });
         } else if (hoveredColumnNode) {
           setShownColumn(true);

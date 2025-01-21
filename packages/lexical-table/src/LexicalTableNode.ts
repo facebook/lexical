@@ -22,9 +22,11 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementDOMSlot,
+  type ElementFormatType,
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   setDOMUnmanaged,
@@ -76,7 +78,7 @@ function setRowStriping(
   dom: HTMLElement,
   config: EditorConfig,
   rowStriping: boolean,
-) {
+): void {
   if (rowStriping) {
     addClassNamesToElement(dom, config.theme.tableRowStriping);
     dom.setAttribute('data-lexical-row-striping', 'true');
@@ -84,6 +86,27 @@ function setRowStriping(
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
   }
+}
+
+function alignTableElement(
+  dom: HTMLElement,
+  config: EditorConfig,
+  formatType: ElementFormatType,
+): void {
+  if (!config.theme.tableAlignment) {
+    return;
+  }
+  const removeClasses: string[] = [];
+  const addClasses: string[] = [];
+  for (const format of ['center', 'right'] as const) {
+    const classes = config.theme.tableAlignment[format];
+    if (!classes) {
+      continue;
+    }
+    (format === formatType ? addClasses : removeClasses).push(classes);
+  }
+  removeClassNamesFromElement(dom, ...removeClasses);
+  addClassNamesToElement(dom, ...addClasses);
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
@@ -114,21 +137,22 @@ export function setScrollableTablesActive(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
-  __colWidths?: number[] | readonly number[];
+  __colWidths?: readonly number[];
 
   static getType(): string {
     return 'table';
   }
 
-  getColWidths(): number[] | readonly number[] | undefined {
+  getColWidths(): readonly number[] | undefined {
     const self = this.getLatest();
     return self.__colWidths;
   }
 
-  setColWidths(colWidths: readonly number[]): this {
+  setColWidths(colWidths: readonly number[] | undefined): this {
     const self = this.getWritable();
     // NOTE: Node properties should be immutable. Freeze to prevent accidental mutation.
-    self.__colWidths = __DEV__ ? Object.freeze(colWidths) : colWidths;
+    self.__colWidths =
+      colWidths !== undefined && __DEV__ ? Object.freeze(colWidths) : colWidths;
     return self;
   }
 
@@ -152,10 +176,14 @@ export class TableNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableNode): TableNode {
-    const tableNode = $createTableNode();
-    tableNode.__rowStriping = serializedNode.rowStriping || false;
-    tableNode.__colWidths = serializedNode.colWidths;
-    return tableNode;
+    return $createTableNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setRowStriping(serializedNode.rowStriping || false)
+      .setColWidths(serializedNode.colWidths);
   }
 
   constructor(key?: NodeKey) {
@@ -205,6 +233,7 @@ export class TableNode extends ElementNode {
     setDOMUnmanaged(colGroup);
 
     addClassNamesToElement(tableElement, config.theme.table);
+    alignTableElement(tableElement, config, this.getFormatType());
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
@@ -228,6 +257,11 @@ export class TableNode extends ElementNode {
       setRowStriping(dom, config, this.__rowStriping);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
+    alignTableElement(
+      this.getDOMSlot(dom).element,
+      config,
+      this.getFormatType(),
+    );
     return false;
   }
 
@@ -238,6 +272,13 @@ export class TableNode extends ElementNode {
       after: (tableElement) => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
+          if (this.__format) {
+            alignTableElement(
+              tableElement as HTMLElement,
+              editor._config,
+              this.getFormatType(),
+            );
+          }
         }
         if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {
           tableElement = tableElement.querySelector('table');
@@ -425,8 +466,10 @@ export class TableNode extends ElementNode {
     return Boolean(this.getLatest().__rowStriping);
   }
 
-  setRowStriping(newRowStriping: boolean): void {
-    this.getWritable().__rowStriping = newRowStriping;
+  setRowStriping(newRowStriping: boolean): this {
+    const self = this.getWritable();
+    self.__rowStriping = newRowStriping;
+    return self;
   }
 
   canSelectBefore(): true {

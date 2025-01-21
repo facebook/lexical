@@ -40,17 +40,15 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
       event.preventDefault();
       const deleteSelection = $getSelection();
       if (isSelected && $isNodeSelection(deleteSelection)) {
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isPageBreakNode(node)) {
-              node.remove();
-            }
-          });
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isPageBreakNode(node)) {
+            node.remove();
+          }
         });
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   useEffect(() => {
@@ -105,7 +103,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode();
+    return $createPageBreakNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): DOMConversionMap | null {

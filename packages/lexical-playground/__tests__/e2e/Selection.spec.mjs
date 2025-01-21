@@ -578,6 +578,53 @@ test.describe.parallel('Selection', () => {
     );
   });
 
+  test('Can adjust tripple click selection with', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await pasteFromClipboard(page, {
+      'text/html': `<p><a href="https://test.com">Hello</a>world</p><p>!</p>`,
+    });
+
+    await page
+      .locator('div[contenteditable="true"] > p')
+      .first()
+      .click({clickCount: 3});
+
+    await pressToggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://test.com">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              Hello
+            </strong>
+          </a>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            world
+          </strong>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+    );
+  });
+
   test('Select all from Node selection #4658', async ({page, isPlainText}) => {
     // TODO selectAll is bad for Linux #4665
     test.skip(isPlainText || IS_LINUX);

@@ -15,6 +15,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -123,12 +124,16 @@ export class ListItemNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = $createListItemNode();
-    node.setChecked(serializedNode.checked);
-    node.setValue(serializedNode.value);
-    node.setFormat(serializedNode.format);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createListItemNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setValue(serializedNode.value)
+      .setChecked(serializedNode.checked);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -257,9 +262,10 @@ export class ListItemNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = $createListItemNode(
-      this.__checked == null ? undefined : false,
-    );
+    const newElement = $createListItemNode()
+      .updateFromJSON(this.exportJSON())
+      .setChecked(this.getChecked() ? false : undefined);
+
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;
@@ -310,9 +316,10 @@ export class ListItemNode extends ElementNode {
     return self.__value;
   }
 
-  setValue(value: number): void {
+  setValue(value: number): this {
     const self = this.getWritable();
     self.__value = value;
+    return self;
   }
 
   getChecked(): boolean | undefined {
@@ -328,13 +335,15 @@ export class ListItemNode extends ElementNode {
     return listType === 'check' ? Boolean(self.__checked) : undefined;
   }
 
-  setChecked(checked?: boolean): void {
+  setChecked(checked?: boolean): this {
     const self = this.getWritable();
     self.__checked = checked;
+    return self;
   }
 
-  toggleChecked(): void {
-    this.setChecked(!this.__checked);
+  toggleChecked(): this {
+    const self = this.getWritable();
+    return self.setChecked(!self.__checked);
   }
 
   getIndent(): number {

@@ -28,6 +28,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {TRANSFORMERS} from '.';
+import {canContainTransformableMarkdown} from './importTextTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(
@@ -497,7 +498,7 @@ export function registerMarkdownShortcuts(
       const anchorNode = editorState._nodeMap.get(anchorKey);
 
       if (
-        !$isTextNode(anchorNode) ||
+        !canContainTransformableMarkdown(anchorNode) ||
         !dirtyLeaves.has(anchorKey) ||
         (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
       ) {
@@ -505,11 +506,6 @@ export function registerMarkdownShortcuts(
       }
 
       editor.update(() => {
-        // Markdown is not available inside code
-        if (anchorNode.hasFormat('code')) {
-          return;
-        }
-
         const parentNode = anchorNode.getParent();
 
         if (parentNode === null || $isCodeNode(parentNode)) {

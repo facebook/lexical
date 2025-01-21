@@ -8,7 +8,7 @@
 import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextMatchTransformer} from './MarkdownTransformers';
 
-import {$isTextNode, type TextNode} from 'lexical';
+import {$isTextNode, type LexicalNode, type TextNode} from 'lexical';
 
 import {
   findOutermostTextFormatTransformer,
@@ -18,6 +18,18 @@ import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
+
+/**
+ * Returns true if the node can contain transformable markdown.
+ * Code nodes cannot contain transformable markdown.
+ * For example, `code **bold**` should not be transformed to
+ * <code>code <strong>bold</strong></code>.
+ */
+export function canContainTransformableMarkdown(
+  node: LexicalNode | undefined,
+): node is TextNode {
+  return $isTextNode(node) && !node.hasFormat('code');
+}
 
 /**
  * Handles applying both text format and text match transformers.
@@ -63,33 +75,21 @@ export function importTextTransformers(
       foundTextFormat.match,
     );
 
-    if (
-      result.nodeAfter &&
-      $isTextNode(result.nodeAfter) &&
-      !result.nodeAfter.hasFormat('code')
-    ) {
+    if (canContainTransformableMarkdown(result.nodeAfter)) {
       importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (
-      result.nodeBefore &&
-      $isTextNode(result.nodeBefore) &&
-      !result.nodeBefore.hasFormat('code')
-    ) {
+    if (canContainTransformableMarkdown(result.nodeBefore)) {
       importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (
-      result.transformedNode &&
-      $isTextNode(result.transformedNode) &&
-      !result.transformedNode.hasFormat('code')
-    ) {
+    if (canContainTransformableMarkdown(result.transformedNode)) {
       importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
@@ -109,33 +109,21 @@ export function importTextTransformers(
       return;
     }
 
-    if (
-      result.nodeAfter &&
-      $isTextNode(result.nodeAfter) &&
-      !result.nodeAfter.hasFormat('code')
-    ) {
+    if (canContainTransformableMarkdown(result.nodeAfter)) {
       importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (
-      result.nodeBefore &&
-      $isTextNode(result.nodeBefore) &&
-      !result.nodeBefore.hasFormat('code')
-    ) {
+    if (canContainTransformableMarkdown(result.nodeBefore)) {
       importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (
-      result.transformedNode &&
-      $isTextNode(result.transformedNode) &&
-      !result.transformedNode.hasFormat('code')
-    ) {
+    if (canContainTransformableMarkdown(result.transformedNode)) {
       importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,

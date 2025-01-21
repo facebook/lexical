@@ -548,10 +548,7 @@ export const LINK: TextMatchTransformer = {
     const textContent = exportChildren(node);
 
     const linkContent = title
-      ? `[${textContent}](${node.getURL()} "${title
-          // Escape quotes and backslashes in the title so that it doesn't break the markdown
-          .replace(/\\/g, '\\\\')
-          .replace(/"/g, '\\"')}")`
+      ? `[${textContent}](${node.getURL()} "${title}")`
       : `[${textContent}](${node.getURL()})`;
 
     return linkContent;

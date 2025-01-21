@@ -734,6 +734,16 @@ i.page-break,
   color: red;
 }
 
+.characters-count {
+  color: #888;
+  font-size: 12px;
+  text-align: right;
+  display: block;
+  position: absolute;
+  left: 55px;
+  bottom: 5px;
+}
+
 .dropdown {
   z-index: 100;
   display: block;

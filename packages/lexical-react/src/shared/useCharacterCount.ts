@@ -7,9 +7,7 @@
  */
 import type {LexicalEditor} from 'lexical';
 
-import {OverflowNode} from '@lexical/overflow';
 import {useEffect, useState} from 'react';
-import invariant from 'shared/invariant';
 
 type OptionalProps = {
   strlen?: (input: string) => number;
@@ -23,17 +21,6 @@ export function useCharacterCount(
   const [characterCount, setCharacterCount] = useState(0);
 
   useEffect(() => {
-    // Check if OverflowNode is registered
-    if (!editor.hasNodes([OverflowNode])) {
-      invariant(
-        false,
-        'useCharacterCount: OverflowNode not registered on editor',
-      );
-    }
-  }, [editor]);
-
-  useEffect(() => {
-    // Update character count whenever the text content changes
     const unregisterTextContentListener = editor.registerTextContentListener(
       (currentText: string) => {
         setCharacterCount(strlen(currentText));

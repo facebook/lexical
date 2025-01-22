@@ -17,12 +17,15 @@ function utf8Length(text: string) {
 
 export function CharacterCountPlugin({
   charset = 'UTF-16',
+  render = DefaultRenderer,
 }: {
   charset?: 'UTF-16' | 'UTF-8';
+  render?: (characterCount: number) => JSX.Element;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const characterCount = useCharacterCount(editor, {
-    strlen: (text: string) => {
+
+  const strlen = React.useMemo(() => {
+    return (text: string) => {
       if (charset === 'UTF-8') {
         return utf8Length(text);
       } else if (charset === 'UTF-16') {
@@ -30,8 +33,14 @@ export function CharacterCountPlugin({
       } else {
         throw new Error('Unrecognized charset');
       }
-    },
-  });
+    };
+  }, [charset]);
 
+  const characterCount = useCharacterCount(editor, {strlen});
+
+  return render(characterCount);
+}
+
+function DefaultRenderer(characterCount: number) {
   return <span className="characters-count">{characterCount}</span>;
 }

@@ -64,6 +64,16 @@ describe('LexicalTableCellNode tests', () => {
         expect(cellWithCustomWidthNode.createDOM(editorConfig).outerHTML).toBe(
           `<td style="width: ${cellWidth}px;" class="${editorConfig.theme.tableCell}"></td>`,
         );
+        const verticalAlign = 'top';
+        const cellWithVerticalAlignNode = $createTableCellNode(
+          TableCellHeaderStates.NO_STATUS,
+        );
+        cellWithVerticalAlignNode.setVerticalAlign(verticalAlign);
+        expect(
+          cellWithVerticalAlignNode.createDOM(editorConfig).outerHTML,
+        ).toBe(
+          `<td style="vertical-align: ${verticalAlign};" class="${editorConfig.theme.tableCell}"></td>`,
+        );
       });
     });
   });

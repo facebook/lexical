@@ -407,15 +407,26 @@ describe('LexicalCaret', () => {
             );
             expect(range).toMatchObject({
               anchor: {
+                direction: 'next',
                 indexEnd: textNodes[1].getTextContentSize(),
                 indexStart: offset,
               },
               focus: {
-                indexEnd: textNodes[1].getTextContentSize(),
-                indexStart: offset,
+                direction: 'next',
+                indexEnd: offset,
+                indexStart: 0,
               },
             });
-            expect(range.textSliceCarets()).toEqual([]);
+            expect(range.textSliceCarets()).toMatchObject([
+              {
+                direction: 'next',
+                indexEnd: offset,
+                indexStart: offset,
+                origin: node,
+                type: 'breadth',
+              },
+            ]);
+            expect(range.nonEmptyTextSliceCarets()).toEqual([]);
             expect([...range.internalCarets('root')]).toEqual([]);
           }
         });
@@ -448,14 +459,14 @@ describe('LexicalCaret', () => {
                 $isTextSliceCaret(range.focus),
                 '$isTextSliceCaret(range.anchor)',
               );
-              const pt = (offset: number) =>
-                direction === 'next'
+              const pt = (offset: number, anchorOrFocus: 'anchor' | 'focus') =>
+                (direction === 'next') === (anchorOrFocus === 'anchor')
                   ? {indexEnd: size, indexStart: offset}
                   : {indexEnd: offset, indexStart: 0};
               expect(range).toMatchObject({
-                anchor: pt(anchorOffset),
+                anchor: pt(anchorOffset, 'anchor'),
                 direction,
-                focus: pt(focusOffset),
+                focus: pt(focusOffset, 'focus'),
               });
               expect(range.textSliceCarets()).toMatchObject([
                 {
@@ -466,6 +477,134 @@ describe('LexicalCaret', () => {
               ]);
               expect([...range.internalCarets('root')]).toEqual([]);
               expect(range.isCollapsed()).toBe(false);
+            }
+          }
+        });
+      });
+      test('single text node non-empty selection', async () => {
+        await testEnv.editor.update(() => {
+          const textNodes = ['first', 'second', 'third'].map((text) =>
+            $createTextNode(text).setMode('token'),
+          );
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...textNodes));
+          for (const node of textNodes) {
+            // Test all non-empty selections
+            const size = node.getTextContentSize();
+            for (let indexStart = 0; indexStart < size; indexStart++) {
+              for (
+                let indexEnd = indexStart + 1;
+                indexEnd <= size;
+                indexEnd++
+              ) {
+                for (const direction of ['next', 'previous'] as const) {
+                  const selection =
+                    direction === 'next'
+                      ? node.select(indexStart, indexEnd)
+                      : node.select(indexEnd, indexStart);
+                  const range = $caretRangeFromSelection(selection);
+                  invariant(
+                    $isTextSliceCaret(range.anchor),
+                    '$isTextSliceCaret(range.anchor)',
+                  );
+                  invariant(
+                    $isTextSliceCaret(range.focus),
+                    '$isTextSliceCaret(range.anchor)',
+                  );
+                  expect(range.direction).toBe(direction);
+                  expect(range.textSliceCarets()).toMatchObject([
+                    {indexEnd, indexStart, origin: node},
+                  ]);
+                  expect([...range.internalCarets('root')]).toMatchObject([]);
+                }
+              }
+            }
+          }
+        });
+      });
+      test('multiple text node non-empty selection', async () => {
+        await testEnv.editor.update(() => {
+          const textNodes = ['first', 'second', 'third'].map((text) =>
+            $createTextNode(text).setMode('token'),
+          );
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...textNodes));
+          const selection = $getRoot().select();
+
+          // test all start and end nodes (where different)
+          const nodeCount = textNodes.length;
+          for (
+            let indexNodeStart = 0;
+            indexNodeStart < nodeCount;
+            indexNodeStart++
+          ) {
+            for (
+              let indexNodeEnd = indexNodeStart + 1;
+              indexNodeEnd < nodeCount;
+              indexNodeEnd++
+            ) {
+              const startNode = textNodes[indexNodeStart]!;
+              const endNode = textNodes[indexNodeEnd]!;
+              for (const indexStart of [0, 1, startNode.getTextContentSize()]) {
+                for (const indexEnd of [0, 1, endNode.getTextContentSize()]) {
+                  for (const direction of ['next', 'previous'] as const) {
+                    const [anchorNode, anchorOffset, focusNode, focusOffset] =
+                      direction === 'next'
+                        ? [startNode, indexStart, endNode, indexEnd]
+                        : [endNode, indexEnd, startNode, indexStart];
+                    selection.setTextNodeRange(
+                      anchorNode,
+                      anchorOffset,
+                      focusNode,
+                      focusOffset,
+                    );
+                    const range = $caretRangeFromSelection(selection);
+                    invariant(
+                      $isTextSliceCaret(range.anchor),
+                      '$isTextSliceCaret(range.anchor)',
+                    );
+                    invariant(
+                      $isTextSliceCaret(range.focus),
+                      '$isTextSliceCaret(range.anchor)',
+                    );
+                    expect(range.direction).toBe(direction);
+                    const textSliceCarets = range.textSliceCarets();
+                    expect(textSliceCarets).toHaveLength(2);
+                    const [anchorSlice, focusSlice] = textSliceCarets;
+                    expect(anchorSlice).toMatchObject({
+                      direction,
+                      indexEnd:
+                        direction === 'next'
+                          ? anchorNode.getTextContentSize()
+                          : anchorOffset,
+                      indexStart: direction === 'next' ? anchorOffset : 0,
+                      origin: anchorNode,
+                      type: 'breadth',
+                    });
+                    expect(focusSlice).toMatchObject({
+                      direction,
+                      indexEnd:
+                        direction === 'next'
+                          ? focusOffset
+                          : focusNode.getTextContentSize(),
+                      indexStart: direction === 'next' ? 0 : focusOffset,
+                      origin: focusNode,
+                      type: 'breadth',
+                    });
+                    expect([...range.internalCarets('root')]).toMatchObject(
+                      textNodes
+                        .slice(indexNodeStart + 1, indexNodeEnd)
+                        .map((origin) => ({
+                          direction,
+                          origin,
+                          type: 'breadth',
+                        })),
+                    );
+                  }
+                }
+              }
             }
           }
         });

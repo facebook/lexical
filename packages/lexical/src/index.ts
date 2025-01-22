@@ -19,6 +19,7 @@ export type {
   RootMode,
   StepwiseIteratorConfig,
   TextSliceCaret,
+  TextSliceCaretTuple,
 } from './LexicalCaret';
 export {
   $caretFromPoint,

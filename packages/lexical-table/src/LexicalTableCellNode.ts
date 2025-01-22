@@ -49,6 +49,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
+    verticalAlign?: null | string;
   },
   SerializedElementNode
 >;
@@ -65,6 +66,8 @@ export class TableCellNode extends ElementNode {
   __width?: number | undefined;
   /** @internal */
   __backgroundColor: null | string;
+  /** @internal */
+  __verticalAlign: null | string;
 
   static getType(): string {
     return 'tablecell';
@@ -83,6 +86,7 @@ export class TableCellNode extends ElementNode {
     super.afterCloneFrom(node);
     this.__rowSpan = node.__rowSpan;
     this.__backgroundColor = node.__backgroundColor;
+    this.__verticalAlign = node.__verticalAlign;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -111,7 +115,8 @@ export class TableCellNode extends ElementNode {
       .setColSpan(serializedNode.colSpan || 1)
       .setRowSpan(serializedNode.rowSpan || 1)
       .setWidth(serializedNode.width || undefined)
-      .setBackgroundColor(serializedNode.backgroundColor || null);
+      .setBackgroundColor(serializedNode.backgroundColor || null)
+      .setVerticalAlign(serializedNode.verticalAlign || null);
   }
 
   constructor(
@@ -126,6 +131,7 @@ export class TableCellNode extends ElementNode {
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
+    this.__verticalAlign = null;
   }
 
   createDOM(config: EditorConfig): HTMLTableCellElement {
@@ -142,6 +148,9 @@ export class TableCellNode extends ElementNode {
     }
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
+    }
+    if (this.__verticalAlign !== null) {
+      element.style.verticalAlign = this.__verticalAlign;
     }
 
     addClassNamesToElement(
@@ -171,7 +180,7 @@ export class TableCellNode extends ElementNode {
       }
       element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
-      element.style.verticalAlign = 'top';
+      element.style.verticalAlign = this.getVerticalAlign() || 'top';
       element.style.textAlign = 'start';
       if (this.__backgroundColor === null && this.hasHeader()) {
         element.style.backgroundColor = '#f2f3f5';
@@ -188,6 +197,7 @@ export class TableCellNode extends ElementNode {
       colSpan: this.__colSpan,
       headerState: this.__headerState,
       rowSpan: this.__rowSpan,
+      verticalAlign: this.getVerticalAlign(),
       width: this.getWidth(),
     };
   }
@@ -249,6 +259,16 @@ export class TableCellNode extends ElementNode {
     return self;
   }
 
+  getVerticalAlign(): null | string {
+    return this.getLatest().__verticalAlign;
+  }
+
+  setVerticalAlign(newVerticalAlign: null | string): this {
+    const self = this.getWritable();
+    self.__verticalAlign = newVerticalAlign;
+    return self;
+  }
+
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
@@ -275,7 +295,8 @@ export class TableCellNode extends ElementNode {
       prevNode.__width !== this.__width ||
       prevNode.__colSpan !== this.__colSpan ||
       prevNode.__rowSpan !== this.__rowSpan ||
-      prevNode.__backgroundColor !== this.__backgroundColor
+      prevNode.__backgroundColor !== this.__backgroundColor ||
+      prevNode.__verticalAlign !== this.__verticalAlign
     );
   }
 
@@ -320,6 +341,10 @@ export function $convertTableCellNodeElement(
   const backgroundColor = domNode_.style.backgroundColor;
   if (backgroundColor !== '') {
     tableCellNode.__backgroundColor = backgroundColor;
+  }
+  const verticalAlign = domNode_.style.verticalAlign;
+  if (verticalAlign !== '') {
+    tableCellNode.__verticalAlign = verticalAlign;
   }
 
   const style = domNode_.style;

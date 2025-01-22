@@ -53,6 +53,7 @@ import invariant from 'shared/invariant';
 
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
+import DropDown, {DropDownItem} from '../../ui/DropDown';
 
 function computeSelectionCount(selection: TableSelection): {
   columns: number;
@@ -472,6 +473,29 @@ function TableActionMenu({
     [editor],
   );
 
+  const formatVerticalAlign = (value: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+        const [cell] = $getNodeTriplet(selection.anchor);
+        if ($isTableCellNode(cell)) {
+          cell.setVerticalAlign(value);
+        }
+
+        if ($isTableSelection(selection)) {
+          const nodes = selection.getNodes();
+
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if ($isTableCellNode(node)) {
+              node.setVerticalAlign(value);
+            }
+          }
+        }
+      }
+    });
+  };
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {
@@ -527,6 +551,41 @@ function TableActionMenu({
         data-test-id="table-row-striping">
         <span className="text">Toggle Row Striping</span>
       </button>
+      <DropDown
+        buttonLabel="Vertical Align"
+        buttonClassName="item"
+        buttonAriaLabel="Formatting options for vertical alignment">
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('top');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-top" />
+            <span className="text">Top Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('middle');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-middle" />
+            <span className="text">Middle Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('bottom');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-bottom" />
+            <span className="text">Bottom Align</span>
+          </div>
+        </DropDownItem>
+      </DropDown>
       <hr />
       <button
         type="button"

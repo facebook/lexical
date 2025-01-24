@@ -15,6 +15,7 @@ import {
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -181,6 +182,21 @@ export default function ContextMenuPlugin(): JSX.Element {
               .at(-2);
 
             ancestorNodeWithRootAsParent?.remove();
+          } else if ($isNodeSelection(selection)) {
+            const selectedNodes = selection.getNodes();
+            const deletableNodeTypes = new Set([
+              'image',
+              'inline-image',
+              'page-break',
+              'excalidraw',
+              'horizontal-rule',
+            ]);
+
+            selectedNodes.forEach((node) => {
+              if (deletableNodeTypes.has(node.getType())) {
+                node.remove();
+              }
+            });
           }
         },
       }),

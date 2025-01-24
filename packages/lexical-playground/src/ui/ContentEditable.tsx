@@ -8,6 +8,8 @@
 
 import './ContentEditable.css';
 
+import type {JSX} from 'react';
+
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import * as React from 'react';
 

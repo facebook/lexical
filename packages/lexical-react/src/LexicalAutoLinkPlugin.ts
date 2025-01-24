@@ -8,6 +8,7 @@
 
 import type {AutoLinkAttributes} from '@lexical/link';
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
+import type {JSX} from 'react';
 
 import {
   $createAutoLinkNode,

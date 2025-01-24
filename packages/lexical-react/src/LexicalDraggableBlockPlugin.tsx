@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';

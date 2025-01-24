@@ -8,6 +8,8 @@
 
 import './index.css';
 
+import type {JSX} from 'react';
+
 import {
   $isCodeNode,
   CodeNode,

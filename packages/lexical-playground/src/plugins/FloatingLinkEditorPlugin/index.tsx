@@ -7,6 +7,8 @@
  */
 import './index.css';
 
+import type {JSX} from 'react';
+
 import {
   $createLinkNode,
   $isAutoLinkNode,

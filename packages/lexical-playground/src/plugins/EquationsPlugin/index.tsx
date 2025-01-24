@@ -8,6 +8,8 @@
 
 import 'katex/dist/katex.css';
 
+import type {JSX} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {

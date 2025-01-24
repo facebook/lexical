@@ -7,6 +7,7 @@
  */
 
 import type {Ref, RefObject} from 'react';
+import type {JSX} from 'react';
 
 import './EquationEditor.css';
 

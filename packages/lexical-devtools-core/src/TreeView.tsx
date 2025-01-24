@@ -7,6 +7,7 @@
  */
 
 import type {EditorSetOptions, EditorState} from 'lexical';
+import type {JSX} from 'react';
 
 import * as React from 'react';
 import {forwardRef, useCallback, useEffect, useRef, useState} from 'react';

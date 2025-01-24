@@ -8,6 +8,8 @@
 
 import './FlashMessage.css';
 
+import type {JSX} from 'react';
+
 import {ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 

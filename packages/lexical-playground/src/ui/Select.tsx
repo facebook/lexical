@@ -8,6 +8,8 @@
 
 import './Select.css';
 
+import type {JSX} from 'react';
+
 import * as React from 'react';
 
 type SelectIntrinsicProps = JSX.IntrinsicElements['select'];

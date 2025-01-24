@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {exportToSvg} from '@excalidraw/excalidraw';
 import {
   ExcalidrawElement,

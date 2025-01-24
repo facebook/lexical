@@ -8,6 +8,8 @@
 
 import './ExcalidrawModal.css';
 
+import type {JSX} from 'react';
+
 import {Excalidraw} from '@excalidraw/excalidraw';
 import {
   AppState,

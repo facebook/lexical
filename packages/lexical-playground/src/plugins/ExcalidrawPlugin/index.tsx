@@ -7,6 +7,7 @@
  */
 import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
 import type {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement} from '@lexical/utils';

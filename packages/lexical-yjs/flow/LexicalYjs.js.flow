@@ -345,6 +345,7 @@ declare export function createBinding(
   id: string,
   doc: ?Doc,
   docMap: Map<string, Doc>,
+  getXmlText: ?(ydoc: Doc) => XmlText
 ): Binding;
 
 declare export function syncCursorPositions(

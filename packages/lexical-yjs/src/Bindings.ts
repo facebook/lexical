@@ -50,12 +50,13 @@ export function createBinding(
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
   excludedProperties?: ExcludedProperties,
+  getXmlText = (ydoc: Doc) => ydoc.get('root', XmlText) as XmlText,
 ): Binding {
   invariant(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  const rootXmlText = doc.get('root', XmlText) as XmlText;
+  const rootXmlText = getXmlText(doc);
   const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,
     null,

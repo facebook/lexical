@@ -17,6 +17,7 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';

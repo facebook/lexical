@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getNextRightPreorderNode} from '@lexical/utils';

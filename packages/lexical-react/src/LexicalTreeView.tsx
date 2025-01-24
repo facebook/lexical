@@ -7,6 +7,7 @@
  */
 
 import type {EditorState, LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {
   CustomPrintNodeFn,

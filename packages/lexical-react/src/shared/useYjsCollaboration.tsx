@@ -8,6 +8,7 @@
 
 import type {Binding, Provider, SyncCursorPositionsFn} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {mergeRegister} from '@lexical/utils';
 import {

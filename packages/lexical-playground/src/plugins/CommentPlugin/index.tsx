@@ -14,8 +14,8 @@ import type {
   NodeKey,
   RangeSelection,
 } from 'lexical';
-import type {Doc} from 'yjs';
 import type {JSX} from 'react';
+import type {Doc} from 'yjs';
 
 import './index.css';
 

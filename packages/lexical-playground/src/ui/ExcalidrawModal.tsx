@@ -6,9 +6,9 @@
  *
  */
 
-import './ExcalidrawModal.css';
-
 import type {JSX} from 'react';
+
+import './ExcalidrawModal.css';
 
 import {Excalidraw} from '@excalidraw/excalidraw';
 import {

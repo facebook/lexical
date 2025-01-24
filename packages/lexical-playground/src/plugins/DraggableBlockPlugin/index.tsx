@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import './index.css';
-
 import type {JSX} from 'react';
+
+import './index.css';
 
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {useRef} from 'react';

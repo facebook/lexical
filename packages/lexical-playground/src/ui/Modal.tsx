@@ -6,9 +6,9 @@
  *
  */
 
-import './Modal.css';
-
 import type {JSX} from 'react';
+
+import './Modal.css';
 
 import {isDOMNode} from 'lexical';
 import * as React from 'react';

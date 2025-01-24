@@ -6,8 +6,8 @@
  *
  */
 
-import type {Doc} from 'yjs';
 import type {JSX} from 'react';
+import type {Doc} from 'yjs';
 
 import {
   type CollaborationContextType,

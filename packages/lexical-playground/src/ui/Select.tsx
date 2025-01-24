@@ -6,9 +6,9 @@
  *
  */
 
-import './Select.css';
-
 import type {JSX} from 'react';
+
+import './Select.css';
 
 import * as React from 'react';
 

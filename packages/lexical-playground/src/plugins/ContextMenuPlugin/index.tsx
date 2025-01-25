@@ -189,7 +189,7 @@ export default function ContextMenuPlugin(): JSX.Element {
               'inline-image',
               'page-break',
               'excalidraw',
-              'horizontal-rule',
+              'horizontalrule',
             ]);
 
             selectedNodes.forEach((node) => {

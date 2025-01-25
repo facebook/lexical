@@ -271,13 +271,28 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           if (!colWidths) {
             return;
           }
-          const width = colWidths[columnIndex];
-          if (width === undefined) {
-            return;
-          }
           const newColWidths = [...colWidths];
-          const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);
-          newColWidths[columnIndex] = newWidth;
+          const isLastColumn = columnIndex === colWidths.length - 1;
+          if (isLastColumn) {
+            newColWidths[columnIndex] = Math.max(
+              colWidths[columnIndex] + widthChange,
+              MIN_COLUMN_WIDTH,
+            );
+          } else {
+            const currentWidth = colWidths[columnIndex];
+            const nextWidth = colWidths[columnIndex + 1];
+
+            const maxCanExpand = nextWidth - MIN_COLUMN_WIDTH;
+            const maxCanShrink = currentWidth - MIN_COLUMN_WIDTH;
+
+            const constrainedChange = Math.min(
+              Math.max(widthChange, -maxCanShrink),
+              maxCanExpand,
+            );
+
+            newColWidths[columnIndex] = currentWidth + constrainedChange;
+            newColWidths[columnIndex + 1] = nextWidth - constrainedChange;
+          }
           tableNode.setColWidths(newColWidths);
         },
         {tag: 'skip-scroll-into-view'},

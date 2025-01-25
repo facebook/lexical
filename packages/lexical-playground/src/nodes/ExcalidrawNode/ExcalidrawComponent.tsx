@@ -8,6 +8,7 @@
 
 import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
 import type {NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';

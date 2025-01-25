@@ -447,7 +447,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   ];
   const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes: Map<string, RegisteredNode>;
+  let registeredNodes: RegisteredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;

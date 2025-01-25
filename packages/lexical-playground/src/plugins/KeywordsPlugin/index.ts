@@ -7,6 +7,7 @@
  */
 
 import type {TextNode} from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalTextEntity} from '@lexical/react/useLexicalTextEntity';

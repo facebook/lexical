@@ -6,6 +6,7 @@
  *
  */
 import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {calculateZoomLevel} from '@lexical/utils';

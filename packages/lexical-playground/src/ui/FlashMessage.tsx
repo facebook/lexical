@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './FlashMessage.css';
 
 import {ReactNode} from 'react';

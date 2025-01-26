@@ -16,6 +16,7 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';

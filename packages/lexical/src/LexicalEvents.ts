@@ -176,6 +176,8 @@ let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
+let isSafariEndingComposition = false;
+let safariEndCompositionEventData = '';
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
   '',
@@ -1006,6 +1008,14 @@ function onCompositionEnd(
   // the logic in onInput.
   if (IS_FIREFOX) {
     isFirefoxEndingComposition = true;
+  } else if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
+    // Fix：https://github.com/facebook/lexical/pull/7061
+    // In safari, onCompositionEnd triggers before keydown
+    // This will cause an extra character to be deleted when exiting the IME
+    // Therefore, a flag is used to mark that the keydown event is triggered after onCompositionEnd
+    // Ensure that an extra character is not deleted due to the backspace event being triggered in the keydown event.
+    isSafariEndingComposition = true;
+    safariEndCompositionEventData = event.data;
   } else {
     updateEditorSync(editor, () => {
       $onCompositionEndImpl(editor, event.data);
@@ -1027,6 +1037,14 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
 
   if (key == null) {
+    return;
+  }
+  if (isSafariEndingComposition && isBackspace(lastKeyCode)) {
+    updateEditorSync(editor, () => {
+      $onCompositionEndImpl(editor, safariEndCompositionEventData);
+    });
+    isSafariEndingComposition = false;
+    safariEndCompositionEventData = '';
     return;
   }
 

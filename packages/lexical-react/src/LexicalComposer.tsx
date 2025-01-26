@@ -7,6 +7,7 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
+import type {JSX} from 'react';
 
 import {
   createLexicalComposerContext,

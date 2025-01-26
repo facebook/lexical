@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';

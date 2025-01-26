@@ -1134,6 +1134,9 @@ export class RangeSelection implements BaseSelection {
    * Removes the text in the Selection, adjusting the EditorState accordingly.
    */
   removeText(): void {
+    // const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
+    // $setPointFromCaret(this.anchor, newRange.anchor);
+    // $setPointFromCaret(this.focus, newRange.focus);
     if (this.isCollapsed()) {
       return;
     }

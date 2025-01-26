@@ -10,10 +10,15 @@ import type {PointType, RangeSelection} from './LexicalSelection';
 
 import invariant from 'shared/invariant';
 
-import {$getNodeByKeyOrThrow, $isRootOrShadowRoot} from './LexicalUtils';
+import {
+  $getAncestor,
+  $getNodeByKeyOrThrow,
+  $isRootOrShadowRoot,
+  INTERNAL_$isBlock,
+} from './LexicalUtils';
 import {$isElementNode, type ElementNode} from './nodes/LexicalElementNode';
 import {$isRootNode} from './nodes/LexicalRootNode';
-import {$isTextNode, TextNode} from './nodes/LexicalTextNode';
+import {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
 
 export type CaretDirection = 'next' | 'previous';
 export type FlipDirection<D extends CaretDirection> = typeof FLIP_DIRECTION[D];
@@ -103,19 +108,19 @@ export interface NodeCaretRange<D extends CaretDirection = CaretDirection>
    * NodeCaretRange. Non-empty is defined by indexEnd > indexStart
    * (some text will be in the slice).
    *
-   * 0: Neither anchor nor focus are non-empty TextSliceCarets
-   * 1: One of anchor or focus are non-empty TextSliceCaret, or of the same origin
-   * 2: Anchor and focus are both non-empty TextSliceCaret of different origin
+   * 0: Neither anchor nor focus are non-empty TextNodeCarets
+   * 1: One of anchor or focus are non-empty TextNodeCaret, or of the same origin
+   * 2: Anchor and focus are both non-empty TextNodeCaret of different origin
    */
-  nonEmptyTextSliceCarets: () => TextSliceCaretTuple<D>;
+  getNonEmptyTextSlices: () => TextNodeCaretSliceTuple<D>;
   /**
    * There are between zero and two TextSliceCarets for a NodeCaretRange
    *
-   * 0: Neither anchor nor focus are TextSliceCarets
-   * 1: One of anchor or focus are TextSliceCaret, or of the same origin
-   * 2: Anchor and focus are both TextSliceCaret of different origin
+   * 0: Neither anchor nor focus are TextNodeCarets
+   * 1: One of anchor or focus are TextNodeCaret, or of the same origin
+   * 2: Anchor and focus are both TextNodeCaret of different origin
    */
-  textSliceCarets: () => TextSliceCaretTuple<D>;
+  getTextSlices: () => TextNodeCaretSliceTuple<D>;
 }
 
 export interface StepwiseIteratorConfig<State, Stop, Value> {
@@ -148,7 +153,7 @@ export type NodeCaret<D extends CaretDirection = CaretDirection> =
   | DepthNodeCaret<ElementNode, D>;
 
 export type RangeNodeCaret<D extends CaretDirection = CaretDirection> =
-  | TextSliceCaret<TextNode, D>
+  | TextNodeCaret<TextNode, D>
   | BreadthNodeCaret<LexicalNode, D>
   | DepthNodeCaret<ElementNode, D>;
 
@@ -159,6 +164,8 @@ export interface BreadthNodeCaret<
   T extends LexicalNode = LexicalNode,
   D extends CaretDirection = CaretDirection,
 > extends BaseNodeCaret<T, D, 'breadth'> {
+  /** Get a new caret with the latest origin pointer */
+  getLatest: () => BreadthNodeCaret<T, D>;
   /**
    * If the origin of this node is an ElementNode, return the DepthNodeCaret of this origin in the same direction.
    * If the origin is not an ElementNode, this will return null.
@@ -180,6 +187,8 @@ export interface DepthNodeCaret<
   T extends ElementNode = ElementNode,
   D extends CaretDirection = CaretDirection,
 > extends BaseNodeCaret<T, D, 'depth'> {
+  /** Get a new caret with the latest origin pointer */
+  getLatest: () => DepthNodeCaret<T, D>;
   getParentCaret: (mode: RootMode) => null | BreadthNodeCaret<T, D>;
   getParentAtCaret: () => T;
   /** Return this, the DepthNode is already a child caret of its origin */
@@ -187,16 +196,47 @@ export interface DepthNodeCaret<
 }
 
 /**
- * A TextSliceCaret is a special case of a BreadthNodeCaret that also carries an index
- * pair used for representing partially selected TextNode at the edges of a NodeCaretRange
+ * A TextNodeCaret is a special case of a BreadthNodeCaret that also carries an offset
+ * used for representing partially selected TextNode at the edges of a NodeCaretRange.
+ *
+ * The direction determines which part of the text is adjacent to the caret, if next
+ * it's all of the text after offset. If previous, it's all of the text before offset.
  */
-export interface TextSliceCaret<
+export interface TextNodeCaret<
   T extends TextNode = TextNode,
   D extends CaretDirection = CaretDirection,
 > extends BreadthNodeCaret<T, D> {
-  readonly indexStart: number;
-  readonly indexEnd: number;
+  /** Get a new caret with the latest origin pointer */
+  getLatest: () => TextNodeCaret<T, D>;
+  readonly offset: number;
 }
+
+/**
+ * A TextNodeCaretSlice is a wrapper for a TextNodeCaret that carries a size
+ * representing the amount of text selected from the given caret. A negative
+ * size means that text before offset is selected, a positive size means that
+ * text after offset is selected. The offset+size pair is not affected in
+ * any way by the direction of the caret.
+ *
+ * The selected string content can be computed as such:
+ *
+ * ```
+ * slice.origin.getTextContent().slice(
+ *   Math.min(slice.offset, slice.offset + slice.size),
+ *   Math.max(slice.offset, slice.offset + slice.size),
+ * )
+ * ```
+ */
+export interface TextNodeCaretSlice<
+  T extends TextNode = TextNode,
+  D extends CaretDirection = CaretDirection,
+> {
+  readonly caret: TextNodeCaret<T, D>;
+  readonly size: number;
+}
+
+export type TextNodeCaretSliceTuple<D extends CaretDirection> =
+  readonly TextNodeCaretSlice<TextNode, D>[] & {length: 0 | 1 | 2};
 
 abstract class AbstractCaret<
   T extends LexicalNode,
@@ -315,6 +355,12 @@ abstract class AbstractDepthNodeCaret<
   implements DepthNodeCaret<T, D>
 {
   readonly type = 'depth';
+  getLatest(): DepthNodeCaret<T, D> {
+    const origin = this.origin.getLatest();
+    return origin === this.origin
+      ? this
+      : $getDepthCaret(origin, this.direction);
+  }
   /**
    * Get the BreadthNodeCaret from this origin in the same direction.
    *
@@ -396,8 +442,15 @@ abstract class AbstractBreadthNodeCaret<
   implements BreadthNodeCaret<T, D>
 {
   readonly type = 'breadth';
-  indexStart?: number;
-  indexEnd?: number;
+  // TextNodeCaret
+  offset?: number;
+  getLatest(): BreadthNodeCaret<T, D> {
+    const origin = this.origin.getLatest();
+    return origin === this.origin
+      ? this
+      : $getBreadthCaret(origin, this.direction);
+  }
+
   getParentAtCaret(): ElementNode {
     return this.origin.getParentOrThrow();
   }
@@ -421,51 +474,54 @@ abstract class AbstractBreadthNodeCaret<
   }
 }
 
-export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
-  caret: TextSliceCaret<T, D>,
-): BreadthNodeCaret<T, D> {
-  const {origin, direction, indexEnd, indexStart} = caret;
-  const text = caret.origin.getTextContent();
-  return $getBreadthCaret(
-    origin.setTextContent(text.slice(0, indexStart) + text.slice(indexEnd)),
-    direction,
-  );
+function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
+  slice: TextNodeCaretSlice<T, D>,
+): [indexStart: number, indexEnd: number] {
+  const {
+    size,
+    caret: {offset},
+  } = slice;
+  return [offset, offset + size].sort() as [number, number];
 }
 
-export function $splitTextSlice<T extends TextNode, D extends CaretDirection>(
-  caret: TextSliceCaret<T, D>,
-): BreadthNodeCaret<TextNode, D> {
-  const {origin, indexEnd, indexStart, direction} = caret;
-  const splits = origin.splitText(indexStart, indexEnd);
-  const splitIndex = indexStart === 0 ? 0 : 1;
-  const node = splits[splitIndex];
-  invariant(
-    $isTextNode(node),
-    '$splitTextSlice: expecting TextNode result from origin.splitText(%s, %s)[%s] with size %s',
-    String(indexStart),
-    String(indexEnd),
-    String(splitIndex),
-    String(origin.getTextContentSize()),
+export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
+  slice: TextNodeCaretSlice<T, D>,
+): TextNodeCaret<T, D> {
+  const {
+    caret: {origin, direction},
+  } = slice;
+  const [indexStart, indexEnd] = $getTextSliceIndices(slice);
+  const text = origin.getTextContent();
+  return $getTextNodeCaret(
+    origin.setTextContent(text.slice(0, indexStart) + text.slice(indexEnd)),
+    direction,
+    indexStart,
   );
-  return $getBreadthCaret(node, direction);
 }
 
 export function $getTextSliceContent<
   T extends TextNode,
   D extends CaretDirection,
->(caret: TextSliceCaret<T, D>): string {
-  return caret.origin.getTextContent().slice(caret.indexStart, caret.indexEnd);
+>(slice: TextNodeCaretSlice<T, D>): string {
+  return slice.caret.origin
+    .getTextContent()
+    .slice(...$getTextSliceIndices(slice));
 }
 
-export function $isTextSliceCaret<D extends CaretDirection>(
-  caret: null | undefined | NodeCaret<D>,
-): caret is TextSliceCaret<TextNode, D> {
+export function $isTextNodeCaret<D extends CaretDirection>(
+  caret: null | undefined | RangeNodeCaret<D>,
+): caret is TextNodeCaret<TextNode, D> {
   return (
     caret instanceof AbstractBreadthNodeCaret &&
     $isTextNode(caret.origin) &&
-    typeof caret.indexEnd === 'number' &&
-    typeof caret.indexStart === 'number'
+    typeof caret.offset === 'number'
   );
+}
+
+export function $isSameTextNodeCaret<
+  T extends TextNodeCaret<TextNode, CaretDirection>,
+>(a: T, b: null | undefined | RangeNodeCaret<CaretDirection>): b is T {
+  return $isTextNodeCaret(b) && a.is(b) && a.offset === b.offset;
 }
 
 export function $isNodeCaret<D extends CaretDirection>(
@@ -544,27 +600,51 @@ export function $getBreadthCaret(
   return origin ? new BREADTH_CTOR[direction](origin) : null;
 }
 
-export function $getTextSliceCaret<
-  T extends TextNode,
-  D extends CaretDirection,
->(
+function $getLatestTextNodeCaret<T extends TextNode, D extends CaretDirection>(
+  this: TextNodeCaret<T, D>,
+): TextNodeCaret<T, D> {
+  const origin = this.origin.getLatest();
+  return origin === this.origin
+    ? this
+    : $getTextNodeCaret(origin, this.direction, this.offset);
+}
+
+function $getFlippedTextNodeCaret<T extends TextNode, D extends CaretDirection>(
+  this: TextNodeCaret<T, D>,
+): TextNodeCaret<T, FlipDirection<D>> {
+  return $getTextNodeCaret(
+    this.origin,
+    flipDirection(this.direction),
+    this.offset,
+  );
+}
+
+export function $getTextNodeCaret<T extends TextNode, D extends CaretDirection>(
   origin: T,
   direction: D,
-  indexStart: number,
-  indexEnd: number,
-): TextSliceCaret<T, D> {
+  offset: number | CaretDirection,
+): TextNodeCaret<T, D> {
   const size = origin.getTextContentSize();
+  const numericOffset =
+    offset === 'next' ? size : offset === 'previous' ? 0 : offset;
   invariant(
-    indexStart >= 0 && indexEnd >= indexStart && indexEnd <= size,
-    '$getTextSliceCaret: invalid slice with indexStart %s indexEnd %s for size %s',
-    String(indexStart),
-    String(indexEnd),
+    numericOffset >= 0 && numericOffset <= size,
+    '$getTextNodeCaret: invalid offset %s for size %s',
+    String(offset),
     String(size),
   );
   return Object.assign($getBreadthCaret(origin, direction), {
-    indexEnd,
-    indexStart,
+    getFlipped: $getFlippedTextNodeCaret,
+    getLatest: $getLatestTextNodeCaret,
+    offset: numericOffset,
   });
+}
+
+export function $getTextNodeCaretSlice<
+  T extends TextNode,
+  D extends CaretDirection,
+>(caret: TextNodeCaret<T, D>, size: number): TextNodeCaretSlice<T, D> {
+  return {caret, size};
 }
 
 /**
@@ -633,9 +713,6 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
   return (direction === 'next' ? caret : caret.getFlipped()) as NodeCaret<D>;
 }
 
-export type TextSliceCaretTuple<D extends CaretDirection> =
-  readonly TextSliceCaret<TextNode, D>[] & {length: 0 | 1 | 2};
-
 class NodeCaretRangeImpl<D extends CaretDirection>
   implements NodeCaretRange<D>
 {
@@ -652,46 +729,60 @@ class NodeCaretRangeImpl<D extends CaretDirection>
     this.focus = focus;
     this.direction = direction;
   }
+  getLatest(): NodeCaretRange<D> {
+    const anchor = this.anchor.getLatest();
+    const focus = this.focus.getLatest();
+    return anchor === this.anchor && focus === this.focus
+      ? this
+      : new NodeCaretRangeImpl(anchor, focus, this.direction);
+  }
   isCollapsed(): boolean {
     return (
-      this.anchor.is(this.focus) && this.nonEmptyTextSliceCarets().length === 0
+      this.anchor.is(this.focus) &&
+      !(
+        $isTextNodeCaret(this.anchor) &&
+        !$isSameTextNodeCaret(this.anchor, this.focus)
+      )
     );
   }
-  nonEmptyTextSliceCarets(): TextSliceCaretTuple<D> {
-    return this.textSliceCarets().filter(
-      (caret) => caret.indexEnd > caret.indexStart,
-    ) as TextSliceCaretTuple<D>;
+  getNonEmptyTextSlices(): TextNodeCaretSliceTuple<D> {
+    return this.getTextSlices().filter(
+      (slice) => slice.size !== 0,
+    ) as TextNodeCaretSliceTuple<D>;
   }
-  textSliceCarets(): TextSliceCaretTuple<D> {
-    const {anchor, focus} = this;
-    if (
-      anchor.is(focus) &&
-      $isTextSliceCaret(anchor) &&
-      $isTextSliceCaret(focus)
-    ) {
-      const {direction} = this;
-      const maxStart = Math.max(anchor.indexStart, focus.indexStart);
-      return [
-        $getTextSliceCaret(
-          anchor.origin,
-          direction,
-          maxStart,
-          Math.max(maxStart, Math.min(anchor.indexEnd, focus.indexEnd)),
-        ),
-      ];
+  getTextSlices(): TextNodeCaretSliceTuple<D> {
+    const slices = (['anchor', 'focus'] as const).flatMap((k) => {
+      const caret = this[k];
+      return $isTextNodeCaret(caret)
+        ? [$getSliceFromTextNodeCaret(caret, k)]
+        : [];
+    });
+    if (slices.length === 2) {
+      const [{caret: anchorCaret}, {caret: focusCaret}] = slices;
+      if (anchorCaret.is(focusCaret)) {
+        return [
+          $getTextNodeCaretSlice(
+            anchorCaret,
+            focusCaret.offset - anchorCaret.offset,
+          ),
+        ];
+      }
     }
-    return [anchor, focus].filter($isTextSliceCaret) as TextSliceCaretTuple<D>;
+    return slices as TextNodeCaretSliceTuple<D>;
   }
   internalCarets(rootMode: RootMode): IterableIterator<NodeCaret<D>> {
-    const step = (state: NodeCaret<D>) =>
-      $getAdjacentDepthCaret(state) || state.getParentCaret(rootMode);
     const {anchor, focus} = this;
+    const isTextFocus = $isTextNodeCaret(focus);
+    const step = (state: NodeCaret<D>) =>
+      state.is(focus)
+        ? null
+        : $getAdjacentDepthCaret(state) || state.getParentCaret(rootMode);
     return makeStepwiseIterator({
       initial: anchor.is(focus) ? null : step(anchor),
       map: (state) => state,
       step,
       stop: (state: null | RangeNodeCaret<D>): state is null =>
-        state === null || state.is(focus),
+        state === null || (isTextFocus && focus.is(state)),
     });
   }
   [Symbol.iterator](): IterableIterator<NodeCaret<D>> {
@@ -699,18 +790,27 @@ class NodeCaretRangeImpl<D extends CaretDirection>
   }
 }
 
+function $getSliceFromTextNodeCaret<
+  T extends TextNode,
+  D extends CaretDirection,
+>(
+  caret: TextNodeCaret<T, D>,
+  anchorOrFocus: 'anchor' | 'focus',
+): TextNodeCaretSlice<T, D> {
+  const offsetB =
+    (caret.direction === 'next') === (anchorOrFocus === 'anchor')
+      ? caret.origin.getTextContentSize()
+      : 0;
+  return {caret, size: offsetB - caret.offset};
+}
+
 /**
- * Since a NodeCaret can only represent a whole node, when a text PointType
- * is encountered the caret will lie before the text node if it is non-empty
- * and offset === 0, otherwise it will lie after the node.
- *
  * @param point
- * @returns a NodeCaret for the point
+ * @returns a RangeNodeCaret for the point
  */
 export function $caretFromPoint<D extends CaretDirection>(
   point: PointType,
   direction: D,
-  anchorOrFocus: 'anchor' | 'focus',
 ): RangeNodeCaret<D> {
   const {type, key, offset} = point;
   const node = $getNodeByKeyOrThrow(point.key);
@@ -721,9 +821,7 @@ export function $caretFromPoint<D extends CaretDirection>(
       node.getType(),
       key,
     );
-    return (direction === 'next') === (anchorOrFocus === 'anchor')
-      ? $getTextSliceCaret(node, direction, offset, node.getTextContentSize())
-      : $getTextSliceCaret(node, direction, 0, offset);
+    return $getTextNodeCaret(node, direction, offset);
   }
   invariant(
     $isElementNode(node),
@@ -734,52 +832,31 @@ export function $caretFromPoint<D extends CaretDirection>(
   return $getChildCaretAtIndex(node, point.offset, direction);
 }
 
-function $normalizeCaretForPoint<D extends CaretDirection>(
-  caret: RangeNodeCaret<D>,
-): RangeNodeCaret<D> {
-  if ($isTextSliceCaret(caret)) {
-    return caret;
-  }
-  let current = $getChildCaretOrSelf(caret);
-  while ($isDepthNodeCaret(current)) {
-    const next = $getAdjacentDepthCaret(current);
-    if (!next) {
-      return current;
-    }
-    current = next;
-  }
-  const {origin} = current;
-  if ($isTextNode(origin)) {
-    const {direction} = caret;
-    const index = direction === 'next' ? 0 : origin.getTextContentSize();
-    return $getTextSliceCaret(origin, direction, index, index);
-  }
-  return current;
-}
-
 export function $setPointFromCaret<D extends CaretDirection>(
   point: PointType,
   caret: RangeNodeCaret<D>,
-  normalize = true,
 ): void {
-  const normCaret = normalize ? $normalizeCaretForPoint(caret) : caret;
-  const {origin, direction} = normCaret;
-  if ($isTextSliceCaret(normCaret)) {
+  if ($isTextNodeCaret(caret)) {
+    point.set(caret.origin.getKey(), caret.offset, 'text');
+  }
+  const {origin, direction} = caret;
+  const isNext = direction === 'next';
+  if ($isDepthNodeCaret(caret)) {
     point.set(
       origin.getKey(),
-      normCaret[direction === 'next' ? 'indexEnd' : 'indexStart'],
-      'text',
-    );
-  } else if ($isDepthNodeCaret(normCaret)) {
-    point.set(
-      origin.getKey(),
-      direction === 'next' ? 0 : normCaret.origin.getChildrenSize(),
+      isNext ? 0 : caret.origin.getChildrenSize(),
       'element',
+    );
+  } else if ($isTextNode(origin)) {
+    point.set(
+      origin.getKey(),
+      isNext ? origin.getTextContentSize() : 0,
+      'text',
     );
   } else {
     point.set(
       origin.getParentOrThrow().getKey(),
-      origin.getIndexWithinParent(),
+      origin.getIndexWithinParent() + (isNext ? 1 : 0),
       'element',
     );
   }
@@ -800,10 +877,137 @@ export function $caretRangeFromSelection(
   const {anchor, focus} = selection;
   const direction = focus.isBefore(anchor) ? 'previous' : 'next';
   return new NodeCaretRangeImpl(
-    $caretFromPoint(anchor, direction, 'anchor'),
-    $caretFromPoint(focus, direction, 'focus'),
+    $caretFromPoint(anchor, direction),
+    $caretFromPoint(focus, direction),
     direction,
   );
+}
+
+export function $rewindBreadthCaret<
+  T extends LexicalNode,
+  D extends CaretDirection,
+>(caret: BreadthNodeCaret<T, D>): NodeCaret<D> {
+  const {direction, origin} = caret;
+  // Rotate the direction around the origin and get the adjacent node
+  const rewindOrigin = $getBreadthCaret(
+    origin,
+    flipDirection(direction),
+  ).getNodeAtCaret();
+  return rewindOrigin
+    ? $getBreadthCaret(rewindOrigin, direction)
+    : $getDepthCaret(origin.getParentOrThrow(), direction);
+}
+
+export function $removeTextFromCaretRange<D extends CaretDirection>(
+  range: NodeCaretRange<D>,
+): NodeCaretRange<D> {
+  if (range.isCollapsed()) {
+    return range;
+  }
+  let anchor = range.anchor;
+  const {direction} = range;
+
+  // Remove all internal nodes
+  const canRemove = new Set<NodeKey>();
+  for (const caret of range.internalCarets('root')) {
+    if ($isDepthNodeCaret(caret)) {
+      canRemove.add(caret.origin.getKey());
+    } else if ($isBreadthNodeCaret(caret)) {
+      const {origin} = caret;
+      if (!$isElementNode(origin) || canRemove.has(origin.getKey())) {
+        origin.remove();
+      }
+    }
+  }
+  // Merge blocks if necessary
+  const firstBlock = $getAncestor(range.anchor.origin, INTERNAL_$isBlock);
+  const lastBlock = $getAncestor(range.focus.origin, INTERNAL_$isBlock);
+  if (
+    $isElementNode(lastBlock) &&
+    canRemove.has(lastBlock.getKey()) &&
+    $isElementNode(firstBlock)
+  ) {
+    $getDepthCaret(firstBlock, flipDirection(direction)).splice(
+      0,
+      lastBlock.getChildren(),
+    );
+    lastBlock.remove();
+  }
+  // Splice text at the anchor and/or origin. If the text is entirely selected or a token then it is removed.
+  // Segmented nodes will be copied to a plain text node with the same format and style and set to normal mode.
+  for (const slice of range.getNonEmptyTextSlices()) {
+    const {origin} = slice.caret;
+    const isAnchor = anchor.is(slice.caret);
+    const contentSize = origin.getTextContentSize();
+    const caretBefore = $rewindBreadthCaret(
+      $getBreadthCaret(origin, direction),
+    );
+    const mode = origin.getMode();
+    if (Math.abs(slice.size) === contentSize || mode === 'token') {
+      caretBefore.remove();
+      if (isAnchor) {
+        anchor = caretBefore;
+      }
+    } else {
+      const nextCaret = $removeTextSlice(slice);
+      if (isAnchor) {
+        anchor = nextCaret;
+      }
+      if (mode === 'segmented') {
+        const src = nextCaret.origin;
+        const plainTextNode = $createTextNode(src.getTextContent())
+          .setStyle(src.getStyle())
+          .setFormat(src.getFormat());
+        caretBefore.replaceOrInsert(plainTextNode);
+        if (isAnchor) {
+          anchor = $getTextNodeCaret(
+            plainTextNode,
+            nextCaret.direction,
+            nextCaret.offset,
+          );
+        }
+      }
+    }
+  }
+  anchor = $normalizeCaret(anchor);
+  return new NodeCaretRangeImpl(anchor, anchor, direction);
+}
+
+function $getDeepestChildOrSelf<Caret extends RangeNodeCaret | null>(
+  initialCaret: Caret,
+): RangeNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
+  let caret = $getChildCaretOrSelf(initialCaret);
+  while ($isDepthNodeCaret(caret)) {
+    const childNode = caret.getNodeAtCaret();
+    if (!$isElementNode(childNode)) {
+      break;
+    }
+    caret = $getDepthCaret(childNode, caret.direction);
+  }
+  return (caret && caret.getChildCaret()) || caret;
+}
+
+export function $normalizeCaret<D extends CaretDirection>(
+  initialCaret: RangeNodeCaret<D>,
+): RangeNodeCaret<D> {
+  const latestInitialCaret = initialCaret.getLatest();
+  if ($isTextNodeCaret(latestInitialCaret)) {
+    return latestInitialCaret;
+  }
+  const {direction} = latestInitialCaret;
+  const caret = $getDeepestChildOrSelf(latestInitialCaret);
+  if ($isTextNode(caret.origin)) {
+    return $getTextNodeCaret(caret.origin, direction, direction);
+  }
+  const adjacent = $getDeepestChildOrSelf(caret.getAdjacentCaret());
+  if ($isBreadthNodeCaret(adjacent) && $isTextNode(adjacent.origin)) {
+    return $getTextNodeCaret(
+      adjacent.origin,
+      direction,
+      flipDirection(direction),
+    );
+  }
+  return caret;
 }
 
 export function makeStepwiseIterator<State, Stop, Value>({

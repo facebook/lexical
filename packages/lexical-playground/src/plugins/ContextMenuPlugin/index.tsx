@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {

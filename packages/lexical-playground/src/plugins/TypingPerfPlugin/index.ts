@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {useEffect} from 'react';
 
 import useReport from '../../hooks/useReport';

@@ -1188,6 +1188,46 @@ describe('LexicalCaret', () => {
                   });
                 }
               }
+              const remainingNodes = $getRoot().getAllTextNodes();
+              let newIndex = 0;
+              for (
+                let originalIndex = 0;
+                originalIndex < originalNodes.length;
+                originalIndex++
+              ) {
+                const originalText = texts[originalIndex];
+                const originalNode = originalNodes[originalIndex];
+                let deleted: boolean;
+                if (originalIndex === nodeIndexStart) {
+                  deleted = startCaret.offset === 0;
+                  if (!deleted) {
+                    expect(originalNode.getTextContent()).toBe(
+                      originalText.slice(0, startCaret.offset),
+                    );
+                  }
+                } else if (
+                  originalIndex > nodeIndexStart &&
+                  originalIndex < nodeIndexEnd
+                ) {
+                  deleted = true;
+                } else if (originalIndex === nodeIndexEnd) {
+                  deleted = endCaret.offset === originalText.length;
+                  if (!deleted) {
+                    expect(originalNode.getTextContent()).toBe(
+                      originalText.slice(endCaret.offset),
+                    );
+                  }
+                } else {
+                  deleted = false;
+                  expect(originalNode.getTextContent()).toBe(originalText);
+                }
+                expect(originalNode.isAttached()).toBe(!deleted);
+                if (!deleted) {
+                  expect(originalNode.is(remainingNodes[newIndex])).toBe(true);
+                }
+                newIndex += deleted ? 0 : 1;
+              }
+              expect(remainingNodes).toHaveLength(newIndex);
             });
           });
         }

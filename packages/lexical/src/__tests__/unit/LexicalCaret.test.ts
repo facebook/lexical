@@ -21,6 +21,7 @@ import {
   $removeTextFromCaretRange,
   $rewindBreadthCaret,
   $setPointFromCaret,
+  $setSelection,
   BreadthNodeCaret,
   DepthNodeCaret,
   LexicalNode,
@@ -32,6 +33,26 @@ import {initializeUnitTest, invariant} from '../utils';
 
 const DIRECTIONS = ['next', 'previous'] as const;
 const BIASES = ['inside', 'outside'] as const;
+
+function combinations<A, B>(as: Iterable<A>, bs: Iterable<B>): [A, B][] {
+  const rval: [A, B][] = [];
+  for (const a of as) {
+    for (const b of bs) {
+      rval.push([a, b]);
+    }
+  }
+  return rval;
+}
+
+function startOfNode(size: number) {
+  return 0;
+}
+function endOfNode(size: number) {
+  return size;
+}
+function insideNode(size: number) {
+  return 1;
+}
 
 describe('LexicalCaret', () => {
   initializeUnitTest((testEnv) => {
@@ -699,6 +720,7 @@ describe('LexicalCaret', () => {
               originalRangeMatch,
             );
             expect($getRoot().getTextContent()).toEqual(originalText);
+            $setSelection(null);
           }
         });
       });
@@ -748,6 +770,7 @@ describe('LexicalCaret', () => {
                 expect([...range.internalCarets('root')]).toEqual([]);
                 expect(range.isCollapsed()).toBe(false);
                 const resultRange = $removeTextFromCaretRange(range);
+                $setSelection(null);
                 const remainingNodes = $getRoot().getAllTextNodes();
                 expect(remainingNodes).toEqual(
                   originalNodes.map((n) => n.getLatest()),
@@ -898,6 +921,7 @@ describe('LexicalCaret', () => {
                     : [{caret: {offset: size}, size: -size}],
                 );
                 const resultRange = $removeTextFromCaretRange(range);
+                $setSelection(null);
                 const remainingNodes = $getRoot().getAllTextNodes();
                 expect(remainingNodes.map((n) => n.getTextContent())).toEqual(
                   texts.filter((_v, j) => j !== i),
@@ -986,6 +1010,7 @@ describe('LexicalCaret', () => {
                 text.slice(offsetStart, offsetEnd),
               );
               const resultRange = $removeTextFromCaretRange(range);
+              $setSelection(null);
               expect(resultRange.isCollapsed()).toBe(true);
               expect(resultRange.anchor).toMatchObject({
                 direction,
@@ -1004,103 +1029,169 @@ describe('LexicalCaret', () => {
         }
       });
 
-      // test('multiple text node non-empty selection', async () => {
-      //   await testEnv.editor.update(() => {
-      //     const textNodes = ['first', 'second', 'third'].map((text) =>
-      //       $createTextNode(text).setMode('token'),
-      //     );
-      //     $getRoot()
-      //       .clear()
-      //       .append($createParagraphNode().append(...textNodes));
-      //     const selection = $getRoot().select();
-
-      //     // test all start and end nodes (where different)
-      //     const nodeCount = textNodes.length;
-      //     for (
-      //       let indexNodeStart = 0;
-      //       indexNodeStart < nodeCount;
-      //       indexNodeStart++
-      //     ) {
-      //       for (
-      //         let indexNodeEnd = indexNodeStart + 1;
-      //         indexNodeEnd < nodeCount;
-      //         indexNodeEnd++
-      //       ) {
-      //         const startNode = textNodes[indexNodeStart]!;
-      //         const endNode = textNodes[indexNodeEnd]!;
-      //         for (const indexStart of [0, 1, startNode.getTextContentSize()]) {
-      //           for (const indexEnd of [0, 1, endNode.getTextContentSize()]) {
-      //             for (const direction of DIRECTIONS) {
-      //               const [anchorNode, anchorOffset, focusNode, focusOffset] =
-      //                 direction === 'next'
-      //                   ? [startNode, indexStart, endNode, indexEnd]
-      //                   : [endNode, indexEnd, startNode, indexStart];
-      //               selection.setTextNodeRange(
-      //                 anchorNode,
-      //                 anchorOffset,
-      //                 focusNode,
-      //                 focusOffset,
-      //               );
-      //               const range = $caretRangeFromSelection(selection);
-      //               invariant(
-      //                 $isTextSliceCaret(range.anchor),
-      //                 '$isTextSliceCaret(range.anchor)',
-      //               );
-      //               invariant(
-      //                 $isTextSliceCaret(range.focus),
-      //                 '$isTextSliceCaret(range.anchor)',
-      //               );
-      //               expect(range.direction).toBe(direction);
-      //               const textSliceCarets = range.textSliceCarets();
-      //               expect(textSliceCarets).toHaveLength(2);
-      //               const [anchorSlice, focusSlice] = textSliceCarets;
-      //               expect(anchorSlice).toMatchObject({
-      //                 direction,
-      //                 indexEnd:
-      //                   direction === 'next'
-      //                     ? anchorNode.getTextContentSize()
-      //                     : anchorOffset,
-      //                 indexStart: direction === 'next' ? anchorOffset : 0,
-      //                 origin: anchorNode,
-      //                 type: 'breadth',
-      //               });
-      //               expect(focusSlice).toMatchObject({
-      //                 direction,
-      //                 indexEnd:
-      //                   direction === 'next'
-      //                     ? focusOffset
-      //                     : focusNode.getTextContentSize(),
-      //                 indexStart: direction === 'next' ? 0 : focusOffset,
-      //                 origin: focusNode,
-      //                 type: 'breadth',
-      //               });
-      //               expect([...range.internalCarets('root')]).toMatchObject(
-      //                 textNodes
-      //                   .slice(indexNodeStart + 1, indexNodeEnd)
-      //                   .map((origin) => ({
-      //                     direction,
-      //                     origin,
-      //                     type: 'breadth',
-      //                   })),
-      //               );
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //   });
-      // });
+      describe('multiple text node selection', () => {
+        const OFFSETS = [startOfNode, insideNode, endOfNode];
+        const NODE_PAIRS = [
+          [0, 1],
+          [0, 2],
+          [1, 2],
+        ] as const;
+        for (const [
+          direction,
+          [[nodeIndexStart, nodeIndexEnd], [startFn, endFn]],
+        ] of combinations(
+          DIRECTIONS,
+          combinations(NODE_PAIRS, combinations(OFFSETS, OFFSETS)),
+        )) {
+          test(`${direction} ${texts[nodeIndexStart]} ${startFn.name} ${texts[nodeIndexEnd]} ${endFn.name}`, async () => {
+            await testEnv.editor.update(() => {
+              const originalNodes = $getRoot().getAllTextNodes();
+              const startNode = originalNodes[nodeIndexStart];
+              const endNode = originalNodes[nodeIndexEnd];
+              expect(startNode !== endNode).toBe(true);
+              invariant($isTextNode(startNode), 'text node');
+              invariant($isTextNode(endNode), 'text node');
+              expect(startNode.isBefore(endNode)).toBe(true);
+              const startCaret = $getTextNodeCaret(
+                startNode,
+                direction,
+                startFn(startNode.getTextContentSize()),
+              );
+              const endCaret = $getTextNodeCaret(
+                endNode,
+                direction,
+                endFn(endNode.getTextContentSize()),
+              );
+              const [anchor, focus] =
+                direction === 'next'
+                  ? [startCaret, endCaret]
+                  : [endCaret, startCaret];
+              const range = $getCaretRange(anchor, focus);
+              expect([...range.internalCarets('root')]).toHaveLength(
+                Math.max(0, nodeIndexEnd - nodeIndexStart - 1),
+              );
+              const slices = range.getTextSlices();
+              expect(slices).toHaveLength(2);
+              expect(slices.map($getTextSliceContent)).toEqual(
+                direction === 'next'
+                  ? [
+                      startCaret.origin
+                        .getTextContent()
+                        .slice(startCaret.offset),
+                      endCaret.origin
+                        .getTextContent()
+                        .slice(0, endCaret.offset),
+                    ]
+                  : [
+                      endCaret.origin
+                        .getTextContent()
+                        .slice(0, endCaret.offset),
+                      startCaret.origin
+                        .getTextContent()
+                        .slice(startCaret.offset),
+                    ],
+              );
+              const resultRange = $removeTextFromCaretRange(range);
+              if (direction === 'next') {
+                if (anchor.offset !== 0) {
+                  // Part of the anchor remains
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: anchor.offset,
+                      origin: anchor.origin.getLatest(),
+                    },
+                  });
+                } else if (nodeIndexStart > 0) {
+                  // The anchor was removed so bias towards the previous node
+                  const prevNode =
+                    originalNodes[nodeIndexStart - 1].getLatest();
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: prevNode.getTextContentSize(),
+                      origin: prevNode,
+                    },
+                  });
+                } else if (focus.offset !== texts[nodeIndexEnd].length) {
+                  // The focus was not deleted and there is no previous node
+                  // so the new anchor will be set to the focus origin
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: 0,
+                      origin: originalNodes[nodeIndexEnd].getLatest(),
+                    },
+                  });
+                } else if (nodeIndexEnd !== texts.length - 1) {
+                  // The anchor was at the start and the focus was removed
+                  // but there is another text node to use as the anchor caret
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: 0,
+                      origin: originalNodes[nodeIndexEnd + 1].getLatest(),
+                    },
+                  });
+                } else {
+                  // All text has been removed so we have to use a depth caret
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      direction,
+                      origin: $getRoot().getFirstChild(),
+                      type: 'depth',
+                    },
+                  });
+                }
+              } else {
+                invariant(direction === 'previous', 'exhaustiveness check');
+                if (anchor.offset !== texts[nodeIndexEnd].length) {
+                  // Part of the anchor remains
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: 0,
+                      origin: anchor.origin.getLatest(),
+                    },
+                  });
+                } else if (nodeIndexEnd < texts.length - 1) {
+                  // The anchor was removed so bias towards the next node
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: 0,
+                      origin: originalNodes[nodeIndexEnd + 1].getLatest(),
+                    },
+                  });
+                } else if (focus.offset !== 0) {
+                  // The focus was not deleted and there is no next node
+                  // so the new anchor will be set to the focus origin
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: focus.offset,
+                      origin: focus.origin.getLatest(),
+                    },
+                  });
+                } else if (nodeIndexStart > 0) {
+                  // The anchor was at the end and the focus was removed
+                  // but there is another text node to use as the anchor caret
+                  const prevNode =
+                    originalNodes[nodeIndexStart - 1].getLatest();
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: prevNode.getTextContentSize(),
+                      origin: prevNode,
+                    },
+                  });
+                } else {
+                  // All text has been removed so we have to use a depth caret
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      direction,
+                      origin: $getRoot().getFirstChild(),
+                      type: 'depth',
+                    },
+                  });
+                }
+              }
+            });
+          });
+        }
+      });
     });
   });
 });
-
-function* combinations<A, B>(
-  as: Iterable<A>,
-  bs: Iterable<B>,
-): Iterable<[A, B]> {
-  for (const a of as) {
-    for (const b of bs) {
-      yield [a, b];
-    }
-  }
-}

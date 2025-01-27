@@ -2048,26 +2048,36 @@ test.describe.parallel('Tables', () => {
         false,
       );
       await mergeTableCells(page);
-      await click(page, 'th');
-      const resizerBoundingBox = await selectorBoundingBox(
+      await click(page, 'td:nth-child(3) > .PlaygroundEditorTheme__paragraph');
+      let resizerBoundingBox = await selectorBoundingBox(
         page,
         '.TableCellResizer__resizer:first-child',
       );
-      const x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
-      const y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+      let x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+      let y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
       await page.mouse.move(x, y);
       await page.mouse.down();
       await page.mouse.move(x + 50, y);
       await page.mouse.up();
-
+      await click(page, 'th');
+      resizerBoundingBox = await selectorBoundingBox(
+        page,
+        '.TableCellResizer__resizer:first-child',
+      );
+      x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+      y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 50, y);
+      await page.mouse.up();
       await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <table class="PlaygroundEditorTheme__table">
             <colgroup>
-              <col style="width: 142px" />
               <col style="width: 92px" />
+              <col style="width: 142px" />
               <col style="width: 92px" />
             </colgroup>
             <tr>

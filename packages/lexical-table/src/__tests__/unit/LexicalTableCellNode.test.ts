@@ -64,15 +64,23 @@ describe('LexicalTableCellNode tests', () => {
         expect(cellWithCustomWidthNode.createDOM(editorConfig).outerHTML).toBe(
           `<td style="width: ${cellWidth}px;" class="${editorConfig.theme.tableCell}"></td>`,
         );
-        const verticalAlign = 'top';
-        const cellWithVerticalAlignNode = $createTableCellNode(
+        const ignoredVerticalAlign = 'top';
+        const cellWithIgnoredVerticalAlignNode = $createTableCellNode(
           TableCellHeaderStates.NO_STATUS,
         );
-        cellWithVerticalAlignNode.setVerticalAlign(verticalAlign);
+        cellWithIgnoredVerticalAlignNode.setVerticalAlign(ignoredVerticalAlign);
         expect(
-          cellWithVerticalAlignNode.createDOM(editorConfig).outerHTML,
+          cellWithIgnoredVerticalAlignNode.createDOM(editorConfig).outerHTML,
+        ).toBe(`<td class="${editorConfig.theme.tableCell}"></td>`);
+        const validVerticalAlign = 'middle';
+        const cellWithValidVerticalAlignNode = $createTableCellNode(
+          TableCellHeaderStates.NO_STATUS,
+        );
+        cellWithValidVerticalAlignNode.setVerticalAlign(validVerticalAlign);
+        expect(
+          cellWithValidVerticalAlignNode.createDOM(editorConfig).outerHTML,
         ).toBe(
-          `<td style="vertical-align: ${verticalAlign};" class="${editorConfig.theme.tableCell}"></td>`,
+          `<td style="vertical-align: ${validVerticalAlign};" class="${editorConfig.theme.tableCell}"></td>`,
         );
       });
     });

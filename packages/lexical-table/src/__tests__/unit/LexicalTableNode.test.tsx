@@ -287,8 +287,7 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Make sure paragraph is inserted inside empty cells
-            const emptyCell =
-              '<td style="vertical-align: top"><p><br></p></td>';
+            const emptyCell = '<td><p><br></p></td>';
             expectTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
@@ -298,19 +297,19 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 200px;" />
                   </colgroup>
                   <tr>
-                    <td style="vertical-align: top">
+                    <td>
                       <p dir="ltr">
                         <span data-lexical-text="true">Hello there</span>
                       </p>
                     </td>
-                    <td style="vertical-align: top">
+                    <td>
                       <p dir="ltr">
                         <span data-lexical-text="true">General Kenobi!</span>
                       </p>
                     </td>
                   </tr>
                   <tr>
-                    <td style="vertical-align: top">
+                    <td>
                       <p dir="ltr">
                         <span data-lexical-text="true">Lexical is nice</span>
                       </p>

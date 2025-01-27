@@ -129,6 +129,7 @@ export class CollabElementNode {
   ): void {
     const children = this._children;
     let currIndex = 0;
+    let pendingSplitText = null;
 
     for (let i = 0; i < deltas.length; i++) {
       const delta = deltas[i];
@@ -211,7 +212,7 @@ export class CollabElementNode {
           currIndex += insertDelta.length;
         } else {
           const sharedType = insertDelta;
-          const {nodeIndex} = getPositionFromElementAndOffset(
+          const {node, nodeIndex, length} = getPositionFromElementAndOffset(
             this,
             currIndex,
             false,
@@ -221,7 +222,30 @@ export class CollabElementNode {
             sharedType as XmlText | YMap<unknown> | XmlElement,
             this,
           );
-          children.splice(nodeIndex, 0, collabNode);
+          if (
+            node instanceof CollabTextNode &&
+            length > 0 &&
+            length < node._text.length
+          ) {
+            // Trying to insert in the middle of a text node; split the text.
+            const text = node._text;
+            const splitIdx = text.length - length;
+            node._text = spliceString(text, splitIdx, length, '');
+            children.splice(nodeIndex + 1, 0, collabNode);
+            // The insert that triggers the text split might not be a text node. Need to keep a
+            // reference to the remaining text so that it can be added when we do create one.
+            pendingSplitText = spliceString(text, 0, splitIdx, '');
+          } else {
+            children.splice(nodeIndex, 0, collabNode);
+          }
+          if (
+            pendingSplitText !== null &&
+            collabNode instanceof CollabTextNode
+          ) {
+            // Found a text node to insert the pending text into.
+            collabNode._text = pendingSplitText + collabNode._text;
+            pendingSplitText = null;
+          }
           currIndex += 1;
         }
       } else {

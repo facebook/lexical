@@ -149,7 +149,7 @@ export class TableCellNode extends ElementNode {
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
     }
-    if (this.__verticalAlign !== null) {
+    if (isValidVerticalAlign(this.__verticalAlign)) {
       element.style.verticalAlign = this.__verticalAlign;
     }
 
@@ -317,6 +317,12 @@ export class TableCellNode extends ElementNode {
   }
 }
 
+function isValidVerticalAlign(
+  verticalAlign: null | string,
+): verticalAlign is string {
+  return verticalAlign === 'middle' || verticalAlign === 'bottom';
+}
+
 export function $convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
@@ -343,7 +349,7 @@ export function $convertTableCellNodeElement(
     tableCellNode.__backgroundColor = backgroundColor;
   }
   const verticalAlign = domNode_.style.verticalAlign;
-  if (verticalAlign !== '') {
+  if (isValidVerticalAlign(verticalAlign)) {
     tableCellNode.__verticalAlign = verticalAlign;
   }
 

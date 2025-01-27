@@ -237,8 +237,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   ) => {
     for (let row = 0; row < tableMap.length; row++) {
       for (let column = 0; column < tableMap[row].length; column++) {
-        if (tableMap[row][column].cell === tableCellNode) {
-          return column;
+        const {cell} = tableMap[row][column];
+        if (cell === tableCellNode) {
+          return column + cell.__colSpan - 1;
         }
       }
     }

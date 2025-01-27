@@ -82,27 +82,28 @@ export function $setPointFromCaret<D extends CaretDirection>(
 ): void {
   if ($isTextNodeCaret(caret)) {
     point.set(caret.origin.getKey(), caret.offset, 'text');
-  }
-  const {origin, direction} = caret;
-  const isNext = direction === 'next';
-  if ($isDepthNodeCaret(caret)) {
-    point.set(
-      origin.getKey(),
-      isNext ? 0 : caret.origin.getChildrenSize(),
-      'element',
-    );
-  } else if ($isTextNode(origin)) {
-    point.set(
-      origin.getKey(),
-      isNext ? origin.getTextContentSize() : 0,
-      'text',
-    );
   } else {
-    point.set(
-      origin.getParentOrThrow().getKey(),
-      origin.getIndexWithinParent() + (isNext ? 1 : 0),
-      'element',
-    );
+    const {origin, direction} = caret;
+    const isNext = direction === 'next';
+    if ($isDepthNodeCaret(caret)) {
+      point.set(
+        origin.getKey(),
+        isNext ? 0 : caret.origin.getChildrenSize(),
+        'element',
+      );
+    } else if ($isTextNode(origin)) {
+      point.set(
+        origin.getKey(),
+        isNext ? origin.getTextContentSize() : 0,
+        'text',
+      );
+    } else {
+      point.set(
+        origin.getParentOrThrow().getKey(),
+        origin.getIndexWithinParent() + (isNext ? 1 : 0),
+        'element',
+      );
+    }
   }
 }
 
@@ -194,8 +195,11 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     );
     lastBlock.remove();
   }
-  // Splice text at the anchor and/or origin. If the text is entirely selected or a token then it is removed.
-  // Segmented nodes will be copied to a plain text node with the same format and style and set to normal mode.
+  // Splice text at the anchor and/or origin.
+  // If the text is entirely selected then it is removed.
+  // If it's a token with a non-empty selection then it is removed.
+  // Segmented nodes will be copied to a plain text node with the same format
+  // and style and set to normal mode.
   for (const slice of range.getNonEmptyTextSlices()) {
     const {origin} = slice.caret;
     const isAnchor = anchor.is(slice.caret);
@@ -204,7 +208,10 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       $getBreadthCaret(origin, direction),
     );
     const mode = origin.getMode();
-    if (Math.abs(slice.size) === contentSize || mode === 'token') {
+    if (
+      Math.abs(slice.size) === contentSize ||
+      (mode === 'token' && slice.size !== 0)
+    ) {
       caretBefore.remove();
       if (isAnchor) {
         anchor = caretBefore;

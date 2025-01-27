@@ -9,6 +9,7 @@
 import {
   $caretRangeFromSelection,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getBreadthCaret,
   $getCaretRange,
@@ -29,7 +30,7 @@ import {
   TextNode,
 } from 'lexical';
 
-import {initializeUnitTest, invariant} from '../utils';
+import {initializeUnitTest, invariant} from '../../../__tests__/utils';
 
 const DIRECTIONS = ['next', 'previous'] as const;
 const BIASES = ['inside', 'outside'] as const;
@@ -665,6 +666,48 @@ describe('LexicalCaret', () => {
               .clear()
               .append($createParagraphNode().append(...textNodes));
           });
+        });
+        test('remove first TextNode with second in token mode', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              const originalNodes = $getRoot().getAllTextNodes();
+              const [leadingText, trailingTokenText] = originalNodes;
+              trailingTokenText.setMode('token');
+              sel.anchor.set(leadingText.getKey(), 0, 'text');
+              sel.focus.set(
+                leadingText.getKey(),
+                leadingText.getTextContentSize(),
+                'text',
+              );
+              const direction = 'next';
+              const range = $caretRangeFromSelection(sel);
+              expect(range).toMatchObject({
+                anchor: {direction, offset: 0, origin: leadingText},
+                focus: {
+                  direction,
+                  offset: leadingText.getTextContentSize(),
+                  origin: leadingText,
+                },
+              });
+              const resultRange = $removeTextFromCaretRange(range);
+              $setPointFromCaret(sel.anchor, resultRange.anchor);
+              $setPointFromCaret(sel.focus, resultRange.focus);
+              expect(leadingText.isAttached()).toBe(false);
+              expect(trailingTokenText.isAttached()).toBe(true);
+              expect($getRoot().getAllTextNodes()).toHaveLength(2);
+              expect(resultRange.isCollapsed()).toBe(true);
+              expect(sel.isCollapsed()).toBe(true);
+              expect(sel.anchor.key).toBe(trailingTokenText.getKey());
+              expect(sel.anchor.offset).toBe(0);
+              expect(resultRange.anchor).toMatchObject({
+                direction,
+                offset: 0,
+                origin: trailingTokenText.getLatest(),
+              });
+            },
+            {discrete: true},
+          );
         });
         test('collapsed text point selection', async () => {
           await testEnv.editor.update(() => {

@@ -11,8 +11,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getBreadthCaret,
+  $getCaretRange,
   $getDepthCaret,
   $getRoot,
+  $getTextNodeCaret,
+  $getTextSliceContent,
   $isTextNode,
   $isTextNodeCaret,
   $removeTextFromCaretRange,
@@ -936,48 +939,71 @@ describe('LexicalCaret', () => {
         }
       });
 
-      // test('single text node non-empty selection', async () => {
-      //   await testEnv.editor.update(() => {
-      //     const textNodes = ['first', 'second', 'third'].map((text) =>
-      //       $createTextNode(text).setMode('token'),
-      //     );
-      //     $getRoot()
-      //       .clear()
-      //       .append($createParagraphNode().append(...textNodes));
-      //     for (const node of textNodes) {
-      //       // Test all non-empty selections
-      //       const size = node.getTextContentSize();
-      //       for (let indexStart = 0; indexStart < size; indexStart++) {
-      //         for (
-      //           let indexEnd = indexStart + 1;
-      //           indexEnd <= size;
-      //           indexEnd++
-      //         ) {
-      //           for (const direction of DIRECTIONS) {
-      //             const selection =
-      //               direction === 'next'
-      //                 ? node.select(indexStart, indexEnd)
-      //                 : node.select(indexEnd, indexStart);
-      //             const range = $caretRangeFromSelection(selection);
-      //             invariant(
-      //               $isTextSliceCaret(range.anchor),
-      //               '$isTextSliceCaret(range.anchor)',
-      //             );
-      //             invariant(
-      //               $isTextSliceCaret(range.focus),
-      //               '$isTextSliceCaret(range.anchor)',
-      //             );
-      //             expect(range.direction).toBe(direction);
-      //             expect(range.textSliceCarets()).toMatchObject([
-      //               {indexEnd, indexStart, origin: node},
-      //             ]);
-      //             expect([...range.internalCarets('root')]).toMatchObject([]);
-      //           }
-      //         }
-      //       }
-      //     }
-      //   });
-      // });
+      const EDGE_OFFSETS = [
+        [0, 1],
+        [1, 1],
+        [1, 0],
+      ] as const;
+      describe('single text node non-empty partial selection', () => {
+        for (const [
+          direction,
+          [anchorEdgeOffset, focusEdgeOffset],
+        ] of combinations(DIRECTIONS, EDGE_OFFSETS)) {
+          test(`${direction} ${anchorEdgeOffset}:${-focusEdgeOffset}`, async () => {
+            await testEnv.editor.update(() => {
+              const originalNodes = $getRoot().getAllTextNodes();
+              const i = 0;
+              const text = texts[i];
+              const node = originalNodes[i];
+              invariant($isTextNode(node), `Missing TextNode 0`);
+              const size = node.getTextContentSize();
+              const anchor = $getTextNodeCaret(
+                node,
+                direction,
+                direction === 'next'
+                  ? anchorEdgeOffset
+                  : size - anchorEdgeOffset,
+              );
+              const focus = $getTextNodeCaret(
+                node,
+                direction,
+                direction === 'next' ? size - focusEdgeOffset : focusEdgeOffset,
+              );
+              const [offsetStart, offsetEnd] = [
+                anchor.offset,
+                focus.offset,
+              ].sort();
+              const range = $getCaretRange(anchor, focus);
+              const slices = range.getNonEmptyTextSlices();
+              expect([...range.internalCarets('root')]).toEqual([]);
+              expect(slices.length).toBe(1);
+              const [slice] = slices;
+              expect(slice.size).toBe(
+                (direction === 'next' ? 1 : -1) *
+                  (size - anchorEdgeOffset - focusEdgeOffset),
+              );
+              expect($getTextSliceContent(slice)).toBe(
+                text.slice(offsetStart, offsetEnd),
+              );
+              const resultRange = $removeTextFromCaretRange(range);
+              expect(resultRange.isCollapsed()).toBe(true);
+              expect(resultRange.anchor).toMatchObject({
+                direction,
+                offset: offsetStart,
+                origin: node.getLatest(),
+              });
+              const remainingNodes = $getRoot().getAllTextNodes();
+              expect(remainingNodes).toHaveLength(texts.length);
+              expect(remainingNodes.map((n) => n.getTextContent())).toEqual(
+                texts.map((v, j) =>
+                  i === j ? v.slice(0, offsetStart) + v.slice(offsetEnd) : v,
+                ),
+              );
+            });
+          });
+        }
+      });
+
       // test('multiple text node non-empty selection', async () => {
       //   await testEnv.editor.update(() => {
       //     const textNodes = ['first', 'second', 'third'].map((text) =>

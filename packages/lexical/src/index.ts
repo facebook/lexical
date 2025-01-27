@@ -27,6 +27,7 @@ export {
   $caretRangeFromSelection,
   $getAdjacentDepthCaret,
   $getBreadthCaret,
+  $getCaretRange,
   $getChildCaretAtIndex,
   $getChildCaretOrSelf,
   $getDepthCaret,

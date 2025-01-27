@@ -863,10 +863,7 @@ export function $setPointFromCaret<D extends CaretDirection>(
 }
 
 /**
- * Get a pair of carets for a RangeSelection. Since a NodeCaret can
- * only represent a whole node, when a text PointType is encountered
- * the caret will be moved to before or after the node depending
- * on where the other point lies.
+ * Get a pair of carets for a RangeSelection.
  *
  * If the focus is before the anchor, then the direction will be
  * 'previous', otherwise the direction will be 'next'.
@@ -876,11 +873,17 @@ export function $caretRangeFromSelection(
 ): NodeCaretRange {
   const {anchor, focus} = selection;
   const direction = focus.isBefore(anchor) ? 'previous' : 'next';
-  return new NodeCaretRangeImpl(
+  return $getCaretRange(
     $caretFromPoint(anchor, direction),
     $caretFromPoint(focus, direction),
-    direction,
   );
+}
+
+export function $getCaretRange<D extends CaretDirection>(
+  anchor: RangeNodeCaret<D>,
+  focus: RangeNodeCaret<D>,
+) {
+  return new NodeCaretRangeImpl(anchor, focus, anchor.direction);
 }
 
 export function $rewindBreadthCaret<
@@ -970,7 +973,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     }
   }
   anchor = $normalizeCaret(anchor);
-  return new NodeCaretRangeImpl(anchor, anchor, direction);
+  return $getCaretRange(anchor, anchor);
 }
 
 function $getDeepestChildOrSelf<Caret extends RangeNodeCaret | null>(

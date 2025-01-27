@@ -11,13 +11,13 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.23.1",
+  "version": "0.23.2-nightly.20250127.0",
   "main": "LexicalYjs.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/offset": "0.23.1",
-    "@lexical/selection": "0.23.1",
-    "lexical": "0.23.1"
+    "@lexical/offset": "0.23.2-nightly.20250127.0",
+    "@lexical/selection": "0.23.2-nightly.20250127.0",
+    "lexical": "0.23.2-nightly.20250127.0"
   },
   "peerDependencies": {
     "yjs": ">=13.5.22"

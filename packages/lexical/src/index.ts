@@ -21,30 +21,32 @@ export type {
   TextNodeCaret,
   TextNodeCaretSlice,
   TextNodeCaretSliceTuple,
-} from './LexicalCaret';
+} from './caret/LexicalCaret';
 export {
-  $caretFromPoint,
-  $caretRangeFromSelection,
   $getAdjacentDepthCaret,
   $getBreadthCaret,
   $getCaretRange,
-  $getChildCaretAtIndex,
   $getChildCaretOrSelf,
   $getDepthCaret,
   $getTextNodeCaret,
   $getTextNodeCaretSlice,
-  $getTextSliceContent,
   $isBreadthNodeCaret,
   $isDepthNodeCaret,
   $isSameTextNodeCaret,
   $isTextNodeCaret,
+  flipDirection,
+  makeStepwiseIterator,
+} from './caret/LexicalCaret';
+export {
+  $caretFromPoint,
+  $caretRangeFromSelection,
+  $getChildCaretAtIndex,
+  $getTextSliceContent,
   $removeTextFromCaretRange,
   $removeTextSlice,
   $rewindBreadthCaret,
   $setPointFromCaret,
-  flipDirection,
-  makeStepwiseIterator,
-} from './LexicalCaret';
+} from './caret/LexicalCaretUtils';
 export type {PasteCommandType} from './LexicalCommands';
 export {
   BLUR_COMMAND,

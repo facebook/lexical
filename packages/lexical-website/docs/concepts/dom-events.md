@@ -2,7 +2,7 @@
 
 # Working with DOM Events
 
-Sometimes, when working with Lexical, it might be necessary or useful for you to attach a DOM Event Listener to the underlying DOM nodes that Lexical controls. For instance, you might want to to show a popover when a user mouses over a specific node or open a modal when they click on a node. Either of these use cases (and many others) can be accomplished via native DOM Event Listeners. There are 3 main ways that you can listen for DOM Events on nodes controlled by Lexical:
+Sometimes, when working with Lexical, it might be necessary or useful for you to attach a DOM Event Listener to the underlying DOM nodes that Lexical controls. For instance, you might want to show a popover when a user mouses over a specific node or open a modal when they click on a node. Either of these use cases (and many others) can be accomplished via native DOM Event Listeners. There are 3 main ways that you can listen for DOM Events on nodes controlled by Lexical:
 
 ## 1. Event Delegation
 
@@ -40,7 +40,7 @@ const removeMutationListener = editor.registerMutationListener(nodeType, (mutati
             const element: null | HTMLElement = editor.getElementByKey(key);
             if (
                 // Updated might be a move, so that might mean a new DOM element
-                // is created. In this case, we need to add and event listener too.
+                // is created. In this case, we need to add an event listener too.
                 (mutation === 'created' || mutation === 'updated') &&
                 element !== null &&
                 !registeredElements.has(element)

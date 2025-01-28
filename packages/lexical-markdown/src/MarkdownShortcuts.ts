@@ -498,7 +498,7 @@ export function registerMarkdownShortcuts(
       const anchorNode = editorState._nodeMap.get(anchorKey);
 
       if (
-        !canContainTransformableMarkdown(anchorNode) ||
+        !$isTextNode(anchorNode) ||
         !dirtyLeaves.has(anchorKey) ||
         (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
       ) {
@@ -506,6 +506,10 @@ export function registerMarkdownShortcuts(
       }
 
       editor.update(() => {
+        if (!canContainTransformableMarkdown(anchorNode)) {
+          return;
+        }
+
         const parentNode = anchorNode.getParent();
 
         if (parentNode === null || $isCodeNode(parentNode)) {

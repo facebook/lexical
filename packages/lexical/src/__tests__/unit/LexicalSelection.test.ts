@@ -6,7 +6,13 @@
  *
  */
 
-import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -15,6 +21,7 @@ import {
   $getSelection,
   $isParagraphNode,
   $isTextNode,
+  $selectAll,
   $setSelection,
   createEditor,
   ElementNode,
@@ -835,5 +842,142 @@ describe('Regression tests for #6701', () => {
     ).toThrow(
       /Expected node TextNode of type text to have a block ElementNode ancestor/,
     );
+  });
+});
+
+describe('getNodes()', () => {
+  initializeUnitTest((testEnv) => {
+    let paragraphNode: ParagraphNode;
+    let paragraphText: TextNode;
+    let linkNode: LinkNode;
+    let linkText: TextNode;
+    let listNode: ListNode;
+    let listItemText1: TextNode;
+    let listItemText2: TextNode;
+    let listItem1: ListItemNode;
+    let listItem2: ListItemNode;
+
+    beforeEach(() => {
+      testEnv.editor.update(() => {
+        paragraphText = $createTextNode('paragraph text');
+        linkText = $createTextNode('link text');
+        linkNode = $createLinkNode().append(linkText);
+        paragraphNode = $createParagraphNode().append(paragraphText, linkNode);
+        listItemText1 = $createTextNode('item 1');
+        listItemText2 = $createTextNode('item 2');
+        listItem1 = $createListItemNode().append(listItemText1);
+        listItem2 = $createListItemNode().append(listItemText2);
+        listNode = $createListNode('bullet').append(listItem1, listItem2);
+        $getRoot().clear().append(paragraphNode, listNode);
+      });
+    });
+    test('$selectAll() - normalized text', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $selectAll();
+          // Normalized to the text nodes
+          expect(selection).toMatchObject({
+            anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+            focus: {
+              key: listItemText2.getKey(),
+              offset: listItemText2.getTextContentSize(),
+              type: 'text',
+            },
+          });
+          expect(selection.getNodes()).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+            // The parent paragraphNode comes after its children because the
+            // selection started inside of it at paragraphText
+            paragraphNode,
+            listNode,
+            listItem1,
+            listItemText1,
+            listItem2,
+            listItemText2,
+          ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select all without normalization', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set('root', 0, 'element');
+          selection.focus.set('root', $getRoot().getChildrenSize(), 'element');
+          expect(selection.getNodes()).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+            // The parent paragraphNode comes later because there is
+            // an implicit normalization in the beginning of getNodes
+            // to work around… something? See the getDescendantByIndex usage.
+            paragraphNode,
+            listNode,
+            listItem1,
+            listItemText1,
+            listItem2,
+            listItemText2,
+          ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('select only the paragraph (not normalized)', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = paragraphNode.select(
+            0,
+            paragraphNode.getChildrenSize(),
+          );
+          expect(selection).toMatchObject({
+            anchor: {key: paragraphNode.getKey(), offset: 0, type: 'element'},
+            focus: {
+              key: paragraphNode.getKey(),
+              offset: paragraphNode.getChildrenSize(),
+              type: 'element',
+            },
+          });
+          // The selection doesn't visit outside of the paragraph
+          expect(selection.getNodes()).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+          ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('select around the paragraph (not normalized)', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(
+            'root',
+            paragraphNode.getIndexWithinParent(),
+            'element',
+          );
+          selection.focus.set(
+            'root',
+            paragraphNode.getIndexWithinParent() + 1,
+            'element',
+          );
+          expect(selection).toMatchObject({
+            anchor: {key: 'root', offset: 0, type: 'element'},
+            focus: {key: 'root', offset: 1, type: 'element'},
+          });
+          // The selection shouldn't visit outside of the paragraph
+          expect(selection.getNodes()).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+            paragraphNode,
+          ]);
+        },
+        {discrete: true},
+      );
+    });
   });
 });

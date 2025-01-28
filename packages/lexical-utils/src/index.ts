@@ -269,10 +269,10 @@ export function $getNextSiblingOrParentSibling(
   return rval && [rval[0].origin, rval[1]];
 }
 
-function $getNextSiblingOrParentSiblingCaret(
-  startCaret: NodeCaret<'next'>,
+function $getNextSiblingOrParentSiblingCaret<D extends CaretDirection>(
+  startCaret: NodeCaret<D>,
   rootMode: RootMode = 'root',
-): null | [NodeCaret<'next'>, number] {
+): null | [NodeCaret<D>, number] {
   let depthDiff = 0;
   let caret = startCaret;
   let nextCaret = $getAdjacentDepthCaret(caret);
@@ -310,10 +310,11 @@ export function $getDepth(node: LexicalNode): number {
 export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null {
-  const caret = $getAdjacentDepthCaret(
-    $getChildCaretOrSelf($getBreadthCaret(startingNode, 'previous')),
+  const startCaret = $getChildCaretOrSelf(
+    $getBreadthCaret(startingNode, 'previous'),
   );
-  return caret && caret.origin;
+  const next = $getNextSiblingOrParentSiblingCaret(startCaret, 'root');
+  return next && next[0].origin;
 }
 
 /**

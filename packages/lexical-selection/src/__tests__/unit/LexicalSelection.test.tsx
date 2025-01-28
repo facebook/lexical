@@ -1290,7 +1290,8 @@ describe('LexicalSelection tests', () => {
         paragraph.append(elementNode);
         elementNode.append(text);
 
-        const selectedNodes = $getSelection()!.getNodes();
+        const selection = $getSelection()!;
+        const selectedNodes = selection.getNodes();
 
         expect(selectedNodes.length).toBe(1);
         expect(selectedNodes[0].getKey()).toBe(text.getKey());

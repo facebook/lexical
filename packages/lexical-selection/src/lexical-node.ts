@@ -19,6 +19,7 @@ import {
   BaseSelection,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   Point,
   RangeSelection,
   TextNode,
@@ -302,134 +303,67 @@ export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
 ): void {
   const selection = $getSelection();
-  if (!$isRangeSelection(selection)) {
+  if (!selection) {
     return;
   }
-  const selectedNodes = selection.getNodes();
-  const selectedNodesLength = selectedNodes.length;
-  const {anchor, focus} = selection;
 
-  const lastIndex = selectedNodesLength - 1;
-  let firstNode = selectedNodes[0];
-  let lastNode = selectedNodes[lastIndex];
+  const slicedTextNodes = new Map<
+    NodeKey,
+    [startIndex: number, endIndex: number]
+  >();
+  const getSliceIndices = (
+    node: TextNode,
+  ): [startIndex: number, endIndex: number] =>
+    slicedTextNodes.get(node.getKey()) || [0, node.getTextContentSize()];
 
-  const firstNodeText = firstNode.getTextContent();
-  const firstNodeTextLength = firstNodeText.length;
-  const focusOffset = focus.offset;
-  let anchorOffset = anchor.offset;
-  const isBefore = anchor.isBefore(focus);
-  let startOffset = isBefore ? anchorOffset : focusOffset;
-  let endOffset = isBefore ? focusOffset : anchorOffset;
-  const startType = isBefore ? anchor.type : focus.type;
-  const endType = isBefore ? focus.type : anchor.type;
-  const endKey = isBefore ? focus.key : anchor.key;
+  if ($isRangeSelection(selection)) {
+    const {anchor, focus} = selection;
+    const isBackwards = focus.isBefore(anchor);
+    const [startPoint, endPoint] = isBackwards
+      ? [focus, anchor]
+      : [anchor, focus];
 
-  // This is the case where the user only selected the very end of the
-  // first node so we don't want to include it in the formatting change.
-  if ($isTextNode(firstNode) && startOffset === firstNodeTextLength) {
-    const nextSibling = firstNode.getNextSibling();
-
-    if ($isTextNode(nextSibling)) {
-      // we basically make the second node the firstNode, changing offsets accordingly
-      anchorOffset = 0;
-      startOffset = 0;
-      firstNode = nextSibling;
+    if (startPoint.type === 'text' && startPoint.offset > 0) {
+      const endIndex = getSliceIndices(startPoint.getNode())[1];
+      slicedTextNodes.set(startPoint.key, [
+        Math.min(startPoint.offset, endIndex),
+        endIndex,
+      ]);
+    }
+    if (endPoint.type === 'text') {
+      const [startIndex, size] = getSliceIndices(endPoint.getNode());
+      if (endPoint.offset < size) {
+        slicedTextNodes.set(endPoint.key, [
+          startIndex,
+          Math.max(startIndex, endPoint.offset),
+        ]);
+      }
     }
   }
 
-  // This is the case where we only selected a single node
-  if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode) && firstNode.canHaveFormat()) {
-      startOffset =
-        startType === 'element'
-          ? 0
-          : anchorOffset > focusOffset
-          ? focusOffset
-          : anchorOffset;
-      endOffset =
-        endType === 'element'
-          ? firstNodeTextLength
-          : anchorOffset > focusOffset
-          ? anchorOffset
-          : focusOffset;
+  const selectedNodes = selection.getNodes();
+  for (const selectedNode of selectedNodes) {
+    if (!($isTextNode(selectedNode) && selectedNode.canHaveFormat())) {
+      continue;
+    }
+    const [startOffset, endOffset] = getSliceIndices(selectedNode);
+    // No actual text is selected, so do nothing.
+    if (endOffset === startOffset) {
+      continue;
+    }
 
-      // No actual text is selected, so do nothing.
-      if (startOffset === endOffset) {
-        return;
-      }
-
-      // The entire node is selected or a token/segment, so just format it
-      if (
-        $isTokenOrSegmented(firstNode) ||
-        (startOffset === 0 && endOffset === firstNodeTextLength)
-      ) {
-        fn(firstNode);
-        firstNode.select(startOffset, endOffset);
-      } else {
-        // The node is partially selected, so split it into two nodes
-        // and style the selected one.
-        const splitNodes = firstNode.splitText(startOffset, endOffset);
-        const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        fn(replacement);
-        replacement.select(0, endOffset - startOffset);
-      }
-    } // multiple nodes selected.
-  } else {
+    // The entire node is selected or a token/segment, so just format it
     if (
-      $isTextNode(firstNode) &&
-      startOffset < firstNode.getTextContentSize() &&
-      firstNode.canHaveFormat()
+      $isTokenOrSegmented(selectedNode) ||
+      (startOffset === 0 && endOffset === selectedNode.getTextContentSize())
     ) {
-      if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-        // the entire first node isn't selected and it isn't a token or segmented, so split it
-        firstNode = firstNode.splitText(startOffset)[1];
-        startOffset = 0;
-        if (isBefore) {
-          anchor.set(firstNode.getKey(), startOffset, 'text');
-        } else {
-          focus.set(firstNode.getKey(), startOffset, 'text');
-        }
-      }
-
-      fn(firstNode as TextNode);
-    }
-
-    if ($isTextNode(lastNode) && lastNode.canHaveFormat()) {
-      const lastNodeText = lastNode.getTextContent();
-      const lastNodeTextLength = lastNodeText.length;
-
-      // The last node might not actually be the end node
-      //
-      // If not, assume the last node is fully-selected unless the end offset is
-      // zero.
-      if (lastNode.__key !== endKey && endOffset !== 0) {
-        endOffset = lastNodeTextLength;
-      }
-
-      // if the entire last node isn't selected and it isn't a token or segmented, split it
-      if (endOffset !== lastNodeTextLength && !$isTokenOrSegmented(lastNode)) {
-        [lastNode] = lastNode.splitText(endOffset);
-      }
-
-      if (endOffset !== 0 || endType === 'element') {
-        fn(lastNode as TextNode);
-      }
-    }
-
-    // style all the text nodes in between
-    for (let i = 1; i < lastIndex; i++) {
-      const selectedNode = selectedNodes[i];
-      const selectedNodeKey = selectedNode.getKey();
-
-      if (
-        $isTextNode(selectedNode) &&
-        selectedNode.canHaveFormat() &&
-        selectedNodeKey !== firstNode.getKey() &&
-        selectedNodeKey !== lastNode.getKey() &&
-        !selectedNode.isToken()
-      ) {
-        fn(selectedNode as TextNode);
-      }
+      fn(selectedNode);
+    } else {
+      // The node is partially selected, so split it into two or three nodes
+      // and style the selected one.
+      const splitNodes = selectedNode.splitText(startOffset, endOffset);
+      const replacement = splitNodes[startOffset === 0 ? 0 : 1];
+      fn(replacement);
     }
   }
 }

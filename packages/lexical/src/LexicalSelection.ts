@@ -496,33 +496,61 @@ export class RangeSelection implements BaseSelection {
     const isBefore = anchor.isBefore(focus);
     const firstPoint = isBefore ? anchor : focus;
     const lastPoint = isBefore ? focus : anchor;
-    let firstNode = firstPoint.getNode();
-    let lastNode = lastPoint.getNode();
-    const overselectedFirstNode =
-      $isElementNode(firstNode) &&
-      firstPoint.offset > 0 &&
-      firstPoint.offset >= firstNode.getChildrenSize();
-    const startOffset = firstPoint.offset;
-    const endOffset = lastPoint.offset;
+    const firstPointNode = firstPoint.getNode();
+    const lastPointNode = lastPoint.getNode();
+    let firstNode: LexicalNode = firstPointNode;
+    let lastNode: LexicalNode = lastPointNode;
+    let overselectedFirstNode = false;
+    const overselectedLastNodes = new Set<NodeKey>();
 
-    if ($isElementNode(firstNode)) {
-      const firstNodeDescendant =
-        firstNode.getDescendantByIndex<ElementNode>(startOffset);
-      firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
+    if ($isElementNode(firstPointNode)) {
+      overselectedFirstNode =
+        firstPoint.offset > 0 &&
+        firstPoint.offset >= firstPointNode.getChildrenSize();
+      firstNode =
+        firstPointNode.getDescendantByIndex(firstPoint.offset) ||
+        firstPointNode;
     }
-    if ($isElementNode(lastNode)) {
-      let lastNodeDescendant =
-        lastNode.getDescendantByIndex<ElementNode>(endOffset);
-      // We don't want to over-select, as node selection infers the child before
-      // the last descendant, not including that descendant.
-      if (
-        lastNodeDescendant !== null &&
-        lastNodeDescendant !== firstNode &&
-        lastNode.getChildAtIndex(endOffset) === lastNodeDescendant
-      ) {
-        lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
+    if ($isElementNode(lastPointNode)) {
+      const lastPointChild = lastPointNode.getChildAtIndex(lastPoint.offset);
+      if (lastPointChild) {
+        overselectedLastNodes.add(lastPointChild.getKey());
+        lastNode =
+          ($isElementNode(lastPointChild) &&
+            lastPointChild.getFirstDescendant()) ||
+          lastPointChild;
+        for (
+          let overselected: LexicalNode | null = lastNode;
+          overselected && !overselected.is(lastPointChild);
+          overselected = overselected.getParent()
+        ) {
+          overselectedLastNodes.add(overselected.getKey());
+        }
+      } else {
+        const beforeChild =
+          lastPoint.offset > 0 &&
+          lastPointNode.getChildAtIndex(lastPoint.offset - 1);
+        if (beforeChild) {
+          // This case is not an overselection
+          lastNode =
+            ($isElementNode(beforeChild) && beforeChild.getLastDescendant()) ||
+            beforeChild;
+        } else {
+          // It's the last node and we have to find something at or after lastNode
+          // and mark all of the ancestors inbetween as overselected
+          lastNode = firstNode;
+          let parent = lastPointNode.getParent();
+          for (; parent !== null; parent = parent.getParent()) {
+            overselectedLastNodes.add(parent.getKey());
+            const parentSibling = parent.getNextSibling();
+            if (parentSibling) {
+              lastNode = parentSibling;
+              break;
+            }
+          }
+          overselectedLastNodes.add(lastNode.getKey());
+        }
       }
-      lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
 
     let nodes: Array<LexicalNode>;
@@ -534,8 +562,16 @@ export class RangeSelection implements BaseSelection {
         nodes = [firstNode];
       }
     } else {
-      nodes = firstNode.getNodesBetween(lastNode);
       // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
+      nodes = firstNode.getNodesBetween(lastNode);
+      if (overselectedLastNodes.size > 0) {
+        while (
+          nodes.length > 0 &&
+          overselectedLastNodes.has(nodes[nodes.length - 1].getKey())
+        ) {
+          nodes.pop();
+        }
+      }
       if (overselectedFirstNode) {
         const deleteCount = nodes.findIndex(
           (node) => !node.is(firstNode) && !node.isBefore(firstNode),

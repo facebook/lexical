@@ -8,12 +8,12 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.23.1",
+  "version": "0.23.2-nightly.20250128.0",
   "main": "LexicalCode.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.23.1",
-    "lexical": "0.23.1",
+    "@lexical/utils": "0.23.2-nightly.20250128.0",
+    "lexical": "0.23.2-nightly.20250128.0",
     "prismjs": "^1.27.0"
   },
   "repository": {

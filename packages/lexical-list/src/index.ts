@@ -12,7 +12,6 @@ import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
-  $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
@@ -101,43 +100,34 @@ export function registerList(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerMutationListener(
-      ListItemNode,
-      (mutations) => {
-        editor.update(() => {
-          for (const [key, type] of mutations) {
-            if (type !== 'destroyed') {
-              const node = $getNodeByKey<ListItemNode>(key);
-              const listItemElement = editor.getElementByKey(key);
-              if (node && listItemElement) {
-                const firstChild = node.getFirstChild<LexicalNode>();
-                if (firstChild) {
-                  const textElement = editor.getElementByKey(
-                    firstChild.getKey(),
-                  );
-                  if (textElement && textElement.style.cssText) {
-                    listItemElement.setAttribute(
-                      'style',
-                      textElement.style.cssText,
-                    );
-                  }
-                } else {
-                  const selection = $getSelection();
-                  if (
-                    $isRangeSelection(selection) &&
-                    selection.isCollapsed() &&
-                    selection.style
-                  ) {
-                    listItemElement.setAttribute('style', selection.style);
-                  }
-                }
-              }
-            }
+    editor.registerNodeTransform(ListItemNode, (node) => {
+      const listItemElement = editor.getElementByKey(node.__key);
+      if (node && listItemElement) {
+        const firstChild = node.getFirstChild<LexicalNode>();
+        if (firstChild) {
+          const textElement = editor.getElementByKey(firstChild.getKey());
+          if (
+            textElement &&
+            textElement.style.cssText &&
+            textElement.style.cssText !== node.getStyle()
+          ) {
+            listItemElement.setAttribute('style', textElement.style.cssText);
+            node.markDirty();
           }
-        });
-      },
-      {skipInitialization: false},
-    ),
+        } else {
+          const selection = $getSelection();
+          if (
+            $isRangeSelection(selection) &&
+            selection.isCollapsed() &&
+            selection.style &&
+            selection.style !== node.getStyle()
+          ) {
+            listItemElement.setAttribute('style', selection.style);
+            node.markDirty();
+          }
+        }
+      }
+    }),
     editor.registerNodeTransform(TextNode, (node) => {
       const listItemParentNode = node.getParent();
       if ($isListItemNode(listItemParentNode)) {

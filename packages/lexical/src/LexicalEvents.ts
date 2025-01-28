@@ -337,31 +337,27 @@ function onSelectionChange(
           anchor.offset === lastOffset &&
           anchor.key === lastKey
         ) {
-          selection.format = lastFormat;
-          selection.style = lastStyle;
+          $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
         } else {
           if (anchor.type === 'text') {
             invariant(
               $isTextNode(anchorNode),
               'Point.getNode() must return TextNode when type is text',
             );
-            selection.format = anchorNode.getFormat();
-            selection.style = anchorNode.getStyle();
+            $updateSelectionFormatStyleFromNode(selection, anchorNode);
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             invariant(
               $isElementNode(anchorNode),
               'Point.getNode() must return ElementNode when type is element',
             );
             const lastNode = anchor.getNode();
-            selection.style = '';
             if (
               // This previously applied to all ParagraphNode
               lastNode.isEmpty()
             ) {
-              selection.format = lastNode.getTextFormat();
-              selection.style = lastNode.getTextStyle();
+              $updateSelectionFormatStyleFromNode(selection, lastNode);
             } else {
-              selection.format = 0;
+              $updateSelectionFormatStyle(selection, 0, '');
             }
           }
         }
@@ -409,6 +405,27 @@ function onSelectionChange(
 
     dispatchCommand(editor, SELECTION_CHANGE_COMMAND, undefined);
   });
+}
+
+function $updateSelectionFormatStyle(
+  selection: RangeSelection,
+  format: number,
+  style: string,
+) {
+  if (selection.format !== format || selection.style !== style) {
+    selection.format = format;
+    selection.style = style;
+    selection.dirty = true;
+  }
+}
+
+function $updateSelectionFormatStyleFromNode(
+  selection: RangeSelection,
+  node: TextNode | ElementNode,
+) {
+  const format = node.getFormat();
+  const style = node.getStyle();
+  $updateSelectionFormatStyle(selection, format, style);
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -578,12 +595,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           if ($isRangeSelection(selection)) {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
-            selection.format = anchorNode.getFormat();
             invariant(
               $isTextNode(anchorNode),
               'Anchor node must be a TextNode',
             );
-            selection.style = anchorNode.getStyle();
+            $updateSelectionFormatStyleFromNode(selection, anchorNode);
           }
         } else {
           $setCompositionKey(null);

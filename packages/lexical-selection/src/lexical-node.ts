@@ -17,6 +17,7 @@ import {
   $isTextNode,
   $isTokenOrSegmented,
   BaseSelection,
+  ElementNode,
   LexicalEditor,
   LexicalNode,
   Point,
@@ -241,7 +242,7 @@ export function $addNodeStyle(node: TextNode): void {
 }
 
 function $patchStyle(
-  target: TextNode | RangeSelection,
+  target: TextNode | RangeSelection | ElementNode,
   patch: Record<
     string,
     | string
@@ -263,7 +264,7 @@ function $patchStyle(
       }
       return styles;
     },
-    {...prevStyles} || {},
+    {...prevStyles},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
   target.setStyle(newCSSText);
@@ -285,12 +286,16 @@ export function $patchStyleText(
     | null
     | ((
         currentStyleValue: string | null,
-        target: TextNode | RangeSelection,
+        target: TextNode | RangeSelection | ElementNode,
       ) => string)
   >,
 ): void {
   if (selection.isCollapsed() && $isRangeSelection(selection)) {
     $patchStyle(selection, patch);
+    const emptyNode = selection.anchor.getNode();
+    if ($isElementNode(emptyNode) && emptyNode.isEmpty()) {
+      $patchStyle(emptyNode, patch);
+    }
   } else {
     $forEachSelectedTextNode((textNode) => {
       $patchStyle(textNode, patch);

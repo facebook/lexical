@@ -187,7 +187,7 @@ export function $dfs(
 
 /**
  * A function which will return exactly the reversed order of $dfs. That means that the tree is traversed
- * from left to right, starting at the leaf and working towards the root.
+ * from right to left, starting at the leaf and working towards the root.
  * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
  * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
@@ -840,8 +840,7 @@ function $unwrapAndFilterDescendantsImpl(
  *
  * This function is read-only and performs no mutation operations, which makes
  * it suitable for import and export purposes but likely not for any in-place
- * mutation. You shimport { $getRoot } from 'lexical';
-ould use {@link $unwrapAndFilterDescendants} for in-place
+ * mutation. You should use {@link $unwrapAndFilterDescendants} for in-place
  * mutations such as node transforms.
  *
  * @param children The children to traverse

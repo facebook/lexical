@@ -46,6 +46,8 @@ export {
   $removeTextSlice,
   $rewindBreadthCaret,
   $setPointFromCaret,
+  $setSelectionFromCaretRange,
+  $updateRangeSelectionFromCaretRange,
 } from './caret/LexicalCaretUtils';
 export type {PasteCommandType} from './LexicalCommands';
 export {

@@ -6,7 +6,6 @@
  *
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
-import type {PointType, RangeSelection} from '../LexicalSelection';
 import type {
   BreadthNodeCaret,
   CaretDirection,
@@ -20,8 +19,16 @@ import type {
 import invariant from 'shared/invariant';
 
 import {
+  $createRangeSelection,
+  $getSelection,
+  $isRangeSelection,
+  type PointType,
+  type RangeSelection,
+} from '../LexicalSelection';
+import {
   $getAncestor,
   $getNodeByKeyOrThrow,
+  $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
@@ -105,6 +112,34 @@ export function $setPointFromCaret<D extends CaretDirection>(
       );
     }
   }
+}
+
+/**
+ * Set a RangeSelection on the editor from the given NodeCaretRange
+ *
+ * @returns The new RangeSelection
+ */
+export function $setSelectionFromCaretRange(
+  caretRange: NodeCaretRange,
+): RangeSelection {
+  const currentSelection = $getSelection();
+  const selection = $isRangeSelection(currentSelection)
+    ? currentSelection
+    : $createRangeSelection();
+  $updateRangeSelectionFromCaretRange(selection, caretRange);
+  $setSelection(selection);
+  return selection;
+}
+
+/**
+ * Update the points of a RangeSelection based on the given RangeNodeCaret.
+ */
+export function $updateRangeSelectionFromCaretRange(
+  selection: RangeSelection,
+  caretRange: NodeCaretRange,
+): void {
+  $setPointFromCaret(selection.anchor, caretRange.anchor);
+  $setPointFromCaret(selection.focus, caretRange.focus);
 }
 
 /**
@@ -282,24 +317,18 @@ function $getDeepestChildOrSelf<Caret extends RangeNodeCaret | null>(
 export function $normalizeCaret<D extends CaretDirection>(
   initialCaret: RangeNodeCaret<D>,
 ): RangeNodeCaret<D> {
-  const latestInitialCaret = initialCaret.getLatest();
-  if ($isTextNodeCaret(latestInitialCaret)) {
-    return latestInitialCaret;
+  const caret = initialCaret.getLatest();
+  const {direction} = caret;
+  if ($isTextNodeCaret(caret)) {
+    return caret;
   }
-  const {direction} = latestInitialCaret;
-  const caret = $getDeepestChildOrSelf(latestInitialCaret);
   if ($isTextNode(caret.origin)) {
     return $getTextNodeCaret(caret.origin, direction, direction);
   }
   const adjacent = $getDeepestChildOrSelf(caret.getAdjacentCaret());
-  if ($isBreadthNodeCaret(adjacent) && $isTextNode(adjacent.origin)) {
-    return $getTextNodeCaret(
-      adjacent.origin,
-      direction,
-      flipDirection(direction),
-    );
-  }
-  return caret;
+  return $isBreadthNodeCaret(adjacent) && $isTextNode(adjacent.origin)
+    ? $getTextNodeCaret(adjacent.origin, direction, flipDirection(direction))
+    : caret;
 }
 
 function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
@@ -309,7 +338,7 @@ function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
     size,
     caret: {offset},
   } = slice;
-  return [offset, offset + size].sort() as [number, number];
+  return [offset, offset + size].sort((a, b) => a - b) as [number, number];
 }
 
 export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(

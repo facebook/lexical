@@ -15,6 +15,7 @@ import type {TextFormatType} from './nodes/LexicalTextNode';
 import invariant from 'shared/invariant';
 
 import {
+  $caretRangeFromSelection,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -23,7 +24,9 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  $removeTextFromCaretRange,
   $setSelection,
+  $updateRangeSelectionFromCaretRange,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
@@ -1134,80 +1137,11 @@ export class RangeSelection implements BaseSelection {
    * Removes the text in the Selection, adjusting the EditorState accordingly.
    */
   removeText(): void {
-    // const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
-    // $setPointFromCaret(this.anchor, newRange.anchor);
-    // $setPointFromCaret(this.focus, newRange.focus);
-    if (this.isCollapsed()) {
-      return;
-    }
-    const {anchor, focus} = this;
-    const selectedNodes = this.getNodes();
-    const firstPoint = this.isBackward() ? focus : anchor;
-    const lastPoint = this.isBackward() ? anchor : focus;
-    let firstNode = firstPoint.getNode();
-    let lastNode = lastPoint.getNode();
-    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
-    const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
-    // If a token is partially selected then move the selection to cover the whole selection
-    if (
-      $isTextNode(firstNode) &&
-      firstNode.isToken() &&
-      firstPoint.offset < firstNode.getTextContentSize()
-    ) {
-      firstPoint.set(firstNode.getKey(), 0, 'text');
-    }
-    if (lastPoint.offset > 0 && $isTextNode(lastNode) && lastNode.isToken()) {
-      lastPoint.set(lastNode.getKey(), lastNode.getTextContentSize(), 'text');
-    }
-
-    for (const node of selectedNodes) {
-      if (
-        !$hasAncestor(firstNode, node) &&
-        !$hasAncestor(lastNode, node) &&
-        node.getKey() !== firstNode.getKey() &&
-        node.getKey() !== lastNode.getKey()
-      ) {
-        node.remove();
-      }
-    }
-
-    const fixText = (node: TextNode, del: number) => {
-      if (node.getTextContent() === '') {
-        node.remove();
-      } else if (del !== 0 && $isTokenOrSegmented(node)) {
-        const textNode = $createTextNode(node.getTextContent());
-        textNode.setFormat(node.getFormat());
-        textNode.setStyle(node.getStyle());
-        return node.replace(textNode);
-      }
-    };
-    if (firstNode === lastNode && $isTextNode(firstNode)) {
-      const del = Math.abs(focus.offset - anchor.offset);
-      firstNode.spliceText(firstPoint.offset, del, '', true);
-      fixText(firstNode, del);
-      return;
-    }
-    if ($isTextNode(firstNode)) {
-      const del = firstNode.getTextContentSize() - firstPoint.offset;
-      firstNode.spliceText(firstPoint.offset, del, '');
-      firstNode = fixText(firstNode, del) || firstNode;
-    }
-    if ($isTextNode(lastNode)) {
-      lastNode.spliceText(0, lastPoint.offset, '');
-      lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
-    }
-    if (firstNode.isAttached() && $isTextNode(firstNode)) {
-      firstNode.selectEnd();
-    } else if (lastNode.isAttached() && $isTextNode(lastNode)) {
-      lastNode.selectStart();
-    }
-
-    // Merge blocks
-    const bothElem = $isElementNode(firstBlock) && $isElementNode(lastBlock);
-    if (bothElem && firstBlock !== lastBlock) {
-      firstBlock.append(...lastBlock.getChildren());
-      lastBlock.remove();
-      lastPoint.set(firstPoint.key, firstPoint.offset, firstPoint.type);
+    const isCurrentSelection = $getSelection() === this;
+    const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
+    $updateRangeSelectionFromCaretRange(this, newRange);
+    if (isCurrentSelection && $getSelection() !== this) {
+      $setSelection(this);
     }
   }
 

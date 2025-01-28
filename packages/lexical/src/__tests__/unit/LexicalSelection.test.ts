@@ -764,7 +764,9 @@ describe('LexicalSelection tests', () => {
                 'text',
               );
               $setSelection(sel);
+              expect($getSelection()).toBe(sel);
               sel.removeText();
+              expect($getSelection()).toBe(sel);
               expect(leadingText.isAttached()).toBe(true);
               expect(trailingSegmentedText.isAttached()).toBe(false);
               const allTextNodes = $getRoot().getAllTextNodes();

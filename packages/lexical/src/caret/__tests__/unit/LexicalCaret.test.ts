@@ -6,6 +6,7 @@
  *
  */
 
+import {$createLinkNode} from '@lexical/link';
 import {
   $caretRangeFromSelection,
   $createParagraphNode,
@@ -15,6 +16,7 @@ import {
   $getCaretRange,
   $getDepthCaret,
   $getRoot,
+  $getSelection,
   $getTextNodeCaret,
   $getTextSliceContent,
   $isTextNode,
@@ -23,6 +25,7 @@ import {
   $rewindBreadthCaret,
   $setPointFromCaret,
   $setSelection,
+  $setSelectionFromCaretRange,
   BreadthNodeCaret,
   DepthNodeCaret,
   LexicalNode,
@@ -30,7 +33,11 @@ import {
   TextNode,
 } from 'lexical';
 
-import {initializeUnitTest, invariant} from '../../../__tests__/utils';
+import {
+  $assertRangeSelection,
+  initializeUnitTest,
+  invariant,
+} from '../../../__tests__/utils';
 
 const DIRECTIONS = ['next', 'previous'] as const;
 const BIASES = ['inside', 'outside'] as const;
@@ -655,9 +662,71 @@ describe('LexicalCaret', () => {
     });
     describe('$removeTextFromCaretRange', () => {
       const texts = ['first', 'second', 'third'] as const;
+      describe('ported LexicalSelection tests', () => {
+        test('remove partial initial TextNode and partial segmented TextNode', () => {
+          let leadingText: TextNode;
+          let trailingSegmentedText: TextNode;
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              leadingText = $createTextNode('leading text');
+              trailingSegmentedText =
+                $createTextNode('segmented text').setMode('segmented');
+              $getRoot()
+                .clear()
+                .append(
+                  $createParagraphNode().append(
+                    leadingText,
+                    trailingSegmentedText,
+                  ),
+                );
+              sel.anchor.set(leadingText.getKey(), 'lead'.length, 'text');
+              sel.focus.set(
+                trailingSegmentedText.getKey(),
+                'segmented '.length,
+                'text',
+              );
+              $setSelection(sel);
+              const resultRange = $removeTextFromCaretRange(
+                $caretRangeFromSelection(sel),
+              );
+              $setSelectionFromCaretRange(resultRange);
+              expect(resultRange).toMatchObject({
+                anchor: {
+                  offset: 'lead'.length,
+                  origin: leadingText.getLatest(),
+                },
+                direction: 'next',
+              });
+              expect(leadingText.isAttached()).toBe(true);
+              expect(trailingSegmentedText.isAttached()).toBe(false);
+              const allTextNodes = $getRoot().getAllTextNodes();
+              // These should get merged in reconciliation
+              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
+                ['lead', 'text'],
+              );
+              const selection = $assertRangeSelection($getSelection());
+              expect(selection.isCollapsed()).toBe(true);
+              expect(selection.anchor.key).toBe(leadingText.getKey());
+              expect(selection.anchor.offset).toBe('lead'.length);
+            },
+            {discrete: true},
+          );
+          // Reconciliation has happened
+          testEnv.editor.getEditorState().read(() => {
+            const allTextNodes = $getRoot().getAllTextNodes();
+            // These should get merged in reconciliation
+            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+              'leadtext',
+            ]);
+            expect(leadingText.isAttached()).toBe(true);
+            expect(trailingSegmentedText.isAttached()).toBe(false);
+          });
+        });
+      });
       describe('single block', () => {
-        beforeEach(async () => {
-          await testEnv.editor.update(() => {
+        beforeEach(() => {
+          testEnv.editor.update(() => {
             // Ensure that the separate texts don't get merged
             const textNodes = texts.map((text) =>
               $createTextNode(text).setStyle(`color: --color-${text}`),
@@ -682,6 +751,7 @@ describe('LexicalCaret', () => {
               );
               const direction = 'next';
               const range = $caretRangeFromSelection(sel);
+              $setSelection(sel);
               expect(range).toMatchObject({
                 anchor: {direction, offset: 0, origin: leadingText},
                 focus: {
@@ -691,8 +761,7 @@ describe('LexicalCaret', () => {
                 },
               });
               const resultRange = $removeTextFromCaretRange(range);
-              $setPointFromCaret(sel.anchor, resultRange.anchor);
-              $setPointFromCaret(sel.focus, resultRange.focus);
+              $setSelectionFromCaretRange(resultRange);
               expect(leadingText.isAttached()).toBe(false);
               expect(trailingTokenText.isAttached()).toBe(true);
               expect($getRoot().getAllTextNodes()).toHaveLength(2);
@@ -1042,7 +1111,7 @@ describe('LexicalCaret', () => {
                 const [offsetStart, offsetEnd] = [
                   anchor.offset,
                   focus.offset,
-                ].sort();
+                ].sort((a, b) => a - b);
                 const range = $getCaretRange(anchor, focus);
                 const slices = range.getNonEmptyTextSlices();
                 expect([...range.internalCarets('root')]).toEqual([]);
@@ -1478,6 +1547,46 @@ describe('LexicalCaret', () => {
             });
           }
         });
+      });
+    });
+  });
+});
+
+describe('LexicalSelectionHelpers', () => {
+  initializeUnitTest((testEnv) => {
+    describe('with a fully-selected text node preceded by an inline element', () => {
+      test('a single text node', async () => {
+        await testEnv.editor.update(() => {
+          const root = $getRoot();
+
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+
+          const link = $createLinkNode('https://');
+          link.append($createTextNode('link'));
+          paragraph.append(link);
+
+          const text = $createTextNode('Existing text...');
+          paragraph.append(text);
+
+          const range = $getCaretRange(
+            $getTextNodeCaret(text, 'next', 0),
+            $getTextNodeCaret(text, 'next', 'next'),
+          );
+          const newRange = $removeTextFromCaretRange(range);
+          expect(newRange).toMatchObject({
+            anchor: {
+              direction: 'next',
+              origin: link.getLatest(),
+              type: 'breadth',
+            },
+          });
+          newRange.focus.insert($createTextNode('foo'));
+        });
+
+        expect(testEnv.innerHTML).toBe(
+          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+        );
       });
     });
   });

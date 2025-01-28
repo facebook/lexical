@@ -185,6 +185,21 @@ export function $dfs(
   return Array.from($dfsIterator(startNode, endNode));
 }
 
+/**
+ * A function which will return exactly the reversed order of $dfs. That means that the tree is traversed
+ * from left to right, starting at the leaf and working towards the root.
+ * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
+ * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
+ */
+export function $reverseDfs(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode> {
+  return Array.from($reverseDfsIterator(startNode, endNode));
+}
+
 type DFSIterator = {
   next: () => IteratorResult<DFSNode, void>;
   [Symbol.iterator]: () => DFSIterator;
@@ -327,6 +342,85 @@ export function $getNextRightPreorderNode(
   return node;
 }
 
+/**
+ * An iterator which will traverse the tree in exactly the reversed order of $dfsIterator. Tree traversal is done
+ * on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
+ * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator {
+  const start = (
+    startNode ||
+    $getRoot().getLastDescendant() ||
+    $getRoot()
+  ).getLatest();
+  const startDepth = $getDepth(start);
+  const end = endNode || $getRoot();
+  let node: null | LexicalNode = start;
+  let depth = startDepth;
+  let isFirstNext = true;
+
+  const iterator: DFSIterator = {
+    next(): IteratorResult<DFSNode, void> {
+      if (node === null) {
+        return iteratorDone;
+      }
+      if (isFirstNext) {
+        isFirstNext = false;
+        return iteratorNotDone({depth, node});
+      }
+      if (node === end) {
+        return iteratorDone;
+      }
+      if (node.getPreviousSibling()) {
+        let depthDiff;
+        [node, depthDiff] = $getPreviousSiblingsLastDescendantOrPreviousSibling(
+          node,
+        ) || [null, 0];
+        depth += depthDiff;
+      } else {
+        node = node.getParent();
+        depth--;
+      }
+      if (node === null) {
+        return iteratorDone;
+      }
+      return iteratorNotDone({depth, node});
+    },
+    [Symbol.iterator](): DFSIterator {
+      return iterator;
+    },
+  };
+  return iterator;
+}
+
+/**
+ * Returns the previous sibling's last descendant (when it exists) or the previous sibling.
+ * R -> P -> T1
+ *        -> T2
+ *   -> P2
+ * returns T1 for node T2, T2 for node P2, and null for node T1 or P.
+ * @param node LexicalNode.
+ * @returns an array (tuple) coontaining the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
+function $getPreviousSiblingsLastDescendantOrPreviousSibling(
+  node: LexicalNode,
+): null | [LexicalNode, number] {
+  let _node: LexicalNode | null = node.getPreviousSibling();
+  let depthDiff = 0;
+  while ($isElementNode(_node) && _node.getChildrenSize() > 0) {
+    _node = _node.getLastChild();
+    depthDiff++;
+  }
+  if (_node === null) {
+    return null;
+  }
+  return [_node, depthDiff];
+}
 /**
  * Takes a node and traverses up its ancestors (toward the root node)
  * in order to find a specific type of node.
@@ -746,7 +840,8 @@ function $unwrapAndFilterDescendantsImpl(
  *
  * This function is read-only and performs no mutation operations, which makes
  * it suitable for import and export purposes but likely not for any in-place
- * mutation. You should use {@link $unwrapAndFilterDescendants} for in-place
+ * mutation. You shimport { $getRoot } from 'lexical';
+ould use {@link $unwrapAndFilterDescendants} for in-place
  * mutations such as node transforms.
  *
  * @param children The children to traverse

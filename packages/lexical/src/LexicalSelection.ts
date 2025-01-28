@@ -538,7 +538,6 @@ export class RangeSelection implements BaseSelection {
         } else {
           // It's the last node and we have to find something at or after lastNode
           // and mark all of the ancestors inbetween as overselected
-          lastNode = firstNode;
           let parent = lastPointNode.getParent();
           for (; parent !== null; parent = parent.getParent()) {
             overselectedLastNodes.add(parent.getKey());

@@ -447,7 +447,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   ];
   const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes: Map<string, RegisteredNode>;
+  let registeredNodes: RegisteredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -1101,11 +1101,15 @@ export class LexicalEditor {
           }
         }
       } else {
-        // If content editable is unmounted we'll reset editor state back to original
-        // (or pending) editor state since there will be no reconciliation
-        this._editorState = pendingEditorState;
-        this._pendingEditorState = null;
+        // When the content editable is unmounted we will still trigger a
+        // reconciliation so that any pending updates are flushed,
+        // to match the previous state change when
+        // `_editorState = pendingEditorState` was used, but by
+        // using a commit we preserve the readOnly invariant
+        // for editor.getEditorState().
         this._window = null;
+        this._updateTags.add('history-merge');
+        $commitPendingUpdates(this);
       }
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);

@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import 'katex/dist/katex.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';

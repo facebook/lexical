@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import * as React from 'react';
 import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';

@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';

@@ -6,6 +6,7 @@
  *
  */
 import type {Position} from '../../nodes/InlineImageNode/InlineImageNode';
+import type {JSX} from 'react';
 
 import '../../nodes/InlineImageNode/InlineImageNode.css';
 

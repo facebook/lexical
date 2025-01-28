@@ -19,6 +19,7 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {$applyNodeReplacement, createEditor, DecoratorNode} from 'lexical';
 import * as React from 'react';

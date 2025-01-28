@@ -7,6 +7,7 @@
  */
 
 import type {ElementNode, LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';

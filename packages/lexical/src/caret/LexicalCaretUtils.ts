@@ -247,10 +247,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
         ? [anchorBlock, focusBlock]
         : [focusBlock, anchorBlock];
 
-    $getDepthCaret(firstBlock, flipDirection(direction)).splice(
-      0,
-      lastBlock.getChildren(),
-    );
+    $getDepthCaret(firstBlock, 'previous').splice(0, lastBlock.getChildren());
     lastBlock.remove();
   }
   // Splice text at the anchor and/or origin.

@@ -1476,8 +1476,8 @@ describe('LexicalCaret', () => {
                           .slice(startCaret.offset),
                       ],
                 );
-                const originalAnchorParent = anchor.getParentAtCaret();
-                const originalFocusParent = focus.getParentAtCaret();
+                const originalStartParent = startCaret.getParentAtCaret();
+                const originalEndParent = endCaret.getParentAtCaret();
                 const resultRange = $removeTextFromCaretRange(range);
                 if (direction === 'next') {
                   if (anchor.offset !== 0) {
@@ -1503,7 +1503,7 @@ describe('LexicalCaret', () => {
                     expect(resultRange).toMatchObject({
                       anchor: {
                         direction,
-                        origin: originalAnchorParent.getLatest(),
+                        origin: originalStartParent.getLatest(),
                         type: 'depth',
                       },
                     });
@@ -1533,7 +1533,7 @@ describe('LexicalCaret', () => {
                     expect(resultRange).toMatchObject({
                       anchor: {
                         direction,
-                        origin: originalAnchorParent.getLatest(),
+                        origin: originalStartParent.getLatest(),
                         type: 'depth',
                       },
                     });
@@ -1541,14 +1541,14 @@ describe('LexicalCaret', () => {
                 }
                 // Check that the containing block is always that of the anchor
                 expect(resultRange.anchor.getParentAtCaret().getLatest()).toBe(
-                  originalAnchorParent.getLatest(),
+                  originalStartParent.getLatest(),
                 );
                 // Check that the focus parent has always been removed
-                expect(originalFocusParent.isAttached()).toBe(false);
+                expect(originalEndParent.isAttached()).toBe(false);
                 // Check that the focus has been removed or moved to the anchor parent
                 expect(
                   !focus.origin.isAttached() ||
-                    originalAnchorParent.is(focus.origin.getParent()),
+                    originalStartParent.is(focus.origin.getParent()),
                 ).toBe(true);
                 const remainingNodes = $getRoot().getAllTextNodes();
                 let newIndex = 0;

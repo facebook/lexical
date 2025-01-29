@@ -547,7 +547,9 @@ export class RangeSelection implements BaseSelection {
               break;
             }
           }
-          overselectedLastNodes.add(lastNode.getKey());
+          if (!(lastPointNode.isEmpty() && lastPointNode.is(lastNode))) {
+            overselectedLastNodes.add(lastNode.getKey());
+          }
         }
       }
     }

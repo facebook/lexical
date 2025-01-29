@@ -856,6 +856,7 @@ describe('getNodes()', () => {
     let listItemText2: TextNode;
     let listItem1: ListItemNode;
     let listItem2: ListItemNode;
+    let emptyParagraph: ParagraphNode;
 
     beforeEach(() => {
       testEnv.editor.update(() => {
@@ -868,21 +869,18 @@ describe('getNodes()', () => {
         listItem1 = $createListItemNode().append(listItemText1);
         listItem2 = $createListItemNode().append(listItemText2);
         listNode = $createListNode('bullet').append(listItem1, listItem2);
-        $getRoot().clear().append(paragraphNode, listNode);
+        emptyParagraph = $createParagraphNode();
+        $getRoot().clear().append(paragraphNode, listNode, emptyParagraph);
       });
     });
-    test('$selectAll() - normalized text', () => {
+    test('$selectAll()', () => {
       testEnv.editor.update(
         () => {
           const selection = $selectAll();
           // Normalized to the text nodes
           expect(selection).toMatchObject({
             anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
-            focus: {
-              key: listItemText2.getKey(),
-              offset: listItemText2.getTextContentSize(),
-              type: 'text',
-            },
+            focus: {key: emptyParagraph.getKey(), offset: 0, type: 'element'},
           });
           expect(selection.getNodes()).toEqual([
             paragraphText,
@@ -896,7 +894,41 @@ describe('getNodes()', () => {
             listItemText1,
             listItem2,
             listItemText2,
+            emptyParagraph,
           ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('$selectAll() after removing empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          emptyParagraph.remove();
+          const selection = $selectAll();
+          // Normalized to the text nodes
+          expect(selection).toMatchObject({
+            anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+            focus: {
+              key: listItemText2.getKey(),
+              offset: listItemText2.getTextContentSize(),
+              type: 'text',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            [
+              paragraphText,
+              linkNode,
+              linkText,
+              // The parent paragraphNode comes after its children because the
+              // selection started inside of it at paragraphText
+              paragraphNode,
+              listNode,
+              listItem1,
+              listItemText1,
+              listItem2,
+              listItemText2,
+            ].map((n) => n.getLatest()),
+          );
         },
         {discrete: true},
       );
@@ -920,6 +952,32 @@ describe('getNodes()', () => {
             listItemText1,
             listItem2,
             listItemText2,
+            emptyParagraph,
+          ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select all from first text to last empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 0, 'text');
+          selection.focus.set(emptyParagraph.getKey(), 0, 'element');
+          expect(selection.getNodes()).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+            // The parent paragraphNode comes later because there is
+            // an implicit normalization in the beginning of getNodes
+            // to work around… something? See the getDescendantByIndex usage.
+            paragraphNode,
+            listNode,
+            listItem1,
+            listItemText1,
+            listItem2,
+            listItemText2,
+            emptyParagraph,
           ]);
         },
         {discrete: true},

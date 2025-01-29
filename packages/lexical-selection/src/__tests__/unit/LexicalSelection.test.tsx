@@ -2757,7 +2757,11 @@ describe('LexicalSelection tests', () => {
         expect(rootChildren[1].__type).toBe('heading');
         expect(rootChildren.length).toBe(2);
         const sel = $getSelection()!;
-        expect(sel.getNodes().length).toBe(2);
+        expect(sel).toMatchObject({
+          anchor: {key: rootChildren[0].__key, offset: 0, type: 'element'},
+          focus: {key: rootChildren[1].__key, offset: 0, type: 'element'},
+        });
+        expect(sel.getNodes()).toEqual(rootChildren);
       });
     });
 

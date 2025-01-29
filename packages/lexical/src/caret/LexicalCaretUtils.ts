@@ -233,13 +233,20 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     }
   }
   // Merge blocks if necessary
-  const firstBlock = $getAncestor(range.anchor.origin, INTERNAL_$isBlock);
-  const lastBlock = $getAncestor(range.focus.origin, INTERNAL_$isBlock);
+  const anchorBlock = $getAncestor(range.anchor.origin, INTERNAL_$isBlock);
+  const focusBlock = $getAncestor(range.focus.origin, INTERNAL_$isBlock);
   if (
-    $isElementNode(lastBlock) &&
-    canRemove.has(lastBlock.getKey()) &&
-    $isElementNode(firstBlock)
+    $isElementNode(focusBlock) &&
+    canRemove.has(focusBlock.getKey()) &&
+    $isElementNode(anchorBlock)
   ) {
+    // always merge blocks later in the document with
+    // blocks earlier in the document
+    const [firstBlock, lastBlock] =
+      direction === 'next'
+        ? [anchorBlock, focusBlock]
+        : [focusBlock, anchorBlock];
+
     $getDepthCaret(firstBlock, flipDirection(direction)).splice(
       0,
       lastBlock.getChildren(),

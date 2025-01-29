@@ -210,6 +210,7 @@
   overflow-y: scroll;
   overflow-x: scroll;
   table-layout: fixed;
+  width: max-content;
   margin-top: 25px;
   margin-bottom: 30px;
 }

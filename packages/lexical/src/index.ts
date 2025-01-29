@@ -15,7 +15,7 @@ export type {
   FlipDirection,
   NodeCaret,
   NodeCaretRange,
-  RangeNodeCaret,
+  PointNodeCaret,
   RootMode,
   StepwiseIteratorConfig,
   TextNodeCaret,

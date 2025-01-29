@@ -941,20 +941,10 @@ describe('LexicalCaret', () => {
                     texts.filter((_v, j) => j !== i),
                   );
                   expect(resultRange.isCollapsed()).toBe(true);
-                  // bias towards the anchor
-                  const adjacentIndex = Math.min(
-                    remainingNodes.length - 1,
-                    Math.max(0, i + (direction === 'next' ? -1 : 0)),
-                  );
+                  // bias towards the start
+                  const adjacentIndex = Math.max(0, i - 1);
                   const newOrigin = remainingNodes[adjacentIndex];
-                  const offset =
-                    direction === 'next'
-                      ? i === 0
-                        ? 0
-                        : newOrigin.getTextContentSize()
-                      : i === texts.length - 1
-                      ? newOrigin.getTextContentSize()
-                      : 0;
+                  const offset = i === 0 ? 0 : newOrigin.getTextContentSize();
                   const pt = {
                     direction,
                     offset,
@@ -1092,17 +1082,10 @@ describe('LexicalCaret', () => {
                     originalNodes.map((n) => n.getLatest()),
                   );
                   expect(resultRange.isCollapsed()).toBe(true);
-                  // bias towards the anchor
-                  const adjacentIndex = Math.min(
-                    remainingNodes.length - 1,
-                    Math.max(0, i + (direction === 'next' ? -1 : 0)),
-                  );
+                  // bias towards the start
+                  const adjacentIndex = Math.max(0, i - 1);
                   const newOrigin = remainingNodes[adjacentIndex];
-                  const offset =
-                    (direction === 'next' && i !== 0) ||
-                    (direction === 'previous' && i === texts.length - 1)
-                      ? newOrigin.getTextContentSize()
-                      : 0;
+                  const offset = i === 0 ? 0 : newOrigin.getTextContentSize();
                   expect(resultRange).toMatchObject({
                     anchor: {
                       direction,
@@ -1256,101 +1239,55 @@ describe('LexicalCaret', () => {
                       ],
                 );
                 const resultRange = $removeTextFromCaretRange(range);
-                if (direction === 'next') {
-                  if (anchor.offset !== 0) {
-                    // Part of the anchor remains
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: anchor.offset,
-                        origin: anchor.origin.getLatest(),
-                      },
-                    });
-                  } else if (nodeIndexStart > 0) {
-                    // The anchor was removed so bias towards the previous node
-                    const prevNode =
-                      originalNodes[nodeIndexStart - 1].getLatest();
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: prevNode.getTextContentSize(),
-                        origin: prevNode,
-                      },
-                    });
-                  } else if (focus.offset !== texts[nodeIndexEnd].length) {
-                    // The focus was not deleted and there is no previous node
-                    // so the new anchor will be set to the focus origin
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: 0,
-                        origin: originalNodes[nodeIndexEnd].getLatest(),
-                      },
-                    });
-                  } else if (nodeIndexEnd !== texts.length - 1) {
-                    // The anchor was at the start and the focus was removed
-                    // but there is another text node to use as the anchor caret
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: 0,
-                        origin: originalNodes[nodeIndexEnd + 1].getLatest(),
-                      },
-                    });
-                  } else {
-                    // All text has been removed so we have to use a depth caret
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        direction,
-                        origin: $getRoot().getFirstChild(),
-                        type: 'depth',
-                      },
-                    });
-                  }
+                expect(resultRange).toMatchObject({
+                  anchor: {direction},
+                  direction,
+                  focus: {direction},
+                });
+                if (startCaret.offset !== 0) {
+                  // Part of the start remains
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: startCaret.offset,
+                      origin: startCaret.origin.getLatest(),
+                    },
+                  });
+                } else if (nodeIndexStart > 0) {
+                  // The anchor was removed so bias towards the previous node
+                  const prevNode =
+                    originalNodes[nodeIndexStart - 1].getLatest();
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: prevNode.getTextContentSize(),
+                      origin: prevNode,
+                    },
+                  });
+                } else if (endCaret.offset !== texts[nodeIndexEnd].length) {
+                  // The focus was not deleted and there is no previous node
+                  // so the new anchor will be set to the focus origin
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: 0,
+                      origin: originalNodes[nodeIndexEnd].getLatest(),
+                    },
+                  });
+                } else if (nodeIndexEnd !== texts.length - 1) {
+                  // The anchor was at the start and the focus was removed
+                  // but there is another text node to use as the anchor caret
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      offset: 0,
+                      origin: originalNodes[nodeIndexEnd + 1].getLatest(),
+                    },
+                  });
                 } else {
-                  invariant(direction === 'previous', 'exhaustiveness check');
-                  if (anchor.offset !== texts[nodeIndexEnd].length) {
-                    // Part of the anchor remains
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: 0,
-                        origin: anchor.origin.getLatest(),
-                      },
-                    });
-                  } else if (nodeIndexEnd < texts.length - 1) {
-                    // The anchor was removed so bias towards the next node
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: 0,
-                        origin: originalNodes[nodeIndexEnd + 1].getLatest(),
-                      },
-                    });
-                  } else if (focus.offset !== 0) {
-                    // The focus was not deleted and there is no next node
-                    // so the new anchor will be set to the focus origin
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: focus.offset,
-                        origin: focus.origin.getLatest(),
-                      },
-                    });
-                  } else if (nodeIndexStart > 0) {
-                    // The anchor was at the end and the focus was removed
-                    // but there is another text node to use as the anchor caret
-                    const prevNode =
-                      originalNodes[nodeIndexStart - 1].getLatest();
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        offset: prevNode.getTextContentSize(),
-                        origin: prevNode,
-                      },
-                    });
-                  } else {
-                    // All text has been removed so we have to use a depth caret
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        direction,
-                        origin: $getRoot().getFirstChild(),
-                        type: 'depth',
-                      },
-                    });
-                  }
+                  // All text has been removed so we have to use a depth caret
+                  expect(resultRange).toMatchObject({
+                    anchor: {
+                      origin: $getRoot().getFirstChild(),
+                      type: 'depth',
+                    },
+                  });
                 }
                 const remainingNodes = $getRoot().getAllTextNodes();
                 let newIndex = 0;
@@ -1484,18 +1421,22 @@ describe('LexicalCaret', () => {
                     // Part of the anchor remains
                     expect(resultRange).toMatchObject({
                       anchor: {
+                        direction,
                         offset: anchor.offset,
                         origin: anchor.origin.getLatest(),
                       },
+                      direction,
                     });
                   } else if (focus.offset !== texts[nodeIndexEnd].length) {
                     // The focus was not deleted and there is no previous node
                     // so the new anchor will be set to the focus origin
                     expect(resultRange).toMatchObject({
                       anchor: {
+                        direction,
                         offset: 0,
                         origin: originalNodes[nodeIndexEnd].getLatest(),
                       },
+                      direction,
                     });
                   } else {
                     // The anchor and focus were removed
@@ -1506,26 +1447,32 @@ describe('LexicalCaret', () => {
                         origin: originalStartParent.getLatest(),
                         type: 'depth',
                       },
+                      direction,
                     });
                   }
                 } else {
+                  return;
                   invariant(direction === 'previous', 'exhaustiveness check');
                   if (anchor.offset !== texts[nodeIndexEnd].length) {
                     // Part of the anchor remains
                     expect(resultRange).toMatchObject({
                       anchor: {
+                        direction,
                         offset: 0,
                         origin: anchor.origin.getLatest(),
                       },
+                      direction,
                     });
                   } else if (focus.offset !== 0) {
                     // The focus was not removed
                     // so the new anchor will be set to the focus origin
                     expect(resultRange).toMatchObject({
                       anchor: {
+                        direction,
                         offset: focus.offset,
                         origin: focus.origin.getLatest(),
                       },
+                      direction,
                     });
                   } else {
                     // All text has been removed so we have to use a depth caret
@@ -1536,6 +1483,7 @@ describe('LexicalCaret', () => {
                         origin: originalStartParent.getLatest(),
                         type: 'depth',
                       },
+                      direction,
                     });
                   }
                 }

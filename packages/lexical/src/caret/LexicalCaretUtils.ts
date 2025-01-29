@@ -11,7 +11,7 @@ import type {
   CaretDirection,
   NodeCaret,
   NodeCaretRange,
-  RangeNodeCaret,
+  PointNodeCaret,
   RootMode,
   TextNodeCaret,
   TextNodeCaretSlice,
@@ -52,12 +52,12 @@ import {
 
 /**
  * @param point
- * @returns a RangeNodeCaret for the point
+ * @returns a PointNodeCaret for the point
  */
 export function $caretFromPoint<D extends CaretDirection>(
   point: PointType,
   direction: D,
-): RangeNodeCaret<D> {
+): PointNodeCaret<D> {
   const {type, key, offset} = point;
   const node = $getNodeByKeyOrThrow(point.key);
   if (type === 'text') {
@@ -79,14 +79,14 @@ export function $caretFromPoint<D extends CaretDirection>(
 }
 
 /**
- * Update the given point in-place from the RangeNodeCaret
+ * Update the given point in-place from the PointNodeCaret
  *
  * @param point the point to set
  * @param caret the caret to set the point from
  */
 export function $setPointFromCaret<D extends CaretDirection>(
   point: PointType,
-  caret: RangeNodeCaret<D>,
+  caret: PointNodeCaret<D>,
 ): void {
   if ($isTextNodeCaret(caret)) {
     point.set(caret.origin.getKey(), caret.offset, 'text');
@@ -133,7 +133,7 @@ export function $setSelectionFromCaretRange(
 }
 
 /**
- * Update the points of a RangeSelection based on the given RangeNodeCaret.
+ * Update the points of a RangeSelection based on the given PointNodeCaret.
  */
 export function $updateRangeSelectionFromCaretRange(
   selection: RangeSelection,
@@ -204,19 +204,22 @@ function $getAnchorCandidates<D extends CaretDirection>(
 }
 
 /**
- * Remove all text and nodes in the given range. The block containing the
- * focus will be removed and merged with the anchor's block if they are
- * not the same.
+ * Remove all text and nodes in the given range. If the range spans multiple
+ * blocks then the remaining contents of the later block will be merged with
+ * the earlier block.
  *
  * @param range The range to remove text and nodes from
- * @returns The new collapsed range
+ * @returns The new collapsed range (biased towards the earlier node)
  */
 export function $removeTextFromCaretRange<D extends CaretDirection>(
-  range: NodeCaretRange<D>,
+  initialRange: NodeCaretRange<D>,
 ): NodeCaretRange<D> {
-  if (range.isCollapsed()) {
-    return range;
+  if (initialRange.isCollapsed()) {
+    return initialRange;
   }
+  // Always process removals in document order
+  const range = $getCaretRangeInDirection(initialRange, 'next');
+
   let anchorCandidates = $getAnchorCandidates(range.anchor);
   const {direction} = range;
 
@@ -296,7 +299,10 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   }
   for (const caret of anchorCandidates) {
     if (caret.origin.isAttached()) {
-      const anchor = $normalizeCaret(caret);
+      const anchor = $getCaretInDirection(
+        $normalizeCaret(caret),
+        initialRange.direction,
+      );
       return $getCaretRange(anchor, anchor);
     }
   }
@@ -318,9 +324,9 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
  * @param initialCaret
  * @returns Either a deeper DepthNodeCaret or the given initialCaret
  */
-function $getDeepestChildOrSelf<Caret extends RangeNodeCaret | null>(
+function $getDeepestChildOrSelf<Caret extends PointNodeCaret | null>(
   initialCaret: Caret,
-): RangeNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
+): PointNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
   let caret = $getChildCaretOrSelf(initialCaret);
   while ($isDepthNodeCaret(caret)) {
     const childNode = caret.getNodeAtCaret();
@@ -333,7 +339,7 @@ function $getDeepestChildOrSelf<Caret extends RangeNodeCaret | null>(
 }
 
 /**
- * Normalize a caret to the deepest equivalent RangeNodeCaret.
+ * Normalize a caret to the deepest equivalent PointNodeCaret.
  * This will return a TextNodeCaret with the offset set according
  * to the direction if given a caret with a TextNode origin
  * or a caret with an ElementNode origin with the deepest DepthNode
@@ -343,11 +349,11 @@ function $getDeepestChildOrSelf<Caret extends RangeNodeCaret | null>(
  * is required when an offset is already present.
  *
  * @param initialCaret
- * @returns The normalized RangeNodeCaret
+ * @returns The normalized PointNodeCaret
  */
 export function $normalizeCaret<D extends CaretDirection>(
-  initialCaret: RangeNodeCaret<D>,
-): RangeNodeCaret<D> {
+  initialCaret: PointNodeCaret<D>,
+): PointNodeCaret<D> {
   const caret = initialCaret.getLatest();
   const {direction} = caret;
   if ($isTextNodeCaret(caret)) {
@@ -362,6 +368,10 @@ export function $normalizeCaret<D extends CaretDirection>(
     : caret;
 }
 
+/**
+ * @param slice a TextNodeCaretSlice
+ * @returns absolute coordinates into the text (for use with text.slice(...))
+ */
 function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
   slice: TextNodeCaretSlice<T, D>,
 ): [indexStart: number, indexEnd: number] {
@@ -369,9 +379,64 @@ function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
     size,
     caret: {offset},
   } = slice;
-  return [offset, offset + size].sort((a, b) => a - b) as [number, number];
+  const offsetB = offset + size;
+  return offsetB < offset ? [offsetB, offset] : [offset, offsetB];
 }
 
+/**
+ * Return the caret if it's in the given direction, otherwise return
+ * caret.getFlipped().
+ *
+ * @param caret Any PointNodeCaret
+ * @param direction The desired direction
+ * @returns A PointNodeCaret in direction
+ */
+export function $getCaretInDirection<D extends CaretDirection>(
+  caret: PointNodeCaret<CaretDirection>,
+  direction: D,
+): PointNodeCaret<D> {
+  return (
+    caret.direction === direction ? caret : caret.getFlipped()
+  ) as PointNodeCaret<D>;
+}
+
+/**
+ * Return the range if it's in the given direction, otherwise
+ * construct a new range using a flipped focus as the anchor
+ * and a flipped anchor as the focus. This transformation
+ * preserves the section of the document that it's working
+ * with, but reverses the order of iteration.
+ *
+ * @param range Any NodeCaretRange
+ * @param direction The desired direction
+ * @returns A NodeCaretRange in direction
+ */
+export function $getCaretRangeInDirection<D extends CaretDirection>(
+  range: NodeCaretRange<CaretDirection>,
+  direction: D,
+): NodeCaretRange<D> {
+  if (range.direction === direction) {
+    return range as NodeCaretRange<D>;
+  }
+  return $getCaretRange(
+    // focus and anchor get flipped here
+    $getCaretInDirection(range.focus, direction),
+    $getCaretInDirection(range.anchor, direction),
+  );
+}
+
+/**
+ * Remove the slice of text from the contained caret, returning a new
+ * TextNodeCaret without the wrapper (since the size would be zero).
+ *
+ * Note that this is a lower-level utility that does not have any specific
+ * behavior for 'segmented' or 'token' modes and it will not remove
+ * an empty TextNode.
+ *
+ * @param slice The slice to mutate
+ * @returns The inner TextNodeCaret with the same offset and direction
+ *          and the latest TextNode origin after mutation
+ */
 export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
   slice: TextNodeCaretSlice<T, D>,
 ): TextNodeCaret<T, D> {
@@ -387,10 +452,15 @@ export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
   );
 }
 
-export function $getTextSliceContent<
-  T extends TextNode,
-  D extends CaretDirection,
->(slice: TextNodeCaretSlice<T, D>): string {
+/**
+ * Read the text from a TextNodeSlice
+ *
+ * @param slice The slice to read
+ * @returns The text represented by the slice
+ */
+export function $getTextSliceContent(
+  slice: TextNodeCaretSlice<TextNode, CaretDirection>,
+): string {
   return slice.caret.origin
     .getTextContent()
     .slice(...$getTextSliceIndices(slice));

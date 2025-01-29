@@ -14,9 +14,26 @@ import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
 import {$isTextNode, TextNode} from '../nodes/LexicalTextNode';
 
+/**
+ * The direction of a caret, 'next' points towards the end of the document
+ * and 'previous' points towards the beginning
+ */
 export type CaretDirection = 'next' | 'previous';
+/**
+ * A type utility to flip next and previous
+ */
 export type FlipDirection<D extends CaretDirection> = typeof FLIP_DIRECTION[D];
+/**
+ * A breadth caret type points from a LexicalNode origin to its next or previous sibling,
+ * and a depth caret type points from an ElementNode origin to its first or last child.
+ */
 export type CaretType = 'breadth' | 'depth';
+/**
+ * The RootMode is specified in all caret traversals where the traversal can go up
+ * towards the root. 'root' means that it will stop at the document root,
+ * and 'shadowRoot' will stop at the document root or any shadow root
+ * (per {@link $isRootOrShadowRoot}).
+ */
 export type RootMode = 'root' | 'shadowRoot';
 
 const FLIP_DIRECTION = {
@@ -36,7 +53,12 @@ export interface BaseNodeCaret<
   readonly type: Type;
   /** next if pointing at the next sibling or first child, previous if pointing at the previous sibling or last child */
   readonly direction: D;
-  /** Retun true if other is a caret with the same origin (by node key comparion), type, and direction */
+  /**
+   * Retun true if other is a caret with the same origin (by node key comparion), type, and direction.
+   *
+   * Note that this will not check the offset of a TextNodeCaret because it is otherwise indistinguishable
+   * from a BreadthNodeCaret. Use {@link $isSameTextNodeCaret} for that specific scenario.
+   */
   is: (other: NodeCaret | null) => boolean;
   /**
    * Get a new NodeCaret with the head and tail of its directional arrow flipped, such that flipping twice is the identity.
@@ -86,11 +108,11 @@ export interface BaseNodeCaret<
  * A RangeSelection expressed as a pair of Carets
  */
 export interface NodeCaretRange<D extends CaretDirection = CaretDirection>
-  extends Iterable<RangeNodeCaret<D>> {
+  extends Iterable<PointNodeCaret<D>> {
   readonly type: 'node-caret-range';
   readonly direction: D;
-  anchor: RangeNodeCaret<D>;
-  focus: RangeNodeCaret<D>;
+  anchor: PointNodeCaret<D>;
+  focus: PointNodeCaret<D>;
   /** Return true if anchor and focus are the same caret */
   isCollapsed: () => boolean;
   /**
@@ -146,7 +168,15 @@ export type NodeCaret<D extends CaretDirection = CaretDirection> =
   | BreadthNodeCaret<LexicalNode, D>
   | DepthNodeCaret<ElementNode, D>;
 
-export type RangeNodeCaret<D extends CaretDirection = CaretDirection> =
+/**
+ * A PointNodeCaret is a NodeCaret that also includes a specialized
+ * TextNodeCaret type which refers to a specific offset of a TextNode.
+ * This type is separate because it is not relevant to general node traversal
+ * so it doesn't make sense to have it show up except when defining
+ * a NodeCaretRange and in those cases there will be at most two of them only
+ * at the boundaries.
+ */
+export type PointNodeCaret<D extends CaretDirection = CaretDirection> =
   | TextNodeCaret<TextNode, D>
   | BreadthNodeCaret<LexicalNode, D>
   | DepthNodeCaret<ElementNode, D>;
@@ -190,11 +220,17 @@ export interface DepthNodeCaret<
 }
 
 /**
- * A TextNodeCaret is a special case of a BreadthNodeCaret that also carries an offset
- * used for representing partially selected TextNode at the edges of a NodeCaretRange.
+ * A TextNodeCaret is a special case of a BreadthNodeCaret that also carries
+ * an offset used for representing partially selected TextNode at the edges
+ * of a NodeCaretRange.
  *
- * The direction determines which part of the text is adjacent to the caret, if next
- * it's all of the text after offset. If previous, it's all of the text before offset.
+ * The direction determines which part of the text is adjacent to the caret,
+ * if next it's all of the text after offset. If previous, it's all of the
+ * text before offset.
+ *
+ * While this can be used in place of any BreadthNodeCaret of a TextNode,
+ * the offset into the text will be ignored except in contexts that
+ * specifically use the TextNodeCaret or PointNodeCaret types.
  */
 export interface TextNodeCaret<
   T extends TextNode = TextNode,
@@ -206,13 +242,14 @@ export interface TextNodeCaret<
 }
 
 /**
- * A TextNodeCaretSlice is a wrapper for a TextNodeCaret that carries a size
- * representing the amount of text selected from the given caret. A negative
- * size means that text before offset is selected, a positive size means that
- * text after offset is selected. The offset+size pair is not affected in
- * any way by the direction of the caret.
+ * A TextNodeCaretSlice is a wrapper for a TextNodeCaret that carries a signed
+ * size representing the direction and amount of text selected from the given
+ * caret. A negative size means that text before offset is selected, a
+ * positive size means that text after offset is selected. The offset+size
+ * pair is not affected in any way by the direction of the caret.
  *
- * The selected string content can be computed as such:
+ * The selected string content can be computed as such
+ * (see also {@link $getTextSliceContent}):
  *
  * ```
  * slice.origin.getTextContent().slice(
@@ -229,6 +266,10 @@ export interface TextNodeCaretSlice<
   readonly size: number;
 }
 
+/**
+ * A utility type to specify that a NodeCaretRange may have zero,
+ * one, or two associated TextNodeCaretSlice.
+ */
 export type TextNodeCaretSliceTuple<D extends CaretDirection> =
   readonly TextNodeCaretSlice<TextNode, D>[] & {length: 0 | 1 | 2};
 
@@ -415,6 +456,16 @@ const MODE_PREDICATE = {
   shadowRoot: $isRootOrShadowRoot,
 } as const;
 
+/**
+ * Flip a direction ('next' -> 'previous'; 'previous' -> 'next').
+ *
+ * Note that TypeScript can't prove that FlipDirection is its own
+ * inverse (but if you have a concrete 'next' or 'previous' it will
+ * simplify accordingly).
+ *
+ * @param direction A direction
+ * @returns The opposite direction
+ */
 export function flipDirection<D extends CaretDirection>(
   direction: D,
 ): FlipDirection<D> {
@@ -468,8 +519,14 @@ abstract class AbstractBreadthNodeCaret<
   }
 }
 
+/**
+ * Guard to check if the given caret is specifically a TextNodeCaret
+ *
+ * @param caret Any caret
+ * @returns true if it is a TextNodeCaret
+ */
 export function $isTextNodeCaret<D extends CaretDirection>(
-  caret: null | undefined | RangeNodeCaret<D>,
+  caret: null | undefined | PointNodeCaret<D>,
 ): caret is TextNodeCaret<TextNode, D> {
   return (
     caret instanceof AbstractBreadthNodeCaret &&
@@ -478,24 +535,49 @@ export function $isTextNodeCaret<D extends CaretDirection>(
   );
 }
 
+/**
+ * Guard to check the equivalence of TextNodeCaret
+ *
+ * @param a The caret known to be a TextNodeCaret
+ * @param b Any caret
+ * @returns true if b is a TextNodeCaret with the same origin, direction and offset as a
+ */
 export function $isSameTextNodeCaret<
   T extends TextNodeCaret<TextNode, CaretDirection>,
->(a: T, b: null | undefined | RangeNodeCaret<CaretDirection>): b is T {
+>(a: T, b: null | undefined | PointNodeCaret<CaretDirection>): b is T {
   return $isTextNodeCaret(b) && a.is(b) && a.offset === b.offset;
 }
 
+/**
+ * Guard to check if the given argument is any type of caret
+ *
+ * @param caret
+ * @returns true if caret is any type of caret
+ */
 export function $isNodeCaret<D extends CaretDirection>(
-  caret: null | undefined | NodeCaret<D>,
-) {
+  caret: null | undefined | PointNodeCaret<D>,
+): caret is PointNodeCaret<D> {
   return caret instanceof AbstractCaret;
 }
 
+/**
+ * Guard to check if the given argument is specifically a BreadthNodeCaret (or TextNodeCaret)
+ *
+ * @param caret
+ * @returns true if caret is a BreadthNodeCaret
+ */
 export function $isBreadthNodeCaret<D extends CaretDirection>(
   caret: null | undefined | NodeCaret<D>,
 ): caret is BreadthNodeCaret<LexicalNode, D> {
   return caret instanceof AbstractBreadthNodeCaret;
 }
 
+/**
+ * Guard to check if the given argument is specifically a DepthNodeCaret
+
+ * @param caret 
+ * @returns true if caret is a DepthNodeCaret
+ */
 export function $isDepthNodeCaret<D extends CaretDirection>(
   caret: null | undefined | NodeCaret<D>,
 ): caret is DepthNodeCaret<ElementNode, D> {
@@ -579,6 +661,14 @@ function $getFlippedTextNodeCaret<T extends TextNode, D extends CaretDirection>(
   );
 }
 
+/**
+ * Construct a TextNodeCaret
+ *
+ * @param origin The TextNode
+ * @param direction The direction (next points to the end of the text, previous points to the beginning)
+ * @param offset The offset into the text in absolute positive string coordinates (0 is the start)
+ * @returns a TextNodeCaret
+ */
 export function $getTextNodeCaret<T extends TextNode, D extends CaretDirection>(
   origin: T,
   direction: D,
@@ -600,6 +690,17 @@ export function $getTextNodeCaret<T extends TextNode, D extends CaretDirection>(
   });
 }
 
+/**
+ * Construct a TextNodeCaretSlice given a TextNodeCaret and a signed size. The
+ * size should be negative to slice text before the caret's offset, and positive
+ * to slice text after the offset. The direction of the caret itself is not
+ * relevant to the string coordinates when working with a TextNodeCaretSlice
+ * but mutation operations will preserve the direction.
+ *
+ * @param caret
+ * @param size
+ * @returns TextNodeCaretSlice
+ */
 export function $getTextNodeCaretSlice<
   T extends TextNode,
   D extends CaretDirection,
@@ -653,11 +754,11 @@ class NodeCaretRangeImpl<D extends CaretDirection>
 {
   readonly type = 'node-caret-range';
   readonly direction: D;
-  anchor: RangeNodeCaret<D>;
-  focus: RangeNodeCaret<D>;
+  anchor: PointNodeCaret<D>;
+  focus: PointNodeCaret<D>;
   constructor(
-    anchor: RangeNodeCaret<D>,
-    focus: RangeNodeCaret<D>,
+    anchor: PointNodeCaret<D>,
+    focus: PointNodeCaret<D>,
     direction: D,
   ) {
     this.anchor = anchor;
@@ -716,7 +817,7 @@ class NodeCaretRangeImpl<D extends CaretDirection>
       initial: anchor.is(focus) ? null : step(anchor),
       map: (state) => state,
       step,
-      stop: (state: null | RangeNodeCaret<D>): state is null =>
+      stop: (state: null | PointNodeCaret<D>): state is null =>
         state === null || (isTextFocus && focus.is(state)),
     });
   }
@@ -739,19 +840,53 @@ function $getSliceFromTextNodeCaret<
   return {caret, size: offsetB - caret.offset};
 }
 
+/**
+ * Construct a NodeCaretRange from anchor and focus carets pointing in the
+ * same direction. In order to get the expected behavior,
+ * the anchor must point towards the focus or be the same point.
+ *
+ * In the 'next' direction the anchor should be at or before the
+ * focus in the document. In the 'previous' direction the anchor
+ * should be at or after the focus in the document
+ * (similar to a backwards RangeSelection).
+ *
+ * @param anchor
+ * @param focus
+ * @returns a NodeCaretRange
+ */
 export function $getCaretRange<D extends CaretDirection>(
-  anchor: RangeNodeCaret<D>,
-  focus: RangeNodeCaret<D>,
+  anchor: PointNodeCaret<D>,
+  focus: PointNodeCaret<D>,
 ) {
+  invariant(
+    anchor.direction === focus.direction,
+    '$getCaretRange: anchor and focus must be in the same direction',
+  );
   return new NodeCaretRangeImpl(anchor, focus, anchor.direction);
 }
 
-export function makeStepwiseIterator<State, Stop, Value>({
-  initial,
-  stop,
-  step,
-  map,
-}: StepwiseIteratorConfig<State, Stop, Value>): IterableIterator<Value> {
+/**
+ * A generalized utility for creating a stepwise iterator
+ * based on:
+ *
+ * - an initial state
+ * - a stop guard that returns true if the iteration is over, this
+ *   is typically used to detect a sentinel value such as null or
+ *   undefined from the state but may return true for other conditions
+ *   as well
+ * - a step function that advances the state (this will be called
+ *   after map each time next() is called to prepare the next state)
+ * - a map function that will be called that may transform the state
+ *   before returning it. It will only be called once for each next()
+ *   call when stop(state) === false
+ *
+ * @param config
+ * @returns An IterableIterator
+ */
+export function makeStepwiseIterator<State, Stop, Value>(
+  config: StepwiseIteratorConfig<State, Stop, Value>,
+): IterableIterator<Value> {
+  const {initial, stop, step, map} = config;
   let state = initial;
   return {
     [Symbol.iterator]() {

@@ -15,6 +15,7 @@ import {
   $trimTextContentFromAnchor,
 } from './lexical-node';
 import {
+  $copyBlockFormatIndent,
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $moveCaretSelection,
@@ -47,6 +48,7 @@ export {
 export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 
 export {
+  $copyBlockFormatIndent,
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $moveCaretSelection,

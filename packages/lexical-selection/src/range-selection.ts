@@ -37,14 +37,33 @@ import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
+export function $copyBlockFormatIndent(
+  srcNode: ElementNode,
+  destNode: ElementNode,
+): void {
+  const format = srcNode.getFormatType();
+  const indent = srcNode.getIndent();
+  if (format !== destNode.getFormatType()) {
+    destNode.setFormat(format);
+  }
+  if (indent !== destNode.getIndent()) {
+    destNode.setIndent(indent);
+  }
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
- * @param createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $afterCreateElement - The function that updates the new node based on the previous one ($copyBlockFormatIndent by default)
  */
-export function $setBlocksType(
+export function $setBlocksType<T extends ElementNode>(
   selection: BaseSelection | null,
-  createElement: () => ElementNode,
+  $createElement: () => T,
+  $afterCreateElement: (
+    prevNodeSrc: ElementNode,
+    newNodeDest: T,
+  ) => void = $copyBlockFormatIndent,
 ): void {
   if (selection === null) {
     return;
@@ -73,9 +92,10 @@ export function $setBlocksType(
       blockMap.set(node.getKey(), node);
     }
   }
-  for (const [key, node] of blockMap) {
-    const element = createElement();
-    node.replace(element, true);
+  for (const [key, prevNode] of blockMap) {
+    const element = $createElement();
+    $afterCreateElement(prevNode, element);
+    prevNode.replace(element, true);
     if (newSelection) {
       if (key === newSelection.anchor.key) {
         newSelection.anchor.key = element.getKey();

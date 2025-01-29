@@ -3013,15 +3013,17 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const ul1 = $createListNode('bullet');
         const text1 = $createTextNode('1');
-        const li1 = $createListItemNode().append(text1);
+        const li1 = $createListItemNode();
         const li1_wrapper = $createListItemNode();
         const ul2 = $createListNode('bullet');
         const text1_1 = $createTextNode('1.1');
-        const li1_1 = $createListItemNode().append(text1_1);
-        ul1.append(li1, li1_wrapper);
-        li1_wrapper.append(ul2);
-        ul2.append(li1_1);
-        root.append(ul1);
+        const li1_1 = $createListItemNode();
+        root.append(
+          ul1.append(
+            li1.append(text1),
+            li1_wrapper.append(ul2.append(li1_1.append(text1_1))),
+          ),
+        );
 
         const selection = $createRangeSelection();
         $setSelection(selection);
@@ -3045,7 +3047,7 @@ describe('LexicalSelection tests', () => {
       );
     });
 
-    test('Nested list with listItem twice indented from his father', async () => {
+    test('Nested list with listItem twice indented from its parent', async () => {
       const testEditor = createTestEditor();
       const element = document.createElement('div');
       testEditor.setRootElement(element);
@@ -3056,11 +3058,10 @@ describe('LexicalSelection tests', () => {
         const li1_wrapper = $createListItemNode();
         const ul2 = $createListNode('bullet');
         const text1_1 = $createTextNode('1.1');
-        const li1_1 = $createListItemNode().append(text1_1);
-        ul1.append(li1_wrapper);
-        li1_wrapper.append(ul2);
-        ul2.append(li1_1);
-        root.append(ul1);
+        const li1_1 = $createListItemNode();
+        root.append(
+          ul1.append(li1_wrapper.append(ul2.append(li1_1.append(text1_1)))),
+        );
 
         const selection = $createRangeSelection();
         $setSelection(selection);

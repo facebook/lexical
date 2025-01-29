@@ -12,6 +12,7 @@ import type {
   NodeCaret,
   NodeCaretRange,
   RangeNodeCaret,
+  RootMode,
   TextNodeCaret,
   TextNodeCaretSlice,
 } from './LexicalCaret';
@@ -187,6 +188,21 @@ export function $rewindBreadthCaret<
     : $getDepthCaret(origin.getParentOrThrow(), direction);
 }
 
+function $getAnchorCandidates<D extends CaretDirection>(
+  anchor: NodeCaret<D>,
+  rootMode: RootMode = 'root',
+): [NodeCaret<D>, ...NodeCaret<D>[]] {
+  const carets: [NodeCaret<D>, ...NodeCaret<D>[]] = [anchor];
+  for (
+    let parent = anchor.getParentCaret(rootMode);
+    parent !== null;
+    parent = parent.getParentCaret(rootMode)
+  ) {
+    carets.push($rewindBreadthCaret(parent));
+  }
+  return carets;
+}
+
 /**
  * Remove all text and nodes in the given range. The block containing the
  * focus will be removed and merged with the anchor's block if they are
@@ -201,7 +217,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   if (range.isCollapsed()) {
     return range;
   }
-  let anchor = range.anchor;
+  let anchorCandidates = $getAnchorCandidates(range.anchor);
   const {direction} = range;
 
   // Remove all internal nodes
@@ -237,7 +253,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // and style and set to normal mode.
   for (const slice of range.getNonEmptyTextSlices()) {
     const {origin} = slice.caret;
-    const isAnchor = anchor.is(slice.caret);
+    const isAnchor = anchorCandidates[0].is(slice.caret);
     const contentSize = origin.getTextContentSize();
     const caretBefore = $rewindBreadthCaret(
       $getBreadthCaret(origin, direction),
@@ -247,14 +263,14 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       Math.abs(slice.size) === contentSize ||
       (mode === 'token' && slice.size !== 0)
     ) {
-      caretBefore.remove();
       if (isAnchor) {
-        anchor = caretBefore;
+        anchorCandidates = $getAnchorCandidates(caretBefore);
       }
+      caretBefore.remove();
     } else {
       const nextCaret = $removeTextSlice(slice);
       if (isAnchor) {
-        anchor = nextCaret;
+        anchorCandidates = $getAnchorCandidates(nextCaret);
       }
       if (mode === 'segmented') {
         const src = nextCaret.origin;
@@ -263,17 +279,28 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
           .setFormat(src.getFormat());
         caretBefore.replaceOrInsert(plainTextNode);
         if (isAnchor) {
-          anchor = $getTextNodeCaret(
-            plainTextNode,
-            nextCaret.direction,
-            nextCaret.offset,
+          anchorCandidates = $getAnchorCandidates(
+            $getTextNodeCaret(
+              plainTextNode,
+              nextCaret.direction,
+              nextCaret.offset,
+            ),
           );
         }
       }
     }
   }
-  anchor = $normalizeCaret(anchor);
-  return $getCaretRange(anchor, anchor);
+  for (const caret of anchorCandidates) {
+    if (caret.origin.isAttached()) {
+      const anchor = $normalizeCaret(caret);
+      return $getCaretRange(anchor, anchor);
+    }
+  }
+  invariant(
+    false,
+    '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
+    JSON.stringify(anchorCandidates.map((n) => n.origin.__key)),
+  );
 }
 
 /**

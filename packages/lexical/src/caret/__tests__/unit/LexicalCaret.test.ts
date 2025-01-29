@@ -736,6 +736,55 @@ describe('LexicalCaret', () => {
               .append($createParagraphNode().append(...textNodes));
           });
         });
+        test('remove second TextNode when wrapped in a LinkNode that will become empty', () => {
+          testEnv.editor.update(
+            () => {
+              const sel = $createRangeSelection();
+              const originalNodes = $getRoot().getAllTextNodes();
+              const [leadingText, trailingLinkText] = originalNodes;
+              const linkWrapper = $createLinkNode('https://lexical.dev');
+              trailingLinkText.replace(linkWrapper);
+              linkWrapper.append(trailingLinkText);
+              sel.anchor.set(trailingLinkText.getKey(), 0, 'text');
+              sel.focus.set(
+                trailingLinkText.getKey(),
+                trailingLinkText.getTextContentSize(),
+                'text',
+              );
+              const direction = 'next';
+              const range = $caretRangeFromSelection(sel);
+              $setSelection(sel);
+              expect(range).toMatchObject({
+                anchor: {
+                  direction,
+                  offset: 0,
+                  origin: trailingLinkText.getLatest(),
+                },
+                focus: {
+                  direction,
+                  offset: trailingLinkText.getTextContentSize(),
+                  origin: trailingLinkText.getLatest(),
+                },
+              });
+              const resultRange = $removeTextFromCaretRange(range);
+              $setSelectionFromCaretRange(resultRange);
+              expect(leadingText.isAttached()).toBe(true);
+              expect(trailingLinkText.isAttached()).toBe(false);
+              expect($getRoot().getAllTextNodes()).toHaveLength(2);
+              expect(resultRange.isCollapsed()).toBe(true);
+              expect(sel.isCollapsed()).toBe(true);
+              expect(sel.anchor.getNode()).toBe(leadingText.getLatest());
+              expect(sel.anchor.key).toBe(leadingText.getKey());
+              expect(sel.anchor.offset).toBe(leadingText.getTextContentSize());
+              expect(resultRange.anchor).toMatchObject({
+                direction,
+                offset: leadingText.getTextContentSize(),
+                origin: leadingText.getLatest(),
+              });
+            },
+            {discrete: true},
+          );
+        });
         test('remove first TextNode with second in token mode', () => {
           testEnv.editor.update(
             () => {

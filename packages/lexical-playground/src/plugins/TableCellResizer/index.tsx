@@ -7,6 +7,7 @@
  */
 import type {TableCellNode, TableDOMCell, TableMapType} from '@lexical/table';
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import './index.css';
 

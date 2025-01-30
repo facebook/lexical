@@ -7,6 +7,11 @@
  */
 
 import {
+  moveRight,
+  moveToEditorBeginning,
+  STANDARD_KEYPRESS_DELAY_MS,
+} from '../../keyboardShortcuts/index.mjs';
+import {
   assertHTML,
   click,
   focusEditor,
@@ -15,10 +20,10 @@ import {
   test,
 } from '../../utils/index.mjs';
 
-test('Headings - changes to a paragraph when you press enter at the end of a heading', async ({
+test(`Headings - stays as a heading when you press enter in the middle of a heading`, async ({
   page,
-  isPlainText,
   isCollab,
+  isPlainText,
 }) => {
   test.skip(isPlainText);
   await initialize({isCollab, page});
@@ -40,6 +45,10 @@ test('Headings - changes to a paragraph when you press enter at the end of a hea
     `,
   );
 
+  await moveToEditorBeginning(page);
+
+  await moveRight(page, 5, STANDARD_KEYPRESS_DELAY_MS);
+
   await page.keyboard.press('Enter');
 
   await assertHTML(
@@ -48,9 +57,13 @@ test('Headings - changes to a paragraph when you press enter at the end of a hea
       <h1
         class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
         dir="ltr">
-        <span data-lexical-text="true">Welcome to the playground</span>
+        <span data-lexical-text="true">Welco</span>
       </h1>
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      <h1
+        class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+        dir="ltr">
+        <span data-lexical-text="true">me to the playground</span>
+      </h1>
     `,
   );
 });

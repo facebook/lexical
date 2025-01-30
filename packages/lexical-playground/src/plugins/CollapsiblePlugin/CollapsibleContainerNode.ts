@@ -118,8 +118,9 @@ export class CollapsibleContainerNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedCollapsibleContainerNode,
   ): CollapsibleContainerNode {
-    const node = $createCollapsibleContainerNode(serializedNode.open);
-    return node;
+    return $createCollapsibleContainerNode(serializedNode.open).updateFromJSON(
+      serializedNode,
+    );
   }
 
   exportDOM(): DOMExportOutput {
@@ -133,8 +134,6 @@ export class CollapsibleContainerNode extends ElementNode {
     return {
       ...super.exportJSON(),
       open: this.__open,
-      type: 'collapsible-container',
-      version: 1,
     };
   }
 

@@ -7,6 +7,7 @@
  */
 
 import type {HistoryState} from '@lexical/react/LexicalHistoryPlugin';
+import type {JSX} from 'react';
 
 import {createEmptyHistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import * as React from 'react';

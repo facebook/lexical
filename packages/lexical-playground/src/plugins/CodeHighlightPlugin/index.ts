@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {registerCodeHighlighting} from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';

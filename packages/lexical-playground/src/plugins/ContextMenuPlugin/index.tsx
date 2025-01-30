@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -15,6 +17,8 @@ import {
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
+  $isDecoratorNode,
+  $isNodeSelection,
   $isRangeSelection,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -181,6 +185,13 @@ export default function ContextMenuPlugin(): JSX.Element {
               .at(-2);
 
             ancestorNodeWithRootAsParent?.remove();
+          } else if ($isNodeSelection(selection)) {
+            const selectedNodes = selection.getNodes();
+            selectedNodes.forEach((node) => {
+              if ($isDecoratorNode(node)) {
+                node.remove();
+              }
+            });
           }
         },
       }),

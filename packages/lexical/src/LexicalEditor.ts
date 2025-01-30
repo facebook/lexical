@@ -21,7 +21,7 @@ import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
   $commitPendingUpdates,
@@ -29,8 +29,11 @@ import {
   parseEditorState,
   triggerListeners,
   updateEditor,
+  updateEditorSync,
 } from './LexicalUpdates';
 import {
+  $addUpdateTag,
+  $onUpdate,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -40,7 +43,7 @@ import {
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {DecoratorNode} from './nodes/LexicalDecoratorNode';
+import {$isDecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -85,6 +88,8 @@ export type EditorUpdateOptions = {
   skipTransforms?: true;
   tag?: string | Array<string>;
   discrete?: true;
+  /** @internal */
+  event?: undefined | UIEvent | Event | null;
 };
 
 export type EditorSetOptions = {
@@ -442,7 +447,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   ];
   const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes: Map<string, RegisteredNode>;
+  let registeredNodes: RegisteredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -498,7 +503,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
-          if (proto instanceof DecoratorNode) {
+          if ($isDecoratorNode(proto)) {
             // eslint-disable-next-line no-prototype-builtins
             if (!proto.hasOwnProperty('decorate')) {
               console.warn(
@@ -512,14 +517,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           ) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
-          }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !proto.hasOwnProperty('exportJSON')
-          ) {
-            console.warn(
-              `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
         }
@@ -1104,11 +1101,15 @@ export class LexicalEditor {
           }
         }
       } else {
-        // If content editable is unmounted we'll reset editor state back to original
-        // (or pending) editor state since there will be no reconciliation
-        this._editorState = pendingEditorState;
-        this._pendingEditorState = null;
+        // When the content editable is unmounted we will still trigger a
+        // reconciliation so that any pending updates are flushed,
+        // to match the previous state change when
+        // `_editorState = pendingEditorState` was used, but by
+        // using a commit we preserve the readOnly invariant
+        // for editor.getEditorState().
         this._window = null;
+        this._updateTags.add('history-merge');
+        $commitPendingUpdates(this);
       }
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);
@@ -1155,7 +1156,7 @@ export class LexicalEditor {
         : null;
     }
 
-    $flushRootMutations(this);
+    flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
@@ -1247,33 +1248,28 @@ export class LexicalEditor {
     if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
-      updateEditor(
-        this,
-        () => {
-          const selection = $getSelection();
-          const root = $getRoot();
+      updateEditorSync(this, () => {
+        const selection = $getSelection();
+        const root = $getRoot();
 
-          if (selection !== null) {
-            // Marking the selection dirty will force the selection back to it
-            selection.dirty = true;
-          } else if (root.getChildrenSize() !== 0) {
-            if (options.defaultSelection === 'rootStart') {
-              root.selectStart();
-            } else {
-              root.selectEnd();
-            }
+        if (selection !== null) {
+          // Marking the selection dirty will force the selection back to it
+          selection.dirty = true;
+        } else if (root.getChildrenSize() !== 0) {
+          if (options.defaultSelection === 'rootStart') {
+            root.selectStart();
+          } else {
+            root.selectEnd();
           }
-        },
-        {
-          onUpdate: () => {
-            rootElement.removeAttribute('autocapitalize');
-            if (callbackFn) {
-              callbackFn();
-            }
-          },
-          tag: 'focus',
-        },
-      );
+        }
+        $addUpdateTag('focus');
+        $onUpdate(() => {
+          rootElement.removeAttribute('autocapitalize');
+          if (callbackFn) {
+            callbackFn();
+          }
+        });
+      });
       // In the case where onUpdate doesn't fire (due to the focus update not
       // occuring).
       if (this._pendingEditorState === null) {

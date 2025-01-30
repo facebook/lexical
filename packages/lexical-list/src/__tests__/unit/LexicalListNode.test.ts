@@ -57,9 +57,9 @@ describe('LexicalListNode tests', () => {
         expect(listNode.getTag()).toBe('ul');
         expect(listNode.getTextContent()).toBe('');
       });
-
-      // @ts-expect-error
-      expect(() => $createListNode()).toThrow();
+      await editor.update(() => {
+        expect(() => $createListNode()).not.toThrow();
+      });
     });
 
     test('ListNode.getTag()', async () => {

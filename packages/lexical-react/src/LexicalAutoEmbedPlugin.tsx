@@ -10,6 +10,7 @@ import type {
   LexicalNode,
   MutationListener,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';

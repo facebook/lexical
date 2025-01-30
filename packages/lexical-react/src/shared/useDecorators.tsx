@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor, NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import {Suspense, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';

@@ -12,6 +12,7 @@ import type {
   DOMExportOutput,
   EditorConfig,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
@@ -95,7 +96,15 @@ export class LayoutContainerNode extends ElementNode {
   }
 
   static importJSON(json: SerializedLayoutContainerNode): LayoutContainerNode {
-    return $createLayoutContainerNode(json.templateColumns);
+    return $createLayoutContainerNode().updateFromJSON(json);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedLayoutContainerNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setTemplateColumns(serializedNode.templateColumns);
   }
 
   isShadowRoot(): boolean {
@@ -110,8 +119,6 @@ export class LayoutContainerNode extends ElementNode {
     return {
       ...super.exportJSON(),
       templateColumns: this.__templateColumns,
-      type: 'layout-container',
-      version: 1,
     };
   }
 
@@ -119,13 +126,15 @@ export class LayoutContainerNode extends ElementNode {
     return this.getLatest().__templateColumns;
   }
 
-  setTemplateColumns(templateColumns: string) {
-    this.getWritable().__templateColumns = templateColumns;
+  setTemplateColumns(templateColumns: string): this {
+    const self = this.getWritable();
+    self.__templateColumns = templateColumns;
+    return self;
   }
 }
 
 export function $createLayoutContainerNode(
-  templateColumns: string,
+  templateColumns: string = '',
 ): LayoutContainerNode {
   return new LayoutContainerNode(templateColumns);
 }

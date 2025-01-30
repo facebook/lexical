@@ -6,8 +6,9 @@
  *
  */
 
-import type {Binding, Provider} from '@lexical/yjs';
+import type {Binding, Provider, SyncCursorPositionsFn} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -54,6 +55,7 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
+  syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
@@ -90,7 +92,7 @@ export function useYjsCollaboration(
     };
 
     const onAwarenessUpdate = () => {
-      syncCursorPositions(binding, provider);
+      syncCursorPositionsFn(binding, provider);
     };
 
     const onYjsTreeChanges = (
@@ -102,7 +104,13 @@ export function useYjsCollaboration(
       const origin = transaction.origin;
       if (origin !== binding) {
         const isFromUndoManger = origin instanceof UndoManager;
-        syncYjsChangesToLexical(binding, provider, events, isFromUndoManger);
+        syncYjsChangesToLexical(
+          binding,
+          provider,
+          events,
+          isFromUndoManger,
+          syncCursorPositionsFn,
+        );
       }
     };
 
@@ -191,6 +199,7 @@ export function useYjsCollaboration(
     shouldBootstrap,
     awarenessData,
     setDoc,
+    syncCursorPositionsFn,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {

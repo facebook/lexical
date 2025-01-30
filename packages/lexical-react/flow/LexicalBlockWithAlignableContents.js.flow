@@ -16,7 +16,7 @@ import type {
 } from 'lexical';
 
 type Props = $ReadOnly<{
-  children: React$Node,
+  children: React.Node,
   format: ?ElementFormatType,
   nodeKey: NodeKey,
   className: $ReadOnly<{
@@ -25,4 +25,4 @@ type Props = $ReadOnly<{
   }>,
 }>;
 
-declare export function BlockWithAlignableContents(Props): React$Node;
+declare export function BlockWithAlignableContents(Props): React.Node;

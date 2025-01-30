@@ -55,6 +55,9 @@ import {
 } from '.';
 import {
   COMPOSITION_SUFFIX,
+  DOM_DOCUMENT_FRAGMENT_TYPE,
+  DOM_DOCUMENT_TYPE,
+  DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
@@ -62,7 +65,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
-import {$flushRootMutations} from './LexicalMutations';
+import {flushRootMutations} from './LexicalMutations';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
@@ -193,8 +196,20 @@ export function $isTokenOrSegmented(node: TextNode): boolean {
   return node.isToken() || node.isSegmented();
 }
 
-export function isDOMTextNode(node: Node): node is Text {
-  return node.nodeType === DOM_TEXT_TYPE;
+/**
+ * @param node - The element being tested
+ * @returns Returns true if node is an DOM Text node, false otherwise.
+ */
+export function isDOMTextNode(node: unknown): node is Text {
+  return isDOMNode(node) && node.nodeType === DOM_TEXT_TYPE;
+}
+
+/**
+ * @param node - The element being tested
+ * @returns Returns true if node is an DOM Document node, false otherwise.
+ */
+export function isDOMDocumentNode(node: unknown): node is Document {
+  return isDOMNode(node) && node.nodeType === DOM_DOCUMENT_TYPE;
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
@@ -528,8 +543,13 @@ export function markNodesWithTypesAsDirty(
   editor.update(
     () => {
       for (const nodeMap of dirtyNodeMaps) {
-        for (const node of nodeMap.values()) {
-          node.markDirty();
+        for (const nodeKey of nodeMap.keys()) {
+          // We are only concerned with nodes that are still in the latest NodeMap,
+          // if they no longer exist then markDirty would raise an exception
+          const latest = $getNodeByKey(nodeKey);
+          if (latest) {
+            latest.markDirty();
+          }
         }
       }
     },
@@ -570,7 +590,7 @@ export function $setSelection(selection: null | BaseSelection): void {
 export function $flushMutations(): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  $flushRootMutations(editor);
+  flushRootMutations(editor);
 }
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
@@ -633,10 +653,7 @@ export function createUID(): string {
 }
 
 export function getAnchorTextFromDOM(anchorNode: Node): null | string {
-  if (anchorNode.nodeType === DOM_TEXT_TYPE) {
-    return anchorNode.nodeValue;
-  }
-  return null;
+  return isDOMTextNode(anchorNode) ? anchorNode.nodeValue : null;
 }
 
 export function $updateSelectedTextFromDOM(
@@ -645,7 +662,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
   if (domSelection === null) {
     return;
   }
@@ -1304,15 +1321,25 @@ export function getParentElement(node: Node): HTMLElement | null {
     : parentElement;
 }
 
+export function getDOMOwnerDocument(
+  target: EventTarget | null,
+): Document | null {
+  return isDOMDocumentNode(target)
+    ? target
+    : isHTMLElement(target)
+    ? target.ownerDocument
+    : null;
+}
+
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   selectionRect: DOMRect,
   rootElement: HTMLElement,
 ): void {
-  const doc = rootElement.ownerDocument;
-  const defaultView = doc.defaultView;
+  const doc = getDOMOwnerDocument(rootElement);
+  const defaultView = getDefaultView(doc);
 
-  if (defaultView === null) {
+  if (doc === null || defaultView === null) {
     return;
   }
   let {top: currentTop, bottom: currentBottom} = selectionRect;
@@ -1414,9 +1441,9 @@ export function $hasAncestor(
   return false;
 }
 
-export function getDefaultView(domElem: HTMLElement): Window | null {
-  const ownerDoc = domElem.ownerDocument;
-  return (ownerDoc && ownerDoc.defaultView) || null;
+export function getDefaultView(domElem: EventTarget | null): Window | null {
+  const ownerDoc = getDOMOwnerDocument(domElem);
+  return ownerDoc ? ownerDoc.defaultView : null;
 }
 
 export function getWindow(editor: LexicalEditor): Window {
@@ -1658,6 +1685,19 @@ export function getDOMSelection(targetWindow: null | Window): null | Selection {
   return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
 }
 
+/**
+ * Returns the selection for the defaultView of the ownerDocument of given EventTarget.
+ *
+ * @param eventTarget The node to get the selection from
+ * @returns a Selection or null
+ */
+export function getDOMSelectionFromTarget(
+  eventTarget: null | EventTarget,
+): null | Selection {
+  const defaultView = getDefaultView(eventTarget);
+  return defaultView ? defaultView.getSelection() : null;
+}
+
 export function $splitNode(
   node: ElementNode,
   offset: number,
@@ -1736,7 +1776,7 @@ export function isHTMLAnchorElement(x: unknown): x is HTMLAnchorElement {
  * @returns Returns true if x is an HTML element, false otherwise.
  */
 export function isHTMLElement(x: unknown): x is HTMLElement {
-  return isDOMNode(x) && x.nodeType === 1;
+  return isDOMNode(x) && x.nodeType === DOM_ELEMENT_TYPE;
 }
 
 /**
@@ -1757,7 +1797,7 @@ export function isDOMNode(x: unknown): x is Node {
  * @returns Returns true if x is a document fragment, false otherwise.
  */
 export function isDocumentFragment(x: unknown): x is DocumentFragment {
-  return isDOMNode(x) && x.nodeType === 11;
+  return isDOMNode(x) && x.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE;
 }
 
 /**
@@ -1787,8 +1827,17 @@ export function isBlockDomNode(node: Node) {
 }
 
 /**
+ * @internal
+ *
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
+ *
+ * This function returns true for a DecoratorNode that is not inline OR
+ * an ElementNode that is:
+ * - not a root or shadow root
+ * - not inline
+ * - can't be empty
+ * - has no children or an inline first child
  */
 export function INTERNAL_$isBlock(
   node: LexicalNode,

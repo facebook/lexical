@@ -23,6 +23,7 @@ import {
   $insertNodes,
   $isElementNode,
   $isRangeSelection,
+  $isTabNode,
   $isTextNode,
   $setSelection,
   KEY_TAB_COMMAND,
@@ -252,6 +253,31 @@ describe('LexicalTabNode tests', () => {
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr"><span data-lexical-text="true">\t</span><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></p>',
       );
+    });
+
+    test('can be serialized and deserialized', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTabNode()));
+        const textNodes = $getRoot().getAllTextNodes();
+        expect(textNodes).toHaveLength(1);
+        expect($isTabNode(textNodes[0])).toBe(true);
+      });
+      const json = editor.getEditorState().toJSON();
+      await editor.update(() => {
+        $getRoot().clear().append($createParagraphNode());
+      });
+      editor.read(() => {
+        expect($getRoot().getAllTextNodes()).toHaveLength(0);
+      });
+      await editor.setEditorState(editor.parseEditorState(json));
+      editor.read(() => {
+        const textNodes = $getRoot().getAllTextNodes();
+        expect(textNodes).toHaveLength(1);
+        expect($isTabNode(textNodes[0])).toBe(true);
+      });
     });
   });
 });

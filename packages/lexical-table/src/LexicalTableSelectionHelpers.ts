@@ -456,6 +456,10 @@ export function applyTableHandlers(
       return false;
     }
 
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
+
     if ($isTableSelection(selection)) {
       if (event) {
         event.preventDefault();
@@ -557,6 +561,12 @@ export function applyTableHandlers(
         const focusNode = selection.focus.getNode();
         if (!$isTableCellNode(anchorNode) || !$isTableCellNode(focusNode)) {
           return false;
+        }
+
+        // Align the table if the entire table is selected
+        if ($isFullTableSelection(selection, tableNode)) {
+          tableNode.setFormat(formatType);
+          return true;
         }
 
         const [tableMap, anchorCell, focusCell] = $computeTableMap(
@@ -1573,6 +1583,24 @@ function $isSelectionInTable(
     return isAnchorInside && isFocusInside;
   }
 
+  return false;
+}
+
+function $isFullTableSelection(
+  selection: null | BaseSelection,
+  tableNode: TableNode,
+): boolean {
+  if ($isTableSelection(selection)) {
+    const anchorNode = selection.anchor.getNode() as TableCellNode;
+    const focusNode = selection.focus.getNode() as TableCellNode;
+    if (tableNode && anchorNode && focusNode) {
+      const [map] = $computeTableMap(tableNode, anchorNode, focusNode);
+      return (
+        anchorNode.getKey() === map[0][0].cell.getKey() &&
+        focusNode.getKey() === map[map.length - 1].at(-1)!.cell.getKey()
+      );
+    }
+  }
   return false;
 }
 

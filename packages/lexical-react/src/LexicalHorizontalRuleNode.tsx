@@ -16,6 +16,7 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -53,17 +54,15 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
       const deleteSelection = $getSelection();
       if (isSelected && $isNodeSelection(deleteSelection)) {
         event.preventDefault();
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isHorizontalRuleNode(node)) {
-              node.remove();
-            }
-          });
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isHorizontalRuleNode(node)) {
+            node.remove();
+          }
         });
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   useEffect(() => {
@@ -126,7 +125,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedHorizontalRuleNode,
   ): HorizontalRuleNode {
-    return $createHorizontalRuleNode();
+    return $createHorizontalRuleNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -135,13 +134,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
         conversion: $convertHorizontalRuleElement,
         priority: 0,
       }),
-    };
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'horizontalrule',
-      version: 1,
     };
   }
 

@@ -8,6 +8,7 @@
 
 import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
 import type {NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -57,16 +58,14 @@ export default function ExcalidrawComponent({
     (event: KeyboardEvent) => {
       if (isSelected) {
         event.preventDefault();
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if (node) {
-            node.remove();
-          }
-        });
+        const node = $getNodeByKey(nodeKey);
+        if (node) {
+          node.remove();
+        }
       }
       return false;
     },
-    [editor, isSelected, nodeKey],
+    [isSelected, nodeKey],
   );
 
   useEffect(() => {

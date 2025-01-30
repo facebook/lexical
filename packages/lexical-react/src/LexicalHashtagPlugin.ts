@@ -7,6 +7,7 @@
  */
 
 import type {TextNode} from 'lexical';
+import type {JSX} from 'react';
 
 import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';

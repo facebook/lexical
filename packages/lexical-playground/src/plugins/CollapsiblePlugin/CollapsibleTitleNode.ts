@@ -80,15 +80,7 @@ export class CollapsibleTitleNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedCollapsibleTitleNode,
   ): CollapsibleTitleNode {
-    return $createCollapsibleTitleNode();
-  }
-
-  exportJSON(): SerializedCollapsibleTitleNode {
-    return {
-      ...super.exportJSON(),
-      type: 'collapsible-title',
-      version: 1,
-    };
+    return $createCollapsibleTitleNode().updateFromJSON(serializedNode);
   }
 
   collapseAtStart(_selection: RangeSelection): boolean {

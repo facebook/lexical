@@ -372,24 +372,13 @@ describe('$applyNodeReplacement', () => {
     static clone(node: ExtendedTextNode): ExtendedTextNode {
       return new ExtendedTextNode(node.__text, node.getKey());
     }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
-    }
     initWithTextNode(node: TextNode): this {
-      this.__text = node.__text;
-      TextNode.prototype.afterCloneFrom.call(this, node);
-      return this;
-    }
-    initWithJSON(serializedNode: SerializedTextNode): this {
-      this.setTextContent(serializedNode.text);
-      this.setFormat(serializedNode.format);
-      this.setDetail(serializedNode.detail);
-      this.setMode(serializedNode.mode);
-      this.setStyle(serializedNode.style);
-      return this;
+      const self = this.getWritable();
+      TextNode.prototype.updateFromJSON.call(self, node.exportJSON());
+      return self;
     }
     static importJSON(serializedNode: SerializedTextNode): ExtendedTextNode {
-      return $createExtendedTextNode().initWithJSON(serializedNode);
+      return $createExtendedTextNode().updateFromJSON(serializedNode);
     }
   }
   class ExtendedExtendedTextNode extends ExtendedTextNode {
@@ -405,10 +394,7 @@ describe('$applyNodeReplacement', () => {
     static importJSON(
       serializedNode: SerializedTextNode,
     ): ExtendedExtendedTextNode {
-      return $createExtendedExtendedTextNode().initWithJSON(serializedNode);
-    }
-    exportJSON(): SerializedTextNode {
-      return {...super.exportJSON(), type: this.getType()};
+      return $createExtendedExtendedTextNode().updateFromJSON(serializedNode);
     }
   }
   function $createExtendedTextNode(text: string = '') {

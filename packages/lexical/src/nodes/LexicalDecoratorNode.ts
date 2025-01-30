@@ -7,7 +7,6 @@
  */
 
 import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
-import type {NodeKey} from '../LexicalNode';
 import type {ElementNode} from './LexicalElementNode';
 
 import {EditorConfig} from 'lexical';
@@ -25,9 +24,6 @@ export interface DecoratorNode<T> {
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DecoratorNode<T> extends LexicalNode {
   ['constructor']!: KlassConstructor<typeof DecoratorNode<T>>;
-  constructor(key?: NodeKey) {
-    super(key);
-  }
 
   /**
    * The returned value is added to the LexicalEditor._decorators

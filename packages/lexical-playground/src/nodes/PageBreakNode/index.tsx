@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+import type {JSX} from 'react';
+
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -40,17 +43,15 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
       event.preventDefault();
       const deleteSelection = $getSelection();
       if (isSelected && $isNodeSelection(deleteSelection)) {
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isPageBreakNode(node)) {
-              node.remove();
-            }
-          });
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isPageBreakNode(node)) {
+            node.remove();
+          }
         });
       }
       return false;
     },
-    [editor, isSelected],
+    [isSelected],
   );
 
   useEffect(() => {
@@ -105,7 +106,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode();
+    return $createPageBreakNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -121,13 +122,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
           priority: COMMAND_PRIORITY_HIGH,
         };
       },
-    };
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: this.getType(),
-      version: 1,
     };
   }
 

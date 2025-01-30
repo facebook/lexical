@@ -13,11 +13,13 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {
   $applyNodeReplacement,
@@ -100,16 +102,22 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedInlineImageNode,
   ): InlineImageNode {
-    const {altText, height, width, caption, src, showCaption, position} =
-      serializedNode;
-    const node = $createInlineImageNode({
+    const {altText, height, width, src, showCaption, position} = serializedNode;
+    return $createInlineImageNode({
       altText,
       height,
       position,
       showCaption,
       src,
       width,
-    });
+    }).updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedInlineImageNode>,
+  ): this {
+    const {caption} = serializedNode;
+    const node = super.updateFromJSON(serializedNode);
     const nestedEditor = node.__caption;
     const editorState = nestedEditor.parseEditorState(caption.editorState);
     if (!editorState.isEmpty()) {
@@ -158,14 +166,13 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedInlineImageNode {
     return {
+      ...super.exportJSON(),
       altText: this.getAltText(),
       caption: this.__caption.toJSON(),
       height: this.__height === 'inherit' ? 0 : this.__height,
       position: this.__position,
       showCaption: this.__showCaption,
       src: this.getSrc(),
-      type: 'inline-image',
-      version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
     };
   }

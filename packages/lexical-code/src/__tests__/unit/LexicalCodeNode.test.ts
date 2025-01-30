@@ -7,6 +7,7 @@
  */
 
 import {
+  $createCodeHighlightNode,
   $createCodeNode,
   $isCodeHighlightNode,
   registerCodeHighlighting,
@@ -855,6 +856,34 @@ describe('LexicalCodeNode tests', () => {
           );
         }
       }
+    });
+    describe('initial editor state before transforms', () => {
+      test('can be registered after initial editor state (regression #7014)', async () => {
+        const {editor} = testEnv;
+        await editor.update(
+          () => {
+            const root = $getRoot();
+            const codeBlock = $createCodeNode('javascript');
+            codeBlock.append(
+              $createCodeHighlightNode('const lexical = "awesome"'),
+            );
+            root.append(codeBlock);
+          },
+          {tag: 'history-merge'},
+        );
+        // before transform
+        expect(testEnv.innerHTML).toBe(
+          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
+        );
+        registerRichText(editor);
+        registerTabIndentation(editor);
+        registerCodeHighlighting(editor);
+        await Promise.resolve(undefined);
+        // after transforms
+        expect(testEnv.innerHTML).toBe(
+          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
+        );
+      });
     });
   });
 });

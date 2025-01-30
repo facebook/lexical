@@ -349,11 +349,11 @@ export class ListItemNode extends ElementNode {
   getIndent(): number {
     // If we don't have a parent, we are likely serializing
     const parent = this.getParent();
-    if (parent === null) {
+    if (parent === null || !this.isAttached()) {
       return this.getLatest().__indent;
     }
     // ListItemNode should always have a ListNode for a parent.
-    let listNodeParent = parent.getParent();
+    let listNodeParent = parent.getParentOrThrow();
     let indentLevel = 0;
     while ($isListItemNode(listNodeParent)) {
       listNodeParent = listNodeParent.getParentOrThrow().getParentOrThrow();

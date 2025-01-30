@@ -8,6 +8,7 @@
 
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $createParagraphNode,
@@ -665,6 +666,37 @@ describe('LexicalCaret', () => {
     });
     describe('$removeTextFromCaretRange', () => {
       const texts = ['first', 'second', 'third'] as const;
+      describe('ported Headings e2e tests', () => {
+        test('Pressing return in the middle of a heading creates a new heading below', () => {
+          testEnv.editor.update(
+            () => {
+              const initialTextNode = $createTextNode('[before][after]');
+              const headingNode = $createHeadingNode().append(initialTextNode);
+              $getRoot().clear().append(headingNode);
+              const newHeadingNode = initialTextNode
+                .select('[before]'.length, '[before]'.length)
+                .insertParagraph();
+              expect(
+                $getRoot()
+                  .getAllTextNodes()
+                  .map((n) => n.getTextContent()),
+              ).toEqual(['[before]', '[after]']);
+              invariant($isHeadingNode(newHeadingNode), 'paragraph inserted');
+              expect($getRoot().getChildren()).toEqual([
+                headingNode,
+                newHeadingNode,
+              ]);
+              expect(initialTextNode.getTextContent()).toBe('[before]');
+              expect(initialTextNode.getParent()).toBe(headingNode);
+              const newTextNodes = newHeadingNode.getAllTextNodes();
+              expect(newTextNodes).toHaveLength(1);
+              invariant($isTextNode(newTextNodes[0]), 'new text node created');
+              expect(newTextNodes[0].getTextContent()).toBe('[after]');
+            },
+            {discrete: true},
+          );
+        });
+      });
       describe('ported File e2e tests', () => {
         test('$selectAll() with nesting and a trailing decorator', () => {
           testEnv.editor.update(

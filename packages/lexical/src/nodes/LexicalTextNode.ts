@@ -1009,48 +1009,51 @@ export class TextNode extends LexicalNode {
       textSize = nextTextSize;
       splitNodes.push(sibling);
     }
-    if (startTextPoint || endTextPoint) {
-      const originalStartOffset = startTextPoint ? startTextPoint.offset : null;
-      const originalEndOffset = endTextPoint ? endTextPoint.offset : null;
-      let startOffset = 0;
-      for (const node of splitNodes) {
-        const endOffset = startOffset + node.getTextContentSize();
-        if (
-          startTextPoint !== null &&
-          originalStartOffset !== null &&
-          originalStartOffset <= endOffset &&
-          originalStartOffset >= startOffset
-        ) {
-          // Bias the start point to move to the new node
-          startTextPoint.set(
-            node.getKey(),
-            originalStartOffset - startOffset,
-            'text',
-          );
-          if (originalStartOffset < endOffset) {
-            // The start isn't on a border so we can stop checking
-            startTextPoint = null;
-          }
-        }
-        if (
-          endTextPoint !== null &&
-          originalEndOffset !== null &&
-          originalEndOffset <= endOffset &&
-          originalEndOffset >= startOffset
-        ) {
-          endTextPoint.set(
-            node.getKey(),
-            originalEndOffset - startOffset,
-            'text',
-          );
-          // Bias the end to remain on the same node, only consider
-          // the next node if it's collapsed with the start on the end node
-          if (startTextPoint === null || originalEndOffset < endOffset) {
-            break;
-          }
-        }
-        startOffset = endOffset;
+
+    // Move the selection to the best location in the split string.
+    // The end point is always left-biased, and the start point is
+    // generally left biased unless the end point would land on a
+    // later node in the split in which case it will prefer the start
+    // of that node so they will tend to be on the same node.
+    const originalStartOffset = startTextPoint ? startTextPoint.offset : null;
+    const originalEndOffset = endTextPoint ? endTextPoint.offset : null;
+    let startOffset = 0;
+    for (const node of splitNodes) {
+      if (!(startTextPoint || endTextPoint)) {
+        break;
       }
+      const endOffset = startOffset + node.getTextContentSize();
+      if (
+        startTextPoint !== null &&
+        originalStartOffset !== null &&
+        originalStartOffset <= endOffset &&
+        originalStartOffset >= startOffset
+      ) {
+        // Set the start point to the first valid node
+        startTextPoint.set(
+          node.getKey(),
+          originalStartOffset - startOffset,
+          'text',
+        );
+        if (originalStartOffset < endOffset) {
+          // The start isn't on a border so we can stop checking
+          startTextPoint = null;
+        }
+      }
+      if (
+        endTextPoint !== null &&
+        originalEndOffset !== null &&
+        originalEndOffset <= endOffset &&
+        originalEndOffset >= startOffset
+      ) {
+        endTextPoint.set(
+          node.getKey(),
+          originalEndOffset - startOffset,
+          'text',
+        );
+        break;
+      }
+      startOffset = endOffset;
     }
 
     // Insert the nodes into the parent's children

@@ -1519,17 +1519,28 @@ describe('LexicalNode state', () => {
         });
       });
 
-      test(`createStateKey and getState don't need to be inside an update, setState does`, async () => {
-        const keyForString = createStateKey('keyForString', {
-          parse: (value) => value as string,
-        });
-        const stringValue = root.getState(keyForString);
-        type _Test = Expect<Equal<typeof stringValue, string | undefined>>;
-        expect(stringValue).toBeUndefined();
+      test(`setState() need to be inside an update`, async () => {
         const fn = () => {
+          const keyForString = createStateKey('keyForString', {
+            parse: (value) => value as string,
+          });
           root.setState(keyForString, 'hello');
         };
         expect(fn).toThrow();
+      });
+
+      test(`getState and setState`, async () => {
+        const keyForString = createStateKey('keyForString', {
+          parse: (value) => value as string,
+        });
+        const {editor} = testEnv;
+        editor.update(() => {
+          const stringValue = root.getState(keyForString);
+          type _Test = Expect<Equal<typeof stringValue, string | undefined>>;
+          expect(stringValue).toBeUndefined();
+          root.setState(keyForString, 'hello');
+          expect(root.getState(keyForString)).toBe('hello');
+        });
       });
     },
     {

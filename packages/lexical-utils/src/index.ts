@@ -21,6 +21,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
+  $rewindBreadthCaret,
   $setSelection,
   $splitNode,
   type BreadthNodeCaret,
@@ -206,6 +207,20 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 ): null | BreadthNodeCaret<LexicalNode, D> {
   return caret ? caret.getAdjacentCaret() : null;
 }
+/**
+ * A function which will return exactly the reversed order of $dfs. That means that the tree is traversed
+ * from right to left, starting at the leaf and working towards the root.
+ * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
+ * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
+ */
+export function $reverseDfs(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode> {
+  return Array.from($reverseDfsIterator(startNode, endNode));
+}
 
 /**
  * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
@@ -217,19 +232,26 @@ export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
+  return $dfsCaretIterator('next', startNode, endNode);
+}
+
+function $dfsCaretIterator<D extends CaretDirection>(
+  direction: D,
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
   const rootMode = 'root';
   const root = $getRoot();
   const start = startNode || root;
   const startCaret = $isElementNode(start)
-    ? $getDepthCaret(start, 'next')
-    : $getBreadthCaret(start, 'previous').getFlipped();
+    ? $getDepthCaret(start, direction)
+    : $rewindBreadthCaret($getBreadthCaret(start, direction));
   const startDepth = $getDepth(startCaret.getParentAtCaret());
   const endCaret = $getAdjacentDepthCaret(
     endNode
-      ? $getChildCaretOrSelf($getBreadthCaret(endNode, 'next'))
+      ? $getChildCaretOrSelf($getBreadthCaret(endNode, direction))
       : startCaret.getParentCaret(rootMode),
   );
-
   let depth = startDepth;
   return makeStepwiseIterator({
     initial: startCaret,
@@ -315,6 +337,20 @@ export function $getNextRightPreorderNode(
   );
   const next = $getNextSiblingOrParentSiblingCaret(startCaret, 'root');
   return next && next[0].origin;
+}
+
+/**
+ * An iterator which will traverse the tree in exactly the reversed order of $dfsIterator. Tree traversal is done
+ * on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
+ * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  return $dfsCaretIterator('previous', startNode, endNode);
 }
 
 /**
@@ -808,5 +844,8 @@ function $childIterator<D extends CaretDirection>(
  * @param node The ElementNode to unwrap and remove
  */
 export function $unwrapNode(node: ElementNode): void {
-  $getBreadthCaret(node, 'next').getFlipped().splice(1, node.getChildren());
+  $rewindBreadthCaret($getBreadthCaret(node, 'next')).splice(
+    1,
+    node.getChildren(),
+  );
 }

@@ -40,6 +40,8 @@ export {
 export {
   $caretFromPoint,
   $caretRangeFromSelection,
+  $getCaretInDirection,
+  $getCaretRangeInDirection,
   $getChildCaretAtIndex,
   $getTextSliceContent,
   $removeTextFromCaretRange,

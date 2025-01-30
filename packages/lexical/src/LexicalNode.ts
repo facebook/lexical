@@ -187,6 +187,30 @@ export type NodeKey = string;
 
 export type State = {[Key in string]?: string | number | boolean | State};
 
+export interface StateKey<K extends string = string, V = unknown> {
+  key: K;
+  // Here we are storing a default for convenience
+  value: V;
+  parse: (value: unknown) => V;
+}
+
+export interface StateKeyConfig<V> {
+  /* possibly constrain V to ensure JSON serializability */
+  parse: (value: unknown) => V;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type StateKeyConfigValue<T extends StateKeyConfig<any>> = ReturnType<
+  T['parse']
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createStateKey<K extends string, T extends StateKeyConfig<any>>(
+  key: K,
+  config: T,
+): StateKey<K, StateKeyConfigValue<T>> {
+  return {key, parse: config.parse, value: config.parse(undefined)};
+}
+
 export class LexicalNode {
   // Allow us to look up the type including static props
   ['constructor']!: KlassConstructor<typeof LexicalNode>;
@@ -204,21 +228,32 @@ export class LexicalNode {
   /** @internal */
   __state: State = {};
 
-  getState<T extends State = State>(key: keyof T): T[keyof T] | undefined {
-    const self = this.getLatest();
-    return (self.__state as T)[key];
+  // getState<T extends State = State>(key: keyof T): T[keyof T] | undefined {
+  //   const self = this.getLatest();
+  //   return (self.__state as T)[key];
+  // }
+
+  getState<T extends StateKey>(k: T): T['value'] | undefined {
+    return k.parse(/* implement state here */ undefined);
   }
 
-  setState<T extends State = State>(
-    key: keyof T,
-    value: T[keyof T] | undefined,
-  ) {
-    const self = this.getWritable();
-    if (value === undefined) {
-      delete (self.__state as T)[key];
-      return;
-    }
-    (self.__state as T)[key] = value;
+  // setState<T extends State = State>(
+  //   key: keyof T,
+  //   value: T[keyof T] | undefined,
+  // ) {
+  //   const self = this.getWritable();
+  //   if (value === undefined) {
+  //     delete (self.__state as T)[key];
+  //     return;
+  //   }
+  //   (self.__state as T)[key] = value;
+  // }
+
+  setState<T extends StateKey>(k: T, v: T['value']) {
+    const _self = this.getWritable();
+    // self.__state[k.key] = v;
+    // (self.__state as T)[k.key] = v;
+    return this;
   }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_

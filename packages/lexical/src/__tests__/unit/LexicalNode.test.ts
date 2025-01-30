@@ -21,12 +21,13 @@ import {
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  RootNode,
   SerializedLexicalNode,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
 
-import {LexicalNode} from '../../LexicalNode';
+import {createStateKey, LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
@@ -35,6 +36,14 @@ import {
   TestElementNode,
   TestInlineElementNode,
 } from '../utils';
+
+// https://www.totaltypescript.com/how-to-test-your-types
+type Expect<T extends true> = T;
+type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
+  ? 1
+  : 2
+  ? true
+  : false;
 
 class TestNode extends LexicalNode {
   static getType(): string {
@@ -1493,6 +1502,39 @@ describe('LexicalNode tests', () => {
     {
       namespace: '',
       nodes: [LexicalNode, TestNode, InlineDecoratorNode],
+      theme: {},
+    },
+  );
+});
+
+describe('LexicalNode state', () => {
+  initializeUnitTest(
+    (testEnv) => {
+      let root: RootNode;
+
+      beforeEach(async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          root = $getRoot();
+        });
+      });
+
+      test(`createStateKey and getState don't need to be inside an update, setState does`, async () => {
+        const keyForString = createStateKey('keyForString', {
+          parse: (value) => value as string,
+        });
+        const stringValue = root.getState(keyForString);
+        type _Test = Expect<Equal<typeof stringValue, string | undefined>>;
+        expect(stringValue).toBeUndefined();
+        const fn = () => {
+          root.setState(keyForString, 'hello');
+        };
+        expect(fn).toThrow();
+      });
+    },
+    {
+      namespace: '',
+      nodes: [LexicalNode, TestNode],
       theme: {},
     },
   );

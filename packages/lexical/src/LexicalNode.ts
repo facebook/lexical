@@ -972,6 +972,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
+    this.__state = serializedNode.state || {};
     return this;
   }
 

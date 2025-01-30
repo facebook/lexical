@@ -1542,6 +1542,40 @@ describe('LexicalNode state', () => {
           expect(root.getState(keyForString)).toBe('hello');
         });
       });
+
+      test(`import and export state`, async () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const paragraph = new ParagraphNode();
+          const json = paragraph.exportJSON();
+          // We don't export state as an empty object
+          expect(json).toStrictEqual({
+            children: [],
+            direction: null,
+            format: '',
+            indent: 0,
+            textFormat: 0,
+            textStyle: '',
+            type: 'paragraph',
+            version: 1,
+          });
+          const keyForNumber = createStateKey('keyForNumber', {
+            parse: (value) => value as number,
+          });
+          paragraph.setState(keyForNumber, 1);
+          const json2 = paragraph.exportJSON();
+          expect(json2).toStrictEqual({
+            ...json,
+            state: {
+              keyForNumber: 1,
+            },
+          });
+          const paragraph2 = ParagraphNode.importJSON(json2);
+          expect(paragraph2.__state).toStrictEqual({
+            keyForNumber: 1,
+          });
+        });
+      });
     },
     {
       namespace: '',

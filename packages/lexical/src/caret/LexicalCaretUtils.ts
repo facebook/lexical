@@ -17,7 +17,6 @@ import type {
   TextNodeCaretSlice,
 } from './LexicalCaret';
 
-import {$getAdjacentCaret} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -466,7 +465,7 @@ export function $getExpandedCaret<D extends CaretDirection>(
     return caret;
   }
   let nextCaret = caret;
-  while (!$getAdjacentCaret(nextCaret)) {
+  while (!nextCaret.getAdjacentCaret()) {
     const nextParent = nextCaret.getParentCaret(rootMode);
     if (!nextParent) {
       break;

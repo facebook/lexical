@@ -20,6 +20,7 @@ import {
 
 import {
   $createListItemNode,
+  $createListNode,
   $isListItemNode,
   ListItemNode,
   ListNode,
@@ -1358,6 +1359,25 @@ describe('LexicalListItemNode tests', () => {
 
         await editor.update(() => {
           expect(listItemNode1.getIndent()).toBe(0);
+        });
+      });
+    });
+
+    test('Can serialize a node that is not attached', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listItemNode = $createListItemNode();
+        const listNode = $createListNode();
+        listNode.append(listItemNode);
+        expect(listItemNode.exportJSON()).toEqual({
+          checked: undefined,
+          children: [],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'listitem',
+          value: 1,
+          version: 1,
         });
       });
     });

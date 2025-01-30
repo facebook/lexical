@@ -43,6 +43,8 @@ export {
   $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
+  $getExpandedCaret,
+  $getExpandedCaretRange,
   $getTextSliceContent,
   $removeTextFromCaretRange,
   $removeTextSlice,

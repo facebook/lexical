@@ -17,6 +17,7 @@ import type {
   TextNodeCaretSlice,
 } from './LexicalCaret';
 
+import {$getAdjacentCaret} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -46,6 +47,7 @@ import {
   $getTextNodeCaret,
   $isBreadthNodeCaret,
   $isDepthNodeCaret,
+  $isSameTextNodeCaret,
   $isTextNodeCaret,
   flipDirection,
 } from './LexicalCaret';
@@ -218,7 +220,9 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     return initialRange;
   }
   // Always process removals in document order
-  const range = $getCaretRangeInDirection(initialRange, 'next');
+  const range = $getExpandedCaretRange(
+    $getCaretRangeInDirection(initialRange, 'next'),
+  );
 
   let anchorCandidates = $getAnchorCandidates(range.anchor);
   const {direction} = range;
@@ -423,6 +427,53 @@ export function $getCaretRangeInDirection<D extends CaretDirection>(
     $getCaretInDirection(range.focus, direction),
     $getCaretInDirection(range.anchor, direction),
   );
+}
+
+/**
+ * Expand a range's focus away from the anchor towards the
+ * top of the tree so long as it doesn't have any adjacent
+ * siblings.
+ *
+ * @param range
+ * @param rootMode
+ * @returns
+ */
+export function $getExpandedCaretRange<D extends CaretDirection>(
+  range: NodeCaretRange<D>,
+  rootMode: RootMode = 'root',
+): NodeCaretRange<D> {
+  return $getCaretRange(range.anchor, $getExpandedCaret(range.focus, rootMode));
+}
+
+/**
+ * Move a caret upwards towards a root so long as it does not have any adjacent caret
+ *
+ * @param caret
+ * @param rootMode
+ * @returns
+ */
+export function $getExpandedCaret<D extends CaretDirection>(
+  caret: PointNodeCaret<D>,
+  rootMode: RootMode = 'root',
+): PointNodeCaret<D> {
+  if (
+    $isTextNodeCaret(caret) &&
+    !$isSameTextNodeCaret(
+      caret,
+      $getTextNodeCaret(caret.origin, caret.direction, caret.direction),
+    )
+  ) {
+    return caret;
+  }
+  let nextCaret = caret;
+  while (!$getAdjacentCaret(nextCaret)) {
+    const nextParent = nextCaret.getParentCaret(rootMode);
+    if (!nextParent) {
+      break;
+    }
+    nextCaret = nextParent;
+  }
+  return nextCaret;
 }
 
 /**

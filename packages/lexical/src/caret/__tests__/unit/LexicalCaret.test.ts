@@ -7,6 +7,7 @@
  */
 
 import {$createLinkNode} from '@lexical/link';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {
   $caretRangeFromSelection,
   $createParagraphNode,
@@ -23,6 +24,7 @@ import {
   $isTextNodeCaret,
   $removeTextFromCaretRange,
   $rewindBreadthCaret,
+  $selectAll,
   $setPointFromCaret,
   $setSelection,
   $setSelectionFromCaretRange,
@@ -35,6 +37,7 @@ import {
 
 import {
   $assertRangeSelection,
+  $createTestDecoratorNode,
   initializeUnitTest,
   invariant,
 } from '../../../__tests__/utils';
@@ -662,6 +665,37 @@ describe('LexicalCaret', () => {
     });
     describe('$removeTextFromCaretRange', () => {
       const texts = ['first', 'second', 'third'] as const;
+      describe('ported File e2e tests', () => {
+        test('$selectAll() with nesting and a trailing decorator', () => {
+          testEnv.editor.update(
+            () => {
+              const paragraphNode = $createParagraphNode().append(
+                $createTextNode('Hello').setFormat('bold'),
+                $createTextNode('World'),
+              );
+              const listNode = $createListNode('number').append(
+                $createListItemNode().append($createTextNode('one')),
+                $createListItemNode().append($createTextNode('two')),
+                $createListItemNode().append($createTestDecoratorNode()),
+              );
+              $getRoot().clear().append(paragraphNode, listNode);
+              expect($getRoot().getChildrenSize()).toBe(2);
+              const range = $caretRangeFromSelection($selectAll());
+              const resultRange = $removeTextFromCaretRange(range);
+              expect($getRoot().getAllTextNodes()).toEqual([]);
+              expect($getRoot().getChildren()).toEqual([paragraphNode]);
+              expect(resultRange).toMatchObject({
+                anchor: {
+                  direction: 'next',
+                  origin: paragraphNode,
+                  type: 'depth',
+                },
+              });
+            },
+            {discrete: true},
+          );
+        });
+      });
       describe('ported LexicalSelection tests', () => {
         test('remove partial initial TextNode and partial segmented TextNode', () => {
           let leadingText: TextNode;

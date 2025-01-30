@@ -207,13 +207,12 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 ): null | BreadthNodeCaret<LexicalNode, D> {
   return caret ? caret.getAdjacentCaret() : null;
 }
+
 /**
- * A function which will return exactly the reversed order of $dfs. That means that the tree is traversed
- * from right to left, starting at the leaf and working towards the root.
- * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
- * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
- * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
- * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
+ * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function $reverseDfs(
   startNode?: LexicalNode,
@@ -223,7 +222,7 @@ export function $reverseDfs(
 }
 
 /**
- * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
  * @param startNode - The node to start the search, if omitted, it will start at the root node.
  * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
@@ -340,10 +339,9 @@ export function $getNextRightPreorderNode(
 }
 
 /**
- * An iterator which will traverse the tree in exactly the reversed order of $dfsIterator. Tree traversal is done
- * on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
- * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
+ * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function $reverseDfsIterator(

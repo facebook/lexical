@@ -12,7 +12,9 @@ import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
+  ElementNode,
   LexicalEditor,
+  LexicalNode,
   NodeKey,
 } from 'lexical';
 import {
@@ -21,15 +23,24 @@ import {
   invariant,
 } from 'lexical/src/__tests__/utils';
 
-import {$dfs, $getNextSiblingOrParentSibling, $reverseDfs} from '../..';
+import {
+  $dfs,
+  $firstToLastIterator,
+  $getNextSiblingOrParentSibling,
+  $lastToFirstIterator,
+  $reverseDfs,
+} from '../..';
+
+interface DFSKeyPair {
+  depth: number;
+  node: NodeKey;
+}
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     describe('dfs order', () => {
-      let expectedKeys: Array<{
-        depth: number;
-        node: NodeKey;
-      }> = [];
+      let expectedKeys: DFSKeyPair[];
+      let reverseExpectedKeys: DFSKeyPair[];
 
       /**
        *               R
@@ -38,6 +49,8 @@ describe('LexicalNodeHelpers tests', () => {
        *     T1   T2 T3          T6
        *
        *  DFS: R, P1, B1, T1, B2, T2, T3, P2, T4, T5, B3, T6
+       *
+       *  Reverse DFS: R, P2, B3, T6, T5, T4, P1, B2, T3, T2, B1, T1
        */
       beforeEach(async () => {
         const editor: LexicalEditor = testEnv.editor;
@@ -72,56 +85,56 @@ describe('LexicalNodeHelpers tests', () => {
 
           block3.append(text6);
 
-          expectedKeys = [
-            {
-              depth: 0,
-              node: root.getKey(),
-            },
-            {
-              depth: 1,
-              node: paragraph1.getKey(),
-            },
-            {
-              depth: 2,
-              node: block1.getKey(),
-            },
-            {
-              depth: 3,
-              node: text1.getKey(),
-            },
-            {
-              depth: 2,
-              node: block2.getKey(),
-            },
-            {
-              depth: 3,
-              node: text2.getKey(),
-            },
-            {
-              depth: 3,
-              node: text3.getKey(),
-            },
-            {
-              depth: 1,
-              node: paragraph2.getKey(),
-            },
-            {
-              depth: 2,
-              node: text4.getKey(),
-            },
-            {
-              depth: 2,
-              node: text5.getKey(),
-            },
-            {
-              depth: 2,
-              node: block3.getKey(),
-            },
-            {
-              depth: 3,
-              node: text6.getKey(),
-            },
-          ];
+          function* keysForNode(
+            depth: number,
+            node: LexicalNode,
+            $getChildren: (element: ElementNode) => Iterable<LexicalNode>,
+          ): Iterable<DFSKeyPair> {
+            yield {depth, node: node.getKey()};
+            if ($isElementNode(node)) {
+              const childDepth = depth + 1;
+              for (const child of $getChildren(node)) {
+                yield* keysForNode(childDepth, child, $getChildren);
+              }
+            }
+          }
+
+          expectedKeys = [...keysForNode(0, root, $firstToLastIterator)];
+          reverseExpectedKeys = [...keysForNode(0, root, $lastToFirstIterator)];
+          // R, P1, B1, T1, B2, T2, T3, P2, T4, T5, B3, T6
+          expect(expectedKeys).toEqual(
+            [
+              root,
+              paragraph1,
+              block1,
+              text1,
+              block2,
+              text2,
+              text3,
+              paragraph2,
+              text4,
+              text5,
+              block3,
+              text6,
+            ].map((n) => ({depth: n.getParentKeys().length, node: n.getKey()})),
+          );
+          // R, P2, B3, T6, T5, T4, P1, B2, T3, T2, B1, T1
+          expect(reverseExpectedKeys).toEqual(
+            [
+              root,
+              paragraph2,
+              block3,
+              text6,
+              text5,
+              text4,
+              paragraph1,
+              block2,
+              text3,
+              text2,
+              block1,
+              text1,
+            ].map((n) => ({depth: n.getParentKeys().length, node: n.getKey()})),
+          );
         });
       });
 
@@ -150,12 +163,12 @@ describe('LexicalNodeHelpers tests', () => {
       test('Reverse DFS node order', async () => {
         const editor: LexicalEditor = testEnv.editor;
         editor.getEditorState().read(() => {
-          const expectedNodes = expectedKeys
-            .map(({depth, node: nodeKey}) => ({
+          const expectedNodes = reverseExpectedKeys.map(
+            ({depth, node: nodeKey}) => ({
               depth,
               node: $getNodeByKey(nodeKey)!.getLatest(),
-            }))
-            .reverse();
+            }),
+          );
 
           const first = expectedNodes[0];
           const second = expectedNodes[1];
@@ -167,9 +180,7 @@ describe('LexicalNodeHelpers tests', () => {
             expectedNodes.slice(1, expectedNodes.length - 1),
           );
           expect($reverseDfs()).toEqual(expectedNodes);
-          expect($reverseDfs($getRoot().getLastDescendant()!)).toEqual(
-            expectedNodes,
-          );
+          expect($reverseDfs($getRoot())).toEqual(expectedNodes);
         });
       });
     });
@@ -206,6 +217,8 @@ describe('LexicalNodeHelpers tests', () => {
         const block3 = $createTestElementNode();
         invariant($isElementNode(block1));
 
+        // this will (only) change the latest state of block1
+        // all other nodes will be the same version
         block1.append(block3);
 
         expect($dfs(root!)).toEqual([
@@ -265,28 +278,30 @@ describe('LexicalNodeHelpers tests', () => {
         const block3 = $createTestElementNode();
         invariant($isElementNode(block1));
 
+        // this will (only) change the latest state of block1
+        // all other nodes will be the same version
         block1.append(block3);
 
         expect($reverseDfs()).toEqual([
           {
-            depth: 2,
-            node: block2!.getLatest(),
-          },
-          {
-            depth: 3,
-            node: block3.getLatest(),
-          },
-          {
-            depth: 2,
-            node: block1.getLatest(),
+            depth: 0,
+            node: root!.getLatest(),
           },
           {
             depth: 1,
             node: paragraph!.getLatest(),
           },
           {
-            depth: 0,
-            node: root!.getLatest(),
+            depth: 2,
+            node: block2!.getLatest(),
+          },
+          {
+            depth: 2,
+            node: block1.getLatest(),
+          },
+          {
+            depth: 3,
+            node: block3.getLatest(),
           },
         ]);
       });

@@ -195,7 +195,7 @@ type DeepImmutable<T> = T extends Map<infer K, infer V>
     }
   : T;
 type State = {[Key in string]?: string | number | boolean | State};
-type StateValue = string | number | boolean | State;
+type StateValue = string | number | boolean | undefined | State;
 interface StateKey<
   K extends string = string,
   V extends StateValue = StateValue,
@@ -235,7 +235,7 @@ export class LexicalNode {
   /** @internal */
   __state: DeepImmutable<State> = {};
 
-  getState<T extends StateKey>(k: T): T['value'] | undefined {
+  getState<T extends StateKey>(k: T): T['value'] {
     const self = this.getLatest();
     // If the state is not set, return the default value
     return self.__state[k.key] ?? k.parse(undefined);

@@ -13,7 +13,9 @@ All you need to do is define keys with `createStateKey`, and then use it with th
 
 ```ts
 // IMPLEMENTATION
-const color = createStateKey('color', { parse: (value) => value as string });
+const color = createStateKey('color', {
+  parse: (value: unknown) => (typeof value === 'string' ? value : undefined),
+});
 
 // USAGE
 const textNode = new TextNode();

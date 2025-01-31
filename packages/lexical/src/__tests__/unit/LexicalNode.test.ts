@@ -1536,10 +1536,25 @@ describe('LexicalNode state', () => {
         const {editor} = testEnv;
         editor.update(() => {
           const stringValue = root.getState(keyForString);
-          type _Test = Expect<Equal<typeof stringValue, string | undefined>>;
+          type _Test = Expect<Equal<typeof stringValue, string>>;
           expect(stringValue).toBeUndefined();
           root.setState(keyForString, 'hello');
           expect(root.getState(keyForString)).toBe('hello');
+
+          const keyForMaybeString = createStateKey('keyForMaybeString', {
+            parse: (value) => value as string | undefined,
+          });
+          const maybeStringValue = root.getState(keyForMaybeString);
+          type _Test2 = Expect<
+            Equal<typeof maybeStringValue, string | undefined>
+          >;
+          expect(maybeStringValue).toBeUndefined();
+
+          const keyForMaybeNull = createStateKey('keyForMaybeNull', {
+            parse: (value) => value as string | null,
+          });
+          // @ts-expect-error - null is not a valid value
+          const _maybeNullValue = root.getState(keyForMaybeNull);
         });
       });
 

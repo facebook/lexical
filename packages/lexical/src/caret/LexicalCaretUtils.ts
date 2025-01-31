@@ -39,14 +39,13 @@ import {
   type TextNode,
 } from '../nodes/LexicalTextNode';
 import {
+  $getAdjacentDepthCaret,
   $getBreadthCaret,
   $getCaretRange,
-  $getChildCaretOrSelf,
   $getDepthCaret,
   $getTextNodeCaret,
   $isBreadthNodeCaret,
   $isDepthNodeCaret,
-  $isSameTextNodeCaret,
   $isTextNodeCaret,
   flipDirection,
 } from './LexicalCaret';
@@ -193,9 +192,12 @@ function $getAnchorCandidates<D extends CaretDirection>(
   anchor: NodeCaret<D>,
   rootMode: RootMode = 'root',
 ): [NodeCaret<D>, ...NodeCaret<D>[]] {
+  // These candidates will be the anchor itself, the pointer to the anchor (if different), and then any parents of that
   const carets: [NodeCaret<D>, ...NodeCaret<D>[]] = [anchor];
   for (
-    let parent = anchor.getParentCaret(rootMode);
+    let parent = $isDepthNodeCaret(anchor)
+      ? anchor.getParentCaret(rootMode)
+      : anchor;
     parent !== null;
     parent = parent.getParentCaret(rootMode)
   ) {
@@ -219,28 +221,88 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     return initialRange;
   }
   // Always process removals in document order
-  const range = $getExpandedCaretRange(
-    $getCaretRangeInDirection(initialRange, 'next'),
+  const rootMode = 'root';
+  const nextDirection = 'next';
+  const range = $getCaretRangeInDirection(initialRange, nextDirection);
+
+  const anchorCandidates = $getAnchorCandidates(range.anchor, rootMode);
+  const focusCandidates = $getAnchorCandidates(
+    range.focus.getFlipped(),
+    rootMode,
   );
 
-  let anchorCandidates = $getAnchorCandidates(range.anchor);
-  const {direction} = range;
-
-  // Remove all internal nodes
+  // Mark the start of each ElementNode
   const canRemove = new Set<NodeKey>();
-  for (const caret of range.internalCarets('root')) {
+  // Mark the end of each ElementNode
+  const canExpand = new Set<NodeKey>();
+  // Remove all internal nodes
+  for (const caret of range.internalCarets(rootMode)) {
     if ($isDepthNodeCaret(caret)) {
       canRemove.add(caret.origin.getKey());
     } else if ($isBreadthNodeCaret(caret)) {
       const {origin} = caret;
-      if (!$isElementNode(origin) || canRemove.has(origin.getKey())) {
+      if ($isElementNode(origin) && !canRemove.has(origin.getKey())) {
+        // The anchor is inside this element
+        canExpand.add(origin.getKey());
+      } else {
         origin.remove();
       }
     }
   }
+
+  // Splice text at the anchor and/or origin.
+  // If the text is entirely selected then it is removed.
+  // If it's a token with a non-empty selection then it is removed.
+  // Segmented nodes will be copied to a plain text node with the same format
+  // and style and set to normal mode.
+  for (const slice of range.getTextSlices()) {
+    const {origin} = slice.caret;
+    const contentSize = origin.getTextContentSize();
+    const caretBefore = $rewindBreadthCaret(
+      $getBreadthCaret(origin, nextDirection),
+    );
+    const mode = origin.getMode();
+    if (
+      Math.abs(slice.size) === contentSize ||
+      (mode === 'token' && slice.size !== 0)
+    ) {
+      // anchorCandidates[1] should still be valid, it is caretBefore
+      caretBefore.remove();
+    } else if (slice.size !== 0) {
+      let nextCaret = $removeTextSlice(slice);
+      if (mode === 'segmented') {
+        const src = nextCaret.origin;
+        const plainTextNode = $createTextNode(src.getTextContent())
+          .setStyle(src.getStyle())
+          .setFormat(src.getFormat());
+        caretBefore.replaceOrInsert(plainTextNode);
+        nextCaret = $getTextNodeCaret(
+          plainTextNode,
+          nextDirection,
+          nextCaret.offset,
+        );
+      }
+      if (anchorCandidates[0].is(slice.caret)) {
+        anchorCandidates[0] = nextCaret;
+      }
+    }
+  }
+
+  for (const candidates of [anchorCandidates, focusCandidates]) {
+    const deleteCount = candidates.findIndex((caret) =>
+      caret.origin.isAttached(),
+    );
+    candidates.splice(0, deleteCount);
+  }
+
+  const anchorCandidate = anchorCandidates.find((v) => v.origin.isAttached());
+  const focusCandidate = focusCandidates.find((v) => v.origin.isAttached());
+
   // Merge blocks if necessary
-  const anchorBlock = $getAncestor(range.anchor.origin, INTERNAL_$isBlock);
-  const focusBlock = $getAncestor(range.focus.origin, INTERNAL_$isBlock);
+  const anchorBlock =
+    anchorCandidate && $getAncestor(anchorCandidate.origin, INTERNAL_$isBlock);
+  const focusBlock =
+    focusCandidate && $getAncestor(focusCandidate.origin, INTERNAL_$isBlock);
   if (
     $isElementNode(focusBlock) &&
     canRemove.has(focusBlock.getKey()) &&
@@ -248,60 +310,12 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   ) {
     // always merge blocks later in the document with
     // blocks earlier in the document
-    const [firstBlock, lastBlock] =
-      direction === 'next'
-        ? [anchorBlock, focusBlock]
-        : [focusBlock, anchorBlock];
+    $getDepthCaret(anchorBlock, 'previous').splice(0, focusBlock.getChildren());
+    focusBlock.remove();
+  }
 
-    $getDepthCaret(firstBlock, 'previous').splice(0, lastBlock.getChildren());
-    lastBlock.remove();
-  }
-  // Splice text at the anchor and/or origin.
-  // If the text is entirely selected then it is removed.
-  // If it's a token with a non-empty selection then it is removed.
-  // Segmented nodes will be copied to a plain text node with the same format
-  // and style and set to normal mode.
-  for (const slice of range.getNonEmptyTextSlices()) {
-    const {origin} = slice.caret;
-    const isAnchor = anchorCandidates[0].is(slice.caret);
-    const contentSize = origin.getTextContentSize();
-    const caretBefore = $rewindBreadthCaret(
-      $getBreadthCaret(origin, direction),
-    );
-    const mode = origin.getMode();
-    if (
-      Math.abs(slice.size) === contentSize ||
-      (mode === 'token' && slice.size !== 0)
-    ) {
-      if (isAnchor) {
-        anchorCandidates = $getAnchorCandidates(caretBefore);
-      }
-      caretBefore.remove();
-    } else {
-      const nextCaret = $removeTextSlice(slice);
-      if (isAnchor) {
-        anchorCandidates = $getAnchorCandidates(nextCaret);
-      }
-      if (mode === 'segmented') {
-        const src = nextCaret.origin;
-        const plainTextNode = $createTextNode(src.getTextContent())
-          .setStyle(src.getStyle())
-          .setFormat(src.getFormat());
-        caretBefore.replaceOrInsert(plainTextNode);
-        if (isAnchor) {
-          anchorCandidates = $getAnchorCandidates(
-            $getTextNodeCaret(
-              plainTextNode,
-              nextCaret.direction,
-              nextCaret.offset,
-            ),
-          );
-        }
-      }
-    }
-  }
-  for (const caret of anchorCandidates) {
-    if (caret.origin.isAttached()) {
+  for (const caret of [anchorCandidate, focusCandidate]) {
+    if (caret && caret.origin.isAttached()) {
       const anchor = $getCaretInDirection(
         $normalizeCaret(caret),
         initialRange.direction,
@@ -330,7 +344,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
 function $getDeepestChildOrSelf<Caret extends PointNodeCaret | null>(
   initialCaret: Caret,
 ): PointNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
-  let caret = $getChildCaretOrSelf(initialCaret);
+  let caret: PointNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) =
+    initialCaret;
   while ($isDepthNodeCaret(caret)) {
     const childNode = caret.getNodeAtCaret();
     if (!$isElementNode(childNode)) {
@@ -368,7 +383,7 @@ export function $normalizeCaret<D extends CaretDirection>(
   const adjacent = $getDeepestChildOrSelf(caret.getAdjacentCaret());
   return $isBreadthNodeCaret(adjacent) && $isTextNode(adjacent.origin)
     ? $getTextNodeCaret(adjacent.origin, direction, flipDirection(direction))
-    : caret;
+    : $getDeepestChildOrSelf(caret);
 }
 
 /**
@@ -426,53 +441,6 @@ export function $getCaretRangeInDirection<D extends CaretDirection>(
     $getCaretInDirection(range.focus, direction),
     $getCaretInDirection(range.anchor, direction),
   );
-}
-
-/**
- * Expand a range's focus away from the anchor towards the
- * top of the tree so long as it doesn't have any adjacent
- * siblings.
- *
- * @param range
- * @param rootMode
- * @returns
- */
-export function $getExpandedCaretRange<D extends CaretDirection>(
-  range: NodeCaretRange<D>,
-  rootMode: RootMode = 'root',
-): NodeCaretRange<D> {
-  return $getCaretRange(range.anchor, $getExpandedCaret(range.focus, rootMode));
-}
-
-/**
- * Move a caret upwards towards a root so long as it does not have any adjacent caret
- *
- * @param caret
- * @param rootMode
- * @returns
- */
-export function $getExpandedCaret<D extends CaretDirection>(
-  caret: PointNodeCaret<D>,
-  rootMode: RootMode = 'root',
-): PointNodeCaret<D> {
-  if (
-    $isTextNodeCaret(caret) &&
-    !$isSameTextNodeCaret(
-      caret,
-      $getTextNodeCaret(caret.origin, caret.direction, caret.direction),
-    )
-  ) {
-    return caret;
-  }
-  let nextCaret = caret;
-  while (!nextCaret.getAdjacentCaret()) {
-    const nextParent = nextCaret.getParentCaret(rootMode);
-    if (!nextParent) {
-      break;
-    }
-    nextCaret = nextParent;
-  }
-  return nextCaret;
 }
 
 /**
@@ -539,4 +507,33 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
     caret = nextCaret;
   }
   return (direction === 'next' ? caret : caret.getFlipped()) as NodeCaret<D>;
+}
+
+/**
+ * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
+ * R -> P -> T1, T2
+ *   -> P2
+ * returns T2 for node T1, P2 for node T2, and null for node P2.
+ * @param node LexicalNode.
+ * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
+export function $getAdjacentSiblingOrParentSiblingCaret<
+  D extends CaretDirection,
+>(
+  startCaret: NodeCaret<D>,
+  rootMode: RootMode = 'root',
+): null | [NodeCaret<D>, number] {
+  let depthDiff = 0;
+  let caret = startCaret;
+  let nextCaret = $getAdjacentDepthCaret(caret);
+  while (nextCaret === null) {
+    depthDiff--;
+    nextCaret = caret.getParentCaret(rootMode);
+    if (!nextCaret) {
+      return null;
+    }
+    caret = nextCaret;
+    nextCaret = $getAdjacentDepthCaret(caret);
+  }
+  return nextCaret && [nextCaret, depthDiff];
 }

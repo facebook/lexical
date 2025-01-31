@@ -10,6 +10,11 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+} from '@lexical/table';
+import {
   $caretRangeFromSelection,
   $createParagraphNode,
   $createRangeSelection,
@@ -713,6 +718,43 @@ describe('LexicalCaret', () => {
               $getRoot().clear().append(paragraphNode, listNode);
               expect($getRoot().getChildrenSize()).toBe(2);
               const range = $caretRangeFromSelection($selectAll());
+              const resultRange = $removeTextFromCaretRange(range);
+              expect($getRoot().getAllTextNodes()).toEqual([]);
+              expect($getRoot().getChildren()).toEqual([paragraphNode]);
+              expect(resultRange).toMatchObject({
+                anchor: {
+                  direction: 'next',
+                  origin: paragraphNode,
+                  type: 'depth',
+                },
+              });
+            },
+            {discrete: true},
+          );
+        });
+      });
+      describe('ported Table e2e tests', () => {
+        test('Can delete all with range selection anchored in table', () => {
+          testEnv.editor.update(
+            () => {
+              const tableNode = $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode('cell 1')),
+                  ),
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode('cell 2')),
+                  ),
+                ),
+              );
+              const paragraphNode = $createParagraphNode().append(
+                $createTextNode('paragraph 2'),
+              );
+              $getRoot().clear().append(tableNode, paragraphNode);
+              const selection = $selectAll();
+              // The table plug-in would normally do this normalization
+              selection.anchor.set('root', 0, 'element');
+              const range = $caretRangeFromSelection(selection);
               const resultRange = $removeTextFromCaretRange(range);
               expect($getRoot().getAllTextNodes()).toEqual([]);
               expect($getRoot().getChildren()).toEqual([paragraphNode]);

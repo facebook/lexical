@@ -730,9 +730,9 @@ export function $getDepthCaret(
 /**
  * Gets the DepthNodeCaret if one is possible at this caret origin, otherwise return the caret
  */
-export function $getChildCaretOrSelf<Caret extends NodeCaret | null>(
+export function $getChildCaretOrSelf<Caret extends PointNodeCaret | null>(
   caret: Caret,
-): NodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
+): PointNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
   return (caret && caret.getChildCaret()) || caret;
 }
 
@@ -857,7 +857,7 @@ function $getSliceFromTextNodeCaret<
 export function $getCaretRange<D extends CaretDirection>(
   anchor: PointNodeCaret<D>,
   focus: PointNodeCaret<D>,
-) {
+): NodeCaretRange<D> {
   invariant(
     anchor.direction === focus.direction,
     '$getCaretRange: anchor and focus must be in the same direction',

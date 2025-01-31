@@ -10,6 +10,7 @@ import {
   $cloneWithProperties,
   $createParagraphNode,
   $getAdjacentDepthCaret,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $getBreadthCaret,
   $getChildCaretAtIndex,
   $getChildCaretOrSelf,
@@ -34,7 +35,6 @@ import {
   makeStepwiseIterator,
   type NodeCaret,
   type NodeKey,
-  type RootMode,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -262,7 +262,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
       if (state.type === 'depth') {
         depth++;
       }
-      const rval = $getNextSiblingOrParentSiblingCaret(state);
+      const rval = $getAdjacentSiblingOrParentSiblingCaret(state);
       if (!rval || rval[0].is(endCaret)) {
         return null;
       }
@@ -284,29 +284,10 @@ function $dfsCaretIterator<D extends CaretDirection>(
 export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number] {
-  const rval = $getNextSiblingOrParentSiblingCaret(
+  const rval = $getAdjacentSiblingOrParentSiblingCaret(
     $getBreadthCaret(node, 'next'),
   );
   return rval && [rval[0].origin, rval[1]];
-}
-
-function $getNextSiblingOrParentSiblingCaret<D extends CaretDirection>(
-  startCaret: NodeCaret<D>,
-  rootMode: RootMode = 'root',
-): null | [NodeCaret<D>, number] {
-  let depthDiff = 0;
-  let caret = startCaret;
-  let nextCaret = $getAdjacentDepthCaret(caret);
-  while (nextCaret === null) {
-    depthDiff--;
-    nextCaret = caret.getParentCaret(rootMode);
-    if (!nextCaret) {
-      return null;
-    }
-    caret = nextCaret;
-    nextCaret = $getAdjacentDepthCaret(caret);
-  }
-  return nextCaret && [nextCaret, depthDiff];
 }
 
 export function $getDepth(node: LexicalNode): number {
@@ -334,7 +315,7 @@ export function $getNextRightPreorderNode(
   const startCaret = $getChildCaretOrSelf(
     $getBreadthCaret(startingNode, 'previous'),
   );
-  const next = $getNextSiblingOrParentSiblingCaret(startCaret, 'root');
+  const next = $getAdjacentSiblingOrParentSiblingCaret(startCaret, 'root');
   return next && next[0].origin;
 }
 

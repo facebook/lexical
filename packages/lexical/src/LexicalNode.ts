@@ -238,7 +238,7 @@ export class LexicalNode {
   getState<T extends StateKey>(k: T): T['value'] {
     const self = this.getLatest();
     // If the state is not set, return the default value
-    return self.__state[k.key] ?? k.parse(undefined);
+    return k.parse(self.__state[k.key]);
   }
 
   setState<T extends StateKey>(k: T, v: T['value']): this {

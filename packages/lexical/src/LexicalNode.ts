@@ -241,9 +241,10 @@ export class LexicalNode {
     return self.__state[k.key] ?? k.parse(undefined);
   }
 
-  setState<T extends StateKey>(k: T, v: T['value']) {
+  setState<T extends StateKey>(k: T, v: T['value']): this {
     const self = this.getWritable();
     self.__state = {...self.__state, [k.key]: v};
+    return self;
   }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_

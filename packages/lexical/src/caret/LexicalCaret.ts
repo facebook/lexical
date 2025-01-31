@@ -674,6 +674,26 @@ export function $getTextNodeCaret<T extends TextNode, D extends CaretDirection>(
   direction: D,
   offset: number | CaretDirection,
 ): TextNodeCaret<T, D> {
+  return Object.assign($getBreadthCaret(origin, direction), {
+    getFlipped: $getFlippedTextNodeCaret,
+    getLatest: $getLatestTextNodeCaret,
+    offset: $getTextNodeOffset(origin, offset),
+  });
+}
+
+/**
+ * Get a normalized offset into a TextNode given a numeric offset or a
+ * direction for which end of the string to use. Throws if the offset
+ * is not in the bounds of the text content size.
+ *
+ * @param origin a TextNode
+ * @param offset An absolute offset into the TextNode string, or a direction for which end to use as the offset
+ * @returns An absolute offset into the TextNode string
+ */
+export function $getTextNodeOffset(
+  origin: TextNode,
+  offset: number | CaretDirection,
+): number {
   const size = origin.getTextContentSize();
   const numericOffset =
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
@@ -683,11 +703,7 @@ export function $getTextNodeCaret<T extends TextNode, D extends CaretDirection>(
     String(offset),
     String(size),
   );
-  return Object.assign($getBreadthCaret(origin, direction), {
-    getFlipped: $getFlippedTextNodeCaret,
-    getLatest: $getLatestTextNodeCaret,
-    offset: numericOffset,
-  });
+  return numericOffset;
 }
 
 /**
@@ -833,10 +849,11 @@ function $getSliceFromTextNodeCaret<
   caret: TextNodeCaret<T, D>,
   anchorOrFocus: 'anchor' | 'focus',
 ): TextNodeCaretSlice<T, D> {
-  const offsetB =
-    (caret.direction === 'next') === (anchorOrFocus === 'anchor')
-      ? caret.origin.getTextContentSize()
-      : 0;
+  const {direction, origin} = caret;
+  const offsetB = $getTextNodeOffset(
+    origin,
+    anchorOrFocus === 'focus' ? flipDirection(direction) : direction,
+  );
   return {caret, size: offsetB - caret.offset};
 }
 

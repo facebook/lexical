@@ -45,6 +45,7 @@ import {
   $getCaretRange,
   $getDepthCaret,
   $getTextNodeCaret,
+  $getTextNodeOffset,
   $isBreadthNodeCaret,
   $isDepthNodeCaret,
   $isTextNodeCaret,
@@ -89,21 +90,15 @@ export function $setPointFromCaret<D extends CaretDirection>(
   point: PointType,
   caret: PointNodeCaret<D>,
 ): void {
-  if ($isTextNodeCaret(caret)) {
-    point.set(caret.origin.getKey(), caret.offset, 'text');
-  } else {
-    const {origin, direction} = caret;
-    const isNext = direction === 'next';
-    if ($isDepthNodeCaret(caret)) {
+  const {origin, direction} = caret;
+  const isNext = direction === 'next';
+  if ($isBreadthNodeCaret(caret)) {
+    if ($isTextNode(origin)) {
       point.set(
         origin.getKey(),
-        isNext ? 0 : caret.origin.getChildrenSize(),
-        'element',
-      );
-    } else if ($isTextNode(origin)) {
-      point.set(
-        origin.getKey(),
-        isNext ? origin.getTextContentSize() : 0,
+        $isTextNodeCaret(caret)
+          ? caret.offset
+          : $getTextNodeOffset(origin, direction),
         'text',
       );
     } else {
@@ -113,6 +108,16 @@ export function $setPointFromCaret<D extends CaretDirection>(
         'element',
       );
     }
+  } else {
+    invariant(
+      $isDepthNodeCaret(caret) && $isElementNode(origin),
+      '$setPointFromCaret: exhaustiveness check',
+    );
+    point.set(
+      origin.getKey(),
+      isNext ? 0 : origin.getChildrenSize(),
+      'element',
+    );
   }
 }
 
@@ -343,16 +348,19 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
  * @returns Either a deeper DepthNodeCaret or the given initialCaret
  */
 function $getDeepestChildOrSelf<
-  D extends CaretDirection,
-  Caret extends PointNodeCaret<D> | null,
->(initialCaret: Caret): DepthNodeCaret<ElementNode, D> | Caret {
-  let caret: DepthNodeCaret<ElementNode, D> | Caret = initialCaret;
+  Caret extends null | PointNodeCaret<CaretDirection>,
+>(
+  initialCaret: Caret,
+): DepthNodeCaret<ElementNode, NonNullable<Caret>['direction']> | Caret {
+  let caret:
+    | DepthNodeCaret<ElementNode, NonNullable<Caret>['direction']>
+    | Caret = initialCaret;
   while ($isDepthNodeCaret(caret)) {
-    const childNode = caret.getNodeAtCaret();
-    if (!$isElementNode(childNode)) {
+    const adjacent = $getAdjacentDepthCaret(caret);
+    if (!$isDepthNodeCaret(adjacent)) {
       break;
     }
-    caret = $getDepthCaret(childNode, caret.direction);
+    caret = adjacent;
   }
   return caret;
 }
@@ -373,18 +381,17 @@ function $getDeepestChildOrSelf<
 export function $normalizeCaret<D extends CaretDirection>(
   initialCaret: PointNodeCaret<D>,
 ): PointNodeCaret<D> {
-  const caret = initialCaret.getLatest();
+  const caret = $getDeepestChildOrSelf(initialCaret.getLatest());
   const {direction} = caret;
-  if ($isTextNodeCaret(caret)) {
-    return caret;
-  }
   if ($isTextNode(caret.origin)) {
-    return $getTextNodeCaret(caret.origin, direction, direction);
+    return $isTextNodeCaret(caret)
+      ? caret
+      : $getTextNodeCaret(caret.origin, direction, direction);
   }
-  const adjacent = $getDeepestChildOrSelf(caret.getAdjacentCaret());
-  return $isBreadthNodeCaret(adjacent) && $isTextNode(adjacent.origin)
-    ? $getTextNodeCaret(adjacent.origin, direction, flipDirection(direction))
-    : $getDeepestChildOrSelf(caret);
+  const adj = caret.getAdjacentCaret();
+  return $isBreadthNodeCaret(adj) && $isTextNode(adj.origin)
+    ? $getTextNodeCaret(adj.origin, direction, flipDirection(direction))
+    : caret;
 }
 
 /**

@@ -233,7 +233,7 @@ export class LexicalNode {
   /** @internal */
   __next: null | NodeKey;
   /** @internal */
-  readonly __state: DeepImmutable<State> = {};
+  __state: DeepImmutable<State> = {};
 
   getState<T extends StateKey>(k: T): T['value'] | undefined {
     const self = this.getLatest();
@@ -982,7 +982,6 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    // @ts-expect-error - only exception.
     this.__state = serializedNode.state || {};
     return this;
   }

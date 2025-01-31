@@ -1618,11 +1618,10 @@ describe('LexicalNode state', () => {
           type _Test = Expect<
             Equal<
               typeof paragraphObject,
-              | {
-                  readonly bar: number;
-                  readonly foo: string;
-                }
-              | undefined
+              {
+                readonly bar: number;
+                readonly foo: string;
+              }
             >
           >;
 

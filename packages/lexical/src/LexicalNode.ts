@@ -243,7 +243,7 @@ export class LexicalNode {
 
   setState<T extends StateKey>(k: T, v: T['value']) {
     const self = this.getWritable();
-    (self.__state as State)[k.key] = v;
+    self.__state = {...self.__state, [k.key]: v};
   }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -333,6 +333,7 @@ export class LexicalNode {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
+    this.__state = prevNode.__state || {};
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

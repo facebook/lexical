@@ -10,7 +10,7 @@
   <a href="https://discord.gg/KmG4wQnnD9">
     <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909"/>
   </a>
-  <a href="https://x/intent/follow?screen_name=lexicaljs">
+  <a href="https://x.com/intent/follow?screen_name=lexicaljs">
     <img alt="Follow us on X" src="https://img.shields.io/twitter/follow/lexicaljs?style=social"/>
   </a>
 </p>

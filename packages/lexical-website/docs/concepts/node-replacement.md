@@ -21,7 +21,11 @@ textNode.setState(color, "blue");
 const textColor = textNode.getState(color) // -> "blue"
 ```
 
-Important: we recommend that you use prefixes with low collision probability when defining state keys. For example, if you are making a plugin called `awesome-lexical`, you could do:
+Inside state, you can put any serializable json value except null. Our recommendation is to always use TypeScript in strict mode, so you don't have to worry about these things!
+
+### Important
+
+we recommend that you use prefixes with low collision probability when defining state keys. For example, if you are making a plugin called `awesome-lexical`, you could do:
 
 ```ts
 const color = createStateKey('awesome-lexical-color', /** your parse fn */)

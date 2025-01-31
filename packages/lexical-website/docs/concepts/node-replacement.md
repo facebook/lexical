@@ -18,7 +18,7 @@ const color = createStateKey('color', {
 });
 
 // USAGE
-const textNode = new TextNode();
+const textNode = $createTextNode();
 textNode.setState(color, "blue");
 const textColor = textNode.getState(color) // -> "blue"
 ```

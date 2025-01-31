@@ -241,7 +241,15 @@ export function $addNodeStyle(node: TextNode): void {
   CSS_TO_STYLES.set(CSSText, styles);
 }
 
-function $patchStyle(
+/**
+ * Applies the provided styles to the given TextNodes or collapsed RangeSelection.
+ * Will update partially selected TextNodes by splitting the TextNode and applying
+ * the styles to the appropriate one.
+ *
+ * @param target - The TextNode or collapsed RangeSelection to apply the styles to
+ * @param patch - The patch to apply, which can include multiple styles. \\{CSSProperty: value\\} . Can also accept a function that returns the new property value.
+ */
+export function $patchStyle(
   target: TextNode | RangeSelection,
   patch: Record<
     string,
@@ -250,8 +258,12 @@ function $patchStyle(
     | ((currentStyleValue: string | null, _target: typeof target) => string)
   >,
 ): void {
+  invariant(
+    target instanceof TextNode || target.isCollapsed(),
+    '$patchStyle must only be called with a TextNode or collapsed RangeSelection',
+  );
   const prevStyles = getStyleObjectFromCSS(
-    'getStyle' in target ? target.getStyle() : target.style,
+    target instanceof TextNode ? target.getStyle() : target.style,
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
@@ -290,13 +302,8 @@ export function $patchStyleText(
       ) => string)
   >,
 ): void {
-  if ($isRangeSelection(selection)) {
-    // Prior to #7046 this would have been a side-effect of $patchStyle,
-    // so we do this for test compatibility
-    $ensureForwardRangeSelection(selection);
-    if (selection.isCollapsed()) {
-      return $patchStyle(selection, patch);
-    }
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    return $patchStyle(selection, patch);
   }
   $forEachSelectedTextNode((textNode) => {
     $patchStyle(textNode, patch);
@@ -369,6 +376,17 @@ export function $forEachSelectedTextNode(
       const replacement = splitNodes[startOffset === 0 ? 0 : 1];
       fn(replacement);
     }
+  }
+  // Prior to NodeCaret #7046 this would have been a side-effect
+  // so we do this for test compatibility.
+  // TODO: we may want to consider simplifying by removing this
+  if (
+    $isRangeSelection(selection) &&
+    selection.anchor.type === 'text' &&
+    selection.focus.type === 'text' &&
+    selection.anchor.key === selection.focus.key
+  ) {
+    $ensureForwardRangeSelection(selection);
   }
 }
 

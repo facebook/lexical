@@ -932,7 +932,7 @@ export class LexicalNode {
     return {
       type: this.__type,
       version: 1,
-      ...(objetcIsEmpty(this.__state) ? {} : {state: this.__state}),
+      ...(objectIsEmpty(this.__state) ? {} : {state: this.__state}),
     };
   }
 
@@ -1343,7 +1343,7 @@ export function insertRangeAfter(
  * The best way to check if an object is empty in O(1)
  * @see https://stackoverflow.com/a/59787784/10476393
  */
-function objetcIsEmpty(obj: object) {
+function objectIsEmpty(obj: object) {
   for (const key in obj) {
     return false;
   }

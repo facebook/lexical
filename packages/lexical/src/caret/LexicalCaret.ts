@@ -567,7 +567,7 @@ export function $isNodeCaret<D extends CaretDirection>(
  * @returns true if caret is a BreadthNodeCaret
  */
 export function $isBreadthNodeCaret<D extends CaretDirection>(
-  caret: null | undefined | NodeCaret<D>,
+  caret: null | undefined | PointNodeCaret<D>,
 ): caret is BreadthNodeCaret<LexicalNode, D> {
   return caret instanceof AbstractBreadthNodeCaret;
 }
@@ -579,7 +579,7 @@ export function $isBreadthNodeCaret<D extends CaretDirection>(
  * @returns true if caret is a DepthNodeCaret
  */
 export function $isDepthNodeCaret<D extends CaretDirection>(
-  caret: null | undefined | NodeCaret<D>,
+  caret: null | undefined | PointNodeCaret<D>,
 ): caret is DepthNodeCaret<ElementNode, D> {
   return caret instanceof AbstractDepthNodeCaret;
 }

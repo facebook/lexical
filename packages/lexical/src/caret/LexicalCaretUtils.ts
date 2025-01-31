@@ -9,6 +9,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import type {
   BreadthNodeCaret,
   CaretDirection,
+  DepthNodeCaret,
   NodeCaret,
   NodeCaretRange,
   PointNodeCaret,
@@ -341,11 +342,11 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
  * @param initialCaret
  * @returns Either a deeper DepthNodeCaret or the given initialCaret
  */
-function $getDeepestChildOrSelf<Caret extends PointNodeCaret | null>(
-  initialCaret: Caret,
-): PointNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) {
-  let caret: PointNodeCaret<NonNullable<Caret>['direction']> | (Caret & null) =
-    initialCaret;
+function $getDeepestChildOrSelf<
+  D extends CaretDirection,
+  Caret extends PointNodeCaret<D> | null,
+>(initialCaret: Caret): DepthNodeCaret<ElementNode, D> | Caret {
+  let caret: DepthNodeCaret<ElementNode, D> | Caret = initialCaret;
   while ($isDepthNodeCaret(caret)) {
     const childNode = caret.getNodeAtCaret();
     if (!$isElementNode(childNode)) {
@@ -353,7 +354,7 @@ function $getDeepestChildOrSelf<Caret extends PointNodeCaret | null>(
     }
     caret = $getDepthCaret(childNode, caret.direction);
   }
-  return (caret && caret.getChildCaret()) || caret;
+  return caret;
 }
 
 /**

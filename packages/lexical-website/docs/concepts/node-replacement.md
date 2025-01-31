@@ -1,4 +1,41 @@
+# Node Customization
 
+Originally the only way to customize nodes was using the node replacement API. Recently we have introduced a second way with the `state` property which has some advantages described below.
+
+## State (New)
+
+The advantages of using state over the replacement API are:
+1. Easier (less boilerplate)
+2. Composable (multiple plugins extending the same node causes failures)
+3. Allows metadata: useful for adding things to the RootNode.
+
+All you need to do is define keys with `createStateKey`, and then use it with the `setState` and `getState` methods.
+
+```ts
+// IMPLEMENTATION
+const color = createStateKey('color', { parse: (value) => value as string });
+
+// USAGE
+const textNode = new TextNode();
+textNode.setState(color, "blue");
+const textColor = textNode.getState(color) // -> "blue"
+```
+
+Important: we recommend that you use prefixes with low collision probability when defining state keys. For example, if you are making a plugin called `awesome-lexical`, you could do:
+
+```ts
+const color = createStateKey('awesome-lexical-color', /** your parse fn */)
+const bgColor = createStateKey('awesome-lexical-bg-color', /** your parse fn */)
+
+// Or you can add all your state inside an object:
+type AwesomeLexical = {
+  color?: string;
+  bgColor?: string;
+  padding?: number
+}
+const awesomeLexical = createStateKey('awesome-lexical', /** your parse fn which returns AwesomeLexical type */)
+
+```
 
 # Node Overrides / Node Replacements
 
@@ -6,7 +43,7 @@ Some of the most commonly used Lexical Nodes are owned and maintained by the cor
 
 Node Overrides allow you to replace all instances of a given node in your editor with instances of a different node class. This can be done through the nodes array in the Editor config:
 
-```
+```ts
 const editorConfig = {
     ...
     nodes=[

@@ -200,10 +200,10 @@ interface StateKey<
   K extends string = string,
   V extends StateValue = StateValue,
 > {
-  key: K;
+  readonly key: K;
   // Here we are storing a default for convenience
-  value: DeepImmutable<V>;
-  parse: (value: unknown) => V;
+  readonly value: DeepImmutable<V>;
+  readonly parse: (value: unknown) => V;
 }
 interface StateKeyConfig<V extends StateValue = StateValue> {
   parse: (value: unknown) => V;

@@ -206,7 +206,7 @@ interface StateKey<
   readonly parse: (value: unknown) => V;
 }
 interface StateKeyConfig<V extends StateValue = StateValue> {
-  parse: (value: unknown) => V;
+  readonly parse: (value: unknown) => V;
 }
 type StateKeyConfigValue<T extends StateKeyConfig> = ReturnType<T['parse']>;
 

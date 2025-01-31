@@ -185,6 +185,15 @@ export type DOMExportOutput = {
 
 export type NodeKey = string;
 
+type DeepImmutable<T> = T extends Map<infer K, infer V>
+  ? ReadonlyMap<DeepImmutable<K>, DeepImmutable<V>>
+  : T extends Set<infer S>
+  ? ReadonlySet<DeepImmutable<S>>
+  : T extends object
+  ? {
+      readonly [K in keyof T]: DeepImmutable<T[K]>;
+    }
+  : T;
 type State = {[Key in string]?: string | number | boolean | State};
 type StateValue = string | number | boolean | State;
 interface StateKey<
@@ -193,7 +202,7 @@ interface StateKey<
 > {
   key: K;
   // Here we are storing a default for convenience
-  value: V;
+  value: DeepImmutable<V>;
   parse: (value: unknown) => V;
 }
 interface StateKeyConfig<V extends StateValue = StateValue> {
@@ -224,16 +233,17 @@ export class LexicalNode {
   /** @internal */
   __next: null | NodeKey;
   /** @internal */
-  __state: State = {};
+  readonly __state: DeepImmutable<State> = {};
 
   getState<T extends StateKey>(k: T): T['value'] | undefined {
     const self = this.getLatest();
-    return self.__state[k.key];
+    // If the state is not set, return the default value
+    return self.__state[k.key] ?? k.parse(undefined);
   }
 
   setState<T extends StateKey>(k: T, v: T['value']) {
     const self = this.getWritable();
-    self.__state[k.key] = v;
+    (self.__state as State)[k.key] = v;
   }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -972,6 +982,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
+    // @ts-expect-error - only exception.
     this.__state = serializedNode.state || {};
     return this;
   }

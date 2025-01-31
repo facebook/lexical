@@ -1549,31 +1549,75 @@ describe('LexicalNode state', () => {
           const paragraph = new ParagraphNode();
           const json = paragraph.exportJSON();
           // We don't export state as an empty object
-          expect(json).toStrictEqual({
-            children: [],
-            direction: null,
-            format: '',
-            indent: 0,
-            textFormat: 0,
-            textStyle: '',
-            type: 'paragraph',
-            version: 1,
-          });
+          expect(json).not.toHaveProperty('state');
           const keyForNumber = createStateKey('keyForNumber', {
             parse: (value) => value as number,
           });
           paragraph.setState(keyForNumber, 1);
           const json2 = paragraph.exportJSON();
-          expect(json2).toStrictEqual({
-            ...json,
-            state: {
-              keyForNumber: 1,
-            },
+          expect(json2.state).toStrictEqual({
+            keyForNumber: 1,
           });
           const paragraph2 = ParagraphNode.importJSON(json2);
           expect(paragraph2.__state).toStrictEqual({
             keyForNumber: 1,
           });
+        });
+      });
+
+      test('default value should not be exported', async () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const indentKey = createStateKey('indent', {
+            parse: (value) => (typeof value === 'number' ? value : 0),
+          });
+          const paragraph = new ParagraphNode();
+          expect(paragraph.getState(indentKey)).toBe(0);
+          const json = paragraph.exportJSON();
+          expect(json).not.toHaveProperty('state');
+          paragraph.setState(indentKey, 1);
+          const json2 = paragraph.exportJSON();
+          expect(json2.state).toStrictEqual({
+            indent: 1,
+          });
+          // set the default value explicitly
+          paragraph.setState(indentKey, 0);
+          const json3 = paragraph.exportJSON();
+          expect(json3.state).not.toHaveProperty('indent');
+        });
+      });
+
+      test('getState returns immutable values, setState require an Object literal', async () => {
+        type TestObject = {
+          foo: string;
+          bar: number;
+        };
+        const {editor} = testEnv;
+        editor.update(() => {
+          const paragraph = new ParagraphNode();
+          const objectKey = createStateKey('testObject', {
+            parse: (value) => value as TestObject,
+          });
+          const paragraphObject = paragraph.getState(objectKey);
+          type _Test = Expect<
+            Equal<
+              typeof paragraphObject,
+              | {
+                  readonly bar: number;
+                  readonly foo: string;
+                }
+              | undefined
+            >
+          >;
+          expect(paragraphObject).toBeDefined();
+
+          // @ts-expect-error - foo is required
+          paragraph.setState(objectKey, {bar: 1});
+          // @ts-expect-error - baz is not a valid property
+          paragraph.setState(objectKey, {bar: 1, baz: 'baz', foo: 'foo'});
+
+          paragraph.setState(objectKey, paragraphObject!);
+          paragraph.setState(objectKey, {...paragraphObject!, foo: 'foo'});
         });
       });
     },

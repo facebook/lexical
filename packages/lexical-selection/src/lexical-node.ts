@@ -264,7 +264,7 @@ function $patchStyle(
       }
       return styles;
     },
-    {...prevStyles} || {},
+    {...prevStyles},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
   target.setStyle(newCSSText);
@@ -290,13 +290,17 @@ export function $patchStyleText(
       ) => string)
   >,
 ): void {
-  if (selection.isCollapsed() && $isRangeSelection(selection)) {
-    $patchStyle(selection, patch);
-  } else {
-    $forEachSelectedTextNode((textNode) => {
-      $patchStyle(textNode, patch);
-    });
+  if ($isRangeSelection(selection)) {
+    // Prior to #7046 this would have been a side-effect of $patchStyle,
+    // so we do this for test compatibility
+    $ensureForwardRangeSelection(selection);
+    if (selection.isCollapsed()) {
+      return $patchStyle(selection, patch);
+    }
   }
+  $forEachSelectedTextNode((textNode) => {
+    $patchStyle(textNode, patch);
+  });
 }
 
 export function $forEachSelectedTextNode(
@@ -365,5 +369,24 @@ export function $forEachSelectedTextNode(
       const replacement = splitNodes[startOffset === 0 ? 0 : 1];
       fn(replacement);
     }
+  }
+}
+
+/**
+ * Ensure that the given RangeSelection is not backwards. If it
+ * is backwards, then the anchor and focus points will be swapped
+ * in-place. Ensuring that the selection is a writable RangeSelection
+ * is the responsibility of the caller (e.g. in a read-only context
+ * you will want to clone $getSelection() before using this).
+ *
+ * @param selection a writable RangeSelection
+ */
+export function $ensureForwardRangeSelection(selection: RangeSelection): void {
+  if (selection.isBackward()) {
+    const {anchor, focus} = selection;
+    // stash for the in-place swap
+    const {key, offset, type} = anchor;
+    anchor.set(focus.key, focus.offset, focus.type);
+    focus.set(key, offset, type);
   }
 }

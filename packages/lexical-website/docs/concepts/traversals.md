@@ -23,7 +23,7 @@ All of these types have a `D` type parameter that must be a `CaretDirection`, so
 can not accidentally mix up `next` and `previous` carets. Many of them
 also have a `T` type parameter that encodes the type of the `origin` node.
 
-:::note
+:::tip
 
 The methods of a caret are designed to operate on nodes attached to the `origin`
 in the designated direction, not the `origin` itself. For example, this code is
@@ -34,6 +34,8 @@ that was just attached.
 // The origin is unaffected (other than being marked dirty)
 caret.insert($createTextNode('no-op')).remove();
 ```
+
+:::
 
 :::warning
 

@@ -166,6 +166,34 @@ traversal, which is supported directly by methods of NodeCaret.
 
 `$getAdjacentDepthCaret(caret)`
 
+## Future Direction
+
+It's expected that higher-level abstractions will be built on top of this
+outside of the core, either in @lexical/utils or a separate companion package.
+This is just designed to be the lowest-level layer with a consistent and
+type-safe interface. That sort of abstraction will probably look a little bit
+like cheerio or jQuery, but for working with Lexical documents. It is not
+expected that more abstractions will be added to the core.
+
+In order to reduce code size and eliminate bugs, more of the core will be
+refactored to use NodeCaret internally.
+
+Once this happens, it's possible that the internal structure of PointType
+and/or RangeSelection may change to accommodate NodeCaret, as it is more
+resilient to document changes (only changes that directly affect the
+orgin node will "break" the point). A simple version of this would be to
+create a caret any time that the point changes, and use that caret
+as a fallback if the selection would otherwise be lost.
+
+It may be the case that NodeCaret will become the lowest level API, working
+directly with private LexicalNode/ElementNode internals. When/if that happens,
+the methods on LexicalNode will remain for backwards compatibility,
+but overriding them will not be supported. It isn't particularly safe to
+override them as-is anyway, and these overrides are frequently the
+root cause of bugs (e.g. parents that remove themselves after an operation
+on a child, causing the point to be lost unless the caller was sophisticated
+enough to store the array of parents).
+
 ## History
 
 Before NodeCaret, Lexical's core API offered a relatively low-level DOM-like

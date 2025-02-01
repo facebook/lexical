@@ -290,14 +290,15 @@ export function $getNextSiblingOrParentSibling(
   return rval && [rval[0].origin, rval[1]];
 }
 
-export function $getDepth(node: LexicalNode): number {
-  let innerNode: LexicalNode | null = node;
-  let depth = 0;
-
-  while ((innerNode = innerNode.getParent()) !== null) {
+export function $getDepth(node: null | LexicalNode): number {
+  let depth = -1;
+  for (
+    let innerNode = node;
+    innerNode !== null;
+    innerNode = innerNode.getParent()
+  ) {
     depth++;
   }
-
   return depth;
 }
 

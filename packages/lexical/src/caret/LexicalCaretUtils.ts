@@ -14,8 +14,8 @@ import type {
   NodeCaretRange,
   PointNodeCaret,
   RootMode,
-  TextNodeCaret,
-  TextNodeCaretSlice,
+  TextPointCaret,
+  TextPointCaretSlice,
 } from './LexicalCaret';
 
 import invariant from 'shared/invariant';
@@ -44,11 +44,11 @@ import {
   $getBreadthCaret,
   $getCaretRange,
   $getDepthCaret,
-  $getTextNodeCaret,
   $getTextNodeOffset,
+  $getTextPointCaret,
   $isBreadthNodeCaret,
   $isDepthNodeCaret,
-  $isTextNodeCaret,
+  $isTextPointCaret,
   flipDirection,
 } from './LexicalCaret';
 
@@ -69,7 +69,7 @@ export function $caretFromPoint<D extends CaretDirection>(
       node.getType(),
       key,
     );
-    return $getTextNodeCaret(node, direction, offset);
+    return $getTextPointCaret(node, direction, offset);
   }
   invariant(
     $isElementNode(node),
@@ -96,7 +96,7 @@ export function $setPointFromCaret<D extends CaretDirection>(
     if ($isTextNode(origin)) {
       point.set(
         origin.getKey(),
-        $isTextNodeCaret(caret)
+        $isTextPointCaret(caret)
           ? caret.offset
           : $getTextNodeOffset(origin, direction),
         'text',
@@ -238,22 +238,22 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   );
 
   // Mark the start of each ElementNode
-  const canRemove = new Set<NodeKey>();
-  // Mark the end of each ElementNode
-  const canExpand = new Set<NodeKey>();
-  // Remove all internal nodes
-  for (const caret of range.internalCarets(rootMode)) {
+  const seenStart = new Set<NodeKey>();
+  // Queue removals since removing the only child can cascade to having
+  // a parent remove itself which will affect iteration
+  const removedNodes: LexicalNode[] = [];
+  for (const caret of range.iterNodeCarets(rootMode)) {
     if ($isDepthNodeCaret(caret)) {
-      canRemove.add(caret.origin.getKey());
+      seenStart.add(caret.origin.getKey());
     } else if ($isBreadthNodeCaret(caret)) {
       const {origin} = caret;
-      if ($isElementNode(origin) && !canRemove.has(origin.getKey())) {
-        // The anchor is inside this element
-        canExpand.add(origin.getKey());
-      } else {
-        origin.remove();
+      if (!$isElementNode(origin) || seenStart.has(origin.getKey())) {
+        removedNodes.push(origin);
       }
     }
+  }
+  for (const node of removedNodes) {
+    node.remove();
   }
 
   // Splice text at the anchor and/or origin.
@@ -269,12 +269,12 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     );
     const mode = origin.getMode();
     if (
-      Math.abs(slice.size) === contentSize ||
-      (mode === 'token' && slice.size !== 0)
+      Math.abs(slice.distance) === contentSize ||
+      (mode === 'token' && slice.distance !== 0)
     ) {
       // anchorCandidates[1] should still be valid, it is caretBefore
       caretBefore.remove();
-    } else if (slice.size !== 0) {
+    } else if (slice.distance !== 0) {
       let nextCaret = $removeTextSlice(slice);
       if (mode === 'segmented') {
         const src = nextCaret.origin;
@@ -282,7 +282,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
           .setStyle(src.getStyle())
           .setFormat(src.getFormat());
         caretBefore.replaceOrInsert(plainTextNode);
-        nextCaret = $getTextNodeCaret(
+        nextCaret = $getTextPointCaret(
           plainTextNode,
           nextDirection,
           nextCaret.offset,
@@ -311,7 +311,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     focusCandidate && $getAncestor(focusCandidate.origin, INTERNAL_$isBlock);
   if (
     $isElementNode(focusBlock) &&
-    canRemove.has(focusBlock.getKey()) &&
+    seenStart.has(focusBlock.getKey()) &&
     $isElementNode(anchorBlock)
   ) {
     // always merge blocks later in the document with
@@ -367,12 +367,12 @@ function $getDeepestChildOrSelf<
 
 /**
  * Normalize a caret to the deepest equivalent PointNodeCaret.
- * This will return a TextNodeCaret with the offset set according
+ * This will return a TextPointCaret with the offset set according
  * to the direction if given a caret with a TextNode origin
  * or a caret with an ElementNode origin with the deepest DepthNode
  * having an adjacent TextNode.
  *
- * If given a TextNodeCaret, it will be returned, as no normalization
+ * If given a TextPointCaret, it will be returned, as no normalization
  * is required when an offset is already present.
  *
  * @param initialCaret
@@ -384,28 +384,28 @@ export function $normalizeCaret<D extends CaretDirection>(
   const caret = $getDeepestChildOrSelf(initialCaret.getLatest());
   const {direction} = caret;
   if ($isTextNode(caret.origin)) {
-    return $isTextNodeCaret(caret)
+    return $isTextPointCaret(caret)
       ? caret
-      : $getTextNodeCaret(caret.origin, direction, direction);
+      : $getTextPointCaret(caret.origin, direction, direction);
   }
   const adj = caret.getAdjacentCaret();
   return $isBreadthNodeCaret(adj) && $isTextNode(adj.origin)
-    ? $getTextNodeCaret(adj.origin, direction, flipDirection(direction))
+    ? $getTextPointCaret(adj.origin, direction, flipDirection(direction))
     : caret;
 }
 
 /**
- * @param slice a TextNodeCaretSlice
+ * @param slice a TextPointCaretSlice
  * @returns absolute coordinates into the text (for use with text.slice(...))
  */
 function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
-  slice: TextNodeCaretSlice<T, D>,
+  slice: TextPointCaretSlice<T, D>,
 ): [indexStart: number, indexEnd: number] {
   const {
-    size,
+    distance,
     caret: {offset},
   } = slice;
-  const offsetB = offset + size;
+  const offsetB = offset + distance;
   return offsetB < offset ? [offsetB, offset] : [offset, offsetB];
 }
 
@@ -453,25 +453,25 @@ export function $getCaretRangeInDirection<D extends CaretDirection>(
 
 /**
  * Remove the slice of text from the contained caret, returning a new
- * TextNodeCaret without the wrapper (since the size would be zero).
+ * TextPointCaret without the wrapper (since the size would be zero).
  *
  * Note that this is a lower-level utility that does not have any specific
  * behavior for 'segmented' or 'token' modes and it will not remove
  * an empty TextNode.
  *
  * @param slice The slice to mutate
- * @returns The inner TextNodeCaret with the same offset and direction
+ * @returns The inner TextPointCaret with the same offset and direction
  *          and the latest TextNode origin after mutation
  */
 export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
-  slice: TextNodeCaretSlice<T, D>,
-): TextNodeCaret<T, D> {
+  slice: TextPointCaretSlice<T, D>,
+): TextPointCaret<T, D> {
   const {
     caret: {origin, direction},
   } = slice;
   const [indexStart, indexEnd] = $getTextSliceIndices(slice);
   const text = origin.getTextContent();
-  return $getTextNodeCaret(
+  return $getTextPointCaret(
     origin.setTextContent(text.slice(0, indexStart) + text.slice(indexEnd)),
     direction,
     indexStart,
@@ -485,7 +485,7 @@ export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
  * @returns The text represented by the slice
  */
 export function $getTextSliceContent(
-  slice: TextNodeCaretSlice<TextNode, CaretDirection>,
+  slice: TextPointCaretSlice<TextNode, CaretDirection>,
 ): string {
   return slice.caret.origin
     .getTextContent()

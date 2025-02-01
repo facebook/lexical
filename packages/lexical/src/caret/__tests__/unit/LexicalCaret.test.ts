@@ -24,10 +24,10 @@ import {
   $getDepthCaret,
   $getRoot,
   $getSelection,
-  $getTextNodeCaret,
+  $getTextPointCaret,
   $getTextSliceContent,
   $isTextNode,
-  $isTextNodeCaret,
+  $isTextPointCaret,
   $removeTextFromCaretRange,
   $rewindBreadthCaret,
   $selectAll,
@@ -446,12 +446,12 @@ describe('LexicalCaret', () => {
             const range = $caretRangeFromSelection(selection);
             expect(range.isCollapsed()).toBe(true);
             invariant(
-              $isTextNodeCaret(range.anchor),
-              '$isTextNodeCaret(range.anchor)',
+              $isTextPointCaret(range.anchor),
+              '$isTextPointCaret(range.anchor)',
             );
             invariant(
-              $isTextNodeCaret(range.focus),
-              '$isTextNodeCaret(range.anchor)',
+              $isTextPointCaret(range.focus),
+              '$isTextPointCaret(range.anchor)',
             );
             expect(range).toMatchObject({
               anchor: {
@@ -471,11 +471,11 @@ describe('LexicalCaret', () => {
                   origin: node,
                   type: 'breadth',
                 },
-                size: 0,
+                distance: 0,
               },
             ]);
             expect(range.getNonEmptyTextSlices()).toEqual([]);
-            expect([...range.internalCarets('root')]).toEqual([]);
+            expect([...range.iterNodeCarets('root')]).toEqual([]);
           }
         });
       });
@@ -500,12 +500,12 @@ describe('LexicalCaret', () => {
               });
               const range = $caretRangeFromSelection(selection);
               invariant(
-                $isTextNodeCaret(range.anchor),
-                '$isTextNodeCaret(range.anchor)',
+                $isTextPointCaret(range.anchor),
+                '$isTextPointCaret(range.anchor)',
               );
               invariant(
-                $isTextNodeCaret(range.focus),
-                '$isTextNodeCaret(range.anchor)',
+                $isTextPointCaret(range.focus),
+                '$isTextPointCaret(range.anchor)',
               );
               expect(range).toMatchObject({
                 anchor: {direction, offset: anchorOffset, origin: node},
@@ -519,10 +519,10 @@ describe('LexicalCaret', () => {
                     offset: anchorOffset,
                     origin: node,
                   },
-                  size: focusOffset - anchorOffset,
+                  distance: focusOffset - anchorOffset,
                 },
               ]);
-              expect([...range.internalCarets('root')]).toEqual([]);
+              expect([...range.iterNodeCarets('root')]).toEqual([]);
               expect(range.isCollapsed()).toBe(false);
             }
           });
@@ -556,18 +556,18 @@ describe('LexicalCaret', () => {
                       : node.select(indexEnd, indexStart);
                   const range = $caretRangeFromSelection(selection);
                   invariant(
-                    $isTextNodeCaret(range.anchor),
-                    '$isTextNodeCaret(range.anchor)',
+                    $isTextPointCaret(range.anchor),
+                    '$isTextPointCaret(range.anchor)',
                   );
                   invariant(
-                    $isTextNodeCaret(range.focus),
-                    '$isTextNodeCaret(range.anchor)',
+                    $isTextPointCaret(range.focus),
+                    '$isTextPointCaret(range.anchor)',
                   );
                   expect(range.direction).toBe(direction);
                   expect(range.getTextSlices()).toMatchObject([
-                    {caret: {direction, offset, origin: node}, size},
+                    {caret: {direction, offset, origin: node}, distance: size},
                   ]);
-                  expect([...range.internalCarets('root')]).toMatchObject([]);
+                  expect([...range.iterNodeCarets('root')]).toMatchObject([]);
                 }
               }
             }
@@ -617,12 +617,12 @@ describe('LexicalCaret', () => {
                     );
                     const range = $caretRangeFromSelection(selection);
                     invariant(
-                      $isTextNodeCaret(range.anchor),
-                      '$isTextNodeCaret(range.anchor)',
+                      $isTextPointCaret(range.anchor),
+                      '$isTextPointCaret(range.anchor)',
                     );
                     invariant(
-                      $isTextNodeCaret(range.focus),
-                      '$isTextNodeCaret(range.anchor)',
+                      $isTextPointCaret(range.focus),
+                      '$isTextPointCaret(range.anchor)',
                     );
                     expect(range.direction).toBe(direction);
                     const textSliceCarets = range.getTextSlices();
@@ -635,7 +635,7 @@ describe('LexicalCaret', () => {
                         origin: anchorNode,
                         type: 'breadth',
                       },
-                      size:
+                      distance:
                         direction === 'next'
                           ? anchorNode.getTextContentSize() - anchorOffset
                           : 0 - anchorOffset,
@@ -647,12 +647,12 @@ describe('LexicalCaret', () => {
                         origin: focusNode,
                         type: 'breadth',
                       },
-                      size:
+                      distance:
                         direction === 'next'
                           ? 0 - focusOffset
                           : focusNode.getTextContentSize() - focusOffset,
                     });
-                    expect([...range.internalCarets('root')]).toMatchObject(
+                    expect([...range.iterNodeCarets('root')]).toMatchObject(
                       textNodes
                         .slice(indexNodeStart + 1, indexNodeEnd)
                         .map((origin) => ({
@@ -955,12 +955,12 @@ describe('LexicalCaret', () => {
               const range = $caretRangeFromSelection(selection);
               expect(range.isCollapsed()).toBe(true);
               invariant(
-                $isTextNodeCaret(range.anchor),
-                '$isTextNodeCaret(range.anchor)',
+                $isTextPointCaret(range.anchor),
+                '$isTextPointCaret(range.anchor)',
               );
               invariant(
-                $isTextNodeCaret(range.focus),
-                '$isTextNodeCaret(range.anchor)',
+                $isTextPointCaret(range.focus),
+                '$isTextPointCaret(range.anchor)',
               );
               const originalRangeMatch = {
                 anchor: {
@@ -981,11 +981,11 @@ describe('LexicalCaret', () => {
                     origin: node,
                     type: 'breadth',
                   },
-                  size: 0,
+                  distance: 0,
                 },
               ]);
               expect(range.getNonEmptyTextSlices()).toEqual([]);
-              expect([...range.internalCarets('root')]).toEqual([]);
+              expect([...range.iterNodeCarets('root')]).toEqual([]);
               expect($removeTextFromCaretRange(range)).toMatchObject(
                 originalRangeMatch,
               );
@@ -1013,12 +1013,12 @@ describe('LexicalCaret', () => {
                   });
                   const range = $caretRangeFromSelection(selection);
                   invariant(
-                    $isTextNodeCaret(range.anchor),
-                    '$isTextNodeCaret(range.anchor)',
+                    $isTextPointCaret(range.anchor),
+                    '$isTextPointCaret(range.anchor)',
                   );
                   invariant(
-                    $isTextNodeCaret(range.focus),
-                    '$isTextNodeCaret(range.anchor)',
+                    $isTextPointCaret(range.focus),
+                    '$isTextPointCaret(range.anchor)',
                   );
                   expect(range).toMatchObject({
                     anchor: {offset: anchorOffset, origin: node},
@@ -1032,12 +1032,12 @@ describe('LexicalCaret', () => {
                           direction === 'next' ? 0 : node.getTextContentSize(),
                         origin: node,
                       },
-                      size:
+                      distance:
                         (direction === 'next' ? 1 : -1) *
                         node.getTextContentSize(),
                     },
                   ]);
-                  expect([...range.internalCarets('root')]).toEqual([]);
+                  expect([...range.iterNodeCarets('root')]).toEqual([]);
                   expect(range.isCollapsed()).toBe(false);
                   const resultRange = $removeTextFromCaretRange(range);
                   $setSelection(null);
@@ -1170,15 +1170,15 @@ describe('LexicalCaret', () => {
                   }
                   const range = $caretRangeFromSelection(selection);
                   expect(range.isCollapsed()).toBe(false);
-                  expect([...range.internalCarets('root')].length).toBe(
+                  expect([...range.iterNodeCarets('root')].length).toBe(
                     anchorBias === 'outside' && focusBias === 'outside' ? 1 : 0,
                   );
                   expect(range.getNonEmptyTextSlices()).toMatchObject(
                     anchorBias === 'outside' && focusBias === 'outside'
                       ? []
                       : (anchorBias === 'inside') === (direction === 'next')
-                      ? [{caret: {offset: 0}, size}]
-                      : [{caret: {offset: size}, size: -size}],
+                      ? [{caret: {offset: 0}, distance: size}]
+                      : [{caret: {offset: size}, distance: -size}],
                   );
                   const resultRange = $removeTextFromCaretRange(range);
                   $setSelection(null);
@@ -1234,14 +1234,14 @@ describe('LexicalCaret', () => {
                 const node = originalNodes[i];
                 invariant($isTextNode(node), `Missing TextNode 0`);
                 const size = node.getTextContentSize();
-                const anchor = $getTextNodeCaret(
+                const anchor = $getTextPointCaret(
                   node,
                   direction,
                   direction === 'next'
                     ? anchorEdgeOffset
                     : size - anchorEdgeOffset,
                 );
-                const focus = $getTextNodeCaret(
+                const focus = $getTextPointCaret(
                   node,
                   direction,
                   direction === 'next'
@@ -1254,10 +1254,10 @@ describe('LexicalCaret', () => {
                 ].sort((a, b) => a - b);
                 const range = $getCaretRange(anchor, focus);
                 const slices = range.getNonEmptyTextSlices();
-                expect([...range.internalCarets('root')]).toEqual([]);
+                expect([...range.iterNodeCarets('root')]).toEqual([]);
                 expect(slices.length).toBe(1);
                 const [slice] = slices;
-                expect(slice.size).toBe(
+                expect(slice.distance).toBe(
                   (direction === 'next' ? 1 : -1) *
                     (size - anchorEdgeOffset - focusEdgeOffset),
                 );
@@ -1307,12 +1307,12 @@ describe('LexicalCaret', () => {
                 invariant($isTextNode(startNode), 'text node');
                 invariant($isTextNode(endNode), 'text node');
                 expect(startNode.isBefore(endNode)).toBe(true);
-                const startCaret = $getTextNodeCaret(
+                const startCaret = $getTextPointCaret(
                   startNode,
                   direction,
                   startFn(startNode.getTextContentSize()),
                 );
-                const endCaret = $getTextNodeCaret(
+                const endCaret = $getTextPointCaret(
                   endNode,
                   direction,
                   endFn(endNode.getTextContentSize()),
@@ -1322,7 +1322,7 @@ describe('LexicalCaret', () => {
                     ? [startCaret, endCaret]
                     : [endCaret, startCaret];
                 const range = $getCaretRange(anchor, focus);
-                expect([...range.internalCarets('root')]).toHaveLength(
+                expect([...range.iterNodeCarets('root')]).toHaveLength(
                   Math.max(0, nodeIndexEnd - nodeIndexStart - 1),
                 );
                 const slices = range.getTextSlices();
@@ -1481,12 +1481,12 @@ describe('LexicalCaret', () => {
                 invariant($isTextNode(startNode), 'text node');
                 invariant($isTextNode(endNode), 'text node');
                 expect(startNode.isBefore(endNode)).toBe(true);
-                const startCaret = $getTextNodeCaret(
+                const startCaret = $getTextPointCaret(
                   startNode,
                   direction,
                   startFn(startNode.getTextContentSize()),
                 );
-                const endCaret = $getTextNodeCaret(
+                const endCaret = $getTextPointCaret(
                   endNode,
                   direction,
                   endFn(endNode.getTextContentSize()),
@@ -1497,7 +1497,7 @@ describe('LexicalCaret', () => {
                     : [endCaret, startCaret];
                 const range = $getCaretRange(anchor, focus);
                 // TODO compute the expected internal carets
-                // expect([...range.internalCarets('root')]).toHaveLength(
+                // expect([...range.iterNodeCarets('root')]).toHaveLength(
                 //   Math.max(0, nodeIndexEnd - nodeIndexStart - 1),
                 // );
                 const slices = range.getTextSlices();
@@ -1521,8 +1521,8 @@ describe('LexicalCaret', () => {
                           .slice(startCaret.offset),
                       ],
                 );
-                const originalStartParent = startCaret.getParentAtCaret();
-                const originalEndParent = endCaret.getParentAtCaret();
+                const originalStartParent = startCaret.getParentAtCaret()!;
+                const originalEndParent = endCaret.getParentAtCaret()!;
                 const resultRange = $removeTextFromCaretRange(range);
                 if (direction === 'next') {
                   if (anchor.offset !== 0) {
@@ -1558,45 +1558,9 @@ describe('LexicalCaret', () => {
                       direction,
                     });
                   }
-                } else {
-                  return;
-                  invariant(direction === 'previous', 'exhaustiveness check');
-                  if (anchor.offset !== texts[nodeIndexEnd].length) {
-                    // Part of the anchor remains
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        direction,
-                        offset: 0,
-                        origin: anchor.origin.getLatest(),
-                      },
-                      direction,
-                    });
-                  } else if (focus.offset !== 0) {
-                    // The focus was not removed
-                    // so the new anchor will be set to the focus origin
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        direction,
-                        offset: focus.offset,
-                        origin: focus.origin.getLatest(),
-                      },
-                      direction,
-                    });
-                  } else {
-                    // All text has been removed so we have to use a depth caret
-                    // at the anchor paragraph
-                    expect(resultRange).toMatchObject({
-                      anchor: {
-                        direction,
-                        origin: originalStartParent.getLatest(),
-                        type: 'depth',
-                      },
-                      direction,
-                    });
-                  }
                 }
                 // Check that the containing block is always that of the anchor
-                expect(resultRange.anchor.getParentAtCaret().getLatest()).toBe(
+                expect(resultRange.anchor.getParentAtCaret()!.getLatest()).toBe(
                   originalStartParent.getLatest(),
                 );
                 // Check that the focus parent has always been removed
@@ -1675,8 +1639,8 @@ describe('LexicalSelectionHelpers', () => {
           paragraph.append(text);
 
           const range = $getCaretRange(
-            $getTextNodeCaret(text, 'next', 0),
-            $getTextNodeCaret(text, 'next', 'next'),
+            $getTextPointCaret(text, 'next', 0),
+            $getTextPointCaret(text, 'next', 'next'),
           );
           const newRange = $removeTextFromCaretRange(range);
           expect(newRange).toMatchObject({

@@ -128,7 +128,8 @@ it is just a data structure and has no methods.
 ### CaretRange
 
 `CaretRange` contains a pair of `PointCaret` that are in the same direction. It
-is equivalent in purpose to a `RangeSelection`.
+is equivalent in purpose to a `RangeSelection`, and is what you would generally
+use for depth first traversals.
 
 * Constructed with `$getCaretRange(anchor, focus)` or `$caretRangeFromSelection(selection)`
 * The `anchor` is the start of the range, generally where the selection originated,
@@ -138,6 +139,16 @@ is equivalent in purpose to a `RangeSelection`.
   focus of the user
 * Anchor and focus must point in the same direction. The `anchor` points towards the first
   node *in the range* and the focus points towards the first node *not in the range*
+* The `getTextSlices()` method is essential to handle the literal edge cases where
+  the anchor and/or focus are a `TextPointCaret`. These edges are *not* included
+  in the default caret iteration of the `CaretRange`.
+
+:::warning
+
+If you are iterating a `CaretRange` you must consider the `getTextSlices()` separately,
+or use the `iterSlicesAndCarets()` method which will include them.
+
+:::
 
 ## Traversal Strategies
 
@@ -166,9 +177,12 @@ For example, iterating all siblings:
 // Note that NodeCaret<D> already implements Iterable<NodeCaret<D>> in this
 // way, so this function is not very useful. You can just use startCaret as
 // the iterable.
-function *iterSiblings<D extends CaretDirection>(
+function *$iterSiblings<D extends CaretDirection>(
   startCaret: NodeCaret<D>
-): Iterable<NodeCaret<D>> {
+): Iterable<SiblingCaret<D>> {
+  // Note that we start at the adjacent caret. The start caret
+  // points away from the origin node, so we do not want to
+  // trick ourselves into thinking that that origin is included.
   for (
     let caret = startCaret.getAdjacentCaret();
     caret !== null;
@@ -185,32 +199,83 @@ The strategy to do a depth-first caret traversal is to use an adjacent caret
 traversal and immediately use a `ChildCaret` any time that an `ElementNode`
 origin is encountered. This strategy yields all possible carets, but each
 ElementNode in the traversal may be yielded once or twice (a `ChildCaret` on
-enter, and a `BreadthNode` on leave). Allowing you to see whether an
+enter, and a `SiblingCaret` on leave). Allowing you to see whether an
 `ElementNode` is partially included in the range or not is one of the
 reasons that this abstraction exists.
 
-
 ```ts
-function *iterAllNodes<D extends CaretDirection>(
-  startCaret: NodeCaret<D>,
-  endCaret = startCaret.getParentCaret('root')
+function *$iterCaretsDepthFirst<D extends CaretDirection>(
+  startCaret: NodeCaret<D>
 ): Iterable<NodeCaret<D>> {
+  function step(prevCaret: NodeCaret<D>): null | NodeCaret<D> {
+    // Get the adjacent SiblingCaret
+    const nextCaret = prevCaret.getAdjacent();
+    return (
+      // If there is a sibling, try and get a ChildCaret from it
+      (nextCaret && nextCaret.getChildCaret()) ||
+      // Return the sibling if there is one
+      nextCaret ||
+      // Return a SiblingCaret of the parent, if there is one
+      prevCaret.getParentCaret('root')
+    );
+  }
+  // You may add an additional check here, usually some specific
+  // caret to terminate the iteration with (such as the parent caret
+  // of startCaret):
+  //
+  //  `caret !== null || caret.is(endCaret)`
+  //
   for (
-    let caret = startCaret.getAdjacentCaret();
+    let caret = step(startCaret);
     caret !== null;
-    caret = caret.getAdjacentCaret()
+    caret = step(caret)
   ) {
-
+    yield caret;
   }
 }
-
-// This is in getNodes() style where it's very hard to tell if the ElementNode
-// partially or completely included
 ```
 
-`$getAdjacentChildCaret(caret)` - `$getChildCaretOrSelf(caret?.getAdjacentCaret())`
+Normally this type of iteration would be done from a `CaretRange`, where you
+would specify a precise end caret (focus).
 
-`$getAdjacentSiblingOrParentSiblingCaret(caret)` - 
+```ts
+function $iterCaretsDepthFirst<D extends CaretDirection>(
+  startCaret: NodeCaret<D>,
+  endCaret?: NodeCaret<D>,
+): Iterable<NodeCaret<D>> {
+  return $getCaretRange(
+    startCaret,
+    // Use the root as the default end caret, but you might choose
+    // to use startCaret.getParentCaret('root') for example
+    endCaret || $getBreadthNode($getRoot(), startCaret.direction)
+  );
+}
+```
+
+To get all nodes that are entirely selected between two carets:
+
+```ts
+function *$iterNodesDepthFirst<D extends CaretDirection>(
+  startCaret: NodeCaret<D>,
+  endCaret?: NodeCaret<D>,
+): Iterable<NodeCaret<D>> {
+  const seen = new Set<NodeKey>();
+  for (const caret of $iterCaretsDepthFirst(startCaret, endCaret)) {
+    const {origin} = caret;
+    if ($isChildCaret(caret)) {
+      seen.add(origin.getKey());
+    } else if (!$isElementNode(origin) || seen.has(origin.getKey())) {
+      // If the origin is an element and we have not seen it as a ChildCaret
+      // then it was not entirely in the CaretRange
+      yield origin;
+    }
+  }
+}
+```
+
+### Handling TextPointSlice
+
+
 
 ## Future Direction
 

@@ -25,7 +25,6 @@ import {
   $getSelection,
   $getSiblingCaret,
   $getTextPointCaret,
-  $getTextSliceContent,
   $isTextNode,
   $isTextPointCaret,
   $removeTextFromCaretRange,
@@ -228,7 +227,7 @@ describe('LexicalCaret', () => {
               const flippedAdjacent = flipped.getAdjacentCaret();
               invariant(
                 flippedAdjacent !== null,
-                'A flipped BreadthNode always has an adjacent caret because it points back to the origin',
+                'A flipped SiblingCaret always has an adjacent caret because it points back to the origin',
               );
               expect(flippedAdjacent.origin.is(caret.origin)).toBe(true);
 
@@ -1265,7 +1264,7 @@ describe('LexicalCaret', () => {
                   (direction === 'next' ? 1 : -1) *
                     (size - anchorEdgeOffset - focusEdgeOffset),
                 );
-                expect($getTextSliceContent(slice)).toBe(
+                expect(slice.getTextContent()).toBe(
                   text.slice(offsetStart, offsetEnd),
                 );
                 const resultRange = $removeTextFromCaretRange(range);
@@ -1331,7 +1330,7 @@ describe('LexicalCaret', () => {
                 );
                 const slices = range.getTextSlices();
                 expect(slices).toHaveLength(2);
-                expect(slices.map($getTextSliceContent)).toEqual(
+                expect(slices.map((slice) => slice.getTextContent())).toEqual(
                   direction === 'next'
                     ? [
                         startCaret.origin
@@ -1506,7 +1505,7 @@ describe('LexicalCaret', () => {
                 // );
                 const slices = range.getTextSlices();
                 expect(slices).toHaveLength(2);
-                expect(slices.map($getTextSliceContent)).toEqual(
+                expect(slices.map((slice) => slice.getTextContent())).toEqual(
                   direction === 'next'
                     ? [
                         startCaret.origin

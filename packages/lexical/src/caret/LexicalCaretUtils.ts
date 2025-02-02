@@ -394,21 +394,6 @@ export function $normalizeCaret<D extends CaretDirection>(
 }
 
 /**
- * @param slice a TextPointCaretSlice
- * @returns absolute coordinates into the text (for use with text.slice(...))
- */
-function $getTextSliceIndices<T extends TextNode, D extends CaretDirection>(
-  slice: TextPointCaretSlice<T, D>,
-): [indexStart: number, indexEnd: number] {
-  const {
-    distance,
-    caret: {offset},
-  } = slice;
-  const offsetB = offset + distance;
-  return offsetB < offset ? [offsetB, offset] : [offset, offsetB];
-}
-
-/**
  * Return the caret if it's in the given direction, otherwise return
  * caret.getFlipped().
  *
@@ -468,27 +453,13 @@ export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
   const {
     caret: {origin, direction},
   } = slice;
-  const [indexStart, indexEnd] = $getTextSliceIndices(slice);
+  const [indexStart, indexEnd] = slice.getSliceIndices();
   const text = origin.getTextContent();
   return $getTextPointCaret(
     origin.setTextContent(text.slice(0, indexStart) + text.slice(indexEnd)),
     direction,
     indexStart,
   );
-}
-
-/**
- * Read the text from a TextNodeSlice
- *
- * @param slice The slice to read
- * @returns The text represented by the slice
- */
-export function $getTextSliceContent(
-  slice: TextPointCaretSlice<TextNode, CaretDirection>,
-): string {
-  return slice.caret.origin
-    .getTextContent()
-    .slice(...$getTextSliceIndices(slice));
 }
 
 /**

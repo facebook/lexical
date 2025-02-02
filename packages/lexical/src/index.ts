@@ -34,6 +34,7 @@ export {
   $isSameTextPointCaret,
   $isSiblingCaret,
   $isTextPointCaret,
+  $isTextPointCaretSlice,
   flipDirection,
   makeStepwiseIterator,
 } from './caret/LexicalCaret';
@@ -44,7 +45,6 @@ export {
   $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
-  $getTextSliceContent,
   $removeTextFromCaretRange,
   $removeTextSlice,
   $rewindSiblingCaret,

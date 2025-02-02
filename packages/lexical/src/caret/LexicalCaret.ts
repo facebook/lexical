@@ -242,23 +242,26 @@ export interface TextPointCaret<
  * caret. A negative distance means that text before offset is selected, a
  * positive distance means that text after offset is selected. The offset+distance
  * pair is not affected in any way by the direction of the caret.
- *
- * The selected string content can be computed as such
- * (see also {@link $getTextSliceContent}):
- *
- * ```
- * slice.origin.getTextContent().slice(
- *   Math.min(slice.offset, slice.offset + slice.distance),
- *   Math.max(slice.offset, slice.offset + slice.distance),
- * )
- * ```
  */
 export interface TextPointCaretSlice<
   T extends TextNode = TextNode,
   D extends CaretDirection = CaretDirection,
 > {
+  readonly type: 'slice';
   readonly caret: TextPointCaret<T, D>;
   readonly distance: number;
+  /**
+   * @returns absolute coordinates into the text (for use with `text.slice(...)`)
+   */
+  getSliceIndices: () => [startIndex: number, endIndex: number];
+  /**
+   * @returns The text represented by the slice
+   */
+  getTextContent: () => string;
+  /**
+   * @returns The size of the text represented by the slice
+   */
+  getTextContentSize: () => number;
 }
 
 /**
@@ -724,7 +727,7 @@ export function $getTextPointCaretSlice<
   T extends TextNode,
   D extends CaretDirection,
 >(caret: TextPointCaret<T, D>, distance: number): TextPointCaretSlice<T, D> {
-  return {caret, distance};
+  return new TextPointCaretSliceImpl(caret, distance);
 }
 
 /**
@@ -834,6 +837,35 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
   }
 }
 
+class TextPointCaretSliceImpl<T extends TextNode, D extends CaretDirection>
+  implements TextPointCaretSlice<T, D>
+{
+  readonly type = 'slice';
+  readonly caret: TextPointCaret<T, D>;
+  readonly distance: number;
+  constructor(caret: TextPointCaret<T, D>, distance: number) {
+    this.caret = caret;
+    this.distance = distance;
+  }
+  getSliceIndices(): [startIndex: number, endIndex: number] {
+    const {
+      distance,
+      caret: {offset},
+    } = this;
+    const offsetB = offset + distance;
+    return offsetB < offset ? [offsetB, offset] : [offset, offsetB];
+  }
+
+  getTextContent(): string {
+    const [startIndex, endIndex] = this.getSliceIndices();
+    return this.caret.origin.getTextContent().slice(startIndex, endIndex);
+  }
+
+  getTextContentSize(): number {
+    return Math.abs(this.distance);
+  }
+}
+
 function $getSliceFromTextPointCaret<
   T extends TextNode,
   D extends CaretDirection,
@@ -846,7 +878,17 @@ function $getSliceFromTextPointCaret<
     origin,
     anchorOrFocus === 'focus' ? flipDirection(direction) : direction,
   );
-  return {caret, distance: offsetB - caret.offset};
+  return $getTextPointCaretSlice(caret, offsetB - caret.offset);
+}
+
+export function $isTextPointCaretSlice<D extends CaretDirection>(
+  caretOrSlice:
+    | null
+    | undefined
+    | PointCaret<D>
+    | TextPointCaretSlice<TextNode, D>,
+) {
+  return caretOrSlice instanceof TextPointCaretSliceImpl;
 }
 
 /**

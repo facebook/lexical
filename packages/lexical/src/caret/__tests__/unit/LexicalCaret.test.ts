@@ -19,25 +19,25 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
-  $getBreadthCaret,
   $getCaretRange,
   $getChildCaret,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $getTextPointCaret,
   $getTextSliceContent,
   $isTextNode,
   $isTextPointCaret,
   $removeTextFromCaretRange,
-  $rewindBreadthCaret,
+  $rewindSiblingCaret,
   $selectAll,
   $setPointFromCaret,
   $setSelection,
   $setSelectionFromCaretRange,
-  BreadthCaret,
   ChildCaret,
   LexicalNode,
   RootNode,
+  SiblingCaret,
   TextNode,
 } from 'lexical';
 
@@ -95,14 +95,14 @@ describe('LexicalCaret', () => {
               expect(flipped).not.toBe(caret);
               expect(flipped.getFlipped().is(caret)).toBe(true);
               expect(flipped.direction).not.toBe(direction);
-              expect(flipped.type).toBe('breadth');
+              expect(flipped.type).toBe('sibling');
               expect(flipped.getNodeAtCaret()).toBe(null);
               expect(flipped.getAdjacentCaret()).toBe(null);
               for (const mode of ['root', 'shadowRoot'] as const) {
                 expect(caret.getParentCaret(mode)).toBe(null);
                 expect(flipped.getParentCaret(mode)).toBe(null);
               }
-              const adjacent: BreadthCaret<
+              const adjacent: SiblingCaret<
                 LexicalNode,
                 typeof direction
               > | null = caret.getAdjacentCaret();
@@ -111,7 +111,7 @@ describe('LexicalCaret', () => {
                 'depth caret of a non-empty element must always have an adjacent caret',
               );
               expect(paragraph.is(adjacent.origin)).toBe(true);
-              expect(adjacent.type).toBe('breadth');
+              expect(adjacent.type).toBe('sibling');
               expect(adjacent.getAdjacentCaret()).toBe(null);
 
               expect(root.getChildrenSize()).toBe(1);
@@ -181,7 +181,7 @@ describe('LexicalCaret', () => {
         });
       }
     });
-    describe('$getBreadthCaret', () => {
+    describe('$getSiblingCaret', () => {
       for (const direction of DIRECTIONS) {
         test(`direction ${direction}`, async () => {
           await testEnv.editor.update(
@@ -201,11 +201,11 @@ describe('LexicalCaret', () => {
               invariant(nextToken !== null, 'nextToken must exist');
               // Note that the type declarations here would normally be inferred, these are
               // used just to demonstrate that inference is working as expected
-              const caret: BreadthCaret<TextNode, typeof direction> =
-                $getBreadthCaret(zToken, direction);
+              const caret: SiblingCaret<TextNode, typeof direction> =
+                $getSiblingCaret(zToken, direction);
               expect(zToken.is(caret.origin)).toBe(true);
               expect(caret.direction).toBe(direction);
-              expect(caret.type).toBe('breadth');
+              expect(caret.type).toBe('sibling');
               expect(nextToken.is(caret.getNodeAtCaret())).toBe(true);
               expect(paragraph.is(caret.getParentAtCaret())).toBe(true);
 
@@ -223,7 +223,7 @@ describe('LexicalCaret', () => {
               expect(flipped.getFlipped().is(caret));
               expect(flipped.origin.is(caret.getNodeAtCaret())).toBe(true);
               expect(flipped.direction).not.toBe(direction);
-              expect(flipped.type).toBe('breadth');
+              expect(flipped.type).toBe('sibling');
               expect(zToken.is(flipped.getNodeAtCaret())).toBe(true);
               const flippedAdjacent = flipped.getAdjacentCaret();
               invariant(
@@ -234,18 +234,18 @@ describe('LexicalCaret', () => {
 
               for (const mode of ['root', 'shadowRoot'] as const) {
                 expect(
-                  $getBreadthCaret(paragraph, caret.direction).is(
+                  $getSiblingCaret(paragraph, caret.direction).is(
                     caret.getParentCaret(mode),
                   ),
                 ).toBe(true);
                 expect(
-                  $getBreadthCaret(paragraph, flipped.direction).is(
+                  $getSiblingCaret(paragraph, flipped.direction).is(
                     flipped.getParentCaret(mode),
                   ),
                 ).toBe(true);
               }
 
-              const adjacent: BreadthCaret<
+              const adjacent: SiblingCaret<
                 LexicalNode,
                 typeof direction
               > | null = caret.getAdjacentCaret();
@@ -254,7 +254,7 @@ describe('LexicalCaret', () => {
               expect(tokens[ZERO_INDEX + offset].is(adjacent.origin)).toBe(
                 true,
               );
-              expect(adjacent.type).toBe('breadth');
+              expect(adjacent.type).toBe('sibling');
               expect(adjacent.origin.getTextContent()).toBe(String(offset));
 
               expect(tokens[ZERO_INDEX + offset].isAttached()).toBe(true);
@@ -469,12 +469,11 @@ describe('LexicalCaret', () => {
                   direction: 'next',
                   offset,
                   origin: node,
-                  type: 'breadth',
+                  type: 'sibling',
                 },
                 distance: 0,
               },
             ]);
-            expect(range.getNonEmptyTextSlices()).toEqual([]);
             expect([...range.iterNodeCarets('root')]).toEqual([]);
           }
         });
@@ -633,7 +632,7 @@ describe('LexicalCaret', () => {
                         direction,
                         offset: anchorOffset,
                         origin: anchorNode,
-                        type: 'breadth',
+                        type: 'sibling',
                       },
                       distance:
                         direction === 'next'
@@ -645,7 +644,7 @@ describe('LexicalCaret', () => {
                         direction,
                         offset: focusOffset,
                         origin: focusNode,
-                        type: 'breadth',
+                        type: 'sibling',
                       },
                       distance:
                         direction === 'next'
@@ -658,7 +657,7 @@ describe('LexicalCaret', () => {
                         .map((origin) => ({
                           direction,
                           origin,
-                          type: 'breadth',
+                          type: 'sibling',
                         })),
                     );
                   }
@@ -979,12 +978,11 @@ describe('LexicalCaret', () => {
                     direction: 'next',
                     offset,
                     origin: node,
-                    type: 'breadth',
+                    type: 'sibling',
                   },
                   distance: 0,
                 },
               ]);
-              expect(range.getNonEmptyTextSlices()).toEqual([]);
               expect([...range.iterNodeCarets('root')]).toEqual([]);
               expect($removeTextFromCaretRange(range)).toMatchObject(
                 originalRangeMatch,
@@ -1057,7 +1055,7 @@ describe('LexicalCaret', () => {
                     direction,
                     offset,
                     origin: newOrigin,
-                    type: 'breadth',
+                    type: 'sibling',
                   };
                   expect(resultRange).toMatchObject({
                     anchor: pt,
@@ -1090,11 +1088,11 @@ describe('LexicalCaret', () => {
                     direction === 'next' ? [0, size] : [size, 0];
                   // Create the inside selection, will mutate for outside
                   const selection = node.select(anchorOffset, focusOffset);
-                  const nodeCaret = $getBreadthCaret(node, direction);
+                  const nodeCaret = $getSiblingCaret(node, direction);
                   if (anchorBias === 'outside') {
                     $setPointFromCaret(
                       selection.anchor,
-                      $rewindBreadthCaret(nodeCaret),
+                      $rewindSiblingCaret(nodeCaret),
                     );
                     if (direction === 'next') {
                       if (i === 0) {
@@ -1132,7 +1130,7 @@ describe('LexicalCaret', () => {
                   if (focusBias === 'outside') {
                     $setPointFromCaret(
                       selection.focus,
-                      $getBreadthCaret(node, direction).getFlipped(),
+                      $getSiblingCaret(node, direction).getFlipped(),
                     );
                     if (direction === 'next') {
                       if (i === texts.length - 1) {
@@ -1173,7 +1171,11 @@ describe('LexicalCaret', () => {
                   expect([...range.iterNodeCarets('root')].length).toBe(
                     anchorBias === 'outside' && focusBias === 'outside' ? 1 : 0,
                   );
-                  expect(range.getNonEmptyTextSlices()).toMatchObject(
+                  expect(
+                    range
+                      .getTextSlices()
+                      .filter((slice) => slice.distance !== 0),
+                  ).toMatchObject(
                     anchorBias === 'outside' && focusBias === 'outside'
                       ? []
                       : (anchorBias === 'inside') === (direction === 'next')
@@ -1199,14 +1201,14 @@ describe('LexicalCaret', () => {
                       direction,
                       offset,
                       origin: newOrigin,
-                      type: 'breadth',
+                      type: 'sibling',
                     },
                     direction,
                     focus: {
                       direction,
                       offset,
                       origin: newOrigin,
-                      type: 'breadth',
+                      type: 'sibling',
                     },
                     type: 'node-caret-range',
                   });
@@ -1253,7 +1255,9 @@ describe('LexicalCaret', () => {
                   focus.offset,
                 ].sort((a, b) => a - b);
                 const range = $getCaretRange(anchor, focus);
-                const slices = range.getNonEmptyTextSlices();
+                const slices = range
+                  .getTextSlices()
+                  .filter((slice) => slice.distance !== 0);
                 expect([...range.iterNodeCarets('root')]).toEqual([]);
                 expect(slices.length).toBe(1);
                 const [slice] = slices;
@@ -1647,7 +1651,7 @@ describe('LexicalSelectionHelpers', () => {
             anchor: {
               direction: 'next',
               origin: link.getLatest(),
-              type: 'breadth',
+              type: 'sibling',
             },
           });
           newRange.focus.insert($createTextNode('foo'));

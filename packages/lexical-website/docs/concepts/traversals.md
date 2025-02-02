@@ -53,15 +53,15 @@ constructed with, all accessor methods on that origin will generally call
 
 ### NodeCaret
 
-`NodeCaret` is any `BreadthCaret` or any `ChildCaret`
-* Typically constructed with `$getChildCaretOrSelf($getBreadthCaret(origin, direction))`
+`NodeCaret` is any `SiblingCaret` or any `ChildCaret`
+* Typically constructed with `$getChildCaretOrSelf($getSiblingCaret(origin, direction))`
   which returns a `ChildCaret` when the origin is an `ElementNode`
 
-### BreadthCaret
+### SiblingCaret
 
-`BreadthCaret` is a caret that points towards a sibling of the origin
+`SiblingCaret` is a caret that points towards a sibling of the origin
 
-* Constructed with `$getBreadthCaret(origin: LexicalNode, direction: CaretDirection)`
+* Constructed with `$getSiblingCaret(origin: LexicalNode, direction: CaretDirection)`
 * The `next` direction points towards the right
 * The `previous` direction points towards the left
 
@@ -87,12 +87,12 @@ constructed with, all accessor methods on that origin will generally call
 
 ### PointCaret
 
-`PointCaret` is any `TextPointCaret`, `BreadthCaret` or `ChildCaret`. This
+`PointCaret` is any `TextPointCaret`, `SiblingCaret` or `ChildCaret`. This
 type can be used to represent any point in the document that `PointType` can represent.
 
 :::tip
 
-Because `TextPointCaret` is a subclass of `BreadthCaret`, this type is
+Because `TextPointCaret` is a subclass of `SiblingCaret`, this type is
 really just used to document that the function will not ignore
 `TextPointCaret`
 
@@ -100,7 +100,7 @@ really just used to document that the function will not ignore
 
 ### TextPointCaret
 
-`TextPointCaret` is a specialized `BreadthCaret` with any `TextNode` origin and an `offset` property
+`TextPointCaret` is a specialized `SiblingCaret` with any `TextNode` origin and an `offset` property
 * Constructed with `$getTextPointCaret(origin, direction, offset)`
 * The `offset` property is an absolute index into the string
 * The `next` direction implies all text content after `offset`
@@ -109,7 +109,7 @@ really just used to document that the function will not ignore
 
 :::warning
 
-Since `TextPointCaret` is a specialization of `BreadthCaret`, the offset will be ignored
+Since `TextPointCaret` is a specialization of `SiblingCaret`, the offset will be ignored
 by functions that are not also specialized to handle it.
 
 :::
@@ -146,10 +146,10 @@ is equivalent in purpose to a `RangeSelection`.
 The lowest level building block for traversals with NodeCaret is the adjacent caret
 traversal, which is supported directly by methods of NodeCaret.
 
-`getAdjacentCaret()` - Gets a `BreadthCaret` for the node attached to
+`getAdjacentCaret()` - Gets a `SiblingCaret` for the node attached to
   `origin` in direction. If there is no attached node, it will return `null`
 
-`getParentCaret(rootMode)` - Gets a `BreadthCaret` for the parent node
+`getParentCaret(rootMode)` - Gets a `SiblingCaret` for the parent node
   of `origin` in the same direction. If there is no parent node, or the parent
   is a root according to `rootMode`, then it will return `null`. `rootMode`
   may be `'root'` to only return `null` for `RootNode` or `'shadowRoot'` to

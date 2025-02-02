@@ -7,13 +7,13 @@
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
 import type {
-  BreadthCaret,
   CaretDirection,
   CaretRange,
   ChildCaret,
   NodeCaret,
   PointCaret,
   RootMode,
+  SiblingCaret,
   TextPointCaret,
   TextPointCaretSlice,
 } from './LexicalCaret';
@@ -41,13 +41,13 @@ import {
 } from '../nodes/LexicalTextNode';
 import {
   $getAdjacentChildCaret,
-  $getBreadthCaret,
   $getCaretRange,
   $getChildCaret,
+  $getSiblingCaret,
   $getTextNodeOffset,
   $getTextPointCaret,
-  $isBreadthCaret,
   $isChildCaret,
+  $isSiblingCaret,
   $isTextPointCaret,
   flipDirection,
 } from './LexicalCaret';
@@ -92,7 +92,7 @@ export function $setPointFromCaret<D extends CaretDirection>(
 ): void {
   const {origin, direction} = caret;
   const isNext = direction === 'next';
-  if ($isBreadthCaret(caret)) {
+  if ($isSiblingCaret(caret)) {
     if ($isTextNode(origin)) {
       point.set(
         origin.getKey(),
@@ -167,30 +167,30 @@ export function $caretRangeFromSelection(
 }
 
 /**
- * Given a BreadthCaret we can always compute a caret that points to the
+ * Given a SiblingCaret we can always compute a caret that points to the
  * origin of that caret in the same direction. The adjacent caret of the
  * returned caret will be equivalent to the given caret.
  *
  * @example
  * ```ts
- * breadthCaret.is($rewindBreadthCaret(breadthCaret).getAdjacentCaret())
+ * SiblingCaret.is($rewindSiblingCaret(SiblingCaret).getAdjacentCaret())
  * ```
  *
  * @param caret The caret to "rewind"
- * @returns A new caret (ChildCaret or BreadthCaret) with the same direction
+ * @returns A new caret (ChildCaret or SiblingCaret) with the same direction
  */
-export function $rewindBreadthCaret<
+export function $rewindSiblingCaret<
   T extends LexicalNode,
   D extends CaretDirection,
->(caret: BreadthCaret<T, D>): NodeCaret<D> {
+>(caret: SiblingCaret<T, D>): NodeCaret<D> {
   const {direction, origin} = caret;
   // Rotate the direction around the origin and get the adjacent node
-  const rewindOrigin = $getBreadthCaret(
+  const rewindOrigin = $getSiblingCaret(
     origin,
     flipDirection(direction),
   ).getNodeAtCaret();
   return rewindOrigin
-    ? $getBreadthCaret(rewindOrigin, direction)
+    ? $getSiblingCaret(rewindOrigin, direction)
     : $getChildCaret(origin.getParentOrThrow(), direction);
 }
 
@@ -207,7 +207,7 @@ function $getAnchorCandidates<D extends CaretDirection>(
     parent !== null;
     parent = parent.getParentCaret(rootMode)
   ) {
-    carets.push($rewindBreadthCaret(parent));
+    carets.push($rewindSiblingCaret(parent));
   }
   return carets;
 }
@@ -245,7 +245,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   for (const caret of range.iterNodeCarets(rootMode)) {
     if ($isChildCaret(caret)) {
       seenStart.add(caret.origin.getKey());
-    } else if ($isBreadthCaret(caret)) {
+    } else if ($isSiblingCaret(caret)) {
       const {origin} = caret;
       if (!$isElementNode(origin) || seenStart.has(origin.getKey())) {
         removedNodes.push(origin);
@@ -264,8 +264,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   for (const slice of range.getTextSlices()) {
     const {origin} = slice.caret;
     const contentSize = origin.getTextContentSize();
-    const caretBefore = $rewindBreadthCaret(
-      $getBreadthCaret(origin, nextDirection),
+    const caretBefore = $rewindSiblingCaret(
+      $getSiblingCaret(origin, nextDirection),
     );
     const mode = origin.getMode();
     if (
@@ -388,7 +388,7 @@ export function $normalizeCaret<D extends CaretDirection>(
       : $getTextPointCaret(caret.origin, direction, direction);
   }
   const adj = caret.getAdjacentCaret();
-  return $isBreadthCaret(adj) && $isTextNode(adj.origin)
+  return $isSiblingCaret(adj) && $isTextNode(adj.origin)
     ? $getTextPointCaret(adj.origin, direction, flipDirection(direction))
     : caret;
 }
@@ -506,7 +506,7 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
 ): NodeCaret<D> {
   let caret: NodeCaret<'next'> = $getChildCaret(parent, 'next');
   for (let i = 0; i < index; i++) {
-    const nextCaret: null | BreadthCaret<LexicalNode, 'next'> =
+    const nextCaret: null | SiblingCaret<LexicalNode, 'next'> =
       caret.getAdjacentCaret();
     if (nextCaret === null) {
       break;

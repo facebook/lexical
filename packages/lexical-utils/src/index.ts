@@ -11,21 +11,20 @@ import {
   $createParagraphNode,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
-  $getBreadthCaret,
   $getChildCaret,
   $getChildCaretAtIndex,
   $getChildCaretOrSelf,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
-  $rewindBreadthCaret,
+  $rewindSiblingCaret,
   $setSelection,
   $splitNode,
-  type BreadthCaret,
   type CaretDirection,
   type EditorState,
   ElementNode,
@@ -35,6 +34,7 @@ import {
   makeStepwiseIterator,
   type NodeCaret,
   type NodeKey,
+  type SiblingCaret,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -204,7 +204,7 @@ export function $dfs(
  */
 export function $getAdjacentCaret<D extends CaretDirection>(
   caret: null | NodeCaret<D>,
-): null | BreadthCaret<LexicalNode, D> {
+): null | SiblingCaret<LexicalNode, D> {
   return caret ? caret.getAdjacentCaret() : null;
 }
 
@@ -244,11 +244,11 @@ function $dfsCaretIterator<D extends CaretDirection>(
   const start = startNode || root;
   const startCaret = $isElementNode(start)
     ? $getChildCaret(start, direction)
-    : $rewindBreadthCaret($getBreadthCaret(start, direction));
+    : $rewindSiblingCaret($getSiblingCaret(start, direction));
   const startDepth = $getDepth(startCaret.getParentAtCaret());
   const endCaret = $getAdjacentChildCaret(
     endNode
-      ? $getChildCaretOrSelf($getBreadthCaret(endNode, direction))
+      ? $getChildCaretOrSelf($getSiblingCaret(endNode, direction))
       : startCaret.getParentCaret(rootMode),
   );
   let depth = startDepth;
@@ -285,7 +285,7 @@ export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number] {
   const rval = $getAdjacentSiblingOrParentSiblingCaret(
-    $getBreadthCaret(node, 'next'),
+    $getSiblingCaret(node, 'next'),
   );
   return rval && [rval[0].origin, rval[1]];
 }
@@ -314,7 +314,7 @@ export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null {
   const startCaret = $getChildCaretOrSelf(
-    $getBreadthCaret(startingNode, 'previous'),
+    $getSiblingCaret(startingNode, 'previous'),
   );
   const next = $getAdjacentSiblingOrParentSiblingCaret(startCaret, 'root');
   return next && next[0].origin;
@@ -813,7 +813,7 @@ function $childIterator<D extends CaretDirection>(
       }
       return origin;
     },
-    step: (caret: BreadthCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
+    step: (caret: SiblingCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
     stop: (v): v is null => v === null,
   });
 }
@@ -824,7 +824,7 @@ function $childIterator<D extends CaretDirection>(
  * @param node The ElementNode to unwrap and remove
  */
 export function $unwrapNode(node: ElementNode): void {
-  $rewindBreadthCaret($getBreadthCaret(node, 'next')).splice(
+  $rewindSiblingCaret($getSiblingCaret(node, 'next')).splice(
     1,
     node.getChildren(),
   );

@@ -8,7 +8,6 @@
 
 export type {
   BaseCaret,
-  BreadthCaret,
   CaretDirection,
   CaretRange,
   CaretType,
@@ -17,6 +16,7 @@ export type {
   NodeCaret,
   PointCaret,
   RootMode,
+  SiblingCaret,
   StepwiseIteratorConfig,
   TextPointCaret,
   TextPointCaretSlice,
@@ -24,15 +24,15 @@ export type {
 } from './caret/LexicalCaret';
 export {
   $getAdjacentChildCaret,
-  $getBreadthCaret,
   $getCaretRange,
   $getChildCaret,
   $getChildCaretOrSelf,
+  $getSiblingCaret,
   $getTextPointCaret,
   $getTextPointCaretSlice,
-  $isBreadthCaret,
   $isChildCaret,
   $isSameTextPointCaret,
+  $isSiblingCaret,
   $isTextPointCaret,
   flipDirection,
   makeStepwiseIterator,
@@ -47,7 +47,7 @@ export {
   $getTextSliceContent,
   $removeTextFromCaretRange,
   $removeTextSlice,
-  $rewindBreadthCaret,
+  $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelectionFromCaretRange,
   $updateRangeSelectionFromCaretRange,

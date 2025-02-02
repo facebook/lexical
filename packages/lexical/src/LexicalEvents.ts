@@ -25,6 +25,7 @@ import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
   $isRootNode,
@@ -79,6 +80,7 @@ import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
   $findMatchingParent,
   $flushMutations,
+  $getAdjacentNode,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
@@ -609,7 +611,16 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             isSelectionAnchorSameAsFocus &&
             !hasSelectedAllTextInNode &&
             selectedNodeCanInsertTextAfter;
-          if (!shouldLetBrowserHandleDelete) {
+          // Check if selection is collapsed and if the previous node is a decorator node
+          // If so, the browser will not be able to handle the deletion
+          let browserAbleToDelete = true;
+          if (selection.isCollapsed()) {
+            const prevNode = $getAdjacentNode(selection.anchor, true);
+            if ($isDecoratorNode(prevNode)) {
+              browserAbleToDelete = false;
+            }
+          }
+          if (!(shouldLetBrowserHandleDelete && browserAbleToDelete)) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
         }

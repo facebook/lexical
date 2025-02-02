@@ -53,13 +53,13 @@ constructed with, all accessor methods on that origin will generally call
 
 ### NodeCaret
 
-`NodeCaret` is any `BreadthNodeCaret` or any `DepthNodeCaret`
+`NodeCaret` is any `BreadthCaret` or any `DepthCaret`
 * Typically constructed with `$getChildCaretOrSelf($getBreadthCaret(origin, direction))`
-  which returns a `DepthNodeCaret` when the origin is an `ElementNode`
+  which returns a `DepthCaret` when the origin is an `ElementNode`
 
-### BreadthNodeCaret
+### BreadthCaret
 
-`BreadthNodeCaret` is a caret that points towards a sibling of the origin
+`BreadthCaret` is a caret that points towards a sibling of the origin
 
 * Constructed with `$getBreadthCaret(origin: LexicalNode, direction: CaretDirection)`
 * The `next` direction points towards the right
@@ -71,9 +71,9 @@ constructed with, all accessor methods on that origin will generally call
 | `getNodeAtCaret()`     | `origin.getNextSibling()` | `origin.getPreviousSibling()` |
 | `insert(node)`         | `origin.insertAfter(node)`| `origin.insertBefore(node)`   |
 
-### DepthNodeCaret
+### DepthCaret
 
-`DepthNodeCaret` is a caret that points towards the first or last child of the origin
+`DepthCaret` is a caret that points towards the first or last child of the origin
 
 * Constructed with `$getDepthCaret(origin: ElementNode, direction: CaretDirection)`
 * The `next` direction points towards the first child
@@ -85,14 +85,14 @@ constructed with, all accessor methods on that origin will generally call
 | `getNodeAtCaret()`     | `origin.getFirstChild()`   | `origin.getLastChild()`       |
 | `insert(node)`         | `origin.splice(0, 0, node)`| `origin.append(node)`         |
 
-### PointNodeCaret
+### PointCaret
 
-`PointNodeCaret` is any `TextPointCaret`, `BreadthNodeCaret` or `DepthNodeCaret`. This
+`PointCaret` is any `TextPointCaret`, `BreadthCaret` or `DepthCaret`. This
 type can be used to represent any point in the document that `PointType` can represent.
 
 :::tip
 
-Because `TextPointCaret` is a subclass of `BreadthNodeCaret`, this type is
+Because `TextPointCaret` is a subclass of `BreadthCaret`, this type is
 really just used to document that the function will not ignore
 `TextPointCaret`
 
@@ -100,7 +100,7 @@ really just used to document that the function will not ignore
 
 ### TextPointCaret
 
-`TextPointCaret` is a specialized `BreadthNodeCaret` with any `TextNode` origin and an `offset` property
+`TextPointCaret` is a specialized `BreadthCaret` with any `TextNode` origin and an `offset` property
 * Constructed with `$getTextPointCaret(origin, direction, offset)`
 * The `offset` property is an absolute index into the string
 * The `next` direction implies all text content after `offset`
@@ -109,7 +109,7 @@ really just used to document that the function will not ignore
 
 :::warning
 
-Since `TextPointCaret` is a specialization of `BreadthNodeCaret`, the offset will be ignored
+Since `TextPointCaret` is a specialization of `BreadthCaret`, the offset will be ignored
 by functions that are not also specialized to handle it.
 
 :::
@@ -125,9 +125,9 @@ it is just a data structure and has no methods.
 * The `direction` of the caret is generally ignored when working with a
   `TextPointCaretSlice`, the slice is in absolute string coordinates
 
-### NodeCaretRange
+### CaretRange
 
-`NodeCaretRange` contains a pair of `PointNodeCaret` that are in the same direction. It
+`CaretRange` contains a pair of `PointCaret` that are in the same direction. It
 is equivalent in purpose to a `RangeSelection`.
 
 * Constructed with `$getCaretRange(anchor, focus)` or `$caretRangeFromSelection(selection)`
@@ -146,25 +146,71 @@ is equivalent in purpose to a `RangeSelection`.
 The lowest level building block for traversals with NodeCaret is the adjacent caret
 traversal, which is supported directly by methods of NodeCaret.
 
-`getAdjacentCaret()` - Gets a `BreadthNodeCaret` for the node attached to
+`getAdjacentCaret()` - Gets a `BreadthCaret` for the node attached to
   `origin` in direction. If there is no attached node, it will return `null`
 
-`getParentCaret(rootMode)` - Gets a `BreadthNodeCaret` for the parent node
+`getParentCaret(rootMode)` - Gets a `BreadthCaret` for the parent node
   of `origin` in the same direction. If there is no parent node, or the parent
   is a root according to `rootMode`, then it will return `null`. `rootMode`
   may be `'root'` to only return `null` for `RootNode` or `'shadowRoot'` to
   return `null` for `RootNode` or any `ElementNode` parent where
   `isShadowRoot()` returns true
 
-`getChildCaret()` - Gets a `DepthNodeCaret` for this origin, or `null` if the
+`getChildCaret()` - Gets a `DepthCaret` for this origin, or `null` if the
   origin is not an `ElementNode`. Will return `this` if the caret is already
-  a `DepthNodeCaret`
+  a `DepthCaret`
+
+For example, iterating all siblings:
+
+```ts
+// Note that NodeCaret<D> already implements Iterable<NodeCaret<D>> in this
+// way, so this function is not very useful. You can just use startCaret as
+// the iterable.
+function *iterSiblings<D extends CaretDirection>(
+  startCaret: NodeCaret<D>
+): Iterable<NodeCaret<D>> {
+  for (
+    let caret = startCaret.getAdjacentCaret();
+    caret !== null;
+    caret = caret.getAdjacentCaret()
+  ) {
+    yield caret;
+  }
+}
+```
 
 ### Depth First Caret Traversals
 
-`$getAdjacentSiblingOrParentSiblingCaret(caret)`
+The strategy to do a depth-first caret traversal is to use an adjacent caret
+traversal and immediately use a `DepthCaret` any time that an `ElementNode`
+origin is encountered. This strategy yields all possible carets, but each
+ElementNode in the traversal may be yielded once or twice (a `DepthNode` on
+enter, and a `BreadthNode` on leave). Allowing you to see whether an
+`ElementNode` is partially included in the range or not is one of the
+reasons that this abstraction exists.
 
-`$getAdjacentDepthCaret(caret)`
+
+```ts
+function *iterAllNodes<D extends CaretDirection>(
+  startCaret: NodeCaret<D>,
+  endCaret = startCaret.getParentCaret('root')
+): Iterable<NodeCaret<D>> {
+  for (
+    let caret = startCaret.getAdjacentCaret();
+    caret !== null;
+    caret = caret.getAdjacentCaret()
+  ) {
+
+  }
+}
+
+// This is in getNodes() style where it's very hard to tell if the ElementNode
+// partially or completely included
+```
+
+`$getAdjacentDepthCaret(caret)` - `$getChildCaretOrSelf(caret?.getAdjacentCaret())`
+
+`$getAdjacentSiblingOrParentSiblingCaret(caret)` - 
 
 ## Future Direction
 

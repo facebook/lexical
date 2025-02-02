@@ -34,8 +34,8 @@ import {
   $setPointFromCaret,
   $setSelection,
   $setSelectionFromCaretRange,
-  BreadthNodeCaret,
-  DepthNodeCaret,
+  BreadthCaret,
+  DepthCaret,
   LexicalNode,
   RootNode,
   TextNode,
@@ -83,7 +83,7 @@ describe('LexicalCaret', () => {
               root.clear().append(paragraph);
               // Note that the type declarations here would normally be inferred, these are
               // used just to demonstrate that inference is working as expected
-              const caret: DepthNodeCaret<RootNode, typeof direction> =
+              const caret: DepthCaret<RootNode, typeof direction> =
                 $getDepthCaret(root, direction);
               expect(root.is(caret.origin)).toBe(true);
               expect(caret.direction).toBe(direction);
@@ -102,7 +102,7 @@ describe('LexicalCaret', () => {
                 expect(caret.getParentCaret(mode)).toBe(null);
                 expect(flipped.getParentCaret(mode)).toBe(null);
               }
-              const adjacent: BreadthNodeCaret<
+              const adjacent: BreadthCaret<
                 LexicalNode,
                 typeof direction
               > | null = caret.getAdjacentCaret();
@@ -201,7 +201,7 @@ describe('LexicalCaret', () => {
               invariant(nextToken !== null, 'nextToken must exist');
               // Note that the type declarations here would normally be inferred, these are
               // used just to demonstrate that inference is working as expected
-              const caret: BreadthNodeCaret<TextNode, typeof direction> =
+              const caret: BreadthCaret<TextNode, typeof direction> =
                 $getBreadthCaret(zToken, direction);
               expect(zToken.is(caret.origin)).toBe(true);
               expect(caret.direction).toBe(direction);
@@ -245,7 +245,7 @@ describe('LexicalCaret', () => {
                 ).toBe(true);
               }
 
-              const adjacent: BreadthNodeCaret<
+              const adjacent: BreadthCaret<
                 LexicalNode,
                 typeof direction
               > | null = caret.getAdjacentCaret();

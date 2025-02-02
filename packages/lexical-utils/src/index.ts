@@ -25,7 +25,7 @@ import {
   $rewindBreadthCaret,
   $setSelection,
   $splitNode,
-  type BreadthNodeCaret,
+  type BreadthCaret,
   type CaretDirection,
   type EditorState,
   ElementNode,
@@ -204,7 +204,7 @@ export function $dfs(
  */
 export function $getAdjacentCaret<D extends CaretDirection>(
   caret: null | NodeCaret<D>,
-): null | BreadthNodeCaret<LexicalNode, D> {
+): null | BreadthCaret<LexicalNode, D> {
   return caret ? caret.getAdjacentCaret() : null;
 }
 
@@ -813,7 +813,7 @@ function $childIterator<D extends CaretDirection>(
       }
       return origin;
     },
-    step: (caret: BreadthNodeCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
+    step: (caret: BreadthCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
     stop: (v): v is null => v === null,
   });
 }

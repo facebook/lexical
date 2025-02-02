@@ -433,12 +433,12 @@ export function $getCaretRangeInDirection<D extends CaretDirection>(
 }
 
 /**
- * Get a 'next' caret for the child at the given index, or the last
- * caret in that node if out of bounds
+ * Get a caret pointing at the child at the given index, or the last
+ * caret in that node if out of bounds.
  *
  * @param parent An ElementNode
  * @param index The index of the origin for the caret
- * @returns A next caret with the arrow at that index
+ * @returns A caret pointing towards the node at that index
  */
 export function $getChildCaretAtIndex<D extends CaretDirection>(
   parent: ElementNode,
@@ -454,7 +454,7 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
     }
     caret = nextCaret;
   }
-  return (direction === 'next' ? caret : caret.getFlipped()) as NodeCaret<D>;
+  return $getCaretInDirection(caret, direction);
 }
 
 /**

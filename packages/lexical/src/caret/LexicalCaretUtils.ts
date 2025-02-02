@@ -10,7 +10,7 @@ import type {
   BreadthCaret,
   CaretDirection,
   CaretRange,
-  DepthCaret,
+  ChildCaret,
   NodeCaret,
   PointCaret,
   RootMode,
@@ -40,14 +40,14 @@ import {
   type TextNode,
 } from '../nodes/LexicalTextNode';
 import {
-  $getAdjacentDepthCaret,
+  $getAdjacentChildCaret,
   $getBreadthCaret,
   $getCaretRange,
-  $getDepthCaret,
+  $getChildCaret,
   $getTextNodeOffset,
   $getTextPointCaret,
   $isBreadthCaret,
-  $isDepthCaret,
+  $isChildCaret,
   $isTextPointCaret,
   flipDirection,
 } from './LexicalCaret';
@@ -110,7 +110,7 @@ export function $setPointFromCaret<D extends CaretDirection>(
     }
   } else {
     invariant(
-      $isDepthCaret(caret) && $isElementNode(origin),
+      $isChildCaret(caret) && $isElementNode(origin),
       '$setPointFromCaret: exhaustiveness check',
     );
     point.set(
@@ -177,7 +177,7 @@ export function $caretRangeFromSelection(
  * ```
  *
  * @param caret The caret to "rewind"
- * @returns A new caret (DepthCaret or BreadthCaret) with the same direction
+ * @returns A new caret (ChildCaret or BreadthCaret) with the same direction
  */
 export function $rewindBreadthCaret<
   T extends LexicalNode,
@@ -191,7 +191,7 @@ export function $rewindBreadthCaret<
   ).getNodeAtCaret();
   return rewindOrigin
     ? $getBreadthCaret(rewindOrigin, direction)
-    : $getDepthCaret(origin.getParentOrThrow(), direction);
+    : $getChildCaret(origin.getParentOrThrow(), direction);
 }
 
 function $getAnchorCandidates<D extends CaretDirection>(
@@ -201,7 +201,7 @@ function $getAnchorCandidates<D extends CaretDirection>(
   // These candidates will be the anchor itself, the pointer to the anchor (if different), and then any parents of that
   const carets: [NodeCaret<D>, ...NodeCaret<D>[]] = [anchor];
   for (
-    let parent = $isDepthCaret(anchor)
+    let parent = $isChildCaret(anchor)
       ? anchor.getParentCaret(rootMode)
       : anchor;
     parent !== null;
@@ -243,7 +243,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // a parent remove itself which will affect iteration
   const removedNodes: LexicalNode[] = [];
   for (const caret of range.iterNodeCarets(rootMode)) {
-    if ($isDepthCaret(caret)) {
+    if ($isChildCaret(caret)) {
       seenStart.add(caret.origin.getKey());
     } else if ($isBreadthCaret(caret)) {
       const {origin} = caret;
@@ -316,7 +316,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   ) {
     // always merge blocks later in the document with
     // blocks earlier in the document
-    $getDepthCaret(anchorBlock, 'previous').splice(0, focusBlock.getChildren());
+    $getChildCaret(anchorBlock, 'previous').splice(0, focusBlock.getChildren());
     focusBlock.remove();
   }
 
@@ -337,26 +337,26 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
 }
 
 /**
- * Return the deepest DepthCaret that has initialCaret's origin
+ * Return the deepest ChildCaret that has initialCaret's origin
  * as an ancestor, or initialCaret if the origin is not an ElementNode
- * or is already the deepest DepthCaret.
+ * or is already the deepest ChildCaret.
  *
  * This is generally used when normalizing because there is
  * "zero distance" between these locations.
  *
  * @param initialCaret
- * @returns Either a deeper DepthCaret or the given initialCaret
+ * @returns Either a deeper ChildCaret or the given initialCaret
  */
 function $getDeepestChildOrSelf<
   Caret extends null | PointCaret<CaretDirection>,
 >(
   initialCaret: Caret,
-): DepthCaret<ElementNode, NonNullable<Caret>['direction']> | Caret {
-  let caret: DepthCaret<ElementNode, NonNullable<Caret>['direction']> | Caret =
+): ChildCaret<ElementNode, NonNullable<Caret>['direction']> | Caret {
+  let caret: ChildCaret<ElementNode, NonNullable<Caret>['direction']> | Caret =
     initialCaret;
-  while ($isDepthCaret(caret)) {
-    const adjacent = $getAdjacentDepthCaret(caret);
-    if (!$isDepthCaret(adjacent)) {
+  while ($isChildCaret(caret)) {
+    const adjacent = $getAdjacentChildCaret(caret);
+    if (!$isChildCaret(adjacent)) {
       break;
     }
     caret = adjacent;
@@ -368,7 +368,7 @@ function $getDeepestChildOrSelf<
  * Normalize a caret to the deepest equivalent PointCaret.
  * This will return a TextPointCaret with the offset set according
  * to the direction if given a caret with a TextNode origin
- * or a caret with an ElementNode origin with the deepest DepthNode
+ * or a caret with an ElementNode origin with the deepest ChildCaret
  * having an adjacent TextNode.
  *
  * If given a TextPointCaret, it will be returned, as no normalization
@@ -504,7 +504,7 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
   index: number,
   direction: D,
 ): NodeCaret<D> {
-  let caret: NodeCaret<'next'> = $getDepthCaret(parent, 'next');
+  let caret: NodeCaret<'next'> = $getChildCaret(parent, 'next');
   for (let i = 0; i < index; i++) {
     const nextCaret: null | BreadthCaret<LexicalNode, 'next'> =
       caret.getAdjacentCaret();
@@ -532,7 +532,7 @@ export function $getAdjacentSiblingOrParentSiblingCaret<
 ): null | [NodeCaret<D>, number] {
   let depthDiff = 0;
   let caret = startCaret;
-  let nextCaret = $getAdjacentDepthCaret(caret);
+  let nextCaret = $getAdjacentChildCaret(caret);
   while (nextCaret === null) {
     depthDiff--;
     nextCaret = caret.getParentCaret(rootMode);
@@ -540,7 +540,7 @@ export function $getAdjacentSiblingOrParentSiblingCaret<
       return null;
     }
     caret = nextCaret;
-    nextCaret = $getAdjacentDepthCaret(caret);
+    nextCaret = $getAdjacentChildCaret(caret);
   }
   return nextCaret && [nextCaret, depthDiff];
 }

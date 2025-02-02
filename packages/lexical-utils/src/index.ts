@@ -9,12 +9,12 @@
 import {
   $cloneWithProperties,
   $createParagraphNode,
-  $getAdjacentDepthCaret,
+  $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
   $getBreadthCaret,
+  $getChildCaret,
   $getChildCaretAtIndex,
   $getChildCaretOrSelf,
-  $getDepthCaret,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
@@ -243,10 +243,10 @@ function $dfsCaretIterator<D extends CaretDirection>(
   const root = $getRoot();
   const start = startNode || root;
   const startCaret = $isElementNode(start)
-    ? $getDepthCaret(start, direction)
+    ? $getChildCaret(start, direction)
     : $rewindBreadthCaret($getBreadthCaret(start, direction));
   const startDepth = $getDepth(startCaret.getParentAtCaret());
-  const endCaret = $getAdjacentDepthCaret(
+  const endCaret = $getAdjacentChildCaret(
     endNode
       ? $getChildCaretOrSelf($getBreadthCaret(endNode, direction))
       : startCaret.getParentCaret(rootMode),
@@ -259,7 +259,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
       if (state.is(endCaret)) {
         return null;
       }
-      if (state.type === 'depth') {
+      if (state.type === 'child') {
         depth++;
       }
       const rval = $getAdjacentSiblingOrParentSiblingCaret(state);
@@ -641,7 +641,7 @@ export function $filter<T>(
  * @param node Node that needs to be appended
  */
 export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
-  $getDepthCaret(parent, 'next').insert(node);
+  $getChildCaret(parent, 'next').insert(node);
 }
 
 let NEEDS_MANUAL_ZOOM = IS_FIREFOX || !CAN_USE_DOM ? false : undefined;
@@ -779,7 +779,7 @@ export function $descendantsMatching(
  * @returns An iterator of the node's children
  */
 export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
-  return $childIterator($getDepthCaret(node, 'next'));
+  return $childIterator($getChildCaret(node, 'next'));
 }
 
 /**
@@ -791,7 +791,7 @@ export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
  * @returns An iterator of the node's children
  */
 export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
-  return $childIterator($getDepthCaret(node, 'previous'));
+  return $childIterator($getChildCaret(node, 'previous'));
 }
 
 function $childIterator<D extends CaretDirection>(

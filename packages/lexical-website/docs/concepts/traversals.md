@@ -17,7 +17,7 @@ The core concept with `NodeCaret` is that you can represent any specific
 point in the document by using an `origin` node, a `direction` that
 points towards an adjacent node (`next` or `previous`), and a `type`
 to specify whether the arrow points towards a sibling (`breadth`) or
-towards a child (`depth`).
+towards a child (`child`).
 
 All of these types have a `D` type parameter that must be a `CaretDirection`, so you
 can not accidentally mix up `next` and `previous` carets. Many of them
@@ -53,9 +53,9 @@ constructed with, all accessor methods on that origin will generally call
 
 ### NodeCaret
 
-`NodeCaret` is any `BreadthCaret` or any `DepthCaret`
+`NodeCaret` is any `BreadthCaret` or any `ChildCaret`
 * Typically constructed with `$getChildCaretOrSelf($getBreadthCaret(origin, direction))`
-  which returns a `DepthCaret` when the origin is an `ElementNode`
+  which returns a `ChildCaret` when the origin is an `ElementNode`
 
 ### BreadthCaret
 
@@ -71,11 +71,11 @@ constructed with, all accessor methods on that origin will generally call
 | `getNodeAtCaret()`     | `origin.getNextSibling()` | `origin.getPreviousSibling()` |
 | `insert(node)`         | `origin.insertAfter(node)`| `origin.insertBefore(node)`   |
 
-### DepthCaret
+### ChildCaret
 
-`DepthCaret` is a caret that points towards the first or last child of the origin
+`ChildCaret` is a caret that points towards the first or last child of the origin
 
-* Constructed with `$getDepthCaret(origin: ElementNode, direction: CaretDirection)`
+* Constructed with `$getChildCaret(origin: ElementNode, direction: CaretDirection)`
 * The `next` direction points towards the first child
 * The `previous` direction points towards the last child
 
@@ -87,7 +87,7 @@ constructed with, all accessor methods on that origin will generally call
 
 ### PointCaret
 
-`PointCaret` is any `TextPointCaret`, `BreadthCaret` or `DepthCaret`. This
+`PointCaret` is any `TextPointCaret`, `BreadthCaret` or `ChildCaret`. This
 type can be used to represent any point in the document that `PointType` can represent.
 
 :::tip
@@ -156,9 +156,9 @@ traversal, which is supported directly by methods of NodeCaret.
   return `null` for `RootNode` or any `ElementNode` parent where
   `isShadowRoot()` returns true
 
-`getChildCaret()` - Gets a `DepthCaret` for this origin, or `null` if the
+`getChildCaret()` - Gets a `ChildCaret` for this origin, or `null` if the
   origin is not an `ElementNode`. Will return `this` if the caret is already
-  a `DepthCaret`
+  a `ChildCaret`
 
 For example, iterating all siblings:
 
@@ -182,9 +182,9 @@ function *iterSiblings<D extends CaretDirection>(
 ### Depth First Caret Traversals
 
 The strategy to do a depth-first caret traversal is to use an adjacent caret
-traversal and immediately use a `DepthCaret` any time that an `ElementNode`
+traversal and immediately use a `ChildCaret` any time that an `ElementNode`
 origin is encountered. This strategy yields all possible carets, but each
-ElementNode in the traversal may be yielded once or twice (a `DepthNode` on
+ElementNode in the traversal may be yielded once or twice (a `ChildCaret` on
 enter, and a `BreadthNode` on leave). Allowing you to see whether an
 `ElementNode` is partially included in the range or not is one of the
 reasons that this abstraction exists.
@@ -208,7 +208,7 @@ function *iterAllNodes<D extends CaretDirection>(
 // partially or completely included
 ```
 
-`$getAdjacentDepthCaret(caret)` - `$getChildCaretOrSelf(caret?.getAdjacentCaret())`
+`$getAdjacentChildCaret(caret)` - `$getChildCaretOrSelf(caret?.getAdjacentCaret())`
 
 `$getAdjacentSiblingOrParentSiblingCaret(caret)` - 
 

@@ -27,7 +27,7 @@ export type FlipDirection<D extends CaretDirection> = typeof FLIP_DIRECTION[D];
  * A breadth caret type points from a LexicalNode origin to its next or previous sibling,
  * and a depth caret type points from an ElementNode origin to its first or last child.
  */
-export type CaretType = 'breadth' | 'depth';
+export type CaretType = 'breadth' | 'child';
 /**
  * The RootMode is specified in all caret traversals where the traversal can go up
  * towards the root. 'root' means that it will stop at the document root,
@@ -49,7 +49,7 @@ export interface BaseCaret<
 > extends Iterable<BreadthCaret<LexicalNode, D>> {
   /** The origin node of this caret, typically this is what you will use in traversals */
   readonly origin: T;
-  /** breadth for a BreadthCaret (pointing at the next or previous sibling) or depth for a DepthCaret (pointing at the first or last child) */
+  /** breadth for a BreadthCaret (pointing at the next or previous sibling) or depth for a ChildCaret (pointing at the first or last child) */
   readonly type: Type;
   /** next if pointing at the next sibling or first child, previous if pointing at the previous sibling or last child */
   readonly direction: D;
@@ -67,14 +67,14 @@ export interface BaseCaret<
    * @example
    * ```
    * caret.getFlipped().getFlipped().is(caret) === true;
-   * $getDepthCaret(parent, 'next').getFlipped().is($getBreadthCaret(firstChild, 'previous')) === true;
-   * $getBreadthCaret(lastChild, 'next').getFlipped().is($getDepthCaret(parent, 'previous')) === true;
+   * $getChildCaret(parent, 'next').getFlipped().is($getBreadthCaret(firstChild, 'previous')) === true;
+   * $getBreadthCaret(lastChild, 'next').getFlipped().is($getChildCaret(parent, 'previous')) === true;
    * $getBreadthCaret(firstChild, 'next).getFlipped().is($getBreadthCaret(lastChild, 'previous')) === true;
-   * $getDepthCaret(emptyParent, 'next').getFlipped().is($getDepthCaret(emptyParent, 'previous')) === true;
+   * $getChildCaret(emptyParent, 'next').getFlipped().is($getChildCaret(emptyParent, 'previous')) === true;
    * ```
    */
   getFlipped: () => NodeCaret<FlipDirection<D>>;
-  /** Get the ElementNode that is the logical parent (`origin` for `DepthCaret`, `origin.getParent()` for `BreadthCaret`) */
+  /** Get the ElementNode that is the logical parent (`origin` for `ChildCaret`, `origin.getParent()` for `BreadthCaret`) */
   getParentAtCaret: () => null | ElementNode;
   /** Get the node connected to the origin in the caret's direction, or null if there is no node */
   getNodeAtCaret: () => null | LexicalNode;
@@ -85,7 +85,7 @@ export interface BaseCaret<
   /**
    * Insert a node connected to origin in this direction.
    * For a `BreadthCaret` this is `origin.insertAfter(node)` for next, or `origin.insertBefore(node)` for previous.
-   * For a `DepthCaret` this is `origin.splice(0, 0, [node])` for next or `origin.append(node)` for previous.
+   * For a `ChildCaret` this is `origin.splice(0, 0, [node])` for next or `origin.append(node)` for previous.
    */
   insert: (node: LexicalNode) => this;
   /** If getNodeAtCaret() is null then replace it with node, otherwise insert node */
@@ -152,7 +152,7 @@ export interface StepwiseIteratorConfig<State, Stop, Value> {
  * A NodeCaret is the combination of an origin node and a direction
  * that points towards where a connected node will be fetched, inserted,
  * or replaced. A BreadthCaret points from a node to its next or previous
- * sibling, and a DepthCaret points to its first or last child
+ * sibling, and a ChildCaret points to its first or last child
  * (using next or previous as direction, for symmetry with BreadthCaret).
  *
  * The differences between NodeCaret and PointType are:
@@ -168,7 +168,7 @@ export interface StepwiseIteratorConfig<State, Stop, Value> {
  */
 export type NodeCaret<D extends CaretDirection = CaretDirection> =
   | BreadthCaret<LexicalNode, D>
-  | DepthCaret<ElementNode, D>;
+  | ChildCaret<ElementNode, D>;
 
 /**
  * A PointCaret is a NodeCaret that also includes a specialized
@@ -181,7 +181,7 @@ export type NodeCaret<D extends CaretDirection = CaretDirection> =
 export type PointCaret<D extends CaretDirection = CaretDirection> =
   | TextPointCaret<TextNode, D>
   | BreadthCaret<LexicalNode, D>
-  | DepthCaret<ElementNode, D>;
+  | ChildCaret<ElementNode, D>;
 
 /**
  * A BreadthCaret points from an origin LexicalNode towards its next or previous sibling.
@@ -193,10 +193,10 @@ export interface BreadthCaret<
   /** Get a new caret with the latest origin pointer */
   getLatest: () => BreadthCaret<T, D>;
   /**
-   * If the origin of this node is an ElementNode, return the DepthCaret of this origin in the same direction.
+   * If the origin of this node is an ElementNode, return the ChildCaret of this origin in the same direction.
    * If the origin is not an ElementNode, this will return null.
    */
-  getChildCaret: () => null | DepthCaret<T & ElementNode, D>;
+  getChildCaret: () => null | ChildCaret<T & ElementNode, D>;
   /**
    * Get the caret in the same direction from the parent of this origin.
    *
@@ -207,17 +207,17 @@ export interface BreadthCaret<
 }
 
 /**
- * A DepthCaret points from an origin ElementNode towards its first or last child.
+ * A ChildCaret points from an origin ElementNode towards its first or last child.
  */
-export interface DepthCaret<
+export interface ChildCaret<
   T extends ElementNode = ElementNode,
   D extends CaretDirection = CaretDirection,
-> extends BaseCaret<T, D, 'depth'> {
+> extends BaseCaret<T, D, 'child'> {
   /** Get a new caret with the latest origin pointer */
-  getLatest: () => DepthCaret<T, D>;
+  getLatest: () => ChildCaret<T, D>;
   getParentCaret: (mode: RootMode) => null | BreadthCaret<T, D>;
   getParentAtCaret: () => T;
-  /** Return this, the DepthNode is already a child caret of its origin */
+  /** Return this, the ChildCaret is already a child caret of its origin */
   getChildCaret: () => this;
 }
 
@@ -387,19 +387,19 @@ abstract class AbstractCaret<
   }
 }
 
-abstract class AbstractDepthCaret<
+abstract class AbstractChildCaret<
     T extends ElementNode,
     D extends CaretDirection,
   >
-  extends AbstractCaret<T, D, 'depth'>
-  implements DepthCaret<T, D>
+  extends AbstractCaret<T, D, 'child'>
+  implements ChildCaret<T, D>
 {
-  readonly type = 'depth';
-  getLatest(): DepthCaret<T, D> {
+  readonly type = 'child';
+  getLatest(): ChildCaret<T, D> {
     const origin = this.origin.getLatest();
     return origin === this.origin
       ? this
-      : $getDepthCaret(origin, this.direction);
+      : $getChildCaret(origin, this.direction);
   }
   /**
    * Get the BreadthCaret from this origin in the same direction.
@@ -417,7 +417,7 @@ abstract class AbstractDepthCaret<
     const dir = flipDirection(this.direction);
     return (
       $getBreadthCaret(this.getNodeAtCaret(), dir) ||
-      $getDepthCaret(this.origin, dir)
+      $getChildCaret(this.origin, dir)
     );
   }
   getParentAtCaret(): T {
@@ -428,7 +428,7 @@ abstract class AbstractDepthCaret<
   }
 }
 
-class DepthCaretFirst<T extends ElementNode> extends AbstractDepthCaret<
+class ChildCaretFirst<T extends ElementNode> extends AbstractChildCaret<
   T,
   'next'
 > {
@@ -442,7 +442,7 @@ class DepthCaretFirst<T extends ElementNode> extends AbstractDepthCaret<
   }
 }
 
-class DepthCaretLast<T extends ElementNode> extends AbstractDepthCaret<
+class ChildCaretLast<T extends ElementNode> extends AbstractChildCaret<
   T,
   'previous'
 > {
@@ -503,9 +503,9 @@ abstract class AbstractBreadthCaret<
   getParentAtCaret(): null | ElementNode {
     return this.origin.getParent();
   }
-  getChildCaret(): DepthCaret<T & ElementNode, D> | null {
+  getChildCaret(): ChildCaret<T & ElementNode, D> | null {
     return $isElementNode(this.origin)
-      ? $getDepthCaret(this.origin, this.direction)
+      ? $getChildCaret(this.origin, this.direction)
       : null;
   }
   getParentCaret(mode: RootMode): BreadthCaret<ElementNode, D> | null {
@@ -518,7 +518,7 @@ abstract class AbstractBreadthCaret<
     const dir = flipDirection(this.direction);
     return (
       $getBreadthCaret(this.getNodeAtCaret(), dir) ||
-      $getDepthCaret(this.origin.getParentOrThrow(), dir)
+      $getChildCaret(this.origin.getParentOrThrow(), dir)
     );
   }
 }
@@ -577,15 +577,15 @@ export function $isBreadthCaret<D extends CaretDirection>(
 }
 
 /**
- * Guard to check if the given argument is specifically a DepthCaret
+ * Guard to check if the given argument is specifically a ChildCaret
 
  * @param caret 
- * @returns true if caret is a DepthCaret
+ * @returns true if caret is a ChildCaret
  */
-export function $isDepthCaret<D extends CaretDirection>(
+export function $isChildCaret<D extends CaretDirection>(
   caret: null | undefined | PointCaret<D>,
-): caret is DepthCaret<ElementNode, D> {
-  return caret instanceof AbstractDepthCaret;
+): caret is ChildCaret<ElementNode, D> {
+  return caret instanceof AbstractChildCaret;
 }
 
 class BreadthCaretNext<T extends LexicalNode> extends AbstractBreadthCaret<
@@ -622,8 +622,8 @@ const BREADTH_CTOR = {
 } as const;
 
 const DEPTH_CTOR = {
-  next: DepthCaretFirst,
-  previous: DepthCaretLast,
+  next: ChildCaretFirst,
+  previous: ChildCaretLast,
 };
 
 /**
@@ -740,21 +740,21 @@ export function $getTextPointCaretSlice<
  *
  * @param origin The origin ElementNode
  * @param direction 'next' for first child or 'previous' for last child
- * @returns null if origin is null or not an ElementNode, otherwise a DepthCaret for this origin and direction
+ * @returns null if origin is null or not an ElementNode, otherwise a ChildCaret for this origin and direction
  */
-export function $getDepthCaret<T extends ElementNode, D extends CaretDirection>(
+export function $getChildCaret<T extends ElementNode, D extends CaretDirection>(
   origin: T,
   direction: D,
-): DepthCaret<T, D>;
-export function $getDepthCaret(
+): ChildCaret<T, D>;
+export function $getChildCaret(
   origin: null | LexicalNode,
   direction: CaretDirection,
-): null | DepthCaret<ElementNode, CaretDirection> {
+): null | ChildCaret<ElementNode, CaretDirection> {
   return $isElementNode(origin) ? new DEPTH_CTOR[direction](origin) : null;
 }
 
 /**
- * Gets the DepthCaret if one is possible at this caret origin, otherwise return the caret
+ * Gets the ChildCaret if one is possible at this caret origin, otherwise return the caret
  */
 export function $getChildCaretOrSelf<Caret extends PointCaret | null>(
   caret: Caret,
@@ -764,12 +764,12 @@ export function $getChildCaretOrSelf<Caret extends PointCaret | null>(
 
 /**
  * Gets the adjacent caret, if not-null and if the origin of the adjacent caret is an ElementNode, then return
- * the DepthCaret. This can be used along with the getParentAdjacentCaret method to perform a full DFS
+ * the ChildCaret. This can be used along with the getParentAdjacentCaret method to perform a full DFS
  * style traversal of the tree.
  *
  * @param caret The caret to start at
  */
-export function $getAdjacentDepthCaret<D extends CaretDirection>(
+export function $getAdjacentChildCaret<D extends CaretDirection>(
   caret: null | NodeCaret<D>,
 ): null | NodeCaret<D> {
   return caret && $getChildCaretOrSelf(caret.getAdjacentCaret());
@@ -832,7 +832,7 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
     const step = (state: NodeCaret<D>) =>
       state.is(focus)
         ? null
-        : $getAdjacentDepthCaret(state) || state.getParentCaret(rootMode);
+        : $getAdjacentChildCaret(state) || state.getParentCaret(rootMode);
     return makeStepwiseIterator({
       initial: anchor.is(focus) ? null : step(anchor),
       map: (state) => state,

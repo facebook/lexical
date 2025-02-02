@@ -21,7 +21,7 @@ import {
   $createTextNode,
   $getBreadthCaret,
   $getCaretRange,
-  $getDepthCaret,
+  $getChildCaret,
   $getRoot,
   $getSelection,
   $getTextPointCaret,
@@ -35,7 +35,7 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   BreadthCaret,
-  DepthCaret,
+  ChildCaret,
   LexicalNode,
   RootNode,
   TextNode,
@@ -73,7 +73,7 @@ function insideNode(size: number) {
 
 describe('LexicalCaret', () => {
   initializeUnitTest((testEnv) => {
-    describe('$getDepthCaret', () => {
+    describe('$getChildCaret', () => {
       for (const direction of DIRECTIONS) {
         test(`direction ${direction}`, async () => {
           await testEnv.editor.update(
@@ -83,11 +83,11 @@ describe('LexicalCaret', () => {
               root.clear().append(paragraph);
               // Note that the type declarations here would normally be inferred, these are
               // used just to demonstrate that inference is working as expected
-              const caret: DepthCaret<RootNode, typeof direction> =
-                $getDepthCaret(root, direction);
+              const caret: ChildCaret<RootNode, typeof direction> =
+                $getChildCaret(root, direction);
               expect(root.is(caret.origin)).toBe(true);
               expect(caret.direction).toBe(direction);
-              expect(caret.type).toBe('depth');
+              expect(caret.type).toBe('child');
               expect(paragraph.is(caret.getNodeAtCaret())).toBe(true);
               expect(root.is(caret.getParentAtCaret())).toBe(true);
 
@@ -725,7 +725,7 @@ describe('LexicalCaret', () => {
                 anchor: {
                   direction: 'next',
                   origin: paragraphNode,
-                  type: 'depth',
+                  type: 'child',
                 },
               });
             },
@@ -762,7 +762,7 @@ describe('LexicalCaret', () => {
                 anchor: {
                   direction: 'next',
                   origin: paragraphNode,
-                  type: 'depth',
+                  type: 'child',
                 },
               });
             },
@@ -1393,7 +1393,7 @@ describe('LexicalCaret', () => {
                   expect(resultRange).toMatchObject({
                     anchor: {
                       origin: $getRoot().getFirstChild(),
-                      type: 'depth',
+                      type: 'child',
                     },
                   });
                 }
@@ -1553,7 +1553,7 @@ describe('LexicalCaret', () => {
                       anchor: {
                         direction,
                         origin: originalStartParent.getLatest(),
-                        type: 'depth',
+                        type: 'child',
                       },
                       direction,
                     });

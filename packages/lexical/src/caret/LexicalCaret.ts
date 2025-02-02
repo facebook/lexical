@@ -125,11 +125,14 @@ export interface CaretRange<D extends CaretDirection = CaretDirection>
    */
   iterNodeCarets: (rootMode: RootMode) => IterableIterator<NodeCaret<D>>;
   /**
-   * There are between zero and two TextSliceCarets for a CaretRange
+   * There are between zero and two non-null TextSliceCarets for a CaretRange.
+   * Note that when anchor and focus share an origin node the second element
+   * will be null becaues the slice is entirely represented by the first element.
    *
-   * 0: Neither anchor nor focus are TextPointCarets
-   * 1: One of anchor or focus are TextPointCaret, or of the same origin
-   * 2: Anchor and focus are both TextPointCaret of different origin
+   * `[slice, slice]`: anchor and focus are TextPointCaret with distinct origin nodes
+   * `[slice, null]`: anchor is a TextPointCaret
+   * `[null, slice]`: focus is a TextPointCaret
+   * `[null, null]`: Neither anchor nor focus are TextPointCarets
    */
   getTextSlices: () => TextPointCaretSliceTuple<D>;
 }
@@ -278,10 +281,14 @@ export interface TextPointCaretSlice<
 
 /**
  * A utility type to specify that a CaretRange may have zero,
- * one, or two associated TextPointCaretSlice.
+ * one, or two associated TextPointCaretSlice. If the anchor
+ * and focus are on the same node, the anchorSlice will contain
+ * the slice and focusSlie will be null.
  */
-export type TextPointCaretSliceTuple<D extends CaretDirection> =
-  readonly TextPointCaretSlice<TextNode, D>[] & {length: 0 | 1 | 2};
+export type TextPointCaretSliceTuple<D extends CaretDirection> = readonly [
+  anchorSlice: null | TextPointCaretSlice<TextNode, D>,
+  focusSlice: null | TextPointCaretSlice<TextNode, D>,
+];
 
 abstract class AbstractCaret<
   T extends LexicalNode,
@@ -810,24 +817,28 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
     );
   }
   getTextSlices(): TextPointCaretSliceTuple<D> {
-    const slices = (['anchor', 'focus'] as const).flatMap((k) => {
+    const getSlice = (k: 'anchor' | 'focus') => {
       const caret = this[k];
       return $isTextPointCaret(caret)
-        ? [$getSliceFromTextPointCaret(caret, k)]
-        : [];
-    });
-    if (slices.length === 2) {
-      const [{caret: anchorCaret}, {caret: focusCaret}] = slices;
+        ? $getSliceFromTextPointCaret(caret, k)
+        : null;
+    };
+    const anchorSlice = getSlice('anchor');
+    const focusSlice = getSlice('focus');
+    if (anchorSlice && focusSlice) {
+      const {caret: anchorCaret} = anchorSlice;
+      const {caret: focusCaret} = focusSlice;
       if (anchorCaret.is(focusCaret)) {
         return [
           $getTextPointCaretSlice(
             anchorCaret,
             focusCaret.offset - anchorCaret.offset,
           ),
+          null,
         ];
       }
     }
-    return slices as TextPointCaretSliceTuple<D>;
+    return [anchorSlice, focusSlice];
   }
   iterNodeCarets(rootMode: RootMode): IterableIterator<NodeCaret<D>> {
     const {anchor, focus} = this;

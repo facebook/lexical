@@ -256,6 +256,9 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // Segmented nodes will be copied to a plain text node with the same format
   // and style and set to normal mode.
   for (const slice of range.getTextSlices()) {
+    if (!slice) {
+      continue;
+    }
     const {origin} = slice.caret;
     const contentSize = origin.getTextContentSize();
     const caretBefore = $rewindSiblingCaret(

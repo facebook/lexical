@@ -173,7 +173,7 @@ export function $caretRangeFromSelection(
  *
  * @example
  * ```ts
- * SiblingCaret.is($rewindSiblingCaret(SiblingCaret).getAdjacentCaret())
+ * siblingCaret.is($rewindSiblingCaret(siblingCaret).getAdjacentCaret())
  * ```
  *
  * @param caret The caret to "rewind"

@@ -262,6 +262,18 @@ export interface TextPointCaretSlice<
    * @returns The size of the text represented by the slice
    */
   getTextContentSize: () => number;
+  /**
+   * Remove the slice of text from the contained caret, returning a new
+   * TextPointCaret without the wrapper (since the size would be zero).
+   *
+   * Note that this is a lower-level utility that does not have any specific
+   * behavior for 'segmented' or 'token' modes and it will not remove
+   * an empty TextNode.
+   *
+   * @returns The inner TextPointCaret with the same offset and direction
+   *          and the latest TextNode origin after mutation
+   */
+  removeTextSlice(): TextPointCaret<T, D>;
 }
 
 /**
@@ -864,6 +876,19 @@ class TextPointCaretSliceImpl<T extends TextNode, D extends CaretDirection>
   getTextContentSize(): number {
     return Math.abs(this.distance);
   }
+
+  removeTextSlice(): TextPointCaret<T, D> {
+    const {
+      caret: {origin, direction},
+    } = this;
+    const [indexStart, indexEnd] = this.getSliceIndices();
+    const text = origin.getTextContent();
+    return $getTextPointCaret(
+      origin.setTextContent(text.slice(0, indexStart) + text.slice(indexEnd)),
+      direction,
+      indexStart,
+    );
+  }
 }
 
 function $getSliceFromTextPointCaret<
@@ -881,13 +906,19 @@ function $getSliceFromTextPointCaret<
   return $getTextPointCaretSlice(caret, offsetB - caret.offset);
 }
 
+/**
+ * Guard to check for a TextPointCaretSlice
+ *
+ * @param caretOrSlice A caret or slice
+ * @returns true if caretOrSlice is a TextPointCaretSlice
+ */
 export function $isTextPointCaretSlice<D extends CaretDirection>(
   caretOrSlice:
     | null
     | undefined
     | PointCaret<D>
     | TextPointCaretSlice<TextNode, D>,
-) {
+): caretOrSlice is TextPointCaretSlice<TextNode, D> {
   return caretOrSlice instanceof TextPointCaretSliceImpl;
 }
 

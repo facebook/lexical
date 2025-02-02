@@ -46,7 +46,6 @@ export {
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
   $removeTextFromCaretRange,
-  $removeTextSlice,
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelectionFromCaretRange,

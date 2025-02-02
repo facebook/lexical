@@ -14,8 +14,6 @@ import type {
   PointCaret,
   RootMode,
   SiblingCaret,
-  TextPointCaret,
-  TextPointCaretSlice,
 } from './LexicalCaret';
 
 import invariant from 'shared/invariant';
@@ -34,11 +32,7 @@ import {
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
-import {
-  $createTextNode,
-  $isTextNode,
-  type TextNode,
-} from '../nodes/LexicalTextNode';
+import {$createTextNode, $isTextNode} from '../nodes/LexicalTextNode';
 import {
   $getAdjacentChildCaret,
   $getCaretRange,
@@ -275,7 +269,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       // anchorCandidates[1] should still be valid, it is caretBefore
       caretBefore.remove();
     } else if (slice.distance !== 0) {
-      let nextCaret = $removeTextSlice(slice);
+      let nextCaret = slice.removeTextSlice();
       if (mode === 'segmented') {
         const src = nextCaret.origin;
         const plainTextNode = $createTextNode(src.getTextContent())
@@ -432,33 +426,6 @@ export function $getCaretRangeInDirection<D extends CaretDirection>(
     // focus and anchor get flipped here
     $getCaretInDirection(range.focus, direction),
     $getCaretInDirection(range.anchor, direction),
-  );
-}
-
-/**
- * Remove the slice of text from the contained caret, returning a new
- * TextPointCaret without the wrapper (since the size would be zero).
- *
- * Note that this is a lower-level utility that does not have any specific
- * behavior for 'segmented' or 'token' modes and it will not remove
- * an empty TextNode.
- *
- * @param slice The slice to mutate
- * @returns The inner TextPointCaret with the same offset and direction
- *          and the latest TextNode origin after mutation
- */
-export function $removeTextSlice<T extends TextNode, D extends CaretDirection>(
-  slice: TextPointCaretSlice<T, D>,
-): TextPointCaret<T, D> {
-  const {
-    caret: {origin, direction},
-  } = slice;
-  const [indexStart, indexEnd] = slice.getSliceIndices();
-  const text = origin.getTextContent();
-  return $getTextPointCaret(
-    origin.setTextContent(text.slice(0, indexStart) + text.slice(indexEnd)),
-    direction,
-    indexStart,
   );
 }
 

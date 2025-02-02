@@ -1499,10 +1499,7 @@ describe('LexicalCaret', () => {
                     ? [startCaret, endCaret]
                     : [endCaret, startCaret];
                 const range = $getCaretRange(anchor, focus);
-                // TODO compute the expected internal carets
-                // expect([...range.iterNodeCarets('root')]).toHaveLength(
-                //   Math.max(0, nodeIndexEnd - nodeIndexStart - 1),
-                // );
+                // TODO check [...range] carets
                 const slices = range.getTextSlices();
                 expect(slices).toHaveLength(2);
                 expect(slices.map((slice) => slice.getTextContent())).toEqual(

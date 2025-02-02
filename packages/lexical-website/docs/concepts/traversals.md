@@ -145,8 +145,11 @@ use for depth first traversals.
 
 :::warning
 
-If you are iterating a `CaretRange` you must consider the `getTextSlices()` separately,
-or use the `iterSlicesAndCarets()` method which will include them.
+If you are iterating a `CaretRange` you must consider the `getTextSlices()`
+separately, they are not included in the iteration. This is so you don't have
+to consider `TextPointCaretSlice` at every step. They are literal edge cases
+that can only be at the start and/or end and typically have special
+treatment (splitting instead of removing, for example).
 
 :::
 

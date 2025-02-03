@@ -6,6 +6,7 @@
  *
  */
 import {
+  $caretRangeFromSelection,
   $createTextNode,
   $getCharacterOffsets,
   $getNodeByKey,
@@ -328,26 +329,12 @@ export function $forEachSelectedTextNode(
     slicedTextNodes.get(node.getKey()) || [0, node.getTextContentSize()];
 
   if ($isRangeSelection(selection)) {
-    const {anchor, focus} = selection;
-    const isBackwards = focus.isBefore(anchor);
-    const [startPoint, endPoint] = isBackwards
-      ? [focus, anchor]
-      : [anchor, focus];
-
-    if (startPoint.type === 'text' && startPoint.offset > 0) {
-      const endIndex = getSliceIndices(startPoint.getNode())[1];
-      slicedTextNodes.set(startPoint.key, [
-        Math.min(startPoint.offset, endIndex),
-        endIndex,
-      ]);
-    }
-    if (endPoint.type === 'text') {
-      const [startIndex, size] = getSliceIndices(endPoint.getNode());
-      if (endPoint.offset < size) {
-        slicedTextNodes.set(endPoint.key, [
-          startIndex,
-          Math.max(startIndex, endPoint.offset),
-        ]);
+    for (const slice of $caretRangeFromSelection(selection).getTextSlices()) {
+      if (slice) {
+        slicedTextNodes.set(
+          slice.caret.origin.getKey(),
+          slice.getSliceIndices(),
+        );
       }
     }
   }

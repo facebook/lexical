@@ -1637,6 +1637,42 @@ describe('LexicalNode state', () => {
           paragraph.setState(objectKey, {...paragraphObject!, foo: 'foo'});
         });
       });
+
+      test('setting state shouldn’t affect previous reconciled versions of the node', () => {
+        const {editor} = testEnv;
+        let v0: RootNode;
+        let v1: RootNode;
+        const vk = createStateKey('vk', {
+          parse: (v) => (typeof v === 'number' ? v : null),
+        });
+        editor.update(
+          () => {
+            v0 = $getRoot();
+            v0.setState(vk, 0);
+            expect(v0.getState(vk)).toBe(0);
+          },
+          {discrete: true},
+        );
+        const state0 = editor.getEditorState();
+        editor.update(
+          () => {
+            v0.setState(vk, 1);
+            v1 = v0.getLatest();
+            // This is testing getLatest()
+            expect(v0.getState(vk)).toBe(1);
+            expect(v1.getState(vk)).toBe(1);
+            expect(v1.is(v0)).toBe(true);
+          },
+          {discrete: true},
+        );
+        const state1 = editor.getEditorState();
+        // Test that the correct version is returned and that they are independent
+        expect(state0.read(() => v0.getState(vk))).toBe(0);
+        expect(state1.read(() => v1.getState(vk))).toBe(1);
+        // Test that getLatest is used and not the __state property directly
+        expect(state0.read(() => v1.getState(vk))).toBe(0);
+        expect(state1.read(() => v0.getState(vk))).toBe(1);
+      });
     },
     {
       namespace: '',

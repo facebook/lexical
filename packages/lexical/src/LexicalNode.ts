@@ -194,8 +194,8 @@ type DeepImmutable<T> = T extends Map<infer K, infer V>
       readonly [K in keyof T]: DeepImmutable<T[K]>;
     }
   : T;
-type State = {[Key in string]?: string | number | boolean | State};
-type StateValue = string | number | boolean | undefined | State;
+type State = {[Key in string]?: string | number | null | boolean | State};
+type StateValue = string | number | boolean | null | undefined | State;
 interface StateKey<
   K extends string = string,
   V extends StateValue = StateValue,

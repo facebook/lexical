@@ -1531,13 +1531,13 @@ describe('LexicalNode state', () => {
 
       test(`getState and setState`, async () => {
         const keyForString = createStateKey('keyForString', {
-          parse: (value) => value as string,
+          parse: (value) => (value as string) || '',
         });
         const {editor} = testEnv;
         editor.update(() => {
           const stringValue = root.getState(keyForString);
           type _Test = Expect<Equal<typeof stringValue, string>>;
-          expect(stringValue).toBeUndefined();
+          expect(stringValue).toBe('');
           root.setState(keyForString, 'hello');
           expect(root.getState(keyForString)).toBe('hello');
 
@@ -1551,14 +1551,13 @@ describe('LexicalNode state', () => {
           expect(maybeStringValue).toBeUndefined();
 
           // TO-DO:
-          // It would be a bit nicer if createStateKey also gave a compilation error if parse tried to return null.
-          // It's not a big deal, because getState does give an error. The problem is that I can't activate it.
-          // The @expect-error does not work because strict mode is disabled in `tsconfig.test.json`.
-          const _keyForMaybeNull = createStateKey('keyForMaybeNull', {
-            parse: (value) => value as string | null,
+          // It would be a bit nicer if createStateKey also gave a compilation error.
+          // It's not a big deal, because getState will indeed throw the error at compile time.
+          const keyForNoSerializable = createStateKey('keyForNoSerializable', {
+            parse: () => new Date(),
           });
-          // // @ts-expect-error - null is not a valid value
-          // const _maybeNullValue = root.getState(keyForMaybeNull);
+          // @ts-expect-error - null is not a valid value
+          const _noSerializableValue = root.getState(keyForNoSerializable);
         });
       });
 

@@ -31,7 +31,6 @@ export {
   $getTextPointCaret,
   $getTextPointCaretSlice,
   $isChildCaret,
-  $isSameTextPointCaret,
   $isSiblingCaret,
   $isTextPointCaret,
   $isTextPointCaretSlice,

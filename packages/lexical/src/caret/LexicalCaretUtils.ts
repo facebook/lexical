@@ -14,6 +14,7 @@ import type {
   PointCaret,
   RootMode,
   SiblingCaret,
+  TextPointCaret,
 } from './LexicalCaret';
 
 import invariant from 'shared/invariant';
@@ -32,7 +33,11 @@ import {
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
-import {$createTextNode, $isTextNode} from '../nodes/LexicalTextNode';
+import {
+  $createTextNode,
+  $isTextNode,
+  type TextNode,
+} from '../nodes/LexicalTextNode';
 import {
   $getAdjacentChildCaret,
   $getCaretRange,
@@ -86,15 +91,11 @@ export function $setPointFromCaret<D extends CaretDirection>(
 ): void {
   const {origin, direction} = caret;
   const isNext = direction === 'next';
-  if ($isSiblingCaret(caret)) {
+  if ($isTextPointCaret(caret)) {
+    point.set(origin.getKey(), caret.offset, 'text');
+  } else if ($isSiblingCaret(caret)) {
     if ($isTextNode(origin)) {
-      point.set(
-        origin.getKey(),
-        $isTextPointCaret(caret)
-          ? caret.offset
-          : $getTextNodeOffset(origin, direction),
-        'text',
-      );
+      point.set(origin.getKey(), $getTextNodeOffset(origin, direction), 'text');
     } else {
       point.set(
         origin.getParentOrThrow().getKey(),
@@ -189,15 +190,15 @@ export function $rewindSiblingCaret<
 }
 
 function $getAnchorCandidates<D extends CaretDirection>(
-  anchor: NodeCaret<D>,
+  anchor: PointCaret<D>,
   rootMode: RootMode = 'root',
-): [NodeCaret<D>, ...NodeCaret<D>[]] {
+): [PointCaret<D>, ...NodeCaret<D>[]] {
   // These candidates will be the anchor itself, the pointer to the anchor (if different), and then any parents of that
-  const carets: [NodeCaret<D>, ...NodeCaret<D>[]] = [anchor];
+  const carets: [PointCaret<D>, ...NodeCaret<D>[]] = [anchor];
   for (
     let parent = $isChildCaret(anchor)
       ? anchor.getParentCaret(rootMode)
-      : anchor;
+      : anchor.getSiblingCaret();
     parent !== null;
     parent = parent.getParentCaret(rootMode)
   ) {
@@ -285,7 +286,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
           nextCaret.offset,
         );
       }
-      if (anchorCandidates[0].is(slice.caret)) {
+      if (anchorCandidates[0].isSameNodeCaret(slice.caret)) {
         anchorCandidates[0] = nextCaret;
       }
     }
@@ -398,13 +399,22 @@ export function $normalizeCaret<D extends CaretDirection>(
  * @param direction The desired direction
  * @returns A PointCaret in direction
  */
-export function $getCaretInDirection<D extends CaretDirection>(
-  caret: PointCaret<CaretDirection>,
+export function $getCaretInDirection<
+  Caret extends PointCaret<CaretDirection>,
+  D extends CaretDirection,
+>(
+  caret: Caret,
   direction: D,
-): PointCaret<D> {
-  return (
-    caret.direction === direction ? caret : caret.getFlipped()
-  ) as PointCaret<D>;
+):
+  | NodeCaret<D>
+  | (Caret extends TextPointCaret<TextNode, CaretDirection>
+      ? TextPointCaret<TextNode, D>
+      : never) {
+  return (caret.direction === direction ? caret : caret.getFlipped()) as
+    | NodeCaret<D>
+    | (Caret extends TextPointCaret<TextNode, CaretDirection>
+        ? TextPointCaret<TextNode, D>
+        : never);
 }
 
 /**

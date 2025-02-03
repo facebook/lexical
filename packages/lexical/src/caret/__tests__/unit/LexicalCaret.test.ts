@@ -93,7 +93,7 @@ describe('LexicalCaret', () => {
 
               const flipped = caret.getFlipped();
               expect(flipped).not.toBe(caret);
-              expect(flipped.getFlipped().is(caret)).toBe(true);
+              expect(flipped.getFlipped().isSameNodeCaret(caret)).toBe(true);
               expect(flipped.direction).not.toBe(direction);
               expect(flipped.type).toBe('sibling');
               expect(flipped.getNodeAtCaret()).toBe(null);
@@ -220,7 +220,7 @@ describe('LexicalCaret', () => {
 
               const flipped = caret.getFlipped();
               expect(flipped).not.toBe(caret);
-              expect(flipped.getFlipped().is(caret));
+              expect(flipped.getFlipped().isSameNodeCaret(caret));
               expect(flipped.origin.is(caret.getNodeAtCaret())).toBe(true);
               expect(flipped.direction).not.toBe(direction);
               expect(flipped.type).toBe('sibling');
@@ -234,14 +234,15 @@ describe('LexicalCaret', () => {
 
               for (const mode of ['root', 'shadowRoot'] as const) {
                 expect(
-                  $getSiblingCaret(paragraph, caret.direction).is(
+                  $getSiblingCaret(paragraph, caret.direction).isSameNodeCaret(
                     caret.getParentCaret(mode),
                   ),
                 ).toBe(true);
                 expect(
-                  $getSiblingCaret(paragraph, flipped.direction).is(
-                    flipped.getParentCaret(mode),
-                  ),
+                  $getSiblingCaret(
+                    paragraph,
+                    flipped.direction,
+                  ).isSameNodeCaret(flipped.getParentCaret(mode)),
                 ).toBe(true);
               }
 
@@ -471,7 +472,7 @@ describe('LexicalCaret', () => {
                   direction: 'next',
                   offset,
                   origin: node,
-                  type: 'sibling',
+                  type: 'text',
                 },
                 distance: 0,
               },
@@ -640,7 +641,7 @@ describe('LexicalCaret', () => {
                         direction,
                         offset: anchorOffset,
                         origin: anchorNode,
-                        type: 'sibling',
+                        type: 'text',
                       },
                       distance:
                         direction === 'next'
@@ -652,7 +653,7 @@ describe('LexicalCaret', () => {
                         direction,
                         offset: focusOffset,
                         origin: focusNode,
-                        type: 'sibling',
+                        type: 'text',
                       },
                       distance:
                         direction === 'next'
@@ -988,7 +989,7 @@ describe('LexicalCaret', () => {
                     direction: 'next',
                     offset,
                     origin: node,
-                    type: 'sibling',
+                    type: 'text',
                   },
                   distance: 0,
                 },
@@ -1067,7 +1068,7 @@ describe('LexicalCaret', () => {
                     direction,
                     offset,
                     origin: newOrigin,
-                    type: 'sibling',
+                    type: 'text',
                   };
                   expect(resultRange).toMatchObject({
                     anchor: pt,
@@ -1213,14 +1214,14 @@ describe('LexicalCaret', () => {
                       direction,
                       offset,
                       origin: newOrigin,
-                      type: 'sibling',
+                      type: 'text',
                     },
                     direction,
                     focus: {
                       direction,
                       offset,
                       origin: newOrigin,
-                      type: 'sibling',
+                      type: 'text',
                     },
                     type: 'node-caret-range',
                   });

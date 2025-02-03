@@ -12,7 +12,7 @@ import invariant from 'shared/invariant';
 import {$isRootOrShadowRoot} from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
-import {$isTextNode, TextNode} from '../nodes/LexicalTextNode';
+import {TextNode} from '../nodes/LexicalTextNode';
 
 /**
  * The direction of a caret, 'next' points towards the end of the document
@@ -53,33 +53,16 @@ export interface BaseCaret<
   readonly type: Type;
   /** next if pointing at the next sibling or first child, previous if pointing at the previous sibling or last child */
   readonly direction: D;
-  /**
-   * Retun true if other is a caret with the same origin (by node key comparion), type, and direction.
-   *
-   * Note that this will not check the offset of a TextPointCaret because it is otherwise indistinguishable
-   * from a SiblingCaret. Use {@link $isSameTextPointCaret} for that specific scenario.
-   */
-  is: (other: NodeCaret | null) => boolean;
-  /**
-   * Get a new NodeCaret with the head and tail of its directional arrow flipped, such that flipping twice is the identity.
-   * For example, given a non-empty parent with a firstChild and lastChild, and a second emptyParent node with no children:
-   *
-   * @example
-   * ```
-   * caret.getFlipped().getFlipped().is(caret) === true;
-   * $getChildCaret(parent, 'next').getFlipped().is($getSiblingCaret(firstChild, 'previous')) === true;
-   * $getSiblingCaret(lastChild, 'next').getFlipped().is($getChildCaret(parent, 'previous')) === true;
-   * $getSiblingCaret(firstChild, 'next).getFlipped().is($getSiblingCaret(lastChild, 'previous')) === true;
-   * $getChildCaret(emptyParent, 'next').getFlipped().is($getChildCaret(emptyParent, 'previous')) === true;
-   * ```
-   */
-  getFlipped: () => NodeCaret<FlipDirection<D>>;
   /** Get the ElementNode that is the logical parent (`origin` for `ChildCaret`, `origin.getParent()` for `SiblingCaret`) */
   getParentAtCaret: () => null | ElementNode;
   /** Get the node connected to the origin in the caret's direction, or null if there is no node */
   getNodeAtCaret: () => null | LexicalNode;
   /** Get a new SiblingCaret from getNodeAtCaret() in the same direction. */
   getAdjacentCaret: () => null | SiblingCaret<LexicalNode, D>;
+  /**
+   * Get a new SiblingCaret with this same node
+   */
+  getSiblingCaret: () => SiblingCaret<T, D>;
   /** Remove the getNodeAtCaret() node, if it exists */
   remove: () => this;
   /**
@@ -200,6 +183,36 @@ export interface SiblingCaret<
    * @returns A SiblingCaret with the parent of this origin, or null if the parent is a root according to mode.
    */
   getParentCaret: (mode: RootMode) => null | SiblingCaret<ElementNode, D>;
+  /**
+   * Retun true if other is a SiblingCaret or TextPointCaret with the same
+   * origin (by node key comparion) and direction.
+   */
+  isSameNodeCaret: (
+    other: null | undefined | PointCaret,
+  ) => other is SiblingCaret<T, D> | T extends TextNode
+    ? TextPointCaret<T & TextNode, D>
+    : never;
+  /**
+   * Retun true if other is a SiblingCaret with the same
+   * origin (by node key comparion) and direction.
+   */
+  isSamePointCaret: (
+    other: null | undefined | PointCaret,
+  ) => other is SiblingCaret<T, D>;
+  /**
+   * Get a new NodeCaret with the head and tail of its directional arrow flipped, such that flipping twice is the identity.
+   * For example, given a non-empty parent with a firstChild and lastChild, and a second emptyParent node with no children:
+   *
+   * @example
+   * ```
+   * caret.getFlipped().getFlipped().is(caret) === true;
+   * $getChildCaret(parent, 'next').getFlipped().is($getSiblingCaret(firstChild, 'previous')) === true;
+   * $getSiblingCaret(lastChild, 'next').getFlipped().is($getChildCaret(parent, 'previous')) === true;
+   * $getSiblingCaret(firstChild, 'next).getFlipped().is($getSiblingCaret(lastChild, 'previous')) === true;
+   * $getChildCaret(emptyParent, 'next').getFlipped().is($getChildCaret(emptyParent, 'previous')) === true;
+   * ```
+   */
+  getFlipped: () => NodeCaret<FlipDirection<D>>;
 }
 
 /**
@@ -215,6 +228,34 @@ export interface ChildCaret<
   getParentAtCaret: () => T;
   /** Return this, the ChildCaret is already a child caret of its origin */
   getChildCaret: () => this;
+  /**
+   * Retun true if other is a ChildCaret with the same
+   * origin (by node key comparion) and direction.
+   */
+  isSameNodeCaret: (
+    other: null | undefined | PointCaret,
+  ) => other is ChildCaret<T, D>;
+  /**
+   * Retun true if other is a ChildCaret with the same
+   * origin (by node key comparion) and direction.
+   */
+  isSamePointCaret: (
+    other: null | undefined | PointCaret,
+  ) => other is ChildCaret<T, D>;
+  /**
+   * Get a new NodeCaret with the head and tail of its directional arrow flipped, such that flipping twice is the identity.
+   * For example, given a non-empty parent with a firstChild and lastChild, and a second emptyParent node with no children:
+   *
+   * @example
+   * ```
+   * caret.getFlipped().getFlipped().is(caret) === true;
+   * $getChildCaret(parent, 'next').getFlipped().is($getSiblingCaret(firstChild, 'previous')) === true;
+   * $getSiblingCaret(lastChild, 'next').getFlipped().is($getChildCaret(parent, 'previous')) === true;
+   * $getSiblingCaret(firstChild, 'next).getFlipped().is($getSiblingCaret(lastChild, 'previous')) === true;
+   * $getChildCaret(emptyParent, 'next').getFlipped().is($getChildCaret(emptyParent, 'previous')) === true;
+   * ```
+   */
+  getFlipped: () => NodeCaret<FlipDirection<D>>;
 }
 
 /**
@@ -233,10 +274,46 @@ export interface ChildCaret<
 export interface TextPointCaret<
   T extends TextNode = TextNode,
   D extends CaretDirection = CaretDirection,
-> extends SiblingCaret<T, D> {
+> extends BaseCaret<T, D, 'text'> {
+  /** The offset into the string */
+  readonly offset: number;
   /** Get a new caret with the latest origin pointer */
   getLatest: () => TextPointCaret<T, D>;
-  readonly offset: number;
+  /**
+   * A TextPointCaret can not have a ChildCaret.
+   */
+  getChildCaret: () => null;
+  /**
+   * Get the caret in the same direction from the parent of this origin.
+   *
+   * @param mode 'root' to return null at the root, 'shadowRoot' to return null at the root or any shadow root
+   * @returns A SiblingCaret with the parent of this origin, or null if the parent is a root according to mode.
+   */
+  getParentCaret: (mode: RootMode) => null | SiblingCaret<ElementNode, D>;
+  /**
+   * Retun true if other is a TextPointCaret or SiblingCaret with the same
+   * origin (by node key comparion) and direction.
+   */
+  isSameNodeCaret: (
+    other: null | undefined | PointCaret,
+  ) => other is TextPointCaret<T, D> | SiblingCaret<T, D>;
+  /**
+   * Retun true if other is a ChildCaret with the same
+   * origin (by node key comparion) and direction.
+   */
+  isSamePointCaret: (
+    other: null | undefined | PointCaret,
+  ) => other is TextPointCaret<T, D>;
+  /**
+   * Get a new TextPointCaret with the head and tail of its directional arrow flipped, such that flipping twice is the identity.
+   * For a TextPointCaret this merely flips the direction because the arrow is internal to the node.
+   *
+   * @example
+   * ```
+   * caret.getFlipped().getFlipped().is(caret) === true;
+   * ```
+   */
+  getFlipped: () => TextPointCaret<T, FlipDirection<D>>;
 }
 
 /**
@@ -301,7 +378,6 @@ abstract class AbstractCaret<
   readonly origin: T;
   abstract getNodeAtCaret(): null | LexicalNode;
   abstract insert(node: LexicalNode): this;
-  abstract getFlipped(): NodeCaret<FlipDirection<D>>;
   abstract getParentAtCaret(): null | ElementNode;
   constructor(origin: T) {
     this.origin = origin;
@@ -324,6 +400,9 @@ abstract class AbstractCaret<
   }
   getAdjacentCaret(): null | SiblingCaret<LexicalNode, D> {
     return $getSiblingCaret(this.getNodeAtCaret(), this.direction);
+  }
+  getSiblingCaret(): SiblingCaret<T, D> {
+    return $getSiblingCaret(this.origin, this.direction);
   }
   remove(): this {
     const node = this.getNodeAtCaret();
@@ -441,6 +520,20 @@ abstract class AbstractChildCaret<
   getChildCaret(): this {
     return this;
   }
+  isSameNodeCaret(
+    other: null | undefined | PointCaret,
+  ): other is ChildCaret<T, D> {
+    return (
+      other instanceof AbstractChildCaret &&
+      this.direction === other.direction &&
+      this.origin.is(other.origin)
+    );
+  }
+  isSamePointCaret(
+    other: null | undefined | PointCaret,
+  ): other is ChildCaret<T, D> {
+    return this.isSameNodeCaret(other);
+  }
 }
 
 class ChildCaretFirst<T extends ElementNode> extends AbstractChildCaret<
@@ -507,13 +600,14 @@ abstract class AbstractSiblingCaret<
   implements SiblingCaret<T, D>
 {
   readonly type = 'sibling';
-  // TextPointCaret
-  offset?: number;
   getLatest(): SiblingCaret<T, D> {
     const origin = this.origin.getLatest();
     return origin === this.origin
       ? this
       : $getSiblingCaret(origin, this.direction);
+  }
+  getSiblingCaret(): this {
+    return this;
   }
   getParentAtCaret(): null | ElementNode {
     return this.origin.getParent();
@@ -536,8 +630,92 @@ abstract class AbstractSiblingCaret<
       $getChildCaret(this.origin.getParentOrThrow(), dir)
     );
   }
+  isSamePointCaret(
+    other: null | undefined | PointCaret,
+  ): other is SiblingCaret<T, D> {
+    return (
+      other instanceof AbstractSiblingCaret &&
+      this.direction === other.direction &&
+      this.origin.is(other.origin)
+    );
+  }
+  isSameNodeCaret(
+    other: null | undefined | PointCaret,
+  ): other is T | SiblingCaret<T, D> extends TextNode
+    ? TextPointCaret<T & TextNode, D>
+    : never {
+    return (
+      (other instanceof AbstractSiblingCaret ||
+        other instanceof AbstractTextPointCaret) &&
+      this.direction === other.direction &&
+      this.origin.is(other.origin)
+    );
+  }
 }
 
+abstract class AbstractTextPointCaret<
+    T extends TextNode,
+    D extends CaretDirection,
+  >
+  extends AbstractCaret<T, D, 'text'>
+  implements TextPointCaret<T, D>
+{
+  readonly type = 'text';
+  readonly offset: number;
+  abstract readonly direction: D;
+  constructor(origin: T, offset: number) {
+    super(origin);
+    this.offset = offset;
+  }
+  getLatest(): TextPointCaret<T, D> {
+    const origin = this.origin.getLatest();
+    return origin === this.origin
+      ? this
+      : $getTextPointCaret(origin, this.direction, this.offset);
+  }
+  getParentAtCaret(): null | ElementNode {
+    return this.origin.getParent();
+  }
+  getChildCaret(): null {
+    return null;
+  }
+  getParentCaret(mode: RootMode): SiblingCaret<ElementNode, D> | null {
+    return $getSiblingCaret(
+      $filterByMode(this.getParentAtCaret(), mode),
+      this.direction,
+    );
+  }
+  getFlipped(): TextPointCaret<T, FlipDirection<D>> {
+    return $getTextPointCaret(
+      this.origin,
+      flipDirection(this.direction),
+      this.offset,
+    );
+  }
+  isSamePointCaret(
+    other: null | undefined | PointCaret,
+  ): other is TextPointCaret<T, D> {
+    return (
+      other instanceof AbstractTextPointCaret &&
+      this.direction === other.direction &&
+      this.origin.is(other.origin) &&
+      this.offset === other.offset
+    );
+  }
+  isSameNodeCaret(
+    other: null | undefined | PointCaret,
+  ): other is SiblingCaret<T, D> | TextPointCaret<T, D> {
+    return (
+      (other instanceof AbstractSiblingCaret ||
+        other instanceof AbstractTextPointCaret) &&
+      this.direction === other.direction &&
+      this.origin.is(other.origin)
+    );
+  }
+  getSiblingCaret(): SiblingCaret<T, D> {
+    return $getSiblingCaret(this.origin, this.direction);
+  }
+}
 /**
  * Guard to check if the given caret is specifically a TextPointCaret
  *
@@ -547,24 +725,7 @@ abstract class AbstractSiblingCaret<
 export function $isTextPointCaret<D extends CaretDirection>(
   caret: null | undefined | PointCaret<D>,
 ): caret is TextPointCaret<TextNode, D> {
-  return (
-    caret instanceof AbstractSiblingCaret &&
-    $isTextNode(caret.origin) &&
-    typeof caret.offset === 'number'
-  );
-}
-
-/**
- * Guard to check the equivalence of TextPointCaret
- *
- * @param a The caret known to be a TextPointCaret
- * @param b Any caret
- * @returns true if b is a TextPointCaret with the same origin, direction and offset as a
- */
-export function $isSameTextPointCaret<
-  T extends TextPointCaret<TextNode, CaretDirection>,
->(a: T, b: null | undefined | PointCaret<CaretDirection>): b is T {
-  return $isTextPointCaret(b) && a.is(b) && a.offset === b.offset;
+  return caret instanceof AbstractTextPointCaret;
 }
 
 /**
@@ -631,6 +792,39 @@ class SiblingCaretPrevious<T extends LexicalNode> extends AbstractSiblingCaret<
   }
 }
 
+class TextPointCaretNext<T extends TextNode> extends AbstractTextPointCaret<
+  T,
+  'next'
+> {
+  readonly direction = 'next';
+  getNodeAtCaret(): null | LexicalNode {
+    return this.origin.getNextSibling();
+  }
+  insert(node: LexicalNode): this {
+    this.origin.insertAfter(node);
+    return this;
+  }
+}
+
+class TextPointCaretPrevious<T extends TextNode> extends AbstractTextPointCaret<
+  T,
+  'previous'
+> {
+  readonly direction = 'previous';
+  getNodeAtCaret(): null | LexicalNode {
+    return this.origin.getPreviousSibling();
+  }
+  insert(node: LexicalNode): this {
+    this.origin.insertBefore(node);
+    return this;
+  }
+}
+
+const TEXT_CTOR = {
+  next: TextPointCaretNext,
+  previous: TextPointCaretPrevious,
+} as const;
+
 const SIBLING_CTOR = {
   next: SiblingCaretNext,
   previous: SiblingCaretPrevious,
@@ -655,32 +849,12 @@ export function $getSiblingCaret<
 export function $getSiblingCaret<
   T extends LexicalNode,
   D extends CaretDirection,
->(origin: T | null, direction: D): null | SiblingCaret<T, D>;
+>(origin: null | T, direction: D): null | SiblingCaret<T, D>;
 export function $getSiblingCaret(
-  origin: LexicalNode | null,
+  origin: null | LexicalNode,
   direction: CaretDirection,
-): SiblingCaret<LexicalNode, CaretDirection> | null {
+): null | SiblingCaret<LexicalNode, CaretDirection> {
   return origin ? new SIBLING_CTOR[direction](origin) : null;
-}
-
-function $getLatestTextPointCaret<T extends TextNode, D extends CaretDirection>(
-  this: TextPointCaret<T, D>,
-): TextPointCaret<T, D> {
-  const origin = this.origin.getLatest();
-  return origin === this.origin
-    ? this
-    : $getTextPointCaret(origin, this.direction, this.offset);
-}
-
-function $getFlippedTextPointCaret<
-  T extends TextNode,
-  D extends CaretDirection,
->(this: TextPointCaret<T, D>): TextPointCaret<T, FlipDirection<D>> {
-  return $getTextPointCaret(
-    this.origin,
-    flipDirection(this.direction),
-    this.offset,
-  );
 }
 
 /**
@@ -698,12 +872,23 @@ export function $getTextPointCaret<
   origin: T,
   direction: D,
   offset: number | CaretDirection,
-): TextPointCaret<T, D> {
-  return Object.assign($getSiblingCaret(origin, direction), {
-    getFlipped: $getFlippedTextPointCaret,
-    getLatest: $getLatestTextPointCaret,
-    offset: $getTextNodeOffset(origin, offset),
-  });
+): TextPointCaret<T, D>;
+export function $getTextPointCaret<
+  T extends TextNode,
+  D extends CaretDirection,
+>(
+  origin: null | T,
+  direction: D,
+  offset: number | CaretDirection,
+): null | TextPointCaret<T, D>;
+export function $getTextPointCaret(
+  origin: TextNode | null,
+  direction: CaretDirection,
+  offset: number | CaretDirection,
+): null | TextPointCaret<TextNode, CaretDirection> {
+  return origin
+    ? new TEXT_CTOR[direction](origin, $getTextNodeOffset(origin, offset))
+    : null;
 }
 
 /**
@@ -773,7 +958,7 @@ export function $getChildCaret(
  */
 export function $getChildCaretOrSelf<Caret extends PointCaret | null>(
   caret: Caret,
-): PointCaret<NonNullable<Caret>['direction']> | (Caret & null) {
+): Caret | ChildCaret<ElementNode, NonNullable<Caret>['direction']> {
   return (caret && caret.getChildCaret()) || caret;
 }
 
@@ -808,13 +993,7 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
       : new CaretRangeImpl(anchor, focus, this.direction);
   }
   isCollapsed(): boolean {
-    return (
-      this.anchor.is(this.focus) &&
-      !(
-        $isTextPointCaret(this.anchor) &&
-        !$isSameTextPointCaret(this.anchor, this.focus)
-      )
-    );
+    return this.anchor.isSamePointCaret(this.focus);
   }
   getTextSlices(): TextPointCaretSliceTuple<D> {
     const getSlice = (k: 'anchor' | 'focus') => {
@@ -828,7 +1007,7 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
     if (anchorSlice && focusSlice) {
       const {caret: anchorCaret} = anchorSlice;
       const {caret: focusCaret} = focusSlice;
-      if (anchorCaret.is(focusCaret)) {
+      if (anchorCaret.isSameNodeCaret(focusCaret)) {
         return [
           $getTextPointCaretSlice(
             anchorCaret,
@@ -841,18 +1020,21 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
     return [anchorSlice, focusSlice];
   }
   iterNodeCarets(rootMode: RootMode): IterableIterator<NodeCaret<D>> {
-    const {anchor, focus} = this;
+    const anchor = $isTextPointCaret(this.anchor)
+      ? this.anchor.getSiblingCaret()
+      : this.anchor;
+    const {focus} = this;
     const isTextFocus = $isTextPointCaret(focus);
     const step = (state: NodeCaret<D>) =>
-      state.is(focus)
+      state.isSameNodeCaret(focus)
         ? null
         : $getAdjacentChildCaret(state) || state.getParentCaret(rootMode);
     return makeStepwiseIterator({
-      initial: anchor.is(focus) ? null : step(anchor),
+      initial: anchor.isSameNodeCaret(focus) ? null : step(anchor),
       map: (state) => state,
       step,
       stop: (state: null | PointCaret<D>): state is null =>
-        state === null || (isTextFocus && focus.is(state)),
+        state === null || (isTextFocus && focus.isSameNodeCaret(state)),
     });
   }
   [Symbol.iterator](): IterableIterator<NodeCaret<D>> {

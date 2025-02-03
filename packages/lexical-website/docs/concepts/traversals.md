@@ -57,6 +57,14 @@ constructed with, all accessor methods on that origin will generally call
 * Typically constructed with `$getChildCaretOrSelf($getSiblingCaret(origin, direction))`
   which returns a `ChildCaret` when the origin is an `ElementNode`
 
+:::tip
+
+This type does not include `TextPointCaret` or `TextPointCaretSlice`,
+so you will not have to consider those edge cases when you see this
+more specific type.
+
+:::
+
 ### SiblingCaret
 
 `SiblingCaret` is a caret that points towards a sibling of the origin
@@ -90,14 +98,6 @@ constructed with, all accessor methods on that origin will generally call
 `PointCaret` is any `TextPointCaret`, `SiblingCaret` or `ChildCaret`. This
 type can be used to represent any point in the document that `PointType` can represent.
 
-:::tip
-
-Because `TextPointCaret` is a subclass of `SiblingCaret`, this type is
-really just used to document that the function will not ignore
-`TextPointCaret`
-
-:::
-
 ### TextPointCaret
 
 `TextPointCaret` is a specialized `SiblingCaret` with any `TextNode` origin and an `offset` property
@@ -105,14 +105,6 @@ really just used to document that the function will not ignore
 * The `offset` property is an absolute index into the string
 * The `next` direction implies all text content after `offset`
 * The `previous` direction implies all text content before `offset`
-
-
-:::warning
-
-Since `TextPointCaret` is a specialization of `SiblingCaret`, the offset will be ignored
-by functions that are not also specialized to handle it.
-
-:::
 
 ### TextPointCaretSlice
 
@@ -275,10 +267,6 @@ function *$iterNodesDepthFirst<D extends CaretDirection>(
   }
 }
 ```
-
-### Handling TextPointSlice
-
-
 
 ## Future Direction
 

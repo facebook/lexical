@@ -256,14 +256,14 @@ function $dfsCaretIterator<D extends CaretDirection>(
     initial: startCaret,
     map: (state) => ({depth, node: state.origin}),
     step: (state: NodeCaret<'next'>) => {
-      if (state.is(endCaret)) {
+      if (state.isSameNodeCaret(endCaret)) {
         return null;
       }
       if (state.type === 'child') {
         depth++;
       }
       const rval = $getAdjacentSiblingOrParentSiblingCaret(state);
-      if (!rval || rval[0].is(endCaret)) {
+      if (!rval || rval[0].isSameNodeCaret(endCaret)) {
         return null;
       }
       depth += rval[1];

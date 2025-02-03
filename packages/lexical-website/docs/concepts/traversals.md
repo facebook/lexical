@@ -100,22 +100,40 @@ type can be used to represent any point in the document that `PointType` can rep
 
 ### TextPointCaret
 
-`TextPointCaret` is a specialized `SiblingCaret` with any `TextNode` origin and an `offset` property
+`TextPointCaret` is basically a `SiblingCaret` with a `TextNode` origin and an `offset` property
 * Constructed with `$getTextPointCaret(origin, direction, offset)`
 * The `offset` property is an absolute index into the string
 * The `next` direction implies all text content after `offset`
 * The `previous` direction implies all text content before `offset`
+* All methods that are also present on `SiblingCaret` behave in the same way
 
 ### TextPointCaretSlice
 
-`TextPointCaretSlice` is a wrapper for `TextPointCaret` that provides a signed `distance`,
-it is just a data structure and has no methods.
+`TextPointCaretSlice` is a wrapper for `TextPointCaret` that provides a signed `distance`.
 
 * Constructed with `$getTextPointCaretSlice(caret, distance)`
+* There are convenience methods like `removeTextSlice()` and `getTextContent()`,
+  so it's not generally necessary to know the implementation details here
 * `Math.min(caret.offset, caret.offset + distance)` refers to the start offset of the slice
 * `Math.max(caret.offset, caret.offset + distance)` refers to the end offset of the slice
 * The `direction` of the caret is generally ignored when working with a
   `TextPointCaretSlice`, the slice is in absolute string coordinates
+
+:::info
+
+The property name `distance` was chosen because `length` and `size` are
+commonly used on other data structures in JavaScript and Lexical, and they
+are overwhelmingly non-negative. While most uses of `distance` are also
+non-negative, in some contexts such as computer graphics it is not uncommon
+to use
+[Signed distance functions](https://en.wikipedia.org/wiki/Signed_distance_function)
+where the distance metric is signed.
+
+In SDF terms, the subset of the space is `\[offset, ∞)`. Any coordinate less
+than the `offset` boundary is a negative distance; otherise the distance is
+non-negative.
+
+:::
 
 ### CaretRange
 

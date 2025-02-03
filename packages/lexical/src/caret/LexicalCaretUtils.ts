@@ -213,10 +213,14 @@ function $getAnchorCandidates<D extends CaretDirection>(
  * the earlier block.
  *
  * @param range The range to remove text and nodes from
+ * @param sliceMode If 'preserveEmptyTextPointCaret' it will leave an empty TextPointCaret at the anchor for insert if one exists, otherwise empty slices will be removed
  * @returns The new collapsed range (biased towards the earlier node)
  */
 export function $removeTextFromCaretRange<D extends CaretDirection>(
   initialRange: CaretRange<D>,
+  sliceMode:
+    | 'removeEmptySlices'
+    | 'preserveEmptyTextSliceCaret' = 'removeEmptySlices',
 ): CaretRange<D> {
   if (initialRange.isCollapsed()) {
     return initialRange;
@@ -224,6 +228,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // Always process removals in document order
   const rootMode = 'root';
   const nextDirection = 'next';
+  let sliceState = sliceMode;
   const range = $getCaretRangeInDirection(initialRange, nextDirection);
 
   const anchorCandidates = $getAnchorCandidates(range.anchor, rootMode);
@@ -252,7 +257,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   }
 
   // Splice text at the anchor and/or origin.
-  // If the text is entirely selected then it is removed.
+  // If the text is entirely selected then it is removed (unless it is the first slice and sliceMode is preserveEmptyTextSliceCaret).
   // If it's a token with a non-empty selection then it is removed.
   // Segmented nodes will be copied to a plain text node with the same format
   // and style and set to normal mode.
@@ -267,12 +272,14 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     );
     const mode = origin.getMode();
     if (
-      Math.abs(slice.distance) === contentSize ||
+      (Math.abs(slice.distance) === contentSize &&
+        sliceState === 'removeEmptySlices') ||
       (mode === 'token' && slice.distance !== 0)
     ) {
       // anchorCandidates[1] should still be valid, it is caretBefore
       caretBefore.remove();
     } else if (slice.distance !== 0) {
+      sliceState = 'removeEmptySlices';
       let nextCaret = slice.removeTextSlice();
       if (mode === 'segmented') {
         const src = nextCaret.origin;

@@ -15,6 +15,7 @@ import type {TextFormatType} from './nodes/LexicalTextNode';
 import invariant from 'shared/invariant';
 
 import {
+  $caretFromPoint,
   $caretRangeFromSelection,
   $createLineBreakNode,
   $createParagraphNode,
@@ -24,7 +25,9 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  $normalizeCaret,
   $removeTextFromCaretRange,
+  $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
   SELECTION_CHANGE_COMMAND,
@@ -844,6 +847,12 @@ export class RangeSelection implements BaseSelection {
         endPoint,
         format,
         style,
+      );
+    }
+    if (endPoint.type === 'element') {
+      $setPointFromCaret(
+        endPoint,
+        $normalizeCaret($caretFromPoint(endPoint, 'next')),
       );
     }
     const startOffset = firstPoint.offset;

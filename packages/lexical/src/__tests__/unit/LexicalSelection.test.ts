@@ -14,6 +14,7 @@ import {
   ListNode,
 } from '@lexical/list';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -1033,6 +1034,40 @@ describe('getNodes()', () => {
             linkText,
             paragraphNode,
           ]);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('Regression #7081', () => {
+  initializeUnitTest((testEnv) => {
+    test('Firefox selection & paste before linebreak', () => {
+      testEnv.editor.update(
+        () => {
+          const textNode =
+            $createTextNode('XXXX').setStyle(`color: --color-test`);
+          const paragraphNode = $createParagraphNode();
+          $getRoot()
+            .clear()
+            .append(
+              paragraphNode.append(
+                $createTextNode('ID: '),
+                textNode,
+                $createLineBreakNode(),
+                $createTextNode('aa'),
+              ),
+            );
+          const selection = textNode.select(0);
+          selection.focus.set(
+            paragraphNode.getKey(),
+            1 + textNode.getIndexWithinParent(),
+            'element',
+          );
+          selection.insertText('123');
+          expect(textNode.isAttached()).toBe(true);
+          expect(textNode.getTextContent()).toBe('123');
         },
         {discrete: true},
       );

@@ -386,14 +386,6 @@ abstract class AbstractCaret<
   constructor(origin: T) {
     this.origin = origin;
   }
-  is(other: NodeCaret | null): boolean {
-    return (
-      other !== null &&
-      other.type === this.type &&
-      other.direction === this.direction &&
-      this.origin.is(other.origin)
-    );
-  }
   [Symbol.iterator](): IterableIterator<SiblingCaret<LexicalNode, D>> {
     return makeStepwiseIterator({
       initial: this.getAdjacentCaret(),

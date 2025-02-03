@@ -1583,6 +1583,15 @@ describe('LexicalNode state', () => {
         });
       });
 
+      test('states cannot be registered with the same key string', () => {
+        expect(() => {
+          createStateKey('foo', {parse: (value) => undefined});
+          createStateKey('foo', {parse: (value) => 0});
+        }).toThrow(
+          `There has been an attempt to register a state with the key "foo", but it is already registered.`,
+        );
+      });
+
       test('default value should not be exported', async () => {
         const {editor} = testEnv;
         editor.update(() => {
@@ -1598,11 +1607,20 @@ describe('LexicalNode state', () => {
           expect(json2.state).toStrictEqual({
             indent: 1,
           });
-          // TODO: How could exportJson know which stateKey maps to each key?
           // set the default value explicitly
-          // paragraph.setState(indentKey, 0);
-          // const json3 = paragraph.exportJSON();
-          // expect(json3.state).not.toHaveProperty('indent');
+          paragraph.setState(indentKey, 0);
+          const json3 = paragraph.exportJSON();
+          expect(json3).not.toHaveProperty('state');
+
+          // TO-DISCUSS: There has been an attempt to register a state with the key "foo", but it is already registered.
+          // const foo = createStateKey('foo', {
+          //   parse: (value) => (typeof value === 'string' ? value : ''),
+          // });
+          // paragraph.setState(foo, 'foo');
+          // const json4 = paragraph.exportJSON();
+          // expect(json4.state).toStrictEqual({
+          //   foo: 'foo',
+          // });
         });
       });
 

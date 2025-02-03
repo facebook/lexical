@@ -210,11 +210,19 @@ interface StateKeyConfig<V extends StateValue = StateValue> {
 }
 type StateKeyConfigValue<T extends StateKeyConfig> = ReturnType<T['parse']>;
 
+const stateStore = new Map<string, StateKeyConfig>();
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createStateKey<K extends string, T extends StateKeyConfig<any>>(
   key: K,
   config: T,
 ): StateKey<K, StateKeyConfigValue<T>> {
+  if (stateStore.has(key)) {
+    throw new Error(
+      `There has been an attempt to register a state with the key "${key}", but it is already registered.`,
+    );
+  }
+  stateStore.set(key, config);
   return {key, parse: config.parse, value: config.parse(undefined)};
 }
 
@@ -931,10 +939,23 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
+    const state: State = {};
+    Object.entries(this.__state).forEach(([key, value]) => {
+      const config = stateStore.get(key);
+      if (!config) {
+        throw new Error(
+          `There has been an attempt to export a state with the key "${key}", but it is not registered.`,
+        );
+      }
+      // We don't export state if it's the default value
+      if (value !== config.parse(undefined)) {
+        state[key] = value;
+      }
+    });
     return {
       type: this.__type,
       version: 1,
-      ...(objectIsEmpty(this.__state) ? {} : {state: this.__state}),
+      ...(objectIsEmpty(state) ? {} : {state}),
     };
   }
 

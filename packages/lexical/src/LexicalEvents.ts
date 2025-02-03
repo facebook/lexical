@@ -613,14 +613,10 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             selectedNodeCanInsertTextAfter;
           // Check if selection is collapsed and if the previous node is a decorator node
           // If so, the browser will not be able to handle the deletion
-          let browserAbleToDelete = true;
-          if (selection.isCollapsed()) {
-            const prevNode = $getAdjacentNode(selection.anchor, true);
-            if ($isDecoratorNode(prevNode)) {
-              browserAbleToDelete = false;
-            }
+          if (shouldLetBrowserHandleDelete && selection.isCollapsed()) {
+            shouldLetBrowserHandleDelete = !$isDecoratorNode($getAdjacentNode(selection.anchor, true));
           }
-          if (!(shouldLetBrowserHandleDelete && browserAbleToDelete)) {
+          if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
         }

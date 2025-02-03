@@ -40,7 +40,6 @@ export {
 export {
   $caretFromPoint,
   $caretRangeFromSelection,
-  $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,

@@ -63,15 +63,15 @@ export interface BaseCaret<
    * Get a new SiblingCaret with this same node
    */
   getSiblingCaret: () => SiblingCaret<T, D>;
-  /** Remove the getNodeAtCaret() node, if it exists */
+  /** Remove the getNodeAtCaret() node that this caret is pointing towards, if it exists */
   remove: () => this;
   /**
-   * Insert a node connected to origin in this direction.
+   * Insert a node connected to origin in this direction (before the node that this caret is pointing towards, if any existed).
    * For a `SiblingCaret` this is `origin.insertAfter(node)` for next, or `origin.insertBefore(node)` for previous.
    * For a `ChildCaret` this is `origin.splice(0, 0, [node])` for next or `origin.append(node)` for previous.
    */
   insert: (node: LexicalNode) => this;
-  /** If getNodeAtCaret() is null then replace it with node, otherwise insert node */
+  /** If getNodeAtCaret() is not null then replace it with node, otherwise insert node */
   replaceOrInsert: (node: LexicalNode, includeChildren?: boolean) => this;
   /**
    * Splice an iterable (typically an Array) of nodes into this location.
@@ -106,7 +106,7 @@ export interface CaretRange<D extends CaretDirection = CaretDirection>
    * An ElementNode origin will be yielded as a ChildCaret on enter,
    * and a SiblingCaret on leave.
    */
-  iterNodeCarets: (rootMode: RootMode) => IterableIterator<NodeCaret<D>>;
+  iterNodeCarets: (rootMode?: RootMode) => IterableIterator<NodeCaret<D>>;
   /**
    * There are between zero and two non-null TextSliceCarets for a CaretRange.
    * Note that when anchor and focus share an origin node the second element
@@ -135,9 +135,9 @@ export interface StepwiseIteratorConfig<State, Stop, Value> {
  * (using next or previous as direction, for symmetry with SiblingCaret).
  *
  * The differences between NodeCaret and PointType are:
- * - NodeCaret can only be used to refer to an entire node. A PointType of text type can be used to refer to a specific location inside of a TextNode.
- * - NodeCaret stores an origin node, type (sibling or child), and direction (next or previous). A PointType stores a type (text or element), the key of a node, and an offset within that node.
- * - NodeCaret is directional and always refers to a very specific node, eliminating all ambiguity. PointType can refer to the location before or after a node depending on context.
+ * - NodeCaret can only be used to refer to an entire node (PointCaret is used when a full analog is needed). A PointType of text type can be used to refer to a specific location inside of a TextNode.
+ * - NodeCaret stores an origin node, type (sibling or child), and direction (next or previous). A PointType stores a type (text or element), the key of a node, and a text or child offset within that node.
+ * - NodeCaret is directional and always refers to a very specific node, eliminating all ambiguity. PointType can refer to the location before or at a node depending on context.
  * - NodeCaret is more robust to nearby mutations, as it relies only on a node's direct connections. An element Any change to the count of previous siblings in an element PointType will invalidate it.
  * - NodeCaret is designed to work more directly with the internal representation of the document tree, making it suitable for use in traversals without performing any redundant work.
  *
@@ -150,12 +150,16 @@ export type NodeCaret<D extends CaretDirection = CaretDirection> =
   | ChildCaret<ElementNode, D>;
 
 /**
- * A PointCaret is a NodeCaret that also includes a specialized
+ * A PointCaret is a NodeCaret that also includes a
  * TextPointCaret type which refers to a specific offset of a TextNode.
  * This type is separate because it is not relevant to general node traversal
  * so it doesn't make sense to have it show up except when defining
  * a CaretRange and in those cases there will be at most two of them only
  * at the boundaries.
+ *
+ * The addition of TextPointCaret allows this type to represent any location
+ * that is representable by PointType, as the TextPointCaret refers to a
+ * specific offset within a TextNode.
  */
 export type PointCaret<D extends CaretDirection = CaretDirection> =
   | TextPointCaret<TextNode, D>
@@ -182,7 +186,7 @@ export interface SiblingCaret<
    * @param mode 'root' to return null at the root, 'shadowRoot' to return null at the root or any shadow root
    * @returns A SiblingCaret with the parent of this origin, or null if the parent is a root according to mode.
    */
-  getParentCaret: (mode: RootMode) => null | SiblingCaret<ElementNode, D>;
+  getParentCaret: (mode?: RootMode) => null | SiblingCaret<ElementNode, D>;
   /**
    * Retun true if other is a SiblingCaret or TextPointCaret with the same
    * origin (by node key comparion) and direction.
@@ -224,7 +228,7 @@ export interface ChildCaret<
 > extends BaseCaret<T, D, 'child'> {
   /** Get a new caret with the latest origin pointer */
   getLatest: () => ChildCaret<T, D>;
-  getParentCaret: (mode: RootMode) => null | SiblingCaret<T, D>;
+  getParentCaret: (mode?: RootMode) => null | SiblingCaret<T, D>;
   getParentAtCaret: () => T;
   /** Return this, the ChildCaret is already a child caret of its origin */
   getChildCaret: () => this;
@@ -289,7 +293,7 @@ export interface TextPointCaret<
    * @param mode 'root' to return null at the root, 'shadowRoot' to return null at the root or any shadow root
    * @returns A SiblingCaret with the parent of this origin, or null if the parent is a root according to mode.
    */
-  getParentCaret: (mode: RootMode) => null | SiblingCaret<ElementNode, D>;
+  getParentCaret: (mode?: RootMode) => null | SiblingCaret<ElementNode, D>;
   /**
    * Retun true if other is a TextPointCaret or SiblingCaret with the same
    * origin (by node key comparion) and direction.
@@ -447,7 +451,7 @@ abstract class AbstractCaret<
     // TODO: Optimize this to work directly with node internals
     for (const node of nodeIter) {
       if (nodesToRemove.size > 0) {
-        // TODO: For some reason `npm run tsc-extension` needs this annotation?
+        // For some reason `npm run tsc-extension` needs this annotation?
         const target: null | LexicalNode = caret.getNodeAtCaret();
         if (target) {
           nodesToRemove.delete(target.getKey());
@@ -501,7 +505,7 @@ abstract class AbstractChildCaret<
    * @param mode 'root' to return null at the root, 'shadowRoot' to return null at the root or any shadow root
    * @returns A SiblingCaret with this origin, or null if origin is a root according to mode.
    */
-  getParentCaret(mode: RootMode): null | SiblingCaret<T, D> {
+  getParentCaret(mode: RootMode = 'root'): null | SiblingCaret<T, D> {
     return $getSiblingCaret(
       $filterByMode(this.getParentAtCaret(), mode),
       this.direction,
@@ -587,7 +591,7 @@ export function flipDirection<D extends CaretDirection>(
 
 function $filterByMode<T extends ElementNode>(
   node: T | null,
-  mode: RootMode,
+  mode: RootMode = 'root',
 ): T | null {
   return MODE_PREDICATE[mode](node) ? null : node;
 }
@@ -617,7 +621,7 @@ abstract class AbstractSiblingCaret<
       ? $getChildCaret(this.origin, this.direction)
       : null;
   }
-  getParentCaret(mode: RootMode): SiblingCaret<ElementNode, D> | null {
+  getParentCaret(mode: RootMode = 'root'): SiblingCaret<ElementNode, D> | null {
     return $getSiblingCaret(
       $filterByMode(this.getParentAtCaret(), mode),
       this.direction,
@@ -679,7 +683,7 @@ abstract class AbstractTextPointCaret<
   getChildCaret(): null {
     return null;
   }
-  getParentCaret(mode: RootMode): SiblingCaret<ElementNode, D> | null {
+  getParentCaret(mode: RootMode = 'root'): SiblingCaret<ElementNode, D> | null {
     return $getSiblingCaret(
       $filterByMode(this.getParentAtCaret(), mode),
       this.direction,
@@ -1019,7 +1023,7 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
     }
     return [anchorSlice, focusSlice];
   }
-  iterNodeCarets(rootMode: RootMode): IterableIterator<NodeCaret<D>> {
+  iterNodeCarets(rootMode: RootMode = 'root'): IterableIterator<NodeCaret<D>> {
     const anchor = $isTextPointCaret(this.anchor)
       ? this.anchor.getSiblingCaret()
       : this.anchor;

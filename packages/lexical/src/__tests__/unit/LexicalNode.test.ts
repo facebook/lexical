@@ -1522,7 +1522,7 @@ describe('LexicalNode state', () => {
       test(`setState() need to be inside an update`, async () => {
         const fn = () => {
           const keyForString = createStateKey('keyForString', {
-            parse: (value) => value as string,
+            parse: (value) => (typeof value === 'string' ? value : ''),
           });
           root.setState(keyForString, 'hello');
         };
@@ -1531,7 +1531,7 @@ describe('LexicalNode state', () => {
 
       test(`getState and setState`, async () => {
         const keyForString = createStateKey('keyForString', {
-          parse: (value) => (value as string) || '',
+          parse: (value) => (typeof value === 'string' ? value : ''),
         });
         const {editor} = testEnv;
         editor.update(() => {
@@ -1542,7 +1542,7 @@ describe('LexicalNode state', () => {
           expect(root.getState(keyForString)).toBe('hello');
 
           const keyForMaybeString = createStateKey('keyForMaybeString', {
-            parse: (value) => value as string | undefined,
+            parse: (value) => (typeof value === 'string' ? value : undefined),
           });
           const maybeStringValue = root.getState(keyForMaybeString);
           type _Test2 = Expect<
@@ -1569,7 +1569,7 @@ describe('LexicalNode state', () => {
           // We don't export state as an empty object
           expect(json).not.toHaveProperty('state');
           const keyForNumber = createStateKey('keyForNumber', {
-            parse: (value) => value as number,
+            parse: (value) => (typeof value === 'number' ? value : 0),
           });
           paragraph.setState(keyForNumber, 1);
           const json2 = paragraph.exportJSON();
@@ -1615,7 +1615,11 @@ describe('LexicalNode state', () => {
         editor.update(() => {
           const paragraph = new ParagraphNode();
           const objectKey = createStateKey('testObject', {
-            parse: (value) => value as TestObject,
+            parse: (value) =>
+              (value as TestObject) || {
+                bar: 0,
+                foo: '',
+              },
           });
           const paragraphObject = paragraph.getState(objectKey);
           type _Test = Expect<

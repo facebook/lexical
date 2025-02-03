@@ -606,7 +606,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           const hasSelectedAllTextInNode =
             selection.anchor.offset === 0 &&
             selection.focus.offset === selectedNodeText.length;
-          const shouldLetBrowserHandleDelete =
+          let shouldLetBrowserHandleDelete =
             IS_ANDROID_CHROME &&
             isSelectionAnchorSameAsFocus &&
             !hasSelectedAllTextInNode &&
@@ -614,7 +614,9 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           // Check if selection is collapsed and if the previous node is a decorator node
           // If so, the browser will not be able to handle the deletion
           if (shouldLetBrowserHandleDelete && selection.isCollapsed()) {
-            shouldLetBrowserHandleDelete = !$isDecoratorNode($getAdjacentNode(selection.anchor, true));
+            shouldLetBrowserHandleDelete = !$isDecoratorNode(
+              $getAdjacentNode(selection.anchor, true),
+            );
           }
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);

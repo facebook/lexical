@@ -214,6 +214,20 @@
   margin-top: 25px;
   margin-bottom: 30px;
 }
+.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child {
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 100%;
+  border-right: 1px solid #bbb;
+}
 .PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
   background-color: #f2f5fb;
 }

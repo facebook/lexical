@@ -447,6 +447,19 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const toggleFirstColumnFreeze = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setFirstColumnFreeze(!tableNode.getFirstColumnFreeze());
+        }
+      }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
+
   const handleCellBackgroundColor = useCallback(
     (value: string) => {
       editor.update(() => {
@@ -527,6 +540,13 @@ function TableActionMenu({
         onClick={() => toggleRowStriping()}
         data-test-id="table-row-striping">
         <span className="text">Toggle Row Striping</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleFirstColumnFreeze()}
+        data-test-id="table-freeze-first-column">
+        <span className="text">Toggle First Column Freeze</span>
       </button>
       <hr />
       <button

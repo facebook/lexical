@@ -1038,6 +1038,23 @@ describe('getNodes()', () => {
         {discrete: true},
       );
     });
+    test('select an empty ListItemNode (collapsed)', () => {
+      testEnv.editor.update(
+        () => {
+          const emptyListItem = $createListItemNode();
+          listItem2.insertBefore(emptyListItem);
+          const selection = $createRangeSelection();
+          selection.anchor.set(emptyListItem.getKey(), 0, 'element');
+          selection.focus.set(emptyListItem.getKey(), 0, 'element');
+          expect(selection).toMatchObject({
+            anchor: {key: emptyListItem.getKey(), offset: 0, type: 'element'},
+            focus: {key: emptyListItem.getKey(), offset: 0, type: 'element'},
+          });
+          expect(selection.getNodes()).toEqual([emptyListItem]);
+        },
+        {discrete: true},
+      );
+    });
   });
 });
 

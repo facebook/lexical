@@ -559,7 +559,7 @@ export class RangeSelection implements BaseSelection {
 
     let nodes: Array<LexicalNode>;
 
-    if (firstNode.is(lastNode)) {
+    if (firstNode.is(lastNode) || this.isCollapsed()) {
       if ($isElementNode(firstNode) && firstNode.getChildrenSize() > 0) {
         nodes = [];
       } else {
@@ -581,6 +581,15 @@ export class RangeSelection implements BaseSelection {
           (node) => !node.is(firstNode) && !node.isBefore(firstNode),
         );
         nodes.splice(0, deleteCount);
+      }
+    }
+    if (__DEV__) {
+      if (this.isCollapsed() && nodes.length > 1) {
+        invariant(
+          false,
+          'RangeSelection.getNodes() returned %s > 1 nodes in a collapsed selection',
+          String(nodes.length),
+        );
       }
     }
     if (!isCurrentlyReadOnlyMode()) {

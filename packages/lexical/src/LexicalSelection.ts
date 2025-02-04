@@ -21,10 +21,14 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getAdjacentSiblingOrParentSiblingCaret,
+  $getCaretRangeInDirection,
+  $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isRootNode,
+  $isSiblingCaret,
   $isTextNode,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -605,6 +609,93 @@ export class RangeSelection implements BaseSelection {
     }
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
+    }
+    if (__DEV__) {
+      // To verify that we have covered every case this
+      // has both implementations of getNodes() and
+      // compares them
+      const caretNodes: LexicalNode[] = [];
+      const range = $getCaretRangeInDirection(
+        $caretRangeFromSelection(this),
+        'next',
+      );
+      const [beforeSlice, afterSlice] = range.getTextSlices();
+      if (beforeSlice) {
+        caretNodes.push(beforeSlice.caret.origin);
+      }
+      const seenAncestors = new Set<ElementNode>();
+      const seenElements = new Set<ElementNode>();
+      for (const caret of range) {
+        if ($isChildCaret(caret)) {
+          // Emulate the leading under-selection behavior of getNodes by
+          // ignoring the 'enter' of any ElementNode until we've seen a
+          // SiblingCaret
+          const {origin} = caret;
+          if (caretNodes.length === 0) {
+            seenAncestors.add(origin);
+          } else {
+            seenElements.add(origin);
+            caretNodes.push(origin);
+          }
+        } else {
+          const {origin} = caret;
+          if (!$isElementNode(origin) || !seenElements.has(origin)) {
+            caretNodes.push(origin);
+          }
+        }
+      }
+      if (afterSlice) {
+        caretNodes.push(afterSlice.caret.origin);
+      }
+      const lastIncludedIdx = caretNodes.findLastIndex(
+        (n: LexicalNode) =>
+          !$isElementNode(n) || seenElements.has(n) || seenAncestors.has(n),
+      );
+      if (lastIncludedIdx !== -1) {
+        // Emulate the trailing under-selection behavior of getNodes by
+        // discarding any trailing 'leave' of ElementNodes that we
+        // did not have an 'enter' for, but we also have to handle
+        // the case where the focus should be included as the last ancestor
+        const lastIncludedNode = caretNodes[lastIncludedIdx];
+        // A very special case where no next descendant could be found
+        // so we exclude one extra ancestor
+        let spliceIdx: number;
+        if (
+          $isElementNode(lastIncludedNode) &&
+          !lastIncludedNode.isEmpty() &&
+          range.focus.origin.is(lastIncludedNode) &&
+          $isSiblingCaret(range.focus) &&
+          $getAdjacentSiblingOrParentSiblingCaret(range.focus) === null
+        ) {
+          spliceIdx = lastIncludedIdx;
+        } else {
+          spliceIdx = lastIncludedIdx + 1;
+        }
+        caretNodes.length = spliceIdx;
+      } else if (caretNodes.length === 0 && range.isCollapsed()) {
+        // Emulate the collapsed behavior of getNodes by returning the descendant
+        const normCaret = $normalizeCaret(range.anchor);
+        const normOrAdjacent =
+          ($isChildCaret(normCaret) && normCaret.getAdjacentCaret()) ||
+          normCaret;
+        caretNodes.push(normOrAdjacent.origin);
+      }
+      const maxLength = Math.max(caretNodes.length, nodes.length);
+      for (let i = 0; i < maxLength; i++) {
+        const caretNode = caretNodes[i] || {__key: '', __type: ''};
+        const refNode = nodes[i] || {__key: '', __type: ''};
+        if (caretNode !== refNode) {
+          invariant(
+            false,
+            'getNodes(): idx %s caretNode{%s %s} !== refNode{%s %s}',
+            String(i),
+            caretNode.__type,
+            caretNode.__key,
+            refNode.__type,
+            refNode.__key,
+          );
+        }
+      }
     }
     return nodes;
   }

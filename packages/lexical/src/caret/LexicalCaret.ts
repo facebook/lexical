@@ -993,7 +993,7 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
   }
   getTextSlices(): TextPointCaretSliceTuple<D> {
     const getSlice = (k: 'anchor' | 'focus') => {
-      const caret = this[k];
+      const caret = this[k].getLatest();
       return $isTextPointCaret(caret)
         ? $getSliceFromTextPointCaret(caret, k)
         : null;
@@ -1018,8 +1018,8 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
   iterNodeCarets(rootMode: RootMode = 'root'): IterableIterator<NodeCaret<D>> {
     const anchor = $isTextPointCaret(this.anchor)
       ? this.anchor.getSiblingCaret()
-      : this.anchor;
-    const {focus} = this;
+      : this.anchor.getLatest();
+    const focus = this.focus.getLatest();
     const isTextFocus = $isTextPointCaret(focus);
     const step = (state: NodeCaret<D>) =>
       state.isSameNodeCaret(focus)

@@ -48,6 +48,7 @@ export type SerializedTableNode = Spread<
   {
     colWidths?: readonly number[];
     rowStriping?: boolean;
+    frozenFirstColumn?: boolean;
   },
   SerializedElementNode
 >;
@@ -85,6 +86,20 @@ function setRowStriping(
   } else {
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
+  }
+}
+
+function setFirstColumnFreeze(
+  dom: HTMLElement,
+  config: EditorConfig,
+  forzenFirstColumn: boolean,
+): void {
+  if (forzenFirstColumn) {
+    addClassNamesToElement(dom, config.theme.tableFrozenColumn);
+    dom.setAttribute('data-lexical-frozen-first-column', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableFrozenColumn);
+    dom.removeAttribute('data-lexical-fronzen-first-column');
   }
 }
 
@@ -137,6 +152,7 @@ export function setScrollableTablesActive(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
+  __frozenFirstColumn: boolean;
   __colWidths?: readonly number[];
 
   static getType(): string {
@@ -164,6 +180,7 @@ export class TableNode extends ElementNode {
     super.afterCloneFrom(prevNode);
     this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
+    this.__frozenFirstColumn = prevNode.__frozenFirstColumn;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -183,12 +200,14 @@ export class TableNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setRowStriping(serializedNode.rowStriping || false)
+      .setFirstColumnFreeze(serializedNode.frozenFirstColumn || false)
       .setColWidths(serializedNode.colWidths);
   }
 
   constructor(key?: NodeKey) {
     super(key);
     this.__rowStriping = false;
+    this.__frozenFirstColumn = false;
   }
 
   exportJSON(): SerializedTableNode {
@@ -234,6 +253,9 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(tableElement, config.theme.table);
     alignTableElement(tableElement, config, this.getFormatType());
+    if (this.__frozenFirstColumn) {
+      setFirstColumnFreeze(tableElement, config, true);
+    }
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
@@ -255,6 +277,9 @@ export class TableNode extends ElementNode {
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__rowStriping !== this.__rowStriping) {
       setRowStriping(dom, config, this.__rowStriping);
+    }
+    if (prevNode.__frozenFirstColumn !== this.__frozenFirstColumn) {
+      setFirstColumnFreeze(dom, config, this.__frozenFirstColumn);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
     alignTableElement(
@@ -470,6 +495,16 @@ export class TableNode extends ElementNode {
     const self = this.getWritable();
     self.__rowStriping = newRowStriping;
     return self;
+  }
+
+  setFirstColumnFreeze(newValue: boolean): this {
+    const self = this.getWritable();
+    self.__frozenFirstColumn = newValue;
+    return self;
+  }
+
+  getFirstColumnFreeze(): boolean {
+    return Boolean(this.getLatest().__frozenFirstColumn);
   }
 
   canSelectBefore(): true {

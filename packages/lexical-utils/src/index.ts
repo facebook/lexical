@@ -185,6 +185,21 @@ export function $dfs(
   return Array.from($dfsIterator(startNode, endNode));
 }
 
+/**
+ * A function which will return exactly the reversed order of $dfs. That means that the tree is traversed
+ * from right to left, starting at the leaf and working towards the root.
+ * @param startNode - The node to start the search. If omitted, it will start at the last leaf node in the tree.
+ * @param endNode - The node to end the search. If omitted, it will work backwards all the way to the root node
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
+ */
+export function $reverseDfs(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode> {
+  return Array.from($reverseDfsIterator(startNode, endNode));
+}
+
 type DFSIterator = {
   next: () => IteratorResult<DFSNode, void>;
   [Symbol.iterator]: () => DFSIterator;
@@ -199,7 +214,7 @@ const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
 ) => ({done: false, value});
 
 /**
- * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
  * @param startNode - The node to start the search, if omitted, it will start at the root node.
  * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
@@ -285,6 +300,39 @@ export function $getNextSiblingOrParentSibling(
   return [node_, depthDiff];
 }
 
+/**
+ * Returns the Node's previous sibling when this exists, otherwise the closest parent previous sibling. For example
+ * R -> P -> T1, T2
+ *   -> P2
+ * returns T1 for node T2, P for node P2, and null for node P
+ * @param node LexicalNode.
+ * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
+function $getPreviousSiblingOrParentSibling(
+  node: LexicalNode,
+): null | [LexicalNode, number] {
+  let node_: null | LexicalNode = node;
+  // Find immediate sibling or nearest parent sibling
+  let sibling = null;
+  let depthDiff = 0;
+
+  while (sibling === null && node_ !== null) {
+    sibling = node_.getPreviousSibling();
+
+    if (sibling === null) {
+      node_ = node_.getParent();
+      depthDiff--;
+    } else {
+      node_ = sibling;
+    }
+  }
+
+  if (node_ === null) {
+    return null;
+  }
+  return [node_, depthDiff];
+}
+
 export function $getDepth(node: LexicalNode): number {
   let innerNode: LexicalNode | null = node;
   let depth = 0;
@@ -325,6 +373,63 @@ export function $getNextRightPreorderNode(
     }
   }
   return node;
+}
+
+/**
+ * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator {
+  const start = (startNode || $getRoot()).getLatest();
+  const startDepth = $getDepth(start);
+  const end = endNode;
+  let node: null | LexicalNode = start;
+  let depth = startDepth;
+  let isFirstNext = true;
+
+  const iterator: DFSIterator = {
+    next(): IteratorResult<DFSNode, void> {
+      if (node === null) {
+        return iteratorDone;
+      }
+      if (isFirstNext) {
+        isFirstNext = false;
+        return iteratorNotDone({depth, node});
+      }
+      if (node === end) {
+        return iteratorDone;
+      }
+
+      if ($isElementNode(node) && node.getChildrenSize() > 0) {
+        node = node.getLastChild();
+        depth++;
+      } else {
+        let depthDiff;
+        [node, depthDiff] = $getPreviousSiblingOrParentSibling(node) || [
+          null,
+          0,
+        ];
+        depth += depthDiff;
+        if (end == null && depth <= startDepth) {
+          node = null;
+        }
+      }
+
+      if (node === null) {
+        return iteratorDone;
+      }
+      return iteratorNotDone({depth, node});
+    },
+    [Symbol.iterator](): DFSIterator {
+      return iterator;
+    },
+  };
+  return iterator;
 }
 
 /**

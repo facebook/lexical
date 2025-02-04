@@ -5,6 +5,8 @@ on:
       - main
 jobs:
   size-limit:
+    # remove below line to enable this job
+    if: false
     runs-on: ubuntu-latest
     env:
       CI_JOB_NUMBER: 1

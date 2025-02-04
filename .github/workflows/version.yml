@@ -20,4 +20,4 @@ jobs:
       channel: ${{ inputs.increment == 'prerelease' && 'next' || 'latest' }}
       git-repo: 'git@github.com:facebook/lexical.git'
     secrets:
-      SSH_KEY: ${{ secrets.SSH_KEY_2 }}
+      SSH_KEY_2: ${{ secrets.SSH_KEY_2 }}

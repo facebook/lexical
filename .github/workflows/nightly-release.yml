@@ -14,7 +14,7 @@ jobs:
       dry-run: false
       git-repo: 'git@github.com:facebook/lexical.git'
     secrets:
-      SSH_KEY: ${{ secrets.SSH_KEY_2 }}
+      SSH_KEY_2: ${{ secrets.SSH_KEY_2 }}
   npm-release:
     uses: ./.github/workflows/call-npm-publish.yml
     needs: [increment-version]

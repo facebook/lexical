@@ -104,11 +104,11 @@ describe('LexicalMarkNode tests', () => {
             $getRoot().getFirstChildOrThrow<ParagraphNode>();
           paragraphNode.append(decoratorNode, textNode);
           const selection = $createRangeSelection();
-          selection.anchor.set(paragraphNode.getKey(), 0, 'text');
+          selection.anchor.set(paragraphNode.getKey(), 0, 'element');
           selection.focus.set(
             paragraphNode.getKey(),
-            paragraphNode.getTextContent().length,
-            'text',
+            paragraphNode.getChildrenSize(),
+            'element',
           );
           $wrapSelectionInMarkNode(selection, false, 'my-id');
 
@@ -132,11 +132,11 @@ describe('LexicalMarkNode tests', () => {
             $getRoot().getFirstChildOrThrow<ParagraphNode>();
           paragraphNode.append(elementNode, textNode);
           const selection = $createRangeSelection();
-          selection.anchor.set(paragraphNode.getKey(), 0, 'text');
+          selection.anchor.set(paragraphNode.getKey(), 0, 'element');
           selection.focus.set(
             paragraphNode.getKey(),
-            paragraphNode.getTextContent().length,
-            'text',
+            paragraphNode.getChildrenSize(),
+            'element',
           );
           $wrapSelectionInMarkNode(selection, false, 'my-id');
 
@@ -160,11 +160,11 @@ describe('LexicalMarkNode tests', () => {
             $getRoot().getFirstChildOrThrow<ParagraphNode>();
           paragraphNode.append(elementNode, textNode);
           const selection = $createRangeSelection();
-          selection.anchor.set(paragraphNode.getKey(), 0, 'text');
+          selection.anchor.set(paragraphNode.getKey(), 0, 'element');
           selection.focus.set(
             paragraphNode.getKey(),
-            paragraphNode.getTextContent().length,
-            'text',
+            paragraphNode.getChildrenSize(),
+            'element',
           );
           $wrapSelectionInMarkNode(selection, false, 'my-id');
 

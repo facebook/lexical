@@ -647,32 +647,32 @@ export class RangeSelection implements BaseSelection {
       if (afterSlice) {
         caretNodes.push(afterSlice.caret.origin);
       }
-      const lastIncludedIdx = caretNodes.findLastIndex(
-        (n: LexicalNode) =>
-          !$isElementNode(n) || seenElements.has(n) || seenAncestors.has(n),
-      );
-      if (lastIncludedIdx !== -1) {
-        // Emulate the trailing under-selection behavior of getNodes by
-        // discarding any trailing 'leave' of ElementNodes that we
-        // did not have an 'enter' for, but we also have to handle
-        // the case where the focus should be included as the last ancestor
-        const lastIncludedNode = caretNodes[lastIncludedIdx];
-        // A very special case where no next descendant could be found
-        // so we exclude one extra ancestor
-        let spliceIdx: number;
-        if (
-          $isElementNode(lastIncludedNode) &&
-          !lastIncludedNode.isEmpty() &&
-          range.focus.origin.is(lastIncludedNode) &&
-          $isSiblingCaret(range.focus) &&
-          $getAdjacentSiblingOrParentSiblingCaret(range.focus) === null
-        ) {
-          spliceIdx = lastIncludedIdx;
-        } else {
-          spliceIdx = lastIncludedIdx + 1;
+      while (caretNodes.length > 0) {
+        const lastIncludedNode = caretNodes[caretNodes.length - 1];
+        if ($isElementNode(lastIncludedNode)) {
+          if (
+            seenElements.has(lastIncludedNode) ||
+            seenAncestors.has(lastIncludedNode)
+          ) {
+            // A very special case where no next descendant could be found
+            // so we exclude one extra ancestor
+            if (
+              !lastIncludedNode.isEmpty() &&
+              range.focus.origin.is(lastIncludedNode) &&
+              $isSiblingCaret(range.focus) &&
+              $getAdjacentSiblingOrParentSiblingCaret(range.focus) === null
+            ) {
+              caretNodes.pop();
+            }
+            // fall through to break
+          } else {
+            caretNodes.pop();
+            continue;
+          }
         }
-        caretNodes.length = spliceIdx;
-      } else if (caretNodes.length === 0 && range.isCollapsed()) {
+        break;
+      }
+      if (caretNodes.length === 0 && range.isCollapsed()) {
         // Emulate the collapsed behavior of getNodes by returning the descendant
         const normCaret = $normalizeCaret(range.anchor);
         const normOrAdjacent =

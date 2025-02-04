@@ -489,6 +489,10 @@ i.tweet {
   background-image: url(images/icons/tweet.svg);
 }
 
+i.x {
+  background-image: url(images/icons/x.svg);
+}
+
 i.youtube {
   background-image: url(images/icons/youtube.svg);
 }

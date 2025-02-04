@@ -106,8 +106,7 @@
     "update-packages": "npm run update-version && npm run update-tsconfig && npm run update-flowconfig && npm run create-docs && npm run create-www-stubs",
     "postversion": "node ./scripts/npm/postversion",
     "publish-extension": "npm run zip -w @lexical/devtools && npm run publish -w @lexical/devtools",
-    "release": "npm run prepare-release && node ./scripts/npm/release.js",
-    "size": "npm run build-prod && size-limit"
+    "release": "npm run prepare-release && node ./scripts/npm/release.js"
   },
   "devDependencies": {
     "@babel/core": "^7.24.5",
@@ -125,7 +124,6 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-terser": "^0.4.4",
-    "@size-limit/preset-big-lib": "^11.1.2",
     "@types/child-process-promise": "^2.2.6",
     "@types/jest": "^29.5.12",
     "@types/jsdom": "^21.1.6",
@@ -181,7 +179,6 @@
     "proper-lockfile": "^4.1.2",
     "react-test-renderer": "^17.0.2",
     "rollup": "^4.22.4",
-    "size-limit": "^11.1.2",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.1",

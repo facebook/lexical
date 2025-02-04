@@ -342,3 +342,61 @@ concurrently with mutations due to the problems with `PointType`.
 NodeCaret was born out of frustration with these APIs and a desire
 to unify it all in a coherent way to simplify and reduce errors in
 the core.
+
+## Terminology
+
+### Caret
+
+The term Caret was chosen because it is concise and specific term
+specific to a point in a text document. Lexical is "an extensible text editor
+framework" so it makes sense that navigation in the document would use
+terms relevant to text. Most other terms such as Cursor or Point
+already have meanings in Lexical and/or are less specific.
+
+See also:
+- [Caret](https://developer.mozilla.org/en-US/docs/Glossary/Caret)
+- [Caret navigation](https://en.wikipedia.org/wiki/Caret_navigation)
+
+### Origin
+
+The origin is the reference node for a NodeCaret. Absolute coordinates
+are determined by combining this origin node and an "arrow" that points
+towards to where the adjacent node is (or could be). The "arrow" is
+determined by the `direction` and `type` of the caret.
+
+In a way this "arrow" is considered to be something like a unit vector
+to indicate the direction, and adding it to an origin allows you to specify
+an absolute location relative to that origin. Unlike the other coordinate
+systems available in Lexical, it does not need recomputing whenever
+siblings or a parent changes, so long as the origin node is still attached.
+
+See also:
+- [Origin](https://en.wikipedia.org/wiki/Origin_(mathematics))
+- [Unit Vector](https://en.wikipedia.org/wiki/Unit_vector)
+
+### ChildCaret / SiblingCaret
+
+These were chosen because they match the existing methods on `ElementNode`
+and `LexicalNode` (`getFirstChild`, `getNextSibling`, etc.)
+
+### Direction
+
+`'next'` and `'previous'` were chosen for direction mostly to match the
+existing methods such as `getNextSibling()` that exist in DOM and in Lexical.
+Using other words such as `'left'` and `'right'` would be ambiguous since
+text direction can be bidirectional and already uses the terms left-to-right
+and right-to-left.
+
+### Distance
+
+The property name `distance` was chosen for `TextPointCaretSlice` because
+`length` and `size` are commonly used on other data structures in JavaScript
+and Lexical, and they are overwhelmingly non-negative. While most uses of
+`distance` are also non-negative, in some contexts such as computer graphics
+it is not uncommon to use
+[Signed distance functions](https://en.wikipedia.org/wiki/Signed_distance_function)
+where the distance metric is signed.
+
+In SDF terms, the subset of the space is `\[offset, ∞)`. Any coordinate less
+than the `offset` boundary is a negative distance; otherise the distance is
+non-negative.

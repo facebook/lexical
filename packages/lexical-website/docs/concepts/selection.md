@@ -44,7 +44,7 @@ TableSelection represents a grid-like selection like tables. It stores the key o
 
 - `tableKey` representing the parent node key where the selection takes place
 - `anchor` representing a `TableSelection` point
-- `focus` reprensenting a `TableSelection` point
+- `focus` representing a `TableSelection` point
 
 For example, a table where you select row = 1 col = 1 to row 2 col = 2 could be stored as follows:
 - `tableKey = 2` table key

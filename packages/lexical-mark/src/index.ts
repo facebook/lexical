@@ -9,7 +9,7 @@
 import type {SerializedMarkNode} from './MarkNode';
 import type {LexicalNode, RangeSelection, TextNode} from 'lexical';
 
-import {$isElementNode, $isTextNode} from 'lexical';
+import {$isDecoratorNode, $isElementNode, $isTextNode} from 'lexical';
 
 import {$createMarkNode, $isMarkNode, MarkNode} from './MarkNode';
 
@@ -84,9 +84,12 @@ export function $wrapSelectionInMarkNode(
       // codebase.
 
       continue;
-    } else if ($isElementNode(node) && node.isInline()) {
-      // Case 3: inline element nodes can be added in their entirety to the new
-      // mark
+    } else if (
+      ($isElementNode(node) || $isDecoratorNode(node)) &&
+      node.isInline()
+    ) {
+      // Case 3: inline element/decorator nodes can be added in their entirety
+      // to the new mark
       targetNode = node;
     }
 

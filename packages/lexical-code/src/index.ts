@@ -6,14 +6,22 @@
  *
  */
 
+import {$getEndOfCodeInLine, $getStartOfCodeInLine} from './CodeHighlighter';
+import {
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+} from './CodeHighlightNode';
+
 export {
-  getEndOfCodeInLine,
-  getStartOfCodeInLine,
+  $getEndOfCodeInLine,
+  $getStartOfCodeInLine,
   PrismTokenizer,
   registerCodeHighlighting,
 } from './CodeHighlighter';
 export {
   $createCodeHighlightNode,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
   $isCodeHighlightNode,
   CODE_LANGUAGE_FRIENDLY_NAME_MAP,
   CODE_LANGUAGE_MAP,
@@ -21,10 +29,17 @@ export {
   DEFAULT_CODE_LANGUAGE,
   getCodeLanguages,
   getDefaultCodeLanguage,
-  getFirstCodeNodeOfLine,
   getLanguageFriendlyName,
-  getLastCodeNodeOfLine,
   normalizeCodeLang,
 } from './CodeHighlightNode';
 export type {SerializedCodeNode} from './CodeNode';
 export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';
+
+/** @deprecated renamed to {@link $getFirstCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
+export const getFirstCodeNodeOfLine = $getFirstCodeNodeOfLine;
+/** @deprecated renamed to {@link $getLastCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
+export const getLastCodeNodeOfLine = $getLastCodeNodeOfLine;
+/** @deprecated renamed to {@link $getEndOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
+export const getEndOfCodeInLine = $getEndOfCodeInLine;
+/** @deprecated renamed to {@link $getStartOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
+export const getStartOfCodeInLine = $getStartOfCodeInLine;

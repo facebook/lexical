@@ -37,8 +37,8 @@ import {
 import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
+  $getFirstCodeNodeOfLine,
   $isCodeHighlightNode,
-  getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
 
 export type SerializedCodeNode = Spread<
@@ -259,7 +259,8 @@ export class CodeNode extends ElementNode {
     const firstPoint = anchor.isBefore(focus) ? anchor : focus;
     const firstSelectionNode = firstPoint.getNode();
     if ($isTextNode(firstSelectionNode)) {
-      let node = getFirstCodeNodeOfLine(firstSelectionNode);
+      let node: null | LexicalNode =
+        $getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
       // eslint-disable-next-line no-constant-condition
       while (true) {

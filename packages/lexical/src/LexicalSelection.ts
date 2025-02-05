@@ -20,8 +20,9 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
-  $getAdjacentSiblingOrParentSiblingCaret,
+  $getAdjacentChildCaret,
   $getCaretRangeInDirection,
+  $getChildCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -34,6 +35,7 @@ import {
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
+  NodeCaret,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
@@ -646,23 +648,34 @@ export class RangeSelection implements BaseSelection {
       if (afterSlice) {
         caretNodes.push(afterSlice.caret.origin);
       }
-      while (caretNodes.length > 0) {
+      // Emulate the trailing underselection behavior when the last offset of
+      // an element is selected
+      if (
+        $isSiblingCaret(range.focus) &&
+        $isElementNode(range.focus.origin) &&
+        range.focus.getNodeAtCaret() === null
+      ) {
+        for (
+          let reverseCaret: null | NodeCaret<'previous'> = $getChildCaret(
+            range.focus.origin,
+            'previous',
+          );
+          reverseCaret &&
+          $isChildCaret(reverseCaret) &&
+          seenAncestors.has(reverseCaret.origin);
+          reverseCaret = $getAdjacentChildCaret(reverseCaret)
+        ) {
+          seenAncestors.delete(reverseCaret.origin);
+        }
+      }
+      while (caretNodes.length > 1) {
         const lastIncludedNode = caretNodes[caretNodes.length - 1];
         if ($isElementNode(lastIncludedNode)) {
           if (
             seenElements.has(lastIncludedNode) ||
+            lastIncludedNode.isEmpty() ||
             seenAncestors.has(lastIncludedNode)
           ) {
-            // A very special case where no next descendant could be found
-            // so we exclude one extra ancestor
-            if (
-              !lastIncludedNode.isEmpty() &&
-              range.focus.origin.is(lastIncludedNode) &&
-              $isSiblingCaret(range.focus) &&
-              $getAdjacentSiblingOrParentSiblingCaret(range.focus) === null
-            ) {
-              caretNodes.pop();
-            }
             // fall through to break
           } else {
             caretNodes.pop();

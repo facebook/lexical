@@ -45,11 +45,11 @@ import invariant from 'shared/invariant';
 import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
   $isCodeHighlightNode,
   CodeHighlightNode,
   DEFAULT_CODE_LANGUAGE,
-  getFirstCodeNodeOfLine,
-  getLastCodeNodeOfLine,
 } from './CodeHighlightNode';
 import {$isCodeNode, CodeNode} from './CodeNode';
 
@@ -75,7 +75,7 @@ export const PrismTokenizer: Tokenizer = {
   },
 };
 
-export function getStartOfCodeInLine(
+export function $getStartOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
   offset: number,
 ): null | {
@@ -188,10 +188,10 @@ function findNextNonBlankInLine(
   }
 }
 
-export function getEndOfCodeInLine(
+export function $getEndOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
 ): CodeHighlightNode | TabNode {
-  const lastNode = getLastCodeNodeOfLine(anchor);
+  const lastNode = $getLastCodeNodeOfLine(anchor);
   invariant(
     !$isLineBreakNode(lastNode),
     'Unexpected lineBreakNode in getEndOfCodeInLine',
@@ -535,8 +535,8 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
   if ($isCodeNode(firstNode)) {
     return indentOrOutdent;
   }
-  const firstOfLine = getFirstCodeNodeOfLine(firstNode);
-  const lastOfLine = getLastCodeNodeOfLine(firstNode);
+  const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
+  const lastOfLine = $getLastCodeNodeOfLine(firstNode);
   const anchor = selection.anchor;
   const focus = selection.focus;
   let selectionFirst;
@@ -578,7 +578,7 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
           line[0];
         // First and last lines might not be complete
         if (i === 0) {
-          firstOfLine = getFirstCodeNodeOfLine(firstOfLine);
+          firstOfLine = $getFirstCodeNodeOfLine(firstOfLine);
         }
         if (firstOfLine !== null) {
           if (type === INDENT_CONTENT_COMMAND) {
@@ -608,11 +608,7 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
     }
     return true;
   }
-  const firstOfLine = getFirstCodeNodeOfLine(firstNode);
-  invariant(
-    firstOfLine !== null,
-    'Expected getFirstCodeNodeOfLine to return a valid Code Node',
-  );
+  const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
   if (type === INDENT_CONTENT_COMMAND) {
     if ($isLineBreakNode(firstOfLine)) {
       firstOfLine.insertAfter($createTabNode());
@@ -687,11 +683,11 @@ function $handleShiftLines(
   let start;
   let end;
   if (anchorNode.isBefore(focusNode)) {
-    start = getFirstCodeNodeOfLine(anchorNode);
-    end = getLastCodeNodeOfLine(focusNode);
+    start = $getFirstCodeNodeOfLine(anchorNode);
+    end = $getLastCodeNodeOfLine(focusNode);
   } else {
-    start = getFirstCodeNodeOfLine(focusNode);
-    end = getLastCodeNodeOfLine(anchorNode);
+    start = $getFirstCodeNodeOfLine(focusNode);
+    end = $getLastCodeNodeOfLine(anchorNode);
   }
   if (start == null || end == null) {
     return false;
@@ -733,8 +729,8 @@ function $handleShiftLines(
     $isTabNode(sibling) ||
     $isLineBreakNode(sibling)
       ? arrowIsUp
-        ? getFirstCodeNodeOfLine(sibling)
-        : getLastCodeNodeOfLine(sibling)
+        ? $getFirstCodeNodeOfLine(sibling)
+        : $getLastCodeNodeOfLine(sibling)
       : null;
   let insertionPoint =
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
@@ -781,7 +777,7 @@ function $handleMoveTo(
   }
 
   if (isMoveToStart) {
-    const start = getStartOfCodeInLine(focusNode, focus.offset);
+    const start = $getStartOfCodeInLine(focusNode, focus.offset);
     if (start !== null) {
       const {node, offset} = start;
       if ($isLineBreakNode(node)) {
@@ -793,7 +789,7 @@ function $handleMoveTo(
       focusNode.getParentOrThrow().selectStart();
     }
   } else {
-    const node = getEndOfCodeInLine(focusNode);
+    const node = $getEndOfCodeInLine(focusNode);
     node.select();
   }
 

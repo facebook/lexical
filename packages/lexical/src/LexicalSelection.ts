@@ -184,6 +184,16 @@ export class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
+    if (__DEV__) {
+      const node = $getNodeByKey(key);
+      invariant(
+        type === 'text' ? $isTextNode(node) : $isElementNode(node),
+        'PointType.set: node with key %s is %s and can not be used for a %s point',
+        key,
+        node ? node.__type : '[not found]',
+        type,
+      );
+    }
     if (!isCurrentlyReadOnlyMode()) {
       if ($getCompositionKey() === oldKey) {
         $setCompositionKey(key);

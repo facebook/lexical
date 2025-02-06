@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {IS_ANDROID_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -2915,6 +2916,18 @@ export function updateDOMSelection(
       nextFocusNode,
       nextFocusOffset,
     );
+    // When deleting text across multiple paragraphs, Chrome on Android shifts selection rightwards
+    // This is a workaround to restore the correct selection
+    if (IS_ANDROID_CHROME) {
+      setTimeout(() => {
+        domSelection.setBaseAndExtent(
+          nextAnchorNode,
+          nextAnchorOffset,
+          nextFocusNode,
+          nextFocusOffset,
+        );
+      });
+    }
   } catch (error) {
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it

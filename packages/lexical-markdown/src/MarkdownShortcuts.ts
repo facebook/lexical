@@ -28,6 +28,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {TRANSFORMERS} from '.';
+import {canContainTransformableMarkdown} from './importTextTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(
@@ -505,8 +506,7 @@ export function registerMarkdownShortcuts(
       }
 
       editor.update(() => {
-        // Markdown is not available inside code
-        if (anchorNode.hasFormat('code')) {
+        if (!canContainTransformableMarkdown(anchorNode)) {
           return;
         }
 

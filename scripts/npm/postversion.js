@@ -12,7 +12,7 @@
 
 const {spawn} = require('child-process-promise');
 
-const {npm_package_version, CHANNEL, GIT_REPO, GITHUB_OUTPUT} = process.env;
+const {npm_package_version, CHANNEL, GITHUB_OUTPUT} = process.env;
 
 // Previously this script was defined directly in package.json as the
 // following (in one line):
@@ -31,7 +31,6 @@ async function main() {
   // CHANNEL should already be validated by increment-version which calls this (indirectly)
   for (const [k, v] of Object.entries({
     CHANNEL,
-    GIT_REPO,
     npm_package_version,
   })) {
     if (!v) {
@@ -57,6 +56,7 @@ async function main() {
     [
       'git',
       'tag',
+      '-f',
       '-a',
       `v${npm_package_version}`,
       '-m',
@@ -77,7 +77,7 @@ async function main() {
     'git',
     'push',
     ...(process.env.DRY_RUN === '1' ? ['--dry-run'] : []),
-    GIT_REPO,
+    'origin',
     ...refs.map((ref) => `+${ref}`),
   ]);
   if (GITHUB_OUTPUT) {

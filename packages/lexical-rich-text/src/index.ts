@@ -44,6 +44,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
@@ -565,13 +566,25 @@ export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if ($isNodeSelection(selection)) {
-          selection.clear();
-          return true;
+      (event) => {
+        if (!(event.target instanceof Element)) {
+          return false;
         }
-        return false;
+        const decorator = event.target.closest(
+          '[data-lexical-decorator="true"]',
+        );
+        if (!decorator) {
+          return false;
+        }
+        editor.update(() => {
+          const node = $getNearestNodeFromDOMNode(decorator);
+          if ($isDecoratorNode(node)) {
+            const selection = $createNodeSelection();
+            selection.add(node.getKey());
+            $setSelection(selection);
+          }
+        });
+        return true;
       },
       0,
     ),

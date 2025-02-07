@@ -16,15 +16,27 @@ import {IS_ANDROID_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
+  $caretFromPoint,
+  $caretRangeFromSelection,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getAdjacentChildCaret,
+  $getCaretRangeInDirection,
+  $getChildCaret,
+  $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isRootNode,
+  $isSiblingCaret,
   $isTextNode,
+  $normalizeCaret,
+  $removeTextFromCaretRange,
+  $setPointFromCaret,
   $setSelection,
+  $updateRangeSelectionFromCaretRange,
+  NodeCaret,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
@@ -504,46 +516,83 @@ export class RangeSelection implements BaseSelection {
     const isBefore = anchor.isBefore(focus);
     const firstPoint = isBefore ? anchor : focus;
     const lastPoint = isBefore ? focus : anchor;
-    let firstNode = firstPoint.getNode();
-    let lastNode = lastPoint.getNode();
-    const overselectedFirstNode =
-      $isElementNode(firstNode) &&
-      firstPoint.offset > 0 &&
-      firstPoint.offset >= firstNode.getChildrenSize();
-    const startOffset = firstPoint.offset;
-    const endOffset = lastPoint.offset;
+    const firstPointNode = firstPoint.getNode();
+    const lastPointNode = lastPoint.getNode();
+    let firstNode: LexicalNode = firstPointNode;
+    let lastNode: LexicalNode = lastPointNode;
+    let overselectedFirstNode = false;
+    const overselectedLastNodes = new Set<NodeKey>();
 
-    if ($isElementNode(firstNode)) {
-      const firstNodeDescendant =
-        firstNode.getDescendantByIndex<ElementNode>(startOffset);
-      firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
+    if ($isElementNode(firstPointNode)) {
+      overselectedFirstNode =
+        firstPoint.offset > 0 &&
+        firstPoint.offset >= firstPointNode.getChildrenSize();
+      firstNode =
+        firstPointNode.getDescendantByIndex(firstPoint.offset) ||
+        firstPointNode;
     }
-    if ($isElementNode(lastNode)) {
-      let lastNodeDescendant =
-        lastNode.getDescendantByIndex<ElementNode>(endOffset);
-      // We don't want to over-select, as node selection infers the child before
-      // the last descendant, not including that descendant.
-      if (
-        lastNodeDescendant !== null &&
-        lastNodeDescendant !== firstNode &&
-        lastNode.getChildAtIndex(endOffset) === lastNodeDescendant
-      ) {
-        lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
+    if ($isElementNode(lastPointNode)) {
+      const lastPointChild = lastPointNode.getChildAtIndex(lastPoint.offset);
+      if (lastPointChild) {
+        overselectedLastNodes.add(lastPointChild.getKey());
+        lastNode =
+          ($isElementNode(lastPointChild) &&
+            lastPointChild.getFirstDescendant()) ||
+          lastPointChild;
+        for (
+          let overselected: LexicalNode | null = lastNode;
+          overselected && !overselected.is(lastPointChild);
+          overselected = overselected.getParent()
+        ) {
+          overselectedLastNodes.add(overselected.getKey());
+        }
+      } else {
+        const beforeChild =
+          lastPoint.offset > 0 &&
+          lastPointNode.getChildAtIndex(lastPoint.offset - 1);
+        if (beforeChild) {
+          // This case is not an overselection
+          lastNode =
+            ($isElementNode(beforeChild) && beforeChild.getLastDescendant()) ||
+            beforeChild;
+        } else {
+          // It's the last node and we have to find something at or after lastNode
+          // and mark all of the ancestors inbetween as overselected
+          let parent = lastPointNode.getParent();
+          for (; parent !== null; parent = parent.getParent()) {
+            overselectedLastNodes.add(parent.getKey());
+            const parentSibling = parent.getNextSibling();
+            if (parentSibling) {
+              lastNode = parentSibling;
+              break;
+            }
+          }
+          if (!(lastPointNode.isEmpty() && lastPointNode.is(lastNode))) {
+            overselectedLastNodes.add(lastNode.getKey());
+          }
+        }
       }
-      lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
 
     let nodes: Array<LexicalNode>;
 
-    if (firstNode.is(lastNode)) {
+    if (firstNode.is(lastNode) || this.isCollapsed()) {
       if ($isElementNode(firstNode) && firstNode.getChildrenSize() > 0) {
         nodes = [];
       } else {
         nodes = [firstNode];
       }
     } else {
-      nodes = firstNode.getNodesBetween(lastNode);
       // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
+      nodes = firstNode.getNodesBetween(lastNode);
+      if (overselectedLastNodes.size > 0) {
+        while (
+          nodes.length > 0 &&
+          overselectedLastNodes.has(nodes[nodes.length - 1].getKey())
+        ) {
+          nodes.pop();
+        }
+      }
       if (overselectedFirstNode) {
         const deleteCount = nodes.findIndex(
           (node) => !node.is(firstNode) && !node.isBefore(firstNode),
@@ -551,8 +600,115 @@ export class RangeSelection implements BaseSelection {
         nodes.splice(0, deleteCount);
       }
     }
+    if (__DEV__) {
+      if (this.isCollapsed() && nodes.length > 1) {
+        invariant(
+          false,
+          'RangeSelection.getNodes() returned %s > 1 nodes in a collapsed selection',
+          String(nodes.length),
+        );
+      }
+    }
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
+    }
+    if (__DEV__) {
+      // To verify that we have covered every case this
+      // has both implementations of getNodes() and
+      // compares them
+      const caretNodes: LexicalNode[] = [];
+      const range = $getCaretRangeInDirection(
+        $caretRangeFromSelection(this),
+        'next',
+      );
+      const [beforeSlice, afterSlice] = range.getTextSlices();
+      if (beforeSlice) {
+        caretNodes.push(beforeSlice.caret.origin);
+      }
+      const seenAncestors = new Set<ElementNode>();
+      const seenElements = new Set<ElementNode>();
+      for (const caret of range) {
+        if ($isChildCaret(caret)) {
+          // Emulate the leading under-selection behavior of getNodes by
+          // ignoring the 'enter' of any ElementNode until we've seen a
+          // SiblingCaret
+          const {origin} = caret;
+          if (caretNodes.length === 0) {
+            seenAncestors.add(origin);
+          } else {
+            seenElements.add(origin);
+            caretNodes.push(origin);
+          }
+        } else {
+          const {origin} = caret;
+          if (!$isElementNode(origin) || !seenElements.has(origin)) {
+            caretNodes.push(origin);
+          }
+        }
+      }
+      if (afterSlice) {
+        caretNodes.push(afterSlice.caret.origin);
+      }
+      // Emulate the trailing underselection behavior when the last offset of
+      // an element is selected
+      if (
+        $isSiblingCaret(range.focus) &&
+        $isElementNode(range.focus.origin) &&
+        range.focus.getNodeAtCaret() === null
+      ) {
+        for (
+          let reverseCaret: null | NodeCaret<'previous'> = $getChildCaret(
+            range.focus.origin,
+            'previous',
+          );
+          reverseCaret &&
+          $isChildCaret(reverseCaret) &&
+          seenAncestors.has(reverseCaret.origin);
+          reverseCaret = $getAdjacentChildCaret(reverseCaret)
+        ) {
+          seenAncestors.delete(reverseCaret.origin);
+        }
+      }
+      while (caretNodes.length > 1) {
+        const lastIncludedNode = caretNodes[caretNodes.length - 1];
+        if ($isElementNode(lastIncludedNode)) {
+          if (
+            seenElements.has(lastIncludedNode) ||
+            lastIncludedNode.isEmpty() ||
+            seenAncestors.has(lastIncludedNode)
+          ) {
+            // fall through to break
+          } else {
+            caretNodes.pop();
+            continue;
+          }
+        }
+        break;
+      }
+      if (caretNodes.length === 0 && range.isCollapsed()) {
+        // Emulate the collapsed behavior of getNodes by returning the descendant
+        const normCaret = $normalizeCaret(range.anchor);
+        const normOrAdjacent =
+          ($isChildCaret(normCaret) && normCaret.getAdjacentCaret()) ||
+          normCaret;
+        caretNodes.push(normOrAdjacent.origin);
+      }
+      const maxLength = Math.max(caretNodes.length, nodes.length);
+      for (let i = 0; i < maxLength; i++) {
+        const caretNode = caretNodes[i] || {__key: '', __type: ''};
+        const refNode = nodes[i] || {__key: '', __type: ''};
+        if (caretNode !== refNode) {
+          invariant(
+            false,
+            'getNodes(): idx %s caretNode{%s %s} !== refNode{%s %s}',
+            String(i),
+            caretNode.__type,
+            caretNode.__key,
+            refNode.__type,
+            refNode.__key,
+          );
+        }
+      }
     }
     return nodes;
   }
@@ -815,6 +971,12 @@ export class RangeSelection implements BaseSelection {
         endPoint,
         format,
         style,
+      );
+    }
+    if (endPoint.type === 'element') {
+      $setPointFromCaret(
+        endPoint,
+        $normalizeCaret($caretFromPoint(endPoint, 'next')),
       );
     }
     const startOffset = firstPoint.offset;
@@ -1145,77 +1307,11 @@ export class RangeSelection implements BaseSelection {
    * Removes the text in the Selection, adjusting the EditorState accordingly.
    */
   removeText(): void {
-    if (this.isCollapsed()) {
-      return;
-    }
-    const {anchor, focus} = this;
-    const selectedNodes = this.getNodes();
-    const firstPoint = this.isBackward() ? focus : anchor;
-    const lastPoint = this.isBackward() ? anchor : focus;
-    let firstNode = firstPoint.getNode();
-    let lastNode = lastPoint.getNode();
-    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
-    const lastBlock = $getAncestor(lastNode, INTERNAL_$isBlock);
-    // If a token is partially selected then move the selection to cover the whole selection
-    if (
-      $isTextNode(firstNode) &&
-      firstNode.isToken() &&
-      firstPoint.offset < firstNode.getTextContentSize()
-    ) {
-      firstPoint.set(firstNode.getKey(), 0, 'text');
-    }
-    if (lastPoint.offset > 0 && $isTextNode(lastNode) && lastNode.isToken()) {
-      lastPoint.set(lastNode.getKey(), lastNode.getTextContentSize(), 'text');
-    }
-
-    for (const node of selectedNodes) {
-      if (
-        !$hasAncestor(firstNode, node) &&
-        !$hasAncestor(lastNode, node) &&
-        node.getKey() !== firstNode.getKey() &&
-        node.getKey() !== lastNode.getKey()
-      ) {
-        node.remove();
-      }
-    }
-
-    const fixText = (node: TextNode, del: number) => {
-      if (node.getTextContent() === '') {
-        node.remove();
-      } else if (del !== 0 && $isTokenOrSegmented(node)) {
-        const textNode = $createTextNode(node.getTextContent());
-        textNode.setFormat(node.getFormat());
-        textNode.setStyle(node.getStyle());
-        return node.replace(textNode);
-      }
-    };
-    if (firstNode === lastNode && $isTextNode(firstNode)) {
-      const del = Math.abs(focus.offset - anchor.offset);
-      firstNode.spliceText(firstPoint.offset, del, '', true);
-      fixText(firstNode, del);
-      return;
-    }
-    if ($isTextNode(firstNode)) {
-      const del = firstNode.getTextContentSize() - firstPoint.offset;
-      firstNode.spliceText(firstPoint.offset, del, '');
-      firstNode = fixText(firstNode, del) || firstNode;
-    }
-    if ($isTextNode(lastNode)) {
-      lastNode.spliceText(0, lastPoint.offset, '');
-      lastNode = fixText(lastNode, lastPoint.offset) || lastNode;
-    }
-    if (firstNode.isAttached() && $isTextNode(firstNode)) {
-      firstNode.selectEnd();
-    } else if (lastNode.isAttached() && $isTextNode(lastNode)) {
-      lastNode.selectStart();
-    }
-
-    // Merge blocks
-    const bothElem = $isElementNode(firstBlock) && $isElementNode(lastBlock);
-    if (bothElem && firstBlock !== lastBlock) {
-      firstBlock.append(...lastBlock.getChildren());
-      lastBlock.remove();
-      lastPoint.set(firstPoint.key, firstPoint.offset, firstPoint.type);
+    const isCurrentSelection = $getSelection() === this;
+    const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
+    $updateRangeSelectionFromCaretRange(this, newRange);
+    if (isCurrentSelection && $getSelection() !== this) {
+      $setSelection(this);
     }
   }
 

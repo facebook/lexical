@@ -7,6 +7,7 @@
  */
 
 import type {
+  CaretDirection,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
@@ -14,6 +15,7 @@ import type {
   LineBreakNode,
   NodeKey,
   SerializedTextNode,
+  SiblingCaret,
   Spread,
   TabNode,
 } from 'lexical';
@@ -24,6 +26,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $getSiblingCaret,
   $isTabNode,
   ElementNode,
   TextNode,
@@ -224,26 +227,32 @@ export function $isCodeHighlightNode(
   return node instanceof CodeHighlightNode;
 }
 
-export function getFirstCodeNodeOfLine(
+function $getLastMatchingCodeNode<D extends CaretDirection>(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
-): null | CodeHighlightNode | TabNode | LineBreakNode {
-  let previousNode = anchor;
-  let node: null | LexicalNode = anchor;
-  while ($isCodeHighlightNode(node) || $isTabNode(node)) {
-    previousNode = node;
-    node = node.getPreviousSibling();
+  direction: D,
+): CodeHighlightNode | TabNode | LineBreakNode {
+  let matchingNode: CodeHighlightNode | TabNode | LineBreakNode = anchor;
+  for (
+    let caret: null | SiblingCaret<LexicalNode, D> = $getSiblingCaret(
+      anchor,
+      direction,
+    );
+    caret && ($isCodeHighlightNode(caret.origin) || $isTabNode(caret.origin));
+    caret = caret.getAdjacentCaret()
+  ) {
+    matchingNode = caret.origin;
   }
-  return previousNode;
+  return matchingNode;
 }
 
-export function getLastCodeNodeOfLine(
+export function $getFirstCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): CodeHighlightNode | TabNode | LineBreakNode {
-  let nextNode = anchor;
-  let node: null | LexicalNode = anchor;
-  while ($isCodeHighlightNode(node) || $isTabNode(node)) {
-    nextNode = node;
-    node = node.getNextSibling();
-  }
-  return nextNode;
+  return $getLastMatchingCodeNode(anchor, 'previous');
+}
+
+export function $getLastCodeNodeOfLine(
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): CodeHighlightNode | TabNode | LineBreakNode {
+  return $getLastMatchingCodeNode(anchor, 'next');
 }

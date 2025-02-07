@@ -1714,7 +1714,9 @@ test.describe.parallel('Links', () => {
     );
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0, 1],
+      // Previous to #7046 NodeCaret the selection anchor would've been
+      // inside the <a> tag but now it's normalized to the text
+      anchorPath: [0, 1, 0, 0],
       focusOffset: 5,
       focusPath: [0, 1, 0, 0],
     });
@@ -1739,21 +1741,14 @@ test.describe.parallel('Links', () => {
       `,
     );
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    }
+    // Previous to #7046 NodeCaret the selection anchor would've been
+    // inside the <a> tag but now it's normalized to the text
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0, 0],
+    });
 
     // unlink
     await click(page, '.link');
@@ -1819,21 +1814,12 @@ test.describe.parallel('Links', () => {
       `,
     );
 
-    if (browserName === 'chromium') {
-      await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 1],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 1],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 1, 0, 0],
+    });
 
     await setURL(page, 'facebook.com');
 

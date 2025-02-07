@@ -91,7 +91,7 @@ export interface BaseCaret<
  * A RangeSelection expressed as a pair of Carets
  */
 export interface CaretRange<D extends CaretDirection = CaretDirection>
-  extends Iterable<PointCaret<D>> {
+  extends Iterable<NodeCaret<D>> {
   readonly type: 'node-caret-range';
   readonly direction: D;
   anchor: PointCaret<D>;

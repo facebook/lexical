@@ -11,6 +11,8 @@ the code. We expect higher-level utilities to be developed and shipped
 in @lexical/utils or another module at a later date. The current overhead
 should be less than 3kB in a production environment.
 
+The NodeCaret API was introduced in lexical v0.25.0.
+
 ## Concepts
 
 The core concept with `NodeCaret` is that you can represent any specific
@@ -129,7 +131,7 @@ to use
 [Signed distance functions](https://en.wikipedia.org/wiki/Signed_distance_function)
 where the distance metric is signed.
 
-In SDF terms, the subset of the space is `\[offset, ∞)`. Any coordinate less
+In SDF terms, the subset of the space is `[offset, ∞)`. Any coordinate less
 than the `offset` boundary is a negative distance; otherise the distance is
 non-negative.
 
@@ -165,6 +167,8 @@ treatment (splitting instead of removing, for example).
 
 ## Traversal Strategies
 
+<!-- when you update the example code below, please update the tests in packages/src/lexical/caret/__tests__/unit/docs-traversals.test.ts -->
+
 ### Adjacent Caret Traversals
 
 The lowest level building block for traversals with NodeCaret is the adjacent caret
@@ -192,7 +196,7 @@ For example, iterating all siblings:
 // the iterable.
 function *$iterSiblings<D extends CaretDirection>(
   startCaret: NodeCaret<D>
-): Iterable<SiblingCaret<D>> {
+): Iterable<SiblingCaret<LexicalNode, D>> {
   // Note that we start at the adjacent caret. The start caret
   // points away from the origin node, so we do not want to
   // trick ourselves into thinking that that origin is included.
@@ -204,6 +208,62 @@ function *$iterSiblings<D extends CaretDirection>(
     yield caret;
   }
 }
+```
+
+### Examples
+
+Given the following document tree, here are some examples of using the
+adjacent node traversal:
+
+Root
+* Paragraph A
+  * Text A1
+  * Link A2
+    * Text A3
+  * Text A4
+* Paragraph B
+  * Text B1
+* Paragraph C
+
+```ts
+// The root does not have sibling nodes
+const carets = [...$getSiblingCaret($getRoot(), 'next')];
+expect(carets).toEqual([]);
+```
+
+```ts
+// The adjacent node to a ChildNode is its first or last child
+// and is always a SiblingNode. It does not traverse deeper.
+const carets = [...$getChildCaret($getRoot(), 'next')];
+
+// next starts at the first child
+expect(carets).toEqual([
+  $getSiblingCaret(paragraphA, 'next'),
+  $getSiblingCaret(paragraphB, 'next'),
+  $getSiblingCaret(paragraphC, 'next'),
+]);
+
+// previous starts at the last child
+const prevCarets = [...$getChildCaret($getRoot(), 'previous')];
+expect(prevCarets).toEqual([
+  $getSiblingCaret(paragraphC, 'previous'),
+  $getSiblingCaret(paragraphB, 'previous'),
+  $getSiblingCaret(paragraphA, 'previous'),
+]);
+```
+
+```ts
+// The iteration starts at the node where the head of the "arrow"
+// is pointing, which is away from the origin (the tail of the "arrow").
+const carets = [...$getSiblingCaret(paragraphB, 'next')];
+expect(carets).toEqual([
+  $getSiblingCaret(paragraphC, 'next'),
+]);
+
+const prevCarets = [...$getSiblingCaret(paragraphB, 'previous')];
+expect(prevCarets).toEqual([
+  $getSiblingCaret(paragraphA, 'previous'),
+]);
 ```
 
 ### Depth First Caret Traversals
@@ -222,7 +282,7 @@ function *$iterCaretsDepthFirst<D extends CaretDirection>(
 ): Iterable<NodeCaret<D>> {
   function step(prevCaret: NodeCaret<D>): null | NodeCaret<D> {
     // Get the adjacent SiblingCaret
-    const nextCaret = prevCaret.getAdjacent();
+    const nextCaret = prevCaret.getAdjacentCaret();
     return (
       // If there is a sibling, try and get a ChildCaret from it
       (nextCaret && nextCaret.getChildCaret()) ||
@@ -260,7 +320,7 @@ function $iterCaretsDepthFirst<D extends CaretDirection>(
     startCaret,
     // Use the root as the default end caret, but you might choose
     // to use startCaret.getParentCaret('root') for example
-    endCaret || $getBreadthNode($getRoot(), startCaret.direction)
+    endCaret || $getSiblingCaret($getRoot(), startCaret.direction)
   );
 }
 ```
@@ -270,10 +330,10 @@ To get all nodes that are entirely selected between two carets:
 ```ts
 function *$iterNodesDepthFirst<D extends CaretDirection>(
   startCaret: NodeCaret<D>,
-  endCaret?: NodeCaret<D>,
-): Iterable<NodeCaret<D>> {
+  endCaret: NodeCaret<D> = $getChildCaret($getRoot(), startCaret.direction),
+): Iterable<LexicalNode> {
   const seen = new Set<NodeKey>();
-  for (const caret of $iterCaretsDepthFirst(startCaret, endCaret)) {
+  for (const caret of $getCaretRange(startCaret, endCaret)) {
     const {origin} = caret;
     if ($isChildCaret(caret)) {
       seen.add(origin.getKey());
@@ -284,6 +344,45 @@ function *$iterNodesDepthFirst<D extends CaretDirection>(
     }
   }
 }
+```
+
+### Examples
+
+Given the following document tree, here are some examples of using the
+depth-first node traversal (with a `CaretRange`):
+
+Root
+* Paragraph A
+  * Text A1
+  * Link A2
+    * Text A3
+  * Text A4
+* Paragraph B
+  * Text B1
+* Paragraph C
+
+```ts
+// A full traversal of the document from root
+const carets = [...$getCaretRange(
+  // Start with the arrow pointing towards the first child of root
+  $getChildCaret($getRoot(), 'next'),
+  // End when the arrow points away from root
+  $getSiblingCaret($getRoot(), 'next'),
+)];
+expect(carets).toEqual([
+  $getChildCaret(paragraphA, 'next'),   // enter Paragraph A
+  $getSiblingCaret(textA1, 'next'),
+  $getChildCaret(linkA2, 'next'),       // enter Link A2
+  $getSiblingCaret(textA3, 'next'),
+  $getSiblingCaret(linkA2, 'next'),     // leave Link A2
+  $getSiblingCaret(textA4, 'next'),
+  $getSiblingCaret(paragraphA, 'next'), // leave Paragraph A
+  $getChildCaret(paragraphB, 'next'),   // enter Paragraph B
+  $getSiblingCaret(textB1, 'next'),
+  $getSiblingCaret(paragraphB, 'next'), // leave Paragraph B
+  $getChildCaret(paragraphC, 'next'),   // enter Paragraph C
+  $getSiblingCaret(paragraphC, 'next'), // leave Paragraph C
+]);
 ```
 
 ## Future Direction
@@ -397,6 +496,6 @@ it is not uncommon to use
 [Signed distance functions](https://en.wikipedia.org/wiki/Signed_distance_function)
 where the distance metric is signed.
 
-In SDF terms, the subset of the space is `\[offset, ∞)`. Any coordinate less
+In SDF terms, the subset of the space is `[offset, ∞)`. Any coordinate less
 than the `offset` boundary is a negative distance; otherise the distance is
 non-negative.

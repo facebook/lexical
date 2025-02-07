@@ -659,34 +659,34 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 171px" />
                   </colgroup>
                   <tr style="height: 21px;">
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <strong data-lexical-text="true">Surface</strong>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p style="text-align: right;">
                         <span data-lexical-text="true">77349</span>
                       </p>
                     </td>
                   </tr>
                   <tr style="height: 21px;">
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">Lexical</span>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">sdvd</span>
                         <strong data-lexical-text="true">sdfvsfs</strong>

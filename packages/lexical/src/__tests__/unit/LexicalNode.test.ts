@@ -21,13 +21,12 @@ import {
   NodeKey,
   ParagraphNode,
   RangeSelection,
-  RootNode,
   SerializedLexicalNode,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
 
-import {createStateKey, LexicalNode} from '../../LexicalNode';
+import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
@@ -37,15 +36,7 @@ import {
   TestInlineElementNode,
 } from '../utils';
 
-// https://www.totaltypescript.com/how-to-test-your-types
-type Expect<T extends true> = T;
-type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
-  ? 1
-  : 2
-  ? true
-  : false;
-
-class TestNode extends LexicalNode {
+export class TestNode extends LexicalNode {
   static getType(): string {
     return 'test';
   }
@@ -1502,203 +1493,6 @@ describe('LexicalNode tests', () => {
     {
       namespace: '',
       nodes: [LexicalNode, TestNode, InlineDecoratorNode],
-      theme: {},
-    },
-  );
-});
-
-describe('LexicalNode state', () => {
-  initializeUnitTest(
-    (testEnv) => {
-      let root: RootNode;
-
-      beforeEach(async () => {
-        const {editor} = testEnv;
-        await editor.update(() => {
-          root = $getRoot();
-        });
-      });
-
-      test(`setState() need to be inside an update`, async () => {
-        const fn = () => {
-          const keyForString = createStateKey('keyForString', {
-            parse: (value) => (typeof value === 'string' ? value : ''),
-          });
-          root.setState(keyForString, 'hello');
-        };
-        expect(fn).toThrow();
-      });
-
-      test(`getState and setState`, async () => {
-        const keyForString = createStateKey('keyForString', {
-          parse: (value) => (typeof value === 'string' ? value : ''),
-        });
-        const {editor} = testEnv;
-        editor.update(() => {
-          const stringValue = root.getState(keyForString);
-          type _Test = Expect<Equal<typeof stringValue, string>>;
-          expect(stringValue).toBe('');
-          root.setState(keyForString, 'hello');
-          expect(root.getState(keyForString)).toBe('hello');
-
-          const keyForMaybeString = createStateKey('keyForMaybeString', {
-            parse: (value) => (typeof value === 'string' ? value : undefined),
-          });
-          const maybeStringValue = root.getState(keyForMaybeString);
-          type _Test2 = Expect<
-            Equal<typeof maybeStringValue, string | undefined>
-          >;
-          expect(maybeStringValue).toBeUndefined();
-
-          // TO-DO:
-          // It would be a bit nicer if createStateKey also gave a compilation error.
-          // It's not a big deal, because getState will indeed throw the error at compile time.
-          const keyForNoSerializable = createStateKey('keyForNoSerializable', {
-            parse: () => new Date(),
-          });
-          // @ts-expect-error - null is not a valid value
-          const _noSerializableValue = root.getState(keyForNoSerializable);
-        });
-      });
-
-      test(`import and export state`, async () => {
-        const {editor} = testEnv;
-        editor.update(() => {
-          const paragraph = new ParagraphNode();
-          const json = paragraph.exportJSON();
-          // We don't export state as an empty object
-          expect(json).not.toHaveProperty('state');
-          const keyForNumber = createStateKey('keyForNumber', {
-            parse: (value) => (typeof value === 'number' ? value : 0),
-          });
-          paragraph.setState(keyForNumber, 1);
-          const json2 = paragraph.exportJSON();
-          expect(json2.state).toStrictEqual({
-            keyForNumber: 1,
-          });
-          const paragraph2 = ParagraphNode.importJSON(json2);
-          expect(paragraph2.__state).toStrictEqual({
-            keyForNumber: 1,
-          });
-        });
-      });
-
-      test('states cannot be registered with the same key string', () => {
-        expect(() => {
-          createStateKey('foo', {parse: (value) => undefined});
-          createStateKey('foo', {parse: (value) => 0});
-        }).toThrow(
-          `There has been an attempt to register a state with the key "foo", but it is already registered.`,
-        );
-      });
-
-      test('default value should not be exported', async () => {
-        const {editor} = testEnv;
-        editor.update(() => {
-          const indentKey = createStateKey('indent', {
-            parse: (value) => (typeof value === 'number' ? value : 0),
-          });
-          const paragraph = new ParagraphNode();
-          expect(paragraph.getState(indentKey)).toBe(0);
-          const json = paragraph.exportJSON();
-          expect(json).not.toHaveProperty('state');
-          paragraph.setState(indentKey, 1);
-          const json2 = paragraph.exportJSON();
-          expect(json2.state).toStrictEqual({
-            indent: 1,
-          });
-          // set the default value explicitly
-          paragraph.setState(indentKey, 0);
-          const json3 = paragraph.exportJSON();
-          expect(json3).not.toHaveProperty('state');
-
-          // TO-DISCUSS: There has been an attempt to register a state with the key "foo", but it is already registered.
-          // const foo = createStateKey('foo', {
-          //   parse: (value) => (typeof value === 'string' ? value : ''),
-          // });
-          // paragraph.setState(foo, 'foo');
-          // const json4 = paragraph.exportJSON();
-          // expect(json4.state).toStrictEqual({
-          //   foo: 'foo',
-          // });
-        });
-      });
-
-      test('getState returns immutable values, setState require an Object literal', async () => {
-        type TestObject = {
-          foo: string;
-          bar: number;
-        };
-        const {editor} = testEnv;
-        editor.update(() => {
-          const paragraph = new ParagraphNode();
-          const objectKey = createStateKey('testObject', {
-            parse: (value) =>
-              (value as TestObject) || {
-                bar: 0,
-                foo: '',
-              },
-          });
-          const paragraphObject = paragraph.getState(objectKey);
-          type _Test = Expect<
-            Equal<
-              typeof paragraphObject,
-              {
-                readonly bar: number;
-                readonly foo: string;
-              }
-            >
-          >;
-
-          // @ts-expect-error - foo is required
-          paragraph.setState(objectKey, {bar: 1});
-          // @ts-expect-error - baz is not a valid property
-          paragraph.setState(objectKey, {bar: 1, baz: 'baz', foo: 'foo'});
-
-          paragraph.setState(objectKey, paragraphObject!);
-          paragraph.setState(objectKey, {...paragraphObject!, foo: 'foo'});
-        });
-      });
-
-      test('setting state shouldn’t affect previous reconciled versions of the node', () => {
-        const {editor} = testEnv;
-        let v0: RootNode;
-        let v1: RootNode;
-        const vk = createStateKey('vk', {
-          parse: (v) => (typeof v === 'number' ? v : null),
-        });
-        editor.update(
-          () => {
-            v0 = $getRoot();
-            v0.setState(vk, 0);
-            expect(v0.getState(vk)).toBe(0);
-          },
-          {discrete: true},
-        );
-        const state0 = editor.getEditorState();
-        editor.update(
-          () => {
-            v0.setState(vk, 1);
-            v1 = v0.getLatest();
-            // This is testing getLatest()
-            expect(v0.getState(vk)).toBe(1);
-            expect(v1.getState(vk)).toBe(1);
-            expect(v1.is(v0)).toBe(true);
-          },
-          {discrete: true},
-        );
-        const state1 = editor.getEditorState();
-        // Test that the correct version is returned and that they are independent
-        expect(state0.read(() => v0.getState(vk))).toBe(0);
-        expect(state1.read(() => v1.getState(vk))).toBe(1);
-        // Test that getLatest is used and not the __state property directly
-        expect(state0.read(() => v1.getState(vk))).toBe(0);
-        expect(state1.read(() => v0.getState(vk))).toBe(1);
-      });
-    },
-    {
-      namespace: '',
-      nodes: [LexicalNode, TestNode],
       theme: {},
     },
   );

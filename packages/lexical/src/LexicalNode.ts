@@ -22,6 +22,7 @@ import {
   type DecoratorNode,
   ElementNode,
 } from '.';
+import {NodeState, State} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -185,47 +186,6 @@ export type DOMExportOutput = {
 
 export type NodeKey = string;
 
-type DeepImmutable<T> = T extends Map<infer K, infer V>
-  ? ReadonlyMap<DeepImmutable<K>, DeepImmutable<V>>
-  : T extends Set<infer S>
-  ? ReadonlySet<DeepImmutable<S>>
-  : T extends object
-  ? {
-      readonly [K in keyof T]: DeepImmutable<T[K]>;
-    }
-  : T;
-type State = {[Key in string]?: string | number | null | boolean | State};
-type StateValue = string | number | boolean | null | undefined | State;
-interface StateKey<
-  K extends string = string,
-  V extends StateValue = StateValue,
-> {
-  readonly key: K;
-  // Here we are storing a default for convenience
-  readonly value: DeepImmutable<V>;
-  readonly parse: (value: unknown) => V;
-}
-interface StateKeyConfig<V extends StateValue = StateValue> {
-  readonly parse: (value: unknown) => V;
-}
-type StateKeyConfigValue<T extends StateKeyConfig> = ReturnType<T['parse']>;
-
-const stateStore = new Map<string, StateKeyConfig>();
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createStateKey<K extends string, T extends StateKeyConfig<any>>(
-  key: K,
-  config: T,
-): StateKey<K, StateKeyConfigValue<T>> {
-  if (stateStore.has(key)) {
-    throw new Error(
-      `There has been an attempt to register a state with the key "${key}", but it is already registered.`,
-    );
-  }
-  stateStore.set(key, config);
-  return {key, parse: config.parse, value: config.parse(undefined)};
-}
-
 export class LexicalNode {
   // Allow us to look up the type including static props
   ['constructor']!: KlassConstructor<typeof LexicalNode>;
@@ -240,20 +200,30 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+
   /** @internal */
-  __state: DeepImmutable<State> = {};
-
-  getState<T extends StateKey>(k: T): T['value'] {
-    const self = this.getLatest();
-    // If the state is not set, return the default value
-    return k.parse(self.__state[k.key]);
+  get __state() {
+    // @ts-expect-error
+    return this._state;
   }
 
-  setState<T extends StateKey>(k: T, v: T['value']): this {
-    const self = this.getWritable();
-    self.__state = {...self.__state, [k.key]: v};
-    return self;
+  /** @internal */
+  set __state(value: NodeState) {
+    // @ts-expect-error
+    this._state = value;
   }
+
+  // getState<T extends StateKey>(k: T): T['value'] {
+  //   const self = this.getLatest();
+  //   // If the state is not set, return the default value
+  //   return k.parse(self.__state[k.key]);
+  // }
+
+  // setState<T extends StateKey>(k: T, v: T['value']): this {
+  //   const self = this.getWritable();
+  //   self.__state = {...self.__state, [k.key]: v};
+  //   return self;
+  // }
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -342,7 +312,7 @@ export class LexicalNode {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
-    this.__state = prevNode.__state || {};
+    this.__state = prevNode.__state || new NodeState();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -354,6 +324,12 @@ export class LexicalNode {
     this.__prev = null;
     this.__next = null;
     $setNodeKey(this, key);
+    Object.defineProperty(this, '_state', {
+      configurable: true,
+      enumerable: false,
+      value: new NodeState(),
+      writable: true,
+    });
 
     if (__DEV__) {
       if (this.__type !== 'root') {
@@ -939,19 +915,8 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
-    const state: State = {};
-    Object.entries(this.__state).forEach(([key, value]) => {
-      const config = stateStore.get(key);
-      if (!config) {
-        throw new Error(
-          `There has been an attempt to export a state with the key "${key}", but it is not registered.`,
-        );
-      }
-      // We don't export state if it's the default value
-      if (value !== config.parse(undefined)) {
-        state[key] = value;
-      }
-    });
+    // eslint-disable-next-line dot-notation
+    const state = this.__state['toJSON']();
     return {
       type: this.__type,
       version: 1,
@@ -1005,7 +970,8 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    this.__state = serializedNode.state || {};
+    // eslint-disable-next-line dot-notation
+    this.__state['unknownState'] = serializedNode.state || {};
     return this;
   }
 

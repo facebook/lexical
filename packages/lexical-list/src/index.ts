@@ -12,9 +12,15 @@ import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  TextNode,
 } from 'lexical';
 
 import {
@@ -58,6 +64,21 @@ export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
 
+function $checkSelectionListener(): boolean {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const node = selection.anchor.getNode();
+    if (
+      $isListItemNode(node) &&
+      node.isEmpty() &&
+      selection.style !== node.getStyle()
+    ) {
+      node.setStyle(selection.style);
+    }
+  }
+  return false;
+}
+
 export function registerList(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -97,6 +118,29 @@ export function registerList(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_LOW,
     ),
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      $checkSelectionListener,
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerNodeTransform(ListItemNode, (node) => {
+      const firstChild = node.getFirstChild();
+      if (firstChild && $isTextNode(firstChild)) {
+        const style = firstChild.getStyle();
+        if (node.getStyle() !== style) {
+          node.setStyle(style);
+        }
+      }
+    }),
+    editor.registerNodeTransform(TextNode, (node) => {
+      const listItemParentNode = node.getParent();
+      if (
+        $isListItemNode(listItemParentNode) &&
+        node.is(listItemParentNode.getFirstChild())
+      ) {
+        listItemParentNode.markDirty();
+      }
+    }),
   );
   return removeListener;
 }

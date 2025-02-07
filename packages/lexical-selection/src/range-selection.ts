@@ -18,9 +18,9 @@ import type {
 
 import {TableSelection} from '@lexical/table';
 import {
+  $createRangeSelection,
   $getAdjacentNode,
   $getPreviousSelection,
-  $getRoot,
   $getSelection,
   $hasAncestor,
   $isDecoratorNode,
@@ -37,60 +37,76 @@ import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
+export function $copyBlockFormatIndent(
+  srcNode: ElementNode,
+  destNode: ElementNode,
+): void {
+  const format = srcNode.getFormatType();
+  const indent = srcNode.getIndent();
+  if (format !== destNode.getFormatType()) {
+    destNode.setFormat(format);
+  }
+  if (indent !== destNode.getIndent()) {
+    destNode.setIndent(indent);
+  }
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
- * @param createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $afterCreateElement - The function that updates the new node based on the previous one ($copyBlockFormatIndent by default)
  */
-export function $setBlocksType(
+export function $setBlocksType<T extends ElementNode>(
   selection: BaseSelection | null,
-  createElement: () => ElementNode,
+  $createElement: () => T,
+  $afterCreateElement: (
+    prevNodeSrc: ElementNode,
+    newNodeDest: T,
+  ) => void = $copyBlockFormatIndent,
 ): void {
   if (selection === null) {
     return;
   }
+  // Selections tend to not include their containing blocks so we effectively
+  // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
-  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
-  const isCollapsedSelection =
-    selection.is($getSelection()) && selection.isCollapsed();
-
-  if (anchor !== null && anchor.key === 'root') {
-    const element = createElement();
-    const root = $getRoot();
-    const firstChild = root.getFirstChild();
-
-    if (firstChild) {
-      firstChild.replace(element, true);
-    } else {
-      root.append(element);
+  const blockMap = new Map<NodeKey, ElementNode>();
+  let newSelection: RangeSelection | null = null;
+  if (anchorAndFocus) {
+    const [anchor, focus] = anchorAndFocus;
+    newSelection = $createRangeSelection();
+    newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
+    newSelection.focus.set(focus.key, focus.offset, focus.type);
+    const anchorBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
+    const focusBlock = $getAncestor(focus.getNode(), INTERNAL_$isBlock);
+    if ($isElementNode(anchorBlock)) {
+      blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if (isCollapsedSelection) {
-      element.select();
+    if ($isElementNode(focusBlock)) {
+      blockMap.set(focusBlock.getKey(), focusBlock);
     }
-    return;
   }
-
-  const nodes = selection
-    .getNodes()
-    .filter(INTERNAL_$isBlock)
-    .filter($isElementNode);
-  const firstSelectedBlock = anchor
-    ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock)
-    : null;
-  if (
-    $isElementNode(firstSelectedBlock) &&
-    !nodes.find((node) => node.is(firstSelectedBlock))
-  ) {
-    nodes.push(firstSelectedBlock);
-  }
-  for (const node of nodes) {
-    const targetElement = createElement();
-    targetElement.setFormat(node.getFormatType());
-    targetElement.setIndent(node.getIndent());
-    node.replace(targetElement, true);
-    if (node.is(firstSelectedBlock) && isCollapsedSelection) {
-      targetElement.select();
+  for (const node of selection.getNodes()) {
+    if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
+      blockMap.set(node.getKey(), node);
     }
+  }
+  for (const [key, prevNode] of blockMap) {
+    const element = $createElement();
+    $afterCreateElement(prevNode, element);
+    prevNode.replace(element, true);
+    if (newSelection) {
+      if (key === newSelection.anchor.key) {
+        newSelection.anchor.key = element.getKey();
+      }
+      if (key === newSelection.focus.key) {
+        newSelection.focus.key = element.getKey();
+      }
+    }
+  }
+  if (newSelection && selection.is($getSelection())) {
+    $setSelection(newSelection);
   }
 }
 

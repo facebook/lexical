@@ -47,7 +47,7 @@ declare export function $dfsIterator(
 declare export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number];
-declare export function $getDepth(node: LexicalNode): number;
+declare export function $getDepth(node: null | LexicalNode): number;
 declare export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null;

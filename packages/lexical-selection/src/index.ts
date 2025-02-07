@@ -6,15 +6,19 @@
  *
  */
 
-import {
+import {$trimTextContentFromAnchor} from './lexical-node';
+
+export {
   $addNodeStyle,
+  $ensureForwardRangeSelection,
   $forEachSelectedTextNode,
   $isAtNodeEnd,
   $patchStyleText,
   $sliceSelectedTextNodeContent,
   $trimTextContentFromAnchor,
 } from './lexical-node';
-import {
+export {
+  $copyBlockFormatIndent,
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $moveCaretSelection,
@@ -23,42 +27,15 @@ import {
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
 } from './range-selection';
-import {
+export {
   createDOMRange,
   createRectsFromDOMRange,
   getCSSFromStyleObject,
   getStyleObjectFromCSS,
 } from './utils';
-
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
+export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 export {
   /** @deprecated moved to the lexical package */ $cloneWithProperties,
   /** @deprecated moved to the lexical package */ $selectAll,
 } from 'lexical';
-
-export {
-  $addNodeStyle,
-  $forEachSelectedTextNode,
-  $isAtNodeEnd,
-  $patchStyleText,
-  $sliceSelectedTextNodeContent,
-  $trimTextContentFromAnchor,
-};
-/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
-export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
-
-export {
-  $getSelectionStyleValueForProperty,
-  $isParentElementRTL,
-  $moveCaretSelection,
-  $moveCharacter,
-  $setBlocksType,
-  $shouldOverrideDefaultCharacterSelection,
-  $wrapNodes,
-};
-
-export {
-  createDOMRange,
-  createRectsFromDOMRange,
-  getCSSFromStyleObject,
-  getStyleObjectFromCSS,
-};

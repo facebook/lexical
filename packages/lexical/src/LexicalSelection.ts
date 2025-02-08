@@ -688,10 +688,14 @@ export class RangeSelection implements BaseSelection {
       if (caretNodes.length === 0 && range.isCollapsed()) {
         // Emulate the collapsed behavior of getNodes by returning the descendant
         const normCaret = $normalizeCaret(range.anchor);
-        const normOrAdjacent =
-          ($isChildCaret(normCaret) && normCaret.getAdjacentCaret()) ||
-          normCaret;
-        caretNodes.push(normOrAdjacent.origin);
+        const flippedNormCaret = $normalizeCaret(range.anchor.getFlipped());
+        const node =
+          normCaret.getNodeAtCaret() ||
+          flippedNormCaret.getNodeAtCaret() ||
+          (range.anchor.getNodeAtCaret()
+            ? normCaret.origin
+            : flippedNormCaret.origin);
+        caretNodes.push(node);
       }
       const maxLength = Math.max(caretNodes.length, nodes.length);
       for (let i = 0; i < maxLength; i++) {

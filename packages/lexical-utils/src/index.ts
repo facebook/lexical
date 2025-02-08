@@ -21,6 +21,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isSiblingCaret,
   $isTextNode,
   $rewindSiblingCaret,
   $setSelection,
@@ -254,6 +255,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
   );
   let depth = startDepth;
   return makeStepwiseIterator({
+    hasNext: (state): state is NodeCaret<'next'> => state !== null,
     initial: startCaret,
     map: (state) => ({depth, node: state.origin}),
     step: (state: NodeCaret<'next'>) => {
@@ -270,7 +272,6 @@ function $dfsCaretIterator<D extends CaretDirection>(
       depth += rval[1];
       return rval[0];
     },
-    stop: (state): state is null => state === null,
   });
 }
 
@@ -800,6 +801,7 @@ function $childIterator<D extends CaretDirection>(
 ): IterableIterator<LexicalNode> {
   const seen = __DEV__ ? new Set<NodeKey>() : null;
   return makeStepwiseIterator({
+    hasNext: $isSiblingCaret,
     initial: startCaret.getAdjacentCaret(),
     map: (caret) => {
       const origin = caret.origin.getLatest();
@@ -815,7 +817,6 @@ function $childIterator<D extends CaretDirection>(
       return origin;
     },
     step: (caret: SiblingCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
-    stop: (v): v is null => v === null,
   });
 }
 

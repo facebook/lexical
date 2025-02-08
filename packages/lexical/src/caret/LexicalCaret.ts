@@ -122,7 +122,7 @@ export interface CaretRange<D extends CaretDirection = CaretDirection>
 
 export interface StepwiseIteratorConfig<State, Stop, Value> {
   readonly initial: State | Stop;
-  readonly stop: (value: State | Stop) => value is Stop;
+  readonly hasNext: (value: State | Stop) => value is State;
   readonly step: (value: State) => State | Stop;
   readonly map: (value: State) => Value;
 }
@@ -388,10 +388,10 @@ abstract class AbstractCaret<
   }
   [Symbol.iterator](): IterableIterator<SiblingCaret<LexicalNode, D>> {
     return makeStepwiseIterator({
+      hasNext: $isSiblingCaret,
       initial: this.getAdjacentCaret(),
       map: (caret) => caret,
       step: (caret: SiblingCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
-      stop: (v): v is null => v === null,
     });
   }
   getAdjacentCaret(): null | SiblingCaret<LexicalNode, D> {
@@ -1026,11 +1026,11 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
         ? null
         : $getAdjacentChildCaret(state) || state.getParentCaret(rootMode);
     return makeStepwiseIterator({
+      hasNext: (state: null | NodeCaret<D>): state is NodeCaret<D> =>
+        state !== null && !(isTextFocus && focus.isSameNodeCaret(state)),
       initial: anchor.isSameNodeCaret(focus) ? null : step(anchor),
       map: (state) => state,
       step,
-      stop: (state: null | PointCaret<D>): state is null =>
-        state === null || (isTextFocus && focus.isSameNodeCaret(state)),
     });
   }
   [Symbol.iterator](): IterableIterator<NodeCaret<D>> {
@@ -1157,14 +1157,14 @@ export function $getCaretRange<D extends CaretDirection>(
 export function makeStepwiseIterator<State, Stop, Value>(
   config: StepwiseIteratorConfig<State, Stop, Value>,
 ): IterableIterator<Value> {
-  const {initial, stop, step, map} = config;
+  const {initial, hasNext, step, map} = config;
   let state = initial;
   return {
     [Symbol.iterator]() {
       return this;
     },
     next(): IteratorResult<Value> {
-      if (stop(state)) {
+      if (!hasNext(state)) {
         return {done: true, value: undefined};
       }
       const rval = {done: false, value: map(state)};

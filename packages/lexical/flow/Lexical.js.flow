@@ -1073,9 +1073,9 @@ export interface SiblingCaret<T: LexicalNode = LexicalNode, D: CaretDirection = 
 }
 export interface StepwiseIteratorConfig<State, Stop, Value> {
   +initial: State | Stop;
-  stop(value: State | Stop): boolean; //value is Stop;
-  step(value: State): State | Stop;
-  map(value: State): Value;
+  +hasNext: (value: State | Stop) => implies value is State;
+  +step: (value: State) => State | Stop;
+  +map: (value: State) => Value;
 }
 export interface TextPointCaret<T: TextNode = TextNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
   +offset: number;

@@ -31,12 +31,14 @@ import {
   $isRootNode,
   $isSiblingCaret,
   $isTextNode,
+  $isTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
   NodeCaret,
+  PointCaret,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
@@ -689,9 +691,11 @@ export class RangeSelection implements BaseSelection {
         // Emulate the collapsed behavior of getNodes by returning the descendant
         const normCaret = $normalizeCaret(range.anchor);
         const flippedNormCaret = $normalizeCaret(range.anchor.getFlipped());
+        const $getCandidate = (caret: PointCaret): LexicalNode | null =>
+          $isTextPointCaret(caret) ? caret.origin : caret.getNodeAtCaret();
         const node =
-          normCaret.getNodeAtCaret() ||
-          flippedNormCaret.getNodeAtCaret() ||
+          $getCandidate(normCaret) ||
+          $getCandidate(flippedNormCaret) ||
           (range.anchor.getNodeAtCaret()
             ? normCaret.origin
             : flippedNormCaret.origin);

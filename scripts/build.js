@@ -135,7 +135,7 @@ async function build(
       if (
         typeof modulePkgName === 'string' &&
         !(
-          modulePkgName in pkg.packageJson.dependencies ||
+          modulePkgName in (pkg.packageJson.dependencies || {}) ||
           modulePkgName === pkg.getNpmName()
         )
       ) {

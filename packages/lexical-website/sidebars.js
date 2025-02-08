@@ -50,6 +50,7 @@ const sidebars = {
         'concepts/history',
         'concepts/serialization',
         'concepts/dom-events',
+        'concepts/traversals',
       ],
       label: 'Concepts',
       type: 'category',

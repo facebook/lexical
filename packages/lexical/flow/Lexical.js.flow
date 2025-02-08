@@ -1011,3 +1011,168 @@ export interface SerializedEditorState {
 export type SerializedEditor = {
   editorState: SerializedEditorState,
 };
+
+/**
+ * LexicalCaret
+ */
+export interface BaseCaret<T: LexicalNode, D: CaretDirection, Type> extends Iterable<SiblingCaret<LexicalNode, D>> {
+  +origin: T;
+  +type: Type;
+  +direction: D;
+  getParentAtCaret(): null | ElementNode;
+  getNodeAtCaret(): null | LexicalNode;
+  getAdjacentCaret(): null | SiblingCaret<LexicalNode, D>;
+  getSiblingCaret(): SiblingCaret<T, D>;
+  remove(): BaseCaret<T, D, Type>; // this
+  insert(node: LexicalNode): BaseCaret<T, D, Type>; // this
+  replaceOrInsert(node: LexicalNode, includeChildren?: boolean): BaseCaret<T, D, Type>; // this
+  splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): BaseCaret<T, D, Type>; // this
+}
+export type CaretDirection = 'next' | 'previous';
+type FLIP_DIRECTION = {'next' : 'previous', 'previous': 'next'};
+export interface CaretRange<D: CaretDirection = CaretDirection> extends Iterable<NodeCaret<D>> {
+  +type: 'node-caret-range';
+  +direction: D;
+  anchor: PointCaret<D>;
+  focus: PointCaret<D>;
+  isCollapsed(): boolean;
+  iterNodeCarets(rootMode?: RootMode): Iterable<NodeCaret<D>>;
+  getTextSlices(): TextPointCaretSliceTuple<D>;
+}
+export type CaretType = 'sibling' | 'child';
+export interface ChildCaret<T: ElementNode = ElementNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'child'> {
+  getLatest(): ChildCaret<T, D>;
+  getParentCaret(mode?: RootMode): null | SiblingCaret<T, D>;
+  getParentAtCaret(): T;
+  getChildCaret(): ChildCaret<T, D>;
+  isSameNodeCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is ChildCaret<T, D>;
+  isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is ChildCaret<T, D>;
+  getFlipped(): NodeCaret<FlipDirection<D>>;
+  // Refine chained types
+  remove(): ChildCaret<T, D>;
+  insert(node: LexicalNode): ChildCaret<T, D>;
+  replaceOrInsert(node: LexicalNode, includeChildren?: boolean): ChildCaret<T, D>;
+  splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): ChildCaret<T, D>;
+}
+export type FlipDirection<D: CaretDirection> = FLIP_DIRECTION[D];
+export type NodeCaret<D: CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D>;
+export type PointCaret<D: CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D> | TextPointCaret<TextNode, D>;
+export type RootMode = 'root' | 'shadowRoot';
+export interface SiblingCaret<T: LexicalNode = LexicalNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'sibling'> {
+  getLatest(): SiblingCaret<T, D>;
+  getChildCaret(): null | ChildCaret<T & ElementNode, D>;
+  getParentCaret(mode?: RootMode): null | SiblingCaret<ElementNode, D>;
+  isSameNodeCaret(other: null | void | PointCaret<CaretDirection>): boolean; // </CaretDirection>other is SiblingCaret<T, D> | T extends TextNode ? TextPointCaret<T & TextNode, D> : empty;
+  isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is SiblingCaret<T, D>;
+  getFlipped(): NodeCaret<FlipDirection<D>>;
+  // Refine chained types
+  remove(): SiblingCaret<T, D>;
+  insert(node: LexicalNode): SiblingCaret<T, D>;
+  replaceOrInsert(node: LexicalNode, includeChildren?: boolean): SiblingCaret<T, D>;
+  splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): SiblingCaret<T, D>;
+}
+export interface StepwiseIteratorConfig<State, Stop, Value> {
+  +initial: State | Stop;
+  +hasNext: (value: State | Stop) => implies value is State;
+  +step: (value: State) => State | Stop;
+  +map: (value: State) => Value;
+}
+export interface TextPointCaret<T: TextNode = TextNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
+  +offset: number;
+  getLatest(): TextPointCaret<T, D>;
+  getChildCaret(): null;
+  getParentCaret(): null | SiblingCaret<ElementNode, D>;
+  isSameNodeCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is TextPointCaret<T, D> | SiblingCaret<T, D>;
+  isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is TextPointCaret<T, D>;
+  getFlipped(): TextPointCaret<T, FlipDirection<D>>;
+}
+export interface TextPointCaretSlice<T: TextNode = TextNode, D: CaretDirection = CaretDirection> {
+  +type: 'slice';
+  +caret: TextPointCaret<T, D>;
+  +distance: number;
+  getSliceIndices(): [startIndex: number, endIndex: number];
+  getTextContent(): string;
+  getTextContentSize(): number;
+  removeTextSlice(): TextPointCaret<T, D>;
+}
+export type TextPointCaretSliceTuple<D: CaretDirection> = [
+  +anchorSlice: null | TextPointCaretSlice<TextNode, D>,
+  +focusSlice: null | TextPointCaretSlice<TextNode, D>,
+];
+declare export function $getAdjacentChildCaret<D: CaretDirection>(caret: null | NodeCaret<D>): null | NodeCaret<D>;
+declare export function $getCaretRange<D: CaretDirection>(anchor: PointCaret<D>, focus: PointCaret<D>): CaretRange<D>;
+declare export function $getChildCaret<T: null | ElementNode, D: CaretDirection>(origin: T, direction: D): ChildCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getChildCaretOrSelf<Caret: null | PointCaret<CaretDirection>>(caret: Caret): Caret | ChildCaret<ElementNode, Exclude<null, Caret>['direction']>;
+declare export function $getSiblingCaret<T: null | LexicalNode, D: CaretDirection>(origin: T, direction: D): SiblingCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getTextNodeOffset(origin: TextNode, offset: number | CaretDirection): number;
+declare export function $getTextPointCaret<T: null | TextNode, D: CaretDirection>(origin: T, direction: D, offset: number | CaretDirection): TextPointCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getTextPointCaretSlice<T: TextNode, D: CaretDirection>(caret: TextPointCaret<T, D>, distance: number): TextPointCaretSlice<T, D>;
+declare export function $isChildCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is ChildCaret<ElementNode, D>;
+declare export function $isNodeCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is NodeCaret<D>;
+declare export function $isSiblingCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is SiblingCaret<LexicalNode, D>;
+declare export function $isTextPointCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is TextPointCaret<TextNode, D>;
+declare export function $isTextPointCaretSlice<D: CaretDirection>(caret: null | void | PointCaret<D> | TextPointCaretSlice<TextNode, D>): caret is TextPointCaretSlice<TextNode, D>;
+declare export function flipDirection<D: CaretDirection>(direction: D): FlipDirection<D>;
+declare export function makeStepwiseIterator<State, Stop, Value>(
+  config: StepwiseIteratorConfig<State, Stop, Value>,
+): Iterator<Value>;
+/**
+ * LexicalCaretUtils
+ */
+declare export function $caretFromPoint<D: CaretDirection>(
+  point: PointType,
+  direction: D,
+): PointCaret<D>;
+declare export function $caretRangeFromSelection(
+  selection: RangeSelection,
+): CaretRange<CaretDirection>;
+declare export function $getAdjacentSiblingOrParentSiblingCaret<
+  D: CaretDirection,
+>(
+  startCaret: NodeCaret<D>,
+  rootMode?: RootMode
+): null | [NodeCaret<D>, number]
+declare export function $getCaretInDirection<
+  Caret: PointCaret<CaretDirection>,
+  D: CaretDirection,
+>(
+  caret: Caret,
+  direction: D,
+):
+  | NodeCaret<D>
+  | (Caret extends TextPointCaret<TextNode, CaretDirection>
+      ? TextPointCaret<TextNode, D>
+      : empty);
+declare export function $getCaretRangeInDirection<D: CaretDirection>(
+  range: CaretRange<CaretDirection>,
+  direction: D,
+): CaretRange<D>;
+declare export function $getChildCaretAtIndex<D: CaretDirection>(
+  parent: ElementNode,
+  index: number,
+  direction: D,
+): NodeCaret<D>;
+declare export function $normalizeCaret<D: CaretDirection>(
+  initialCaret: PointCaret<D>,
+): PointCaret<D>;
+declare export function $removeTextFromCaretRange<D: CaretDirection>(
+  initialRange: CaretRange<D>,
+  sliceMode?:
+    | 'removeEmptySlices'
+    | 'preserveEmptyTextSliceCaret'
+): CaretRange<D>;
+declare export function $rewindSiblingCaret<
+  T: LexicalNode,
+  D: CaretDirection,
+>(caret: SiblingCaret<T, D>): NodeCaret<D>;
+declare export function $setPointFromCaret<D: CaretDirection>(
+  point: PointType,
+  caret: PointCaret<D>,
+): void;
+declare export function $setSelectionFromCaretRange(
+  caretRange: CaretRange<CaretDirection>,
+): RangeSelection;
+declare export function $updateRangeSelectionFromCaretRange(
+  selection: RangeSelection,
+  caretRange: CaretRange<CaretDirection>,
+): void;

@@ -1073,7 +1073,7 @@ export interface SiblingCaret<T: LexicalNode = LexicalNode, D: CaretDirection = 
 }
 export interface StepwiseIteratorConfig<State, Stop, Value> {
   +initial: State | Stop;
-  stop(value: State | Stop): value is Stop;
+  stop(value: State | Stop): boolean; //value is Stop;
   step(value: State): State | Stop;
   map(value: State): Value;
 }

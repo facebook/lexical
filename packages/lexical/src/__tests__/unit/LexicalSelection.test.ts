@@ -1139,6 +1139,119 @@ describe('getNodes()', () => {
         {discrete: true},
       );
     });
+    test('Manual select with focus collapsed between inline decorators', () => {
+      testEnv.editor.update(
+        () => {
+          const inlineDecoratorLeading = $createTestDecoratorNode();
+          const inlineDecoratorTrailing = $createTestDecoratorNode();
+          const noLongerEmptyParagraph = emptyParagraph;
+          noLongerEmptyParagraph.splice(0, 0, [
+            inlineDecoratorLeading,
+            inlineDecoratorTrailing,
+          ]);
+          const selection = $createRangeSelection();
+          // Collapsed between decorators
+          selection.anchor.set(noLongerEmptyParagraph.getKey(), 1, 'element');
+          selection.focus.set(noLongerEmptyParagraph.getKey(), 1, 'element');
+          expect(selection.isCollapsed()).toBe(true);
+          expect(selection).toMatchObject({
+            anchor: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 1,
+              type: 'element',
+            },
+            focus: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 1,
+              type: 'element',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            // The bias is towards the right
+            [inlineDecoratorTrailing].map((node) => node.getLatest()),
+          );
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select with focus collapsed after inline decorator', () => {
+      testEnv.editor.update(
+        () => {
+          const inlineDecoratorLeading = $createTestDecoratorNode();
+          const inlineDecoratorTrailing = $createTestDecoratorNode();
+          const noLongerEmptyParagraph = emptyParagraph;
+          noLongerEmptyParagraph.splice(0, 0, [
+            inlineDecoratorLeading,
+            inlineDecoratorTrailing,
+          ]);
+          const selection = $createRangeSelection();
+          // Collapsed after decorators
+          selection.anchor.set(noLongerEmptyParagraph.getKey(), 2, 'element');
+          selection.focus.set(noLongerEmptyParagraph.getKey(), 2, 'element');
+          expect(selection.isCollapsed()).toBe(true);
+          expect(selection).toMatchObject({
+            anchor: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 2,
+              type: 'element',
+            },
+            focus: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 2,
+              type: 'element',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            // The bias is towards the last descendant since no
+            // nodes exist to the right
+            [inlineDecoratorTrailing].map((node) => node.getLatest()),
+          );
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select with focus between inline decorators', () => {
+      testEnv.editor.update(
+        () => {
+          const inlineDecoratorLeading = $createTestDecoratorNode();
+          const inlineDecoratorTrailing = $createTestDecoratorNode();
+          const noLongerEmptyParagraph = emptyParagraph;
+          noLongerEmptyParagraph.splice(0, 0, [
+            inlineDecoratorLeading,
+            inlineDecoratorTrailing,
+          ]);
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 0, 'text');
+          selection.focus.set(noLongerEmptyParagraph.getKey(), 1, 'element');
+          expect(selection).toMatchObject({
+            anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+            focus: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 1,
+              type: 'element',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            [
+              paragraphText,
+              linkNode,
+              linkText,
+              // The parent paragraphNode comes after its children because the
+              // selection started inside of it at paragraphText
+              paragraphNode,
+              listNode,
+              listItem1,
+              listItemText1,
+              listItem2,
+              listItemText2,
+              noLongerEmptyParagraph,
+              inlineDecoratorLeading,
+            ].map((node) => node.getLatest()),
+          );
+        },
+        {discrete: true},
+      );
+    });
     test('select only the paragraph (not normalized)', () => {
       testEnv.editor.update(
         () => {

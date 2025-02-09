@@ -32,7 +32,6 @@ import {
   $isTextNode,
   $normalizeCaret,
   $removeTextFromCaretRange,
-  $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
@@ -1825,20 +1824,21 @@ export class RangeSelection implements BaseSelection {
                 // do nothing, shouldn't delete an isolated decorator
               } else if (
                 state.type === 'merge-next-block' &&
-                caret.origin.isKeyboardSelectable() &&
+                (caret.origin.isKeyboardSelectable() ||
+                  !caret.origin.isInline()) &&
                 $isElementNode(initialRange.anchor.origin) &&
                 initialRange.anchor.origin.isEmpty()
               ) {
-                $removeTextFromCaretRange(
-                  $getCaretRange(
-                    initialRange.anchor,
-                    $rewindSiblingCaret(caret),
-                  ),
-                );
+                // If the anchor is an empty element that is adjacent to a
+                // decorator then we remove the paragraph and select the
+                // decorator
+                initialRange.anchor.origin.remove();
                 const nodeSelection = $createNodeSelection();
                 nodeSelection.add(caret.origin.getKey());
                 $setSelection(nodeSelection);
               } else {
+                // When the anchor is not an empty element then the
+                // adjacent decorator is removed
                 caret.origin.remove();
               }
               // always stop when a decorator is encountered

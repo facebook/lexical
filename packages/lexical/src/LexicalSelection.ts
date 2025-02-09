@@ -37,6 +37,7 @@ import {
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
+  CaretRange,
   NodeCaret,
   PointCaret,
   SELECTION_CHANGE_COMMAND,
@@ -618,89 +619,11 @@ export class RangeSelection implements BaseSelection {
       // To verify that we have covered every case this
       // has both implementations of getNodes() and
       // compares them
-      const caretNodes: LexicalNode[] = [];
       const range = $getCaretRangeInDirection(
         $caretRangeFromSelection(this),
         'next',
       );
-      const [beforeSlice, afterSlice] = range.getTextSlices();
-      if (beforeSlice) {
-        caretNodes.push(beforeSlice.caret.origin);
-      }
-      const seenAncestors = new Set<ElementNode>();
-      const seenElements = new Set<ElementNode>();
-      for (const caret of range) {
-        if ($isChildCaret(caret)) {
-          // Emulate the leading under-selection behavior of getNodes by
-          // ignoring the 'enter' of any ElementNode until we've seen a
-          // SiblingCaret
-          const {origin} = caret;
-          if (caretNodes.length === 0) {
-            seenAncestors.add(origin);
-          } else {
-            seenElements.add(origin);
-            caretNodes.push(origin);
-          }
-        } else {
-          const {origin} = caret;
-          if (!$isElementNode(origin) || !seenElements.has(origin)) {
-            caretNodes.push(origin);
-          }
-        }
-      }
-      if (afterSlice) {
-        caretNodes.push(afterSlice.caret.origin);
-      }
-      // Emulate the trailing underselection behavior when the last offset of
-      // an element is selected
-      if (
-        $isSiblingCaret(range.focus) &&
-        $isElementNode(range.focus.origin) &&
-        range.focus.getNodeAtCaret() === null
-      ) {
-        for (
-          let reverseCaret: null | NodeCaret<'previous'> = $getChildCaret(
-            range.focus.origin,
-            'previous',
-          );
-          reverseCaret &&
-          $isChildCaret(reverseCaret) &&
-          seenAncestors.has(reverseCaret.origin);
-          reverseCaret = $getAdjacentChildCaret(reverseCaret)
-        ) {
-          seenAncestors.delete(reverseCaret.origin);
-        }
-      }
-      while (caretNodes.length > 1) {
-        const lastIncludedNode = caretNodes[caretNodes.length - 1];
-        if ($isElementNode(lastIncludedNode)) {
-          if (
-            seenElements.has(lastIncludedNode) ||
-            lastIncludedNode.isEmpty() ||
-            seenAncestors.has(lastIncludedNode)
-          ) {
-            // fall through to break
-          } else {
-            caretNodes.pop();
-            continue;
-          }
-        }
-        break;
-      }
-      if (caretNodes.length === 0 && range.isCollapsed()) {
-        // Emulate the collapsed behavior of getNodes by returning the descendant
-        const normCaret = $normalizeCaret(range.anchor);
-        const flippedNormCaret = $normalizeCaret(range.anchor.getFlipped());
-        const $getCandidate = (caret: PointCaret): LexicalNode | null =>
-          $isTextPointCaret(caret) ? caret.origin : caret.getNodeAtCaret();
-        const node =
-          $getCandidate(normCaret) ||
-          $getCandidate(flippedNormCaret) ||
-          (range.anchor.getNodeAtCaret()
-            ? normCaret.origin
-            : flippedNormCaret.origin);
-        caretNodes.push(node);
-      }
+      const caretNodes = $getNodesFromCaretRangeCompat(range);
       const maxLength = Math.max(caretNodes.length, nodes.length);
       for (let i = 0; i < maxLength; i++) {
         const caretNode = caretNodes[i] || {__key: '', __type: ''};
@@ -3200,4 +3123,101 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
   }
 
   return virtualRoot;
+}
+
+/**
+ * Get all nodes in a CaretRange in a way that complies with all of the
+ * quirks of the original RangeSelection.getNodes().
+ *
+ * @param range The CaretRange
+ */
+function $getNodesFromCaretRangeCompat(
+  // getNodes returned nodes in document order
+  range: CaretRange<'next'>,
+): LexicalNode[] {
+  // To verify that we have covered every case this
+  // has both implementations of getNodes() and
+  // compares them
+  const nodes: LexicalNode[] = [];
+  const [beforeSlice, afterSlice] = range.getTextSlices();
+  if (beforeSlice) {
+    nodes.push(beforeSlice.caret.origin);
+  }
+  const seenAncestors = new Set<ElementNode>();
+  const seenElements = new Set<ElementNode>();
+  for (const caret of range) {
+    if ($isChildCaret(caret)) {
+      // Emulate the leading under-selection behavior of getNodes by
+      // ignoring the 'enter' of any ElementNode until we've seen a
+      // SiblingCaret
+      const {origin} = caret;
+      if (nodes.length === 0) {
+        seenAncestors.add(origin);
+      } else {
+        seenElements.add(origin);
+        nodes.push(origin);
+      }
+    } else {
+      const {origin} = caret;
+      if (!$isElementNode(origin) || !seenElements.has(origin)) {
+        nodes.push(origin);
+      }
+    }
+  }
+  if (afterSlice) {
+    nodes.push(afterSlice.caret.origin);
+  }
+  // Emulate the trailing underselection behavior when the last offset of
+  // an element is selected
+  if (
+    $isSiblingCaret(range.focus) &&
+    $isElementNode(range.focus.origin) &&
+    range.focus.getNodeAtCaret() === null
+  ) {
+    for (
+      let reverseCaret: null | NodeCaret<'previous'> = $getChildCaret(
+        range.focus.origin,
+        'previous',
+      );
+      $isChildCaret(reverseCaret) &&
+      seenAncestors.has(reverseCaret.origin) &&
+      !reverseCaret.origin.isEmpty() &&
+      reverseCaret.origin.is(nodes[nodes.length - 1]);
+      reverseCaret = $getAdjacentChildCaret(reverseCaret)
+    ) {
+      seenAncestors.delete(reverseCaret.origin);
+      nodes.pop();
+    }
+  }
+  while (nodes.length > 1) {
+    const lastIncludedNode = nodes[nodes.length - 1];
+    if ($isElementNode(lastIncludedNode)) {
+      if (
+        seenElements.has(lastIncludedNode) ||
+        lastIncludedNode.isEmpty() ||
+        seenAncestors.has(lastIncludedNode)
+      ) {
+        // fall through to break
+      } else {
+        nodes.pop();
+        continue;
+      }
+    }
+    break;
+  }
+  if (nodes.length === 0 && range.isCollapsed()) {
+    // Emulate the collapsed behavior of getNodes by returning the descendant
+    const normCaret = $normalizeCaret(range.anchor);
+    const flippedNormCaret = $normalizeCaret(range.anchor.getFlipped());
+    const $getCandidate = (caret: PointCaret): LexicalNode | null =>
+      $isTextPointCaret(caret) ? caret.origin : caret.getNodeAtCaret();
+    const node =
+      $getCandidate(normCaret) ||
+      $getCandidate(flippedNormCaret) ||
+      (range.anchor.getNodeAtCaret()
+        ? normCaret.origin
+        : flippedNormCaret.origin);
+    nodes.push(node);
+  }
+  return nodes;
 }

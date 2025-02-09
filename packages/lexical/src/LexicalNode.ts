@@ -15,6 +15,8 @@ import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $getCommonAncestor,
+  $getCommonAncestorResultBranchOrder,
   $isDecoratorNode,
   $isElementNode,
   $isRootNode,
@@ -574,32 +576,18 @@ export class LexicalNode {
    * Returns the closest common ancestor of this node and the provided one or null
    * if one cannot be found.
    *
+   * See also {@link $getCommonAncestor} for a more detailed version of this
+   * operation.
+   *
    * @param node - the other node to find the common ancestor of.
    */
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const a = this.getParents();
-    const b = node.getParents();
-    if ($isElementNode(this)) {
-      a.unshift(this);
-    }
-    if ($isElementNode(node)) {
-      b.unshift(node);
-    }
-    const aLength = a.length;
-    const bLength = b.length;
-    if (aLength === 0 || bLength === 0 || a[aLength - 1] !== b[bLength - 1]) {
-      return null;
-    }
-    const bSet = new Set(b);
-    for (let i = 0; i < aLength; i++) {
-      const ancestor = a[i] as T;
-      if (bSet.has(ancestor)) {
-        return ancestor;
-      }
-    }
-    return null;
+    const result = $getCommonAncestor(this, node);
+    return result
+      ? (result.commonAncestor as T) /* TODO this type cast is a lie */
+      : null;
   }
 
   /**
@@ -616,62 +604,42 @@ export class LexicalNode {
   }
 
   /**
-   * Returns true if this node logical precedes the target node in the editor state.
+   * Returns true if this node logically precedes the target node in the
+   * editor state, false otherwise (including if there is no common ancestor).
+   *
+   * Note that this notion of isBefore is based on post-order; a descendant
+   * node is always before its ancestors. See also
+   * {@link $getCommonAncestor} and {@link $comparePointCaretNext} for
+   * more flexible ways to determine the relative positions of nodes.
    *
    * @param targetNode - the node we're testing to see if it's after this one.
    */
   isBefore(targetNode: LexicalNode): boolean {
-    if (this === targetNode) {
+    const compare = $getCommonAncestor(this, targetNode);
+    if (compare === null) {
       return false;
     }
-    if (targetNode.isParentOf(this)) {
+    if (compare.type === 'descendant') {
       return true;
     }
-    if (this.isParentOf(targetNode)) {
-      return false;
+    if (compare.type === 'branch') {
+      return $getCommonAncestorResultBranchOrder(compare) === -1;
     }
-    const commonAncestor = this.getCommonAncestor(targetNode);
-    let indexA = 0;
-    let indexB = 0;
-    let node: this | ElementNode | LexicalNode = this;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexA = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    node = targetNode;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexB = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    return indexA < indexB;
+    invariant(
+      compare.type === 'same' || compare.type === 'ancestor',
+      'LexicalNode.isBefore: exhaustiveness check',
+    );
+    return false;
   }
 
   /**
-   * Returns true if this node is the parent of the target node, false otherwise.
+   * Returns true if this node is an ancestor of and distinct from the target node, false otherwise.
    *
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const key = this.__key;
-    if (key === targetNode.__key) {
-      return false;
-    }
-    let node: ElementNode | LexicalNode | null = targetNode;
-    while (node !== null) {
-      if (node.__key === key) {
-        return true;
-      }
-      node = node.getParent();
-    }
-    return false;
+    const result = $getCommonAncestor(this, targetNode);
+    return result !== null && result.type === 'ancestor';
   }
 
   // TO-DO: this function can be simplified a lot

@@ -1,3 +1,52 @@
+## v0.24.0 (2025-02-06)
+
+- ci Chore Remove SSHKEY secret (#7143) Bob Ippolito
+- bugfix Fix flow typedef for links plugin to include attributes (#7145) Maksim Horbachevsky
+- lexical Bug Fix Fix Chrome on android deletion bugs (#7122) Wayne
+- lexical-markdown Bug Fix support link and inline code text formats (#7004) Alessio Gravili
+- lexical-react Refactor Replace ReactContext with React.Context (#7137) Sam Zhou
+- lexicallexical-mark Bug Fix wrapSelectionInMarkNode with element points (#7132) Bob Ippolito
+- lexical-playground Fix Replace icon with Twitter with X (#7127) AW
+- cleanup size-limit (#7129) Sherry
+- workflow Delete size limit report (#7128) Sherry
+- workflow disable size-limit job (#7125) Sherry
+- Fix ListItemNode serialization throws (#7116) Gerard Rovira
+- lexical-mark Feature include inline decorator nodes in marks (#7086) James Fitzsimmons
+- lexical-utils Fix Modify reverseDfs to be a right-to-left variant of dfs (#7112) Bob Ippolito
+- lexical-utils Feature add reverse dfs iterator (#7107) Nigel Gutzmann
+- lexical-playground Bug Fix Ensure Delete Node handles all node types (#7096) mohammed shaheer kp
+- Listeners Lexical 3 updates to spelling and grammar - Update listeners.md  (#7100) Adam Pugh
+- Lexical Docs 2 updates to spelling README.md (#7102) Adam Pugh
+- Selection  Lexical 1 Spelling Update Update selection.md (#7103) Adam Pugh
+- Creating a React Plugin 1 Grammar Update - Update createplugin.md (#7104) Adam Pugh
+- Working with DOM Events 2 Spelling and Grammar Updates Update dom-ev (#7105) Adam Pugh
+- lexical-yjs Bug Fix handle text node being split by Yjs redo (#7098) James Fitzsimmons
+- lexical-react Bug Fix Import JSX type from React to prevent Cannot find namespace JSX-error when type-checking with React 19 (#7080) Torleif Berger
+- lexical Chore Rename variable and add comments for Safari compositing workaround (#7092) Tetsuya
+- Fix Use already defined RegisteredNodes type (#7085) Mateo Vukovi
+- playground Bug fix prevent growing whitespaces in markdown table toggle (#7041) Sherry
+- Unrevert Breaking Changelexical Bug Fix Commit updates on editor.setRootElement(null) #7023 (#7068) Sherry
+- lexical-playground plugins TableOfContent Scroll smooth behaviour A (#7069) mohammed shaheer kp
+- lexical-playground Fix Columns Layout Item Overflow (#7066) Ivaylo Pavlov
+- Change fork modules to use production only when NODEENV explicitly set to production (#7065) Bob Ippolito
+- lexical Bug Fix In the Safari browser, during the compositing event process, the delete key exhibits unexpected behavior. (#7061) CityHunter
+- docs Change here link to more descriptive text (#7058) Violet Rosenzweig
+- lexical-table Bug Fix Prevent error if pasted table has empty row (#7057) Aman Harwara
+- lexical-list Bug Fix Prevent error when calling formatList when selection is at root (#6994) Aman Harwara
+- fix iOS Autocorrect strips formatting by reporting wrong dataType (#5789) Brayden
+- lexical-yjs Feature Allow passing in custom syncCursorPositions function to collab hook (#7053) Aman Harwara
+- fix triple click around inline elements (links) (#7055) Maksim Horbachevsky
+- lexical-table Support table alignment (#7044) Ivaylo Pavlov
+- Revert Breaking Changelexical Bug Fix Commit updates on editorSetRootElement(null) (#7023) (#7052) Sherry
+- lexical Bug Fix Normalize selection after applyDOMRange to account for Firefox differences (#7050) Bob Ippolito
+-  Bug Fix Use GITHUBOUTPUT instead of GITHUBENV for size-limit action (#7051) Bob Ippolito
+- Breaking Change Chore Use terser for optimizing cjs prod build (#7047) Bob Ippolito
+- lexical Bug Fix Handle MutationObserverinput event re-ordering when using contentEditable inside of an iframe (#7045) Bob Ippolito
+- Clean up nested editor update (#7039) Ivaylo Pavlov
+- Breaking Changelexicallexical-selectionlexical-list Bug Fix Fix infinite loop when splitting invalid ListItemNode (#7037) Bob Ippolito
+- v0.23.1 (#7035) Bob Ippolito
+- v0.23.1 Lexical GitHub Actions Bot
+
 ## v0.23.1 (2025-01-09)
 
 - lexical Fix TabNode deserialization regression  (#7031) Bob Ippolito

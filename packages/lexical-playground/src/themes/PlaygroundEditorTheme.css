@@ -214,7 +214,14 @@
   margin-top: 25px;
   margin-bottom: 30px;
 }
-.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child {
+.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
+  background-color: #f2f3f5;
   position: sticky;
   z-index: 2;
   left: 0;

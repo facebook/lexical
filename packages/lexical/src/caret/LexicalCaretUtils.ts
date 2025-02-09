@@ -27,7 +27,6 @@ import {
   type RangeSelection,
 } from '../LexicalSelection';
 import {
-  $getAncestor,
   $getNodeByKeyOrThrow,
   $setSelection,
   INTERNAL_$isBlock,
@@ -207,6 +206,13 @@ function $getAnchorCandidates<D extends CaretDirection>(
   return carets;
 }
 
+declare const CaretOriginAttachedBrand: unique symbol;
+function $isCaretAttached<Caret extends PointCaret<CaretDirection>>(
+  caret: null | undefined | Caret,
+): caret is Caret & {[CaretOriginAttachedBrand]: never} {
+  return !!caret && caret.origin.isAttached();
+}
+
 /**
  * Remove all text and nodes in the given range. If the range spans multiple
  * blocks then the remaining contents of the later block will be merged with
@@ -281,6 +287,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     } else if (slice.distance !== 0) {
       sliceState = 'removeEmptySlices';
       let nextCaret = slice.removeTextSlice();
+      const sliceOrigin = slice.caret.origin;
       if (mode === 'segmented') {
         const src = nextCaret.origin;
         const plainTextNode = $createTextNode(src.getTextContent())
@@ -293,52 +300,115 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
           nextCaret.offset,
         );
       }
-      if (anchorCandidates[0].isSameNodeCaret(slice.caret)) {
+      if (sliceOrigin.is(anchorCandidates[0].origin)) {
         anchorCandidates[0] = nextCaret;
+      }
+      if (sliceOrigin.is(focusCandidates[0].origin)) {
+        focusCandidates[0] = nextCaret.getFlipped();
       }
     }
   }
 
-  for (const candidates of [anchorCandidates, focusCandidates]) {
-    const deleteCount = candidates.findIndex((caret) =>
-      caret.origin.isAttached(),
-    );
-    candidates.splice(0, deleteCount);
+  let anchorCandidate: PointCaret<'next'> | undefined;
+  let focusCandidate: PointCaret<'previous'> | undefined;
+  for (const candidate of anchorCandidates) {
+    if ($isCaretAttached(candidate)) {
+      anchorCandidate = $normalizeCaret(candidate);
+      break;
+    }
+  }
+  for (const candidate of focusCandidates) {
+    if ($isCaretAttached(candidate)) {
+      focusCandidate = $normalizeCaret(candidate);
+      break;
+    }
   }
 
-  const anchorCandidate = anchorCandidates.find((v) => v.origin.isAttached());
-  const focusCandidate = focusCandidates.find((v) => v.origin.isAttached());
-
   // Merge blocks if necessary
-  const anchorBlock =
-    anchorCandidate && $getAncestor(anchorCandidate.origin, INTERNAL_$isBlock);
-  const focusBlock =
-    focusCandidate && $getAncestor(focusCandidate.origin, INTERNAL_$isBlock);
-  if (
-    $isElementNode(focusBlock) &&
-    seenStart.has(focusBlock.getKey()) &&
-    $isElementNode(anchorBlock)
-  ) {
+  const mergeTargets = $getBlockMergeTargets(
+    anchorCandidate,
+    focusCandidate,
+    seenStart,
+  );
+  if (mergeTargets) {
+    const [anchorBlock, focusBlock] = mergeTargets;
     // always merge blocks later in the document with
     // blocks earlier in the document
     $getChildCaret(anchorBlock, 'previous').splice(0, focusBlock.getChildren());
     focusBlock.remove();
   }
 
-  for (const caret of [anchorCandidate, focusCandidate]) {
-    if (caret && caret.origin.isAttached()) {
-      const anchor = $getCaretInDirection(
-        $normalizeCaret(caret),
-        initialRange.direction,
-      );
-      return $getCaretRange(anchor, anchor);
-    }
+  const bestCandidate: PointCaret<CaretDirection> | undefined =
+    $isCaretAttached(anchorCandidate)
+      ? anchorCandidate
+      : $isCaretAttached(focusCandidate)
+      ? focusCandidate
+      : anchorCandidates.find($isCaretAttached) ||
+        focusCandidates.find($isCaretAttached);
+  if (bestCandidate) {
+    const anchor = $getCaretInDirection(
+      $normalizeCaret(bestCandidate),
+      initialRange.direction,
+    );
+    return $getCaretRange(anchor, anchor);
   }
   invariant(
     false,
     '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
     JSON.stringify(anchorCandidates.map((n) => n.origin.__key)),
   );
+}
+
+function $getBlockMergeTargets(
+  anchor: null | undefined | PointCaret<'next'>,
+  focus: null | undefined | PointCaret<'previous'>,
+  seenStart: Set<NodeKey>,
+): null | [ElementNode, ElementNode] {
+  if (!anchor || !focus) {
+    return null;
+  }
+  const anchorParent = anchor.getParentAtCaret();
+  const focusParent = focus.getParentAtCaret();
+  if (!anchorParent || !focusParent) {
+    return null;
+  }
+  // TODO refactor when we have a better primitive for common ancestor
+  const anchorElements = anchorParent.getParents().reverse();
+  anchorElements.push(anchorParent);
+  const focusElements = focus.origin.getParents().reverse();
+  focusElements.push(focusParent);
+  const maxLen = Math.min(anchorElements.length, focusElements.length);
+  let commonAncestorCount: number;
+  for (
+    commonAncestorCount = 0;
+    commonAncestorCount < maxLen &&
+    anchorElements[commonAncestorCount] === focusElements[commonAncestorCount];
+    commonAncestorCount++
+  ) {
+    // just traverse the ancestors
+  }
+  const $getBlock = (
+    arr: readonly ElementNode[],
+    isFocus: boolean,
+  ): ElementNode | undefined => {
+    let block: ElementNode | undefined;
+    for (let i = commonAncestorCount; i < arr.length; i++) {
+      const ancestor = arr[i];
+      if (
+        !block &&
+        INTERNAL_$isBlock(ancestor) &&
+        (!isFocus || seenStart.has(ancestor.getKey()))
+      ) {
+        block = ancestor;
+      } else if (ancestor.isShadowRoot()) {
+        return;
+      }
+    }
+    return block;
+  };
+  const anchorBlock = $getBlock(anchorElements, false);
+  const focusBlock = anchorBlock && $getBlock(focusElements, true);
+  return anchorBlock && focusBlock ? [anchorBlock, focusBlock] : null;
 }
 
 /**

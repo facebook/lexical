@@ -453,7 +453,9 @@ function TableActionMenu({
       if (tableCellNode.isAttached()) {
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
         if (tableNode) {
-          tableNode.setFirstColumnFreeze(!tableNode.getFirstColumnFreeze());
+          tableNode.setFrozenColumns(
+            tableNode.getFrozenColumns() === 0 ? 1 : 0,
+          );
         }
       }
       clearTableSelection();

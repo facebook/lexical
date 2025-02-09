@@ -1803,6 +1803,18 @@ export class RangeSelection implements BaseSelection {
               // fall through when descending an inline
             } else if (caret.origin.isShadowRoot()) {
               // Don't merge with a shadow root block
+              if (
+                $isElementNode(initialRange.anchor.origin) &&
+                initialRange.anchor.origin.isEmpty()
+              ) {
+                // delete an empty paragraph like the DecoratorNode case
+                const normCaret = $normalizeCaret(caret);
+                $updateRangeSelectionFromCaretRange(
+                  this,
+                  $getCaretRange(normCaret, normCaret),
+                );
+                initialRange.anchor.origin.remove();
+              }
               return;
             } else if (state.type === 'merge-next-block') {
               $updateRangeSelectionFromCaretRange(

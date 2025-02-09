@@ -48,7 +48,7 @@ export type SerializedTableNode = Spread<
   {
     colWidths?: readonly number[];
     rowStriping?: boolean;
-    frozenFirstColumn?: boolean;
+    frozenFirstColumn?: number;
   },
   SerializedElementNode
 >;
@@ -89,12 +89,12 @@ function setRowStriping(
   }
 }
 
-function setFirstColumnFreeze(
+function setFrozenColumns(
   dom: HTMLElement,
   config: EditorConfig,
-  forzenFirstColumn: boolean,
+  frozenColumnCount: number,
 ): void {
-  if (forzenFirstColumn) {
+  if (frozenColumnCount > 0) {
     addClassNamesToElement(dom, config.theme.tableFrozenColumn);
     dom.setAttribute('data-lexical-frozen-first-column', 'true');
   } else {
@@ -152,7 +152,7 @@ export function setScrollableTablesActive(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
-  __frozenFirstColumn: boolean;
+  __frozenColumnCount: number;
   __colWidths?: readonly number[];
 
   static getType(): string {
@@ -180,7 +180,7 @@ export class TableNode extends ElementNode {
     super.afterCloneFrom(prevNode);
     this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
-    this.__frozenFirstColumn = prevNode.__frozenFirstColumn;
+    this.__frozenColumnCount = prevNode.__frozenColumnCount;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -200,14 +200,14 @@ export class TableNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setRowStriping(serializedNode.rowStriping || false)
-      .setFirstColumnFreeze(serializedNode.frozenFirstColumn || false)
+      .setFrozenColumns(serializedNode.frozenFirstColumn || 0)
       .setColWidths(serializedNode.colWidths);
   }
 
   constructor(key?: NodeKey) {
     super(key);
     this.__rowStriping = false;
-    this.__frozenFirstColumn = false;
+    this.__frozenColumnCount = 0;
   }
 
   exportJSON(): SerializedTableNode {
@@ -253,8 +253,8 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(tableElement, config.theme.table);
     alignTableElement(tableElement, config, this.getFormatType());
-    if (this.__frozenFirstColumn) {
-      setFirstColumnFreeze(tableElement, config, true);
+    if (this.__frozenColumnCount) {
+      setFrozenColumns(tableElement, config, this.__frozenColumnCount);
     }
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
@@ -278,8 +278,8 @@ export class TableNode extends ElementNode {
     if (prevNode.__rowStriping !== this.__rowStriping) {
       setRowStriping(dom, config, this.__rowStriping);
     }
-    if (prevNode.__frozenFirstColumn !== this.__frozenFirstColumn) {
-      setFirstColumnFreeze(dom, config, this.__frozenFirstColumn);
+    if (prevNode.__frozenColumnCount !== this.__frozenColumnCount) {
+      setFrozenColumns(dom, config, this.__frozenColumnCount);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
     alignTableElement(
@@ -497,14 +497,14 @@ export class TableNode extends ElementNode {
     return self;
   }
 
-  setFirstColumnFreeze(newValue: boolean): this {
+  setFrozenColumns(columnCount: number): this {
     const self = this.getWritable();
-    self.__frozenFirstColumn = newValue;
+    self.__frozenColumnCount = columnCount;
     return self;
   }
 
-  getFirstColumnFreeze(): boolean {
-    return Boolean(this.getLatest().__frozenFirstColumn);
+  getFrozenColumns(): number {
+    return this.getLatest().__frozenColumnCount;
   }
 
   canSelectBefore(): true {

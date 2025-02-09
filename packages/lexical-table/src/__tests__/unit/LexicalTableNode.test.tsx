@@ -1057,7 +1057,7 @@ describe('LexicalTableNode tests', () => {
               const root = $getRoot();
               const table = root.getLastChild<TableNode>();
               if (table) {
-                table.setFirstColumnFreeze(true);
+                table.setFrozenColumns(1);
               }
             });
 
@@ -1086,7 +1086,7 @@ describe('LexicalTableNode tests', () => {
               const root = $getRoot();
               const table = root.getLastChild<TableNode>();
               if (table) {
-                table.setFirstColumnFreeze(false);
+                table.setFrozenColumns(0);
               }
             });
 

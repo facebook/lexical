@@ -1070,7 +1070,7 @@ describe('LexicalTableNode tests', () => {
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
                       .tableFrozenColumn}"
-                    data-lexical-frozen-first-column="true">
+                    data-lexical-frozen-column="true">
                     <colgroup>
                       <col />
                       <col />

@@ -48,7 +48,7 @@ export type SerializedTableNode = Spread<
   {
     colWidths?: readonly number[];
     rowStriping?: boolean;
-    frozenFirstColumn?: number;
+    frozenColumnCount?: number;
   },
   SerializedElementNode
 >;
@@ -96,10 +96,10 @@ function setFrozenColumns(
 ): void {
   if (frozenColumnCount > 0) {
     addClassNamesToElement(dom, config.theme.tableFrozenColumn);
-    dom.setAttribute('data-lexical-frozen-first-column', 'true');
+    dom.setAttribute('data-lexical-frozen-column', 'true');
   } else {
     removeClassNamesFromElement(dom, config.theme.tableFrozenColumn);
-    dom.removeAttribute('data-lexical-fronzen-first-column');
+    dom.removeAttribute('data-lexical-frozen-column');
   }
 }
 
@@ -200,7 +200,7 @@ export class TableNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setRowStriping(serializedNode.rowStriping || false)
-      .setFrozenColumns(serializedNode.frozenFirstColumn || 0)
+      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
       .setColWidths(serializedNode.colWidths);
   }
 

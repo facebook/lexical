@@ -258,7 +258,7 @@ export class TableCellNode extends ElementNode {
     return self;
   }
 
-  getVerticalAlign(): null | string {
+  getVerticalAlign(): undefined | string {
     return this.getLatest().__verticalAlign;
   }
 

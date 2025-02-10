@@ -192,11 +192,13 @@ export class TableCellNode extends ElementNode {
   exportJSON(): SerializedTableCellNode {
     return {
       ...super.exportJSON(),
+      ...(isValidVerticalAlign(this.__verticalAlign) && {
+        verticalAlign: this.__verticalAlign,
+      }),
       backgroundColor: this.getBackgroundColor(),
       colSpan: this.__colSpan,
       headerState: this.__headerState,
       rowSpan: this.__rowSpan,
-      ...(isValidVerticalAlign(this.__verticalAlign) && { verticalAlign: this.__verticalAlign }),
       width: this.getWidth(),
     };
   }
@@ -317,8 +319,8 @@ export class TableCellNode extends ElementNode {
 }
 
 function isValidVerticalAlign(
-  verticalAlign: null | string,
-): verticalAlign is string {
+  verticalAlign?: null | string,
+): verticalAlign is 'middle' | 'bottom' {
   return verticalAlign === 'middle' || verticalAlign === 'bottom';
 }
 

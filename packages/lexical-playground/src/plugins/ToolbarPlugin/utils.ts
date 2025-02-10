@@ -23,8 +23,11 @@ import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
+  $caretRangeFromSelection,
   $createParagraphNode,
+  $getCaretRangeInDirection,
   $getSelection,
+  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   ElementNode,
@@ -228,6 +231,12 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         if (!$isRangeSelection(sel) || !sel.isCollapsed()) {
           return;
         }
+        const range = $getCaretRangeInDirection(
+          $caretRangeFromSelection(selection),
+          'previous',
+        );
+        // If the previous node is a linebreak we'll remove it later because we are adding a block
+        const possibleLineBreak = range.focus.getNodeAtCaret();
         // TODO fix insertNodes. This is a workaround because
         // trailing content can end up in the newly inserted block
         // otherwise
@@ -252,6 +261,9 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
           }
         }
         if (target) {
+          if ($isLineBreakNode(possibleLineBreak)) {
+            possibleLineBreak.remove();
+          }
           target.select().insertRawText(textContent);
           $setBlocksType($getSelection(), () => $createCodeNode());
         }

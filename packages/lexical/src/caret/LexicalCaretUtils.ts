@@ -28,6 +28,7 @@ import {
 } from '../LexicalSelection';
 import {
   $getNodeByKeyOrThrow,
+  $isRootOrShadowRoot,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -375,7 +376,7 @@ function $getBlockMergeTargets(
   // TODO refactor when we have a better primitive for common ancestor
   const anchorElements = anchorParent.getParents().reverse();
   anchorElements.push(anchorParent);
-  const focusElements = focus.origin.getParents().reverse();
+  const focusElements = focusParent.getParents().reverse();
   focusElements.push(focusParent);
   const maxLen = Math.min(anchorElements.length, focusElements.length);
   let commonAncestorCount: number;
@@ -389,25 +390,26 @@ function $getBlockMergeTargets(
   }
   const $getBlock = (
     arr: readonly ElementNode[],
-    isFocus: boolean,
+    predicate: (node: ElementNode) => boolean,
   ): ElementNode | undefined => {
     let block: ElementNode | undefined;
     for (let i = commonAncestorCount; i < arr.length; i++) {
       const ancestor = arr[i];
-      if (
-        !block &&
-        INTERNAL_$isBlock(ancestor) &&
-        (!isFocus || seenStart.has(ancestor.getKey()))
-      ) {
-        block = ancestor;
-      } else if (ancestor.isShadowRoot()) {
+      if ($isRootOrShadowRoot(ancestor)) {
         return;
+      } else if (!block && predicate(ancestor)) {
+        block = ancestor;
       }
     }
     return block;
   };
-  const anchorBlock = $getBlock(anchorElements, false);
-  const focusBlock = anchorBlock && $getBlock(focusElements, true);
+  const anchorBlock = $getBlock(anchorElements, INTERNAL_$isBlock);
+  const focusBlock =
+    anchorBlock &&
+    $getBlock(
+      focusElements,
+      (node) => seenStart.has(node.getKey()) && INTERNAL_$isBlock(node),
+    );
   return anchorBlock && focusBlock ? [anchorBlock, focusBlock] : null;
 }
 

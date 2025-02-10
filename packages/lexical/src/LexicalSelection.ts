@@ -23,6 +23,7 @@ import {
   $createTextNode,
   $extendCaretToRange,
   $getCaretRange,
+  $getSiblingCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -32,10 +33,10 @@ import {
   $isTextNode,
   $normalizeCaret,
   $removeTextFromCaretRange,
+  $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
-  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -1819,7 +1820,14 @@ export class RangeSelection implements BaseSelection {
             } else if (state.type === 'merge-next-block') {
               $updateRangeSelectionFromCaretRange(
                 this,
-                $getCaretRange(initialRange.anchor, caret),
+                $getCaretRange(
+                  !caret.origin.isEmpty() && state.block.isEmpty()
+                    ? $rewindSiblingCaret(
+                        $getSiblingCaret(state.block, caret.direction),
+                      )
+                    : initialRange.anchor,
+                  caret,
+                ),
               );
               return this.removeText();
             }
@@ -1863,35 +1871,6 @@ export class RangeSelection implements BaseSelection {
 
       // Handle the deletion around decorators.
       const focus = this.focus;
-      const possibleNode = $getAdjacentNode(focus, isBackward);
-      if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
-        // Make it possible to move selection from range selection to
-        // node selection on the node.
-        if (
-          possibleNode.isKeyboardSelectable() &&
-          $isElementNode(anchorNode) &&
-          anchorNode.getChildrenSize() === 0
-        ) {
-          anchorNode.remove();
-          const nodeSelection = $createNodeSelection();
-          nodeSelection.add(possibleNode.__key);
-          $setSelection(nodeSelection);
-        } else {
-          possibleNode.remove();
-          const editor = getActiveEditor();
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-        }
-        return;
-      } else if (
-        !isBackward &&
-        $isElementNode(possibleNode) &&
-        $isElementNode(anchorNode) &&
-        anchorNode.isEmpty()
-      ) {
-        anchorNode.remove();
-        possibleNode.selectStart();
-        return;
-      }
       this.modify('extend', isBackward, 'character');
 
       if (!this.isCollapsed()) {

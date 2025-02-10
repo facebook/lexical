@@ -30,7 +30,7 @@ export type State = {
   [Key in string]?: string | number | boolean | null | undefined | State;
 };
 
-type StateValue = string | number | boolean | null | undefined | State;
+type StateValue = State[keyof State];
 
 export function createState<K extends string, T extends StateValue>(
   key: K,

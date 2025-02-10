@@ -213,18 +213,6 @@ export class LexicalNode {
     this._state = value;
   }
 
-  // getState<T extends StateKey>(k: T): T['value'] {
-  //   const self = this.getLatest();
-  //   // If the state is not set, return the default value
-  //   return k.parse(self.__state[k.key]);
-  // }
-
-  // setState<T extends StateKey>(k: T, v: T['value']): this {
-  //   const self = this.getWritable();
-  //   self.__state = {...self.__state, [k.key]: v};
-  //   return self;
-  // }
-
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
   // a static getType and clone method though. We define getType and clone here so we can call it

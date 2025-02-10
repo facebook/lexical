@@ -2,36 +2,34 @@
 
 Originally the only way to customize nodes was using the node replacement API. Recently we have introduced a second way with the `state` property which has some advantages described below.
 
-## State (New)
+## State (Experimental)
 
 The advantages of using state over the replacement API are:
 1. Easier (less boilerplate)
 2. Composable (multiple plugins extending the same node causes failures)
 3. Allows metadata: useful for adding things to the RootNode.
 
-All you need to do is define keys with `createStateKey`, and then use it with the `setState` and `getState` methods.
-
 ```ts
 // IMPLEMENTATION
-const color = createStateKey('color', {
+const colorState = createState('color', {
   parse: (value: unknown) => (typeof value === 'string' ? value : undefined),
 });
 
 // USAGE
 const textNode = $createTextNode();
-textNode.setState(color, "blue");
-const textColor = textNode.getState(color) // -> "blue"
+colorState.$set(textNode, "blue");
+const textColor = colorState.$get(textNode) // -> "blue"
 ```
 
-Inside state, you can put any serializable json value except null. Our recommendation is to always use TypeScript in strict mode, so you don't have to worry about these things!
+Inside state, you can put any serializable json value. Our recommendation is to always use TypeScript in strict mode, so you don't have to worry about these things!
 
 ### Important
 
-we recommend that you use prefixes with low collision probability when defining state keys. For example, if you are making a plugin called `awesome-lexical`, you could do:
+we recommend that you use prefixes with low collision probability when defining state. For example, if you are making a plugin called `awesome-lexical`, you could do:
 
 ```ts
-const color = createStateKey('awesome-lexical-color', /** your parse fn */)
-const bgColor = createStateKey('awesome-lexical-bg-color', /** your parse fn */)
+const color = createState('awesome-lexical-color', /** your parse fn */)
+const bgColor = createState('awesome-lexical-bg-color', /** your parse fn */)
 
 // Or you can add all your state inside an object:
 type AwesomeLexical = {
@@ -39,7 +37,7 @@ type AwesomeLexical = {
   bgColor?: string;
   padding?: number
 }
-const awesomeLexical = createStateKey('awesome-lexical', /** your parse fn which returns AwesomeLexical type */)
+const awesomeLexical = createState('awesome-lexical', /** your parse fn which returns AwesomeLexical type */)
 
 ```
 

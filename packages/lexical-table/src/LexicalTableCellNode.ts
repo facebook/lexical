@@ -262,9 +262,9 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__verticalAlign;
   }
 
-  setVerticalAlign(newVerticalAlign: null | string): this {
+  setVerticalAlign(newVerticalAlign: null | undefined | string): this {
     const self = this.getWritable();
-    self.__verticalAlign = newVerticalAlign;
+    self.__verticalAlign = newVerticalAlign || undefined;
     return self;
   }
 

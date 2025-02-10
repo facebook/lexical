@@ -197,7 +197,7 @@ export class TableCellNode extends ElementNode {
       colSpan: this.__colSpan,
       headerState: this.__headerState,
       rowSpan: this.__rowSpan,
-      verticalAlign: this.getVerticalAlign(),
+      ...(isValidVerticalAlign(this.__verticalAlign) && { verticalAlign: this.__verticalAlign }),
       width: this.getWidth(),
     };
   }

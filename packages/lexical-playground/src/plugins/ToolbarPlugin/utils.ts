@@ -158,9 +158,7 @@ export const updateFontSize = (
 export const formatParagraph = (editor: LexicalEditor) => {
   editor.update(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      $setBlocksType(selection, () => $createParagraphNode());
-    }
+    $setBlocksType(selection, () => $createParagraphNode());
   });
 };
 

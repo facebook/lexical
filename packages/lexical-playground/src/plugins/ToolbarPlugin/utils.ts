@@ -27,6 +27,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  ElementNode,
   LexicalEditor,
 } from 'lexical';
 
@@ -214,19 +215,45 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
-      let selection = $getSelection();
-
-      if (selection !== null) {
-        if (selection.isCollapsed()) {
-          $setBlocksType(selection, () => $createCodeNode());
+      const selection = $getSelection();
+      if (!selection) {
+        return;
+      }
+      if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+        $setBlocksType(selection, () => $createCodeNode());
+      } else {
+        const textContent = selection.getTextContent();
+        selection.removeText();
+        const sel = $getSelection();
+        if (!$isRangeSelection(sel) || !sel.isCollapsed()) {
+          return;
+        }
+        // TODO fix insertNodes. This is a workaround because
+        // trailing content can end up in the newly inserted block
+        // otherwise
+        let target: ElementNode | undefined;
+        const p0 = sel.anchor.getNode().getTopLevelElement();
+        if (!p0) {
+          return;
+        } else if (p0.isEmpty()) {
+          // The paragraph is already empty and can be converted to code
+          target = p0;
         } else {
-          const textContent = selection.getTextContent();
-          const codeNode = $createCodeNode();
-          selection.insertNodes([codeNode]);
-          selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            selection.insertRawText(textContent);
+          const p1 = sel.insertParagraph();
+          if (p0.isEmpty()) {
+            // There was no preceding content
+            target = p0;
+          } else if (p1) {
+            target = p1;
+            if (!p1.isEmpty()) {
+              // Handle case for both preceding and trailing content
+              sel.insertParagraph();
+            }
           }
+        }
+        if (target) {
+          target.select().insertRawText(textContent);
+          $setBlocksType($getSelection(), () => $createCodeNode());
         }
       }
     });

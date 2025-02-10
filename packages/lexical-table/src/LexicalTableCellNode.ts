@@ -116,7 +116,7 @@ export class TableCellNode extends ElementNode {
       .setRowSpan(serializedNode.rowSpan || 1)
       .setWidth(serializedNode.width || undefined)
       .setBackgroundColor(serializedNode.backgroundColor || null)
-      .setVerticalAlign(serializedNode.verticalAlign || null);
+      .setVerticalAlign(serializedNode.verticalAlign || undefined);
   }
 
   constructor(

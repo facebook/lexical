@@ -310,6 +310,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     }
   }
 
+  // Find the deepest anchor and focus candidates that are
+  // still attached
   let anchorCandidate: PointCaret<'next'> | undefined;
   let focusCandidate: PointCaret<'previous'> | undefined;
   for (const candidate of anchorCandidates) {
@@ -339,13 +341,13 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     focusBlock.remove();
   }
 
-  const bestCandidate: PointCaret<CaretDirection> | undefined =
-    $isCaretAttached(anchorCandidate)
-      ? anchorCandidate
-      : $isCaretAttached(focusCandidate)
-      ? focusCandidate
-      : anchorCandidates.find($isCaretAttached) ||
-        focusCandidates.find($isCaretAttached);
+  // note this caret can be in either direction
+  const bestCandidate = [
+    anchorCandidate,
+    focusCandidate,
+    ...anchorCandidates,
+    ...focusCandidates,
+  ].find($isCaretAttached);
   if (bestCandidate) {
     const anchor = $getCaretInDirection(
       $normalizeCaret(bestCandidate),
@@ -360,6 +362,16 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   );
 }
 
+/**
+ * Determine if the two caret orgins are in distinct blocks that
+ * should be merged.
+ *
+ * The returned block pair will be the closest blocks to their
+ * common ancestor, and must be no shadow roots between
+ * the blocks and their respective carets. If two distinct
+ * blocks matching this criteria are not found, this will return
+ * null.
+ */
 function $getBlockMergeTargets(
   anchor: null | undefined | PointCaret<'next'>,
   focus: null | undefined | PointCaret<'previous'>,

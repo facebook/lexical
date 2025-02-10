@@ -472,7 +472,7 @@ export class TableObserver {
       const parent = tableNode.getParent();
       // Delete entire table
       tableNode.remove();
-      // Handle case when table is the last node
+      // Handle case when table was the only node
       if ($isRootNode(parent) && parent.isEmpty()) {
         editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
       }

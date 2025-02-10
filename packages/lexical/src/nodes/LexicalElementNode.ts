@@ -289,7 +289,7 @@ function indexPath(root: HTMLElement, child: Node): number[] {
     for (
       let sibling = node.previousSibling;
       sibling !== null;
-      sibling = node.previousSibling
+      sibling = sibling.previousSibling
     ) {
       i++;
     }

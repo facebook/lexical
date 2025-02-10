@@ -18,7 +18,7 @@ The NodeCaret API was introduced in lexical v0.25.0.
 The core concept with `NodeCaret` is that you can represent any specific
 point in the document by using an `origin` node, a `direction` that
 points towards an adjacent node (`next` or `previous`), and a `type`
-to specify whether the arrow points towards a sibling (`breadth`) or
+to specify whether the arrow points towards a sibling (`sibling`) or
 towards a child (`child`).
 
 All of these types have a `D` type parameter that must be a `CaretDirection`, so you

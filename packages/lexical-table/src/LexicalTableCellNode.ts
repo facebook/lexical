@@ -67,7 +67,7 @@ export class TableCellNode extends ElementNode {
   /** @internal */
   __backgroundColor: null | string;
   /** @internal */
-  __verticalAlign: null | string;
+  __verticalAlign?: undefined | string;
 
   static getType(): string {
     return 'tablecell';

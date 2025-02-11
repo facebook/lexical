@@ -33,7 +33,13 @@ import {
 } from 'lexical';
 
 import {SerializedElementNode} from '../..';
-import {$assertRangeSelection, initializeUnitTest, invariant} from '../utils';
+import {
+  $assertRangeSelection,
+  $createTestDecoratorNode,
+  $createTestInlineElementNode,
+  initializeUnitTest,
+  invariant,
+} from '../utils';
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -863,60 +869,37 @@ describe('getNodes()', () => {
       testEnv.editor.update(() => {
         paragraphText = $createTextNode('paragraph text');
         linkText = $createTextNode('link text');
-        linkNode = $createLinkNode().append(linkText);
-        paragraphNode = $createParagraphNode().append(paragraphText, linkNode);
+        linkNode = $createLinkNode();
+        paragraphNode = $createParagraphNode();
         listItemText1 = $createTextNode('item 1');
         listItemText2 = $createTextNode('item 2');
-        listItem1 = $createListItemNode().append(listItemText1);
-        listItem2 = $createListItemNode().append(listItemText2);
-        listNode = $createListNode('bullet').append(listItem1, listItem2);
+        listItem1 = $createListItemNode();
+        listItem2 = $createListItemNode();
+        listNode = $createListNode('bullet');
         emptyParagraph = $createParagraphNode();
-        $getRoot().clear().append(paragraphNode, listNode, emptyParagraph);
+        $getRoot()
+          .clear()
+          .append(
+            paragraphNode.append(paragraphText, linkNode.append(linkText)),
+            listNode.append(
+              listItem1.append(listItemText1),
+              listItem2.append(listItemText2),
+            ),
+            emptyParagraph,
+          );
       });
     });
-    test('$selectAll()', () => {
-      testEnv.editor.update(
-        () => {
-          const selection = $selectAll();
-          // Normalized to the text nodes
-          expect(selection).toMatchObject({
-            anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
-            focus: {key: emptyParagraph.getKey(), offset: 0, type: 'element'},
-          });
-          expect(selection.getNodes()).toEqual([
-            paragraphText,
-            linkNode,
-            linkText,
-            // The parent paragraphNode comes after its children because the
-            // selection started inside of it at paragraphText
-            paragraphNode,
-            listNode,
-            listItem1,
-            listItemText1,
-            listItem2,
-            listItemText2,
-            emptyParagraph,
-          ]);
-        },
-        {discrete: true},
-      );
-    });
-    test('$selectAll() after removing empty paragraph', () => {
-      testEnv.editor.update(
-        () => {
-          emptyParagraph.remove();
-          const selection = $selectAll();
-          // Normalized to the text nodes
-          expect(selection).toMatchObject({
-            anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
-            focus: {
-              key: listItemText2.getKey(),
-              offset: listItemText2.getTextContentSize(),
-              type: 'text',
-            },
-          });
-          expect(selection.getNodes()).toEqual(
-            [
+    describe('$selectAll()', () => {
+      test('with test document', () => {
+        testEnv.editor.update(
+          () => {
+            const selection = $selectAll();
+            // Normalized to the text nodes
+            expect(selection).toMatchObject({
+              anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+              focus: {key: emptyParagraph.getKey(), offset: 0, type: 'element'},
+            });
+            expect(selection.getNodes()).toEqual([
               paragraphText,
               linkNode,
               linkText,
@@ -928,11 +911,183 @@ describe('getNodes()', () => {
               listItemText1,
               listItem2,
               listItemText2,
-            ].map((n) => n.getLatest()),
-          );
-        },
-        {discrete: true},
-      );
+              emptyParagraph,
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+      test('with leading inline decorator', () => {
+        testEnv.editor.update(
+          () => {
+            const inlineDecoratorLeading = $createTestDecoratorNode();
+            paragraphNode.splice(0, 0, [inlineDecoratorLeading]);
+            const selection = $selectAll();
+            // Normalized to the text nodes
+            expect(selection).toMatchObject({
+              anchor: {key: paragraphNode.getKey(), offset: 0, type: 'element'},
+              focus: {key: emptyParagraph.getKey(), offset: 0, type: 'element'},
+            });
+            expect(selection.getNodes()).toEqual(
+              [
+                inlineDecoratorLeading,
+                paragraphText,
+                linkNode,
+                linkText,
+                // The parent paragraphNode comes after its children because the
+                // selection started inside of it at paragraphText
+                paragraphNode,
+                listNode,
+                listItem1,
+                listItemText1,
+                listItem2,
+                listItemText2,
+                emptyParagraph,
+              ].map((node) => node.getLatest()),
+            );
+          },
+          {discrete: true},
+        );
+      });
+      test('with trailing inline decorator', () => {
+        testEnv.editor.update(
+          () => {
+            const inlineDecoratorTrailing = $createTestDecoratorNode();
+            const noLongerEmptyParagraph = emptyParagraph;
+            noLongerEmptyParagraph.splice(0, 0, [inlineDecoratorTrailing]);
+            const selection = $selectAll();
+            // Normalized to the text nodes
+            expect(selection).toMatchObject({
+              anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+              focus: {key: emptyParagraph.getKey(), offset: 1, type: 'element'},
+            });
+            expect(selection.getNodes()).toEqual(
+              [
+                paragraphText,
+                linkNode,
+                linkText,
+                // The parent paragraphNode comes after its children because the
+                // selection started inside of it at paragraphText
+                paragraphNode,
+                listNode,
+                listItem1,
+                listItemText1,
+                listItem2,
+                listItemText2,
+                noLongerEmptyParagraph,
+                inlineDecoratorTrailing,
+              ].map((node) => node.getLatest()),
+            );
+          },
+          {discrete: true},
+        );
+      });
+      test('with leading empty inline element', () => {
+        testEnv.editor.update(
+          () => {
+            const inlineElementLeading = $createTestInlineElementNode();
+            paragraphNode.splice(0, 0, [inlineElementLeading]);
+            const selection = $selectAll();
+            // Normalized to the text nodes
+            expect(selection).toMatchObject({
+              anchor: {
+                key: inlineElementLeading.getKey(),
+                offset: 0,
+                type: 'element',
+              },
+              focus: {key: emptyParagraph.getKey(), offset: 0, type: 'element'},
+            });
+            expect(selection.getNodes()).toEqual(
+              [
+                inlineElementLeading,
+                paragraphText,
+                linkNode,
+                linkText,
+                // The parent paragraphNode comes after its children because the
+                // selection started inside of it at paragraphText
+                paragraphNode,
+                listNode,
+                listItem1,
+                listItemText1,
+                listItem2,
+                listItemText2,
+                emptyParagraph,
+              ].map((node) => node.getLatest()),
+            );
+          },
+          {discrete: true},
+        );
+      });
+      test('with trailing empty inline element', () => {
+        testEnv.editor.update(
+          () => {
+            const inlineElementTrailing = $createTestInlineElementNode();
+            const noLongerEmptyParagraph = emptyParagraph;
+            noLongerEmptyParagraph.splice(0, 0, [inlineElementTrailing]);
+            const selection = $selectAll();
+            // Normalized to the text nodes
+            expect(selection).toMatchObject({
+              anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+              focus: {
+                key: inlineElementTrailing.getKey(),
+                offset: 0,
+                type: 'element',
+              },
+            });
+            expect(selection.getNodes()).toEqual(
+              [
+                paragraphText,
+                linkNode,
+                linkText,
+                // The parent paragraphNode comes after its children because the
+                // selection started inside of it at paragraphText
+                paragraphNode,
+                listNode,
+                listItem1,
+                listItemText1,
+                listItem2,
+                listItemText2,
+                noLongerEmptyParagraph,
+                inlineElementTrailing,
+              ].map((node) => node.getLatest()),
+            );
+          },
+          {discrete: true},
+        );
+      });
+      test('after removing empty paragraph', () => {
+        testEnv.editor.update(
+          () => {
+            emptyParagraph.remove();
+            const selection = $selectAll();
+            // Normalized to the text nodes
+            expect(selection).toMatchObject({
+              anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+              focus: {
+                key: listItemText2.getKey(),
+                offset: listItemText2.getTextContentSize(),
+                type: 'text',
+              },
+            });
+            expect(selection.getNodes()).toEqual(
+              [
+                paragraphText,
+                linkNode,
+                linkText,
+                // The parent paragraphNode comes after its children because the
+                // selection started inside of it at paragraphText
+                paragraphNode,
+                listNode,
+                listItem1,
+                listItemText1,
+                listItem2,
+                listItemText2,
+              ].map((n) => n.getLatest()),
+            );
+          },
+          {discrete: true},
+        );
+      });
     });
     test('Manual select all without normalization', () => {
       testEnv.editor.update(
@@ -980,6 +1135,119 @@ describe('getNodes()', () => {
             listItemText2,
             emptyParagraph,
           ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select with focus collapsed between inline decorators', () => {
+      testEnv.editor.update(
+        () => {
+          const inlineDecoratorLeading = $createTestDecoratorNode();
+          const inlineDecoratorTrailing = $createTestDecoratorNode();
+          const noLongerEmptyParagraph = emptyParagraph;
+          noLongerEmptyParagraph.splice(0, 0, [
+            inlineDecoratorLeading,
+            inlineDecoratorTrailing,
+          ]);
+          const selection = $createRangeSelection();
+          // Collapsed between decorators
+          selection.anchor.set(noLongerEmptyParagraph.getKey(), 1, 'element');
+          selection.focus.set(noLongerEmptyParagraph.getKey(), 1, 'element');
+          expect(selection.isCollapsed()).toBe(true);
+          expect(selection).toMatchObject({
+            anchor: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 1,
+              type: 'element',
+            },
+            focus: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 1,
+              type: 'element',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            // The bias is towards the right
+            [inlineDecoratorTrailing].map((node) => node.getLatest()),
+          );
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select with focus collapsed after inline decorator', () => {
+      testEnv.editor.update(
+        () => {
+          const inlineDecoratorLeading = $createTestDecoratorNode();
+          const inlineDecoratorTrailing = $createTestDecoratorNode();
+          const noLongerEmptyParagraph = emptyParagraph;
+          noLongerEmptyParagraph.splice(0, 0, [
+            inlineDecoratorLeading,
+            inlineDecoratorTrailing,
+          ]);
+          const selection = $createRangeSelection();
+          // Collapsed after decorators
+          selection.anchor.set(noLongerEmptyParagraph.getKey(), 2, 'element');
+          selection.focus.set(noLongerEmptyParagraph.getKey(), 2, 'element');
+          expect(selection.isCollapsed()).toBe(true);
+          expect(selection).toMatchObject({
+            anchor: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 2,
+              type: 'element',
+            },
+            focus: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 2,
+              type: 'element',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            // The bias is towards the last descendant since no
+            // nodes exist to the right
+            [inlineDecoratorTrailing].map((node) => node.getLatest()),
+          );
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select with focus between inline decorators', () => {
+      testEnv.editor.update(
+        () => {
+          const inlineDecoratorLeading = $createTestDecoratorNode();
+          const inlineDecoratorTrailing = $createTestDecoratorNode();
+          const noLongerEmptyParagraph = emptyParagraph;
+          noLongerEmptyParagraph.splice(0, 0, [
+            inlineDecoratorLeading,
+            inlineDecoratorTrailing,
+          ]);
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 0, 'text');
+          selection.focus.set(noLongerEmptyParagraph.getKey(), 1, 'element');
+          expect(selection).toMatchObject({
+            anchor: {key: paragraphText.getKey(), offset: 0, type: 'text'},
+            focus: {
+              key: noLongerEmptyParagraph.getKey(),
+              offset: 1,
+              type: 'element',
+            },
+          });
+          expect(selection.getNodes()).toEqual(
+            [
+              paragraphText,
+              linkNode,
+              linkText,
+              // The parent paragraphNode comes after its children because the
+              // selection started inside of it at paragraphText
+              paragraphNode,
+              listNode,
+              listItem1,
+              listItemText1,
+              listItem2,
+              listItemText2,
+              noLongerEmptyParagraph,
+              inlineDecoratorLeading,
+            ].map((node) => node.getLatest()),
+          );
         },
         {discrete: true},
       );
@@ -1034,6 +1302,18 @@ describe('getNodes()', () => {
             linkText,
             paragraphNode,
           ]);
+        },
+        {discrete: true},
+      );
+    });
+    test('selection collapsed inside an empty element', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(emptyParagraph.getKey(), 0, 'element');
+          selection.focus.set(emptyParagraph.getKey(), 0, 'element');
+          // The selection should include the node it is collapsed inside
+          expect(selection.getNodes()).toEqual([emptyParagraph]);
         },
         {discrete: true},
       );

@@ -561,6 +561,7 @@ export function useMenuAnchorRef(
     parent,
   ]);
 
+  positionMenu();
   useEffect(() => {
     const rootElement = editor.getRootElement();
     if (resolution !== null) {

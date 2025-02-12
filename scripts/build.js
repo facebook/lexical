@@ -301,6 +301,7 @@ function getComment() {
     ' * @preserve-invariant-messages',
     ' * @preserve-whitespace',
     ' * @preventMunge',
+    ' * @noEnforceES3',
   );
   return lines.join('\n');
 }

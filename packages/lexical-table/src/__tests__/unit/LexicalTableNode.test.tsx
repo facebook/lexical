@@ -1085,7 +1085,7 @@ describe('LexicalTableNode tests', () => {
             const stringifiedEditorState = JSON.stringify(
               editor.getEditorState(),
             );
-            const expectedStringifiedEditorState = ``;
+            const expectedStringifiedEditorState = `{"a":"abc"}`;
 
             expect(JSON.parse(stringifiedEditorState)).toEqual(
               JSON.parse(expectedStringifiedEditorState),

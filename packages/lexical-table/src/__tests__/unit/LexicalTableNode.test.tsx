@@ -1082,6 +1082,15 @@ describe('LexicalTableNode tests', () => {
               );
             });
 
+            const stringifiedEditorState = JSON.stringify(
+              editor.getEditorState(),
+            );
+            const expectedStringifiedEditorState = ``;
+
+            expect(JSON.parse(stringifiedEditorState)).toEqual(
+              JSON.parse(expectedStringifiedEditorState),
+            );
+
             await editor.update(() => {
               const root = $getRoot();
               const table = root.getLastChild<TableNode>();

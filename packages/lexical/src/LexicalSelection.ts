@@ -58,7 +58,7 @@ import {
   $hasAncestor,
   $isTokenOrSegmented,
   $setCompositionKey,
-  doesContainGrapheme,
+  doesContainSurrogatePair,
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
@@ -1994,6 +1994,66 @@ function moveNativeSelection(
   domSelection.modify(alter, direction, granularity);
 }
 
+/**
+ * Called by `RangeSelection.deleteCharacter` to determine if
+ * `this.modify('extend', isBackward, 'character')` extended the selection
+ * further than a user would expect for that operation.
+ *
+ * A short(?) JavaScript string vs. Unicode primer:
+ *
+ * Strings in JavaScript use an UTF-16 encoding, and the offsets into a
+ * string are based on those UTF-16 *code units*. This is basically a
+ * historical mistake (though logical at that time, decades ago), but
+ * can never really be fixed for compatibility reasons.
+ *
+ * In Unicode, a *code point* is the combination of one or more *code units*.
+ * and the range of a *code point* can fit into 21 bits.
+ *
+ * Every valid *code point* can be represented with one or two
+ * *UTF-16 code units*. One unit is used when the code point is in the
+ * Basic Multilingual Plane (BMP) and is `< 0xFFFF`. Anything outside
+ * of that plane is encoded with a *surrogate pair* of *code units* and
+ * `/[\uD800-\uDBFF][\uDC00-\uDFFF]/` is a regex that you could use to
+ * find any valid *surrogate pair*. As far as Unicode is concerned, these
+ * pairs represent a single *code point*, but in JavaScript, these pairs
+ * have a length of 2 (`pair.codePointAt(n)` is really returning a
+ * UTF-16 *code unit*, not a unicode *code point*).
+ *
+ * This only gets us as far as *code points*. We now know that we must
+ * consider that each *code point* can have a length of 1 or 2 in JavaScript
+ * string distance. It gets even trickier because the visual representation
+ * of a character is a *grapheme* (approximately what the user thinks of
+ * as a character). A *grapheme* is one or more *code points*, and can
+ * essentially be arbitrarily long, as there are many ways to combine
+ * them.
+ *
+ * The `this.modify(…)` call has already extended our selection by one
+ * *grapheme* in the direction we want to delete. Sounds great, it's done
+ * a lot of awfully tricky work for us because this functionality has only
+ * recently become available in JavaScript via `Intl.Segmenter`. The
+ * problem is that in many cases the expected behavior of backspace or
+ * delete is *not always to delete a whole grapheme*. In some languages
+ * it's always expected that backspace ought to delete one code point, not the
+ * whole grapheme. In other situations such as emoji that use variation
+ * selectors you *do* want to delete the whole *grapheme*.
+ *
+ * In a few situations the behavior is even application dependent, such as
+ * with latin languages where you have multiple ways to represent the same
+ * character visually (e.g. a letter with an accent in one code point, or a
+ * letter followed by a combining mark in a second code point); some apps will
+ * delete the whole grapheme and others will delete only the combining mark,
+ * probably based on whether they perform some sort of *normalization* on their
+ * input to ensure that only one form is used when two sequences of code points
+ * can represent the same visual character. Lexical currently chooses not
+ * to perform any normalization so this type of combining marks will be
+ * deleted as a *code point* without deleting the whole *grapheme*.
+ *
+ * See also:
+ * https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-2/#G25564
+ * https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G30602
+ * https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G49537
+ * https://mathiasbynens.be/notes/javascript-unicode
+ */
 function $updateCaretSelectionForUnicodeCharacter(
   selection: RangeSelection,
   isBackward: boolean,
@@ -2018,7 +2078,7 @@ function $updateCaretSelectionForUnicodeCharacter(
 
     if (startOffset !== characterOffset) {
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
-      if (!doesContainGrapheme(text)) {
+      if (shouldDeleteExactlyOneCodeUnit(text)) {
         if (isBackward) {
           focus.set(focus.key, characterOffset, focus.type);
         } else {
@@ -2026,9 +2086,31 @@ function $updateCaretSelectionForUnicodeCharacter(
         }
       }
     }
-  } else {
-    // TODO Handling of multibyte characters
   }
+}
+
+function shouldDeleteExactlyOneCodeUnit(text: string) {
+  if (__DEV__) {
+    invariant(
+      text.length > 1,
+      'shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units',
+    );
+  }
+  return !(doesContainSurrogatePair(text) || doesContainEmoji(text));
+}
+
+/**
+ * Given the wall of text in $updateCaretSelectionForUnicodeCharacter, you'd
+ * think that the solution might be complex, but the only currently known
+ * cases given the above constraints where we want to delete a whole grapheme
+ * are when emoji is involved. Since ES6 we can use unicode character classes
+ * in regexp which makes this simple.
+ *
+ * It may make sense to add to this heuristic in the future if other
+ * edge cases are discovered, which is why detailed notes remain.
+ */
+function doesContainEmoji(text: string) {
+  return /\p{Emoji}/u.test(text);
 }
 
 function $removeSegment(

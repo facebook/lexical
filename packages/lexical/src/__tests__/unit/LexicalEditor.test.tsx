@@ -2589,6 +2589,20 @@ describe('LexicalEditor tests', () => {
     expect(editor.getEditorState().read($rootTextContent)).toBe('currentnext');
   });
 
+  it('throws when referring to Nodes prior to setEditorState', async () => {
+    editor = createTestEditor({});
+    await editor.update(() => {
+      const text = $createTextNode('next');
+      const state = editor.parseEditorState(
+        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"current","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      );
+      editor.setEditorState(state);
+      expect(() => $insertNodes([text])).toThrow();
+    });
+    // A writable version of the EditorState may have been created, we settle for equal serializations
+    expect(editor.getEditorState().read($rootTextContent)).toBe('current');
+  });
+
   describe('node replacement', () => {
     it('should work correctly', async () => {
       const onError = jest.fn();

@@ -281,14 +281,18 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 100px" />
           </colgroup>
           <tr style="height: 21px">
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">a</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -300,7 +304,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
                 <span data-lexical-text="true">b</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -309,21 +315,27 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
           </tr>
           <tr style="height: 21px">
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">e</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">

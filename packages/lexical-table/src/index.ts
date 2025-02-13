@@ -48,6 +48,7 @@ export type {
 } from './LexicalTableSelection';
 export {
   $createTableSelection,
+  $createTableSelectionFrom,
   $isTableSelection,
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';

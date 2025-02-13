@@ -392,11 +392,10 @@ export class LexicalNode {
         const firstPoint = targetSelection.isBackward()
           ? targetSelection.focus
           : targetSelection.anchor;
-        const firstElement = firstPoint.getNode() as ElementNode;
         if (
-          firstPoint.offset === firstElement.getChildrenSize() &&
-          firstElement.is(parentNode) &&
-          firstElement.getLastChildOrThrow().is(this)
+          parentNode.is(firstPoint.getNode()) &&
+          firstPoint.offset === parentNode.getChildrenSize() &&
+          this.is(parentNode.getLastChild())
         ) {
           return false;
         }

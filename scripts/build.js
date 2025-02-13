@@ -135,7 +135,7 @@ async function build(
       if (
         typeof modulePkgName === 'string' &&
         !(
-          modulePkgName in pkg.packageJson.dependencies ||
+          modulePkgName in (pkg.packageJson.dependencies || {}) ||
           modulePkgName === pkg.getNpmName()
         )
       ) {
@@ -301,6 +301,7 @@ function getComment() {
     ' * @preserve-invariant-messages',
     ' * @preserve-whitespace',
     ' * @preventMunge',
+    ' * @noEnforceES3',
   );
   return lines.join('\n');
 }

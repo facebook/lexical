@@ -107,6 +107,10 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
+export function setActiveEditorState(editorState: EditorState) {
+  activeEditorState = editorState;
+}
+
 export function getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(

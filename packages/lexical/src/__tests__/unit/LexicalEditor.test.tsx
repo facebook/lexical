@@ -20,6 +20,7 @@ import {
   TableCellNode,
   TableRowNode,
 } from '@lexical/table';
+import {$rootTextContent} from '@lexical/text';
 import {
   $createLineBreakNode,
   $createNodeSelection,
@@ -30,6 +31,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
+  $insertNodes,
   $isParagraphNode,
   $isTextNode,
   $parseSerializedNode,
@@ -2572,6 +2574,19 @@ describe('LexicalEditor tests', () => {
     // A writable version of the EditorState may have been created, we settle for equal serializations
     expect(editor._editorState.toJSON()).toEqual(state.toJSON());
     expect(editor._pendingEditorState).toBe(null);
+  });
+
+  it('updates the relevant pendingEditorState after setEditorState', async () => {
+    editor = createTestEditor({});
+    await editor.update(() => {
+      const state = editor.parseEditorState(
+        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"current","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      );
+      editor.setEditorState(state);
+      $insertNodes([$createTextNode('next')]);
+    });
+    // A writable version of the EditorState may have been created, we settle for equal serializations
+    expect(editor.getEditorState().read($rootTextContent)).toBe('currentnext');
   });
 
   describe('node replacement', () => {

@@ -294,6 +294,7 @@ function getComment() {
     0,
     ' *',
     ' * @fullSyntaxTransform',
+    ' * @es6-async_DO_NOT_USE',
     ' * @generated',
     ' * @noflow',
     ' * @nolint',
@@ -301,7 +302,6 @@ function getComment() {
     ' * @preserve-invariant-messages',
     ' * @preserve-whitespace',
     ' * @preventMunge',
-    ' * @noEnforceES3',
   );
   return lines.join('\n');
 }

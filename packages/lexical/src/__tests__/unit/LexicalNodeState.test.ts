@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {makeStateWrapper} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getRoot,
+  $getState,
+  $setState,
   createState,
   ParagraphNode,
   RootNode,
@@ -28,6 +31,7 @@ type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
 const numberState = createState('numberState', {
   parse: (v) => (typeof v === 'number' ? v : 0),
 });
+const numberStateWrapper = makeStateWrapper(numberState);
 class StateNode extends TestNode {
   static getType() {
     return 'state';
@@ -38,8 +42,8 @@ class StateNode extends TestNode {
   static importJSON(serializedNode: SerializedLexicalNode): TestNode {
     return new StateNode().updateFromJSON(serializedNode);
   }
-  getNumber = numberState.nodeGetter();
-  setNumber = numberState.nodeSetter();
+  getNumber = numberStateWrapper.makeGetterMethod<this>();
+  setNumber = numberStateWrapper.makeSetterMethod<this>();
 }
 function $createStateNode() {
   return new StateNode();
@@ -62,10 +66,10 @@ describe('LexicalNode state', () => {
           parse: (value) => (typeof value === 'string' ? value : ''),
         });
         const $fn = () => {
-          stringState.$set(root, 'hello');
+          $setState(root, stringState, 'hello');
         };
         const $fn2 = () => {
-          stringState.$set(root, 'hello');
+          $setState(root, stringState, 'hello');
         };
         expect($fn).toThrow();
         expect($fn2).toThrow();
@@ -92,16 +96,16 @@ describe('LexicalNode state', () => {
         });
         const {editor} = testEnv;
         editor.update(() => {
-          const stringValue = stringState.$get(root);
+          const stringValue = $getState(root, stringState);
           type _Test = Expect<Equal<typeof stringValue, string>>;
           expect(stringValue).toBe('');
-          stringState.$set(root, 'hello');
-          expect(stringState.$get(root)).toBe('hello');
+          $setState(root, stringState, 'hello');
+          expect($getState(root, stringState)).toBe('hello');
 
           const maybeStringState = createState('maybeStringState', {
             parse: (value) => (typeof value === 'string' ? value : undefined),
           });
-          const maybeStringValue = maybeStringState.$get(root);
+          const maybeStringValue = $getState(root, maybeStringState);
           type _Test2 = Expect<
             Equal<typeof maybeStringValue, string | undefined>
           >;
@@ -116,7 +120,7 @@ describe('LexicalNode state', () => {
           const json = paragraph.exportJSON();
           // We don't export state as an empty object
           expect(json).not.toHaveProperty('state');
-          numberState.$set(paragraph, 1);
+          $setState(paragraph, numberState, 1);
           const json2 = paragraph.exportJSON();
           expect(json2.state).toStrictEqual({
             numberState: 1,
@@ -135,16 +139,16 @@ describe('LexicalNode state', () => {
           () => {
             const k0 = createState('foo', {parse: (v) => !!v});
             const k1 = createState('foo', {parse: () => 'foo'});
-            expect(k0.$get(root)).toBe(false);
-            k0.$set(root, true);
-            expect(k0.$get(root)).toBe(true);
-            expect(() => k1.$get(root)).toThrow(
+            expect($getState(root, k0)).toBe(false);
+            $setState(root, k0, true);
+            expect($getState(root, k0)).toBe(true);
+            expect(() => $getState(root, k1)).toThrow(
               'State key collision "foo" detected in RootNode node with type root and key root. Only one StateConfig with a given key should be used on a node.',
             );
-            expect(() => k1.$set(root, 'foo')).toThrow(
+            expect(() => $setState(root, k1, 'foo')).toThrow(
               'State key collision "foo" detected in RootNode node with type root and key root. Only one StateConfig with a given key should be used on a node.',
             );
-            expect(k0.$get(root)).toBe(true);
+            expect($getState(root, k0)).toBe(true);
           },
           {discrete: true},
         );
@@ -172,23 +176,23 @@ describe('LexicalNode state', () => {
             parse: (value) => (typeof value === 'number' ? value : 0),
           });
           const paragraph = $createParagraphNode();
-          expect(indentState.$get(paragraph)).toBe(0);
+          expect($getState(paragraph, indentState)).toBe(0);
           const json = paragraph.exportJSON();
           expect(json).not.toHaveProperty('state');
-          indentState.$set(paragraph, 1);
+          $setState(paragraph, indentState, 1);
           const json2 = paragraph.exportJSON();
           expect(json2.state).toStrictEqual({
             indent: 1,
           });
           // set the default value explicitly
-          indentState.$set(paragraph, 0);
+          $setState(paragraph, indentState, 0);
           const json3 = paragraph.exportJSON();
           expect(json3).not.toHaveProperty('state');
 
           const foo = createState('foo', {
             parse: (value) => (typeof value === 'string' ? value : ''),
           });
-          foo.$set(paragraph, 'fooValue');
+          $setState(paragraph, foo, 'fooValue');
           const json4 = paragraph.exportJSON();
           expect(json4.state).toStrictEqual({
             foo: 'fooValue',
@@ -211,7 +215,7 @@ describe('LexicalNode state', () => {
                 foo: '',
               },
           });
-          const paragraphObject = objectState.$get(paragraph);
+          const paragraphObject = $getState(paragraph, objectState);
           type _Test = Expect<
             Equal<
               typeof paragraphObject,
@@ -223,12 +227,12 @@ describe('LexicalNode state', () => {
           >;
 
           // @ts-expect-error - foo is required
-          objectState.$set(paragraph, {bar: 1});
+          $setState(paragraph, objectState, {bar: 1});
           // @ts-expect-error - baz is not a valid property
-          objectState.$set(paragraph, {bar: 1, baz: 'baz', foo: 'foo'});
+          $setState(paragraph, objectState, {bar: 1, baz: 'baz', foo: 'foo'});
 
-          objectState.$set(paragraph, paragraphObject!);
-          objectState.$set(paragraph, {...paragraphObject!, foo: 'foo'});
+          $setState(paragraph, objectState, paragraphObject!);
+          $setState(paragraph, objectState, {...paragraphObject!, foo: 'foo'});
         });
       });
 
@@ -242,30 +246,30 @@ describe('LexicalNode state', () => {
         editor.update(
           () => {
             v0 = $getRoot();
-            vk.$set(v0, 0);
-            expect(vk.$get(v0)).toBe(0);
+            $setState(v0, vk, 0);
+            expect($getState(v0, vk)).toBe(0);
           },
           {discrete: true},
         );
         const state0 = editor.getEditorState();
         editor.update(
           () => {
-            v1 = vk.$set(v0, 1);
+            v1 = $setState(v0, vk, 1);
             expect(v1).not.toBe(v0);
             expect(v1.is(v0)).toBe(true);
             // This is testing getLatest()
-            expect(vk.$get(v0)).toBe(1);
-            expect(vk.$get(v1)).toBe(1);
+            expect($getState(v0, vk)).toBe(1);
+            expect($getState(v0, vk)).toBe(1);
           },
           {discrete: true},
         );
         const state1 = editor.getEditorState();
         // Test that the correct version is returned and that they are independent
-        expect(state0.read(() => vk.$get(v0))).toBe(0);
-        expect(state1.read(() => vk.$get(v1))).toBe(1);
+        expect(state0.read(() => $getState(v0, vk))).toBe(0);
+        expect(state1.read(() => $getState(v1, vk))).toBe(1);
         // Test that getLatest is used and not the __state property directly
-        expect(state0.read(() => vk.$get(v1))).toBe(0);
-        expect(state1.read(() => vk.$get(v0))).toBe(1);
+        expect(state0.read(() => $getState(v1, vk))).toBe(0);
+        expect(state1.read(() => $getState(v0, vk))).toBe(1);
       });
     },
     {

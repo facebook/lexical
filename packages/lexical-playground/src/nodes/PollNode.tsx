@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {makeStateWrapper} from '@lexical/utils';
 import {
   createState,
   DecoratorNode,
@@ -94,14 +95,18 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = createState('question', {
-  parse: (v) => (typeof v === 'string' ? v : ''),
-});
-const optionsState = createState('options', {
-  isEqual: (a, b) =>
-    a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
-  parse: parseOptions,
-});
+const questionState = makeStateWrapper(
+  createState('question', {
+    parse: (v) => (typeof v === 'string' ? v : ''),
+  }),
+);
+const optionsState = makeStateWrapper(
+  createState('options', {
+    isEqual: (a, b) =>
+      a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
+    parse: parseOptions,
+  }),
+);
 
 export class PollNode extends DecoratorNode<JSX.Element> {
   static getType(): string {
@@ -119,10 +124,10 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     ).updateFromJSON(serializedNode);
   }
 
-  getQuestion = questionState.nodeGetter<this>();
-  setQuestion = questionState.nodeSetter<this>();
-  getOptions = optionsState.nodeGetter<this>();
-  setOptions = optionsState.nodeSetter<this>();
+  getQuestion = questionState.makeGetterMethod<this>();
+  setQuestion = questionState.makeSetterMethod<this>();
+  getOptions = optionsState.makeGetterMethod<this>();
+  setOptions = optionsState.makeSetterMethod<this>();
 
   addOption(option: Option): this {
     return this.setOptions((options) => [...options, option]);

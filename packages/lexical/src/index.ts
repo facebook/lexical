@@ -172,8 +172,6 @@ export {
   $setState,
   createState,
   type StateConfig,
-  type StateGetter,
-  type StateSetter,
   type StateValueConfig,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';

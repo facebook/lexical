@@ -2,7 +2,7 @@
 
 Originally the only way to customize nodes was using the node replacement API. Recently we have introduced a second way with the `state` property which has some advantages described below.
 
-## State (Experimental)
+## Node State (Experimental)
 
 The advantages of using state over the replacement API are:
 1. Easier (less boilerplate)
@@ -17,15 +17,26 @@ const colorState = createState('color', {
 
 // USAGE
 const textNode = $createTextNode();
-colorState.$set(textNode, "blue");
-const textColor = colorState.$get(textNode) // -> "blue"
+$setState(textNode, colorState, 'blue');
+const textColor = $getState(textNode, colorState) // -> "blue"
 ```
 
-Inside state, you can put any serializable json value. Our recommendation is to always use TypeScript in strict mode, so you don't have to worry about these things!
+Inside state, you can use any serializable json value. For advanced use cases
+with values that are not primitive values like string, number, boolean, null
+you may want or need to implement more than just the parse method in the
+value configuration.
+
+While this is still experimental, the API is subject to change and the
+documentation will primarily be API documentation.
 
 ### Important
 
-we recommend that you use prefixes with low collision probability when defining state. For example, if you are making a plugin called `awesome-lexical`, you could do:
+We recommend that you use prefixes with low collision probability when defining
+state that will be applied to node classes that you don't fully control. It is
+a runtime error in dev mode when two distinct separate StateConfig with the
+same key are used on the same node.
+
+For example, if you are making a plugin called `awesome-lexical`, you could do:
 
 ```ts
 const color = createState('awesome-lexical-color', /** your parse fn */)
@@ -38,7 +49,6 @@ type AwesomeLexical = {
   padding?: number
 }
 const awesomeLexical = createState('awesome-lexical', /** your parse fn which returns AwesomeLexical type */)
-
 ```
 
 # Node Overrides / Node Replacements

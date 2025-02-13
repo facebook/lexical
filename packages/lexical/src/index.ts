@@ -141,6 +141,16 @@ export {
   createEditor,
 } from './LexicalEditor';
 export type {EventHandler} from './LexicalEvents';
+export {
+  $getState,
+  $getWritableNodeState,
+  $setState,
+  createState,
+  type StateConfig,
+  type StateGetter,
+  type StateSetter,
+  type StateValueConfig,
+} from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,

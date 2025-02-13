@@ -5,11 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$getRoot, ParagraphNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $getRoot,
+  createState,
+  ParagraphNode,
+  RootNode,
+  SerializedLexicalNode,
+} from 'lexical';
 
-import {LexicalNode} from '../../LexicalNode';
-import {createState} from '../../LexicalNodeState';
-import {RootNode} from '../../nodes/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 import {TestNode} from './LexicalNode.test';
 
@@ -20,6 +24,26 @@ type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
   : 2
   ? true
   : false;
+
+const numberState = createState('numberState', {
+  parse: (v) => (typeof v === 'number' ? v : 0),
+});
+class StateNode extends TestNode {
+  static getType() {
+    return 'state';
+  }
+  static clone(node: StateNode) {
+    return new StateNode(node.__key);
+  }
+  static importJSON(serializedNode: SerializedLexicalNode): TestNode {
+    return new StateNode().updateFromJSON(serializedNode);
+  }
+  getNumber = numberState.nodeGetter();
+  setNumber = numberState.nodeSetter();
+}
+function $createStateNode() {
+  return new StateNode();
+}
 
 describe('LexicalNode state', () => {
   initializeUnitTest(
@@ -52,6 +76,16 @@ describe('LexicalNode state', () => {
         });
       });
 
+      test('__state is not an enumerable property', () => {
+        const {editor} = testEnv;
+        editor.update(
+          () => {
+            expect(Object.keys($getRoot())).not.toContain('__state');
+          },
+          {discrete: true},
+        );
+      });
+
       test(`getState and setState`, async () => {
         const stringState = createState('stringState', {
           parse: (value) => (typeof value === 'string' ? value : ''),
@@ -72,24 +106,16 @@ describe('LexicalNode state', () => {
             Equal<typeof maybeStringValue, string | undefined>
           >;
           expect(maybeStringValue).toBeUndefined();
-
-          const _noSerializableState = createState('noSerializableState', {
-            // @ts-expect-error - Date is not serializable
-            parse: () => new Date(),
-          });
         });
       });
 
       test(`import and export state`, async () => {
         const {editor} = testEnv;
         editor.update(() => {
-          const paragraph = new ParagraphNode();
+          const paragraph = $createParagraphNode();
           const json = paragraph.exportJSON();
           // We don't export state as an empty object
           expect(json).not.toHaveProperty('state');
-          const numberState = createState('numberState', {
-            parse: (value) => (typeof value === 'number' ? value : 0),
-          });
           numberState.$set(paragraph, 1);
           const json2 = paragraph.exportJSON();
           expect(json2.state).toStrictEqual({
@@ -103,15 +129,41 @@ describe('LexicalNode state', () => {
         });
       });
 
-      // TODO
-      //   test('states cannot be registered with the same key string', () => {
-      //     expect(() => {
-      //       createState('foo', {parse: (value) => undefined});
-      //       createState('foo', {parse: (value) => 0});
-      //     }).toThrow(
-      //       `There has been an attempt to register a state with the key "foo", but it is already registered.`,
-      //     );
-      //   });
+      test('states cannot be registered with the same key string', () => {
+        const {editor} = testEnv;
+        editor.update(
+          () => {
+            const k0 = createState('foo', {parse: (v) => !!v});
+            const k1 = createState('foo', {parse: () => 'foo'});
+            expect(k0.$get(root)).toBe(false);
+            k0.$set(root, true);
+            expect(k0.$get(root)).toBe(true);
+            expect(() => k1.$get(root)).toThrow(
+              'State key collision "foo" detected in RootNode node with type root and key root. Only one StateConfig with a given key should be used on a node.',
+            );
+            expect(() => k1.$set(root, 'foo')).toThrow(
+              'State key collision "foo" detected in RootNode node with type root and key root. Only one StateConfig with a given key should be used on a node.',
+            );
+            expect(k0.$get(root)).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('nodeGetter() and nodeSetter()', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const stateNode = $createStateNode();
+          expect(stateNode.getNumber()).toBe(0);
+          stateNode.setNumber(1);
+          expect(stateNode.getNumber()).toBe(1);
+          stateNode.setNumber((n) => n + 1);
+          expect(stateNode.getNumber()).toBe(2);
+          expect(stateNode.exportJSON().state).toStrictEqual({
+            numberState: 2,
+          });
+        });
+      });
 
       test('default value should not be exported', async () => {
         const {editor} = testEnv;
@@ -119,7 +171,7 @@ describe('LexicalNode state', () => {
           const indentState = createState('indent', {
             parse: (value) => (typeof value === 'number' ? value : 0),
           });
-          const paragraph = new ParagraphNode();
+          const paragraph = $createParagraphNode();
           expect(indentState.$get(paragraph)).toBe(0);
           const json = paragraph.exportJSON();
           expect(json).not.toHaveProperty('state');
@@ -151,7 +203,7 @@ describe('LexicalNode state', () => {
         };
         const {editor} = testEnv;
         editor.update(() => {
-          const paragraph = new ParagraphNode();
+          const paragraph = $createParagraphNode();
           const objectState = createState('object', {
             parse: (value) =>
               (value as TestObject) || {
@@ -164,8 +216,8 @@ describe('LexicalNode state', () => {
             Equal<
               typeof paragraphObject,
               {
-                readonly bar: number;
-                readonly foo: string;
+                bar: number;
+                foo: string;
               }
             >
           >;
@@ -198,12 +250,12 @@ describe('LexicalNode state', () => {
         const state0 = editor.getEditorState();
         editor.update(
           () => {
-            vk.$set(v0, 1);
-            v1 = v0.getLatest();
+            v1 = vk.$set(v0, 1);
+            expect(v1).not.toBe(v0);
+            expect(v1.is(v0)).toBe(true);
             // This is testing getLatest()
             expect(vk.$get(v0)).toBe(1);
             expect(vk.$get(v1)).toBe(1);
-            expect(v1.is(v0)).toBe(true);
           },
           {discrete: true},
         );
@@ -218,7 +270,7 @@ describe('LexicalNode state', () => {
     },
     {
       namespace: '',
-      nodes: [LexicalNode, TestNode],
+      nodes: [TestNode, StateNode],
       theme: {},
     },
   );

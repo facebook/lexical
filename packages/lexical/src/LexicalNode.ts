@@ -22,7 +22,7 @@ import {
   type DecoratorNode,
   ElementNode,
 } from '.';
-import {NodeState, State} from './LexicalNodeState';
+import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -60,7 +60,7 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
-  state?: State;
+  state?: Record<string, unknown>;
 };
 
 /**
@@ -200,18 +200,8 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
-
   /** @internal */
-  get __state() {
-    // @ts-expect-error
-    return this._state;
-  }
-
-  /** @internal */
-  set __state(value: NodeState) {
-    // @ts-expect-error
-    this._state = value;
-  }
+  __state?: NodeState<this>;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -296,11 +286,11 @@ export class LexicalNode {
    * ```
    *
    */
-  afterCloneFrom(prevNode: this) {
+  afterCloneFrom(prevNode: this): void {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
-    this.__state = prevNode.__state || new NodeState();
+    this.__state = prevNode.__state;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -311,13 +301,13 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
-    $setNodeKey(this, key);
-    Object.defineProperty(this, '_state', {
+    Object.defineProperty(this, '__state', {
       configurable: true,
       enumerable: false,
-      value: new NodeState(),
+      value: undefined,
       writable: true,
     });
+    $setNodeKey(this, key);
 
     if (__DEV__) {
       if (this.__type !== 'root') {
@@ -904,11 +894,11 @@ export class LexicalNode {
    * */
   exportJSON(): SerializedLexicalNode {
     // eslint-disable-next-line dot-notation
-    const state = this.__state['toJSON']();
+    const state = this.__state ? this.__state.toJSON() : undefined;
     return {
       type: this.__type,
       version: 1,
-      ...(objectIsEmpty(state) ? {} : {state}),
+      ...state,
     };
   }
 
@@ -958,9 +948,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    // eslint-disable-next-line dot-notation
-    this.__state['unknownState'] = serializedNode.state || {};
-    return this;
+    return $updateStateFromJSON(this, serializedNode.state);
   }
 
   /**
@@ -1314,15 +1302,4 @@ export function insertRangeAfter(
   for (const nodeToInsert of nodesToInsert) {
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
-}
-
-/**
- * The best way to check if an object is empty in O(1)
- * @see https://stackoverflow.com/a/59787784/10476393
- */
-function objectIsEmpty(obj: object) {
-  for (const key in obj) {
-    return false;
-  }
-  return true;
 }

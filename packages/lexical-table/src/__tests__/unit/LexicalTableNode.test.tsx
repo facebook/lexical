@@ -77,6 +77,7 @@ const editorConfig = Object.freeze({
       center: 'test-table-alignment-center',
       right: 'test-table-alignment-right',
     },
+    tableFrozenColumn: 'test-table-frozen-column-class',
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },
@@ -1022,6 +1023,513 @@ describe('LexicalTableNode tests', () => {
               const table = root.getLastChild<TableNode>();
               if (table) {
                 table.setRowStriping(false);
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+          });
+
+          test('Toggle frozen first column ON/OFF', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = $createTableNodeWithDimensions(4, 4, true);
+              root.append(table);
+            });
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFrozenColumns(1);
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table} ${editorConfig.theme
+                      .tableFrozenColumn}"
+                    data-lexical-frozen-column="true">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+
+            const stringifiedEditorState = JSON.stringify(
+              editor.getEditorState(),
+            );
+            const expectedStringifiedEditorState = `{
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "textFormat": 0,
+                    "textStyle": "",
+                    "type": "paragraph",
+                    "version": 1
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 3,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "frozenColumnCount": 1,
+                    "indent": 0,
+                    "type": "table",
+                    "version": 1
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "root",
+                "version": 1
+              }
+            }`;
+
+            expect(JSON.parse(stringifiedEditorState)).toEqual(
+              JSON.parse(expectedStringifiedEditorState),
+            );
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFrozenColumns(0);
               }
             });
 

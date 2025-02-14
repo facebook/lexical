@@ -9,7 +9,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 
 import invariant from 'shared/invariant';
 
-import {$isRootOrShadowRoot} from '../LexicalUtils';
+import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
 import {TextNode} from '../nodes/LexicalTextNode';
@@ -1109,6 +1109,16 @@ export function $isTextPointCaretSlice<D extends CaretDirection>(
     | TextPointCaretSlice<TextNode, D>,
 ): caretOrSlice is TextPointCaretSlice<TextNode, D> {
   return caretOrSlice instanceof TextPointCaretSliceImpl;
+}
+
+/**
+ * Construct a CaretRange that starts at anchor and goes to the end of the
+ * document in the anchor caret's direction.
+ */
+export function $extendCaretToRange<D extends CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D> {
+  return $getCaretRange(anchor, $getSiblingCaret($getRoot(), anchor.direction));
 }
 
 /**

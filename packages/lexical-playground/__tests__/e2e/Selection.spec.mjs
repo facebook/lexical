@@ -1177,9 +1177,11 @@ test.describe.parallel('Selection', () => {
     test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
+    // delete the paragraph before the table
     await moveToEditorBeginning(page);
     await deleteBackward(page);
     await moveToEditorEnd(page);
+    // delete the paragraph after the table
     await deleteBackward(page);
     await moveDown(page, 1);
     await assertSelection(page, {

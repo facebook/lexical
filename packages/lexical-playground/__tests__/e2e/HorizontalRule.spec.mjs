@@ -367,7 +367,7 @@ test.describe('HorizontalRule', () => {
     });
   });
 
-  test('Can delete remove paragraph after a horizontal rule without deleting a horizontal rule', async ({
+  test('Can delete empty paragraph after a horizontal rule without deleting the horizontal rule', async ({
     page,
     browserName,
     isPlainText,

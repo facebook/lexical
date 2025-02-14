@@ -6,8 +6,13 @@
  *
  */
 
-import {$createLinkNode} from '@lexical/link';
-import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $createTableCellNode,
@@ -21,10 +26,12 @@ import {
   $createTextNode,
   $getCaretRange,
   $getChildCaret,
+  $getCommonAncestor,
   $getRoot,
   $getSelection,
   $getSiblingCaret,
   $getTextPointCaret,
+  $isSiblingCaret,
   $isTextNode,
   $isTextPointCaret,
   $isTextPointCaretSlice,
@@ -35,7 +42,10 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   ChildCaret,
+  ElementNode,
   LexicalNode,
+  NodeCaret,
+  ParagraphNode,
   RootNode,
   SiblingCaret,
   TextNode,
@@ -47,6 +57,7 @@ import {
   initializeUnitTest,
   invariant,
 } from '../../../__tests__/utils';
+import {$comparePointCaretNext} from '../../LexicalCaret';
 
 const DIRECTIONS = ['next', 'previous'] as const;
 const BIASES = ['inside', 'outside'] as const;
@@ -1635,6 +1646,263 @@ describe('LexicalCaret', () => {
             });
           }
         });
+      });
+    });
+    describe('Ordering', () => {
+      let rootNode: RootNode;
+      let paragraphNode: ParagraphNode;
+      let paragraphText: TextNode;
+      let linkNode: LinkNode;
+      let linkText: TextNode;
+      let listNode: ListNode;
+      let listItemText1: TextNode;
+      let listItemText2: TextNode;
+      let listItem1: ListItemNode;
+      let listItem2: ListItemNode;
+      let emptyParagraph: ParagraphNode;
+
+      beforeEach(() => {
+        testEnv.editor.update(() => {
+          rootNode = $getRoot();
+          paragraphText = $createTextNode('paragraph text');
+          linkText = $createTextNode('link text');
+          linkNode = $createLinkNode();
+          paragraphNode = $createParagraphNode();
+          listItemText1 = $createTextNode('item 1');
+          listItemText2 = $createTextNode('item 2');
+          listItem1 = $createListItemNode();
+          listItem2 = $createListItemNode();
+          listNode = $createListNode('bullet');
+          emptyParagraph = $createParagraphNode();
+          $getRoot()
+            .clear()
+            .append(
+              paragraphNode.append(paragraphText, linkNode.append(linkText)),
+              listNode.append(
+                listItem1.append(listItemText1),
+                listItem2.append(listItemText2),
+              ),
+              emptyParagraph,
+            );
+        });
+      });
+      describe('$comparePointCaretNext', () => {
+        test('trivial caret checks', () => {
+          testEnv.editor.update(
+            () => {
+              const seenCarets: NodeCaret<'next'>[] = [];
+              const range = $getCaretRange(
+                $getChildCaret($getRoot(), 'next'),
+                $getSiblingCaret($getRoot(), 'next'),
+              );
+              expect($comparePointCaretNext(range.anchor, range.focus)).toBe(
+                -1,
+              );
+              expect($comparePointCaretNext(range.anchor, range.anchor)).toBe(
+                0,
+              );
+              expect($comparePointCaretNext(range.focus, range.focus)).toBe(0);
+              expect($comparePointCaretNext(range.focus, range.anchor)).toBe(1);
+              for (const caret of $getCaretRange(
+                $getChildCaret($getRoot(), 'next'),
+                $getSiblingCaret($getRoot(), 'next'),
+              )) {
+                expect($comparePointCaretNext(caret, caret)).toBe(0);
+                for (const seenCaret of seenCarets) {
+                  expect($comparePointCaretNext(caret, seenCaret)).toBe(1);
+                  expect($comparePointCaretNext(seenCaret, caret)).toBe(-1);
+                }
+                seenCarets.push(caret);
+              }
+            },
+            {discrete: true},
+          );
+        });
+        test('TextPointCaret checks single origin', () => {
+          testEnv.editor.update(
+            () => {
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                ),
+              ).toBe(0);
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                  $getTextPointCaret(paragraphText, 'next', 2),
+                ),
+              ).toBe(-1);
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(paragraphText, 'next', 2),
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                ),
+              ).toBe(1);
+              // next sibling carets always come after points inside the text
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(paragraphText, 'next', 2),
+                  $getSiblingCaret(paragraphText, 'next'),
+                ),
+              ).toBe(-1);
+              expect(
+                $comparePointCaretNext(
+                  $getSiblingCaret(paragraphText, 'next'),
+                  $getTextPointCaret(paragraphText, 'next', 2),
+                ),
+              ).toBe(1);
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(
+                    paragraphText,
+                    'next',
+                    paragraphText.getTextContentSize(),
+                  ),
+                  $getSiblingCaret(paragraphText, 'next'),
+                ),
+              ).toBe(-1);
+              expect(
+                $comparePointCaretNext(
+                  $getSiblingCaret(paragraphText, 'next'),
+                  $getTextPointCaret(
+                    paragraphText,
+                    'next',
+                    paragraphText.getTextContentSize(),
+                  ),
+                ),
+              ).toBe(1);
+            },
+            {discrete: true},
+          );
+        });
+        test('TextPointCaret multiple origin', () => {
+          testEnv.editor.update(
+            () => {
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                  $getTextPointCaret(linkText, 'next', 0),
+                ),
+              ).toBe(-1);
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                  $getSiblingCaret(linkText, 'next'),
+                ),
+              ).toBe(-1);
+              expect(
+                $comparePointCaretNext(
+                  $getTextPointCaret(linkText, 'next', 0),
+                  $getTextPointCaret(paragraphText, 'next', 0),
+                ),
+              ).toBe(1);
+            },
+            {discrete: true},
+          );
+        });
+      });
+      describe('$getCommonAncestor', () => {
+        test('trivial node checks', () => {
+          testEnv.editor.update(
+            () => {
+              expect($getCommonAncestor($getRoot(), $getRoot())).toEqual({
+                commonAncestor: $getRoot(),
+                type: 'same',
+              });
+              for (const caret of $getCaretRange(
+                $getChildCaret($getRoot(), 'next'),
+                $getSiblingCaret($getRoot(), 'next'),
+              )) {
+                if ($isSiblingCaret(caret)) {
+                  expect(
+                    $getCommonAncestor(caret.origin, caret.origin),
+                  ).toEqual({
+                    commonAncestor: caret.origin,
+                    type: 'same',
+                  });
+                  expect($getCommonAncestor($getRoot(), caret.origin)).toEqual({
+                    commonAncestor: $getRoot(),
+                    type: 'ancestor',
+                  });
+                  expect($getCommonAncestor(caret.origin, $getRoot())).toEqual({
+                    commonAncestor: $getRoot(),
+                    type: 'descendant',
+                  });
+                  const parent = caret.getParentAtCaret()!;
+                  expect($getCommonAncestor(parent, caret.origin)).toEqual({
+                    commonAncestor: parent,
+                    type: 'ancestor',
+                  });
+                  expect($getCommonAncestor(caret.origin, parent)).toEqual({
+                    commonAncestor: parent,
+                    type: 'descendant',
+                  });
+                }
+              }
+            },
+            {discrete: true},
+          );
+        });
+        function testBranch(
+          title: string,
+          $getTestNodes: () => [LexicalNode, LexicalNode],
+          $getTestAncestors: () => [LexicalNode, LexicalNode],
+          $getTestCommonAncestor: () => ElementNode,
+        ): void {
+          test(title, () => {
+            testEnv.editor.update(
+              () => {
+                const nodes = $getTestNodes().map((n) => n.getLatest());
+                const ancestors = $getTestAncestors().map((n) => n.getLatest());
+                const commonAncestor = $getTestCommonAncestor().getLatest();
+                expect($getCommonAncestor(nodes[0], nodes[1])).toEqual({
+                  a: ancestors[0],
+                  b: ancestors[1],
+                  commonAncestor,
+                  type: 'branch',
+                });
+                expect($getCommonAncestor(nodes[1], nodes[0])).toEqual({
+                  a: ancestors[1],
+                  b: ancestors[0],
+                  commonAncestor,
+                  type: 'branch',
+                });
+              },
+              {discrete: true},
+            );
+          });
+        }
+        testBranch(
+          'paragraphNode and listNode are siblings in root',
+          () => [paragraphNode, listNode],
+          () => [paragraphNode, listNode],
+          () => rootNode,
+        );
+        testBranch(
+          'paragraphText and linkNode->linkText are siblings in paragraphNode',
+          () => [paragraphText, linkText],
+          () => [paragraphText, linkNode],
+          () => paragraphNode,
+        );
+        testBranch(
+          'paragraphNode->linkNode->linkText and listNode->listItem2->listItemText2 are siblings in root',
+          () => [linkText, listItemText2],
+          () => [paragraphNode, listNode],
+          () => rootNode,
+        );
+        testBranch(
+          'listItem1 and listItem2->listItemText2 are siblings in listNode',
+          () => [listItem1, listItemText2],
+          () => [listItem1, listItem2],
+          () => listNode,
+        );
+        testBranch(
+          'listItem1->listItemText1 and listItem2->listItemText2 are siblings in listNode',
+          () => [listItemText1, listItemText2],
+          () => [listItem1, listItem2],
+          () => listNode,
+        );
       });
     });
   });

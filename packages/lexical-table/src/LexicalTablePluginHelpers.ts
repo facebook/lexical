@@ -7,6 +7,7 @@
  */
 
 import {
+  $findMatchingParent,
   $insertFirst,
   $insertNodeToNearestRoot,
   $unwrapAndFilterDescendants,
@@ -14,8 +15,13 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
+  $isElementNode,
   $isTextNode,
+  CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  ElementNode,
+  isDOMNode,
   LexicalEditor,
   NodeKey,
 } from 'lexical';
@@ -250,6 +256,29 @@ export function registerTableSelectionObserver(
   };
 }
 
+function $tableClickCommand(event: MouseEvent): boolean {
+  if (event.detail !== 3 || !isDOMNode(event.target)) {
+    return false;
+  }
+  const startNode = $getNearestNodeFromDOMNode(event.target);
+  if (startNode === null) {
+    return false;
+  }
+  const blockNode = $findMatchingParent(
+    startNode,
+    (node): node is ElementNode => $isElementNode(node) && !node.isInline(),
+  );
+  if (blockNode === null) {
+    return false;
+  }
+  const rootNode = blockNode.getParent();
+  if (!$isTableCellNode(rootNode)) {
+    return false;
+  }
+  blockNode.select(0);
+  return true;
+}
+
 /**
  * Register the INSERT_TABLE_COMMAND listener and the table integrity transforms. The
  * table selection observer should be registered separately after this with
@@ -271,5 +300,10 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
     editor.registerNodeTransform(TableNode, $tableTransform),
     editor.registerNodeTransform(TableRowNode, $tableRowTransform),
     editor.registerNodeTransform(TableCellNode, $tableCellTransform),
+    editor.registerCommand(
+      CLICK_COMMAND,
+      $tableClickCommand,
+      COMMAND_PRIORITY_EDITOR,
+    ),
   );
 }

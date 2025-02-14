@@ -48,6 +48,7 @@ export type SerializedTableNode = Spread<
   {
     colWidths?: readonly number[];
     rowStriping?: boolean;
+    frozenColumnCount?: number;
   },
   SerializedElementNode
 >;
@@ -85,6 +86,20 @@ function setRowStriping(
   } else {
     removeClassNamesFromElement(dom, config.theme.tableRowStriping);
     dom.removeAttribute('data-lexical-row-striping');
+  }
+}
+
+function setFrozenColumns(
+  dom: HTMLElement,
+  config: EditorConfig,
+  frozenColumnCount: number,
+): void {
+  if (frozenColumnCount > 0) {
+    addClassNamesToElement(dom, config.theme.tableFrozenColumn);
+    dom.setAttribute('data-lexical-frozen-column', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableFrozenColumn);
+    dom.removeAttribute('data-lexical-frozen-column');
   }
 }
 
@@ -137,6 +152,7 @@ export function setScrollableTablesActive(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
+  __frozenColumnCount: number;
   __colWidths?: readonly number[];
 
   static getType(): string {
@@ -164,6 +180,7 @@ export class TableNode extends ElementNode {
     super.afterCloneFrom(prevNode);
     this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
+    this.__frozenColumnCount = prevNode.__frozenColumnCount;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -183,18 +200,23 @@ export class TableNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setRowStriping(serializedNode.rowStriping || false)
+      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
       .setColWidths(serializedNode.colWidths);
   }
 
   constructor(key?: NodeKey) {
     super(key);
     this.__rowStriping = false;
+    this.__frozenColumnCount = 0;
   }
 
   exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
       colWidths: this.getColWidths(),
+      frozenColumnCount: this.__frozenColumnCount
+        ? this.__frozenColumnCount
+        : undefined,
       rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
     };
   }
@@ -234,6 +256,9 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(tableElement, config.theme.table);
     alignTableElement(tableElement, config, this.getFormatType());
+    if (this.__frozenColumnCount) {
+      setFrozenColumns(tableElement, config, this.__frozenColumnCount);
+    }
     if (this.__rowStriping) {
       setRowStriping(tableElement, config, true);
     }
@@ -255,6 +280,9 @@ export class TableNode extends ElementNode {
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__rowStriping !== this.__rowStriping) {
       setRowStriping(dom, config, this.__rowStriping);
+    }
+    if (prevNode.__frozenColumnCount !== this.__frozenColumnCount) {
+      setFrozenColumns(dom, config, this.__frozenColumnCount);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
     alignTableElement(
@@ -470,6 +498,16 @@ export class TableNode extends ElementNode {
     const self = this.getWritable();
     self.__rowStriping = newRowStriping;
     return self;
+  }
+
+  setFrozenColumns(columnCount: number): this {
+    const self = this.getWritable();
+    self.__frozenColumnCount = columnCount;
+    return self;
+  }
+
+  getFrozenColumns(): number {
+    return this.getLatest().__frozenColumnCount;
   }
 
   canSelectBefore(): true {

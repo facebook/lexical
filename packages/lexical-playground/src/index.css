@@ -513,6 +513,21 @@ i.justify-align {
   background-image: url(images/icons/justify.svg);
 }
 
+.icon.vertical-top,
+i.left-align {
+  background-image: url(images/icons/vertical-top.svg);
+}
+
+.icon.vertical-middle,
+i.center-align {
+  background-image: url(images/icons/vertical-middle.svg);
+}
+
+.icon.vertical-bottom,
+i.right-align {
+  background-image: url(images/icons/vertical-bottom.svg);
+}
+
 i.indent {
   background-image: url(images/icons/indent.svg);
 }
@@ -1315,6 +1330,7 @@ i.page-break,
 
 .table-cell-action-button-container {
   position: absolute;
+  z-index: 3;
   top: 0;
   left: 0;
   will-change: transform;

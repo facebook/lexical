@@ -30,6 +30,9 @@ test.describe('Regression tests for #7163 - grapheme deleteCharacter', () => {
     // We are only concerned about input here, not collab
     test.skip(isCollab);
 
+    // You can render a grapheme with escape sequences like this:
+    // const fmt = (s) => "'" + Array.from({ length: s.length }, (_, i) => `\\u${s.charCodeAt(i).toString(16).padStart(4, '0')}`).join('') + "'";
+    // e.g. from dev tools copy(fmt('emoji here')) and then paste it in your text editor
     const GRAPHEME_SCENARIOS = [
       // Original scenarios
       {

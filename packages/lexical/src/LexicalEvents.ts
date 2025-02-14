@@ -89,7 +89,7 @@ import {
   $updateSelectedTextFromDOM,
   $updateTextNodeFromDOMContent,
   dispatchCommand,
-  doesContainGrapheme,
+  doesContainSurrogatePair,
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMSelectionFromTarget,
@@ -224,7 +224,9 @@ function $shouldPreventDefaultAndInsertText(
         // a dangling `input` event caused by execCommand('insertText').
         lastBeforeInputInsertTextTimeStamp < timeStamp + 50)) ||
       (anchorNode.isDirty() && textLength < 2) ||
-      doesContainGrapheme(text)) &&
+      // TODO consider if there are other scenarios when multiple code units
+      //      should be addressed here
+      doesContainSurrogatePair(text)) &&
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.

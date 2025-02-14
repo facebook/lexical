@@ -201,9 +201,10 @@ function getHashtagRegexStringChars(): Readonly<{
     '\u1040-\u1049\u17E0-\u17E9\u1810-\u1819\u1946-\u194F\u19D0-\u19D9' +
     '\uFF10-\uFF19';
 
-  // An alpha char is a unicode chars including unicode marks or
-  // letter or char in otherChars range
-  const alpha = unicodeLetters + unicodeAccents + otherChars;
+  // An alpha char is a unicode chars excluding unicode combining marks
+  // but including other chars, a hashtag must start with one of these,
+  // it does not make sense to have a combining mark before a base character.
+  const alpha = unicodeLetters + otherChars;
 
   // A numeric character is any with the number digit property, or
   // underscore. These characters can be included in hashtags, but a hashtag
@@ -212,7 +213,7 @@ function getHashtagRegexStringChars(): Readonly<{
 
   // Alphanumeric char is any alpha char or a unicode char with decimal
   // number property \p{Nd}
-  const alphanumeric = alpha + numeric;
+  const alphanumeric = alpha + unicodeAccents + numeric;
   const hashChars = '#\\uFF03'; // normal '#' or full-width '#'
 
   return {

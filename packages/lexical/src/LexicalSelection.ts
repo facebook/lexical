@@ -2016,8 +2016,12 @@ function moveNativeSelection(
  * `/[\uD800-\uDBFF][\uDC00-\uDFFF]/` is a regex that you could use to
  * find any valid *surrogate pair*. As far as Unicode is concerned, these
  * pairs represent a single *code point*, but in JavaScript, these pairs
- * have a length of 2 (`pair.codePointAt(n)` is really returning a
- * UTF-16 *code unit*, not a unicode *code point*).
+ * have a length of 2 (`pair.charCodeAt(n)` is really returning a
+ * UTF-16 *code unit*, not a unicode *code point*). It is possible to request
+ * a *code point* with `pair.codePointAt(0)` and enumerate code points
+ * in a string with `[...string]` but the offsets we work with, and
+ * the string length, are based in *code units* so that functionality
+ * is unfortunately not very useful here.
  *
  * This only gets us as far as *code points*. We now know that we must
  * consider that each *code point* can have a length of 1 or 2 in JavaScript
@@ -2096,7 +2100,7 @@ function shouldDeleteExactlyOneCodeUnit(text: string) {
       'shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units',
     );
   }
-  return !(doesContainSurrogatePair(text) || doesContainEmoji(text));
+  return !doesContainEmoji(text);
 }
 
 /**
@@ -2108,10 +2112,32 @@ function shouldDeleteExactlyOneCodeUnit(text: string) {
  *
  * It may make sense to add to this heuristic in the future if other
  * edge cases are discovered, which is why detailed notes remain.
+ *
+ * This is implemented with runtime feature detection and will always
+ * return false on pre-2020 platforms that do not have unicode character
+ * class support.
  */
-function doesContainEmoji(text: string) {
-  return /\p{Emoji}/u.test(text);
-}
+const doesContainEmoji: (text: string) => boolean = (() => {
+  try {
+    const re = new RegExp('\\p{Emoji}', 'u');
+    const test = re.test.bind(re);
+    // check a few emoji
+    if (
+      // Emoji in the BMP (heart) with variation selector
+      test('\u2764\ufe0f') &&
+      // Emoji in the BMP (#) with variation selector
+      test('#\ufe0f\u20e3') &&
+      // Emoji outside the BMP (thumbs up) that is encoded with a surrogate pair
+      test('\ud83d\udc4d')
+    ) {
+      return test;
+    }
+  } catch (e) {
+    // SyntaxError
+  }
+  // fallback to only checking for surrogate pairs
+  return doesContainSurrogatePair;
+})();
 
 function $removeSegment(
   node: TextNode,

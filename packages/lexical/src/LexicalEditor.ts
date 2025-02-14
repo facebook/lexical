@@ -786,7 +786,7 @@ export class LexicalEditor {
    * deterministically in the order of registration.
    *
    * @param command - the command that will trigger the callback.
-   * @param listener - the function that will execute when the command is dispatched.
+   * @param listener - the function that will execute when the command is dispatched. Returns true to stop propagation, false to continue.
    * @param priority - the relative priority of the listener. 0 | 1 | 2 | 3 | 4
    *   (or {@link COMMAND_PRIORITY_EDITOR} |
    *     {@link COMMAND_PRIORITY_LOW} |

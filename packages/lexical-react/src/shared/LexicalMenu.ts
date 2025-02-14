@@ -491,6 +491,7 @@ export function useMenuAnchorRef(
   const anchorElementRef = useRef<HTMLElement | null>(
     CAN_USE_DOM ? document.createElement('div') : null,
   );
+  const hasPositioned = useRef(false);
   const positionMenu = useCallback(() => {
     if (anchorElementRef.current === null || parent === undefined) {
       return;
@@ -561,7 +562,12 @@ export function useMenuAnchorRef(
     parent,
   ]);
 
-  positionMenu();
+  // position menu on first render
+  if (!hasPositioned.current) {
+    positionMenu();
+    hasPositioned.current = true;
+  }
+
   useEffect(() => {
     const rootElement = editor.getRootElement();
     if (resolution !== null) {

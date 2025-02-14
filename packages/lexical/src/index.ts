@@ -166,6 +166,15 @@ export type {
   NodeMap,
   SerializedLexicalNode,
 } from './LexicalNode';
+export {
+  $getState,
+  $getStateChange,
+  $getWritableNodeState,
+  $setState,
+  createState,
+  type StateConfig,
+  type StateValueConfig,
+} from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export type {
   BaseSelection,

@@ -49,6 +49,10 @@ test.describe('Grapheme deleteCharacter', () => {
       backspaceCount: 4,
       caretDistance: 1,
       description: 'tailored grapheme cluster',
+
+      // Unclear why Firefox behaves differently here
+      firefoxCaretDistance: 2,
+
       // Devangari 'kshi' tailored grapheme cluster.
       // http://unicode.org/reports/tr29/#Table_Sample_Grapheme_Clusters
       grapheme: '\u0915\u094D\u0937\u093F',
@@ -100,6 +104,9 @@ test.describe('Grapheme deleteCharacter', () => {
       backspaceCount: 8,
       caretDistance: 4,
       description: 'Hindi',
+      // Unclear why this differs
+      firefoxCaretDistance: 5,
+
       grapheme: '\u0905\u0928\u0941\u091a\u094d\u091b\u0947\u0926',
     },
     {
@@ -141,7 +148,8 @@ test.describe('Grapheme deleteCharacter', () => {
       description,
       grapheme,
       dir = 'ltr',
-      skip,
+      skip = false,
+      firefoxCaretDistance = undefined,
     }) => {
       test(description, async ({page, browserName, isCollab, isPlainText}) => {
         // We are only concerned about input here, not collab.
@@ -206,11 +214,16 @@ test.describe('Grapheme deleteCharacter', () => {
           page,
           selectionFromOffset(codeUnits, graphemePath),
         );
-        // TODO figure out why ArrowLeft and ArrowRight do not behave in Firefox
-        if (dir !== 'rtl' && browserName !== 'firefox') {
-          await moveLeft(page, caretDistance);
+        if (dir !== 'rtl') {
+          // It's unclear why Firefox navigates differently in these specific,
+          // cases, but that's not pertinent to what we're testing
+          const testedCaretDistance =
+            browserName === 'firefox' && firefoxCaretDistance !== undefined
+              ? firefoxCaretDistance
+              : caretDistance;
+          await moveLeft(page, testedCaretDistance);
           await assertSelection(page, selectionFromOffset(0, graphemePath));
-          await moveRight(page, caretDistance);
+          await moveRight(page, testedCaretDistance);
         }
         await assertSelection(
           page,

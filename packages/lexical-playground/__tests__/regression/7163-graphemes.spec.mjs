@@ -26,8 +26,12 @@ test.describe('Regression tests for #7163 - grapheme deleteCharacter', () => {
     initialize({isCollab, isPlainText, page}),
   );
 
-  test(`Grapheme character deletion tests`, async ({page, isCollab}) => {
-    // We are only concerned about input here, not collab
+  test(`Grapheme character deletion tests`, async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    // We are only concerned about input here, not collab.
     test.skip(isCollab);
 
     // You can render a grapheme with escape sequences like this:
@@ -135,6 +139,12 @@ test.describe('Regression tests for #7163 - grapheme deleteCharacter', () => {
         description: 'Flag emoji with ZWJ and variation selector',
         grapheme: '\ud83c\udff3\ufe0f\u200d\ud83c\udf08',
       },
+      {
+        backspaceCount: 1,
+        caretDistance: 1,
+        description: 'Chinese for seaborgium (surrogate pair)',
+        grapheme: '\ud862\udf4e',
+      },
     ];
     await focusEditor(page);
     for (const {
@@ -147,49 +157,70 @@ test.describe('Regression tests for #7163 - grapheme deleteCharacter', () => {
       const codeUnits = grapheme.length;
       await page.keyboard.type(description);
       await page.keyboard.press('Enter');
-      await assertHTML(
-        page,
-        html`
-          <p dir="ltr"><span data-lexical-text="true">${description}</span></p>
-          <p><br /></p>
-        `,
-        undefined,
-        {ignoreClasses: true, ignoreInlineStyles: true},
-      );
+      const expectedInitialHTML = isPlainText
+        ? html`
+            <p dir="ltr">
+              <span data-lexical-text="true">${description}</span>
+              <br />
+              <br />
+            </p>
+          `
+        : html`
+            <p dir="ltr">
+              <span data-lexical-text="true">${description}</span>
+            </p>
+            <p><br /></p>
+          `;
+      const expectedGraphemeHTML = isPlainText
+        ? html`
+            <p dir="ltr">
+              <span data-lexical-text="true">${description}</span>
+              <br />
+              <span data-lexical-text="true">${grapheme}</span>
+            </p>
+          `
+        : html`
+            <p dir="ltr">
+              <span data-lexical-text="true">${description}</span>
+            </p>
+            <p dir="${dir}">
+              <span data-lexical-text="true">${grapheme}</span>
+            </p>
+          `;
+      await assertHTML(page, expectedInitialHTML, undefined, {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      });
       await page.keyboard.type(grapheme);
-      await assertHTML(
-        page,
-        html`
-          <p dir="ltr"><span data-lexical-text="true">${description}</span></p>
-          <p dir="${dir}"><span data-lexical-text="true">${grapheme}</span></p>
-        `,
-        undefined,
-        {ignoreClasses: true, ignoreInlineStyles: true},
-      );
-      const selectionFromOffset = (offset, path = [1, 0, 0]) => ({
+      await assertHTML(page, expectedGraphemeHTML, undefined, {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      });
+      const selectionFromOffset = (offset, path) => ({
         anchorOffset: offset,
         anchorPath: path,
         focusOffset: offset,
         focusPath: path,
       });
-      await assertSelection(page, selectionFromOffset(codeUnits));
+      const graphemePath = isPlainText ? [0, 2, 0] : [1, 0, 0];
+      const initialPath = isPlainText ? [0] : [1];
+      const initialOffset = isPlainText ? 2 : 0;
+      await assertSelection(page, selectionFromOffset(codeUnits, graphemePath));
       if (dir !== 'rtl') {
         await moveLeft(page, caretDistance);
-        await assertSelection(page, selectionFromOffset(0));
+        await assertSelection(page, selectionFromOffset(0, graphemePath));
         await moveRight(page, caretDistance);
       }
-      await assertSelection(page, selectionFromOffset(codeUnits));
+      await assertSelection(page, selectionFromOffset(codeUnits, graphemePath));
       await pressBackspace(page, backspaceCount);
-      await assertSelection(page, selectionFromOffset(0, [1]));
-      await assertHTML(
+      await assertSelection(
         page,
-        html`
-          <p dir="ltr"><span data-lexical-text="true">${description}</span></p>
-          <p><br /></p>
-        `,
-        undefined,
-        {ignoreClasses: true, ignoreInlineStyles: true},
+        selectionFromOffset(initialOffset, initialPath),
       );
+      await assertHTML(page, expectedInitialHTML, undefined, {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      });
       await selectAll(page);
       await pressBackspace(page);
     }

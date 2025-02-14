@@ -2100,7 +2100,7 @@ function shouldDeleteExactlyOneCodeUnit(text: string) {
       'shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units',
     );
   }
-  return !doesContainEmoji(text);
+  return !(doesContainSurrogatePair(text) || doesContainEmoji(text));
 }
 
 /**
@@ -2121,7 +2121,9 @@ const doesContainEmoji: (text: string) => boolean = (() => {
   try {
     const re = new RegExp('\\p{Emoji}', 'u');
     const test = re.test.bind(re);
-    // check a few emoji
+    // Sanity check a few emoji to make sure the regexp was parsed
+    // and works correctly. Any one of these should be sufficient,
+    // but they're cheap and it only runs once.
     if (
       // Emoji in the BMP (heart) with variation selector
       test('\u2764\ufe0f') &&
@@ -2135,8 +2137,8 @@ const doesContainEmoji: (text: string) => boolean = (() => {
   } catch (e) {
     // SyntaxError
   }
-  // fallback to only checking for surrogate pairs
-  return doesContainSurrogatePair;
+  // fallback, surrogate pair already checked
+  return () => false;
 })();
 
 function $removeSegment(

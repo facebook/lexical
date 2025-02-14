@@ -168,6 +168,7 @@ export type {
 } from './LexicalNode';
 export {
   $getState,
+  $getStateChange,
   $getWritableNodeState,
   $setState,
   createState,

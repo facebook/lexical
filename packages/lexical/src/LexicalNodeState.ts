@@ -55,6 +55,9 @@ export class StateConfig<K extends string, V> {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyStateConfig = StateConfig<any, any>;
+
 /**
  * Configure a value to be used with StateConfig.
  *
@@ -156,18 +159,55 @@ export function createState<K extends string, V>(
 }
 
 /**
- * The accessor for working with node state
+ * Given two versions of a node and a stateConfig, compare their state values
+ * using `$getState(nodeVersion, stateConfig, 'direct')`.
+ * If the values are equal according to `stateConfig.isEqual`, return `null`,
+ * otherwise return `[value, prevValue]`.
+ *
+ * This is useful for implementing updateDOM. Note that the `'direct'`
+ * version argument is used for both nodes.
+ *
+ * @param node Any LexicalNode
+ * @param prevNode A previous version of node
+ * @param stateConfig The configuration of the state to read
+ * @returns `[value, prevValue]` if changed, otherwise `null`
+ */
+export function $getStateChange<T extends LexicalNode, K extends string, V>(
+  node: T,
+  prevNode: T,
+  stateConfig: StateConfig<K, V>,
+): null | [value: V, prevValue: V] {
+  const value = $getState(node, stateConfig, 'direct');
+  const prevValue = $getState(prevNode, stateConfig, 'direct');
+  return stateConfig.isEqual(value, prevValue) ? null : [value, prevValue];
+}
+
+/**
+ * The accessor for working with node state. This will read the value for the
+ * state on the given node, and will return `stateConfig.defaultValue` if the
+ * state has never been set on this node.
+ *
+ * The `version` parameter is optional and should generally be `'latest'`,
+ * consistent with the behavior of other node methods and functions,
+ * but for certain use cases such as `updateDOM` you may have a need to
+ * use `'direct'` to read the state from a previous version of the node.
+ *
+ * For very advanced use cases, you can expect that 'direct' does not
+ * require an editor state, just like directly accessing other properties
+ * of a node without an accessor (e.g. `textNode.__text`).
  *
  * @param node Any LexicalNode
  * @param stateConfig The configuration of the state to read
+ * @param version The default value 'latest' will read the latest version of the node state, 'direct' will read the version that is stored on this LexicalNode which not reflect the version used in the current editor state
  * @returns The current value from the state, or the default value provided by the configuration.
  */
 export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
+  version: 'latest' | 'direct' = 'latest',
 ) {
-  const latest = node.getLatest();
-  const state = latest.__state;
+  const latestOrDirectNode = version === 'latest' ? node.getLatest() : node;
+  const state = latestOrDirectNode.__state;
   if (state) {
     $registerConfigToState(node, stateConfig, state);
     const known = state.knownState.get(stateConfig) as undefined | V;
@@ -261,11 +301,9 @@ export function $setState<Node extends LexicalNode, K extends string, V>(
   return writable;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type KnownStateMap = Map<StateConfig<any, any>, unknown>;
+type KnownStateMap = Map<AnyStateConfig, unknown>;
 type UnknownStateRecord = Record<string, unknown>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SharedConfigMap = Map<string, StateConfig<any, any>>;
+type SharedConfigMap = Map<string, AnyStateConfig>;
 
 /**
  * @internal
@@ -292,7 +330,6 @@ export class NodeState<T extends LexicalNode> {
    * Note that it uses StateConfig, so in addition to (1) the CURRENT VALUE, it has access to
    * (2) the State key (3) the DEFAULT VALUE and (4) the PARSE FUNCTION
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly knownState: KnownStateMap;
 
   /**
@@ -346,8 +383,7 @@ export class NodeState<T extends LexicalNode> {
    */
   getInternalState(): [
     {readonly [k in string]: unknown} | undefined,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ReadonlyMap<StateConfig<any, any>, unknown>,
+    ReadonlyMap<AnyStateConfig, unknown>,
   ] {
     return [this.unknownState, this.knownState];
   }

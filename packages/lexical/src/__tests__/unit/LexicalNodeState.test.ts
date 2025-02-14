@@ -10,6 +10,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $getState,
+  $getStateChange,
   $setState,
   createState,
   ParagraphNode,
@@ -238,6 +239,7 @@ describe('LexicalNode state', () => {
 
       test('setting state shouldn’t affect previous reconciled versions of the node', () => {
         const {editor} = testEnv;
+        let initialRoot: RootNode;
         let v0: RootNode;
         let v1: RootNode;
         const vk = createState('vk', {
@@ -245,9 +247,10 @@ describe('LexicalNode state', () => {
         });
         editor.update(
           () => {
-            v0 = $getRoot();
-            $setState(v0, vk, 0);
+            initialRoot = $getRoot();
+            v0 = $setState(initialRoot, vk, 0);
             expect($getState(v0, vk)).toBe(0);
+            expect($getStateChange(v0, initialRoot, vk)).toEqual([0, null]);
           },
           {discrete: true},
         );
@@ -259,7 +262,9 @@ describe('LexicalNode state', () => {
             expect(v1.is(v0)).toBe(true);
             // This is testing getLatest()
             expect($getState(v0, vk)).toBe(1);
-            expect($getState(v0, vk)).toBe(1);
+            expect($getState(v0, vk, 'direct')).toBe(0);
+            expect($getState(v1, vk)).toBe(1);
+            expect($getStateChange(v1, v0, vk)).toEqual([1, 0]);
           },
           {discrete: true},
         );
@@ -270,6 +275,17 @@ describe('LexicalNode state', () => {
         // Test that getLatest is used and not the __state property directly
         expect(state0.read(() => $getState(v1, vk))).toBe(0);
         expect(state1.read(() => $getState(v0, vk))).toBe(1);
+        // Test that 'direct' doesn't actually require an editor state.
+        const noState = {
+          read<T>(f: () => T): T {
+            return f();
+          },
+        };
+        expect(noState.read(() => $getState(initialRoot, vk, 'direct'))).toBe(
+          null,
+        );
+        expect(noState.read(() => $getState(v0, vk, 'direct'))).toBe(0);
+        expect(noState.read(() => $getState(v1, vk, 'direct'))).toBe(1);
       });
     },
     {

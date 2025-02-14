@@ -1371,3 +1371,29 @@ describe('Regression #7081', () => {
     });
   });
 });
+
+describe('Regression #7173', () => {
+  initializeUnitTest((testEnv) => {
+    test('Can insertNodes of multiple blocks with a target of an initial empty block and the entire next block', () => {
+      testEnv.editor.update(
+        () => {
+          const emptyParagraph = $createParagraphNode();
+          const replacedParagraph = $createParagraphNode().append(
+            $createTextNode('replaced!'),
+          );
+          $getRoot().clear().append(emptyParagraph, replacedParagraph);
+          const selection = $selectAll();
+          const insertedNodes = [
+            $createParagraphNode().append($createTextNode('p1')),
+            $createParagraphNode().append($createTextNode('p2')),
+          ];
+          selection.insertNodes(insertedNodes);
+          const children = $getRoot().getChildren();
+          expect(children).toHaveLength(2);
+          expect(children).toEqual(insertedNodes);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});

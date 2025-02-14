@@ -183,6 +183,33 @@ describe('LexicalNodeHelpers tests', () => {
           expect($reverseDfs($getRoot())).toEqual(expectedNodes);
         });
       });
+
+      test('DFS from the middle', async () => {
+        const editor: LexicalEditor = testEnv.editor;
+        editor.update(
+          () => {
+            const root = $getRoot();
+
+            root
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  $createTextNode('Hello'),
+                  $createTextNode('world').toggleFormat('bold'),
+                  $createTextNode('!'),
+                ),
+              );
+
+            const paragraph = root.getFirstChildOrThrow<ElementNode>();
+            const children = paragraph.getChildren();
+            expect($dfs(children[1]).map((step) => step.node)).toEqual([
+              children[1],
+              children[2],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
     });
 
     test('DFS triggers getLatest()', async () => {

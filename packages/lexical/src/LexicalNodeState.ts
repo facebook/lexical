@@ -26,11 +26,11 @@ export class StateConfig<K extends string, V> {
   /** The parse function from the StateValueConfig passed to createState */
   readonly parse: (value?: unknown) => V;
   /**
-   * The valueToJSON function from the StateValueConfig passed to createState,
+   * The unparse function from the StateValueConfig passed to createState,
    * with a default that is simply a pass-through that assumes the value is
    * JSON serializable.
    */
-  readonly valueToJSON: (value: V) => unknown;
+  readonly unparse: (value: V) => unknown;
   /**
    * An equality function from the StateValueConfig, with a default of
    * Object.is.
@@ -45,7 +45,7 @@ export class StateConfig<K extends string, V> {
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
-    this.valueToJSON = (stateValueConfig.valueToJSON || coerceToJSON).bind(
+    this.unparse = (stateValueConfig.unparse || coerceToJSON).bind(
       stateValueConfig,
     );
     this.isEqual = (stateValueConfig.isEqual || Object.is).bind(
@@ -60,7 +60,7 @@ export class StateConfig<K extends string, V> {
  *
  * The value type should be inferred from the definition of parse.
  *
- * If the value type is not JSON serializable, then valueToJSON must also be provided.
+ * If the value type is not JSON serializable, then unparse must also be provided.
  *
  * Values should be treated as immutable, much like React.useState. Mutating
  * stored values directly will cause unpredictable behavior, is not supported,
@@ -75,7 +75,7 @@ export class StateConfig<K extends string, V> {
  * ```
  *
  * Only the parse option is required, it is generally not useful to
- * override `valuetoJSON` or `isEqual`. However, if you are using
+ * override `unparse` or `isEqual`. However, if you are using
  * non-primitive types such as Array, Object, Date, or something
  * more exotic then you would want to override this. In these
  * cases you might want to reach for third party libraries.
@@ -88,7 +88,7 @@ export class StateConfig<K extends string, V> {
  *     return date && !isNaN(date.valueOf()) ? date : null;
  *   }
  *   isEqual: (a, b) => a === b || (a && b && a.valueOf() === b.valueOf()),
- *   valueToJSON: (v) => v && v.toString()
+ *   unparse: (v) => v && v.toString()
  * });
  * ```
  *
@@ -122,7 +122,7 @@ export interface StateValueConfig<V> {
    * You may specify a function that converts V back to JSON.
    * This is mandatory when V is not a JSON serializable type.
    */
-  valueToJSON?: (parsed: V) => unknown;
+  unparse?: (parsed: V) => unknown;
   /**
    * This is optional and for advanced use cases only.
    *
@@ -215,13 +215,13 @@ function $registerConfigToState<Node extends LexicalNode, K extends string, V>(
 }
 
 /**
- * Set the state defined by cfg on node. Like with `React.useState` you may
- * directly specify the value or use an updater function that will be called
- * with the previous value of the state on that node (which will be the
- * `cfg.defaultValue` if not set).
+ * Set the state defined by stateConfig on node. Like with `React.useState`
+ * you may directly specify the value or use an updater function that will
+ * be called with the previous value of the state on that node (which will
+ * be the `stateConfig.defaultValue` if not set).
  *
  * When an updater function is used, the node will only be marked dirty if
- * `cfg.isEqual(prevValue, value)` is false.
+ * `stateConfig.isEqual(prevValue, value)` is false.
  *
  * @example
  * ```ts
@@ -359,13 +359,13 @@ export class NodeState<T extends LexicalNode> {
    * specific entries in the future when nodes can declare what
    * their required StateConfigs are.
    */
-  toJSON(excludeDefaults = true): {state?: UnknownStateRecord} {
+  toJSON(): {state?: UnknownStateRecord} {
     const state = {...this.unknownState};
-    for (const [cfg, v] of this.knownState) {
-      if (excludeDefaults && cfg.isEqual(v, cfg.defaultValue)) {
-        delete state[cfg.key];
+    for (const [stateConfig, v] of this.knownState) {
+      if (stateConfig.isEqual(v, stateConfig.defaultValue)) {
+        delete state[stateConfig.key];
       } else {
-        state[cfg.key] = cfg.valueToJSON(v);
+        state[stateConfig.key] = stateConfig.unparse(v);
       }
     }
     return undefinedIfEmpty(state) ? {state} : {};
@@ -394,8 +394,8 @@ export class NodeState<T extends LexicalNode> {
     const nextKnownState = new Map(this.knownState);
     const nextUnknownState = cloneUnknownState(this.unknownState);
     if (nextUnknownState) {
-      for (const cfg of nextKnownState.keys()) {
-        delete nextUnknownState[cfg.key];
+      for (const stateConfig of nextKnownState.keys()) {
+        delete nextUnknownState[stateConfig.key];
       }
     }
     return new NodeState(
@@ -421,9 +421,9 @@ export class NodeState<T extends LexicalNode> {
    * @param v The unknown value from an UnknownStateRecord
    */
   updateFromUnknown(k: string, v: unknown) {
-    const cfg = this.sharedConfigMap.get(k);
-    if (cfg) {
-      this.knownState.set(cfg, cfg.parse(v));
+    const stateConfig = this.sharedConfigMap.get(k);
+    if (stateConfig) {
+      this.knownState.set(stateConfig, stateConfig.parse(v));
     } else if (this.unknownState) {
       this.unknownState[k] = v;
     } else {
@@ -445,18 +445,18 @@ export class NodeState<T extends LexicalNode> {
   updateFromJSON(unknownState: undefined | UnknownStateRecord): void {
     const {knownState, sharedConfigMap} = this;
     // Reset all known state to defaults
-    for (const cfg of this.knownState.keys()) {
-      knownState.set(cfg, cfg.defaultValue);
+    for (const stateConfig of this.knownState.keys()) {
+      knownState.set(stateConfig, stateConfig.defaultValue);
     }
     const nextUnknownState: UnknownStateRecord = {};
     if (unknownState) {
       for (const [k, v] of Object.entries(unknownState)) {
         // This is an inlined version of updateFromUnknown for performance
         // reasons
-        const cfg = sharedConfigMap.get(k);
-        if (cfg) {
+        const stateConfig = sharedConfigMap.get(k);
+        if (stateConfig) {
           // We know how to parse this entry, so it goes directly to known
-          knownState.set(cfg, cfg.parse(v));
+          knownState.set(stateConfig, stateConfig.parse(v));
         } else {
           // Unknown entry, save for later parsing
           nextUnknownState[k] = v;

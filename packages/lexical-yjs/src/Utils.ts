@@ -376,9 +376,9 @@ function syncNodeStateFromLexical(
       }
     }
   }
-  for (const [cfg, v] of known) {
-    if (prevKnown.get(cfg) !== v) {
-      stateMap.set(cfg.key, cfg.valueToJSON(v));
+  for (const [stateConfig, v] of known) {
+    if (prevKnown.get(stateConfig) !== v) {
+      stateMap.set(stateConfig.key, stateConfig.unparse(v));
     }
   }
   if (!existingState) {

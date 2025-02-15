@@ -202,9 +202,9 @@ describe('LexicalNodeHelpers tests', () => {
 
             const paragraph = root.getFirstChildOrThrow<ElementNode>();
             const children = paragraph.getChildren();
-            expect($dfs(children[1]).map((step) => step.node)).toEqual([
-              children[1],
-              children[2],
+            expect($dfs(children[1])).toEqual([
+              {depth: 2, node: children[1]},
+              {depth: 2, node: children[2]},
             ]);
           },
           {discrete: true},

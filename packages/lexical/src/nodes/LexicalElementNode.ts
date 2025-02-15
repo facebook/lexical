@@ -880,9 +880,15 @@ export class ElementNode extends LexicalNode {
     return true;
   }
   /*
-   * This method controls the behavior of a the node during backwards
+   * This method controls the behavior of the node during backwards
    * deletion (i.e., backspace) when selection is at the beginning of
-   * the node (offset 0)
+   * the node (offset 0). You may use this to have the node replace
+   * itself, change its state, or do nothing. When you do make such
+   * a change, you should return true.
+   *
+   * When true is returned, the collapse phase will stop.
+   * When false is returned, and isInline() is true, and getPreviousSibling() is null,
+   * then this function will be called on its parent.
    */
   collapseAtStart(selection: RangeSelection): boolean {
     return false;

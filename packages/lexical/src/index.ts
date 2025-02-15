@@ -171,9 +171,13 @@ export {
   $getStateChange,
   $getWritableNodeState,
   $setState,
+  type AnyStateConfig,
   createState,
   type StateConfig,
+  type StateConfigKey,
+  type StateConfigValue,
   type StateValueConfig,
+  type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export type {

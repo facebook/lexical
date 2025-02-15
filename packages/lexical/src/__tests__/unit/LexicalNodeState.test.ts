@@ -8,9 +8,11 @@
 import {makeStateWrapper} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getState,
   $getStateChange,
+  $isParagraphNode,
   $setState,
   createState,
   ParagraphNode,
@@ -18,7 +20,8 @@ import {
   SerializedLexicalNode,
 } from 'lexical';
 
-import {initializeUnitTest} from '../utils';
+import {$nodeStatesAreEquivalent} from '../../LexicalNodeState';
+import {initializeUnitTest, invariant} from '../utils';
 import {TestNode} from './LexicalNode.test';
 
 // https://www.totaltypescript.com/how-to-test-your-types
@@ -286,6 +289,165 @@ describe('LexicalNode state', () => {
         );
         expect(noState.read(() => $getState(v0, vk, 'direct'))).toBe(0);
         expect(noState.read(() => $getState(v1, vk, 'direct'))).toBe(1);
+      });
+      describe('$nodeStatesAreEquivalent', () => {
+        test('undefined states are equivalent', () => {
+          expect($nodeStatesAreEquivalent(undefined, undefined)).toBe(true);
+        });
+        test('TextNode merging only with equivalent state', () => {
+          const {editor} = testEnv;
+          const classNameState = createState('className', {
+            parse: (v) => (typeof v === 'string' ? v : ''),
+          });
+          const $createTextWithClassName = (className: string) =>
+            $setState($createTextNode(className), classNameState, className);
+          editor.update(
+            () => {
+              $getRoot()
+                .clear()
+                .append(
+                  $createParagraphNode().append(
+                    $createTextWithClassName('red'),
+                    $createTextNode('none!'),
+                    $createTextWithClassName('red'),
+                    $createTextWithClassName('blue'),
+                    $createTextWithClassName('blue'),
+                    $createTextWithClassName('red'),
+                    $createTextWithClassName('blue'),
+                  ),
+                );
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const textNodes = $getRoot().getAllTextNodes();
+            expect(textNodes).toHaveLength(6);
+            expect(
+              textNodes.map((node) => $getState(node, classNameState)),
+            ).toEqual(['red', '', 'red', 'blue', 'red', 'blue']);
+            expect(textNodes.map((node) => node.getTextContent())).toEqual([
+              'red',
+              'none!',
+              'red',
+              'blueblue',
+              'red',
+              'blue',
+            ]);
+          });
+          editor.update(
+            () => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              invariant($isParagraphNode(paragraph), 'must be a paragraph');
+              // change none! to red
+              $setState(paragraph.getChildAtIndex(1)!, classNameState, 'red');
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const textNodes = $getRoot().getAllTextNodes();
+            expect(textNodes).toHaveLength(4);
+            expect(
+              textNodes.map((node) => $getState(node, classNameState)),
+            ).toEqual(['red', 'blue', 'red', 'blue']);
+            expect(textNodes.map((node) => node.getTextContent())).toEqual([
+              'rednone!red',
+              'blueblue',
+              'red',
+              'blue',
+            ]);
+          });
+        });
+        test('different versions of the same state are not equivalent', () => {
+          const {editor} = testEnv;
+          let initialRoot!: RootNode;
+          let v0!: RootNode;
+          let v1!: RootNode;
+          let v2!: RootNode;
+          let v3!: RootNode;
+          let v4!: RootNode;
+          let v5!: RootNode;
+          const vk = createState('vk', {
+            parse: (v) => (typeof v === 'number' ? v : null),
+          });
+          editor.update(
+            () => {
+              initialRoot = $getRoot();
+              v0 = $setState(initialRoot, vk, 0);
+              expect($getState(v0, vk)).toBe(0);
+              expect($getStateChange(v0, initialRoot, vk)).toEqual([0, null]);
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              v1 = $setState(v0, vk, 1);
+              expect(v1).not.toBe(v0);
+              expect(v1.is(v0)).toBe(true);
+              // This is testing getLatest()
+              expect($getState(v0, vk)).toBe(1);
+              expect($getState(v0, vk, 'direct')).toBe(0);
+              expect($getState(v1, vk)).toBe(1);
+              expect($getStateChange(v1, v0, vk)).toEqual([1, 0]);
+            },
+            {discrete: true},
+          );
+          // Set the state back to v0
+          editor.update(
+            () => {
+              v2 = $setState(v1, vk, 0);
+            },
+            {discrete: true},
+          );
+          // Set the state back to default
+          editor.update(
+            () => {
+              v3 = $setState(v2, vk, null);
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              v4 = v3.updateFromJSON({...v3.exportJSON(), state: {vk: 1}});
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              v5 = v4.updateFromJSON({
+                ...v4.exportJSON(),
+                state: {unknown: true, vk: 1},
+              });
+            },
+            {discrete: true},
+          );
+          // Each sub-array's elements are all equivalent, but not equivalent to states from other arrays
+          const equivalences = [
+            [initialRoot.__state, v3.__state, undefined],
+            [v0.__state, v2.__state],
+            [v1.__state, v4.__state],
+            [v5.__state],
+          ];
+          for (let i = 0; i < equivalences.length; i++) {
+            const aSet = equivalences[i];
+            for (let j = i + 1; j < equivalences.length; j++) {
+              const bSet = equivalences[j];
+              for (const a of aSet) {
+                for (const b of bSet) {
+                  expect($nodeStatesAreEquivalent(a, b)).toBe(false);
+                  expect($nodeStatesAreEquivalent(b, a)).toBe(false);
+                }
+              }
+            }
+            for (let j = 0; j < aSet.length; j++) {
+              const a0 = aSet[j];
+              for (let k = j + 1; k < aSet.length; k++) {
+                const a1 = aSet[k];
+                expect($nodeStatesAreEquivalent(a0, a1)).toBe(true);
+                expect($nodeStatesAreEquivalent(a1, a0)).toBe(true);
+              }
+            }
+          }
+        });
       });
     },
     {

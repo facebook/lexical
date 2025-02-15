@@ -55,8 +55,45 @@ export class StateConfig<K extends string, V> {
   }
 }
 
+/**
+ * For advanced use cases, using this type is not recommended unless
+ * it is required (due to TypeScript's lack of features like
+ * higher-kinded types).
+ *
+ * A {@link StateConfig} type with any key and any value that can be
+ * used in situations where the key and value type can not be known,
+ * such as in a generic constraint when working with a collection of
+ * StateConfig.
+ *
+ * {@link StateConfigKey} and {@link StateConfigValue} will be
+ * useful when this is used as a generic constraint.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyStateConfig = StateConfig<any, any>;
+export type AnyStateConfig = StateConfig<any, any>;
+
+/**
+ * Get the value type (V) from a StateConfig
+ */
+export type StateConfigValue<S extends AnyStateConfig> = S extends StateConfig<
+  infer _K,
+  infer V
+>
+  ? V
+  : never;
+/**
+ * Get the key type (K) from a StateConfig
+ */
+export type StateConfigKey<S extends AnyStateConfig> = S extends StateConfig<
+  infer K,
+  infer _V
+>
+  ? K
+  : never;
+/**
+ * A value type, or an updater for that value type. For use with
+ * {@link $setState} or any user-defined wrappers around it.
+ */
+export type ValueOrUpdater<V> = V | ((prevValue: V) => V);
 
 /**
  * Configure a value to be used with StateConfig.
@@ -209,19 +246,8 @@ export function $getState<K extends string, V>(
   const latestOrDirectNode = version === 'latest' ? node.getLatest() : node;
   const state = latestOrDirectNode.__state;
   if (state) {
-    $registerConfigToState(node, stateConfig, state);
-    const known = state.knownState.get(stateConfig) as undefined | V;
-    if (known !== undefined) {
-      return known;
-    } else if (state.unknownState && stateConfig.key in state.unknownState) {
-      const jsonValue = state.unknownState[stateConfig.key];
-      const parsed =
-        jsonValue === undefined
-          ? stateConfig.defaultValue
-          : stateConfig.parse(state.unknownState[stateConfig.key]);
-      state.knownState.set(stateConfig, parsed);
-      return parsed;
-    }
+    $checkCollision(node, stateConfig, state);
+    return state.getValue(stateConfig);
   }
   return stateConfig.defaultValue;
 }
@@ -232,16 +258,14 @@ export function $getState<K extends string, V>(
  * Register the config to this node's sharedConfigMap and throw an exception in
  * `__DEV__` when a collision is detected.
  */
-function $registerConfigToState<Node extends LexicalNode, K extends string, V>(
+function $checkCollision<Node extends LexicalNode, K extends string, V>(
   node: Node,
   stateConfig: StateConfig<K, V>,
   state: NodeState<Node>,
 ): void {
-  const collision = state.sharedConfigMap.get(stateConfig.key);
-  if (collision === undefined) {
-    state.sharedConfigMap.set(stateConfig.key, stateConfig);
-  } else if (collision !== stateConfig) {
-    if (__DEV__) {
+  if (__DEV__) {
+    const collision = state.sharedConfigMap.get(stateConfig.key);
+    if (collision !== undefined && collision !== stateConfig) {
       invariant(
         false,
         '$setState: State key collision %s detected in %s node with type %s and key %s. Only one StateConfig with a given key should be used on a node.',
@@ -280,7 +304,7 @@ function $registerConfigToState<Node extends LexicalNode, K extends string, V>(
 export function $setState<Node extends LexicalNode, K extends string, V>(
   node: Node,
   stateConfig: StateConfig<K, V>,
-  valueOrUpdater: V | ((prevValue: V) => V),
+  valueOrUpdater: ValueOrUpdater<V>,
 ): Node {
   errorOnReadOnly();
   let value: V;
@@ -296,8 +320,8 @@ export function $setState<Node extends LexicalNode, K extends string, V>(
   }
   const writable = node.getWritable();
   const state = $getWritableNodeState(writable);
-  $registerConfigToState(node, stateConfig, state);
-  state.knownState.set(stateConfig, value);
+  $checkCollision(node, stateConfig, state);
+  state.updateFromKnown(stateConfig, value);
   return writable;
 }
 
@@ -358,6 +382,13 @@ export class NodeState<T extends LexicalNode> {
    * remains writable. It is how keys are resolved to configuration.
    */
   readonly sharedConfigMap: SharedConfigMap;
+  /**
+   * @internal
+   *
+   * The count of known or unknown keys in this state, ignoring the
+   * intersection between the two sets.
+   */
+  size: number;
 
   /**
    * @internal
@@ -367,11 +398,51 @@ export class NodeState<T extends LexicalNode> {
     sharedConfigMap: SharedConfigMap = new Map(),
     unknownState: undefined | UnknownStateRecord = undefined,
     knownState: KnownStateMap = new Map(),
+    size: number | undefined = undefined,
   ) {
     this.node = node;
     this.sharedConfigMap = sharedConfigMap;
     this.unknownState = unknownState;
     this.knownState = knownState;
+    const computedSize =
+      size !== undefined
+        ? size
+        : computeSize(sharedConfigMap, unknownState, knownState);
+    if (__DEV__) {
+      invariant(
+        size === undefined || computedSize === size,
+        'NodeState: size != computedSize (%s != %s)',
+        String(size),
+        String(computedSize),
+      );
+      for (const stateConfig of knownState.keys()) {
+        invariant(
+          sharedConfigMap.has(stateConfig.key),
+          'NodeState: sharedConfigMap missing knownState key %s',
+          stateConfig.key,
+        );
+      }
+    }
+    this.size = computedSize;
+  }
+
+  /** @internal */
+  getValue<K extends string, V>(stateConfig: StateConfig<K, V>): V {
+    const known = this.knownState.get(stateConfig) as V | undefined;
+    if (known !== undefined) {
+      return known;
+    }
+    this.sharedConfigMap.set(stateConfig.key, stateConfig);
+    let parsed = stateConfig.defaultValue;
+    if (this.unknownState && stateConfig.key in this.unknownState) {
+      const jsonValue = this.unknownState[stateConfig.key];
+      if (jsonValue !== undefined) {
+        parsed = stateConfig.parse(jsonValue);
+      }
+      // Only update if the key was unknown
+      this.updateFromKnown(stateConfig, parsed);
+    }
+    return parsed;
   }
 
   /**
@@ -430,6 +501,7 @@ export class NodeState<T extends LexicalNode> {
     const nextKnownState = new Map(this.knownState);
     const nextUnknownState = cloneUnknownState(this.unknownState);
     if (nextUnknownState) {
+      // Garbage collection
       for (const stateConfig of nextKnownState.keys()) {
         delete nextUnknownState[stateConfig.key];
       }
@@ -439,7 +511,24 @@ export class NodeState<T extends LexicalNode> {
       this.sharedConfigMap,
       undefinedIfEmpty(nextUnknownState),
       nextKnownState,
+      this.size,
     );
+  }
+
+  /** @internal */
+  updateFromKnown<K extends string, V>(
+    stateConfig: StateConfig<K, V>,
+    value: V,
+  ): void {
+    const key = stateConfig.key;
+    this.sharedConfigMap.set(key, stateConfig);
+    const {knownState, unknownState} = this;
+    if (
+      !(knownState.has(stateConfig) || (unknownState && key in unknownState))
+    ) {
+      this.size++;
+    }
+    knownState.set(stateConfig, value);
   }
 
   /**
@@ -456,14 +545,16 @@ export class NodeState<T extends LexicalNode> {
    * @param k The string key from an UnknownStateRecord
    * @param v The unknown value from an UnknownStateRecord
    */
-  updateFromUnknown(k: string, v: unknown) {
+  updateFromUnknown(k: string, v: unknown): void {
     const stateConfig = this.sharedConfigMap.get(k);
     if (stateConfig) {
-      this.knownState.set(stateConfig, stateConfig.parse(v));
-    } else if (this.unknownState) {
-      this.unknownState[k] = v;
+      this.updateFromKnown(stateConfig, stateConfig.parse(v));
     } else {
-      this.unknownState = {[k]: v};
+      this.unknownState = this.unknownState || {};
+      if (!(k in this.unknownState)) {
+        this.size++;
+      }
+      this.unknownState[k] = v;
     }
   }
 
@@ -479,28 +570,40 @@ export class NodeState<T extends LexicalNode> {
    * @param unknownState The new state in serialized form
    */
   updateFromJSON(unknownState: undefined | UnknownStateRecord): void {
-    const {knownState, sharedConfigMap} = this;
+    const {knownState} = this;
     // Reset all known state to defaults
-    for (const stateConfig of this.knownState.keys()) {
+    for (const stateConfig of knownState.keys()) {
       knownState.set(stateConfig, stateConfig.defaultValue);
     }
-    const nextUnknownState: UnknownStateRecord = {};
+    // Since we are resetting all state to this new record,
+    // the size starts at the number of known keys
+    // and will be updated as we traverse the new state
+    this.size = knownState.size;
+    this.unknownState = {};
     if (unknownState) {
       for (const [k, v] of Object.entries(unknownState)) {
-        // This is an inlined version of updateFromUnknown for performance
-        // reasons
-        const stateConfig = sharedConfigMap.get(k);
-        if (stateConfig) {
-          // We know how to parse this entry, so it goes directly to known
-          knownState.set(stateConfig, stateConfig.parse(v));
-        } else {
-          // Unknown entry, save for later parsing
-          nextUnknownState[k] = v;
-        }
+        this.updateFromUnknown(k, v);
       }
     }
-    this.unknownState = undefinedIfEmpty(nextUnknownState);
+    this.unknownState = undefinedIfEmpty(this.unknownState);
   }
+}
+
+function computeSize(
+  sharedConfigMap: SharedConfigMap,
+  unknownState: UnknownStateRecord | undefined,
+  knownState: KnownStateMap,
+): number {
+  let size = knownState.size;
+  if (unknownState) {
+    for (const k in unknownState) {
+      const sharedConfig = sharedConfigMap.get(k);
+      if (!sharedConfig || !knownState.has(sharedConfig)) {
+        size++;
+      }
+    }
+  }
+  return size;
 }
 
 /**
@@ -563,4 +666,70 @@ export function $updateStateFromJSON<T extends LexicalNode>(
     $getWritableNodeState(node).updateFromJSON(unknownState);
   }
   return writable;
+}
+
+/**
+ * @internal
+ *
+ * Return true if the two nodes have equivalent NodeState, to be used
+ * to determine when TextNode are being merged, not a lot of use cases
+ * otherwise.
+ */
+export function $nodeStatesAreEquivalent<T extends LexicalNode>(
+  a: undefined | NodeState<T>,
+  b: undefined | NodeState<T>,
+): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (a && b && a.size !== b.size) {
+    return false;
+  }
+  const keys = new Set<string>();
+  const hasUnequalMapEntry = (
+    sourceState: NodeState<T>,
+    otherState?: NodeState<T>,
+  ): boolean => {
+    for (const [stateConfig, value] of sourceState.knownState) {
+      if (keys.has(stateConfig.key)) {
+        continue;
+      }
+      keys.add(stateConfig.key);
+      const otherValue = otherState
+        ? otherState.getValue(stateConfig)
+        : stateConfig.defaultValue;
+      if (otherValue !== value && !stateConfig.isEqual(otherValue, value)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const hasUnequalRecordEntry = (
+    sourceState: NodeState<T>,
+    otherState?: NodeState<T>,
+  ): boolean => {
+    const {unknownState} = sourceState;
+    const otherUnknownState = otherState ? otherState.unknownState : undefined;
+    if (unknownState) {
+      for (const [key, value] of Object.entries(unknownState)) {
+        if (keys.has(key)) {
+          continue;
+        }
+        keys.add(key);
+        const otherValue = otherUnknownState
+          ? otherUnknownState[key]
+          : undefined;
+        if (value !== otherValue) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  return !(
+    (a && hasUnequalMapEntry(a, b)) ||
+    (b && hasUnequalMapEntry(b, a)) ||
+    (a && hasUnequalRecordEntry(a, b)) ||
+    (b && hasUnequalRecordEntry(b, a))
+  );
 }

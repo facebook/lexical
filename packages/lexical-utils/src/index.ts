@@ -40,6 +40,7 @@ import {
   RootMode,
   type SiblingCaret,
   StateConfig,
+  ValueOrUpdater,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -878,7 +879,7 @@ export interface StateConfigWrapper<K extends string, V> {
   /** `(node, valueOrUpdater) => $setState(node, stateConfig, valueOrUpdater)` */
   readonly $set: <T extends LexicalNode>(
     node: T,
-    valueOrUpdater: V | ((prevValue: V) => V),
+    valueOrUpdater: ValueOrUpdater<V>,
   ) => T;
   /** `[$get, $set]` */
   readonly accessors: readonly [$get: this['$get'], $set: this['$set']];
@@ -911,7 +912,7 @@ export interface StateConfigWrapper<K extends string, V> {
    */
   makeSetterMethod<T extends LexicalNode>(): (
     this: T,
-    valueOrUpdater: V | ((prevValue: V) => V),
+    valueOrUpdater: ValueOrUpdater<V>,
   ) => T;
 }
 

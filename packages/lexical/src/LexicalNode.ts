@@ -51,10 +51,32 @@ import {
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
+/**
+ * The base type for all serialized nodes
+ */
 export type SerializedLexicalNode = {
+  /** The type string used by the Node class */
   type: string;
+  /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
 };
+
+/**
+ * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
+ */
+export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
+  T,
+  'children' | 'type' | 'version'
+>;
+
+/** @internal */
+export interface LexicalPrivateDOM {
+  __lexicalTextContent?: string | undefined | null;
+  __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
+  __lexicalDirTextContent?: string | undefined | null;
+  __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
+  __lexicalUnmanaged?: boolean | undefined;
+}
 
 export function $removeNode(
   nodeToRemove: LexicalNode,
@@ -155,9 +177,9 @@ export type DOMExportOutputMap = Map<
 
 export type DOMExportOutput = {
   after?: (
-    generatedElement: HTMLElement | Text | null | undefined,
+    generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | Text | null | undefined;
-  element: HTMLElement | Text | null;
+  element: HTMLElement | DocumentFragment | Text | null;
 };
 
 export type NodeKey = string;
@@ -359,11 +381,10 @@ export class LexicalNode {
         const firstPoint = targetSelection.isBackward()
           ? targetSelection.focus
           : targetSelection.anchor;
-        const firstElement = firstPoint.getNode() as ElementNode;
         if (
-          firstPoint.offset === firstElement.getChildrenSize() &&
-          firstElement.is(parentNode) &&
-          firstElement.getLastChildOrThrow().is(this)
+          parentNode.is(firstPoint.getNode()) &&
+          firstPoint.offset === parentNode.getChildrenSize() &&
+          this.is(parentNode.getLastChild())
         ) {
           return false;
         }
@@ -860,7 +881,10 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
-    invariant(false, 'exportJSON: base method not extended');
+    return {
+      type: this.__type,
+      version: 1,
+    };
   }
 
   /**
@@ -877,6 +901,41 @@ export class LexicalNode {
       this.name,
     );
   }
+
+  /**
+   * Update this LexicalNode instance from serialized JSON. It's recommended
+   * to implement as much logic as possible in this method instead of the
+   * static importJSON method, so that the functionality can be inherited in subclasses.
+   *
+   * The LexicalUpdateJSON utility type should be used to ignore any type, version,
+   * or children properties in the JSON so that the extended JSON from subclasses
+   * are acceptable parameters for the super call.
+   *
+   * If overridden, this method must call super.
+   *
+   * @example
+   * ```ts
+   * class MyTextNode extends TextNode {
+   *   // ...
+   *   static importJSON(serializedNode: SerializedMyTextNode): MyTextNode {
+   *     return $createMyTextNode()
+   *       .updateFromJSON(serializedNode);
+   *   }
+   *   updateFromJSON(
+   *     serializedNode: LexicalUpdateJSON<SerializedMyTextNode>,
+   *   ): this {
+   *     return super.updateFromJSON(serializedNode)
+   *       .setMyProperty(serializedNode.myProperty);
+   *   }
+   * }
+   * ```
+   **/
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+  ): this {
+    return this;
+  }
+
   /**
    * @experimental
    *
@@ -1159,6 +1218,16 @@ export class LexicalNode {
    * */
   markDirty(): void {
     this.getWritable();
+  }
+
+  /**
+   * @internal
+   *
+   * When the reconciler detects that a node was mutated, this method
+   * may be called to restore the node to a known good state.
+   */
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
+    this.markDirty();
   }
 }
 

@@ -64,12 +64,56 @@
 .PlaygroundEditorTheme__textUnderline {
   text-decoration: underline;
 }
+
 .PlaygroundEditorTheme__textStrikethrough {
   text-decoration: line-through;
 }
+
 .PlaygroundEditorTheme__textUnderlineStrikethrough {
   text-decoration: underline line-through;
 }
+
+.PlaygroundEditorTheme__tabNode {
+  position: relative;
+  text-decoration: none;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.15em;
+  border-bottom: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.69em;
+  border-top: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before,
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before {
+  top: 0.69em;
+  border-top: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  bottom: 0.05em;
+  border-bottom: 0.1em solid currentColor;
+}
+
 .PlaygroundEditorTheme__textSubscript {
   font-size: 0.8em;
   vertical-align: sub !important;
@@ -84,6 +128,15 @@
   font-family: Menlo, Consolas, Monaco, monospace;
   font-size: 94%;
 }
+.PlaygroundEditorTheme__textLowercase {
+  text-transform: lowercase;
+}
+.PlaygroundEditorTheme__textUppercase {
+  text-transform: uppercase;
+}
+.PlaygroundEditorTheme__textCapitalize {
+  text-transform: capitalize;
+}
 .PlaygroundEditorTheme__hashtag {
   background-color: rgba(88, 144, 255, 0.15);
   border-bottom: 1px solid rgba(88, 144, 255, 0.3);
@@ -95,6 +148,25 @@
 .PlaygroundEditorTheme__link:hover {
   text-decoration: underline;
   cursor: pointer;
+}
+.PlaygroundEditorTheme__blockCursor {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+}
+.PlaygroundEditorTheme__blockCursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+  animation: CursorBlink 1.1s steps(2, start) infinite;
+}
+@keyframes CursorBlink {
+  to {
+    visibility: hidden;
+  }
 }
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);
@@ -123,14 +195,55 @@
   text-align: right;
   min-width: 25px;
 }
+.PlaygroundEditorTheme__tableScrollableWrapper {
+  overflow-x: auto;
+  margin: 0px 25px 30px 0px;
+}
+.PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
+  /* Remove the table's vertical margin and put it on the wrapper */
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.PlaygroundEditorTheme__tableAlignmentCenter {
+  margin-left: auto;
+  margin-right: auto;
+}
+.PlaygroundEditorTheme__tableAlignmentRight {
+  margin-left: auto;
+}
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
   border-spacing: 0;
   overflow-y: scroll;
   overflow-x: scroll;
   table-layout: fixed;
-  width: max-content;
-  margin: 0px 25px 30px 0px;
+  width: fit-content;
+  margin-top: 25px;
+  margin-bottom: 30px;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
+  background-color: #f2f3f5;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 100%;
+  border-right: 1px solid #bbb;
+}
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
+  background-color: #f2f5fb;
 }
 .PlaygroundEditorTheme__tableSelection *::selection {
   background-color: transparent;
@@ -141,22 +254,19 @@
 .PlaygroundEditorTheme__tableCell {
   border: 1px solid #bbb;
   width: 75px;
-  min-width: 75px;
   vertical-align: top;
   text-align: start;
   padding: 6px 8px;
   position: relative;
   outline: none;
+  overflow: auto;
 }
-.PlaygroundEditorTheme__tableCellSortedIndicator {
-  display: block;
-  opacity: 0.5;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background-color: #999;
+/*
+  A firefox workaround to allow scrolling of overflowing table cell
+  ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1904159
+*/
+.PlaygroundEditorTheme__tableCell > * {
+  overflow: inherit;
 }
 .PlaygroundEditorTheme__tableCellResizer {
   position: absolute;
@@ -172,21 +282,18 @@
   text-align: start;
 }
 .PlaygroundEditorTheme__tableCellSelected {
-  background-color: #c9dbf0;
+  caret-color: transparent;
 }
-.PlaygroundEditorTheme__tableCellPrimarySelected {
-  border: 2px solid rgb(60, 132, 244);
-  display: block;
-  height: calc(100% - 2px);
+.PlaygroundEditorTheme__tableCellSelected::after {
   position: absolute;
-  width: calc(100% - 2px);
-  left: -1px;
-  top: -1px;
-  z-index: 2;
-}
-.PlaygroundEditorTheme__tableCellEditing {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
-  border-radius: 3px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  background-color: highlight;
+  mix-blend-mode: multiply;
+  content: '';
+  pointer-events: none;
 }
 .PlaygroundEditorTheme__tableAddColumns {
   position: absolute;
@@ -437,6 +544,8 @@
 .PlaygroundEditorTheme__layoutItem {
   border: 1px dashed #ddd;
   padding: 8px 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 .PlaygroundEditorTheme__autocomplete {
   color: #ccc;
@@ -457,4 +566,9 @@
 .PlaygroundEditorTheme__hr.selected {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
+}
+
+.PlaygroundEditorTheme__specialText {
+  background-color: yellow;
+  font-weight: bold;
 }

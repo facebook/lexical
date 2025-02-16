@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {ParagraphNode, TextNode} from 'lexical';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {$getRoot, ParagraphNode, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {
@@ -56,9 +57,9 @@ describe('LexicalListNode tests', () => {
         expect(listNode.getTag()).toBe('ul');
         expect(listNode.getTextContent()).toBe('');
       });
-
-      // @ts-expect-error
-      expect(() => $createListNode()).toThrow();
+      await editor.update(() => {
+        expect(() => $createListNode()).not.toThrow();
+      });
     });
 
     test('ListNode.getTag()', async () => {
@@ -257,6 +258,45 @@ describe('LexicalListNode tests', () => {
         expect(listNode.append(...nodesToAppend)).toBe(listNode);
         expect($isListItemNode(listNode.getFirstChild())).toBe(true);
         expect(listNode.getFirstChild()?.getTextContent()).toBe('Hello');
+      });
+    });
+
+    test('ListNode.append() should wrap an InlineNode in a ListItemNode without converting it to TextNode', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const listNode = $createListNode('bullet', 1);
+        const linkNode = $createLinkNode('https://lexical.dev/');
+
+        listNode.append(linkNode);
+
+        const root = $getRoot();
+        root.append(listNode);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+
+        const listNode = root.getFirstChild();
+        expect(listNode).not.toBeNull();
+        expect($isListNode(listNode)).toBe(true);
+
+        if ($isListNode(listNode)) {
+          const firstChild = listNode.getFirstChild();
+          expect($isListItemNode(firstChild)).toBe(true);
+
+          if ($isListItemNode(firstChild)) {
+            const wrappedNode = firstChild?.getFirstChild();
+            expect(wrappedNode).not.toBeNull();
+            expect($isLinkNode(wrappedNode)).toBe(true);
+
+            expect((wrappedNode as LinkNode).getURL()).toBe(
+              'https://lexical.dev/',
+            );
+          } else {
+            expect($isListItemNode(firstChild)).toBe(true);
+          }
+        }
       });
     });
 

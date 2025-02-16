@@ -34,7 +34,7 @@ export type InitialConfigType = $ReadOnly<{
 
 type Props = {
   initialConfig: InitialConfigType,
-  children: React$Node,
+  children: React.Node,
 };
 
-declare export function LexicalComposer(Props): React$MixedElement;
+declare export function LexicalComposer(Props): React.MixedElement;

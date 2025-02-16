@@ -14,13 +14,16 @@ import {
   OverflowNode,
 } from '@lexical/overflow';
 import {$rootTextContent} from '@lexical/text';
-import {$dfs, mergeRegister} from '@lexical/utils';
+import {$dfs, $unwrapNode, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isElementNode,
   $isLeafNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  COMMAND_PRIORITY_LOW,
+  DELETE_CHARACTER_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -92,6 +95,29 @@ export function useCharacterLimit(
 
         lastComputedTextLength = textLength;
       }),
+      editor.registerCommand(
+        DELETE_CHARACTER_COMMAND,
+        (isBackward) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          const anchorNode = selection.anchor.getNode();
+          const overflow = anchorNode.getParent();
+          const overflowParent = overflow ? overflow.getParent() : null;
+          const parentNext = overflowParent
+            ? overflowParent.getNextSibling()
+            : null;
+          selection.deleteCharacter(isBackward);
+          if (overflowParent && overflowParent.isEmpty()) {
+            overflowParent.remove();
+          } else if ($isElementNode(parentNext) && parentNext.isEmpty()) {
+            parentNext.remove();
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [editor, maxCharacters, remainingCharacters, strlen]);
 }
@@ -226,18 +252,6 @@ function $wrapNode(node: LexicalNode): OverflowNode {
   node.replace(overflowNode);
   overflowNode.append(node);
   return overflowNode;
-}
-
-function $unwrapNode(node: OverflowNode): LexicalNode | null {
-  const children = node.getChildren();
-  const childrenLength = children.length;
-
-  for (let i = 0; i < childrenLength; i++) {
-    node.insertBefore(children[i]);
-  }
-
-  node.remove();
-  return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
 export function $mergePrevious(overflowNode: OverflowNode): void {

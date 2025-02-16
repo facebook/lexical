@@ -13,13 +13,22 @@ import type {
   NodeKey,
   RangeSelection,
   LexicalCommand,
+  SerializedElementNode,
 } from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
-export type LinkAttributes = {
+export type LinkAttributes = $ReadOnly<{
   rel?: null | string,
   target?: null | string,
   title?: null | string,
+}>;
+export type SerializedLinkNode = {
+  ...SerializedElementNode,
+  rel?: null | string,
+  target?: null | string,
+  title?: null | string,
+  url: string,
+  ...
 };
 declare export class LinkNode extends ElementNode {
   __url: string;
@@ -30,12 +39,8 @@ declare export class LinkNode extends ElementNode {
   static clone(node: LinkNode): LinkNode;
   constructor(url: string, attributes?: LinkAttributes, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: LinkNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   static importDOM(): DOMConversionMap | null;
+  exportJSON(): SerializedLinkNode;
   getURL(): string;
   setURL(url: string): void;
   getTarget(): null | string;
@@ -60,6 +65,11 @@ declare export function $createLinkNode(
 declare export function $isLinkNode(
   node: ?LexicalNode,
 ): node is LinkNode;
+export type SerializedAutoLinkNode = {
+  ...SerializedLinkNode,
+  isUnlinked: boolean,
+  ...
+};
 declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
   // $FlowFixMe clone method inheritance

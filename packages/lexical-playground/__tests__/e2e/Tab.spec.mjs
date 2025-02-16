@@ -8,9 +8,11 @@
 
 import {
   assertHTML,
+  assertSelection,
   focusEditor,
   html,
   initialize,
+  keyDownCtrlOrMeta,
   test,
 } from '../utils/index.mjs';
 
@@ -79,7 +81,9 @@ test.describe('Tab', () => {
             dir="ltr"
             style="padding-inline-start: calc(40px)">
             <span data-lexical-text="true">すし</span>
-            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tabNode"
+              data-lexical-text="true"></span>
             <span data-lexical-text="true">すし</span>
           </p>
         `,
@@ -104,7 +108,9 @@ test.describe('Tab', () => {
           data-gutter="1"
           data-highlight-language="javascript"
           data-language="javascript">
-          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">
@@ -113,6 +119,33 @@ test.describe('Tab', () => {
         </code>
       `,
     );
+  });
+
+  test('can go to start of line after a tab character', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Foo');
+    await page.keyboard.press('Tab');
+
+    page.on('pageerror', (error) => {
+      throw new Error(`Uncaught exception: ${error.message}`);
+    });
+
+    // Press ctrl + left arrow key to go to start of line
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('ArrowLeft');
+
+    // ensure cursor is now at beginning of line
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
   });
 });
 /* eslint-enable sort-keys-fix/sort-keys-fix */

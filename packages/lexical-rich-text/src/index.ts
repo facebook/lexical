@@ -16,6 +16,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   PasteCommandType,
@@ -79,6 +80,7 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  isDOMNode,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -88,10 +90,13 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  KEY_SPACE_COMMAND,
+  KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  setNodeIndentFromDOM,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -124,10 +129,6 @@ export class QuoteNode extends ElementNode {
     return new QuoteNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
-    super(key);
-  }
-
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -135,7 +136,7 @@ export class QuoteNode extends ElementNode {
     addClassNamesToElement(element, config.theme.quote);
     return element;
   }
-  updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 
@@ -151,7 +152,7 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }
@@ -171,18 +172,7 @@ export class QuoteNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
-    const node = $createQuoteNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'quote',
-    };
+    return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
   // Mutation
@@ -242,6 +232,12 @@ export class HeadingNode extends ElementNode {
     return this.__tag;
   }
 
+  setTag(tag: HeadingTagType): this {
+    const self = this.getWritable();
+    this.__tag = tag;
+    return self;
+  }
+
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -256,8 +252,8 @@ export class HeadingNode extends ElementNode {
     return element;
   }
 
-  updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
-    return false;
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    return prevNode.__tag !== this.__tag;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -317,7 +313,7 @@ export class HeadingNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }
@@ -337,19 +333,21 @@ export class HeadingNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-    const node = $createHeadingNode(serializedNode.tag);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createHeadingNode(serializedNode.tag).updateFromJSON(
+      serializedNode,
+    );
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedHeadingNode>,
+  ): this {
+    return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
   }
 
   exportJSON(): SerializedHeadingNode {
     return {
       ...super.exportJSON(),
       tag: this.getTag(),
-      type: 'heading',
-      version: 1,
     };
   }
 
@@ -415,6 +413,7 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
   ) {
     node = $createHeadingNode(nodeName);
     if (element.style !== null) {
+      setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
   }
@@ -425,11 +424,14 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
+    setNodeIndentFromDOM(element, node);
   }
   return {node};
 }
 
-export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode {
+export function $createHeadingNode(
+  headingTag: HeadingTagType = 'h1',
+): HeadingNode {
   return $applyNodeReplacement(new HeadingNode(headingTag));
 }
 
@@ -544,6 +546,19 @@ function $isTargetWithinDecorator(target: HTMLElement): boolean {
 function $isSelectionAtEndOfRoot(selection: RangeSelection) {
   const focus = selection.focus;
   return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
+}
+
+/**
+ * Resets the capitalization of the selection to default.
+ * Called when the user presses space, tab, or enter key.
+ * @param selection The selection to reset the capitalization of.
+ */
+function $resetCapitalization(selection: RangeSelection): void {
+  for (const format of ['lowercase', 'uppercase', 'capitalize'] as const) {
+    if (selection.hasFormat(format)) {
+      selection.toggleFormat(format);
+    }
+  }
 }
 
 export function registerRichText(editor: LexicalEditor): () => void {
@@ -857,7 +872,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        event.preventDefault();
+
         const {anchor} = selection;
         const anchorNode = anchor.getNode();
 
@@ -868,9 +883,18 @@ export function registerRichText(editor: LexicalEditor): () => void {
         ) {
           const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
           if (element.getIndent() > 0) {
+            event.preventDefault();
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
         }
+
+        // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
+        // more details - https://github.com/facebook/lexical/issues/5841
+        if (IS_IOS && navigator.language === 'ko-KR') {
+          return false;
+        }
+        event.preventDefault();
+
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
       COMMAND_PRIORITY_EDITOR,
@@ -897,6 +921,9 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
+        $resetCapitalization(selection);
+
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
@@ -1048,7 +1075,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         // if inputs then paste within the input ignore creating a new node on paste event
-        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
+        if (
+          isDOMNode(event.target) &&
+          isSelectionCapturedInDecoratorInput(event.target)
+        ) {
           return false;
         }
 
@@ -1056,6 +1086,32 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_SPACE_COMMAND,
+      (_) => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $resetCapitalization(selection);
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_TAB_COMMAND,
+      (_) => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $resetCapitalization(selection);
         }
 
         return false;

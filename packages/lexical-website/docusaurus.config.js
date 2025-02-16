@@ -225,6 +225,11 @@ const config = {
 
   favicon: 'img/favicon.ico',
 
+  future: {
+    // See https://docusaurus.io/blog/releases/3.6
+    experimental_faster: true,
+  },
+
   markdown: {
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
@@ -330,6 +335,10 @@ const config = {
           },
           {
             items: [
+              {
+                href: 'https://discord.gg/KmG4wQnnD9',
+                label: 'Discord',
+              },
               {
                 href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
                 label: 'Stack Overflow',

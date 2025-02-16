@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './ExcalidrawModal.css';
 
 import {Excalidraw} from '@excalidraw/excalidraw';
@@ -15,12 +17,13 @@ import {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
 } from '@excalidraw/excalidraw/types/types';
+import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import Button from '../../ui/Button';
-import Modal from '../../ui/Modal';
+import Button from './Button';
+import Modal from './Modal';
 
 export type ExcalidrawInitialElements = ExcalidrawInitialDataState['elements'];
 
@@ -105,7 +108,8 @@ export default function ExcalidrawModal({
       const target = event.target;
       if (
         excaliDrawModelRef.current !== null &&
-        !excaliDrawModelRef.current.contains(target as Node) &&
+        isDOMNode(target) &&
+        !excaliDrawModelRef.current.contains(target) &&
         closeOnClickOutside
       ) {
         onDelete();
@@ -171,13 +175,7 @@ export default function ExcalidrawModal({
   };
 
   const discard = () => {
-    if (elements && elements.filter((el) => !el.isDeleted).length === 0) {
-      // delete node if the scene is clear
-      onDelete();
-    } else {
-      //Otherwise, show confirmation dialog before closing
-      setDiscardModalOpen(true);
-    }
+    setDiscardModalOpen(true);
   };
 
   function ShowDiscardDialog(): JSX.Element {

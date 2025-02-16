@@ -8,6 +8,7 @@
 
 import type {
   DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   LexicalNode,
   SerializedElementNode,
@@ -17,6 +18,10 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {ElementNode} from 'lexical';
 
 export type SerializedLayoutItemNode = SerializedElementNode;
+
+function $convertLayoutItemElement(): DOMConversionOutput | null {
+  return {node: $createLayoutItemNode()};
+}
 
 export class LayoutItemNode extends ElementNode {
   static getType(): string {
@@ -29,6 +34,7 @@ export class LayoutItemNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = document.createElement('div');
+    dom.setAttribute('data-lexical-layout-item', 'true');
     if (typeof config.theme.layoutItem === 'string') {
       addClassNamesToElement(dom, config.theme.layoutItem);
     }
@@ -40,23 +46,25 @@ export class LayoutItemNode extends ElementNode {
   }
 
   static importDOM(): DOMConversionMap | null {
-    return {};
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-lexical-layout-item')) {
+          return null;
+        }
+        return {
+          conversion: $convertLayoutItemElement,
+          priority: 2,
+        };
+      },
+    };
   }
 
-  static importJSON(): LayoutItemNode {
-    return $createLayoutItemNode();
+  static importJSON(serializedNode: SerializedLayoutItemNode): LayoutItemNode {
+    return $createLayoutItemNode().updateFromJSON(serializedNode);
   }
 
   isShadowRoot(): boolean {
     return true;
-  }
-
-  exportJSON(): SerializedLayoutItemNode {
-    return {
-      ...super.exportJSON(),
-      type: 'layout-item',
-      version: 1,
-    };
   }
 }
 

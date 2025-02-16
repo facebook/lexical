@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './index.css';
 
 import {
@@ -15,7 +17,7 @@ import {
   normalizeCodeLang,
 } from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode} from 'lexical';
+import {$getNearestNodeFromDOMNode, isHTMLElement} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -163,7 +165,7 @@ function getMouseInfo(event: MouseEvent): {
 } {
   const target = event.target;
 
-  if (target && target instanceof HTMLElement) {
+  if (isHTMLElement(target)) {
     const codeDOMNode = target.closest<HTMLElement>(
       'code.PlaygroundEditorTheme__code',
     );

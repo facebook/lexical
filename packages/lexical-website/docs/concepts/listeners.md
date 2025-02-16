@@ -2,7 +2,7 @@
 
 # Listeners
 
-Listeners are a mechanism that lets the Editor instance inform the user when a certain operation has occured. All listeners follow a reactive pattern where you can do an operation upon something happening in the future. All listeners also return a function that easily allows for the
+Listeners are a mechanism that lets the Editor instance inform the user when a certain operation has occurred. All listeners follow a reactive pattern where you can do an operation upon something happening in the future. All listeners also return a function that easily allows for the
 listener to be unregistered. Below are the different listeners that Lexical supports today:
 
 ## `registerUpdateListener`
@@ -31,7 +31,7 @@ The update listener callbacks receives a single argument containing the follow p
 - `tags` a Set of all tags that were passed to the update
 
 One thing to be aware of is "waterfall" updates. This is where you might schedule an update inside an update
-listener, as show below:
+listener, as shown below:
 
 ```js
 editor.registerUpdateListener(({editorState}) => {
@@ -48,7 +48,7 @@ editor.registerUpdateListener(({editorState}) => {
 ```
 
 The problem with this pattern is that it means we end up doing two DOM updates, when we likely could have
-done it in a single DOM update. This can have an impact on performance, which is important in text editor.
+done it in a single DOM update. This can have an impact on performance, which is important in a text editor.
 To avoid this, we recommend looking into [Node Transforms](https://lexical.dev/docs/concepts/transforms), which allow you to listen to node changes and
 transform them as part of the same given update, meaning no waterfalls!
 
@@ -84,7 +84,7 @@ handle external UI state and UI features relating to specific types of node.
 If any existing nodes are in the DOM, and skipInitialization is not true, the listener
 will be called immediately with an updateTag of 'registerMutationListener' where all
 nodes have the 'created' NodeMutation. This can be controlled with the skipInitialization option
-(default is currently true for backwards compatibility in 0.17.x but will change to false in 0.18.0).
+(whose default was previously true for backwards compatibility with &lt;=0.16.1 but has been changed to false as of 0.21.0).
 
 ```js
 const removeMutationListener = editor.registerMutationListener(

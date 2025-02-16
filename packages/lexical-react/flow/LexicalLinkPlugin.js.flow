@@ -7,8 +7,15 @@
  * @flow strict
  */
 
+type LinkAttributes = {
+  rel?: null | string;
+  target?: null | string;
+  title?: null | string;
+};
+
 type Props = $ReadOnly<{
   validateUrl?: (url: string) => boolean,
+  attributes?: LinkAttributes,
 }>;
 
 declare export function LinkPlugin(props: Props): null;

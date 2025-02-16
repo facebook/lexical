@@ -74,17 +74,18 @@ header h1 {
 
 .editor-scroller {
   min-height: 150px;
+  max-width: 100%;
   border: 0;
   display: flex;
   position: relative;
   outline: 0;
   z-index: 0;
-  overflow: auto;
   resize: vertical;
 }
 
 .editor {
   flex: auto;
+  max-width: 100%;
   position: relative;
   resize: vertical;
   z-index: -1;
@@ -394,6 +395,18 @@ i.underline {
   background-image: url(images/icons/type-underline.svg);
 }
 
+i.uppercase {
+  background-image: url(images/icons/type-uppercase.svg);
+}
+
+i.lowercase {
+  background-image: url(images/icons/type-lowercase.svg);
+}
+
+i.capitalize {
+  background-image: url(images/icons/type-capitalize.svg);
+}
+
 i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }
@@ -476,8 +489,8 @@ i.columns {
   background-image: url(images/icons/3-columns.svg);
 }
 
-i.tweet {
-  background-image: url(images/icons/tweet.svg);
+i.x {
+  background-image: url(images/icons/x.svg);
 }
 
 i.youtube {
@@ -502,6 +515,21 @@ i.right-align {
 .icon.justify-align,
 i.justify-align {
   background-image: url(images/icons/justify.svg);
+}
+
+.icon.vertical-top,
+i.left-align {
+  background-image: url(images/icons/vertical-top.svg);
+}
+
+.icon.vertical-middle,
+i.center-align {
+  background-image: url(images/icons/vertical-middle.svg);
+}
+
+.icon.vertical-bottom,
+i.right-align {
+  background-image: url(images/icons/vertical-bottom.svg);
 }
 
 i.indent {
@@ -755,9 +783,22 @@ i.page-break,
   min-width: 100px;
 }
 
-.dropdown .item.fontsize-item,
-.dropdown .item.fontsize-item .text {
-  min-width: unset;
+.dropdown .item.wide {
+  align-items: center;
+  width: 248px;
+}
+
+.dropdown .item.wide .icon-text-container {
+  display: flex;
+
+  .text {
+    min-width: 120px;
+  }
+}
+
+.dropdown .item .shortcut {
+  color: #939393;
+  align-self: flex-end;
 }
 
 .dropdown .item .active {
@@ -1293,18 +1334,28 @@ i.page-break,
 
 .table-cell-action-button-container {
   position: absolute;
+  z-index: 3;
   top: 0;
   left: 0;
   will-change: transform;
 }
+.table-cell-action-button-container.table-cell-action-button-container--active {
+  pointer-events: auto;
+  opacity: 1;
+}
+.table-cell-action-button-container.table-cell-action-button-container--inactive {
+  pointer-events: none;
+  opacity: 0;
+}
 
 .table-cell-action-button {
-  background-color: none;
   display: flex;
   justify-content: center;
   align-items: center;
   border: 0;
-  position: relative;
+  position: absolute;
+  top: 10px;
+  right: 10px;
   border-radius: 15px;
   color: #222;
   display: inline-block;
@@ -1451,6 +1502,7 @@ button.action-button:disabled {
   position: sticky;
   top: 0;
   z-index: 2;
+  overflow-y: hidden; /* disable vertical scroll*/
 }
 
 button.toolbar-item {
@@ -1744,28 +1796,6 @@ button.item.dropdown-item-active i {
   white-space: pre-wrap;
   word-break: break-word;
   z-index: 3;
-}
-
-.PlaygroundEditorTheme__blockCursor {
-  display: block;
-  pointer-events: none;
-  position: absolute;
-}
-
-.PlaygroundEditorTheme__blockCursor:after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: -2px;
-  width: 20px;
-  border-top: 1px solid black;
-  animation: CursorBlink 1.1s steps(2, start) infinite;
-}
-
-@keyframes CursorBlink {
-  to {
-    visibility: hidden;
-  }
 }
 
 .dialog-dropdown {

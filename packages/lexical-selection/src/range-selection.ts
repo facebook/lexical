@@ -18,72 +18,95 @@ import type {
 
 import {TableSelection} from '@lexical/table';
 import {
+  $createRangeSelection,
   $getAdjacentNode,
   $getPreviousSelection,
-  $getRoot,
+  $getSelection,
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  INTERNAL_$isBlock,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
+export function $copyBlockFormatIndent(
+  srcNode: ElementNode,
+  destNode: ElementNode,
+): void {
+  const format = srcNode.getFormatType();
+  const indent = srcNode.getIndent();
+  if (format !== destNode.getFormatType()) {
+    destNode.setFormat(format);
+  }
+  if (indent !== destNode.getIndent()) {
+    destNode.setIndent(indent);
+  }
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
- * @param createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $afterCreateElement - The function that updates the new node based on the previous one ($copyBlockFormatIndent by default)
  */
-export function $setBlocksType(
+export function $setBlocksType<T extends ElementNode>(
   selection: BaseSelection | null,
-  createElement: () => ElementNode,
+  $createElement: () => T,
+  $afterCreateElement: (
+    prevNodeSrc: ElementNode,
+    newNodeDest: T,
+  ) => void = $copyBlockFormatIndent,
 ): void {
   if (selection === null) {
     return;
   }
+  // Selections tend to not include their containing blocks so we effectively
+  // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
-  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
-
-  if (anchor !== null && anchor.key === 'root') {
-    const element = createElement();
-    const root = $getRoot();
-    const firstChild = root.getFirstChild();
-
-    if (firstChild) {
-      firstChild.replace(element, true);
-    } else {
-      root.append(element);
+  const blockMap = new Map<NodeKey, ElementNode>();
+  let newSelection: RangeSelection | null = null;
+  if (anchorAndFocus) {
+    const [anchor, focus] = anchorAndFocus;
+    newSelection = $createRangeSelection();
+    newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
+    newSelection.focus.set(focus.key, focus.offset, focus.type);
+    const anchorBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
+    const focusBlock = $getAncestor(focus.getNode(), INTERNAL_$isBlock);
+    if ($isElementNode(anchorBlock)) {
+      blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-
-    return;
-  }
-
-  const nodes = selection.getNodes();
-  const firstSelectedBlock =
-    anchor !== null ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock) : false;
-  if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
-    nodes.push(firstSelectedBlock);
-  }
-
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-
-    if (!INTERNAL_$isBlock(node)) {
-      continue;
+    if ($isElementNode(focusBlock)) {
+      blockMap.set(focusBlock.getKey(), focusBlock);
     }
-    invariant($isElementNode(node), 'Expected block node to be an ElementNode');
-
-    const targetElement = createElement();
-    targetElement.setFormat(node.getFormatType());
-    targetElement.setIndent(node.getIndent());
-    node.replace(targetElement, true);
+  }
+  for (const node of selection.getNodes()) {
+    if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
+      blockMap.set(node.getKey(), node);
+    }
+  }
+  for (const [key, prevNode] of blockMap) {
+    const element = $createElement();
+    $afterCreateElement(prevNode, element);
+    prevNode.replace(element, true);
+    if (newSelection) {
+      if (key === newSelection.anchor.key) {
+        newSelection.anchor.key = element.getKey();
+      }
+      if (key === newSelection.focus.key) {
+        newSelection.focus.key = element.getKey();
+      }
+    }
+  }
+  if (newSelection && selection.is($getSelection())) {
+    $setSelection(newSelection);
   }
 }
 
@@ -453,41 +476,6 @@ export function $moveCharacter(
 }
 
 /**
- * Expands the current Selection to cover all of the content in the editor.
- * @param selection - The current selection.
- */
-export function $selectAll(selection: RangeSelection): void {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorNode = anchor.getNode();
-  const topParent = anchorNode.getTopLevelElementOrThrow();
-  const root = topParent.getParentOrThrow();
-  let firstNode = root.getFirstDescendant();
-  let lastNode = root.getLastDescendant();
-  let firstType: 'element' | 'text' = 'element';
-  let lastType: 'element' | 'text' = 'element';
-  let lastOffset = 0;
-
-  if ($isTextNode(firstNode)) {
-    firstType = 'text';
-  } else if (!$isElementNode(firstNode) && firstNode !== null) {
-    firstNode = firstNode.getParentOrThrow();
-  }
-
-  if ($isTextNode(lastNode)) {
-    lastType = 'text';
-    lastOffset = lastNode.getTextContentSize();
-  } else if (!$isElementNode(lastNode) && lastNode !== null) {
-    lastNode = lastNode.getParentOrThrow();
-  }
-
-  if (firstNode && lastNode) {
-    anchor.set(firstNode.getKey(), 0, firstType);
-    focus.set(lastNode.getKey(), lastOffset, lastType);
-  }
-}
-
-/**
  * Returns the current value of a CSS property for Nodes, if set. If not set, it returns the defaultValue.
  * @param node - The node whose style value to get.
  * @param styleProperty - The CSS style property.
@@ -572,28 +560,6 @@ export function $getSelectionStyleValueForProperty(
   }
 
   return styleValue === null ? defaultValue : styleValue;
-}
-
-/**
- * This function is for internal use of the library.
- * Please do not use it as it may change in the future.
- */
-export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
-  if ($isDecoratorNode(node)) {
-    return false;
-  }
-  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
-    return false;
-  }
-
-  const firstChild = node.getFirstChild();
-  const isLeafElement =
-    firstChild === null ||
-    $isLineBreakNode(firstChild) ||
-    $isTextNode(firstChild) ||
-    firstChild.isInline();
-
-  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
 export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(

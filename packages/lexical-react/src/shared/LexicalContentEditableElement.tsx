@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import * as React from 'react';
 import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';
@@ -20,7 +21,9 @@ export type Props = {
   ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
   ariaControls?: React.AriaAttributes['aria-controls'];
   ariaDescribedBy?: React.AriaAttributes['aria-describedby'];
+  ariaErrorMessage?: React.AriaAttributes['aria-errormessage'];
   ariaExpanded?: React.AriaAttributes['aria-expanded'];
+  ariaInvalid?: React.AriaAttributes['aria-invalid'];
   ariaLabel?: React.AriaAttributes['aria-label'];
   ariaLabelledBy?: React.AriaAttributes['aria-labelledby'];
   ariaMultiline?: React.AriaAttributes['aria-multiline'];
@@ -37,7 +40,9 @@ function ContentEditableElementImpl(
     ariaAutoComplete,
     ariaControls,
     ariaDescribedBy,
+    ariaErrorMessage,
     ariaExpanded,
+    ariaInvalid,
     ariaLabel,
     ariaLabelledBy,
     ariaMultiline,
@@ -84,14 +89,19 @@ function ContentEditableElementImpl(
 
   return (
     <div
-      {...rest}
       aria-activedescendant={isEditable ? ariaActiveDescendant : undefined}
       aria-autocomplete={isEditable ? ariaAutoComplete : 'none'}
       aria-controls={isEditable ? ariaControls : undefined}
       aria-describedby={ariaDescribedBy}
+      // for compat, only override aria-errormessage if ariaErrorMessage is defined
+      {...(ariaErrorMessage != null
+        ? {'aria-errormessage': ariaErrorMessage}
+        : {})}
       aria-expanded={
         isEditable && role === 'combobox' ? !!ariaExpanded : undefined
       }
+      // for compat, only override aria-invalid if ariaInvalid is defined
+      {...(ariaInvalid != null ? {'aria-invalid': ariaInvalid} : {})}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
@@ -108,6 +118,7 @@ function ContentEditableElementImpl(
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}
+      {...rest}
     />
   );
 }

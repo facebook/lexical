@@ -51,6 +51,7 @@ import {
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
+  getWindow,
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
@@ -216,6 +217,20 @@ function $normalizeAllDirtyTextNodes(
     ) {
       $normalizeTextNode(node);
     }
+  }
+}
+
+function addTags(editor: LexicalEditor, tags: undefined | string | string[]) {
+  if (!tags) {
+    return;
+  }
+  const updateTags = editor._updateTags;
+  let tags_ = tags;
+  if (!Array.isArray(tags)) {
+    tags_ = [tags];
+  }
+  for (const tag of tags_) {
+    updateTags.add(tag);
   }
 }
 
@@ -544,7 +559,7 @@ export function $commitPendingUpdates(
 
       return;
     } finally {
-      observer.observe(rootElement as Node, observerOptions);
+      observer.observe(rootElement, observerOptions);
       editor._updating = previouslyUpdating;
       activeEditorState = previousActiveEditorState;
       isReadOnlyMode = previousReadOnlyMode;
@@ -585,7 +600,9 @@ export function $commitPendingUpdates(
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = shouldSkipDOM ? null : getDOMSelection(editor._window);
+  const domSelection = shouldSkipDOM
+    ? null
+    : getDOMSelection(getWindow(editor));
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
@@ -593,7 +610,9 @@ export function $commitPendingUpdates(
     editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
-    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
+    (needsUpdate || pendingSelection === null || pendingSelection.dirty) &&
+    rootElement !== null &&
+    !tags.has('skip-dom-selection')
   ) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
@@ -604,11 +623,7 @@ export function $commitPendingUpdates(
       if (needsUpdate || pendingSelection === null || pendingSelection.dirty) {
         const blockCursorElement = editor._blockCursorElement;
         if (blockCursorElement !== null) {
-          removeDOMBlockCursorElement(
-            blockCursorElement,
-            editor,
-            rootElement as HTMLElement,
-          );
+          removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
         }
         updateDOMSelection(
           currentSelection,
@@ -616,19 +631,15 @@ export function $commitPendingUpdates(
           editor,
           domSelection,
           tags,
-          rootElement as HTMLElement,
+          rootElement,
           nodeCount,
         );
       }
-      updateDOMBlockCursorElement(
-        editor,
-        rootElement as HTMLElement,
-        pendingSelection,
-      );
-      if (observer !== null) {
-        observer.observe(rootElement as Node, observerOptions);
-      }
+      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
     } finally {
+      if (observer !== null) {
+        observer.observe(rootElement, observerOptions);
+      }
       activeEditor = previousActiveEditor;
       activeEditorState = previousActiveEditorState;
     }
@@ -829,11 +840,9 @@ function processNestedUpdates(
       const [nextUpdateFn, options] = queuedUpdate;
 
       let onUpdate;
-      let tag;
 
       if (options !== undefined) {
         onUpdate = options.onUpdate;
-        tag = options.tag;
 
         if (options.skipTransforms) {
           skipTransforms = true;
@@ -851,9 +860,7 @@ function processNestedUpdates(
           editor._deferred.push(onUpdate);
         }
 
-        if (tag) {
-          editor._updateTags.add(tag);
-        }
+        addTags(editor, options.tag);
       }
 
       nextUpdateFn();
@@ -870,17 +877,12 @@ function $beginUpdate(
 ): void {
   const updateTags = editor._updateTags;
   let onUpdate;
-  let tag;
   let skipTransforms = false;
   let discrete = false;
 
   if (options !== undefined) {
     onUpdate = options.onUpdate;
-    tag = options.tag;
-
-    if (tag != null) {
-      updateTags.add(tag);
-    }
+    addTags(editor, options.tag);
 
     skipTransforms = options.skipTransforms || false;
     discrete = options.discrete || false;
@@ -910,15 +912,19 @@ function $beginUpdate(
   isReadOnlyMode = false;
   editor._updating = true;
   activeEditor = editor;
+  const headless = editor._headless || editor.getRootElement() === null;
 
   try {
     if (editorStateWasCloned) {
-      if (editor._headless) {
+      if (headless) {
         if (currentEditorState._selection !== null) {
           pendingEditorState._selection = currentEditorState._selection.clone();
         }
       } else {
-        pendingEditorState._selection = $internalCreateSelection(editor);
+        pendingEditorState._selection = $internalCreateSelection(
+          editor,
+          (options && options.event) || null,
+        );
       }
     }
 
@@ -1000,6 +1006,7 @@ function $beginUpdate(
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
+    editor._deferred.length > 0 ||
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
@@ -1019,6 +1026,25 @@ function $beginUpdate(
       editor._deferred = [];
       editor._pendingEditorState = null;
     }
+  }
+}
+
+/**
+ * A variant of updateEditor that will not defer if it is nested in an update
+ * to the same editor, much like if it was an editor.dispatchCommand issued
+ * within an update
+ */
+export function updateEditorSync(
+  editor: LexicalEditor,
+  updateFn: () => void,
+  options?: EditorUpdateOptions,
+): void {
+  if (!editor._updating) {
+    $beginUpdate(editor, updateFn, options);
+  } else if (activeEditor === editor) {
+    updateFn();
+  } else {
+    editor._updates.push([updateFn, options]);
   }
 }
 

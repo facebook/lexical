@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -32,6 +34,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type MenuTextMatch = {
@@ -267,7 +270,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 }: {
   close: () => void;
   editor: LexicalEditor;
-  anchorElementRef: MutableRefObject<HTMLElement>;
+  anchorElementRef: MutableRefObject<HTMLElement | null>;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
@@ -481,11 +484,18 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
-  parent: HTMLElement = document.body,
-): MutableRefObject<HTMLElement> {
+  parent: HTMLElement | undefined = CAN_USE_DOM ? document.body : undefined,
+  shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
+): MutableRefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
-  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
+  const anchorElementRef = useRef<HTMLElement | null>(
+    CAN_USE_DOM ? document.createElement('div') : null,
+  );
+  const hasPositioned = useRef(false);
   const positionMenu = useCallback(() => {
+    if (anchorElementRef.current === null || parent === undefined) {
+      return;
+    }
     anchorElementRef.current.style.top = anchorElementRef.current.style.bottom;
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
@@ -495,7 +505,10 @@ export function useMenuAnchorRef(
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
       containerDiv.style.top = `${
-        top + window.pageYOffset + anchorHeight + 3
+        top +
+        anchorHeight +
+        3 +
+        (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
       }px`;
       containerDiv.style.left = `${left + window.pageXOffset}px`;
       containerDiv.style.height = `${height}px`;
@@ -519,7 +532,10 @@ export function useMenuAnchorRef(
           top - rootElementRect.top > menuHeight + height
         ) {
           containerDiv.style.top = `${
-            top - menuHeight + window.pageYOffset - height
+            top -
+            menuHeight -
+            height +
+            (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
           }px`;
         }
       }
@@ -538,7 +554,19 @@ export function useMenuAnchorRef(
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
-  }, [editor, resolution, className, parent]);
+  }, [
+    editor,
+    resolution,
+    shouldIncludePageYOffset__EXPERIMENTAL,
+    className,
+    parent,
+  ]);
+
+  // position menu on first render
+  if (!hasPositioned.current) {
+    positionMenu();
+    hasPositioned.current = true;
+  }
 
   useEffect(() => {
     const rootElement = editor.getRootElement();

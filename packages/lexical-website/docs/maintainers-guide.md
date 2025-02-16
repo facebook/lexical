@@ -287,3 +287,9 @@ from main in step 4).
 4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
 5. Create a GitHub release from the tag created in step 1, manually editing the release notes
 6. Announce the release in #announcements on Discord
+
+## Release Protocol
+
+1. All PRs with breaking changes must have `[Breaking Change]` in the PR's title with documentation of what followup actions consumers of the lexical library need to be aware of.
+2. Monthly releases happen on the last week of the month, with a minor increment (eg. v0.20+1.0).
+3. Anything in between will be a patch increment (eg. 0.20.0+1), unless there is a breaking change. 

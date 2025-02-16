@@ -10,14 +10,13 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LexicalUpdateJSON,
   LineBreakNode,
   NodeKey,
   SerializedTextNode,
   Spread,
   TabNode,
 } from 'lexical';
-
-import './CodeHighlighterPrism';
 
 import {
   addClassNamesToElement,
@@ -30,6 +29,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {Prism} from './CodeHighlighterPrism';
 import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -84,11 +84,11 @@ export function getLanguageFriendlyName(lang: string) {
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 export const getCodeLanguages = (): Array<string> =>
-  Object.keys(window.Prism.languages)
+  Object.keys(Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
       // so filtering them out here to get langs list
-      (language) => typeof window.Prism.languages[language] !== 'function',
+      (language) => typeof Prism.languages[language] !== 'function',
     )
     .sort();
 
@@ -98,7 +98,7 @@ export class CodeHighlightNode extends TextNode {
   __highlightType: string | null | undefined;
 
   constructor(
-    text: string,
+    text: string = '',
     highlightType?: string | null | undefined,
     key?: NodeKey,
   ) {
@@ -123,6 +123,12 @@ export class CodeHighlightNode extends TextNode {
     return self.__highlightType;
   }
 
+  setHighlightType(highlightType?: string | null | undefined): this {
+    const self = this.getWritable();
+    self.__highlightType = highlightType || undefined;
+    return self;
+  }
+
   canHaveFormat(): boolean {
     return false;
   }
@@ -137,11 +143,7 @@ export class CodeHighlightNode extends TextNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: CodeHighlightNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const update = super.updateDOM(prevNode, dom, config);
     const prevClassName = getHighlightThemeClass(
       config.theme,
@@ -165,23 +167,21 @@ export class CodeHighlightNode extends TextNode {
   static importJSON(
     serializedNode: SerializedCodeHighlightNode,
   ): CodeHighlightNode {
-    const node = $createCodeHighlightNode(
-      serializedNode.text,
-      serializedNode.highlightType,
-    );
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    return $createCodeHighlightNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedCodeHighlightNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHighlightType(serializedNode.highlightType);
   }
 
   exportJSON(): SerializedCodeHighlightNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
-      type: 'code-highlight',
-      version: 1,
     };
   }
 
@@ -212,7 +212,7 @@ function getHighlightThemeClass(
 }
 
 export function $createCodeHighlightNode(
-  text: string,
+  text: string = '',
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
   return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));

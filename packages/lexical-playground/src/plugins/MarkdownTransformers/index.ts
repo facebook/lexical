@@ -12,6 +12,7 @@ import {
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
+  MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -99,7 +100,7 @@ export const EMOJI: TextMatchTransformer = {
   dependencies: [],
   export: () => null,
   importRegExp: /:([a-z0-9_]+):/,
-  regExp: /:([a-z0-9_]+):/,
+  regExp: /:([a-z0-9_]+):$/,
   replace: (textNode, [, name]) => {
     const emoji = emojiList.find((e) => e.aliases.includes(name))?.emoji;
     if (emoji) {
@@ -172,10 +173,9 @@ export const TABLE: ElementTransformer = {
         // It's TableCellNode so it's just to make flow happy
         if ($isTableCellNode(cell)) {
           rowOutput.push(
-            $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell).replace(
-              /\n/g,
-              '\\n',
-            ),
+            $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell)
+              .replace(/\n/g, '\\n')
+              .trim(),
           );
           if (cell.__headerState === TableCellHeaderStates.ROW) {
             isHeaderRow = true;
@@ -211,7 +211,10 @@ export const TABLE: ElementTransformer = {
         if (!$isTableCellNode(cell)) {
           return;
         }
-        cell.toggleHeaderStyle(TableCellHeaderStates.ROW);
+        cell.setHeaderStyles(
+          TableCellHeaderStates.ROW,
+          TableCellHeaderStates.ROW,
+        );
       });
 
       // Remove line
@@ -313,6 +316,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   TWEET,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];

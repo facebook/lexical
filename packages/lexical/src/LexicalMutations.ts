@@ -6,8 +6,10 @@
  *
  */
 
-import type {TextNode} from '.';
+import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
+import type {EditorState} from './LexicalEditorState';
+import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
@@ -15,21 +17,24 @@ import {IS_FIREFOX} from 'shared/environment';
 import {
   $getSelection,
   $isDecoratorNode,
-  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from '.';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
-import {updateEditor} from './LexicalUpdates';
+import {updateEditorSync} from './LexicalUpdates';
 import {
-  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
+  getNodeKeyFromDOMNode,
+  getParentElement,
   getWindow,
   internalGetRoot,
+  isDOMTextNode,
+  isDOMUnmanaged,
   isFirefoxClipboardEvents,
+  isHTMLElement,
 } from './LexicalUtils';
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -53,14 +58,16 @@ function initTextEntryListener(editor: LexicalEditor): void {
 
 function isManagedLineBreak(
   dom: Node,
-  target: Node,
+  target: Node & LexicalPrivateDOM,
   editor: LexicalEditor,
 ): boolean {
+  const isBR = dom.nodeName === 'BR';
+  const lexicalLineBreak = target.__lexicalLineBreak;
   return (
-    // @ts-expect-error: internal field
-    target.__lexicalLineBreak === dom ||
-    // @ts-ignore We intentionally add this to the Node.
-    dom[`__lexicalKey_${editor._key}`] !== undefined
+    (lexicalLineBreak &&
+      (dom === lexicalLineBreak ||
+        (isBR && dom.previousSibling === lexicalLineBreak))) ||
+    (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
   );
 }
 
@@ -76,7 +83,7 @@ function $handleTextMutation(
   node: TextNode,
   editor: LexicalEditor,
 ): void {
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
   let anchorOffset = null;
   let focusOffset = null;
 
@@ -105,10 +112,36 @@ function shouldUpdateTextNodeFromMutation(
       return false;
     }
   }
-  return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
+  return isDOMTextNode(targetDOM) && targetNode.isAttached();
 }
 
-export function $flushMutations(
+function $getNearestManagedNodePairFromDOMNode(
+  startingDOM: Node,
+  editor: LexicalEditor,
+  editorState: EditorState,
+  rootElement: HTMLElement | null,
+): [HTMLElement, LexicalNode] | undefined {
+  for (
+    let dom: Node | null = startingDOM;
+    dom && !isDOMUnmanaged(dom);
+    dom = getParentElement(dom)
+  ) {
+    const key = getNodeKeyFromDOMNode(dom, editor);
+    if (key !== undefined) {
+      const node = $getNodeByKey(key, editorState);
+      if (node) {
+        // All decorator nodes are unmanaged
+        return $isDecoratorNode(node) || !isHTMLElement(dom)
+          ? undefined
+          : [dom, node];
+      }
+    } else if (dom === rootElement) {
+      return [rootElement, internalGetRoot(editorState)];
+    }
+  }
+}
+
+function flushMutations(
   editor: LexicalEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
@@ -116,11 +149,10 @@ export function $flushMutations(
   isProcessingMutations = true;
   const shouldFlushTextMutations =
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
-
   try {
-    updateEditor(editor, () => {
+    updateEditorSync(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
-      const badDOMTargets = new Map();
+      const badDOMTargets = new Map<HTMLElement, LexicalNode>();
       const rootElement = editor.getRootElement();
       // We use the current editor state, as that reflects what is
       // actually "on screen".
@@ -133,17 +165,16 @@ export function $flushMutations(
         const mutation = mutations[i];
         const type = mutation.type;
         const targetDOM = mutation.target;
-        let targetNode = $getNearestNodeFromDOMNode(
+        const pair = $getNearestManagedNodePairFromDOMNode(
           targetDOM,
+          editor,
           currentEditorState,
+          rootElement,
         );
-
-        if (
-          (targetNode === null && targetDOM !== rootElement) ||
-          $isDecoratorNode(targetNode)
-        ) {
+        if (!pair) {
           continue;
         }
+        const [nodeDOM, targetNode] = pair;
 
         if (type === 'characterData') {
           // Text mutations are deferred and passed to mutation listeners to be
@@ -151,14 +182,10 @@ export function $flushMutations(
           if (
             shouldFlushTextMutations &&
             $isTextNode(targetNode) &&
+            isDOMTextNode(targetDOM) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            $handleTextMutation(
-              // nodeType === DOM_TEXT_TYPE is a Text DOM node
-              targetDOM as Text,
-              targetNode,
-              editor,
-            );
+            $handleTextMutation(targetDOM, targetNode, editor);
           }
         } else if (type === 'childList') {
           shouldRevertSelection = true;
@@ -176,12 +203,12 @@ export function $flushMutations(
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
-              (addedDOM.nodeName !== 'BR' ||
-                !isManagedLineBreak(addedDOM, parentDOM, editor))
+              !isManagedLineBreak(addedDOM, parentDOM, editor)
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
-                  (addedDOM as HTMLElement).innerText || addedDOM.nodeValue;
+                  (isHTMLElement(addedDOM) ? addedDOM.innerText : null) ||
+                  addedDOM.nodeValue;
 
                 if (possibleText) {
                   possibleTextForFirefoxPaste += possibleText;
@@ -202,8 +229,7 @@ export function $flushMutations(
               const removedDOM = removedDOMs[s];
 
               if (
-                (removedDOM.nodeName === 'BR' &&
-                  isManagedLineBreak(removedDOM, targetDOM, editor)) ||
+                isManagedLineBreak(removedDOM, targetDOM, editor) ||
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
@@ -212,11 +238,7 @@ export function $flushMutations(
             }
 
             if (removedDOMsLength !== unremovedBRs) {
-              if (targetDOM === rootElement) {
-                targetNode = internalGetRoot(currentEditorState);
-              }
-
-              badDOMTargets.set(targetDOM, targetNode);
+              badDOMTargets.set(nodeDOM, targetNode);
             }
           }
         }
@@ -227,31 +249,8 @@ export function $flushMutations(
       // is Lexical's "current" editor state. This is basically like
       // an internal revert on the DOM.
       if (badDOMTargets.size > 0) {
-        for (const [targetDOM, targetNode] of badDOMTargets) {
-          if ($isElementNode(targetNode)) {
-            const childKeys = targetNode.getChildrenKeys();
-            let currentDOM = targetDOM.firstChild;
-
-            for (let s = 0; s < childKeys.length; s++) {
-              const key = childKeys[s];
-              const correctDOM = editor.getElementByKey(key);
-
-              if (correctDOM === null) {
-                continue;
-              }
-
-              if (currentDOM == null) {
-                targetDOM.appendChild(correctDOM);
-                currentDOM = correctDOM;
-              } else if (currentDOM !== correctDOM) {
-                targetDOM.replaceChild(correctDOM, currentDOM);
-              }
-
-              currentDOM = currentDOM.nextSibling;
-            }
-          } else if ($isTextNode(targetNode)) {
-            targetNode.markDirty();
-          }
+        for (const [nodeDOM, targetNode] of badDOMTargets) {
+          targetNode.reconcileObservedMutation(nodeDOM, editor);
         }
       }
 
@@ -289,7 +288,6 @@ export function $flushMutations(
 
       if (selection !== null) {
         if (shouldRevertSelection) {
-          selection.dirty = true;
           $setSelection(selection);
         }
 
@@ -303,12 +301,12 @@ export function $flushMutations(
   }
 }
 
-export function $flushRootMutations(editor: LexicalEditor): void {
+export function flushRootMutations(editor: LexicalEditor): void {
   const observer = editor._observer;
 
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    $flushMutations(editor, mutations, observer);
+    flushMutations(editor, mutations, observer);
   }
 }
 
@@ -316,7 +314,7 @@ export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      $flushMutations(editor, mutations, observer);
+      flushMutations(editor, mutations, observer);
     },
   );
 }

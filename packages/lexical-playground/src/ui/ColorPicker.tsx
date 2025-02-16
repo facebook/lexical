@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
@@ -19,6 +21,10 @@ let skipAddingToHistoryStack = false;
 interface ColorPickerProps {
   color: string;
   onChange?: (value: string, skipHistoryStack: boolean) => void;
+}
+
+export function parseAllowedColor(input: string) {
+  return /^rgb\(\d+, \d+, \d+\)$/.test(input) ? input : '';
 }
 
 const basicColors = [

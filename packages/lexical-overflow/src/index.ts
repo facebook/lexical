@@ -9,12 +9,12 @@
 import type {
   EditorConfig,
   LexicalNode,
-  NodeKey,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
 
 import {$applyNodeReplacement, ElementNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
@@ -29,23 +29,11 @@ export class OverflowNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedOverflowNode): OverflowNode {
-    return $createOverflowNode();
+    return $createOverflowNode().updateFromJSON(serializedNode);
   }
 
   static importDOM(): null {
     return null;
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
-    this.__type = 'overflow';
-  }
-
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'overflow',
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -57,7 +45,7 @@ export class OverflowNode extends ElementNode {
     return div;
   }
 
-  updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 
@@ -71,6 +59,15 @@ export class OverflowNode extends ElementNode {
 
   excludeFromCopy(): boolean {
     return true;
+  }
+
+  static transform(): (node: LexicalNode) => void {
+    return (node: LexicalNode) => {
+      invariant($isOverflowNode(node), 'node is not a OverflowNode');
+      if (node.isEmpty()) {
+        node.remove();
+      }
+    };
   }
 }
 

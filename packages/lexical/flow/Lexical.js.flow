@@ -58,11 +58,18 @@ declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
 declare export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
 declare export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
 declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
+declare export var SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_END: LexicalCommand<KeyboardEvent>;
+declare export var MOVE_TO_START: LexicalCommand<KeyboardEvent>;
+declare export var SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
+  nodes: Array<LexicalNode>;
+  selection: BaseSelection;
+}>;
 
 declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**
- * LexicalConstnats
+ * LexicalConstants
  */
 
 declare export var IS_ALL_FORMATTING: number;
@@ -73,7 +80,10 @@ declare export var IS_ITALIC: number;
 declare export var IS_STRIKETHROUGH: number;
 declare export var IS_SUBSCRIPT: number;
 declare export var IS_SUPERSCRIPT: number;
-declare export var IS_UNDERLIN: number;
+declare export var IS_UNDERLINE: number;
+declare export var IS_UPPERCASE: number;
+declare export var IS_LOWERCASE: number;
+declare export var IS_CAPITALIZE: number;
 declare export var TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number>;
 
 /**
@@ -215,7 +225,7 @@ type EditorReadOptions = {
 };
 type EditorUpdateOptions = {
   onUpdate?: () => void,
-  tag?: string,
+  tag?: string | Array<string>,
   skipTransforms?: true,
   discrete?: true,
 };
@@ -236,6 +246,9 @@ type TextNodeThemeClasses = {
   code?: EditorThemeClassName,
   subscript?: EditorThemeClassName,
   superscript?: EditorThemeClassName,
+  lowercase?: EditorThemeClassName,
+  uppercase?: EditorThemeClassName,
+  capitalize?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName,
@@ -249,6 +262,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>,
     ol?: EditorThemeClassName,
     olDepth?: Array<EditorThemeClassName>,
+    checklist?: EditorThemeClassName,
     listitem?: EditorThemeClassName,
     listitemChecked?: EditorThemeClassName,
     listitemUnchecked?: EditorThemeClassName,
@@ -348,7 +362,7 @@ export type DOMConversion = {
   conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
 };
-export type DOMConversionFn = (element: Node) => DOMConversionOutput;
+export type DOMConversionFn = (element: Node) => DOMConversionOutput | null;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: ?LexicalNode | null,
@@ -379,6 +393,7 @@ declare export class LexicalNode {
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
+  updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -408,7 +423,7 @@ declare export class LexicalNode {
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
-    // $FlowFixMe
+    // $FlowFixMe[unclear-type]
     prevNode: any,
     dom: HTMLElement,
     config: EditorConfig,
@@ -426,6 +441,7 @@ declare export class LexicalNode {
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -438,13 +454,16 @@ declare export function $isBlockElementNode(
 ): node is ElementNode;
 
 export interface BaseSelection {
-  clone(): BaseSelection;
   dirty: boolean;
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null | [PointType, PointType];
   getTextContent(): string;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   insertText(text: string): void;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -456,6 +475,8 @@ declare export class NodeSelection implements BaseSelection {
   dirty: boolean;
   constructor(objects: Set<NodeKey>): void;
   is(selection: null | BaseSelection): boolean;
+  isBackward(): boolean;
+  isCollapsed(): boolean;
   add(key: NodeKey): void;
   delete(key: NodeKey): void;
   clear(): void;
@@ -465,6 +486,7 @@ declare export class NodeSelection implements BaseSelection {
   insertRawText(): void;
   insertText(): void;
   getNodes(): Array<LexicalNode>;
+  getStartEndPoints(): null;
   getTextContent(): string;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
@@ -480,6 +502,7 @@ declare export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  style: string;
   constructor(anchor: PointType, focus: PointType, format: number): void;
   is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
@@ -517,6 +540,8 @@ declare export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  forwardDeletion(anchor: PointType, anchorNode: ElementNode | TextNode, isBackward: boolean): boolean;
+  getStartEndPoints(): null | [PointType, PointType];
 }
 export type TextPoint = TextPointType;
 type TextPointType = {
@@ -549,7 +574,7 @@ declare class _Point {
   is(point: PointType): boolean;
   isBefore(b: PointType): boolean;
   getNode(): LexicalNode;
-  set(key: NodeKey, offset: number, type: 'text' | 'element'): void;
+  set(key: NodeKey, offset: number, type: 'text' | 'element', onlyIfChanged?: boolean): void;
 }
 
 declare export function $createRangeSelection(): RangeSelection;
@@ -577,7 +602,11 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
+
 type TextModeType = 'normal' | 'token' | 'segmented';
 
 declare export class TextNode extends LexicalNode {
@@ -603,11 +632,6 @@ declare export class TextNode extends LexicalNode {
   getTextContent(): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   selectionTransform(
     prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
@@ -699,7 +723,6 @@ declare export class RootNode extends ElementNode {
   replace<N: LexicalNode>(node: N): N;
   insertBefore<T: LexicalNode>(nodeToInsert: T): T;
   insertAfter<T: LexicalNode>(nodeToInsert: T): T;
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
 }
@@ -783,10 +806,37 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
+
+/**
+ * ElementDOMSlot
+ */
+declare export class ElementDOMSlot {
+  element: HTMLElement;
+  before: Node | null;
+  after: Node | null;
+  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): ElementDOMSlot;
+  withAfter(after: Node | null | void): ElementDOMSlot;
+  withElement(element: HTMLElement): ElementDOMSlot;
+  insertChild(dom: Node): this;
+  removeChild(dom: Node): this;
+  replaceChild(dom: Node, prevDom: Node): this;
+  getFirstChild(): Node | null;
+  //
+  getManagedLineBreak(): HTMLElement | null;
+  removeManagedLineBreak(): void;
+  insertManagedLineBreak(webkitHack: boolean): void;
+  getFirstChildOffset(): number;
+  resolveChildIndex(element: ElementNode, elementDOM: HTMLElement, initialDOM: Node, initialOffset: number): [node: ElementNode, idx: number];
+}
+
+declare export function setDOMUnmanaged(elementDOM: HTMLElement): void;
+declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
 
 /**
  * LexicalDecoratorNode
@@ -815,7 +865,6 @@ declare export class ParagraphNode extends ElementNode {
   static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,
@@ -837,6 +886,7 @@ declare export function $isParagraphNode(
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 declare export function $hasUpdateTag(tag: string): boolean;
 declare export function $addUpdateTag(tag: string): void;
+declare export function $onUpdate(updateFn: () => void): void;
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
@@ -961,3 +1011,168 @@ export interface SerializedEditorState {
 export type SerializedEditor = {
   editorState: SerializedEditorState,
 };
+
+/**
+ * LexicalCaret
+ */
+export interface BaseCaret<T: LexicalNode, D: CaretDirection, Type> extends Iterable<SiblingCaret<LexicalNode, D>> {
+  +origin: T;
+  +type: Type;
+  +direction: D;
+  getParentAtCaret(): null | ElementNode;
+  getNodeAtCaret(): null | LexicalNode;
+  getAdjacentCaret(): null | SiblingCaret<LexicalNode, D>;
+  getSiblingCaret(): SiblingCaret<T, D>;
+  remove(): BaseCaret<T, D, Type>; // this
+  insert(node: LexicalNode): BaseCaret<T, D, Type>; // this
+  replaceOrInsert(node: LexicalNode, includeChildren?: boolean): BaseCaret<T, D, Type>; // this
+  splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): BaseCaret<T, D, Type>; // this
+}
+export type CaretDirection = 'next' | 'previous';
+type FLIP_DIRECTION = {'next' : 'previous', 'previous': 'next'};
+export interface CaretRange<D: CaretDirection = CaretDirection> extends Iterable<NodeCaret<D>> {
+  +type: 'node-caret-range';
+  +direction: D;
+  anchor: PointCaret<D>;
+  focus: PointCaret<D>;
+  isCollapsed(): boolean;
+  iterNodeCarets(rootMode?: RootMode): Iterable<NodeCaret<D>>;
+  getTextSlices(): TextPointCaretSliceTuple<D>;
+}
+export type CaretType = 'sibling' | 'child';
+export interface ChildCaret<T: ElementNode = ElementNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'child'> {
+  getLatest(): ChildCaret<T, D>;
+  getParentCaret(mode?: RootMode): null | SiblingCaret<T, D>;
+  getParentAtCaret(): T;
+  getChildCaret(): ChildCaret<T, D>;
+  isSameNodeCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is ChildCaret<T, D>;
+  isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is ChildCaret<T, D>;
+  getFlipped(): NodeCaret<FlipDirection<D>>;
+  // Refine chained types
+  remove(): ChildCaret<T, D>;
+  insert(node: LexicalNode): ChildCaret<T, D>;
+  replaceOrInsert(node: LexicalNode, includeChildren?: boolean): ChildCaret<T, D>;
+  splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): ChildCaret<T, D>;
+}
+export type FlipDirection<D: CaretDirection> = FLIP_DIRECTION[D];
+export type NodeCaret<D: CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D>;
+export type PointCaret<D: CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D> | TextPointCaret<TextNode, D>;
+export type RootMode = 'root' | 'shadowRoot';
+export interface SiblingCaret<T: LexicalNode = LexicalNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'sibling'> {
+  getLatest(): SiblingCaret<T, D>;
+  getChildCaret(): null | ChildCaret<T & ElementNode, D>;
+  getParentCaret(mode?: RootMode): null | SiblingCaret<ElementNode, D>;
+  isSameNodeCaret(other: null | void | PointCaret<CaretDirection>): boolean; // </CaretDirection>other is SiblingCaret<T, D> | T extends TextNode ? TextPointCaret<T & TextNode, D> : empty;
+  isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is SiblingCaret<T, D>;
+  getFlipped(): NodeCaret<FlipDirection<D>>;
+  // Refine chained types
+  remove(): SiblingCaret<T, D>;
+  insert(node: LexicalNode): SiblingCaret<T, D>;
+  replaceOrInsert(node: LexicalNode, includeChildren?: boolean): SiblingCaret<T, D>;
+  splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): SiblingCaret<T, D>;
+}
+export interface StepwiseIteratorConfig<State, Stop, Value> {
+  +initial: State | Stop;
+  +hasNext: (value: State | Stop) => implies value is State;
+  +step: (value: State) => State | Stop;
+  +map: (value: State) => Value;
+}
+export interface TextPointCaret<T: TextNode = TextNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
+  +offset: number;
+  getLatest(): TextPointCaret<T, D>;
+  getChildCaret(): null;
+  getParentCaret(): null | SiblingCaret<ElementNode, D>;
+  isSameNodeCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is TextPointCaret<T, D> | SiblingCaret<T, D>;
+  isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is TextPointCaret<T, D>;
+  getFlipped(): TextPointCaret<T, FlipDirection<D>>;
+}
+export interface TextPointCaretSlice<T: TextNode = TextNode, D: CaretDirection = CaretDirection> {
+  +type: 'slice';
+  +caret: TextPointCaret<T, D>;
+  +distance: number;
+  getSliceIndices(): [startIndex: number, endIndex: number];
+  getTextContent(): string;
+  getTextContentSize(): number;
+  removeTextSlice(): TextPointCaret<T, D>;
+}
+export type TextPointCaretSliceTuple<D: CaretDirection> = [
+  +anchorSlice: null | TextPointCaretSlice<TextNode, D>,
+  +focusSlice: null | TextPointCaretSlice<TextNode, D>,
+];
+declare export function $getAdjacentChildCaret<D: CaretDirection>(caret: null | NodeCaret<D>): null | NodeCaret<D>;
+declare export function $getCaretRange<D: CaretDirection>(anchor: PointCaret<D>, focus: PointCaret<D>): CaretRange<D>;
+declare export function $getChildCaret<T: null | ElementNode, D: CaretDirection>(origin: T, direction: D): ChildCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getChildCaretOrSelf<Caret: null | PointCaret<CaretDirection>>(caret: Caret): Caret | ChildCaret<ElementNode, Exclude<null, Caret>['direction']>;
+declare export function $getSiblingCaret<T: null | LexicalNode, D: CaretDirection>(origin: T, direction: D): SiblingCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getTextNodeOffset(origin: TextNode, offset: number | CaretDirection): number;
+declare export function $getTextPointCaret<T: null | TextNode, D: CaretDirection>(origin: T, direction: D, offset: number | CaretDirection): TextPointCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getTextPointCaretSlice<T: TextNode, D: CaretDirection>(caret: TextPointCaret<T, D>, distance: number): TextPointCaretSlice<T, D>;
+declare export function $isChildCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is ChildCaret<ElementNode, D>;
+declare export function $isNodeCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is NodeCaret<D>;
+declare export function $isSiblingCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is SiblingCaret<LexicalNode, D>;
+declare export function $isTextPointCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is TextPointCaret<TextNode, D>;
+declare export function $isTextPointCaretSlice<D: CaretDirection>(caret: null | void | PointCaret<D> | TextPointCaretSlice<TextNode, D>): caret is TextPointCaretSlice<TextNode, D>;
+declare export function flipDirection<D: CaretDirection>(direction: D): FlipDirection<D>;
+declare export function makeStepwiseIterator<State, Stop, Value>(
+  config: StepwiseIteratorConfig<State, Stop, Value>,
+): Iterator<Value>;
+/**
+ * LexicalCaretUtils
+ */
+declare export function $caretFromPoint<D: CaretDirection>(
+  point: PointType,
+  direction: D,
+): PointCaret<D>;
+declare export function $caretRangeFromSelection(
+  selection: RangeSelection,
+): CaretRange<CaretDirection>;
+declare export function $getAdjacentSiblingOrParentSiblingCaret<
+  D: CaretDirection,
+>(
+  startCaret: NodeCaret<D>,
+  rootMode?: RootMode
+): null | [NodeCaret<D>, number]
+declare export function $getCaretInDirection<
+  Caret: PointCaret<CaretDirection>,
+  D: CaretDirection,
+>(
+  caret: Caret,
+  direction: D,
+):
+  | NodeCaret<D>
+  | (Caret extends TextPointCaret<TextNode, CaretDirection>
+      ? TextPointCaret<TextNode, D>
+      : empty);
+declare export function $getCaretRangeInDirection<D: CaretDirection>(
+  range: CaretRange<CaretDirection>,
+  direction: D,
+): CaretRange<D>;
+declare export function $getChildCaretAtIndex<D: CaretDirection>(
+  parent: ElementNode,
+  index: number,
+  direction: D,
+): NodeCaret<D>;
+declare export function $normalizeCaret<D: CaretDirection>(
+  initialCaret: PointCaret<D>,
+): PointCaret<D>;
+declare export function $removeTextFromCaretRange<D: CaretDirection>(
+  initialRange: CaretRange<D>,
+  sliceMode?:
+    | 'removeEmptySlices'
+    | 'preserveEmptyTextSliceCaret'
+): CaretRange<D>;
+declare export function $rewindSiblingCaret<
+  T: LexicalNode,
+  D: CaretDirection,
+>(caret: SiblingCaret<T, D>): NodeCaret<D>;
+declare export function $setPointFromCaret<D: CaretDirection>(
+  point: PointType,
+  caret: PointCaret<D>,
+): void;
+declare export function $setSelectionFromCaretRange(
+  caretRange: CaretRange<CaretDirection>,
+): RangeSelection;
+declare export function $updateRangeSelectionFromCaretRange(
+  selection: RangeSelection,
+  caretRange: CaretRange<CaretDirection>,
+): void;

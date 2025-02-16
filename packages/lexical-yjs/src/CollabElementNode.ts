@@ -129,6 +129,7 @@ export class CollabElementNode {
   ): void {
     const children = this._children;
     let currIndex = 0;
+    let pendingSplitText = null;
 
     for (let i = 0; i < deltas.length; i++) {
       const delta = deltas[i];
@@ -157,21 +158,25 @@ export class CollabElementNode {
               nodeIndex !== 0 ? children[nodeIndex - 1] : null;
             const nodeSize = node.getSize();
 
-            if (
-              offset === 0 &&
-              delCount === 1 &&
-              nodeIndex > 0 &&
-              prevCollabNode instanceof CollabTextNode &&
-              length === nodeSize &&
-              // If the node has no keys, it's been deleted
-              Array.from(node._map.keys()).length === 0
-            ) {
-              // Merge the text node with previous.
-              prevCollabNode._text += node._text;
+            if (offset === 0 && length === nodeSize) {
+              // Text node has been deleted.
               children.splice(nodeIndex, 1);
-            } else if (offset === 0 && delCount === nodeSize) {
-              // The entire thing needs removing
-              children.splice(nodeIndex, 1);
+              // If this was caused by an undo from YJS, there could be dangling text.
+              const danglingText = spliceString(
+                node._text,
+                offset,
+                delCount - 1,
+                '',
+              );
+              if (danglingText.length > 0) {
+                if (prevCollabNode instanceof CollabTextNode) {
+                  // Merge the text node with previous.
+                  prevCollabNode._text += danglingText;
+                } else {
+                  // No previous text node to merge into, just delete the text.
+                  this._xmlText.delete(offset, danglingText.length);
+                }
+              }
             } else {
               node._text = spliceString(node._text, offset, delCount, '');
             }
@@ -207,7 +212,7 @@ export class CollabElementNode {
           currIndex += insertDelta.length;
         } else {
           const sharedType = insertDelta;
-          const {nodeIndex} = getPositionFromElementAndOffset(
+          const {node, nodeIndex, length} = getPositionFromElementAndOffset(
             this,
             currIndex,
             false,
@@ -217,7 +222,30 @@ export class CollabElementNode {
             sharedType as XmlText | YMap<unknown> | XmlElement,
             this,
           );
-          children.splice(nodeIndex, 0, collabNode);
+          if (
+            node instanceof CollabTextNode &&
+            length > 0 &&
+            length < node._text.length
+          ) {
+            // Trying to insert in the middle of a text node; split the text.
+            const text = node._text;
+            const splitIdx = text.length - length;
+            node._text = spliceString(text, splitIdx, length, '');
+            children.splice(nodeIndex + 1, 0, collabNode);
+            // The insert that triggers the text split might not be a text node. Need to keep a
+            // reference to the remaining text so that it can be added when we do create one.
+            pendingSplitText = spliceString(text, 0, splitIdx, '');
+          } else {
+            children.splice(nodeIndex, 0, collabNode);
+          }
+          if (
+            pendingSplitText !== null &&
+            collabNode instanceof CollabTextNode
+          ) {
+            // Found a text node to insert the pending text into.
+            collabNode._text = pendingSplitText + collabNode._text;
+            pendingSplitText = null;
+          }
           currIndex += 1;
         }
       } else {

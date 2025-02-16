@@ -1,0 +1,23 @@
+{
+  "name": "@lexical/vanilla-js-iframe",
+  "private": true,
+  "version": "0.24.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "monorepo:dev": "vite -c vite.monorepo.config.ts",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@lexical/dragon": "0.24.0",
+    "@lexical/history": "0.24.0",
+    "@lexical/rich-text": "0.24.0",
+    "@lexical/utils": "0.24.0",
+    "lexical": "0.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "vite": "^5.2.11"
+  }
+}

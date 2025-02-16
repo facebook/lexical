@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -39,6 +41,7 @@ import {
   createEditor,
   EditorState,
   ElementNode,
+  getDOMSelection,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -61,6 +64,8 @@ import {createRoot, Root} from 'react-dom/client';
 import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
+import {emptyFunction} from '../../LexicalUtils';
+import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -100,6 +105,10 @@ describe('LexicalEditor tests', () => {
           nodes: nodes ?? [],
           onError: onError || jest.fn(),
           theme: {
+            tableAlignment: {
+              center: 'editor-table-alignment-center',
+              right: 'editor-table-alignment-right',
+            },
             text: {
               bold: 'editor-text-bold',
               italic: 'editor-text-italic',
@@ -1014,7 +1023,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(rootListener).toHaveBeenCalledTimes(3);
-    expect(updateListener).toHaveBeenCalledTimes(3);
+    expect(updateListener).toHaveBeenCalledTimes(4);
     expect(container.innerHTML).toBe(
       '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
     );
@@ -1025,11 +1034,17 @@ describe('LexicalEditor tests', () => {
       editable ? 'editable' : 'non-editable'
     })`, async () => {
       const JSON_EDITOR_STATE =
-        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
       init();
       const contentEditable = editor.getRootElement();
       editor.setEditable(editable);
+      editor.update(() => {
+        // Cause the editor to become dirty, so we can ensure
+        // that the getEditorState()._readOnly invariant holds
+        $getRoot().markDirty();
+      });
       editor.setRootElement(null);
+      expect(editor.getEditorState()._readOnly).toBe(true);
       const editorState = editor.parseEditorState(JSON_EDITOR_STATE);
       editor.setEditorState(editorState);
       editor.update(() => {
@@ -1192,6 +1207,8 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
+          __textFormat: 0,
+          __textStyle: '',
           __type: 'root',
         });
         expect(paragraph).toEqual({
@@ -1279,6 +1296,8 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
+          __textFormat: 0,
+          __textStyle: '',
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -1361,6 +1380,8 @@ describe('LexicalEditor tests', () => {
           __prev: null,
           __size: 1,
           __style: '',
+          __textFormat: 0,
+          __textStyle: '',
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -2041,6 +2062,28 @@ describe('LexicalEditor tests', () => {
     ]);
   });
 
+  it('multiple update tags', async () => {
+    init();
+    const $mutateSomething = $createTextNode;
+
+    editor.update($mutateSomething, {
+      tag: ['a', 'b'],
+    });
+    expect(editor._updateTags).toEqual(new Set(['a', 'b']));
+    editor.update(
+      () => {
+        editor.update(emptyFunction, {tag: ['e', 'f']});
+      },
+      {
+        tag: ['c', 'd'],
+      },
+    );
+    expect(editor._updateTags).toEqual(new Set(['a', 'b', 'c', 'd', 'e', 'f']));
+
+    await Promise.resolve();
+    expect(editor._updateTags).toEqual(new Set([]));
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
@@ -2187,7 +2230,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const tableCell = $createTableCellNode(0);
+      const tableCell = $createTableCellNode();
       const tableRow = $createTableRowNode();
       const table = $createTableNode();
 
@@ -2202,7 +2245,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const tableRow = $getNodeByKey(tableRowKey) as TableRowNode;
-      const tableCell = $createTableCellNode(0);
+      const tableCell = $createTableCellNode();
       tableRow.append(tableCell);
     });
 
@@ -2526,7 +2569,8 @@ describe('LexicalEditor tests', () => {
       `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
     );
     editor.setEditorState(state);
-    expect(editor._editorState).toBe(state);
+    // A writable version of the EditorState may have been created, we settle for equal serializations
+    expect(editor._editorState.toJSON()).toEqual(state.toJSON());
     expect(editor._pendingEditorState).toBe(null);
   });
 
@@ -2750,12 +2794,8 @@ describe('LexicalEditor tests', () => {
         return new CustomParagraphNode(node.__key);
       }
 
-      static importJSON() {
-        return new CustomParagraphNode();
-      }
-
-      exportJSON() {
-        return {...super.exportJSON(), type: 'custom-paragraph'};
+      static importJSON(serializedNode: SerializedParagraphNode) {
+        return new CustomParagraphNode().updateFromJSON(serializedNode);
       }
     }
 
@@ -2866,6 +2906,96 @@ describe('LexicalEditor tests', () => {
         });
       });
 
+      expect(onError).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('selection', () => {
+    it('updates the DOM selection', async () => {
+      const onError = jest.fn();
+      const newEditor = createTestEditor({
+        onError: onError,
+      });
+      const text = 'initial content';
+      let textNode!: TextNode;
+      await newEditor.update(
+        () => {
+          textNode = $createTextNode(text);
+          $getRoot().append($createParagraphNode().append(textNode));
+          textNode.select();
+        },
+        {tag: 'history-merge'},
+      );
+      await newEditor.setRootElement(container);
+      const domText = newEditor.getElementByKey(textNode.getKey())
+        ?.firstChild as Text;
+      expect(domText).not.toBe(null);
+      let selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      let range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(true);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(text.length);
+      expect(range.endOffset).toBe(text.length);
+      await newEditor.update(() => {
+        textNode.select(0);
+      });
+      selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(false);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(0);
+      expect(range.endOffset).toBe(text.length);
+      expect(onError).not.toHaveBeenCalled();
+    });
+    it('does not update the Lexical->DOM selection with skip-dom-selection', async () => {
+      const onError = jest.fn();
+      const newEditor = createTestEditor({
+        onError: onError,
+      });
+      const text = 'initial content';
+      let textNode!: TextNode;
+      await newEditor.update(
+        () => {
+          textNode = $createTextNode(text);
+          $getRoot().append($createParagraphNode().append(textNode));
+          textNode.select();
+        },
+        {tag: 'history-merge'},
+      );
+      await newEditor.setRootElement(container);
+      const domText = newEditor.getElementByKey(textNode.getKey())
+        ?.firstChild as Text;
+      expect(domText).not.toBe(null);
+      let selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      let range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(true);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(text.length);
+      expect(range.endOffset).toBe(text.length);
+      await newEditor.update(
+        () => {
+          textNode.select(0);
+        },
+        {tag: 'skip-dom-selection'},
+      );
+      selection = getDOMSelection(newEditor._window || window) as Selection;
+      expect(selection).not.toBe(null);
+      expect(selection.rangeCount > 0);
+      range = selection.getRangeAt(0);
+      expect(range.collapsed).toBe(true);
+      expect(range.startContainer).toBe(domText);
+      expect(range.endContainer).toBe(domText);
+      expect(range.startOffset).toBe(text.length);
+      expect(range.endOffset).toBe(text.length);
       expect(onError).not.toHaveBeenCalled();
     });
   });

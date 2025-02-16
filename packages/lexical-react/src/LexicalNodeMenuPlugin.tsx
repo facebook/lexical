@@ -7,6 +7,7 @@
  */
 
 import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -110,7 +111,9 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
     }
   }, [editor, positionOrCloseMenu, nodeKey]);
 
-  return resolution === null || editor === null ? null : (
+  return anchorElementRef.current === null ||
+    resolution === null ||
+    editor === null ? null : (
     <LexicalMenu
       close={closeNodeMenu}
       resolution={resolution}

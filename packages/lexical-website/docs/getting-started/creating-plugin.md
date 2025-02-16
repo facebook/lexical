@@ -69,13 +69,12 @@ export class EmojiNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    return $createEmojiNode(serializedNode.unifiedID);
+    return $createEmojiNode(serializedNode.unifiedID).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),
-      type: 'emoji',
       unifiedID: this.__unifiedID,
     };
   }

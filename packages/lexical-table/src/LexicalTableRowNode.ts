@@ -6,9 +6,9 @@
  *
  */
 
-import type {Spread} from 'lexical';
+import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   DOMConversionMap,
@@ -21,6 +21,7 @@ import {
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
+import {$isTableCellNode} from './LexicalTableCellNode';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -52,7 +53,15 @@ export class TableRowNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
-    return $createTableRowNode(serializedNode.height);
+    return $createTableRowNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTableRowNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHeight(serializedNode.height);
   }
 
   constructor(height?: number, key?: NodeKey) {
@@ -61,11 +70,10 @@ export class TableRowNode extends ElementNode {
   }
 
   exportJSON(): SerializedTableRowNode {
+    const height = this.getHeight();
     return {
       ...super.exportJSON(),
-      ...(this.getHeight() && {height: this.getHeight()}),
-      type: 'tablerow',
-      version: 1,
+      ...(height === undefined ? undefined : {height}),
     };
   }
 
@@ -81,21 +89,29 @@ export class TableRowNode extends ElementNode {
     return element;
   }
 
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    return destination === 'html';
+  }
+
   isShadowRoot(): boolean {
     return true;
   }
 
-  setHeight(height: number): number | null | undefined {
+  setHeight(height?: number | undefined): this {
     const self = this.getWritable();
     self.__height = height;
-    return this.__height;
+    return self;
   }
 
   getHeight(): number | undefined {
     return this.getLatest().__height;
   }
 
-  updateDOM(prevNode: TableRowNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return prevNode.__height !== this.__height;
   }
 
@@ -116,7 +132,10 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
     height = parseFloat(domNode_.style.height);
   }
 
-  return {node: $createTableRowNode(height)};
+  return {
+    after: (children) => $descendantsMatching(children, $isTableCellNode),
+    node: $createTableRowNode(height),
+  };
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {

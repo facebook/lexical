@@ -22,6 +22,7 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
+  getDOMSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -29,11 +30,7 @@ import {
   SerializedElementNode,
   SerializedTextNode,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
-
-const getDOMSelection = (targetWindow: Window | null): Selection | null =>
-  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -151,10 +148,18 @@ export function $insertDataTransferForRichText(
   }
 
   const htmlString = dataTransfer.getData('text/html');
-  if (htmlString) {
+  const plainString = dataTransfer.getData('text/plain');
+
+  // Skip HTML handling if it matches the plain text representation.
+  // This avoids unnecessary processing for plain text strings created by
+  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
+  if (htmlString && plainString !== htmlString) {
     try {
       const parser = new DOMParser();
-      const dom = parser.parseFromString(htmlString, 'text/html');
+      const dom = parser.parseFromString(
+        trustHTML(htmlString) as string,
+        'text/html',
+      );
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {
@@ -165,8 +170,7 @@ export function $insertDataTransferForRichText(
   // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
   // Webkit-specific: Supports read 'text/uri-list' in clipboard.
-  const text =
-    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
+  const text = plainString || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
       const parts = text.split(/(\r?\n|\t)/);
@@ -190,6 +194,16 @@ export function $insertDataTransferForRichText(
       selection.insertRawText(text);
     }
   }
+}
+
+function trustHTML(html: string): string | TrustedHTML {
+  if (window.trustedTypes && window.trustedTypes.createPolicy) {
+    const policy = window.trustedTypes.createPolicy('lexical', {
+      createHTML: (input) => input,
+    });
+    return policy.createHTML(html);
+  }
+  return html;
 }
 
 /**
@@ -410,9 +424,9 @@ export async function copyToClipboard(
   }
 
   const rootElement = editor.getRootElement();
-  const windowDocument =
-    editor._window == null ? window.document : editor._window.document;
-  const domSelection = getDOMSelection(editor._window);
+  const editorWindow = editor._window || window;
+  const windowDocument = window.document;
+  const domSelection = getDOMSelection(editorWindow);
   if (rootElement === null || domSelection === null) {
     return false;
   }

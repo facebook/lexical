@@ -71,7 +71,7 @@ export default function HomepageExamples() {
           {EXAMPLES.map(({id, label}) => (
             <Tabs.Trigger asChild={true} value={id} key={id}>
               <li
-                className={`cursor-pointer list-none rounded-md px-4 py-1 font-bold transition-colors hover:bg-[#f2f2f2] ${
+                className={`button--text cursor-pointer list-none rounded-md px-4 py-1 font-bold transition-colors hover:bg-[#f2f2f2] ${
                   activeItemID === id && 'pills__item--active'
                 }`}
                 tabIndex={0}

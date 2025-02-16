@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {
@@ -183,11 +184,12 @@ export default function ActionsPlugin({
           undefined, //node
           shouldPreserveNewLinesInMarkdown,
         );
-        root
-          .clear()
-          .append(
-            $createCodeNode('markdown').append($createTextNode(markdown)),
-          );
+        const codeNode = $createCodeNode('markdown');
+        codeNode.append($createTextNode(markdown));
+        root.clear().append(codeNode);
+        if (markdown.length === 0) {
+          codeNode.select();
+        }
       }
     });
   }, [editor, shouldPreserveNewLinesInMarkdown]);
@@ -218,6 +220,7 @@ export default function ActionsPlugin({
         aria-label="Import editor state from JSON">
         <i className="import" />
       </button>
+
       <button
         className="action-button export"
         onClick={() =>

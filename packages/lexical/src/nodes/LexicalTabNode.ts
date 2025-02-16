@@ -11,8 +11,9 @@ import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {EditorConfig} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement} from '../LexicalUtils';
+import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
   SerializedTextNode,
   TextDetailType,
@@ -32,12 +33,6 @@ export class TabNode extends TextNode {
     return new TabNode(node.__key);
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    // TabNode __text can be either '\t' or ''. insertText will remove the empty Node
-    this.__text = prevNode.__text;
-  }
-
   constructor(key?: NodeKey) {
     super('\t', key);
     this.__detail = IS_UNMERGEABLE;
@@ -47,31 +42,37 @@ export class TabNode extends TextNode {
     return null;
   }
 
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    const classNames = getCachedClassNameArray(config.theme, 'tab');
+
+    if (classNames !== undefined) {
+      const domClassList = dom.classList;
+      domClassList.add(...classNames);
+    }
+    return dom;
+  }
+
   static importJSON(serializedTabNode: SerializedTabNode): TabNode {
-    const node = $createTabNode();
-    node.setFormat(serializedTabNode.format);
-    node.setStyle(serializedTabNode.style);
-    return node;
+    return $createTabNode().updateFromJSON(serializedTabNode);
   }
 
-  exportJSON(): SerializedTabNode {
-    return {
-      ...super.exportJSON(),
-      type: 'tab',
-      version: 1,
-    };
+  setTextContent(text: string): this {
+    invariant(
+      text === '\t' || text === '',
+      'TabNode does not support setTextContent',
+    );
+    return super.setTextContent(text);
   }
 
-  setTextContent(_text: string): this {
-    invariant(false, 'TabNode does not support setTextContent');
+  setDetail(detail: TextDetailType | number): this {
+    invariant(detail === IS_UNMERGEABLE, 'TabNode does not support setDetail');
+    return this;
   }
 
-  setDetail(_detail: TextDetailType | number): this {
-    invariant(false, 'TabNode does not support setDetail');
-  }
-
-  setMode(_type: TextModeType): this {
-    invariant(false, 'TabNode does not support setMode');
+  setMode(type: TextModeType): this {
+    invariant(type === 'normal', 'TabNode does not support setMode');
+    return this;
   }
 
   canInsertTextBefore(): boolean {

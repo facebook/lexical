@@ -8,6 +8,7 @@
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 import type {KlassConstructor, Transform} from 'lexical';
+import type {JSX} from 'react';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {

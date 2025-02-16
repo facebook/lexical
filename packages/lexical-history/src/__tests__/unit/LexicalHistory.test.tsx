@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -44,7 +46,7 @@ import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
 type SerializedCustomTextNode = Spread<
-  {type: ReturnType<typeof CustomTextNode.getType>; classes: string[]},
+  {type: string; classes: string[]},
   SerializedTextNode
 >;
 
@@ -87,7 +89,6 @@ class CustomTextNode extends TextNode {
     return {
       ...super.exportJSON(),
       classes: Array.from(this.getClasses()),
-      type: this.constructor.getType(),
     };
   }
 }

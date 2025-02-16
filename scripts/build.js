@@ -18,7 +18,6 @@ const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
 const json = require('@rollup/plugin-json');
 const alias = require('@rollup/plugin-alias');
-const compiler = require('@ampproject/rollup-plugin-closure-compiler');
 const terser = require('@rollup/plugin-terser');
 const {exec} = require('child-process-promise');
 const {packagesManager} = require('./shared/packagesManager');
@@ -34,26 +33,16 @@ const isRelease = argv.release;
 const isWWW = argv.www;
 const extractCodes = argv.codes;
 
-const closureOptions = {
-  apply_input_source_maps: false,
-  assume_function_wrapper: true,
-  compilation_level: 'SIMPLE',
-  inject_libraries: false,
-  language_in: 'ECMASCRIPT_2019',
-  language_out: 'ECMASCRIPT_2019',
-  process_common_js_modules: false,
-  rewrite_polyfills: false,
-  use_types_for_optimization: false,
-  warning_level: 'QUIET',
-};
+const modulePackageMappings = Object.fromEntries(
+  packagesManager.getPublicPackages().flatMap((pkg) => {
+    const pkgName = pkg.getNpmName();
+    return pkg.getExportedNpmModuleNames().map((npm) => [npm, pkgName]);
+  }),
+);
 
 const wwwMappings = {
   ...Object.fromEntries(
-    packagesManager
-      .getPublicPackages()
-      .flatMap((pkg) =>
-        pkg.getExportedNpmModuleNames().map((npm) => [npm, npmToWwwName(npm)]),
-      ),
+    Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
   ),
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
@@ -126,6 +115,7 @@ function getExtension(format) {
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
  * @param {string} version
+ * @param {import('./shared/PackageMetadata').PackageMetadata} pkg
  * @returns {Promise<Array<string>>} the exports of the built module
  */
 async function build(
@@ -136,10 +126,30 @@ async function build(
   isProd,
   format,
   version,
+  pkg,
 ) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
+      const modulePkgName = modulePackageMappings[modulePath];
+      if (
+        typeof modulePkgName === 'string' &&
+        !(
+          modulePkgName in (pkg.packageJson.dependencies || {}) ||
+          modulePkgName === pkg.getNpmName()
+        )
+      ) {
+        console.error(
+          `Error: ${path.relative(
+            '.',
+            src,
+          )} has an undeclared dependency in its import of ${modulePath}.\nAdd the following to the dependencies in ${path.relative(
+            '.',
+            pkg.resolve('package.json'),
+          )}: "${modulePkgName}": "${version}"`,
+        );
+        process.exit(1);
+      }
       return (
         monorepoExternalsSet.has(modulePath) ||
         thirdPartyExternalsRegExp.test(modulePath)
@@ -230,13 +240,10 @@ async function build(
           isWWW && strictWWWMappings,
         ),
       ),
-      // terser is used for esm builds because
-      // @ampproject/rollup-plugin-closure-compiler doesn't compile
-      // `export default function X()` correctly
-      isProd &&
-        (format === 'esm'
-          ? terser({ecma: 2019, module: true})
-          : compiler(closureOptions)),
+      // terser is used because @ampproject/rollup-plugin-closure-compiler
+      // doesn't compile `export default function X()` correctly and hasn't
+      // been updated since Aug 2021
+      isProd && terser({ecma: 2019, module: format === 'esm'}),
       {
         renderChunk(source) {
           // Assets pipeline might use "export" word in the beginning of the line
@@ -287,6 +294,7 @@ function getComment() {
     0,
     ' *',
     ' * @fullSyntaxTransform',
+    ' * @es6-async_DO_NOT_USE',
     ' * @generated',
     ' * @noflow',
     ' * @nolint',
@@ -346,7 +354,7 @@ function forkModuleContent(
   if (target === 'cjs') {
     lines.push(
       `'use strict'`,
-      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}');`,
+      `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
       `module.exports = ${outputFileName};`,
     );
   } else {
@@ -354,11 +362,11 @@ function forkModuleContent(
       lines.push(
         `import * as modDev from '${devFileName}';`,
         `import * as modProd from '${prodFileName}';`,
-        `const mod = process.env.NODE_ENV === 'development' ? modDev : modProd;`,
+        `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
       );
     } else if (target === 'node') {
       lines.push(
-        `const mod = await (process.env.NODE_ENV === 'development' ? import('${devFileName}') : import('${prodFileName}'));`,
+        `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
       );
     }
     for (const name of exports) {
@@ -422,6 +430,7 @@ async function buildAll() {
           isProduction,
           format,
           version,
+          pkg,
         );
 
         if (isRelease) {
@@ -436,6 +445,7 @@ async function buildAll() {
             false,
             format,
             version,
+            pkg,
           );
           buildForkModules(outputPath, outputFileName, format, exports);
         }

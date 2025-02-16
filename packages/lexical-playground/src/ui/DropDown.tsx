@@ -6,6 +6,9 @@
  *
  */
 
+import type {JSX} from 'react';
+
+import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {
   ReactNode,
@@ -189,15 +192,15 @@ export default function DropDown({
     if (button !== null && showDropDown) {
       const handle = (event: MouseEvent) => {
         const target = event.target;
+        if (!isDOMNode(target)) {
+          return;
+        }
         if (stopCloseOnClickSelf) {
-          if (
-            dropDownRef.current &&
-            dropDownRef.current.contains(target as Node)
-          ) {
+          if (dropDownRef.current && dropDownRef.current.contains(target)) {
             return;
           }
         }
-        if (!button.contains(target as Node)) {
+        if (!button.contains(target)) {
           setShowDropDown(false);
         }
       };

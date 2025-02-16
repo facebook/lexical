@@ -6,11 +6,14 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
+import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {
   InitialConfigType,
@@ -174,19 +177,7 @@ export class TestElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -214,15 +205,7 @@ export class TestTextNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    return new TestTextNode(serializedNode.text);
-  }
-
-  exportJSON(): SerializedTestTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_text',
-      version: 1,
-    };
+    return new TestTextNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -240,19 +223,7 @@ export class TestInlineElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestInlineElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestInlineElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_inline_block',
-      version: 1,
-    };
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -286,19 +257,7 @@ export class TestShadowRootNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestShadowRootNode,
   ): TestShadowRootNode {
-    const node = $createTestShadowRootNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestShadowRootNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+    return $createTestShadowRootNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -332,24 +291,11 @@ export class TestSegmentedNode extends TextNode {
   static importJSON(
     serializedNode: SerializedTestSegmentedNode,
   ): TestSegmentedNode {
-    const node = $createTestSegmentedNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
-  exportJSON(): SerializedTestSegmentedNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_segmented',
-      version: 1,
-    };
+    return $createTestSegmentedNode().updateFromJSON(serializedNode);
   }
 }
 
-export function $createTestSegmentedNode(text: string): TestSegmentedNode {
+export function $createTestSegmentedNode(text: string = ''): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
@@ -367,19 +313,9 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestExcludeFromCopyElementNode,
   ): TestExcludeFromCopyElementNode {
-    const node = $createTestExcludeFromCopyElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestExcludeFromCopyElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_exclude_from_copy_block',
-      version: 1,
-    };
+    return $createTestExcludeFromCopyElementNode().updateFromJSON(
+      serializedNode,
+    );
   }
 
   createDOM() {
@@ -413,15 +349,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedTestDecoratorNode,
   ): TestDecoratorNode {
-    return $createTestDecoratorNode();
-  }
-
-  exportJSON(): SerializedTestDecoratorNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_decorator',
-      version: 1,
-    };
+    return $createTestDecoratorNode().updateFromJSON(serializedNode);
   }
 
   static importDOM() {
@@ -486,6 +414,7 @@ const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   TestInlineElementNode,
   TestShadowRootNode,
   TestTextNode,
+  MarkNode,
 ];
 
 export function TestComposer({
@@ -796,8 +725,25 @@ export function html(
   return output;
 }
 
-export function expectHtmlToBeEqual(expected: string, actual: string): void {
-  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+export function polyfillContentEditable() {
+  const div = document.createElement('div');
+  div.contentEditable = 'true';
+  if (/contenteditable/.test(div.outerHTML)) {
+    return;
+  }
+  Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+    get() {
+      return this.getAttribute('contenteditable');
+    },
+
+    set(value) {
+      this.setAttribute('contenteditable', value);
+    },
+  });
+}
+
+export function expectHtmlToBeEqual(actual: string, expected: string): void {
+  expect(prettifyHtml(actual)).toBe(prettifyHtml(expected));
 }
 
 export function prettifyHtml(s: string): string {

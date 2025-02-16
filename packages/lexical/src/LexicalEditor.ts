@@ -86,7 +86,7 @@ export type TextNodeThemeClasses = {
   [key: string]: EditorThemeClassName | undefined;
 };
 
-export interface EditorUpdateOptions {
+export type EditorUpdateOptions = {
   /**
    * A function to run once the update is complete. See also {@link $onUpdate}.
    */
@@ -109,7 +109,7 @@ export interface EditorUpdateOptions {
   discrete?: true;
   /** @internal */
   event?: undefined | UIEvent | Event | null;
-}
+};
 
 export type EditorSetOptions = {
   tag?: string;

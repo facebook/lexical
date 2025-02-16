@@ -26,8 +26,8 @@ import {
 import {
   $updateStateFromJSON,
   type NodeState,
-  NodeStateJSON,
-  Prettify,
+  type NodeStateJSON,
+  type Prettify,
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {
@@ -63,7 +63,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 /**
  * The base type for all serialized nodes
  */
-export interface SerializedLexicalNode {
+export type SerializedLexicalNode = {
   /** The type string used by the Node class */
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
@@ -73,7 +73,7 @@ export interface SerializedLexicalNode {
    * configured for flat storage
    */
   [NODE_STATE_KEY]?: Record<string, unknown>;
-}
+};
 
 /**
  * EXPERIMENTAL
@@ -151,8 +151,6 @@ export interface StaticNodeConfigValue<
 }
 
 /**
- * @internal
- *
  * This is the type of LexicalNode.getStaticNodeConfig() that can be
  * overridden by subclasses.
  */
@@ -161,8 +159,6 @@ export type BaseStaticNodeConfig = {
 };
 
 /**
- * @internal
- *
  * Used to extract the node and type from a StaticNodeConfigRecord
  */
 export type StaticNodeConfig<
@@ -173,8 +169,6 @@ export type StaticNodeConfig<
 };
 
 /**
- * @internal
- *
  * Any StaticNodeConfigValue (for generics and collections)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -195,8 +189,11 @@ export type StaticNodeConfigRecord<
 /**
  * Extract the type from a node based on its getStaticNodeConfig
  *
+ * @example
+ * ```ts
  * type TextNodeType = GetStaticNodeType<TextNode>;
  *      // ? 'text'
+ * ```
  */
 export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
   T['getStaticNodeConfig']
@@ -205,8 +202,6 @@ export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
   : string;
 
 /**
- * @internal
- *
  * The most precise type we can infer for the JSON that will
  * be produced by T.exportJSON().
  *
@@ -394,7 +389,7 @@ export class LexicalNode {
 
   /**
    * This is a convenience method for getStaticNodeConfig that
-   * aids in type inference. See {@link LexicalNode.getStaticNodeConfig}
+   * aids in type inference. See getStaticNodeConfig
    * for example usage.
    */
   configureNode<

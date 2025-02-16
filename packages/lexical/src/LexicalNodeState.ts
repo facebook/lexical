@@ -141,6 +141,9 @@ export type GetNodeStateConfig<T extends LexicalNode> = CollectStateConfigs<
   GetStaticNodeConfigs<T>
 >;
 
+/**
+ * The NodeState JSON produced by this LexicalNode
+ */
 export type NodeStateJSON<T extends LexicalNode> = Prettify<
   {
     [NODE_STATE_KEY]?: Prettify<CollectStateJSON<GetNodeStateConfig<T>, false>>;

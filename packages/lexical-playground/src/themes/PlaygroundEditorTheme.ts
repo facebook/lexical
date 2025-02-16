@@ -113,6 +113,7 @@ const theme: EditorThemeClasses = {
     bold: 'PlaygroundEditorTheme__textBold',
     capitalize: 'PlaygroundEditorTheme__textCapitalize',
     code: 'PlaygroundEditorTheme__textCode',
+    highlight: 'PlaygroundEditorTheme__textHighlight',
     italic: 'PlaygroundEditorTheme__textItalic',
     lowercase: 'PlaygroundEditorTheme__textLowercase',
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',

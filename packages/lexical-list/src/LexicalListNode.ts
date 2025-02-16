@@ -27,6 +27,7 @@ import {
   NodeKey,
   SerializedElementNode,
   Spread,
+  StaticNodeConfigRecord,
 } from 'lexical';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
@@ -128,7 +129,10 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  getStaticNodeConfig() {
+  getStaticNodeConfig(): StaticNodeConfigRecord<
+    'list',
+    {transform: (node: ListNode) => void}
+  > {
     return this.configureNode('list', {
       transform: (node: ListNode): void => {
         mergeNextSiblingListIfSameType(node);

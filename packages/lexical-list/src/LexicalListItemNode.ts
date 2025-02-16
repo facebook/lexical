@@ -21,6 +21,7 @@ import type {
   RangeSelection,
   SerializedElementNode,
   Spread,
+  StaticNodeConfigRecord,
 } from 'lexical';
 
 import {
@@ -99,7 +100,10 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  getStaticNodeConfig() {
+  getStaticNodeConfig(): StaticNodeConfigRecord<
+    'listitem',
+    {transform: (node: ListItemNode) => void}
+  > {
     return this.configureNode('listitem', {
       transform: (node: ListItemNode): void => {
         if (node.__checked == null) {

@@ -17,6 +17,7 @@ import {
   LexicalNode,
   RangeSelection,
   SerializedElementNode,
+  StaticNodeConfigRecord,
 } from 'lexical';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -88,7 +89,10 @@ export class CollapsibleTitleNode extends ElementNode {
     return true;
   }
 
-  getStaticNodeConfig() {
+  getStaticNodeConfig(): StaticNodeConfigRecord<
+    'collapsible-title',
+    {transform: (node: CollapsibleTitleNode) => void}
+  > {
     return this.configureNode('collapsible-title', {
       transform: (node: CollapsibleTitleNode) => {
         if (node.isEmpty()) {

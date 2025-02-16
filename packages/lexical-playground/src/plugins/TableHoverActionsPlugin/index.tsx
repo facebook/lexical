@@ -24,7 +24,12 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, isHTMLElement, NodeKey} from 'lexical';
+import {
+  $getNearestNodeFromDOMNode,
+  EditorThemeClasses,
+  isHTMLElement,
+  NodeKey,
+} from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -38,7 +43,7 @@ function TableHoverActionsContainer({
 }: {
   anchorElem: HTMLElement;
 }): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
+  const [editor, {getTheme}] = useLexicalComposerContext();
   const isEditable = useLexicalEditable();
   const [isShownRow, setShownRow] = useState<boolean>(false);
   const [isShownColumn, setShownColumn] = useState<boolean>(false);
@@ -50,7 +55,7 @@ function TableHoverActionsContainer({
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
-      const {isOutside, tableDOMNode} = getMouseInfo(event);
+      const {isOutside, tableDOMNode} = getMouseInfo(event, getTheme);
 
       if (isOutside) {
         setShownRow(false);
@@ -256,14 +261,14 @@ function TableHoverActionsContainer({
     <>
       {isShownRow && (
         <button
-          className={'PlaygroundEditorTheme__tableAddRows'}
+          className={`${getTheme()?.tableAddRows}`}
           style={{...position}}
           onClick={() => insertAction(true)}
         />
       )}
       {isShownColumn && (
         <button
-          className={'PlaygroundEditorTheme__tableAddColumns'}
+          className={`${getTheme()?.tableAddColumns}`}
           style={{...position}}
           onClick={() => insertAction(false)}
         />
@@ -272,7 +277,10 @@ function TableHoverActionsContainer({
   );
 }
 
-function getMouseInfo(event: MouseEvent): {
+function getMouseInfo(
+  event: MouseEvent,
+  getTheme: () => EditorThemeClasses | null | undefined,
+): {
   tableDOMNode: HTMLElement | null;
   isOutside: boolean;
 } {
@@ -280,17 +288,13 @@ function getMouseInfo(event: MouseEvent): {
 
   if (isHTMLElement(target)) {
     const tableDOMNode = target.closest<HTMLElement>(
-      'td.PlaygroundEditorTheme__tableCell, th.PlaygroundEditorTheme__tableCell',
+      `td.${getTheme()?.tableCell}, th.${getTheme()?.tableCell}`,
     );
 
     const isOutside = !(
       tableDOMNode ||
-      target.closest<HTMLElement>(
-        'button.PlaygroundEditorTheme__tableAddRows',
-      ) ||
-      target.closest<HTMLElement>(
-        'button.PlaygroundEditorTheme__tableAddColumns',
-      ) ||
+      target.closest<HTMLElement>(`button.${getTheme()?.tableAddRows}`) ||
+      target.closest<HTMLElement>(`button.${getTheme()?.tableAddColumns}`) ||
       target.closest<HTMLElement>('div.TableCellResizer__resizer')
     );
 

@@ -91,15 +91,28 @@ export function generateRandomKey(): string {
   return '' + keyCounter++;
 }
 
+/**
+ * @internal
+ */
 export function getRegisteredNodeOrThrow(
   editor: LexicalEditor,
   nodeType: string,
 ): RegisteredNode {
-  const registeredNode = editor._nodes.get(nodeType);
+  const registeredNode = getRegisteredNode(editor, nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'registeredNode: Type %s not found', nodeType);
   }
   return registeredNode;
+}
+
+/**
+ * @internal
+ */
+export function getRegisteredNode(
+  editor: LexicalEditor,
+  nodeType: string,
+): undefined | RegisteredNode {
+  return editor._nodes.get(nodeType);
 }
 
 export const isArray = Array.isArray;
@@ -1501,8 +1514,8 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
 
 export function $applyNodeReplacement<N extends LexicalNode>(node: N): N {
   const editor = getActiveEditor();
-  const nodeType = node.constructor.getType();
-  const registeredNode = editor._nodes.get(nodeType);
+  const nodeType = node.getType();
+  const registeredNode = getRegisteredNode(editor, nodeType);
   invariant(
     registeredNode !== undefined,
     '$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',

@@ -29,6 +29,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  getRegisteredNode,
   isDocumentFragment,
   isInlineDomNode,
 } from 'lexical';
@@ -110,7 +111,7 @@ function $appendNodesToHTML(
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const registeredNode = editor._nodes.get(target.getType());
+  const registeredNode = getRegisteredNode(editor, target.getType());
   let exportOutput;
 
   // Use HTMLConfig overrides, if available.

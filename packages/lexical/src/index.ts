@@ -112,6 +112,7 @@ export {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 export type {
@@ -130,6 +131,7 @@ export type {
   KlassConstructor,
   LexicalCommand,
   LexicalEditor,
+  LexicalNodeConfig,
   LexicalNodeReplacement,
   MutationListener,
   NodeMutation,
@@ -153,6 +155,7 @@ export type {
 } from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export type {
+  BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
@@ -165,6 +168,8 @@ export type {
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  StaticNodeConfig,
+  StaticNodeConfigValue,
 } from './LexicalNode';
 export {
   $getState,
@@ -172,6 +177,7 @@ export {
   $getWritableNodeState,
   $setState,
   type AnyStateConfig,
+  createSharedNodeState,
   createState,
   type StateConfig,
   type StateConfigKey,
@@ -234,6 +240,8 @@ export {
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  getRegisteredNode,
+  getRegisteredNodeOrThrow,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,

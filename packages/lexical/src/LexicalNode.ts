@@ -21,8 +21,13 @@ import {
   $isTextNode,
   type DecoratorNode,
   ElementNode,
+  NODE_STATE_KEY,
 } from '.';
-import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
+import {
+  $updateStateFromJSON,
+  type NodeState,
+  type RequiredNodeStateConfig,
+} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -46,6 +51,7 @@ import {
   $setNodeKey,
   $setSelection,
   errorOnInsertTextNodeOnRoot,
+  getRegisteredNode,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
@@ -60,8 +66,88 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
-  state?: Record<string, unknown>;
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
+
+/**
+ * EXPERIMENTAL
+ * The configuration of a node, used in LexicalNode.getStaticNodeConfig()
+ *
+ * @example
+ * ```ts
+ * class CustomText extends TextNode {
+ *   // This may be optional in the future
+ *   static getType(): string { return 'custom-text'; }
+ *   // This may be required in the future
+ *   getStaticNodeConfig() {
+ *     return this.configureNode({type: 'custom-text'}};
+ *   }
+ * }
+ * ```
+ */
+export interface StaticNodeConfigValue<
+  T extends LexicalNode,
+  Type extends string,
+> {
+  readonly type: Type;
+  readonly transform?: (node: T) => void;
+  /**
+   * EXPERIMENTAL
+   *
+   * An array of RequiredNodeStateConfig to initialize your node with
+   * its state requirements. This may be used to configure serialization of
+   * that state.
+   *
+   * This function will be called (at most) once per editor initialization,
+   * directly on your node's prototype. It must not depend on any state
+   * initialized in the constructor.
+   *
+   * @example
+   * ```ts
+   * const flatState = createState("flat", { parse: parseNumber });
+   * const nestedState = createState("nested", { parse: parseNumber });
+   * const requiredState = ;
+   * class MyNode extends TextNode {
+   *   // ...
+   *   getStaticNodeConfig() {
+   *     return this.configureNode({
+   *       type: 'my-node',
+   *       stateConfigs: [
+   *         { stateConfig: flatState, flat: true},
+   *         nestedState,
+   *       ] as const // 'as const' gives us precise types
+   *     });
+   *   }
+   * }
+   * ```
+   */
+  readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+}
+
+export type BaseStaticNodeConfig = {
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+};
+export type StaticNodeConfig<
+  T extends LexicalNode,
+  Type extends string,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
+
+export type StaticNodeConfigRecord<Config extends AnyStaticNodeConfigValue> =
+  BaseStaticNodeConfig & {
+    readonly [K in Config['type']]?: Config;
+  };
+export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
+  T['getStaticNodeConfig']
+> extends StaticNodeConfig<T, infer Type>
+  ? Type
+  : string;
+export type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
+  T['getStaticNodeConfig']
+>[string];
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
@@ -234,6 +320,17 @@ export class LexicalNode {
       'LexicalNode: Node %s does not implement .clone().',
       this.name,
     );
+  }
+
+  configureNode<
+    Type extends string,
+    Config extends StaticNodeConfigValue<this, Type>,
+  >(config: Config): StaticNodeConfigRecord<Config> {
+    return {[config.type]: config} as StaticNodeConfigRecord<Config>;
+  }
+
+  getStaticNodeConfig(): BaseStaticNodeConfig {
+    return {};
   }
 
   /**
@@ -947,7 +1044,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode.state);
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
   }
 
   /**
@@ -1249,7 +1346,7 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Klass<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._nodes.get(type);
+  const registeredNode = getRegisteredNode(getActiveEditor(), type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(

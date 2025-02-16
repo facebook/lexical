@@ -10,7 +10,7 @@ import type {RangeSelection, TextNode} from '.';
 import type {PointType} from './LexicalSelection';
 
 import {$isElementNode, $isTextNode} from '.';
-import {$nodeStatesAreEquivalent} from './LexicalNodeState';
+import {nodeStatesAreEquivalent} from './LexicalNodeState';
 import {getActiveEditor} from './LexicalUpdates';
 
 function $canSimpleTextNodesBeMerged(
@@ -31,7 +31,7 @@ function $canSimpleTextNodesBeMerged(
     (node1Style === null || node1Style === node2Style) &&
     (node1.__state === null ||
       node1State === node2State ||
-      $nodeStatesAreEquivalent(node1State, node2State))
+      nodeStatesAreEquivalent(node1State, node2State))
   );
 }
 

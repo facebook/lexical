@@ -23,6 +23,7 @@ import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
+import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
   internalGetActiveEditor,
@@ -183,11 +184,16 @@ export type HTMLConfig = {
   import?: DOMConversionMap;
 };
 
+/**
+ * A LexicalNode class or LexicalNodeReplacement configuration
+ */
+export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
+
 export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  nodes?: ReadonlyArray<LexicalNodeConfig>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
@@ -206,6 +212,7 @@ export type RegisteredNode = {
     editor: LexicalEditor,
     targetNode: LexicalNode,
   ) => DOMExportOutput;
+  sharedNodeState: SharedNodeState;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -532,6 +539,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         klass,
         replace,
         replaceWithKlass,
+        sharedNodeState: createSharedNodeState(nodes[i]),
         transforms,
       });
     }
@@ -557,6 +565,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 
   return editor;
 }
+
 export class LexicalEditor {
   ['constructor']!: KlassConstructor<typeof LexicalEditor>;
 

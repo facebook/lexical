@@ -242,6 +242,12 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   useEffect(() => {
     const updateListener = () => {
       editor.getEditorState().read(() => {
+        // Check if editor is in read-only mode
+        if (!editor.isEditable()) {
+          closeTypeahead();
+          return;
+        }
+
         const editorWindow = editor._window || window;
         const range = editorWindow.document.createRange();
         const selection = $getSelection();
@@ -296,6 +302,22 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     closeTypeahead,
     openTypeahead,
   ]);
+
+  // Add effect to listen for editable state changes
+  useEffect(() => {
+    const editableListener = (isEditable: boolean) => {
+      if (!isEditable) {
+        closeTypeahead();
+      }
+    };
+
+    const removeEditableListener =
+      editor.registerEditableListener(editableListener);
+
+    return () => {
+      removeEditableListener();
+    };
+  }, [editor, closeTypeahead]);
 
   return resolution === null ||
     editor === null ||

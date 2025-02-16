@@ -1948,7 +1948,7 @@ function computeTypeToNodeMap(editorState: EditorState): TypeToNodeMap {
  * do not try and use this function to duplicate or copy an existing node.
  *
  * Does not mutate the EditorState.
- * @param node - The node to be cloned.
+ * @param latestNode - The node to be cloned.
  * @returns The clone of the node.
  */
 export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {

@@ -86,22 +86,42 @@ export type TextNodeThemeClasses = {
   [key: string]: EditorThemeClassName | undefined;
 };
 
-export type EditorUpdateOptions = {
+export interface EditorUpdateOptions {
+  /**
+   * A function to run once the update is complete. See also {@link $onUpdate}.
+   */
   onUpdate?: () => void;
+  /**
+   * Setting this to true will suppress all node
+   * transforms for this update cycle.
+   * Useful for synchronizing updates in some cases.
+   */
   skipTransforms?: true;
+  /**
+   * A tag to identify this update, in an update listener, for instance.
+   * See also {@link $addUpdateTag}.
+   */
   tag?: string | Array<string>;
+  /**
+   * If true, prevents this update from being batched, forcing it to
+   * run synchronously.
+   */
   discrete?: true;
   /** @internal */
   event?: undefined | UIEvent | Event | null;
-};
+}
 
 export type EditorSetOptions = {
   tag?: string;
 };
 
-export type EditorFocusOptions = {
+export interface EditorFocusOptions {
+  /**
+   * Where to move selection when the editor is
+   * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
+   */
   defaultSelection?: 'rootStart' | 'rootEnd';
-};
+}
 
 export type EditorThemeClasses = {
   blockCursor?: EditorThemeClassName;
@@ -1225,14 +1245,6 @@ export class LexicalEditor {
    * where Lexical editor state can be safely mutated.
    * @param updateFn - A function that has access to writable editor state.
    * @param options - A bag of options to control the behavior of the update.
-   * @param options.onUpdate - A function to run once the update is complete.
-   * Useful for synchronizing updates in some cases.
-   * @param options.skipTransforms - Setting this to true will suppress all node
-   * transforms for this update cycle.
-   * @param options.tag - A tag to identify this update, in an update listener, for instance.
-   * Some tags are reserved by the core and control update behavior in different ways.
-   * @param options.discrete - If true, prevents this update from being batched, forcing it to
-   * run synchronously.
    */
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(this, updateFn, options);
@@ -1242,8 +1254,6 @@ export class LexicalEditor {
    * Focuses the editor
    * @param callbackFn - A function to run after the editor is focused.
    * @param options - A bag of options
-   * @param options.defaultSelection - Where to move selection when the editor is
-   * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
    */
   focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
     const rootElement = this._rootElement;

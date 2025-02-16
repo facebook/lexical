@@ -42,8 +42,9 @@ const boolState = createState('boolState', {parse: Boolean});
 class StateNode extends TestNode {
   getStaticNodeConfig() {
     return this.configureNode('state', {
+      extends: TestNode,
       stateConfigs: [{flat: true, stateConfig: numberState}, boolState],
-    } as const);
+    });
   }
   getNumber() {
     return $getState(this, numberState);

@@ -105,6 +105,7 @@ const theme: EditorThemeClasses = {
   tableCellResizer: 'PlaygroundEditorTheme__tableCellResizer',
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
   tableFrozenColumn: 'PlaygroundEditorTheme__tableFrozenColumn',
+  tableFrozenRow: 'PlaygroundEditorTheme__tableFrozenRow',
   tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
   tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',

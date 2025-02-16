@@ -531,6 +531,10 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       const type = klass.getType();
       const transform = klass.transform();
       const transforms = new Set<Transform<LexicalNode>>();
+      const nodeConfigValue = klass.prototype.getStaticNodeConfig()[type];
+      if (nodeConfigValue && nodeConfigValue.transform) {
+        transforms.add(nodeConfigValue.transform);
+      }
       if (transform !== null) {
         transforms.add(transform);
       }

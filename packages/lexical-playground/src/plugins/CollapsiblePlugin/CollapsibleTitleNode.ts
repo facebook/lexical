@@ -88,16 +88,15 @@ export class CollapsibleTitleNode extends ElementNode {
     return true;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant(
-        $isCollapsibleTitleNode(node),
-        'node is not a CollapsibleTitleNode',
-      );
-      if (node.isEmpty()) {
-        node.remove();
-      }
-    };
+  getStaticNodeConfig() {
+    return this.configureNode({
+      transform: (node: CollapsibleTitleNode) => {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+      type: 'collapsible-title',
+    });
   }
 
   insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {

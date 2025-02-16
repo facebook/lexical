@@ -5,11 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  GetStaticNodeConfig,
-  GetStaticNodeType,
-  StaticNodeConfigRecord,
-} from '../../LexicalNode';
 
 import {
   $createParagraphNode,
@@ -20,19 +15,14 @@ import {
   $isParagraphNode,
   $setState,
   createState,
-  LexicalNode,
   NODE_STATE_KEY,
   ParagraphNode,
   RootNode,
   SerializedLexicalNode,
+  StateValueOrUpdater,
 } from 'lexical';
 
-import {
-  NodeStateJSON,
-  nodeStatesAreEquivalent,
-  StateConfigValue,
-  ValueOrUpdater,
-} from '../../LexicalNodeState';
+import {nodeStatesAreEquivalent} from '../../LexicalNodeState';
 import {initializeUnitTest, invariant} from '../utils';
 import {TestNode} from './LexicalNode.test';
 
@@ -70,25 +60,10 @@ class StateNode extends TestNode {
   getNumber() {
     return $getState(this, numberState);
   }
-  setNumber(
-    valueOrUpdater: ValueOrUpdater<StateConfigValue<typeof numberState>>,
-  ): this {
+  setNumber(valueOrUpdater: StateValueOrUpdater<typeof numberState>): this {
     return $setState(this, numberState, valueOrUpdater);
   }
 }
-
-export type NodeConfig = GetStaticNodeConfig<StateNode>;
-export type GetRequiredNodeStateConfig<T extends LexicalNode> = ReturnType<
-  T['getStaticNodeConfig']
-> extends StaticNodeConfigRecord<infer Config>
-  ? Config['stateConfigs']
-  : [];
-export type StateNodeStateJSON = NodeStateJSON<StateNode>;
-
-export type LexicalExportJSON<T extends LexicalNode> = Omit<
-  ReturnType<T['exportJSON']>,
-  'type'
-> & {type: GetStaticNodeType<T>} & NodeStateJSON<T>;
 
 function $createStateNode() {
   return new StateNode();

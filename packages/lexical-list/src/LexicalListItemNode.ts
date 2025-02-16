@@ -99,19 +99,21 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListItemNode(node), 'node is not a ListItemNode');
-      if (node.__checked == null) {
-        return;
-      }
-      const parent = node.getParent();
-      if ($isListNode(parent)) {
-        if (parent.getListType() !== 'check' && node.getChecked() != null) {
-          node.setChecked(undefined);
+  getStaticNodeConfig() {
+    return this.configureNode({
+      transform: (node: ListItemNode): void => {
+        if (node.__checked == null) {
+          return;
         }
-      }
-    };
+        const parent = node.getParent();
+        if ($isListNode(parent)) {
+          if (parent.getListType() !== 'check' && node.getChecked() != null) {
+            node.setChecked(undefined);
+          }
+        }
+      },
+      type: 'listitem',
+    });
   }
 
   static importDOM(): DOMConversionMap | null {

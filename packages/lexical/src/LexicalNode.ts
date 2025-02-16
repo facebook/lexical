@@ -26,6 +26,8 @@ import {
 import {
   $updateStateFromJSON,
   type NodeState,
+  NodeStateJSON,
+  Prettify,
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {
@@ -61,13 +63,17 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 /**
  * The base type for all serialized nodes
  */
-export type SerializedLexicalNode = {
+export interface SerializedLexicalNode {
   /** The type string used by the Node class */
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  /**
+   * Any state persisted with the NodeState API that is not
+   * configured for flat storage
+   */
   [NODE_STATE_KEY]?: Record<string, unknown>;
-};
+}
 
 /**
  * EXPERIMENTAL
@@ -89,7 +95,15 @@ export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
 > {
+  /**
+   * The exact type of T.getType(), e.g. 'text' - the method itself must
+   * have a more generic 'string' type to be compatible wtih subclassing.
+   */
   readonly type: Type;
+  /**
+   * An alternative to the internal static transform() method
+   * that provides better DX
+   */
   readonly transform?: (node: T) => void;
   /**
    * EXPERIMENTAL
@@ -124,30 +138,72 @@ export interface StaticNodeConfigValue<
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
 }
 
+/**
+ * @internal
+ *
+ * This is the type of LexicalNode.getStaticNodeConfig() that can be
+ * overridden by subclasses.
+ */
 export type BaseStaticNodeConfig = {
   readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
 };
+
+/**
+ * @internal
+ *
+ * Used to extract the node and type from a StaticNodeConfigRecord
+ */
 export type StaticNodeConfig<
   T extends LexicalNode,
   Type extends string,
 > = BaseStaticNodeConfig & {
   readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
 };
+
+/**
+ * @internal
+ *
+ * Any StaticNodeConfigValue (for generics and collections)
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
 
+/**
+ * @internal
+ *
+ * This is the type that a subclass should return from getStaticNodeConfig()
+ */
 export type StaticNodeConfigRecord<Config extends AnyStaticNodeConfigValue> =
   BaseStaticNodeConfig & {
     readonly [K in Config['type']]?: Config;
   };
+
+/**
+ * Extract the type from a node based on its getStaticNodeConfig
+ *
+ * type TextNodeType = GetStaticNodeType<TextNode>;
+ *      // ? 'text'
+ */
 export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
   T['getStaticNodeConfig']
 > extends StaticNodeConfig<T, infer Type>
   ? Type
   : string;
-export type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
-  T['getStaticNodeConfig']
->[string];
+
+/**
+ * @internal
+ *
+ * The most precise type we can infer for the JSON that will
+ * be produced by T.exportJSON().
+ *
+ * Do not use this for the return type of T.exportJSON()! It must be
+ * a more generic type to be compatible with subclassing.
+ */
+export type LexicalExportJSON<T extends LexicalNode> = Prettify<
+  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+    type: GetStaticNodeType<T>;
+  } & NodeStateJSON<T>
+>;
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.

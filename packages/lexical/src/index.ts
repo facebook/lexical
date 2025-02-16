@@ -183,6 +183,7 @@ export {
   type StateConfigKey,
   type StateConfigValue,
   type StateValueConfig,
+  type StateValueOrUpdater,
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';

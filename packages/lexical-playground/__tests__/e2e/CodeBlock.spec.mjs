@@ -651,6 +651,9 @@ test.describe('CodeBlock', () => {
           </span>
           <br />
           <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
+          <span
             class="PlaygroundEditorTheme__tokenPunctuation"
             data-lexical-text="true">
             }
@@ -910,16 +913,8 @@ test.describe('CodeBlock', () => {
     // Can't move a line down and out of codeblock
     await assertHTML(page, bcaHTML);
     await page.keyboard.press('ArrowDown');
-    await assertSelection(page, {
-      anchorOffset: 10,
-      anchorPath: [0, 10, 0],
-      focusOffset: 10,
-      focusPath: [0, 10, 0],
-    });
-
-    // Verify no content escaped the code block
-    const paragraphs = await page.$$('p');
-    expect(paragraphs.length).toBe(0);
+    await assertSelection(page, endOfLastLine);
+    await assertHTML(page, bcaHTML);
   });
 
   test('prevents selection and typing outside code block boundaries', async ({

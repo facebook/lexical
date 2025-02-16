@@ -27,8 +27,8 @@ import {
   NodeKey,
   SerializedElementNode,
   Spread,
+  StaticNodeConfigRecord,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
@@ -59,6 +59,19 @@ export class ListNode extends ElementNode {
   __start: number;
   /** @internal */
   __listType: ListType;
+
+  /** @internal */
+  $config(): StaticNodeConfigRecord<
+    'list',
+    {$transform: (node: ListNode) => void}
+  > {
+    return this.config('list', {
+      $transform: (node: ListNode): void => {
+        mergeNextSiblingListIfSameType(node);
+        updateChildrenListItemValue(node);
+      },
+    });
+  }
 
   static getType(): string {
     return 'list';
@@ -127,14 +140,6 @@ export class ListNode extends ElementNode {
     $setListThemeClassNames(dom, config.theme, this);
 
     return false;
-  }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListNode(node), 'node is not a ListNode');
-      mergeNextSiblingListIfSameType(node);
-      updateChildrenListItemValue(node);
-    };
   }
 
   static importDOM(): DOMConversionMap | null {

@@ -2584,6 +2584,7 @@ describe('LexicalEditor tests', () => {
           {
             replace: TextNode,
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+            withKlass: TestTextNode,
           },
         ],
         onError: onError,
@@ -2621,6 +2622,7 @@ describe('LexicalEditor tests', () => {
             replace: TextNode,
             with: (node: TextNode) =>
               new TestTextNode(node.getTextContent(), node.getKey()),
+            withKlass: TestTextNode,
           },
         ],
         onError: onError,
@@ -2650,7 +2652,9 @@ describe('LexicalEditor tests', () => {
 
     it('node transform to the nodes specified by "replace" should not be applied to the nodes specified by "with" when "withKlass" is not specified', async () => {
       const onError = jest.fn();
-
+      const mockWarning = jest
+        .spyOn(console, 'warn')
+        .mockImplementationOnce(() => {});
       const newEditor = createTestEditor({
         nodes: [
           TestTextNode,
@@ -2668,6 +2672,10 @@ describe('LexicalEditor tests', () => {
           },
         },
       });
+      expect(mockWarning).toHaveBeenCalledWith(
+        `Override for TextNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+      );
+      mockWarning.mockRestore();
 
       newEditor.setRootElement(container);
 

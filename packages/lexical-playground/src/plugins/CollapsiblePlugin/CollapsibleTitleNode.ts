@@ -16,15 +16,13 @@ import {
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  SerializedElementNode,
+  StaticNodeConfigRecord,
 } from 'lexical';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
-
-type SerializedCollapsibleTitleNode = SerializedElementNode;
 
 export function $convertSummaryElement(
   domNode: HTMLElement,
@@ -35,13 +33,20 @@ export function $convertSummaryElement(
   };
 }
 
+/** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
-  static getType(): string {
-    return 'collapsible-title';
-  }
-
-  static clone(node: CollapsibleTitleNode): CollapsibleTitleNode {
-    return new CollapsibleTitleNode(node.__key);
+  /** @internal */
+  $config(): StaticNodeConfigRecord<
+    'collapsible-title',
+    {$transform: (node: CollapsibleTitleNode) => void}
+  > {
+    return this.config('collapsible-title', {
+      $transform(node: CollapsibleTitleNode) {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+    });
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
@@ -74,24 +79,6 @@ export class CollapsibleTitleNode extends ElementNode {
           priority: 1,
         };
       },
-    };
-  }
-
-  static importJSON(
-    serializedNode: SerializedCollapsibleTitleNode,
-  ): CollapsibleTitleNode {
-    return $createCollapsibleTitleNode().updateFromJSON(serializedNode);
-  }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant(
-        $isCollapsibleTitleNode(node),
-        'node is not a CollapsibleTitleNode',
-      );
-      if (node.isEmpty()) {
-        node.remove();
-      }
     };
   }
 

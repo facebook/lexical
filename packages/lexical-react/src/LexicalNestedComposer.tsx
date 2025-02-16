@@ -16,7 +16,9 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {
+  createSharedNodeState,
   EditorThemeClasses,
+  getRegisteredNode,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -83,6 +85,7 @@ export function LexicalNestedComposer({
             klass: entry.klass,
             replace: entry.replace,
             replaceWithKlass: entry.replaceWithKlass,
+            sharedNodeState: createSharedNodeState(entry.klass),
             transforms: getTransformSetFromKlass(entry.klass),
           });
         }
@@ -97,13 +100,17 @@ export function LexicalNestedComposer({
             replace = options.with;
             replaceWithKlass = options.withKlass || null;
           }
-          const registeredKlass = initialEditor._nodes.get(klass.getType());
+          const registeredKlass = getRegisteredNode(
+            initialEditor,
+            klass.getType(),
+          );
 
           initialEditor._nodes.set(klass.getType(), {
             exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
             replace,
             replaceWithKlass,
+            sharedNodeState: createSharedNodeState(klass),
             transforms: getTransformSetFromKlass(klass),
           });
         }

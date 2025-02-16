@@ -57,6 +57,7 @@ export type ValueOrUpdater<V> = V | ((prevValue: V) => V);
  *     return $setState(this, fooState, valueOrUpdater);
  *   }
  * }
+ * ```
  */
 export type StateValueOrUpdater<Cfg extends AnyStateConfig> = ValueOrUpdater<
   StateConfigValue<Cfg>

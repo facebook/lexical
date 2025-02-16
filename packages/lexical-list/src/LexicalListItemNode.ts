@@ -100,7 +100,7 @@ export class ListItemNode extends ElementNode {
   }
 
   getStaticNodeConfig() {
-    return this.configureNode({
+    return this.configureNode('listitem', {
       transform: (node: ListItemNode): void => {
         if (node.__checked == null) {
           return;
@@ -112,7 +112,6 @@ export class ListItemNode extends ElementNode {
           }
         }
       },
-      type: 'listitem',
     });
   }
 

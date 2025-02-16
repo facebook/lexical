@@ -86,7 +86,7 @@ export interface SerializedLexicalNode {
  *   static getType(): string { return 'custom-text'; }
  *   // This may be required in the future
  *   getStaticNodeConfig() {
- *     return this.configureNode({type: 'custom-text'}};
+ *     return this.configureNode('custom-text', {}};
  *   }
  * }
  * ```
@@ -99,7 +99,7 @@ export interface StaticNodeConfigValue<
    * The exact type of T.getType(), e.g. 'text' - the method itself must
    * have a more generic 'string' type to be compatible wtih subclassing.
    */
-  readonly type: Type;
+  readonly type?: Type;
   /**
    * An alternative to the internal static transform() method
    * that provides better DX
@@ -124,13 +124,15 @@ export interface StaticNodeConfigValue<
    * class MyNode extends TextNode {
    *   // ...
    *   getStaticNodeConfig() {
-   *     return this.configureNode({
-   *       type: 'my-node',
-   *       stateConfigs: [
-   *         { stateConfig: flatState, flat: true},
-   *         nestedState,
-   *       ] as const // 'as const' gives us precise types
-   *     });
+   *     return this.configureNode(
+   *       'my-node',
+   *       {
+   *         stateConfigs: [
+   *           { stateConfig: flatState, flat: true},
+   *           nestedState,
+   *         ] as const // 'as const' gives us precise types
+   *       },
+   *     );
    *   }
    * }
    * ```
@@ -173,10 +175,12 @@ export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
  *
  * This is the type that a subclass should return from getStaticNodeConfig()
  */
-export type StaticNodeConfigRecord<Config extends AnyStaticNodeConfigValue> =
-  BaseStaticNodeConfig & {
-    readonly [K in Config['type']]?: Config;
-  };
+export type StaticNodeConfigRecord<
+  Type extends string,
+  Config extends AnyStaticNodeConfigValue,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: Config;
+};
 
 /**
  * Extract the type from a node based on its getStaticNodeConfig
@@ -381,8 +385,8 @@ export class LexicalNode {
   configureNode<
     Type extends string,
     Config extends StaticNodeConfigValue<this, Type>,
-  >(config: Config): StaticNodeConfigRecord<Config> {
-    return {[config.type]: config} as StaticNodeConfigRecord<Config>;
+  >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config> {
+    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
   }
 
   getStaticNodeConfig(): BaseStaticNodeConfig {

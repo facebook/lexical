@@ -15,7 +15,9 @@ import {
   $isParagraphNode,
   $setState,
   createState,
+  LexicalExportJSON,
   NODE_STATE_KEY,
+  type NodeStateJSON,
   ParagraphNode,
   RootNode,
   SerializedLexicalNode,
@@ -49,13 +51,9 @@ class StateNode extends TestNode {
     return new StateNode().updateFromJSON(serializedNode);
   }
   getStaticNodeConfig() {
-    return this.configureNode({
-      stateConfigs: [
-        {flat: true, stateConfig: numberState},
-        boolState,
-      ] as const,
-      type: 'state',
-    });
+    return this.configureNode('state', {
+      stateConfigs: [{flat: true, stateConfig: numberState}, boolState],
+    } as const);
   }
   getNumber() {
     return $getState(this, numberState);
@@ -64,6 +62,32 @@ class StateNode extends TestNode {
     return $setState(this, numberState, valueOrUpdater);
   }
 }
+type StateNodeStateJSON = NodeStateJSON<StateNode>;
+type _TestNodeStateJSON = Expect<
+  Equal<
+    StateNodeStateJSON,
+    {
+      [NODE_STATE_KEY]?: {boolState?: boolean | undefined} | undefined;
+      numberState?: number | undefined;
+    }
+  >
+>;
+type StateNodeExportJSON = LexicalExportJSON<StateNode>;
+type _TestStateNodeExportJSON = Expect<
+  Equal<
+    StateNodeExportJSON,
+    {
+      state?:
+        | (Record<string, unknown> & {
+            boolState?: boolean | undefined;
+          })
+        | undefined;
+      version: number;
+      type: 'state';
+      numberState?: number | undefined;
+    }
+  >
+>;
 
 function $createStateNode() {
   return new StateNode();

@@ -61,13 +61,12 @@ export class OverflowNode extends ElementNode {
   }
 
   getStaticNodeConfig() {
-    return this.configureNode({
+    return this.configureNode('overflow', {
       transform: (node: OverflowNode) => {
         if (node.isEmpty()) {
           node.remove();
         }
       },
-      type: 'overflow',
     });
   }
 }

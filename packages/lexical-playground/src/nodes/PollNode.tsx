@@ -124,12 +124,11 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   getStaticNodeConfig() {
-    return this.configureNode({
+    return this.configureNode('poll', {
       stateConfigs: [
         {flat: true, stateConfig: questionState},
         {flat: true, stateConfig: optionsState},
       ],
-      type: 'poll',
     });
   }
 

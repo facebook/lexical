@@ -129,12 +129,11 @@ export class ListNode extends ElementNode {
   }
 
   getStaticNodeConfig() {
-    return this.configureNode({
+    return this.configureNode('list', {
       transform: (node: ListNode): void => {
         mergeNextSiblingListIfSameType(node);
         updateChildrenListItemValue(node);
       },
-      type: 'list',
     });
   }
 

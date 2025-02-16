@@ -109,7 +109,7 @@ export type CollectStateJSON<
 
 export type GetRequiredNodeStateConfig<T extends LexicalNode> = ReturnType<
   T['getStaticNodeConfig']
-> extends StaticNodeConfigRecord<infer Config>
+> extends StaticNodeConfigRecord<infer _Type, infer Config>
   ? Config['stateConfigs'] extends readonly RequiredNodeStateConfig[]
     ? NonNullable<Config['stateConfigs']>
     : readonly []

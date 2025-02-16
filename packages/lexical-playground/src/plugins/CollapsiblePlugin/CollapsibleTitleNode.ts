@@ -89,13 +89,12 @@ export class CollapsibleTitleNode extends ElementNode {
   }
 
   getStaticNodeConfig() {
-    return this.configureNode({
+    return this.configureNode('collapsible-title', {
       transform: (node: CollapsibleTitleNode) => {
         if (node.isEmpty()) {
           node.remove();
         }
       },
-      type: 'collapsible-title',
     });
   }
 

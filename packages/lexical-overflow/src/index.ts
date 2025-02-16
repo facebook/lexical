@@ -61,6 +61,7 @@ export class OverflowNode extends ElementNode {
     return true;
   }
 
+  /** @internal */
   getStaticNodeConfig(): StaticNodeConfigRecord<
     'overflow',
     {transform: (node: OverflowNode) => void}

@@ -392,6 +392,11 @@ export class LexicalNode {
     );
   }
 
+  /**
+   * This is a convenience method for getStaticNodeConfig that
+   * aids in type inference. See {@link LexicalNode.getStaticNodeConfig}
+   * for example usage.
+   */
   configureNode<
     Type extends string,
     Config extends StaticNodeConfigValue<this, Type>,
@@ -402,6 +407,21 @@ export class LexicalNode {
     return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
   }
 
+  /**
+   * Override this to implement the new static node configuration protocol,
+   * this method is called directly on the prototype and must not depend
+   * on anything initialized in the constructor. Generally it should be
+   * a trivial implementation.
+   *
+   * @example
+   * ```ts
+   * class MyNode extends TextNode {
+   *   getStaticNodeConfig() {
+   *     return this.configureNode('my-node', {extends: TextNode});
+   *   }
+   * }
+   * ```
+   */
   getStaticNodeConfig(): BaseStaticNodeConfig {
     return {};
   }

@@ -100,6 +100,7 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
+  /** @internal */
   getStaticNodeConfig(): StaticNodeConfigRecord<
     'listitem',
     {transform: (node: ListItemNode) => void}

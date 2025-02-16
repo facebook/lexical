@@ -36,6 +36,7 @@ export function $convertSummaryElement(
   };
 }
 
+/** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
   static getType(): string {
     return 'collapsible-title';
@@ -89,6 +90,7 @@ export class CollapsibleTitleNode extends ElementNode {
     return true;
   }
 
+  /** @internal */
   getStaticNodeConfig(): StaticNodeConfigRecord<
     'collapsible-title',
     {transform: (node: CollapsibleTitleNode) => void}

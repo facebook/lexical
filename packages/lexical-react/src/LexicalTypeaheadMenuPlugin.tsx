@@ -303,21 +303,15 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     openTypeahead,
   ]);
 
-  // Add effect to listen for editable state changes
-  useEffect(() => {
-    const editableListener = (isEditable: boolean) => {
-      if (!isEditable) {
-        closeTypeahead();
-      }
-    };
-
-    const removeEditableListener =
-      editor.registerEditableListener(editableListener);
-
-    return () => {
-      removeEditableListener();
-    };
-  }, [editor, closeTypeahead]);
+  useEffect(
+    () =>
+      editor.registerEditableListener((isEditable) => {
+        if (!isEditable) {
+          closeTypeahead();
+        }
+      }),
+    [editor, closeTypeahead],
+  );
 
   return resolution === null ||
     editor === null ||

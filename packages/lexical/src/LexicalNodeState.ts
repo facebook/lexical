@@ -6,18 +6,19 @@
  *
  */
 
-import type {LexicalNode, StaticNodeConfigRecord} from './LexicalNode';
-
 import {
   $getEditor,
-  LexicalNodeConfig,
+  type Klass,
+  type LexicalNode,
+  type LexicalNodeConfig,
   NODE_STATE_KEY,
   type Spread,
+  type StaticNodeConfigRecord,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {errorOnReadOnly} from './LexicalUpdates';
-import {getRegisteredNodeOrThrow} from './LexicalUtils';
+import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
 
 /**
  * Get the value type (V) from a StateConfig
@@ -101,26 +102,49 @@ export type UnionToIntersection<T> = (
 export type CollectStateJSON<
   Tuple extends readonly RequiredNodeStateConfig[],
   Flat extends boolean,
-> = Prettify<
-  UnionToIntersection<
-    {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
-  >
+> = UnionToIntersection<
+  {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
 >;
 
-export type GetRequiredNodeStateConfig<T extends LexicalNode> = ReturnType<
+type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
   T['getStaticNodeConfig']
-> extends StaticNodeConfigRecord<infer _Type, infer Config>
-  ? Config['stateConfigs'] extends readonly RequiredNodeStateConfig[]
-    ? NonNullable<Config['stateConfigs']>
-    : readonly []
-  : readonly [];
+> extends infer Record
+  ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
+    ? Config & {readonly type: Type}
+    : never
+  : never;
+type GetStaticNodeConfigs<T extends LexicalNode> =
+  GetStaticNodeConfig<T> extends infer OwnConfig
+    ? OwnConfig extends never
+      ? []
+      : OwnConfig extends {extends: Klass<infer Parent>}
+      ? GetStaticNodeConfig<Parent> extends infer ParentNodeConfig
+        ? ParentNodeConfig extends never
+          ? [OwnConfig]
+          : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
+        : OwnConfig
+      : [OwnConfig]
+    : [];
+
+type CollectStateConfigs<Configs> = Configs extends [
+  infer OwnConfig,
+  ...infer ParentConfigs,
+]
+  ? OwnConfig extends {stateConfigs: infer StateConfigs}
+    ? StateConfigs extends readonly RequiredNodeStateConfig[]
+      ? [...StateConfigs, ...CollectStateConfigs<ParentConfigs>]
+      : CollectStateConfigs<ParentConfigs>
+    : CollectStateConfigs<ParentConfigs>
+  : [];
+
+export type GetNodeStateConfig<T extends LexicalNode> = CollectStateConfigs<
+  GetStaticNodeConfigs<T>
+>;
 
 export type NodeStateJSON<T extends LexicalNode> = Prettify<
   {
-    [NODE_STATE_KEY]?: Prettify<
-      CollectStateJSON<GetRequiredNodeStateConfig<T>, false>
-    >;
-  } & CollectStateJSON<GetRequiredNodeStateConfig<T>, true>
+    [NODE_STATE_KEY]?: Prettify<CollectStateJSON<GetNodeStateConfig<T>, false>>;
+  } & CollectStateJSON<GetNodeStateConfig<T>, true>
 >;
 
 /**
@@ -420,11 +444,6 @@ export type SharedNodeState = {
   flatKeys: Set<string>;
 };
 
-const hasOwn =
-  Object.hasOwn ||
-  ((o: object, key: string): boolean =>
-    Object.prototype.hasOwnProperty.call(o, key));
-
 /**
  * @internal
  *
@@ -437,30 +456,23 @@ export function createSharedNodeState(
   const flatKeys = new Set<string>();
   for (
     let klass =
-      typeof nodeConfig === 'function'
-        ? nodeConfig
-        : nodeConfig.withKlass || nodeConfig.replace;
+      typeof nodeConfig === 'function' ? nodeConfig : nodeConfig.replace;
     klass.prototype && klass.prototype.getType !== undefined;
     klass = Object.getPrototypeOf(klass)
   ) {
-    if (hasOwn(klass.prototype, 'getStaticNodeConfig')) {
-      for (const staticNodeConfig of Object.values(
-        klass.prototype.getStaticNodeConfig(),
-      )) {
-        if (staticNodeConfig && staticNodeConfig.stateConfigs) {
-          for (const requiredStateConfig of staticNodeConfig.stateConfigs) {
-            let stateConfig: AnyStateConfig;
-            if ('stateConfig' in requiredStateConfig) {
-              stateConfig = requiredStateConfig.stateConfig;
-              if (requiredStateConfig.flat) {
-                flatKeys.add(stateConfig.key);
-              }
-            } else {
-              stateConfig = requiredStateConfig;
-            }
-            sharedConfigMap.set(stateConfig.key, stateConfig);
+    const {ownNodeConfig} = getStaticNodeConfig(klass);
+    if (ownNodeConfig && ownNodeConfig.stateConfigs) {
+      for (const requiredStateConfig of ownNodeConfig.stateConfigs) {
+        let stateConfig: AnyStateConfig;
+        if ('stateConfig' in requiredStateConfig) {
+          stateConfig = requiredStateConfig.stateConfig;
+          if (requiredStateConfig.flat) {
+            flatKeys.add(stateConfig.key);
           }
+        } else {
+          stateConfig = requiredStateConfig;
         }
+        sharedConfigMap.set(stateConfig.key, stateConfig);
       }
     }
   }

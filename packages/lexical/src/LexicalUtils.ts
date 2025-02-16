@@ -25,6 +25,7 @@ import type {
   LexicalPrivateDOM,
   NodeKey,
   NodeMap,
+  StaticNodeConfigValue,
 } from './LexicalNode';
 import type {
   BaseSelection,
@@ -2001,4 +2002,79 @@ export function setDOMUnmanaged(elementDom: HTMLElement): void {
 export function isDOMUnmanaged(elementDom: Node): boolean {
   const el: Node & LexicalPrivateDOM = elementDom;
   return el.__lexicalUnmanaged === true;
+}
+
+/**
+ * @internal
+ *
+ * Object.hasOwn ponyfill
+ */
+export function hasOwn(o: object, k: string): boolean {
+  return Object.prototype.hasOwnProperty.call(o, k);
+}
+
+/** @internal */
+function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
+  return (
+    klass === DecoratorNode ||
+    klass === ElementNode ||
+    klass === Object.getPrototypeOf(ElementNode)
+  );
+}
+
+/** @internal */
+export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
+  ownNodeType: undefined | string;
+  ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+} {
+  const nodeConfigRecord =
+    'getStaticNodeConfig' in klass.prototype
+      ? klass.prototype.getStaticNodeConfig()
+      : undefined;
+  const isAbstract = isAbstractNodeClass(klass);
+  const nodeType =
+    !isAbstract && hasOwn(klass, 'getType') ? klass.getType() : undefined;
+  let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  let ownNodeType = nodeType;
+  if (nodeConfigRecord) {
+    if (nodeType) {
+      ownNodeConfig = nodeConfigRecord[nodeType];
+    } else {
+      for (const [k, v] of Object.entries(nodeConfigRecord)) {
+        ownNodeType = k;
+        ownNodeConfig = v;
+      }
+    }
+  }
+  if (!isAbstract && ownNodeType) {
+    if (!hasOwn(klass, 'getType')) {
+      klass.getType = () => ownNodeType;
+    }
+    if (!hasOwn(klass, 'clone')) {
+      if (__DEV__) {
+        invariant(
+          klass.length === 0,
+          '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0)',
+          klass.name,
+          ownNodeType,
+          String(klass.length),
+        );
+      }
+      klass.clone = (prevNode: LexicalNode) => new klass(prevNode.getKey());
+    }
+    if (!hasOwn(klass, 'importJSON')) {
+      if (__DEV__) {
+        invariant(
+          klass.length === 0,
+          '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0)',
+          klass.name,
+          ownNodeType,
+          String(klass.length),
+        );
+      }
+      klass.importJSON = (serializedNode) =>
+        new klass().updateFromJSON(serializedNode);
+    }
+  }
+  return {ownNodeConfig, ownNodeType};
 }

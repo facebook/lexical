@@ -138,6 +138,16 @@ export interface StaticNodeConfigValue<
    * ```
    */
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * If specified, this must be the exact superclass of the node. It is not
+   * checked at compile time and it is provided automatically at runtime.
+   *
+   * You would want to specify this when you are extending a node that
+   * has non-trivial configuration in its getStaticNodeConfiguration such
+   * as required state. If you do not specify this, the inferred
+   * types for your node class might be missing some of that.
+   */
+  readonly extends?: Klass<LexicalNode>;
 }
 
 /**
@@ -386,6 +396,9 @@ export class LexicalNode {
     Type extends string,
     Config extends StaticNodeConfigValue<this, Type>,
   >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config> {
+    const parentKlass =
+      config.extends || Object.getPrototypeOf(this.constructor);
+    Object.assign(config, {extends: parentKlass, type});
     return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
   }
 

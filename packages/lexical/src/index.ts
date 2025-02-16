@@ -170,6 +170,7 @@ export type {
   NodeMap,
   SerializedLexicalNode,
   StaticNodeConfig,
+  StaticNodeConfigRecord,
   StaticNodeConfigValue,
 } from './LexicalNode';
 export {

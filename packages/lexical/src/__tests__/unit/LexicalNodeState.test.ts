@@ -20,7 +20,6 @@ import {
   type NodeStateJSON,
   ParagraphNode,
   RootNode,
-  SerializedLexicalNode,
   StateValueOrUpdater,
 } from 'lexical';
 
@@ -41,15 +40,6 @@ const numberState = createState('numberState', {
 });
 const boolState = createState('boolState', {parse: Boolean});
 class StateNode extends TestNode {
-  static getType() {
-    return 'state';
-  }
-  static clone(node: StateNode) {
-    return new StateNode(node.__key);
-  }
-  static importJSON(serializedNode: SerializedLexicalNode): TestNode {
-    return new StateNode().updateFromJSON(serializedNode);
-  }
   getStaticNodeConfig() {
     return this.configureNode('state', {
       stateConfigs: [{flat: true, stateConfig: numberState}, boolState],
@@ -62,6 +52,17 @@ class StateNode extends TestNode {
     return $setState(this, numberState, valueOrUpdater);
   }
 }
+
+const extraState = createState('extra', {parse: String});
+class ExtraStateNode extends StateNode {
+  getStaticNodeConfig() {
+    return this.configureNode('extra-state', {
+      extends: StateNode,
+      stateConfigs: [{flat: true, stateConfig: extraState}],
+    });
+  }
+}
+
 type StateNodeStateJSON = NodeStateJSON<StateNode>;
 type _TestNodeStateJSON = Expect<
   Equal<
@@ -85,6 +86,24 @@ type _TestStateNodeExportJSON = Expect<
       version: number;
       type: 'state';
       numberState?: number | undefined;
+    }
+  >
+>;
+
+type ExtraStateNodeExportJSON = LexicalExportJSON<ExtraStateNode>;
+type _TestExtraStateNodeExportJSON = Expect<
+  Equal<
+    ExtraStateNodeExportJSON,
+    {
+      state?:
+        | (Record<string, unknown> & {
+            boolState?: boolean | undefined;
+          })
+        | undefined;
+      version: number;
+      type: 'extra-state';
+      numberState?: number | undefined;
+      extra?: string | undefined;
     }
   >
 >;

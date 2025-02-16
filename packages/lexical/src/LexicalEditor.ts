@@ -41,6 +41,8 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getStaticNodeConfig,
+  hasOwn,
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
@@ -471,13 +473,12 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
+      const {ownNodeConfig} = getStaticNodeConfig(klass);
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
-        const nodeType =
-          Object.prototype.hasOwnProperty.call(klass, 'getType') &&
-          klass.getType();
         const name = klass.name;
+        const nodeType = hasOwn(klass, 'getType') && klass.getType();
 
         if (replaceWithKlass) {
           invariant(
@@ -495,33 +496,23 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         ) {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!klass.hasOwnProperty(method)) {
+            if (!hasOwn(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importDOM') &&
-            // eslint-disable-next-line no-prototype-builtins
-            klass.hasOwnProperty('exportDOM')
-          ) {
+          if (!hasOwn(klass, 'importDOM') && hasOwn(klass, 'exportDOM')) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
           if ($isDecoratorNode(proto)) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!proto.hasOwnProperty('decorate')) {
+            if (!hasOwn(proto, 'decorate')) {
               console.warn(
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
           }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importJSON')
-          ) {
+          if (!hasOwn(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
@@ -531,9 +522,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       const type = klass.getType();
       const transform = klass.transform();
       const transforms = new Set<Transform<LexicalNode>>();
-      const nodeConfigValue = klass.prototype.getStaticNodeConfig()[type];
-      if (nodeConfigValue && nodeConfigValue.transform) {
-        transforms.add(nodeConfigValue.transform);
+      if (ownNodeConfig && ownNodeConfig.transform) {
+        transforms.add(ownNodeConfig.transform);
       }
       if (transform !== null) {
         transforms.add(transform);

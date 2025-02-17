@@ -1430,7 +1430,16 @@ export class RangeSelection implements BaseSelection {
       $isElementNode(firstBlock) &&
       (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty());
 
-    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+      let isFirstBlockEmpty = (firstBlock as ElementNode)?.isEmpty();
+      // if first block is empty check its has newline chars 
+      if(isFirstBlockEmpty) {
+        const firstBlockParentContent = firstBlock?.getParent()?.getTextContent()?.split('\n') || [];
+        if(firstBlockParentContent?.length > 1 && firstBlockParentContent?.[1] === '') {
+          isFirstBlockEmpty = false;
+        }
+      }
+  
+    const shouldInsert = !$isElementNode(firstBlock) || !isFirstBlockEmpty;
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
     const lastToInsert: LexicalNode | undefined = blocks[blocks.length - 1];
     let firstToInsert: LexicalNode | undefined = blocks[0];

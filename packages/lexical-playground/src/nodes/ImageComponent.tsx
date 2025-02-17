@@ -36,7 +36,6 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $setSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DRAGSTART_COMMAND,
@@ -299,11 +298,6 @@ export default function ImageComponent({
           activeEditorRef.current = activeEditor;
           return false;
         },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        onClick,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<MouseEvent>(

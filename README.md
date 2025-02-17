@@ -115,8 +115,8 @@ function Editor() {
       <PlainTextPlugin
         contentEditable={
           <ContentEditable
-            placeholder={<div>Enter some text...</div>}
             aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
           />
         }
         ErrorBoundary={LexicalErrorBoundary}

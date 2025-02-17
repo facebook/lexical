@@ -20,20 +20,18 @@ export type SerializedOverflowNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class OverflowNode extends ElementNode {
-  static getType(): string {
-    return 'overflow';
-  }
-
-  static clone(node: OverflowNode): OverflowNode {
-    return new OverflowNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode {
-    return $createOverflowNode().updateFromJSON(serializedNode);
-  }
-
-  static importDOM(): null {
-    return null;
+  /** @internal */
+  $config(): StaticNodeConfigRecord<
+    'overflow',
+    {$transform: (node: OverflowNode) => void}
+  > {
+    return this.config('overflow', {
+      $transform(node: OverflowNode) {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+    });
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -59,20 +57,6 @@ export class OverflowNode extends ElementNode {
 
   excludeFromCopy(): boolean {
     return true;
-  }
-
-  /** @internal */
-  getStaticNodeConfig(): StaticNodeConfigRecord<
-    'overflow',
-    {transform: (node: OverflowNode) => void}
-  > {
-    return this.configureNode('overflow', {
-      transform: (node: OverflowNode) => {
-        if (node.isEmpty()) {
-          node.remove();
-        }
-      },
-    });
   }
 }
 

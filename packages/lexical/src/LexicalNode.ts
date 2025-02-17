@@ -23,6 +23,7 @@ import {
   ElementNode,
   NODE_STATE_KEY,
 } from '.';
+import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {
   $updateStateFromJSON,
   type NodeState,
@@ -77,16 +78,13 @@ export type SerializedLexicalNode = {
 
 /**
  * EXPERIMENTAL
- * The configuration of a node, used in LexicalNode.getStaticNodeConfig()
+ * The configuration of a node returned by LexicalNode.$config()
  *
  * @example
  * ```ts
  * class CustomText extends TextNode {
- *   // This may be optional in the future
- *   static getType(): string { return 'custom-text'; }
- *   // This may be required in the future
- *   getStaticNodeConfig() {
- *     return this.configureNode('custom-text', {}};
+ *   $config() {
+ *     return this.config('custom-text', {extends: TextNode}};
  *   }
  * }
  * ```
@@ -104,7 +102,7 @@ export interface StaticNodeConfigValue<
    * An alternative to the internal static transform() method
    * that provides better DX
    */
-  readonly transform?: (node: T) => void;
+  readonly $transform?: (node: T) => void;
   /**
    * EXPERIMENTAL
    *
@@ -118,19 +116,18 @@ export interface StaticNodeConfigValue<
    *
    * @example
    * ```ts
-   * const flatState = createState("flat", { parse: parseNumber });
-   * const nestedState = createState("nested", { parse: parseNumber });
-   * const requiredState = ;
+   * const flatState = createState("flat", {parse: parseNumber});
+   * const nestedState = createState("nested", {parse: parseNumber});
    * class MyNode extends TextNode {
-   *   // ...
-   *   getStaticNodeConfig() {
-   *     return this.configureNode(
+   *   $config() {
+   *     return this.config(
    *       'my-node',
    *       {
+   *         extends: TextNode,
    *         stateConfigs: [
    *           { stateConfig: flatState, flat: true},
    *           nestedState,
-   *         ] as const // 'as const' gives us precise types
+   *         ]
    *       },
    *     );
    *   }
@@ -143,7 +140,7 @@ export interface StaticNodeConfigValue<
    * checked at compile time and it is provided automatically at runtime.
    *
    * You would want to specify this when you are extending a node that
-   * has non-trivial configuration in its getStaticNodeConfiguration such
+   * has non-trivial configuration in its $config such
    * as required state. If you do not specify this, the inferred
    * types for your node class might be missing some of that.
    */
@@ -151,7 +148,7 @@ export interface StaticNodeConfigValue<
 }
 
 /**
- * This is the type of LexicalNode.getStaticNodeConfig() that can be
+ * This is the type of LexicalNode.$config() that can be
  * overridden by subclasses.
  */
 export type BaseStaticNodeConfig = {
@@ -177,7 +174,8 @@ export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
 /**
  * @internal
  *
- * This is the type that a subclass should return from getStaticNodeConfig()
+ * This is the more specific type than BaseStaticNodeConfig that a subclass
+ * should return from $config()
  */
 export type StaticNodeConfigRecord<
   Type extends string,
@@ -187,7 +185,7 @@ export type StaticNodeConfigRecord<
 };
 
 /**
- * Extract the type from a node based on its getStaticNodeConfig
+ * Extract the type from a node based on its $config
  *
  * @example
  * ```ts
@@ -196,7 +194,7 @@ export type StaticNodeConfigRecord<
  * ```
  */
 export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
-  T['getStaticNodeConfig']
+  T[typeof PROTOTYPE_CONFIG_METHOD]
 > extends StaticNodeConfig<T, infer Type>
   ? Type
   : string;
@@ -388,21 +386,6 @@ export class LexicalNode {
   }
 
   /**
-   * This is a convenience method for getStaticNodeConfig that
-   * aids in type inference. See getStaticNodeConfig
-   * for example usage.
-   */
-  configureNode<
-    Type extends string,
-    Config extends StaticNodeConfigValue<this, Type>,
-  >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config> {
-    const parentKlass =
-      config.extends || Object.getPrototypeOf(this.constructor);
-    Object.assign(config, {extends: parentKlass, type});
-    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
-  }
-
-  /**
    * Override this to implement the new static node configuration protocol,
    * this method is called directly on the prototype and must not depend
    * on anything initialized in the constructor. Generally it should be
@@ -411,14 +394,29 @@ export class LexicalNode {
    * @example
    * ```ts
    * class MyNode extends TextNode {
-   *   getStaticNodeConfig() {
-   *     return this.configureNode('my-node', {extends: TextNode});
+   *   $config() {
+   *     return this.config('my-node', {extends: TextNode});
    *   }
    * }
    * ```
    */
-  getStaticNodeConfig(): BaseStaticNodeConfig {
+  $config(): BaseStaticNodeConfig {
     return {};
+  }
+
+  /**
+   * This is a convenience method for $config that
+   * aids in type inference. See {@link LexicalNode.$config}
+   * for example usage.
+   */
+  config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
+    type: Type,
+    config: Config,
+  ): StaticNodeConfigRecord<Type, Config> {
+    const parentKlass =
+      config.extends || Object.getPrototypeOf(this.constructor);
+    Object.assign(config, {extends: parentKlass, type});
+    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
   }
 
   /**

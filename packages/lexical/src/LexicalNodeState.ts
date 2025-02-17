@@ -17,6 +17,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
 
@@ -108,7 +109,7 @@ export type CollectStateJSON<
 >;
 
 type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
-  T['getStaticNodeConfig']
+  T[typeof PROTOTYPE_CONFIG_METHOD]
 > extends infer Record
   ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
     ? Config & {readonly type: Type}

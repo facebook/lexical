@@ -1490,11 +1490,11 @@ describe('LexicalNode tests', () => {
           expect(selection.anchor.offset).toBe(1);
         });
       });
-      describe('LexicalNode.getStaticNodeConfig()', () => {
+      describe('LexicalNode.$config()', () => {
         test('importJSON() with no boilerplate', () => {
           class CustomTextNode extends TextNode {
-            getStaticNodeConfig() {
-              return this.configureNode('custom-text', {extends: TextNode});
+            $config() {
+              return this.config('custom-text', {extends: TextNode});
             }
           }
           const editor = createEditor({
@@ -1524,8 +1524,8 @@ describe('LexicalNode tests', () => {
         test('clone() with no boilerplate', () => {
           class SNCVersionedTextNode extends TextNode {
             __version = 0;
-            getStaticNodeConfig() {
-              return this.configureNode('snc-vtext', {});
+            $config() {
+              return this.config('snc-vtext', {});
             }
             afterCloneFrom(node: this): void {
               super.afterCloneFrom(node);

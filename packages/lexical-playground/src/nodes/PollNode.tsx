@@ -108,23 +108,8 @@ const optionsState = createState('options', {
 });
 
 export class PollNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'poll';
-  }
-
-  static clone(node: PollNode): PollNode {
-    return new PollNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedPollNode): PollNode {
-    return $createPollNode(
-      serializedNode.question,
-      serializedNode.options,
-    ).updateFromJSON(serializedNode);
-  }
-
-  getStaticNodeConfig() {
-    return this.configureNode('poll', {
+  $config() {
+    return this.config('poll', {
       stateConfigs: [
         {flat: true, stateConfig: questionState},
         {flat: true, stateConfig: optionsState},

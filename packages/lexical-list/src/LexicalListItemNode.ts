@@ -59,6 +59,26 @@ export class ListItemNode extends ElementNode {
   /** @internal */
   __checked?: boolean;
 
+  /** @internal */
+  $config(): StaticNodeConfigRecord<
+    'listitem',
+    {$transform: (node: ListItemNode) => void}
+  > {
+    return this.config('listitem', {
+      $transform: (node: ListItemNode): void => {
+        if (node.__checked == null) {
+          return;
+        }
+        const parent = node.getParent();
+        if ($isListNode(parent)) {
+          if (parent.getListType() !== 'check' && node.getChecked() != null) {
+            node.setChecked(undefined);
+          }
+        }
+      },
+    });
+  }
+
   static getType(): string {
     return 'listitem';
   }
@@ -98,26 +118,6 @@ export class ListItemNode extends ElementNode {
     $setListItemThemeClassNames(dom, config.theme, this);
 
     return false;
-  }
-
-  /** @internal */
-  getStaticNodeConfig(): StaticNodeConfigRecord<
-    'listitem',
-    {transform: (node: ListItemNode) => void}
-  > {
-    return this.configureNode('listitem', {
-      transform: (node: ListItemNode): void => {
-        if (node.__checked == null) {
-          return;
-        }
-        const parent = node.getParent();
-        if ($isListNode(parent)) {
-          if (parent.getListType() !== 'check' && node.getChecked() != null) {
-            node.setChecked(undefined);
-          }
-        }
-      },
-    });
   }
 
   static importDOM(): DOMConversionMap | null {

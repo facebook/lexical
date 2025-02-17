@@ -60,6 +60,19 @@ export class ListNode extends ElementNode {
   /** @internal */
   __listType: ListType;
 
+  /** @internal */
+  $config(): StaticNodeConfigRecord<
+    'list',
+    {$transform: (node: ListNode) => void}
+  > {
+    return this.config('list', {
+      $transform: (node: ListNode): void => {
+        mergeNextSiblingListIfSameType(node);
+        updateChildrenListItemValue(node);
+      },
+    });
+  }
+
   static getType(): string {
     return 'list';
   }
@@ -127,19 +140,6 @@ export class ListNode extends ElementNode {
     $setListThemeClassNames(dom, config.theme, this);
 
     return false;
-  }
-
-  /** @internal */
-  getStaticNodeConfig(): StaticNodeConfigRecord<
-    'list',
-    {transform: (node: ListNode) => void}
-  > {
-    return this.configureNode('list', {
-      transform: (node: ListNode): void => {
-        mergeNextSiblingListIfSameType(node);
-        updateChildrenListItemValue(node);
-      },
-    });
   }
 
   static importDOM(): DOMConversionMap | null {

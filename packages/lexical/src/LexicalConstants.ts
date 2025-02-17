@@ -156,3 +156,4 @@ export const TEXT_TYPE_TO_MODE: Record<number, TextModeType> = {
 };
 
 export const NODE_STATE_KEY = 'state';
+export const PROTOTYPE_CONFIG_METHOD = '$config';

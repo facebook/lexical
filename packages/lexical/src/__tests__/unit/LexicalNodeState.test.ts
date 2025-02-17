@@ -40,8 +40,8 @@ const numberState = createState('numberState', {
 });
 const boolState = createState('boolState', {parse: Boolean});
 class StateNode extends TestNode {
-  getStaticNodeConfig() {
-    return this.configureNode('state', {
+  $config() {
+    return this.config('state', {
       extends: TestNode,
       stateConfigs: [{flat: true, stateConfig: numberState}, boolState],
     });
@@ -56,8 +56,8 @@ class StateNode extends TestNode {
 
 const extraState = createState('extra', {parse: String});
 class ExtraStateNode extends StateNode {
-  getStaticNodeConfig() {
-    return this.configureNode('extra-state', {
+  $config() {
+    return this.config('extra-state', {
       extends: StateNode,
       stateConfigs: [{flat: true, stateConfig: extraState}],
     });

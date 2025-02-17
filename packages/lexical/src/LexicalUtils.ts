@@ -62,6 +62,7 @@ import {
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
+  PROTOTYPE_CONFIG_METHOD,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
@@ -2051,8 +2052,8 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
   ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
 } {
   const nodeConfigRecord =
-    'getStaticNodeConfig' in klass.prototype
-      ? klass.prototype.getStaticNodeConfig()
+    PROTOTYPE_CONFIG_METHOD in klass.prototype
+      ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
       : undefined;
   const isAbstract = isAbstractNodeClass(klass);
   const nodeType =
@@ -2077,7 +2078,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       if (__DEV__) {
         invariant(
           klass.length === 0,
-          '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0)',
+          '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
           klass.name,
           ownNodeType,
           String(klass.length),
@@ -2092,7 +2093,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       if (__DEV__) {
         invariant(
           klass.length === 0,
-          '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0)',
+          '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
           klass.name,
           ownNodeType,
           String(klass.length),

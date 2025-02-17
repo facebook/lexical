@@ -221,6 +221,34 @@
   margin-top: 25px;
   margin-bottom: 30px;
 }
+.PlaygroundEditorTheme__tableFrozenRow {
+  /* position:sticky needs overflow:clip or visible
+     https://github.com/w3c/csswg-drafts/issues/865#issuecomment-350585274 */
+  overflow-x: clip;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td {
+  overflow: clip;
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  top: 44px;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th {
+  overflow: clip;
+  background-color: #f2f3f5;
+  position: sticky;
+  z-index: 2;
+  top: 44px;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th:after,
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  border-bottom: 1px solid #bbb;
+}
 .PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
   background-color: #ffffff;
   position: sticky;

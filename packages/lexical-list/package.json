@@ -8,12 +8,12 @@
     "list"
   ],
   "license": "MIT",
-  "version": "0.24.0",
+  "version": "0.24.1-nightly.20250217.0",
   "main": "LexicalList.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.24.0",
-    "lexical": "0.24.0"
+    "@lexical/utils": "0.24.1-nightly.20250217.0",
+    "lexical": "0.24.1-nightly.20250217.0"
   },
   "repository": {
     "type": "git",

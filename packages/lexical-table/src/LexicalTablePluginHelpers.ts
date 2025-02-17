@@ -14,10 +14,13 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   LexicalEditor,
   NodeKey,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -50,6 +53,25 @@ function $insertTableCommandListener({
   columns,
   includeHeaders,
 }: InsertTableCommandPayload): boolean {
+  const selection = $getSelection();
+  if (!selection || !$isRangeSelection(selection)) {
+    return false;
+  }
+
+  // Check if we're inside a table cell
+  let node = selection.anchor.getNode();
+  while (node !== null) {
+    if ($isTableCellNode(node)) {
+      // We're inside a table cell, don't allow nested tables
+      return false;
+    }
+    const parent = node.getParent();
+    if (parent === null) {
+      break;
+    }
+    node = parent;
+  }
+
   const tableNode = $createTableNodeWithDimensions(
     Number(rows),
     Number(columns),
@@ -266,6 +288,37 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
       $insertTableCommandListener,
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+      ({nodes, selection}) => {
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+
+        // Check if we're inside a table cell
+        let isInsideTableCell = false;
+        let currentNode = selection.anchor.getNode();
+        while (currentNode !== null) {
+          if ($isTableCellNode(currentNode)) {
+            isInsideTableCell = true;
+            break;
+          }
+          const parent = currentNode.getParent();
+          if (parent === null) {
+            break;
+          }
+          currentNode = parent;
+        }
+
+        // If inside table cell and clipboard contains a table, prevent the paste operation
+        if (isInsideTableCell && nodes.some($isTableNode)) {
+          return true;
+        }
+
+        return false;
+      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerNodeTransform(TableNode, $tableTransform),

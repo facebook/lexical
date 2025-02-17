@@ -27,6 +27,7 @@ import {
   $commitPendingUpdates,
   internalGetActiveEditor,
   parseEditorState,
+  setActiveEditorState,
   triggerListeners,
   updateEditor,
   updateEditorSync,
@@ -1168,6 +1169,7 @@ export class LexicalEditor {
       $commitPendingUpdates(this);
     }
 
+    setActiveEditorState(writableEditorState);
     this._pendingEditorState = writableEditorState;
     this._dirtyType = FULL_RECONCILE;
     this._dirtyElements.set('root', false);

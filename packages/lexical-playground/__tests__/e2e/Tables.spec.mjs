@@ -192,8 +192,8 @@ test.describe.parallel('Tables', () => {
   });
 
   test.describe
-    .parallel(`Can exit tables with the horizontal arrow keys`, () => {
-    test(`Can exit the first cell of a non-nested table`, async ({
+    .parallel(`Can exit table with the horizontal arrow keys`, () => {
+    test(`Can exit the first cell of a table`, async ({
       page,
       isPlainText,
       isCollab,
@@ -239,7 +239,7 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the last cell of a non-nested table`, async ({
+    test(`Can exit the last cell of a table`, async ({
       page,
       isPlainText,
       isCollab,
@@ -284,62 +284,9 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the first cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
-
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
-      });
-
-      await moveLeft(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 0],
-      });
-    });
-
-    test(`Can exit the last cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
-
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await moveRight(page, 3);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
-      });
-
-      await moveRight(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 2],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 2],
-      });
-    });
+    // Note: Tests for nested table navigation ("Can exit the first/last cell of a nested table into the parent table cell")
+    // have been removed since nested tables are no longer supported.
+    // See: https://github.com/facebook/lexical/issues/7154
   });
 
   test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({

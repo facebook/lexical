@@ -13,6 +13,7 @@ import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 import {$createChildrenArray} from '@lexical/offset';
 import {
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
@@ -24,14 +25,13 @@ import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
   $createCollabNodeFromLexicalNode,
-  $getNodeByKeyOrThrow,
   $getOrInitCollabNodeFromSharedType,
+  $syncPropertiesFromYjs,
   createLexicalNodeFromCollabNode,
   getPositionFromElementAndOffset,
   removeFromParent,
   spliceString,
   syncPropertiesFromLexical,
-  syncPropertiesFromYjs,
 } from './Utils';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -113,7 +113,7 @@ export class CollabElementNode {
       lexicalNode !== null,
       'syncPropertiesFromYjs: could not find element node',
     );
-    syncPropertiesFromYjs(binding, this._xmlText, lexicalNode, keysChanged);
+    $syncPropertiesFromYjs(binding, this._xmlText, lexicalNode, keysChanged);
   }
 
   applyChildrenYjsDelta(

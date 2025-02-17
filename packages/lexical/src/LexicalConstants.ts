@@ -154,3 +154,5 @@ export const TEXT_TYPE_TO_MODE: Record<number, TextModeType> = {
   [IS_SEGMENTED]: 'segmented',
   [IS_TOKEN]: 'token',
 };
+
+export const NODE_STATE_KEY = 'state';

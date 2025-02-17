@@ -21,7 +21,15 @@ import {
   $isTextNode,
   type DecoratorNode,
   ElementNode,
+  NODE_STATE_KEY,
 } from '.';
+import {
+  $updateStateFromJSON,
+  type NodeState,
+  type NodeStateJSON,
+  type Prettify,
+  type RequiredNodeStateConfig,
+} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -45,6 +53,7 @@ import {
   $setNodeKey,
   $setSelection,
   errorOnInsertTextNodeOnRoot,
+  getRegisteredNode,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
@@ -59,7 +68,151 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  /**
+   * Any state persisted with the NodeState API that is not
+   * configured for flat storage
+   */
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
+
+/**
+ * EXPERIMENTAL
+ * The configuration of a node, used in LexicalNode.getStaticNodeConfig()
+ *
+ * @example
+ * ```ts
+ * class CustomText extends TextNode {
+ *   // This may be optional in the future
+ *   static getType(): string { return 'custom-text'; }
+ *   // This may be required in the future
+ *   getStaticNodeConfig() {
+ *     return this.configureNode('custom-text', {}};
+ *   }
+ * }
+ * ```
+ */
+export interface StaticNodeConfigValue<
+  T extends LexicalNode,
+  Type extends string,
+> {
+  /**
+   * The exact type of T.getType(), e.g. 'text' - the method itself must
+   * have a more generic 'string' type to be compatible wtih subclassing.
+   */
+  readonly type?: Type;
+  /**
+   * An alternative to the internal static transform() method
+   * that provides better DX
+   */
+  readonly transform?: (node: T) => void;
+  /**
+   * EXPERIMENTAL
+   *
+   * An array of RequiredNodeStateConfig to initialize your node with
+   * its state requirements. This may be used to configure serialization of
+   * that state.
+   *
+   * This function will be called (at most) once per editor initialization,
+   * directly on your node's prototype. It must not depend on any state
+   * initialized in the constructor.
+   *
+   * @example
+   * ```ts
+   * const flatState = createState("flat", { parse: parseNumber });
+   * const nestedState = createState("nested", { parse: parseNumber });
+   * const requiredState = ;
+   * class MyNode extends TextNode {
+   *   // ...
+   *   getStaticNodeConfig() {
+   *     return this.configureNode(
+   *       'my-node',
+   *       {
+   *         stateConfigs: [
+   *           { stateConfig: flatState, flat: true},
+   *           nestedState,
+   *         ] as const // 'as const' gives us precise types
+   *       },
+   *     );
+   *   }
+   * }
+   * ```
+   */
+  readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * If specified, this must be the exact superclass of the node. It is not
+   * checked at compile time and it is provided automatically at runtime.
+   *
+   * You would want to specify this when you are extending a node that
+   * has non-trivial configuration in its getStaticNodeConfiguration such
+   * as required state. If you do not specify this, the inferred
+   * types for your node class might be missing some of that.
+   */
+  readonly extends?: Klass<LexicalNode>;
+}
+
+/**
+ * This is the type of LexicalNode.getStaticNodeConfig() that can be
+ * overridden by subclasses.
+ */
+export type BaseStaticNodeConfig = {
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+};
+
+/**
+ * Used to extract the node and type from a StaticNodeConfigRecord
+ */
+export type StaticNodeConfig<
+  T extends LexicalNode,
+  Type extends string,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
+};
+
+/**
+ * Any StaticNodeConfigValue (for generics and collections)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
+
+/**
+ * @internal
+ *
+ * This is the type that a subclass should return from getStaticNodeConfig()
+ */
+export type StaticNodeConfigRecord<
+  Type extends string,
+  Config extends AnyStaticNodeConfigValue,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: Config;
+};
+
+/**
+ * Extract the type from a node based on its getStaticNodeConfig
+ *
+ * @example
+ * ```ts
+ * type TextNodeType = GetStaticNodeType<TextNode>;
+ *      // ? 'text'
+ * ```
+ */
+export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
+  T['getStaticNodeConfig']
+> extends StaticNodeConfig<T, infer Type>
+  ? Type
+  : string;
+
+/**
+ * The most precise type we can infer for the JSON that will
+ * be produced by T.exportJSON().
+ *
+ * Do not use this for the return type of T.exportJSON()! It must be
+ * a more generic type to be compatible with subclassing.
+ */
+export type LexicalExportJSON<T extends LexicalNode> = Prettify<
+  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+    type: GetStaticNodeType<T>;
+  } & NodeStateJSON<T>
+>;
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
@@ -198,6 +351,8 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /** @internal */
+  __state?: NodeState<this>;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -230,6 +385,40 @@ export class LexicalNode {
       'LexicalNode: Node %s does not implement .clone().',
       this.name,
     );
+  }
+
+  /**
+   * This is a convenience method for getStaticNodeConfig that
+   * aids in type inference. See getStaticNodeConfig
+   * for example usage.
+   */
+  configureNode<
+    Type extends string,
+    Config extends StaticNodeConfigValue<this, Type>,
+  >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config> {
+    const parentKlass =
+      config.extends || Object.getPrototypeOf(this.constructor);
+    Object.assign(config, {extends: parentKlass, type});
+    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+  }
+
+  /**
+   * Override this to implement the new static node configuration protocol,
+   * this method is called directly on the prototype and must not depend
+   * on anything initialized in the constructor. Generally it should be
+   * a trivial implementation.
+   *
+   * @example
+   * ```ts
+   * class MyNode extends TextNode {
+   *   getStaticNodeConfig() {
+   *     return this.configureNode('my-node', {extends: TextNode});
+   *   }
+   * }
+   * ```
+   */
+  getStaticNodeConfig(): BaseStaticNodeConfig {
+    return {};
   }
 
   /**
@@ -282,10 +471,11 @@ export class LexicalNode {
    * ```
    *
    */
-  afterCloneFrom(prevNode: this) {
+  afterCloneFrom(prevNode: this): void {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
+    this.__state = prevNode.__state;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -296,6 +486,12 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
+    Object.defineProperty(this, '__state', {
+      configurable: true,
+      enumerable: false,
+      value: undefined,
+      writable: true,
+    });
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -881,9 +1077,12 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
+    // eslint-disable-next-line dot-notation
+    const state = this.__state ? this.__state.toJSON() : undefined;
     return {
       type: this.__type,
       version: 1,
+      ...state,
     };
   }
 
@@ -933,7 +1132,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return this;
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
   }
 
   /**
@@ -1235,7 +1434,7 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Klass<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._nodes.get(type);
+  const registeredNode = getRegisteredNode(getActiveEditor(), type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(

@@ -10,6 +10,7 @@ import {
   $cloneWithProperties,
   $createParagraphNode,
   $getAdjacentChildCaret,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $getChildCaret,
   $getChildCaretAtIndex,
   $getChildCaretOrSelf,
@@ -35,7 +36,6 @@ import {
   makeStepwiseIterator,
   type NodeCaret,
   type NodeKey,
-  RootMode,
   type SiblingCaret,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
@@ -830,33 +830,4 @@ export function $unwrapNode(node: ElementNode): void {
     1,
     node.getChildren(),
   );
-}
-
-/**
- * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
- * R -> P -> T1, T2
- *   -> P2
- * returns T2 for node T1, P2 for node T2, and null for node P2.
- * @param node LexicalNode.
- * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
- */
-export function $getAdjacentSiblingOrParentSiblingCaret<
-  D extends CaretDirection,
->(
-  startCaret: NodeCaret<D>,
-  rootMode: RootMode = 'root',
-): null | [NodeCaret<D>, number] {
-  let depthDiff = 0;
-  let caret = startCaret;
-  let nextCaret = $getAdjacentChildCaret(caret);
-  while (nextCaret === null) {
-    depthDiff--;
-    nextCaret = caret.getParentCaret(rootMode);
-    if (!nextCaret) {
-      return null;
-    }
-    caret = nextCaret;
-    nextCaret = $getAdjacentChildCaret(caret);
-  }
-  return nextCaret && [nextCaret, depthDiff];
 }

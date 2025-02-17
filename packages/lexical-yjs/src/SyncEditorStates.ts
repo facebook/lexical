@@ -13,11 +13,21 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getWritableNodeState,
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
+import {
+  Map as YMap,
+  Text as YText,
+  XmlElement,
+  XmlText,
+  YEvent,
+  YMapEvent,
+  YTextEvent,
+  YXmlEvent,
+} from 'yjs';
 
 import {Binding, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -33,16 +43,49 @@ import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
+  getNodeTypeFromSharedType,
   syncWithTransaction,
 } from './Utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function $syncStateEvent(binding: Binding, event: YMapEvent<any>): boolean {
+  const {target} = event;
+  if (
+    !(
+      target._item &&
+      target._item.parentSub === '__state' &&
+      getNodeTypeFromSharedType(target) === undefined &&
+      (target.parent instanceof XmlText ||
+        target.parent instanceof XmlElement ||
+        target.parent instanceof YMap)
+    )
+  ) {
+    // TODO there might be a case to handle in here when a YMap
+    // is used as a value  of __state? It would probably be desirable
+    // to mark the node as dirty when that happens.
+    return false;
+  }
+  const collabNode = $getOrInitCollabNodeFromSharedType(binding, target.parent);
+  const node = collabNode.getNode();
+  if (node) {
+    const state = $getWritableNodeState(node.getWritable());
+    for (const k of event.keysChanged) {
+      state.updateFromUnknown(k, target.get(k));
+    }
+  }
+  return true;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function $syncEvent(binding: Binding, event: any): void {
+  if (event instanceof YMapEvent && $syncStateEvent(binding, event)) {
+    return;
+  }
   const {target} = event;
   const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
-    // @ts-expect-error We need to access the private property of the class
+    // @ts-expect-error We need to access the private childListChanged property of the class
     const {keysChanged, childListChanged, delta} = event;
 
     // Update

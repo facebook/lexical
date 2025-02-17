@@ -17,6 +17,7 @@ import {
   LexicalNode,
   RangeSelection,
   SerializedElementNode,
+  StaticNodeConfigRecord,
 } from 'lexical';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -35,6 +36,7 @@ export function $convertSummaryElement(
   };
 }
 
+/** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
   static getType(): string {
     return 'collapsible-title';
@@ -88,16 +90,18 @@ export class CollapsibleTitleNode extends ElementNode {
     return true;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant(
-        $isCollapsibleTitleNode(node),
-        'node is not a CollapsibleTitleNode',
-      );
-      if (node.isEmpty()) {
-        node.remove();
-      }
-    };
+  /** @internal */
+  getStaticNodeConfig(): StaticNodeConfigRecord<
+    'collapsible-title',
+    {transform: (node: CollapsibleTitleNode) => void}
+  > {
+    return this.configureNode('collapsible-title', {
+      transform: (node: CollapsibleTitleNode) => {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+    });
   }
 
   insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {

@@ -9,15 +9,19 @@
 import type {JSX} from 'react';
 
 import {
+  $getState,
+  $setState,
+  createState,
   DecoratorNode,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
+  StateConfigValue,
 } from 'lexical';
+import {StateValueOrUpdater} from 'packages/lexical/src/LexicalNodeState';
 import * as React from 'react';
 import {Suspense} from 'react';
 
@@ -76,16 +80,40 @@ function $convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
   return null;
 }
 
-export class PollNode extends DecoratorNode<JSX.Element> {
-  __question: string;
-  __options: Options;
+function parseOptions(json: unknown): Options {
+  const options = [];
+  if (Array.isArray(json)) {
+    for (const row of json) {
+      if (
+        row &&
+        typeof row.text === 'string' &&
+        typeof row.uid === 'string' &&
+        Array.isArray(row.votes) &&
+        row.votes.every((v: unknown) => typeof v === 'number')
+      ) {
+        options.push(row);
+      }
+    }
+  }
+  return options;
+}
 
+const questionState = createState('question', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
+const optionsState = createState('options', {
+  isEqual: (a, b) =>
+    a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
+  parse: parseOptions,
+});
+
+export class PollNode extends DecoratorNode<JSX.Element> {
   static getType(): string {
     return 'poll';
   }
 
   static clone(node: PollNode): PollNode {
-    return new PollNode(node.__question, node.__options, node.__key);
+    return new PollNode(node.__key);
   }
 
   static importJSON(serializedNode: SerializedPollNode): PollNode {
@@ -95,59 +123,73 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     ).updateFromJSON(serializedNode);
   }
 
-  constructor(question: string, options: Options, key?: NodeKey) {
-    super(key);
-    this.__question = question;
-    this.__options = options;
+  getStaticNodeConfig() {
+    return this.configureNode('poll', {
+      stateConfigs: [
+        {flat: true, stateConfig: questionState},
+        {flat: true, stateConfig: optionsState},
+      ],
+    });
   }
 
-  exportJSON(): SerializedPollNode {
-    return {
-      ...super.exportJSON(),
-      options: this.__options,
-      question: this.__question,
-    };
+  getQuestion(): StateConfigValue<typeof questionState> {
+    return $getState(this, questionState);
+  }
+  setQuestion(valueOrUpdater: StateValueOrUpdater<typeof questionState>): this {
+    return $setState(this, questionState, valueOrUpdater);
+  }
+  getOptions(): StateConfigValue<typeof optionsState> {
+    return $getState(this, optionsState);
+  }
+  setOptions(valueOrUpdater: StateValueOrUpdater<typeof optionsState>): this {
+    return $setState(this, optionsState, valueOrUpdater);
   }
 
-  addOption(option: Option): void {
-    const self = this.getWritable();
-    const options = Array.from(self.__options);
-    options.push(option);
-    self.__options = options;
+  addOption(option: Option): this {
+    return this.setOptions((options) => [...options, option]);
   }
 
-  deleteOption(option: Option): void {
-    const self = this.getWritable();
-    const options = Array.from(self.__options);
-    const index = options.indexOf(option);
-    options.splice(index, 1);
-    self.__options = options;
+  deleteOption(option: Option): this {
+    return this.setOptions((prevOptions) => {
+      const index = prevOptions.indexOf(option);
+      if (index === -1) {
+        return prevOptions;
+      }
+      const options = Array.from(prevOptions);
+      options.splice(index, 1);
+      return options;
+    });
   }
 
-  setOptionText(option: Option, text: string): void {
-    const self = this.getWritable();
-    const clonedOption = cloneOption(option, text);
-    const options = Array.from(self.__options);
-    const index = options.indexOf(option);
-    options[index] = clonedOption;
-    self.__options = options;
+  setOptionText(option: Option, text: string): this {
+    return this.setOptions((prevOptions) => {
+      const clonedOption = cloneOption(option, text);
+      const options = Array.from(prevOptions);
+      const index = options.indexOf(option);
+      options[index] = clonedOption;
+      return options;
+    });
   }
 
-  toggleVote(option: Option, clientID: number): void {
-    const self = this.getWritable();
-    const votes = option.votes;
-    const votesClone = Array.from(votes);
-    const voteIndex = votes.indexOf(clientID);
-    if (voteIndex === -1) {
-      votesClone.push(clientID);
-    } else {
-      votesClone.splice(voteIndex, 1);
-    }
-    const clonedOption = cloneOption(option, option.text, votesClone);
-    const options = Array.from(self.__options);
-    const index = options.indexOf(option);
-    options[index] = clonedOption;
-    self.__options = options;
+  toggleVote(option: Option, clientID: number): this {
+    return this.setOptions((prevOptions) => {
+      const index = prevOptions.indexOf(option);
+      if (index === -1) {
+        return prevOptions;
+      }
+      const votes = option.votes;
+      const votesClone = Array.from(votes);
+      const voteIndex = votes.indexOf(clientID);
+      if (voteIndex === -1) {
+        votesClone.push(clientID);
+      } else {
+        votesClone.splice(voteIndex, 1);
+      }
+      const clonedOption = cloneOption(option, option.text, votesClone);
+      const options = Array.from(prevOptions);
+      options[index] = clonedOption;
+      return options;
+    });
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -166,10 +208,10 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    element.setAttribute('data-lexical-poll-question', this.__question);
+    element.setAttribute('data-lexical-poll-question', this.getQuestion());
     element.setAttribute(
       'data-lexical-poll-options',
-      JSON.stringify(this.__options),
+      JSON.stringify(this.getOptions()),
     );
     return {element};
   }
@@ -188,8 +230,8 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return (
       <Suspense fallback={null}>
         <PollComponent
-          question={this.__question}
-          options={this.__options}
+          question={this.getQuestion()}
+          options={this.getOptions()}
           nodeKey={this.__key}
         />
       </Suspense>
@@ -198,7 +240,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 }
 
 export function $createPollNode(question: string, options: Options): PollNode {
-  return new PollNode(question, options);
+  return new PollNode().setQuestion(question).setOptions(options);
 }
 
 export function $isPollNode(

@@ -910,7 +910,7 @@ export class LexicalEditor {
   }
 
   /** @internal */
-  private getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
+  getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
     const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
@@ -925,7 +925,7 @@ export class LexicalEditor {
   }
 
   /** @internal */
-  private resolveRegisteredNodeAfterReplacements(
+  resolveRegisteredNodeAfterReplacements(
     registeredNode: RegisteredNode,
   ): RegisteredNode {
     while (registeredNode.replaceWithKlass) {

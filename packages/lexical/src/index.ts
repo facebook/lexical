@@ -219,6 +219,7 @@ export {
   $applyNodeReplacement,
   $cloneWithProperties,
   $copyNode,
+  $create,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,

@@ -7,6 +7,7 @@
  */
 
 import {
+  $create,
   $createRangeSelection,
   $getRoot,
   $getSelection,
@@ -1541,7 +1542,8 @@ describe('LexicalNode tests', () => {
 
           editor.update(
             () => {
-              versionedTextNode = new SNCVersionedTextNode('test');
+              versionedTextNode =
+                $create(SNCVersionedTextNode).setTextContent('test');
               $getRoot().append(
                 $createParagraphNode().append(versionedTextNode),
               );
@@ -1552,11 +1554,17 @@ describe('LexicalNode tests', () => {
           editor.update(
             () => {
               expect(versionedTextNode.getLatest().__version).toEqual(0);
-              expect(
-                versionedTextNode.setTextContent('update').setMode('token')
-                  .__version,
-              ).toEqual(1);
-              expect(versionedTextNode.__version).toEqual(0);
+              const latest = versionedTextNode
+                .setTextContent('update')
+                .setMode('token');
+              expect(latest).toMatchObject({
+                __text: 'update',
+                __version: 1,
+              });
+              expect(versionedTextNode).toMatchObject({
+                __text: 'test',
+                __version: 0,
+              });
             },
             {discrete: true},
           );

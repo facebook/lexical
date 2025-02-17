@@ -41,7 +41,7 @@ function createUID(): string {
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
+    .substring(0, 5);
 }
 
 export function createComment(

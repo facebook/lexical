@@ -596,6 +596,15 @@ export function useMenuAnchorRef(
     onVisibilityChange,
   );
 
+  // Append the context for the menu immediately
+  const containerDiv = anchorElementRef.current;
+  if (containerDiv != null) {
+    containerDiv.style.position = 'absolute';
+    if (parent != null) {
+      parent.append(containerDiv);
+    }
+  }
+
   return anchorElementRef;
 }
 

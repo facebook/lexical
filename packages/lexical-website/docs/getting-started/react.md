@@ -61,8 +61,12 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <RichTextPlugin
-        contentEditable={<ContentEditable />}
-        placeholder={<div>Enter some text...</div>}
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
         ErrorBoundary={LexicalErrorBoundary}
       />
       <HistoryPlugin />
@@ -135,8 +139,12 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <RichTextPlugin
-        contentEditable={<ContentEditable />}
-        placeholder={<div>Enter some text...</div>}
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
         ErrorBoundary={LexicalErrorBoundary}
       />
       <HistoryPlugin />

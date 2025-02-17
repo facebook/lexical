@@ -113,8 +113,12 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <PlainTextPlugin
-        contentEditable={<ContentEditable />}
-        placeholder={<div>Enter some text...</div>}
+        contentEditable={
+          <ContentEditable
+            placeholder={<div>Enter some text...</div>}
+            aria-placeholder={'Enter some text...'}
+          />
+        }
         ErrorBoundary={LexicalErrorBoundary}
       />
       <OnChangePlugin onChange={onChange} />

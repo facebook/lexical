@@ -192,8 +192,8 @@ test.describe.parallel('Tables', () => {
   });
 
   test.describe
-    .parallel(`Can exit tables with the horizontal arrow keys`, () => {
-    test(`Can exit the first cell of a non-nested table`, async ({
+    .parallel(`Can exit table with the horizontal arrow keys`, () => {
+    test(`Can exit the first cell of a table`, async ({
       page,
       isPlainText,
       isCollab,
@@ -239,7 +239,7 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the last cell of a non-nested table`, async ({
+    test(`Can exit the last cell of a table`, async ({
       page,
       isPlainText,
       isCollab,
@@ -284,62 +284,9 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the first cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
-
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
-      });
-
-      await moveLeft(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 0],
-      });
-    });
-
-    test(`Can exit the last cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
-
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await moveRight(page, 3);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
-      });
-
-      await moveRight(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 2],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 2],
-      });
-    });
+    // Note: Tests for nested table navigation ("Can exit the first/last cell of a nested table into the parent table cell")
+    // have been removed since nested tables are no longer supported.
+    // See: https://github.com/facebook/lexical/issues/7154
   });
 
   test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({
@@ -713,7 +660,10 @@ test.describe.parallel('Tables', () => {
         focusPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
       });
 
-      await waitForSelector(page, `#typeahead-menu ul li:first-child.selected`);
+      await waitForSelector(
+        page,
+        `div[class="typeahead-popover mentions-menu"] ul li:first-child.selected`,
+      );
 
       await moveDown(page, 1);
       await assertSelection(page, {
@@ -725,7 +675,7 @@ test.describe.parallel('Tables', () => {
 
       await waitForSelector(
         page,
-        '#typeahead-menu ul li:nth-child(2).selected',
+        'div[class="typeahead-popover mentions-menu"] ul li:nth-child(2).selected',
       );
     });
   });
@@ -5538,7 +5488,10 @@ test.describe.parallel('Tables', () => {
         await click(page, 'div[contenteditable] th p', {
           button: 'right',
         });
-        await click(page, '#typeahead-menu [role="option"] :text("Cut")');
+        await click(
+          page,
+          'div[class="typeahead-popover"] [role="option"] :text("Cut")',
+        );
       });
 
       await assertHTML(
@@ -5580,5 +5533,111 @@ test.describe.parallel('Tables', () => {
         {ignoreClasses: true},
       );
     });
+  });
+
+  test(`Cannot insert nested tables`, async ({page, isPlainText, isCollab}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Insert a table
+    await insertTable(page, 2, 2);
+
+    // Focus inside the first cell
+    await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+
+    // Try to insert another table inside the cell
+    await insertTable(page, 2, 2);
+
+    // Verify no nested table was created
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Cannot paste tables inside table cells`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+    await page.keyboard.type('test');
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that no content was pasted into the cell
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
   });
 });

@@ -35,7 +35,10 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await doubleClick(page, 'div[contenteditable="false"] span');
     await withExclusiveClipboardAccess(async () => {
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await click(page, '#typeahead-menu [role="option"] :text("Copy")');
+      await click(
+        page,
+        'div[class="typeahead-popover"] [role="option"] :text("Copy")',
+      );
 
       await click(page, '.unlock');
       await focusEditor(page);
@@ -78,7 +81,10 @@ test.describe('ContextMenuCopyAndPaste', () => {
 
       await doubleClick(page, 'div[contenteditable="false"] span');
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await click(page, '#typeahead-menu [role="option"] :text("Copy")');
+      await click(
+        page,
+        'div[class="typeahead-popover"] [role="option"] :text("Copy")',
+      );
 
       await click(page, '.unlock');
       await focusEditor(page);

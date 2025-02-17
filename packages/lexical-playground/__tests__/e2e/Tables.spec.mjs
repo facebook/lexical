@@ -713,7 +713,10 @@ test.describe.parallel('Tables', () => {
         focusPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
       });
 
-      await waitForSelector(page, `#typeahead-menu ul li:first-child.selected`);
+      await waitForSelector(
+        page,
+        `div[class="typeahead-popover mentions-menu"] ul li:first-child.selected`,
+      );
 
       await moveDown(page, 1);
       await assertSelection(page, {
@@ -725,7 +728,7 @@ test.describe.parallel('Tables', () => {
 
       await waitForSelector(
         page,
-        '#typeahead-menu ul li:nth-child(2).selected',
+        'div[class="typeahead-popover mentions-menu"] ul li:nth-child(2).selected',
       );
     });
   });
@@ -5538,7 +5541,10 @@ test.describe.parallel('Tables', () => {
         await click(page, 'div[contenteditable] th p', {
           button: 'right',
         });
-        await click(page, '#typeahead-menu [role="option"] :text("Cut")');
+        await click(
+          page,
+          'div[class="typeahead-popover"] [role="option"] :text("Cut")',
+        );
       });
 
       await assertHTML(

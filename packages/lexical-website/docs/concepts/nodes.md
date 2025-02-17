@@ -193,7 +193,7 @@ export class CustomParagraph extends ElementNode {
 
 It's also good etiquette to provide some `$` prefixed utility functions for
 your custom `ElementNode` so that others can easily consume and validate nodes
-are that of your custom node. Here's how you might do this for the above example:
+that are of your custom node. Here's how you might do this for the above example:
 
 ```js
 export function $createCustomParagraphNode(): CustomParagraph {

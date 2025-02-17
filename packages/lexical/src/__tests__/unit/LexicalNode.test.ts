@@ -1493,7 +1493,7 @@ describe('LexicalNode tests', () => {
         test('importJSON() with no boilerplate', () => {
           class CustomTextNode extends TextNode {
             getStaticNodeConfig() {
-              return this.configureNode('custom-text', {});
+              return this.configureNode('custom-text', {extends: TextNode});
             }
           }
           const editor = createEditor({

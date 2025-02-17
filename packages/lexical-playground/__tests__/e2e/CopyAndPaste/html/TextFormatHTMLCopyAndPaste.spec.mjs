@@ -70,4 +70,39 @@ test.describe('HTML CopyAndPaste', () => {
       `,
     );
   });
+
+  test('Copy + paste html with highlight formatting', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    const clipboardData = {
+      'text/html': `<meta charset='utf-8'><p><b>Bold</b><mark>Highlight</mark><b><mark>Bold&amp;Highlight</mark></b></p>`,
+    };
+    await pasteFromClipboard(page, clipboardData);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Bold
+          </strong>
+          <mark data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textHighlight">Highlight</span>
+          </mark>
+          <mark data-lexical-text="true">
+            <strong
+              class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textHighlight">
+              Bold&amp;Highlight
+            </strong>
+          </mark>
+        </p>
+      `,
+    );
+  });
 });

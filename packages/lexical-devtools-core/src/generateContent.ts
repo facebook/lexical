@@ -67,6 +67,8 @@ const FORMAT_PREDICATES = [
     node.hasFormat('superscript') && 'Superscript',
   (node: TextNode | RangeSelection) =>
     node.hasFormat('underline') && 'Underline',
+  (node: TextNode | RangeSelection) =>
+    node.hasFormat('highlight') && 'Highlight',
 ];
 
 const FORMAT_PREDICATES_PARAGRAPH = [
@@ -78,6 +80,7 @@ const FORMAT_PREDICATES_PARAGRAPH = [
   (node: ParagraphNode) => node.hasTextFormat('subscript') && 'Subscript',
   (node: ParagraphNode) => node.hasTextFormat('superscript') && 'Superscript',
   (node: ParagraphNode) => node.hasTextFormat('underline') && 'Underline',
+  (node: ParagraphNode) => node.hasTextFormat('highlight') && 'Highlight',
 ];
 
 const DETAIL_PREDICATES = [

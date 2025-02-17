@@ -14,10 +14,13 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   LexicalEditor,
   NodeKey,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -34,6 +37,7 @@ import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
+  $findTableNode,
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -50,6 +54,16 @@ function $insertTableCommandListener({
   columns,
   includeHeaders,
 }: InsertTableCommandPayload): boolean {
+  const selection = $getSelection();
+  if (!selection || !$isRangeSelection(selection)) {
+    return false;
+  }
+
+  // Prevent nested tables by checking if we're already inside a table
+  if ($findTableNode(selection.anchor.getNode())) {
+    return false;
+  }
+
   const tableNode = $createTableNodeWithDimensions(
     Number(rows),
     Number(columns),
@@ -266,6 +280,18 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
       $insertTableCommandListener,
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+      ({nodes, selection}) => {
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const isInsideTableCell =
+          $findTableNode(selection.anchor.getNode()) !== null;
+        return isInsideTableCell && nodes.some($isTableNode);
+      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerNodeTransform(TableNode, $tableTransform),

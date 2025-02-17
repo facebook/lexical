@@ -1489,6 +1489,100 @@ describe('LexicalNode tests', () => {
           expect(selection.anchor.offset).toBe(1);
         });
       });
+      describe('LexicalNode.getStaticNodeConfig()', () => {
+        test('importJSON() with no boilerplate', () => {
+          class CustomTextNode extends TextNode {
+            getStaticNodeConfig() {
+              return this.configureNode('custom-text', {});
+            }
+          }
+          const editor = createEditor({
+            nodes: [CustomTextNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const node = CustomTextNode.importJSON({
+                detail: 0,
+                format: 0,
+                mode: 'normal',
+                style: '',
+                text: 'codegen!',
+                type: 'custom-text',
+                version: 1,
+              });
+              expect(node).toBeInstanceOf(CustomTextNode);
+              expect(node.getType()).toBe('custom-text');
+              expect(node.getTextContent()).toBe('codegen!');
+            },
+            {discrete: true},
+          );
+        });
+        test('clone() with no boilerplate', () => {
+          class SNCVersionedTextNode extends TextNode {
+            __version = 0;
+            getStaticNodeConfig() {
+              return this.configureNode('snc-vtext', {});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__version = node.__version + 1;
+            }
+          }
+          const editor = createEditor({
+            nodes: [SNCVersionedTextNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          let versionedTextNode: SNCVersionedTextNode;
+
+          editor.update(
+            () => {
+              versionedTextNode = new SNCVersionedTextNode('test');
+              $getRoot().append(
+                $createParagraphNode().append(versionedTextNode),
+              );
+              expect(versionedTextNode.__version).toEqual(0);
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              expect(versionedTextNode.getLatest().__version).toEqual(0);
+              expect(
+                versionedTextNode.setTextContent('update').setMode('token')
+                  .__version,
+              ).toEqual(1);
+              expect(versionedTextNode.__version).toEqual(0);
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              let latest = versionedTextNode.getLatest();
+              expect(versionedTextNode.__version).toEqual(0);
+              expect(versionedTextNode.__mode).toEqual(0);
+              expect(versionedTextNode.getMode()).toEqual('token');
+              expect(latest.__version).toEqual(1);
+              expect(latest.__mode).toEqual(1);
+              latest = latest.setTextContent('another update');
+              expect(latest.__version).toEqual(2);
+              expect(latest.getWritable().__version).toEqual(2);
+              expect(
+                versionedTextNode.getLatest().getWritable().__version,
+              ).toEqual(2);
+              expect(versionedTextNode.getLatest().__version).toEqual(2);
+              expect(versionedTextNode.__mode).toEqual(0);
+              expect(versionedTextNode.getLatest().__mode).toEqual(1);
+              expect(versionedTextNode.getMode()).toEqual('token');
+            },
+            {discrete: true},
+          );
+        });
+      });
     },
     {
       namespace: '',

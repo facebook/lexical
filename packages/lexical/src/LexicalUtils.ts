@@ -82,6 +82,16 @@ export const emptyFunction = () => {
   return;
 };
 
+let pendingNodeToClone: null | LexicalNode = null;
+export function setPendingNodeToClone(pendingNode: null | LexicalNode): void {
+  pendingNodeToClone = pendingNode;
+}
+export function getPendingNodeToClone(): null | LexicalNode {
+  const node = pendingNodeToClone;
+  pendingNodeToClone = null;
+  return node;
+}
+
 let keyCounter = 1;
 
 export function resetRandomKey(): void {
@@ -277,9 +287,11 @@ export function $setNodeKey(
   node: LexicalNode,
   existingKey: NodeKey | null | undefined,
 ): void {
+  const pendingNode = getPendingNodeToClone();
+  existingKey = existingKey || (pendingNode && pendingNode.__key);
   if (existingKey != null) {
     if (__DEV__) {
-      errorOnNodeKeyConstructorMismatch(node, existingKey);
+      errorOnNodeKeyConstructorMismatch(node, existingKey, pendingNode);
     }
     node.__key = existingKey;
     return;
@@ -304,6 +316,7 @@ export function $setNodeKey(
 function errorOnNodeKeyConstructorMismatch(
   node: LexicalNode,
   existingKey: NodeKey,
+  pendingNode: null | LexicalNode,
 ) {
   const editorState = internalGetActiveEditorState();
   if (!editorState) {
@@ -311,6 +324,16 @@ function errorOnNodeKeyConstructorMismatch(
     return;
   }
   const existingNode = editorState._nodeMap.get(existingKey);
+  if (pendingNode) {
+    invariant(
+      existingKey === pendingNode.__key,
+      'Lexical node with constructor %s (type %s) has an incorrect clone implementation, got %s for nodeKey when expecting %s',
+      node.constructor.name,
+      node.getType(),
+      String(existingKey),
+      pendingNode.__key,
+    );
+  }
   if (existingNode && existingNode.constructor !== node.constructor) {
     // Lifted condition to if statement because the inverted logic is a bit confusing
     if (node.constructor.name !== existingNode.constructor.name) {
@@ -2060,7 +2083,10 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
           String(klass.length),
         );
       }
-      klass.clone = (prevNode: LexicalNode) => new klass(prevNode.getKey());
+      klass.clone = (prevNode: LexicalNode) => {
+        setPendingNodeToClone(prevNode);
+        return new klass();
+      };
     }
     if (!hasOwn(klass, 'importJSON')) {
       if (__DEV__) {

@@ -507,8 +507,11 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             replaceWithKlass.name,
             name,
           );
+        } else if (replace) {
+          console.warn(
+            `Override for ${name} specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+          );
         }
-
         if (
           name !== 'RootNode' &&
           nodeType !== 'root' &&

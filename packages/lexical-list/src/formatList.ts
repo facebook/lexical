@@ -323,6 +323,9 @@ export function mergeNextSiblingListIfSameType(list: ListNode): void {
   ) {
     mergeLists(list, nextSibling);
   }
+  if (list && nextSibling && !$isListNode(nextSibling)) {
+    list.insertBefore(nextSibling);
+  }
 }
 
 /**

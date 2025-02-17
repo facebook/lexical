@@ -21,17 +21,22 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $extendCaretToRange,
+  $getCaretRange,
+  $getSiblingCaret,
+  $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isRootNode,
+  $isSiblingCaret,
   $isTextNode,
   $normalizeCaret,
   $removeTextFromCaretRange,
+  $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
-  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -1374,6 +1379,9 @@ export class RangeSelection implements BaseSelection {
     if (nodes.length === 0) {
       return;
     }
+    if (!this.isCollapsed()) {
+      this.removeText();
+    }
     if (this.anchor.key === 'root') {
       this.insertParagraph();
       const selection = $getSelection();
@@ -1778,38 +1786,94 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+      const direction = isBackward ? 'previous' : 'next';
+      const initialCaret = $caretFromPoint(anchor, direction);
+      const initialRange = $extendCaretToRange(initialCaret);
+      if (
+        initialRange
+          .getTextSlices()
+          .every((slice) => slice === null || slice.distance === 0)
+      ) {
+        // There's no text in the direction of the deletion so we can explore our options
+        let state:
+          | {type: 'initial'}
+          | {
+              type: 'merge-next-block';
+              block: ElementNode;
+            } = {type: 'initial'};
+        for (const caret of initialRange.iterNodeCarets('shadowRoot')) {
+          if ($isChildCaret(caret)) {
+            if (caret.origin.isInline()) {
+              // fall through when descending an inline
+            } else if (caret.origin.isShadowRoot()) {
+              // Don't merge with a shadow root block
+              if (
+                $isElementNode(initialRange.anchor.origin) &&
+                initialRange.anchor.origin.isEmpty()
+              ) {
+                // delete an empty paragraph like the DecoratorNode case
+                const normCaret = $normalizeCaret(caret);
+                $updateRangeSelectionFromCaretRange(
+                  this,
+                  $getCaretRange(normCaret, normCaret),
+                );
+                initialRange.anchor.origin.remove();
+              }
+              return;
+            } else if (state.type === 'merge-next-block') {
+              $updateRangeSelectionFromCaretRange(
+                this,
+                $getCaretRange(
+                  !caret.origin.isEmpty() && state.block.isEmpty()
+                    ? $rewindSiblingCaret(
+                        $getSiblingCaret(state.block, caret.direction),
+                      )
+                    : initialRange.anchor,
+                  caret,
+                ),
+              );
+              return this.removeText();
+            }
+          } else if ($isSiblingCaret(caret)) {
+            if ($isElementNode(caret.origin)) {
+              if (!caret.origin.isInline()) {
+                state = {block: caret.origin, type: 'merge-next-block'};
+              } else if (!caret.origin.isParentOf(initialRange.anchor.origin)) {
+                break;
+              }
+              continue;
+            } else if ($isDecoratorNode(caret.origin)) {
+              if (caret.origin.isIsolated()) {
+                // do nothing, shouldn't delete an isolated decorator
+              } else if (
+                state.type === 'merge-next-block' &&
+                (caret.origin.isKeyboardSelectable() ||
+                  !caret.origin.isInline()) &&
+                $isElementNode(initialRange.anchor.origin) &&
+                initialRange.anchor.origin.isEmpty()
+              ) {
+                // If the anchor is an empty element that is adjacent to a
+                // decorator then we remove the paragraph and select the
+                // decorator
+                initialRange.anchor.origin.remove();
+                const nodeSelection = $createNodeSelection();
+                nodeSelection.add(caret.origin.getKey());
+                $setSelection(nodeSelection);
+              } else {
+                // When the anchor is not an empty element then the
+                // adjacent decorator is removed
+                caret.origin.remove();
+              }
+              // always stop when a decorator is encountered
+              return;
+            }
+            break;
+          }
+        }
+      }
 
       // Handle the deletion around decorators.
       const focus = this.focus;
-      const possibleNode = $getAdjacentNode(focus, isBackward);
-      if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
-        // Make it possible to move selection from range selection to
-        // node selection on the node.
-        if (
-          possibleNode.isKeyboardSelectable() &&
-          $isElementNode(anchorNode) &&
-          anchorNode.getChildrenSize() === 0
-        ) {
-          anchorNode.remove();
-          const nodeSelection = $createNodeSelection();
-          nodeSelection.add(possibleNode.__key);
-          $setSelection(nodeSelection);
-        } else {
-          possibleNode.remove();
-          const editor = getActiveEditor();
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-        }
-        return;
-      } else if (
-        !isBackward &&
-        $isElementNode(possibleNode) &&
-        $isElementNode(anchorNode) &&
-        anchorNode.isEmpty()
-      ) {
-        anchorNode.remove();
-        possibleNode.selectStart();
-        return;
-      }
       this.modify('extend', isBackward, 'character');
 
       if (!this.isCollapsed()) {

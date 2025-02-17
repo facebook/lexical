@@ -37,6 +37,7 @@ import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
+  $findTableNode,
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -58,18 +59,9 @@ function $insertTableCommandListener({
     return false;
   }
 
-  // Check if we're inside a table cell
-  let node = selection.anchor.getNode();
-  while (node !== null) {
-    if ($isTableCellNode(node)) {
-      // We're inside a table cell, don't allow nested tables
-      return false;
-    }
-    const parent = node.getParent();
-    if (parent === null) {
-      break;
-    }
-    node = parent;
+  // Prevent nested tables by checking if we're already inside a table
+  if ($findTableNode(selection.anchor.getNode())) {
+    return false;
   }
 
   const tableNode = $createTableNodeWithDimensions(
@@ -296,28 +288,9 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-
-        // Check if we're inside a table cell
-        let isInsideTableCell = false;
-        let currentNode = selection.anchor.getNode();
-        while (currentNode !== null) {
-          if ($isTableCellNode(currentNode)) {
-            isInsideTableCell = true;
-            break;
-          }
-          const parent = currentNode.getParent();
-          if (parent === null) {
-            break;
-          }
-          currentNode = parent;
-        }
-
-        // If inside table cell and clipboard contains a table, prevent the paste operation
-        if (isInsideTableCell && nodes.some($isTableNode)) {
-          return true;
-        }
-
-        return false;
+        const isInsideTableCell =
+          $findTableNode(selection.anchor.getNode()) !== null;
+        return isInsideTableCell && nodes.some($isTableNode);
       },
       COMMAND_PRIORITY_EDITOR,
     ),

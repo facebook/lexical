@@ -2932,12 +2932,18 @@ export function updateDOMSelection(
     // This is a workaround to restore the correct selection
     if (IS_ANDROID_CHROME) {
       setTimeout(() => {
-        domSelection.setBaseAndExtent(
-          nextAnchorNode,
-          nextAnchorOffset,
-          nextFocusNode,
-          nextFocusOffset,
-        );
+        try {
+          domSelection.setBaseAndExtent(
+            nextAnchorNode,
+            nextAnchorOffset,
+            nextFocusNode,
+            nextFocusOffset,
+          );
+        } catch (error) {
+          if (__DEV__) {
+            console.warn(error);
+          }
+        }
       });
     }
   } catch (error) {

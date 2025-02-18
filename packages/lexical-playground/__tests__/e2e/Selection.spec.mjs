@@ -380,7 +380,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can delete forward a Collapsible', async ({page, isPlainText}) => {
+  test(`Can't delete forward a Collapsible`, async ({page, isPlainText}) => {
     test.skip(isPlainText);
     if (!IS_MAC) {
       // Do Windows/Linux have equivalent shortcuts?
@@ -389,6 +389,7 @@ test.describe.parallel('Selection', () => {
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertCollapsible(page);
+    await page.keyboard.type('title');
     await moveToEditorBeginning(page);
     await moveRight(page, 3);
     await deleteForward(page);
@@ -401,15 +402,68 @@ test.describe.parallel('Selection', () => {
           dir="ltr">
           <span data-lexical-text="true">abc</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div class="Collapsible__container" open="">
+          <summary class="Collapsible__title">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">title</span>
+            </p>
+          </summary>
+          <div class="Collapsible__content">
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          </div>
+        </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });
 
-  // TODO I don't think this test is correct but at least this test will prevent it from regressing
-  // even further
-  test('Can delete forward a Table', async ({page, isPlainText}) => {
+  test(`Can't delete backward a Collapsible`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
+    await focusEditor(page);
+    await page.keyboard.type('abc');
+    await insertCollapsible(page);
+    await page.keyboard.type('title');
+    await moveRight(page, 2);
+    await page.keyboard.type('after');
+    await moveLeft(page, 'after'.length);
+    await deleteBackward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+        </p>
+        <div class="Collapsible__container" open="">
+          <summary class="Collapsible__title">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">title</span>
+            </p>
+          </summary>
+          <div class="Collapsible__content">
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          </div>
+        </div>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">after</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can't delete forward a Table`, async ({page, isPlainText}) => {
     test.skip(isPlainText);
     if (!IS_MAC) {
       // Do Windows/Linux have equivalent shortcuts?
@@ -447,6 +501,53 @@ test.describe.parallel('Selection', () => {
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test(`Can't delete backward a Table`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
+    await focusEditor(page);
+    await page.keyboard.type('abc');
+    await insertTable(page, 1, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.type('after');
+    await moveLeft(page, 'after'.length);
+    await deleteBackward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+        </p>
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">after</span>
+        </p>
       `,
     );
   });

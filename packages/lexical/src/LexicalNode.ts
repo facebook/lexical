@@ -9,8 +9,8 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
-import type {Klass, KlassConstructor} from 'lexical';
 
+import {Klass, KlassConstructor, NODE_STATE_KEY} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {
@@ -60,7 +60,7 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
-  state?: Record<string, unknown>;
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
 
 /**
@@ -947,7 +947,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode.state);
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
   }
 
   /**

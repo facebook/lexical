@@ -15,6 +15,7 @@ import {
   $isParagraphNode,
   $setState,
   createState,
+  NODE_STATE_KEY,
   ParagraphNode,
   RootNode,
   SerializedLexicalNode,
@@ -123,15 +124,15 @@ describe('LexicalNode state', () => {
           const paragraph = $createParagraphNode();
           const json = paragraph.exportJSON();
           // We don't export state as an empty object
-          expect(json).not.toHaveProperty('state');
+          expect(json).not.toHaveProperty(NODE_STATE_KEY);
           $setState(paragraph, numberState, 1);
           const json2 = paragraph.exportJSON();
-          expect(json2.state).toStrictEqual({
+          expect(json2[NODE_STATE_KEY]).toStrictEqual({
             numberState: 1,
           });
           const paragraph2 = ParagraphNode.importJSON(json2);
           const json3 = paragraph2.exportJSON();
-          expect(json3.state).toStrictEqual({
+          expect(json3[NODE_STATE_KEY]).toStrictEqual({
             numberState: 1,
           });
         });
@@ -167,7 +168,7 @@ describe('LexicalNode state', () => {
           expect(stateNode.getNumber()).toBe(1);
           stateNode.setNumber((n) => n + 1);
           expect(stateNode.getNumber()).toBe(2);
-          expect(stateNode.exportJSON().state).toStrictEqual({
+          expect(stateNode.exportJSON()[NODE_STATE_KEY]).toStrictEqual({
             numberState: 2,
           });
         });
@@ -182,23 +183,23 @@ describe('LexicalNode state', () => {
           const paragraph = $createParagraphNode();
           expect($getState(paragraph, indentState)).toBe(0);
           const json = paragraph.exportJSON();
-          expect(json).not.toHaveProperty('state');
+          expect(json).not.toHaveProperty(NODE_STATE_KEY);
           $setState(paragraph, indentState, 1);
           const json2 = paragraph.exportJSON();
-          expect(json2.state).toStrictEqual({
+          expect(json2[NODE_STATE_KEY]).toStrictEqual({
             indent: 1,
           });
           // set the default value explicitly
           $setState(paragraph, indentState, 0);
           const json3 = paragraph.exportJSON();
-          expect(json3).not.toHaveProperty('state');
+          expect(json3).not.toHaveProperty(NODE_STATE_KEY);
 
           const foo = createState('foo', {
             parse: (value) => (typeof value === 'string' ? value : ''),
           });
           $setState(paragraph, foo, 'fooValue');
           const json4 = paragraph.exportJSON();
-          expect(json4.state).toStrictEqual({
+          expect(json4[NODE_STATE_KEY]).toStrictEqual({
             foo: 'fooValue',
           });
         });
@@ -407,7 +408,10 @@ describe('LexicalNode state', () => {
           );
           editor.update(
             () => {
-              v4 = v3.updateFromJSON({...v3.exportJSON(), state: {vk: 1}});
+              v4 = v3.updateFromJSON({
+                ...v3.exportJSON(),
+                [NODE_STATE_KEY]: {vk: 1},
+              });
             },
             {discrete: true},
           );
@@ -415,7 +419,7 @@ describe('LexicalNode state', () => {
             () => {
               v5 = v4.updateFromJSON({
                 ...v4.exportJSON(),
-                state: {unknown: true, vk: 1},
+                [NODE_STATE_KEY]: {unknown: true, vk: 1},
               });
             },
             {discrete: true},

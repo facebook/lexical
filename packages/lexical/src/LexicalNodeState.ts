@@ -10,6 +10,7 @@ import type {LexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
+import {NODE_STATE_KEY} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
 
 function coerceToJSON(v: unknown): unknown {
@@ -359,8 +360,8 @@ export class NodeState<T extends LexicalNode> {
   /**
    * @internal
    *
-   * A copy of serializedNode.state that is made when JSON is imported but
-   * has not been parsed yet.
+   * A copy of serializedNode[NODE_STATE_KEY] that is made when JSON is
+   * imported but has not been parsed yet.
    *
    * It stays here until a get state requires us to parse it, and since we
    * then know the value is safe we move it to knownState and garbage collect
@@ -461,12 +462,12 @@ export class NodeState<T extends LexicalNode> {
 
   /**
    * Encode this NodeState to JSON in the format that its node expects.
-   * This returns `{state?: UnknownStateRecord}` rather than
+   * This returns `{[NODE_STATE_KEY]?: UnknownStateRecord}` rather than
    * `UnknownStateRecord | undefined` so that we can support flattening
    * specific entries in the future when nodes can declare what
    * their required StateConfigs are.
    */
-  toJSON(): {state?: UnknownStateRecord} {
+  toJSON(): {[NODE_STATE_KEY]?: UnknownStateRecord} {
     const state = {...this.unknownState};
     for (const [stateConfig, v] of this.knownState) {
       if (stateConfig.isEqual(v, stateConfig.defaultValue)) {
@@ -475,7 +476,7 @@ export class NodeState<T extends LexicalNode> {
         state[stateConfig.key] = stateConfig.unparse(v);
       }
     }
-    return undefinedIfEmpty(state) ? {state} : {};
+    return undefinedIfEmpty(state) ? {[NODE_STATE_KEY]: state} : {};
   }
 
   /**

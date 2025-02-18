@@ -8,6 +8,8 @@
  */
 import type {LexicalEditor} from 'lexical';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
+
+// test comment
 declare export function registerDragonSupport(
   editor: LexicalEditor,
 ): () => void;

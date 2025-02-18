@@ -380,7 +380,11 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test(`Can't delete forward a Collapsible`, async ({page, isPlainText}) => {
+  test(`Can't delete forward a Collapsible`, async ({
+    page,
+    browserName,
+    isPlainText,
+  }) => {
     test.skip(isPlainText);
     if (!IS_MAC) {
       // Do Windows/Linux have equivalent shortcuts?
@@ -394,6 +398,7 @@ test.describe.parallel('Selection', () => {
     await moveRight(page, 3);
     await deleteForward(page);
 
+    const collapsibleTag = browserName === 'chromium' ? 'div' : 'details';
     await assertHTML(
       page,
       html`
@@ -402,7 +407,7 @@ test.describe.parallel('Selection', () => {
           dir="ltr">
           <span data-lexical-text="true">abc</span>
         </p>
-        <div class="Collapsible__container" open="">
+        <${collapsibleTag} class="Collapsible__container" open="">
           <summary class="Collapsible__title">
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -413,13 +418,17 @@ test.describe.parallel('Selection', () => {
           <div class="Collapsible__content">
             <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           </div>
-        </div>
+        </${collapsibleTag}>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });
 
-  test(`Can't delete backward a Collapsible`, async ({page, isPlainText}) => {
+  test(`Can't delete backward a Collapsible`, async ({
+    page,
+    browserName,
+    isPlainText,
+  }) => {
     test.skip(isPlainText);
     if (!IS_MAC) {
       // Do Windows/Linux have equivalent shortcuts?
@@ -434,6 +443,7 @@ test.describe.parallel('Selection', () => {
     await moveLeft(page, 'after'.length);
     await deleteBackward(page);
 
+    const collapsibleTag = browserName === 'chromium' ? 'div' : 'details';
     await assertHTML(
       page,
       html`
@@ -442,7 +452,7 @@ test.describe.parallel('Selection', () => {
           dir="ltr">
           <span data-lexical-text="true">abc</span>
         </p>
-        <div class="Collapsible__container" open="">
+        <${collapsibleTag} class="Collapsible__container" open="">
           <summary class="Collapsible__title">
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -453,7 +463,7 @@ test.describe.parallel('Selection', () => {
           <div class="Collapsible__content">
             <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           </div>
-        </div>
+        </${collapsibleTag}>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">

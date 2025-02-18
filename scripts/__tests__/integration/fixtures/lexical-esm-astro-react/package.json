@@ -11,13 +11,13 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.3",
-    "@astrojs/react": "^3.1.0",
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/react": "^4.2.0",
     "@lexical/react": "0.24.0",
     "@lexical/utils": "0.24.0",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
-    "astro": "^4.5.4",
+    "astro": "^5.3.0",
     "lexical": "0.24.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -26,6 +26,5 @@
   "devDependencies": {
     "@playwright/test": "^1.43.1"
   },
-  "sideEffects": false,
-  "exports": {}
+  "sideEffects": false
 }

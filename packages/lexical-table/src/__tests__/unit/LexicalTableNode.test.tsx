@@ -10,11 +10,16 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
+  $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,
+  $createTableRowNode,
   $createTableSelection,
+  $getElementForTableNode,
   $insertTableColumn__EXPERIMENTAL,
   $isTableCellNode,
+  $isTableNode,
+  TableNode,
 } from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
@@ -36,8 +41,6 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-
-import {$getElementForTableNode, TableNode} from '../../LexicalTableNode';
 
 export class ClipboardDataMock {
   getData: jest.Mock<string, [string]>;
@@ -143,6 +146,115 @@ describe('LexicalTableNode tests', () => {
                 `,
               );
             });
+          });
+
+          test('TableNode.createDOM() and updateDOM() style', () => {
+            const {editor} = testEnv;
+            const $createSmallTable = () =>
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append($createParagraphNode()),
+                ),
+              );
+
+            editor.update(
+              () => {
+                $getRoot().clear().append(
+                  // no style
+                  $createSmallTable(),
+                  // with style
+                  $createSmallTable().setStyle('background-color: blue;'),
+                );
+                $setSelection(null);
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="background-color: blue">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
+            editor.update(
+              () => {
+                $getRoot()
+                  .getChildren()
+                  .map((node, i) => {
+                    if ($isTableNode(node)) {
+                      node.setStyle(`--table-index: ${i};`);
+                    }
+                  });
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 0">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 1">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
           });
 
           test('TableNode.exportDOM() with range selection', async () => {

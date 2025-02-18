@@ -143,7 +143,8 @@ non-negative.
 is equivalent in purpose to a `RangeSelection`, and is what you would generally
 use for depth first traversals.
 
-* Constructed with `$getCaretRange(anchor, focus)` or `$caretRangeFromSelection(selection)`
+* Constructed with `$getCaretRange(anchor, focus)`, `$caretRangeFromSelection(selection)`,
+  or `$extendCaretToRange(anchor)`
 * The `anchor` is the start of the range, generally where the selection originated,
   and it is "anchored" in place because when a selection grows or shrinks only the
   `focus` will be moved

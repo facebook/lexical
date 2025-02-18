@@ -222,6 +222,7 @@
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",
+    "**/build/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

@@ -111,7 +111,7 @@ function getFullMatchOffset(
 ): number {
   let triggerOffset = offset;
   for (let i = triggerOffset; i <= entryText.length; i++) {
-    if (documentText.substr(-i) === entryText.substr(0, i)) {
+    if (documentText.slice(-i) === entryText.substring(0, i)) {
       triggerOffset = i;
     }
   }

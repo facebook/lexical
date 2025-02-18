@@ -78,6 +78,7 @@ const editorConfig = Object.freeze({
       right: 'test-table-alignment-right',
     },
     tableFrozenColumn: 'test-table-frozen-column-class',
+    tableFrozenRow: 'test-table-frozen-row-class',
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },

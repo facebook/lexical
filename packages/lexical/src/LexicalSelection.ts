@@ -1842,11 +1842,7 @@ export class RangeSelection implements BaseSelection {
         $updateCaretSelectionForUnicodeCharacter(this, isBackward);
       } else if (isBackward && anchor.offset === 0) {
         // Special handling around rich text nodes
-        const element =
-          anchor.type === 'element'
-            ? anchor.getNode()
-            : anchor.getNode().getParentOrThrow();
-        if (element.collapseAtStart(this)) {
+        if ($collapseAtStart(this, anchor.getNode())) {
           return;
         }
       }
@@ -1863,9 +1859,9 @@ export class RangeSelection implements BaseSelection {
       if (
         anchorNode.isEmpty() &&
         $isRootNode(anchorNode.getParent()) &&
-        anchorNode.getIndexWithinParent() === 0
+        anchorNode.getPreviousSibling() === null
       ) {
-        anchorNode.collapseAtStart(this);
+        $collapseAtStart(this, anchorNode);
       }
     }
   }
@@ -1970,6 +1966,30 @@ export function $getCharacterOffsets(
     return [0, 0];
   }
   return [getCharacterOffset(anchor), getCharacterOffset(focus)];
+}
+
+function $collapseAtStart(
+  selection: RangeSelection,
+  startNode: LexicalNode,
+): boolean {
+  for (
+    let node: null | LexicalNode = startNode;
+    node;
+    node = node.getParent()
+  ) {
+    if ($isElementNode(node)) {
+      if (node.collapseAtStart(selection)) {
+        return true;
+      }
+      if (!node.isInline()) {
+        break;
+      }
+    }
+    if (node.getPreviousSibling()) {
+      break;
+    }
+  }
+  return false;
 }
 
 function $swapPoints(selection: RangeSelection): void {

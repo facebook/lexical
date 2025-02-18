@@ -516,6 +516,19 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const toggleFirstRowFreeze = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setFrozenRows(tableNode.getFrozenRows() === 0 ? 1 : 0);
+        }
+      }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
+
   const toggleFirstColumnFreeze = useCallback(() => {
     editor.update(() => {
       if (tableCellNode.isAttached()) {
@@ -670,6 +683,13 @@ function TableActionMenu({
           </div>
         </DropDownItem>
       </DropDown>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleFirstRowFreeze()}
+        data-test-id="table-freeze-first-row">
+        <span className="text">Toggle First Row Freeze</span>
+      </button>
       <button
         type="button"
         className="item"

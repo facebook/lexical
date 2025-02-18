@@ -6,6 +6,7 @@
  *
  * @flow strict
  */
+ // This is the test comment
 import type {LexicalEditor} from 'lexical';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 declare export function registerDragonSupport(

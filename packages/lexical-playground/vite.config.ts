@@ -60,10 +60,12 @@ export default defineConfig(({mode}) => ({
         '@babel/plugin-transform-flow-strip-types',
         ...(mode !== 'production'
           ? [
-              require('../../scripts/error-codes/transform-error-messages'),
-              {
-                noMinify: true,
-              },
+              [
+                require('../../scripts/error-codes/transform-error-messages'),
+                {
+                  noMinify: true,
+                },
+              ],
             ]
           : []),
       ],

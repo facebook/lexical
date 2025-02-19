@@ -15,22 +15,12 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
-  $caretFromPoint,
   $createParagraphNode,
-  $extendCaretToRange,
-  $getCaretRange,
   $getSelection,
-  $isChildCaret,
-  $isElementNode,
   $isRangeSelection,
-  $isSiblingCaret,
-  $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
   createCommand,
-  DELETE_CHARACTER_COMMAND,
-  ElementNode,
   INSERT_PARAGRAPH_COMMAND,
-  INTERNAL_$isBlock,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -169,93 +159,6 @@ export default function CollapsiblePlugin(): null {
           node.remove();
         }
       }),
-
-      // This handles the case when container is collapsed and we delete its previous sibling
-      // into it, it would cause collapsed content deleted (since it's display: none, and selection
-      // swallows it when deletes single char). Instead we expand container, which is although
-      // not perfect, but avoids bigger problem
-      editor.registerCommand(
-        DELETE_CHARACTER_COMMAND,
-        (isBackward) => {
-          const selection = $getSelection();
-          if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-            return false;
-          }
-          if (!isBackward) {
-            // inherit strange forward delete behavior per e2e election test
-            // 'Can delete forward a Collapsible'
-            const forwardRange = $extendCaretToRange(
-              $caretFromPoint(selection.anchor, 'next'),
-            );
-            let lastBlock: ElementNode | undefined;
-            for (const caret of forwardRange.iterNodeCarets('shadowRoot')) {
-              if ($isSiblingCaret(caret) && $isElementNode(caret.origin)) {
-                if (INTERNAL_$isBlock(caret.origin)) {
-                  lastBlock = caret.origin;
-                }
-                continue;
-              } else if (
-                lastBlock &&
-                $isChildCaret(caret) &&
-                $isCollapsibleContainerNode(caret.origin)
-              ) {
-                // Unwrap the collapsible, emulating the previous behavior
-                // where the forward deletion opened the title's shadow root,
-                // but skip the step where we let the transforms unwrap the nodes
-                const children = caret.origin.getChildren().flatMap((child) => {
-                  if ($isCollapsibleTitleNode(child)) {
-                    const nestedChildren = child.getChildren();
-                    const [firstChild] = nestedChildren;
-                    // unnest the first paragraph of the title
-                    if (
-                      $isElementNode(firstChild) &&
-                      INTERNAL_$isBlock(firstChild)
-                    ) {
-                      nestedChildren.splice(0, 1, ...firstChild.getChildren());
-                    }
-                    return nestedChildren;
-                  } else if ($isCollapsibleContentNode(child)) {
-                    return child.getChildren();
-                  } else {
-                    return [child];
-                  }
-                });
-                const collapsedRange = $getCaretRange(
-                  forwardRange.anchor,
-                  forwardRange.anchor,
-                );
-                // insert the children,
-                $setSelectionFromCaretRange(collapsedRange).insertNodes(
-                  children,
-                );
-                caret.origin.remove();
-                $setSelectionFromCaretRange(collapsedRange);
-                return true;
-              }
-              break;
-            }
-          }
-
-          if (selection.anchor.offset !== 0) {
-            return false;
-          }
-
-          const anchorNode = selection.anchor.getNode();
-          const topLevelElement = anchorNode.getTopLevelElement();
-          if (topLevelElement === null) {
-            return false;
-          }
-
-          const container = topLevelElement.getPreviousSibling();
-          if (!$isCollapsibleContainerNode(container) || container.getOpen()) {
-            return false;
-          }
-
-          container.setOpen(true);
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
 
       // When collapsible is the last child pressing down/right arrow will insert paragraph
       // below it to allow adding more content. It's similar what $insertBlockNode

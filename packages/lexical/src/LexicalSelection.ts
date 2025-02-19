@@ -3228,9 +3228,6 @@ function $getNodesFromCaretRangeCompat(
   // getNodes returned nodes in document order
   range: CaretRange<'next'>,
 ): LexicalNode[] {
-  // To verify that we have covered every case this
-  // has both implementations of getNodes() and
-  // compares them
   const nodes: LexicalNode[] = [];
   const [beforeSlice, afterSlice] = range.getTextSlices();
   if (beforeSlice) {

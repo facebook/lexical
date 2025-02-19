@@ -23,7 +23,7 @@ import {
   getTableElement,
   TableNode,
 } from '@lexical/table';
-import {calculateZoomLevel} from '@lexical/utils';
+import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode, isHTMLElement} from 'lexical';
 import * as React from 'react';
 import {
@@ -52,7 +52,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const resizerRef = useRef<HTMLDivElement | null>(null);
   const tableRectRef = useRef<ClientRect | null>(null);
   const [hasTable, setHasTable] = useState(false);
-  const tableKeysRef = useRef<Set<NodeKey>>(new Set());
 
   const mouseStartPosRef = useRef<MousePosition | null>(null);
   const [mouseCurrentPos, updateMouseCurrentPos] =
@@ -76,25 +75,19 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   };
 
   useEffect(() => {
-    // Track table existence using mutation listener
-    const unregisterMutation = editor.registerMutationListener(
-      TableNode,
-      (nodeMutations) => {
+    const tableKeys = new Set<NodeKey>();
+    return mergeRegister(
+      editor.registerMutationListener(TableNode, (nodeMutations) => {
         for (const [nodeKey, mutation] of nodeMutations) {
           if (mutation === 'destroyed') {
-            tableKeysRef.current.delete(nodeKey);
+            tableKeys.delete(nodeKey);
           } else {
-            tableKeysRef.current.add(nodeKey);
+            tableKeys.add(nodeKey);
           }
         }
-        setHasTable(tableKeysRef.current.size > 0);
-      },
-    );
-
-    // Register table node transform
-    const unregisterTransform = editor.registerNodeTransform(
-      TableNode,
-      (tableNode) => {
+        setHasTable(tableKeys.size > 0);
+      }),
+      editor.registerNodeTransform(TableNode, (tableNode) => {
         if (tableNode.getColWidths()) {
           return tableNode;
         }
@@ -104,13 +97,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
         tableNode.setColWidths(Array(numColumns).fill(columnWidth));
         return tableNode;
-      },
+      }),
     );
-
-    return () => {
-      unregisterMutation();
-      unregisterTransform();
-    };
   }, [editor]);
 
   useEffect(() => {

@@ -23,14 +23,10 @@ import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
-  $caretRangeFromSelection,
   $createParagraphNode,
-  $getCaretRangeInDirection,
   $getSelection,
-  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
-  ElementNode,
   LexicalEditor,
 } from 'lexical';
 
@@ -218,7 +214,7 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
-      const selection = $getSelection();
+      let selection = $getSelection();
       if (!selection) {
         return;
       }
@@ -226,46 +222,11 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         $setBlocksType(selection, () => $createCodeNode());
       } else {
         const textContent = selection.getTextContent();
-        selection.removeText();
-        const sel = $getSelection();
-        if (!$isRangeSelection(sel) || !sel.isCollapsed()) {
-          return;
-        }
-        const range = $getCaretRangeInDirection(
-          $caretRangeFromSelection(selection),
-          'previous',
-        );
-        // If the previous node is a linebreak we'll remove it later because we are adding a block
-        const possibleLineBreak = range.focus.getNodeAtCaret();
-        // TODO fix insertNodes. This is a workaround because
-        // trailing content can end up in the newly inserted block
-        // otherwise
-        let target: ElementNode | undefined;
-        const p0 = sel.anchor.getNode().getTopLevelElement();
-        if (!p0) {
-          return;
-        } else if (p0.isEmpty()) {
-          // The paragraph is already empty and can be converted to code
-          target = p0;
-        } else {
-          const p1 = sel.insertParagraph();
-          if (p0.isEmpty()) {
-            // There was no preceding content
-            target = p0;
-          } else if (p1) {
-            target = p1;
-            if (!p1.isEmpty()) {
-              // Handle case for both preceding and trailing content
-              sel.insertParagraph();
-            }
-          }
-        }
-        if (target) {
-          if ($isLineBreakNode(possibleLineBreak)) {
-            possibleLineBreak.remove();
-          }
-          target.select().insertRawText(textContent);
-          $setBlocksType($getSelection(), () => $createCodeNode());
+        const codeNode = $createCodeNode();
+        selection.insertNodes([codeNode]);
+        selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertRawText(textContent);
         }
       }
     });

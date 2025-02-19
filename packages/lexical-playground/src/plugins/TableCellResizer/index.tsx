@@ -6,7 +6,7 @@
  *
  */
 import type {TableCellNode, TableDOMCell, TableMapType} from '@lexical/table';
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, NodeKey} from 'lexical';
 import type {JSX} from 'react';
 
 import './index.css';
@@ -18,19 +18,13 @@ import {
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $isTableCellNode,
-  $isTableNode,
   $isTableRowNode,
   getDOMCellFromTarget,
   getTableElement,
   TableNode,
 } from '@lexical/table';
 import {calculateZoomLevel} from '@lexical/utils';
-import {
-  $getNearestNodeFromDOMNode,
-  $getRoot,
-  isHTMLElement,
-  LexicalNode,
-} from 'lexical';
+import {$getNearestNodeFromDOMNode, isHTMLElement} from 'lexical';
 import * as React from 'react';
 import {
   MouseEventHandler,
@@ -58,6 +52,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const resizerRef = useRef<HTMLDivElement | null>(null);
   const tableRectRef = useRef<ClientRect | null>(null);
   const [hasTable, setHasTable] = useState(false);
+  const tableKeysRef = useRef<Set<NodeKey>>(new Set());
 
   const mouseStartPosRef = useRef<MousePosition | null>(null);
   const [mouseCurrentPos, updateMouseCurrentPos] =
@@ -81,15 +76,20 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   };
 
   useEffect(() => {
-    // Check for table existence using editorState
-    const unregisterUpdate = editor.registerUpdateListener(() => {
-      editor.getEditorState().read(() => {
-        const hasTableNow = $getRoot()
-          .getChildren()
-          .some((node: LexicalNode) => $isTableNode(node));
-        setHasTable(hasTableNow);
-      });
-    });
+    // Track table existence using mutation listener
+    const unregisterMutation = editor.registerMutationListener(
+      TableNode,
+      (nodeMutations) => {
+        for (const [nodeKey, mutation] of nodeMutations) {
+          if (mutation === 'destroyed') {
+            tableKeysRef.current.delete(nodeKey);
+          } else {
+            tableKeysRef.current.add(nodeKey);
+          }
+        }
+        setHasTable(tableKeysRef.current.size > 0);
+      },
+    );
 
     // Register table node transform
     const unregisterTransform = editor.registerNodeTransform(
@@ -108,7 +108,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     );
 
     return () => {
-      unregisterUpdate();
+      unregisterMutation();
       unregisterTransform();
     };
   }, [editor]);

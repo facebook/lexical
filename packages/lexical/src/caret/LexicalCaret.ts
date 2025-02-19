@@ -1381,7 +1381,7 @@ export function $getCommonAncestor<
       // b is the ancestor
       invariant(
         $isSameNode(b, parent),
-        '$originComparison: desendant logic error',
+        '$originComparison: descendant logic error',
       );
       return {commonAncestor: parent, type: 'descendant'};
     } else {

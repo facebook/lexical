@@ -21,6 +21,7 @@ import type {
 } from 'lexical';
 
 import {
+  $getAdjacentCaret,
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
@@ -238,7 +239,7 @@ function $getLastMatchingCodeNode<D extends CaretDirection>(
       direction,
     );
     caret && ($isCodeHighlightNode(caret.origin) || $isTabNode(caret.origin));
-    caret = caret.getAdjacentCaret()
+    caret = $getAdjacentCaret(caret)
   ) {
     matchingNode = caret.origin;
   }

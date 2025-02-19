@@ -573,11 +573,10 @@ export class LexicalNode {
   }
 
   /**
+   * @deprecated use {@link $getCommonAncestor}
+   *
    * Returns the closest common ancestor of this node and the provided one or null
    * if one cannot be found.
-   *
-   * See also {@link $getCommonAncestor} for a more detailed version of this
-   * operation.
    *
    * @param node - the other node to find the common ancestor of.
    */
@@ -586,7 +585,7 @@ export class LexicalNode {
   ): T | null {
     const result = $getCommonAncestor(this, node);
     return result
-      ? (result.commonAncestor as T) /* TODO this type cast is a lie */
+      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
       : null;
   }
 

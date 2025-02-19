@@ -1248,7 +1248,7 @@ export function $comparePointCaretNext(
 }
 
 /**
- * Return the ordering of siblings in a branch CommonAncestorResultBranch
+ * Return the ordering of siblings in a CommonAncestorResultBranch
  * @param branch Returns -1 if a precedes b, 1 otherwise
  */
 export function $getCommonAncestorResultBranchOrder<

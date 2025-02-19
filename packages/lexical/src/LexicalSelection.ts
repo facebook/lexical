@@ -510,6 +510,11 @@ export class RangeSelection implements BaseSelection {
    * Gets all the nodes in the Selection. Uses caching to make it generally suitable
    * for use in hot paths.
    *
+   * See also the {@link CaretRange} APIs (starting with
+   * {@link $caretRangeFromSelection}), which are likely to provide a better
+   * foundation for any operation where partial selection is relevant
+   * (e.g. the anchor or focus are inside an ElementNode and TextNode)
+   *
    * @returns an Array containing all the nodes in the Selection
    */
   getNodes(): Array<LexicalNode> {
@@ -517,95 +522,11 @@ export class RangeSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes;
     }
-    const anchor = this.anchor;
-    const focus = this.focus;
-    const isBefore = anchor.isBefore(focus);
-    const firstPoint = isBefore ? anchor : focus;
-    const lastPoint = isBefore ? focus : anchor;
-    const firstPointNode = firstPoint.getNode();
-    const lastPointNode = lastPoint.getNode();
-    let firstNode: LexicalNode = firstPointNode;
-    let lastNode: LexicalNode = lastPointNode;
-    let overselectedFirstNode = false;
-    const overselectedLastNodes = new Set<NodeKey>();
-
-    if ($isElementNode(firstPointNode)) {
-      overselectedFirstNode =
-        firstPoint.offset > 0 &&
-        firstPoint.offset >= firstPointNode.getChildrenSize();
-      firstNode =
-        firstPointNode.getDescendantByIndex(firstPoint.offset) ||
-        firstPointNode;
-    }
-    if ($isElementNode(lastPointNode)) {
-      const lastPointChild = lastPointNode.getChildAtIndex(lastPoint.offset);
-      if (lastPointChild) {
-        overselectedLastNodes.add(lastPointChild.getKey());
-        lastNode =
-          ($isElementNode(lastPointChild) &&
-            lastPointChild.getFirstDescendant()) ||
-          lastPointChild;
-        for (
-          let overselected: LexicalNode | null = lastNode;
-          overselected && !overselected.is(lastPointChild);
-          overselected = overselected.getParent()
-        ) {
-          overselectedLastNodes.add(overselected.getKey());
-        }
-      } else {
-        const beforeChild =
-          lastPoint.offset > 0 &&
-          lastPointNode.getChildAtIndex(lastPoint.offset - 1);
-        if (beforeChild) {
-          // This case is not an overselection
-          lastNode =
-            ($isElementNode(beforeChild) && beforeChild.getLastDescendant()) ||
-            beforeChild;
-        } else {
-          // It's the last node and we have to find something at or after lastNode
-          // and mark all of the ancestors inbetween as overselected
-          let parent = lastPointNode.getParent();
-          for (; parent !== null; parent = parent.getParent()) {
-            overselectedLastNodes.add(parent.getKey());
-            const parentSibling = parent.getNextSibling();
-            if (parentSibling) {
-              lastNode = parentSibling;
-              break;
-            }
-          }
-          if (!(lastPointNode.isEmpty() && lastPointNode.is(lastNode))) {
-            overselectedLastNodes.add(lastNode.getKey());
-          }
-        }
-      }
-    }
-
-    let nodes: Array<LexicalNode>;
-
-    if (firstNode.is(lastNode) || this.isCollapsed()) {
-      if ($isElementNode(firstNode) && firstNode.getChildrenSize() > 0) {
-        nodes = [];
-      } else {
-        nodes = [firstNode];
-      }
-    } else {
-      // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
-      nodes = firstNode.getNodesBetween(lastNode);
-      if (overselectedLastNodes.size > 0) {
-        while (
-          nodes.length > 0 &&
-          overselectedLastNodes.has(nodes[nodes.length - 1].getKey())
-        ) {
-          nodes.pop();
-        }
-      }
-      if (overselectedFirstNode) {
-        const deleteCount = nodes.findIndex(
-          (node) => !node.is(firstNode) && !node.isBefore(firstNode),
-        );
-        nodes.splice(0, deleteCount);
-      }
-    }
+    const range = $getCaretRangeInDirection(
+      $caretRangeFromSelection(this),
+      'next',
+    );
+    const nodes = $getNodesFromCaretRangeCompat(range);
     if (__DEV__) {
       if (this.isCollapsed() && nodes.length > 1) {
         invariant(
@@ -617,32 +538,6 @@ export class RangeSelection implements BaseSelection {
     }
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
-    }
-    if (__DEV__) {
-      // To verify that we have covered every case this
-      // has both implementations of getNodes() and
-      // compares them
-      const range = $getCaretRangeInDirection(
-        $caretRangeFromSelection(this),
-        'next',
-      );
-      const caretNodes = $getNodesFromCaretRangeCompat(range);
-      const maxLength = Math.max(caretNodes.length, nodes.length);
-      for (let i = 0; i < maxLength; i++) {
-        const caretNode = caretNodes[i] || {__key: '', __type: ''};
-        const refNode = nodes[i] || {__key: '', __type: ''};
-        if (caretNode !== refNode) {
-          invariant(
-            false,
-            'getNodes(): idx %s caretNode{%s %s} !== refNode{%s %s}',
-            String(i),
-            caretNode.__type,
-            caretNode.__key,
-            refNode.__type,
-            refNode.__key,
-          );
-        }
-      }
     }
     return nodes;
   }

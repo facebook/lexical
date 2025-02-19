@@ -7,6 +7,7 @@
  */
 
 import {
+  moveLeft,
   moveToEditorBeginning,
   moveToEnd,
   moveToStart,
@@ -17,6 +18,7 @@ import {
   assertHTML,
   assertSelection,
   click,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -232,6 +234,84 @@ test.describe('CodeBlock', () => {
           <span data-lexical-text="true">foo</span>
           <br />
           <span data-lexical-text="true">bar</span>
+          <br />
+          <span data-lexical-text="true">yar</span>
+          <br />
+          <br />
+          <span data-lexical-text="true">meh</span>
+        </code>
+      `,
+    );
+  });
+
+  test('Can select partial paragraphs and convert to code block', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('foo');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('bar');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('yar');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('meh');
+    await page.keyboard.down('Shift');
+    await moveLeft(page, 10);
+    await page.keyboard.up('Shift');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">foo</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">bar</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">yar</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">meh</span>
+        </p>
+      `,
+    );
+
+    await toggleCodeBlock(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">foo</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">ba</span>
+        </p>
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="1234"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span data-lexical-text="true">r</span>
           <br />
           <span data-lexical-text="true">yar</span>
           <br />
@@ -914,6 +994,162 @@ test.describe('CodeBlock', () => {
     await page.keyboard.press('ArrowDown');
     await assertSelection(page, endOfLastLine);
     await assertHTML(page, bcaHTML);
+  });
+
+  test('prevents selection and typing outside code block boundaries', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('console.log("test");');
+    await selectAll(page);
+    await toggleCodeBlock(page);
+
+    // Test 1: Selection stays at start when pressing up
+    await moveToStart(page);
+    await page.keyboard.press('ArrowUp');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
+
+    // Test 2: Typing at start stays within code block
+    await page.keyboard.type('// start');
+    await page.keyboard.press('Enter');
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="12"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tokenComment"
+            data-lexical-text="true">
+            // start
+          </span>
+          <br />
+          <span data-lexical-text="true">console</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            .
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            log
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenSelector"
+            data-lexical-text="true">
+            "test"
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+        </code>
+      `,
+    );
+
+    // Let's verify the cursor position after typing the start comment
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 2, 0],
+      focusOffset: 0,
+      focusPath: [0, 2, 0],
+    });
+
+    // Test 3: Selection stays at end when pressing down
+    await moveToEnd(page);
+    await page.keyboard.type(' // end');
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="12"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tokenComment"
+            data-lexical-text="true">
+            // start
+          </span>
+          <br />
+          <span data-lexical-text="true">console</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            .
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            log
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenSelector"
+            data-lexical-text="true">
+            "test"
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenComment"
+            data-lexical-text="true">
+            // end
+          </span>
+        </code>
+      `,
+    );
+
+    await page.keyboard.press('ArrowDown');
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 10, 0],
+      focusOffset: 6,
+      focusPath: [0, 10, 0],
+    });
+
+    // Verify no content escaped the code block
+    const paragraphs = await page.$$('p');
+    expect(paragraphs.length).toBe(0);
   });
 
   test('When pressing CMD/Ctrl + Left, CMD/Ctrl + Right, the cursor should go to the start of the code', async ({

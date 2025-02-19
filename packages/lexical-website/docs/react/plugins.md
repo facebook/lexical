@@ -45,8 +45,12 @@ React wrapper for `@lexical/plain-text` that adds major features for plain text 
 
 ```jsx
 <PlainTextPlugin
-  contentEditable={<ContentEditable />}
-  placeholder={<div>Enter some text...</div>}
+  contentEditable={
+    <ContentEditable
+      aria-placeholder={'Enter some text...'}
+      placeholder={<div>Enter some text...</div>}
+    />
+  }
   ErrorBoundary={LexicalErrorBoundary}
 />
 ```
@@ -57,8 +61,12 @@ React wrapper for `@lexical/rich-text` that adds major features for rich text ed
 
 ```jsx
 <RichTextPlugin
-  contentEditable={<ContentEditable />}
-  placeholder={<div>Enter some text...</div>}
+  contentEditable={
+    <ContentEditable
+      aria-placeholder={'Enter some text...'}
+      placeholder={<div>Enter some text...</div>}
+    />
+  }
   ErrorBoundary={LexicalErrorBoundary}
 />
 ```

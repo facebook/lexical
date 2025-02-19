@@ -15,19 +15,26 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
+  $caretFromPoint,
   $createParagraphNode,
+  $extendCaretToRange,
+  $getCaretRange,
   $getSelection,
+  $isChildCaret,
+  $isElementNode,
   $isRangeSelection,
+  $isSiblingCaret,
+  $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DELETE_CHARACTER_COMMAND,
   ElementNode,
   INSERT_PARAGRAPH_COMMAND,
+  INTERNAL_$isBlock,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
-  LexicalNode,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -47,7 +54,9 @@ import {
   CollapsibleTitleNode,
 } from './CollapsibleTitleNode';
 
-export const INSERT_COLLAPSIBLE_COMMAND = createCommand<void>();
+export const INSERT_COLLAPSIBLE_COMMAND = createCommand<void>(
+  'INSERT_COLLAPSIBLE_COMMAND',
+);
 
 export default function CollapsiblePlugin(): null {
   const [editor] = useLexicalComposerContext();
@@ -78,12 +87,11 @@ export default function CollapsiblePlugin(): null {
         );
 
         if ($isCollapsibleContainerNode(container)) {
-          const parent = container.getParent<ElementNode>();
+          const parent = container.getParent();
           if (
             parent !== null &&
-            parent.getFirstChild<LexicalNode>() === container &&
-            selection.anchor.key ===
-              container.getFirstDescendant<LexicalNode>()?.getKey()
+            parent.getFirstChild() === container &&
+            selection.anchor.key === container.getFirstDescendant()?.getKey()
           ) {
             container.insertBefore($createParagraphNode());
           }
@@ -102,13 +110,10 @@ export default function CollapsiblePlugin(): null {
         );
 
         if ($isCollapsibleContainerNode(container)) {
-          const parent = container.getParent<ElementNode>();
-          if (
-            parent !== null &&
-            parent.getLastChild<LexicalNode>() === container
-          ) {
-            const titleParagraph = container.getFirstDescendant<LexicalNode>();
-            const contentParagraph = container.getLastDescendant<LexicalNode>();
+          const parent = container.getParent();
+          if (parent !== null && parent.getLastChild() === container) {
+            const titleParagraph = container.getFirstDescendant();
+            const contentParagraph = container.getLastDescendant();
 
             if (
               (contentParagraph !== null &&
@@ -133,9 +138,9 @@ export default function CollapsiblePlugin(): null {
       // "Container > Title + Content" it'll unwrap nodes and convert it back
       // to regular content.
       editor.registerNodeTransform(CollapsibleContentNode, (node) => {
-        const parent = node.getParent<ElementNode>();
+        const parent = node.getParent();
         if (!$isCollapsibleContainerNode(parent)) {
-          const children = node.getChildren<LexicalNode>();
+          const children = node.getChildren();
           for (const child of children) {
             node.insertBefore(child);
           }
@@ -144,17 +149,15 @@ export default function CollapsiblePlugin(): null {
       }),
 
       editor.registerNodeTransform(CollapsibleTitleNode, (node) => {
-        const parent = node.getParent<ElementNode>();
+        const parent = node.getParent();
         if (!$isCollapsibleContainerNode(parent)) {
-          node.replace(
-            $createParagraphNode().append(...node.getChildren<LexicalNode>()),
-          );
+          node.replace($createParagraphNode().append(...node.getChildren()));
           return;
         }
       }),
 
       editor.registerNodeTransform(CollapsibleContainerNode, (node) => {
-        const children = node.getChildren<LexicalNode>();
+        const children = node.getChildren();
         if (
           children.length !== 2 ||
           !$isCollapsibleTitleNode(children[0]) ||
@@ -173,13 +176,67 @@ export default function CollapsiblePlugin(): null {
       // not perfect, but avoids bigger problem
       editor.registerCommand(
         DELETE_CHARACTER_COMMAND,
-        () => {
+        (isBackward) => {
           const selection = $getSelection();
-          if (
-            !$isRangeSelection(selection) ||
-            !selection.isCollapsed() ||
-            selection.anchor.offset !== 0
-          ) {
+          if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+            return false;
+          }
+          if (!isBackward) {
+            // inherit strange forward delete behavior per e2e election test
+            // 'Can delete forward a Collapsible'
+            const forwardRange = $extendCaretToRange(
+              $caretFromPoint(selection.anchor, 'next'),
+            );
+            let lastBlock: ElementNode | undefined;
+            for (const caret of forwardRange.iterNodeCarets('shadowRoot')) {
+              if ($isSiblingCaret(caret) && $isElementNode(caret.origin)) {
+                if (INTERNAL_$isBlock(caret.origin)) {
+                  lastBlock = caret.origin;
+                }
+                continue;
+              } else if (
+                lastBlock &&
+                $isChildCaret(caret) &&
+                $isCollapsibleContainerNode(caret.origin)
+              ) {
+                // Unwrap the collapsible, emulating the previous behavior
+                // where the forward deletion opened the title's shadow root,
+                // but skip the step where we let the transforms unwrap the nodes
+                const children = caret.origin.getChildren().flatMap((child) => {
+                  if ($isCollapsibleTitleNode(child)) {
+                    const nestedChildren = child.getChildren();
+                    const [firstChild] = nestedChildren;
+                    // unnest the first paragraph of the title
+                    if (
+                      $isElementNode(firstChild) &&
+                      INTERNAL_$isBlock(firstChild)
+                    ) {
+                      nestedChildren.splice(0, 1, ...firstChild.getChildren());
+                    }
+                    return nestedChildren;
+                  } else if ($isCollapsibleContentNode(child)) {
+                    return child.getChildren();
+                  } else {
+                    return [child];
+                  }
+                });
+                const collapsedRange = $getCaretRange(
+                  forwardRange.anchor,
+                  forwardRange.anchor,
+                );
+                // insert the children,
+                $setSelectionFromCaretRange(collapsedRange).insertNodes(
+                  children,
+                );
+                caret.origin.remove();
+                $setSelectionFromCaretRange(collapsedRange);
+                return true;
+              }
+              break;
+            }
+          }
+
+          if (selection.anchor.offset !== 0) {
             return false;
           }
 
@@ -189,7 +246,7 @@ export default function CollapsiblePlugin(): null {
             return false;
           }
 
-          const container = topLevelElement.getPreviousSibling<LexicalNode>();
+          const container = topLevelElement.getPreviousSibling();
           if (!$isCollapsibleContainerNode(container) || container.getOpen()) {
             return false;
           }
@@ -244,7 +301,7 @@ export default function CollapsiblePlugin(): null {
             );
 
             if ($isCollapsibleTitleNode(titleNode)) {
-              const container = titleNode.getParent<ElementNode>();
+              const container = titleNode.getParent();
               if (container && $isCollapsibleContainerNode(container)) {
                 if (!container.getOpen()) {
                   container.toggleOpen();

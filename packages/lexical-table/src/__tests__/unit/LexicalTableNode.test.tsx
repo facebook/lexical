@@ -10,11 +10,16 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
+  $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,
+  $createTableRowNode,
   $createTableSelection,
+  $getElementForTableNode,
   $insertTableColumn__EXPERIMENTAL,
   $isTableCellNode,
+  $isTableNode,
+  TableNode,
 } from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
@@ -36,8 +41,6 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-
-import {$getElementForTableNode, TableNode} from '../../LexicalTableNode';
 
 export class ClipboardDataMock {
   getData: jest.Mock<string, [string]>;
@@ -77,6 +80,8 @@ const editorConfig = Object.freeze({
       center: 'test-table-alignment-center',
       right: 'test-table-alignment-right',
     },
+    tableFrozenColumn: 'test-table-frozen-column-class',
+    tableFrozenRow: 'test-table-frozen-row-class',
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },
@@ -141,6 +146,115 @@ describe('LexicalTableNode tests', () => {
                 `,
               );
             });
+          });
+
+          test('TableNode.createDOM() and updateDOM() style', () => {
+            const {editor} = testEnv;
+            const $createSmallTable = () =>
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append($createParagraphNode()),
+                ),
+              );
+
+            editor.update(
+              () => {
+                $getRoot().clear().append(
+                  // no style
+                  $createSmallTable(),
+                  // with style
+                  $createSmallTable().setStyle('background-color: blue;'),
+                );
+                $setSelection(null);
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="background-color: blue">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
+            editor.update(
+              () => {
+                $getRoot()
+                  .getChildren()
+                  .map((node, i) => {
+                    if ($isTableNode(node)) {
+                      node.setStyle(`--table-index: ${i};`);
+                    }
+                  });
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 0">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 1">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
           });
 
           test('TableNode.exportDOM() with range selection', async () => {
@@ -1022,6 +1136,513 @@ describe('LexicalTableNode tests', () => {
               const table = root.getLastChild<TableNode>();
               if (table) {
                 table.setRowStriping(false);
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+          });
+
+          test('Toggle frozen first column ON/OFF', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = $createTableNodeWithDimensions(4, 4, true);
+              root.append(table);
+            });
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFrozenColumns(1);
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table} ${editorConfig.theme
+                      .tableFrozenColumn}"
+                    data-lexical-frozen-column="true">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+
+            const stringifiedEditorState = JSON.stringify(
+              editor.getEditorState(),
+            );
+            const expectedStringifiedEditorState = `{
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "textFormat": 0,
+                    "textStyle": "",
+                    "type": "paragraph",
+                    "version": 1
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 3,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "frozenColumnCount": 1,
+                    "indent": 0,
+                    "type": "table",
+                    "version": 1
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "root",
+                "version": 1
+              }
+            }`;
+
+            expect(JSON.parse(stringifiedEditorState)).toEqual(
+              JSON.parse(expectedStringifiedEditorState),
+            );
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFrozenColumns(0);
               }
             });
 

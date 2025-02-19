@@ -74,8 +74,12 @@ function Editor() {
 return (
     <LexicalComposer initialConfig={initialConfig}>
       <PlainTextPlugin
-        contentEditable={<ContentEditable />}
-        placeholder={<div>Enter some text...</div>}
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
       />
       <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />

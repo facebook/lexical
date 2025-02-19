@@ -294,6 +294,7 @@ function getComment() {
     0,
     ' *',
     ' * @fullSyntaxTransform',
+    ' * @es6-async_DO_NOT_USE',
     ' * @generated',
     ' * @noflow',
     ' * @nolint',

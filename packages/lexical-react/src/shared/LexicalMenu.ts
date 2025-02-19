@@ -111,7 +111,7 @@ function getFullMatchOffset(
 ): number {
   let triggerOffset = offset;
   for (let i = triggerOffset; i <= entryText.length; i++) {
-    if (documentText.substr(-i) === entryText.substr(0, i)) {
+    if (documentText.slice(-i) === entryText.substring(0, i)) {
       triggerOffset = i;
     }
   }
@@ -595,6 +595,15 @@ export function useMenuAnchorRef(
     positionMenu,
     onVisibilityChange,
   );
+
+  // Append the context for the menu immediately
+  const containerDiv = anchorElementRef.current;
+  if (containerDiv != null) {
+    containerDiv.style.position = 'absolute';
+    if (parent != null) {
+      parent.append(containerDiv);
+    }
+  }
 
   return anchorElementRef;
 }

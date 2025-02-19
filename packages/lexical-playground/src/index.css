@@ -419,6 +419,10 @@ i.superscript {
   background-image: url(images/icons/type-superscript.svg);
 }
 
+i.highlight {
+  background-image: url(images/icons/highlighter.svg);
+}
+
 i.link {
   background-image: url(images/icons/link.svg);
 }
@@ -1330,6 +1334,7 @@ i.page-break,
 
 .table-cell-action-button-container {
   position: absolute;
+  z-index: 3;
   top: 0;
   left: 0;
   will-change: transform;

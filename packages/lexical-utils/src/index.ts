@@ -246,8 +246,8 @@ function $dfsCaretIterator<D extends CaretDirection>(
   const start = startNode || root;
   const startCaret = $isElementNode(start)
     ? $getChildCaret(start, direction)
-    : $rewindSiblingCaret($getSiblingCaret(start, direction));
-  const startDepth = $getDepth(startCaret.getParentAtCaret());
+    : $getSiblingCaret(start, direction);
+  const startDepth = $getDepth(start);
   const endCaret = $getAdjacentChildCaret(
     endNode
       ? $getChildCaretOrSelf($getSiblingCaret(endNode, direction))

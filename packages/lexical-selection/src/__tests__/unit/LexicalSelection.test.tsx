@@ -239,39 +239,6 @@ describe('LexicalSelection tests', () => {
     expect(actualSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const GRAPHEME_SCENARIOS = [
-    {
-      description: 'grapheme cluster',
-      // Hangul grapheme cluster.
-      // https://www.compart.com/en/unicode/U+AC01
-      grapheme: '\u1100\u1161\u11A8',
-    },
-    {
-      description: 'extended grapheme cluster',
-      // Tamil 'ni' grapheme cluster.
-      // http://unicode.org/reports/tr29/#Table_Sample_Grapheme_Clusters
-      grapheme: '\u0BA8\u0BBF',
-    },
-    {
-      description: 'tailored grapheme cluster',
-      // Devangari 'kshi' tailored grapheme cluster.
-      // http://unicode.org/reports/tr29/#Table_Sample_Grapheme_Clusters
-      grapheme: '\u0915\u094D\u0937\u093F',
-    },
-    {
-      description: 'Emoji sequence combined using zero-width joiners',
-      // https://emojipedia.org/family-woman-woman-girl-boy/
-      grapheme:
-        '\uD83D\uDC69\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66',
-    },
-    {
-      description: 'Emoji sequence with skin-tone modifier',
-      // https://emojipedia.org/clapping-hands-medium-skin-tone/
-      grapheme: '\uD83D\uDC4F\uD83C\uDFFD',
-    },
-  ];
-
   const suite = [
     {
       expectedHTML:
@@ -735,64 +702,6 @@ describe('LexicalSelection tests', () => {
     },
 
     // Tests need fixing:
-    // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
-    //   {
-    //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
-    //     inputs: [insertText(grapheme + grapheme), deleteBackward(1)],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: grapheme.length,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: grapheme.length,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    //   {
-    //     name: `Delete forward eliminates entire ${description} (${grapheme})`,
-    //     inputs: [
-    //       insertText(grapheme + grapheme),
-    //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //       deleteForward(),
-    //     ],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: 0,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: 0,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    //   {
-    //     name: `Move backward skips over grapheme cluster (${grapheme})`,
-    //     inputs: [insertText(grapheme + grapheme), moveBackward(1)],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: grapheme.length,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: grapheme.length,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    //   {
-    //     name: `Move forward skips over grapheme cluster (${grapheme})`,
-    //     inputs: [
-    //       insertText(grapheme + grapheme),
-    //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //       moveForward(),
-    //     ],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: grapheme.length,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: grapheme.length,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    // ]),
     // {
     //   name: 'Jump to beginning and insert',
     //   inputs: [

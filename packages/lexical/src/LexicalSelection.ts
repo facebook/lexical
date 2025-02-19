@@ -21,9 +21,12 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $extendCaretToRange,
   $getAdjacentChildCaret,
+  $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
+  $getSiblingCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -34,13 +37,13 @@ import {
   $isTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
+  $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
   CaretRange,
   NodeCaret,
   PointCaret,
-  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -67,7 +70,7 @@ import {
   $hasAncestor,
   $isTokenOrSegmented,
   $setCompositionKey,
-  doesContainGrapheme,
+  doesContainSurrogatePair,
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
@@ -1409,6 +1412,9 @@ export class RangeSelection implements BaseSelection {
     if (nodes.length === 0) {
       return;
     }
+    if (!this.isCollapsed()) {
+      this.removeText();
+    }
     if (this.anchor.key === 'root') {
       this.insertParagraph();
       const selection = $getSelection();
@@ -1813,38 +1819,94 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+      const direction = isBackward ? 'previous' : 'next';
+      const initialCaret = $caretFromPoint(anchor, direction);
+      const initialRange = $extendCaretToRange(initialCaret);
+      if (
+        initialRange
+          .getTextSlices()
+          .every((slice) => slice === null || slice.distance === 0)
+      ) {
+        // There's no text in the direction of the deletion so we can explore our options
+        let state:
+          | {type: 'initial'}
+          | {
+              type: 'merge-next-block';
+              block: ElementNode;
+            } = {type: 'initial'};
+        for (const caret of initialRange.iterNodeCarets('shadowRoot')) {
+          if ($isChildCaret(caret)) {
+            if (caret.origin.isInline()) {
+              // fall through when descending an inline
+            } else if (caret.origin.isShadowRoot()) {
+              // Don't merge with a shadow root block
+              if (
+                $isElementNode(initialRange.anchor.origin) &&
+                initialRange.anchor.origin.isEmpty()
+              ) {
+                // delete an empty paragraph like the DecoratorNode case
+                const normCaret = $normalizeCaret(caret);
+                $updateRangeSelectionFromCaretRange(
+                  this,
+                  $getCaretRange(normCaret, normCaret),
+                );
+                initialRange.anchor.origin.remove();
+              }
+              return;
+            } else if (state.type === 'merge-next-block') {
+              $updateRangeSelectionFromCaretRange(
+                this,
+                $getCaretRange(
+                  !caret.origin.isEmpty() && state.block.isEmpty()
+                    ? $rewindSiblingCaret(
+                        $getSiblingCaret(state.block, caret.direction),
+                      )
+                    : initialRange.anchor,
+                  caret,
+                ),
+              );
+              return this.removeText();
+            }
+          } else if ($isSiblingCaret(caret)) {
+            if ($isElementNode(caret.origin)) {
+              if (!caret.origin.isInline()) {
+                state = {block: caret.origin, type: 'merge-next-block'};
+              } else if (!caret.origin.isParentOf(initialRange.anchor.origin)) {
+                break;
+              }
+              continue;
+            } else if ($isDecoratorNode(caret.origin)) {
+              if (caret.origin.isIsolated()) {
+                // do nothing, shouldn't delete an isolated decorator
+              } else if (
+                state.type === 'merge-next-block' &&
+                (caret.origin.isKeyboardSelectable() ||
+                  !caret.origin.isInline()) &&
+                $isElementNode(initialRange.anchor.origin) &&
+                initialRange.anchor.origin.isEmpty()
+              ) {
+                // If the anchor is an empty element that is adjacent to a
+                // decorator then we remove the paragraph and select the
+                // decorator
+                initialRange.anchor.origin.remove();
+                const nodeSelection = $createNodeSelection();
+                nodeSelection.add(caret.origin.getKey());
+                $setSelection(nodeSelection);
+              } else {
+                // When the anchor is not an empty element then the
+                // adjacent decorator is removed
+                caret.origin.remove();
+              }
+              // always stop when a decorator is encountered
+              return;
+            }
+            break;
+          }
+        }
+      }
 
       // Handle the deletion around decorators.
       const focus = this.focus;
-      const possibleNode = $getAdjacentNode(focus, isBackward);
-      if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
-        // Make it possible to move selection from range selection to
-        // node selection on the node.
-        if (
-          possibleNode.isKeyboardSelectable() &&
-          $isElementNode(anchorNode) &&
-          anchorNode.getChildrenSize() === 0
-        ) {
-          anchorNode.remove();
-          const nodeSelection = $createNodeSelection();
-          nodeSelection.add(possibleNode.__key);
-          $setSelection(nodeSelection);
-        } else {
-          possibleNode.remove();
-          const editor = getActiveEditor();
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-        }
-        return;
-      } else if (
-        !isBackward &&
-        $isElementNode(possibleNode) &&
-        $isElementNode(anchorNode) &&
-        anchorNode.isEmpty()
-      ) {
-        anchorNode.remove();
-        possibleNode.selectStart();
-        return;
-      }
       this.modify('extend', isBackward, 'character');
 
       if (!this.isCollapsed()) {
@@ -1877,11 +1939,7 @@ export class RangeSelection implements BaseSelection {
         $updateCaretSelectionForUnicodeCharacter(this, isBackward);
       } else if (isBackward && anchor.offset === 0) {
         // Special handling around rich text nodes
-        const element =
-          anchor.type === 'element'
-            ? anchor.getNode()
-            : anchor.getNode().getParentOrThrow();
-        if (element.collapseAtStart(this)) {
+        if ($collapseAtStart(this, anchor.getNode())) {
           return;
         }
       }
@@ -1898,9 +1956,9 @@ export class RangeSelection implements BaseSelection {
       if (
         anchorNode.isEmpty() &&
         $isRootNode(anchorNode.getParent()) &&
-        anchorNode.getIndexWithinParent() === 0
+        anchorNode.getPreviousSibling() === null
       ) {
-        anchorNode.collapseAtStart(this);
+        $collapseAtStart(this, anchorNode);
       }
     }
   }
@@ -2007,6 +2065,30 @@ export function $getCharacterOffsets(
   return [getCharacterOffset(anchor), getCharacterOffset(focus)];
 }
 
+function $collapseAtStart(
+  selection: RangeSelection,
+  startNode: LexicalNode,
+): boolean {
+  for (
+    let node: null | LexicalNode = startNode;
+    node;
+    node = node.getParent()
+  ) {
+    if ($isElementNode(node)) {
+      if (node.collapseAtStart(selection)) {
+        return true;
+      }
+      if (!node.isInline()) {
+        break;
+      }
+    }
+    if (node.getPreviousSibling()) {
+      break;
+    }
+  }
+  return false;
+}
+
 function $swapPoints(selection: RangeSelection): void {
   const focus = selection.focus;
   const anchor = selection.anchor;
@@ -2029,6 +2111,70 @@ function moveNativeSelection(
   domSelection.modify(alter, direction, granularity);
 }
 
+/**
+ * Called by `RangeSelection.deleteCharacter` to determine if
+ * `this.modify('extend', isBackward, 'character')` extended the selection
+ * further than a user would expect for that operation.
+ *
+ * A short(?) JavaScript string vs. Unicode primer:
+ *
+ * Strings in JavaScript use an UTF-16 encoding, and the offsets into a
+ * string are based on those UTF-16 *code units*. This is basically a
+ * historical mistake (though logical at that time, decades ago), but
+ * can never really be fixed for compatibility reasons.
+ *
+ * In Unicode, a *code point* is the combination of one or more *code units*.
+ * and the range of a *code point* can fit into 21 bits.
+ *
+ * Every valid *code point* can be represented with one or two
+ * *UTF-16 code units*. One unit is used when the code point is in the
+ * Basic Multilingual Plane (BMP) and is `< 0xFFFF`. Anything outside
+ * of that plane is encoded with a *surrogate pair* of *code units* and
+ * `/[\uD800-\uDBFF][\uDC00-\uDFFF]/` is a regex that you could use to
+ * find any valid *surrogate pair*. As far as Unicode is concerned, these
+ * pairs represent a single *code point*, but in JavaScript, these pairs
+ * have a length of 2 (`pair.charCodeAt(n)` is really returning a
+ * UTF-16 *code unit*, not a unicode *code point*). It is possible to request
+ * a *code point* with `pair.codePointAt(0)` and enumerate code points
+ * in a string with `[...string]` but the offsets we work with, and
+ * the string length, are based in *code units* so that functionality
+ * is unfortunately not very useful here.
+ *
+ * This only gets us as far as *code points*. We now know that we must
+ * consider that each *code point* can have a length of 1 or 2 in JavaScript
+ * string distance. It gets even trickier because the visual representation
+ * of a character is a *grapheme* (approximately what the user thinks of
+ * as a character). A *grapheme* is one or more *code points*, and can
+ * essentially be arbitrarily long, as there are many ways to combine
+ * them.
+ *
+ * The `this.modify(…)` call has already extended our selection by one
+ * *grapheme* in the direction we want to delete. Sounds great, it's done
+ * a lot of awfully tricky work for us because this functionality has only
+ * recently become available in JavaScript via `Intl.Segmenter`. The
+ * problem is that in many cases the expected behavior of backspace or
+ * delete is *not always to delete a whole grapheme*. In some languages
+ * it's always expected that backspace ought to delete one code point, not the
+ * whole grapheme. In other situations such as emoji that use variation
+ * selectors you *do* want to delete the whole *grapheme*.
+ *
+ * In a few situations the behavior is even application dependent, such as
+ * with latin languages where you have multiple ways to represent the same
+ * character visually (e.g. a letter with an accent in one code point, or a
+ * letter followed by a combining mark in a second code point); some apps will
+ * delete the whole grapheme and others will delete only the combining mark,
+ * probably based on whether they perform some sort of *normalization* on their
+ * input to ensure that only one form is used when two sequences of code points
+ * can represent the same visual character. Lexical currently chooses not
+ * to perform any normalization so this type of combining marks will be
+ * deleted as a *code point* without deleting the whole *grapheme*.
+ *
+ * See also:
+ * https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-2/#G25564
+ * https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G30602
+ * https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G49537
+ * https://mathiasbynens.be/notes/javascript-unicode
+ */
 function $updateCaretSelectionForUnicodeCharacter(
   selection: RangeSelection,
   isBackward: boolean,
@@ -2053,7 +2199,7 @@ function $updateCaretSelectionForUnicodeCharacter(
 
     if (startOffset !== characterOffset) {
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
-      if (!doesContainGrapheme(text)) {
+      if (shouldDeleteExactlyOneCodeUnit(text)) {
         if (isBackward) {
           focus.set(focus.key, characterOffset, focus.type);
         } else {
@@ -2061,10 +2207,56 @@ function $updateCaretSelectionForUnicodeCharacter(
         }
       }
     }
-  } else {
-    // TODO Handling of multibyte characters
   }
 }
+
+function shouldDeleteExactlyOneCodeUnit(text: string) {
+  if (__DEV__) {
+    invariant(
+      text.length > 1,
+      'shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units',
+    );
+  }
+  return !(doesContainSurrogatePair(text) || doesContainEmoji(text));
+}
+
+/**
+ * Given the wall of text in $updateCaretSelectionForUnicodeCharacter, you'd
+ * think that the solution might be complex, but the only currently known
+ * cases given the above constraints where we want to delete a whole grapheme
+ * are when emoji is involved. Since ES6 we can use unicode character classes
+ * in regexp which makes this simple.
+ *
+ * It may make sense to add to this heuristic in the future if other
+ * edge cases are discovered, which is why detailed notes remain.
+ *
+ * This is implemented with runtime feature detection and will always
+ * return false on pre-2020 platforms that do not have unicode character
+ * class support.
+ */
+const doesContainEmoji: (text: string) => boolean = (() => {
+  try {
+    const re = new RegExp('\\p{Emoji}', 'u');
+    const test = re.test.bind(re);
+    // Sanity check a few emoji to make sure the regexp was parsed
+    // and works correctly. Any one of these should be sufficient,
+    // but they're cheap and it only runs once.
+    if (
+      // Emoji in the BMP (heart) with variation selector
+      test('\u2764\ufe0f') &&
+      // Emoji in the BMP (#) with variation selector
+      test('#\ufe0f\u20e3') &&
+      // Emoji outside the BMP (thumbs up) that is encoded with a surrogate pair
+      test('\ud83d\udc4d')
+    ) {
+      return test;
+    }
+  } catch (e) {
+    // SyntaxError
+  }
+  // fallback, surrogate pair already checked
+  return () => false;
+})();
 
 function $removeSegment(
   node: TextNode,
@@ -2947,12 +3139,18 @@ export function updateDOMSelection(
     // This is a workaround to restore the correct selection
     if (IS_ANDROID_CHROME) {
       setTimeout(() => {
-        domSelection.setBaseAndExtent(
-          nextAnchorNode,
-          nextAnchorOffset,
-          nextFocusNode,
-          nextFocusOffset,
-        );
+        try {
+          domSelection.setBaseAndExtent(
+            nextAnchorNode,
+            nextAnchorOffset,
+            nextFocusNode,
+            nextFocusOffset,
+          );
+        } catch (error) {
+          if (__DEV__) {
+            console.warn(error);
+          }
+        }
       });
     }
   } catch (error) {

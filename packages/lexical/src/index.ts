@@ -29,6 +29,7 @@ export type {
 } from './caret/LexicalCaret';
 export {
   $comparePointCaretNext,
+  $extendCaretToRange,
   $getAdjacentChildCaret,
   $getCaretRange,
   $getChildCaret,

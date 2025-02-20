@@ -478,6 +478,100 @@ test.describe.parallel('Tables', () => {
     );
   });
 
+  test(`Can't backwards delete from text to a table`, async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText || LEGACY_EVENTS);
+
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveDown(page, 2);
+    await page.keyboard.type('asdf');
+
+    // check initial state
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="ltr"><span data-lexical-text="true">asdf</span></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await moveLeft(page, 2);
+    await deleteBackward(page);
+    await deleteBackward(page);
+    await deleteBackward(page);
+    await deleteBackward(page);
+
+    // only 'as' should be deleted
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="ltr"><span data-lexical-text="true">df</span></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2, 0, 0],
+      focusOffset: 0,
+      focusPath: [2, 0, 0],
+    });
+  });
+
   test(`Can enter a table from a paragraph underneath via the left arrow key`, async ({
     page,
     isPlainText,

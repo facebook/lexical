@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  size-limit:
+  baddie:
     runs-on: ubuntu-latest
     env:
       CI_JOB_NUMBER: 1

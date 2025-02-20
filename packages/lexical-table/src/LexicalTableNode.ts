@@ -264,6 +264,9 @@ export class TableNode extends ElementNode {
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
+    if (this.__style) {
+      tableElement.style.cssText = this.__style;
+    }
     const colGroup = document.createElement('colgroup');
     tableElement.appendChild(colGroup);
     updateColgroup(
@@ -311,11 +314,11 @@ export class TableNode extends ElementNode {
       setFrozenRows(dom, config, this.__frozenRowCount);
     }
     updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
-    alignTableElement(
-      this.getDOMSlot(dom).element,
-      config,
-      this.getFormatType(),
-    );
+    const tableElement = this.getDOMSlot(dom).element;
+    if (prevNode.__style !== this.__style) {
+      tableElement.style.cssText = this.__style;
+    }
+    alignTableElement(tableElement, config, this.getFormatType());
     return false;
   }
 

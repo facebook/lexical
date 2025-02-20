@@ -20,7 +20,6 @@ import {
   Spread,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 export type Options = ReadonlyArray<Option>;
 
@@ -212,13 +211,11 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <PollComponent
-          question={this.getQuestion()}
-          options={this.getOptions()}
-          nodeKey={this.__key}
-        />
-      </Suspense>
+      <PollComponent
+        question={this.getQuestion()}
+        options={this.getOptions()}
+        nodeKey={this.__key}
+      />
     );
   }
 }

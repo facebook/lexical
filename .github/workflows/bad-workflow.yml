@@ -1,0 +1,17 @@
+name: 'baddie'
+on:
+  pull_request_target:
+    branches:
+      - main
+jobs:
+  size-limit:
+    runs-on: ubuntu-latest
+    env:
+      CI_JOB_NUMBER: 1
+    steps:
+      - id: print
+        name: print secrets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printenv GH_TOKEN

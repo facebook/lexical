@@ -14,6 +14,7 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import * as Y from 'yjs';
 
 import {Client, createTestConnection, waitForReact} from './utils';
 
@@ -403,6 +404,72 @@ describe('Collaboration', () => {
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
       root: '[object Object]Hello world',
+    });
+    expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+    client1.stop();
+    client2.stop();
+  });
+
+  it('Should handle multiple text nodes being normalized due to merge conflict', async () => {
+    const connector = createTestConnection();
+    const client1 = connector.createClient('1');
+    const client2 = connector.createClient('2');
+    client1.start(container!);
+    client2.start(container!);
+
+    await expectCorrectInitialContent(client1, client2);
+
+    client2.disconnect();
+
+    // Add
+    await waitForReact(() => {
+      client1.getEditor().update(() => {
+        const root = $getRoot();
+
+        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        paragraph.append($createTextNode('1'));
+      });
+    });
+
+    expect(client1.getHTML()).toEqual(
+      '<p><span data-lexical-text="true">1</span></p>',
+    );
+    expect(client1.getDocJSON()).toEqual({
+      root: '[object Object]1',
+    });
+
+    // Simulate normalization merge conflicts by inserting YMap+strings directly into Yjs.
+    const yDoc = client1.getDoc();
+    const rootXmlText = yDoc.get('root') as Y.XmlText;
+    const paragraphXmlText = rootXmlText.toDelta()[0].insert as Y.XmlText;
+    const textYMap = paragraphXmlText.toDelta()[0].insert as Y.Map<unknown>;
+    yDoc.transact(() => {
+      paragraphXmlText.insertEmbed(2, textYMap.clone());
+      paragraphXmlText.insert(3, '2');
+      paragraphXmlText.insertEmbed(4, textYMap.clone());
+      paragraphXmlText.insert(5, '3');
+    });
+
+    // Note: client1 HTML won't have been updated yet here because we edited its Yjs doc directly.
+    expect(client1.getHTML()).toEqual(
+      '<p><span data-lexical-text="true">1</span></p>',
+    );
+    expect(client1.getDocJSON()).toEqual({
+      root: '[object Object]1[object Object]2[object Object]3',
+    });
+
+    // When client2 reconnects, it will normalize the three text nodes, which syncs back to client1.
+    await waitForReact(() => {
+      client2.connect();
+    });
+
+    expect(client1.getHTML()).toEqual(
+      '<p><span data-lexical-text="true">123</span></p>',
+    );
+    expect(client1.getHTML()).toEqual(client2.getHTML());
+    expect(client1.getDocJSON()).toEqual({
+      root: '[object Object]123',
     });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 

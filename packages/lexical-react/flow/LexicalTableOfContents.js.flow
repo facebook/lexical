@@ -7,7 +7,8 @@
  * @flow strict
  */
 
-import {TableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
-
-/** @deprecated use the named export {@link LexicalTableOfContentsPlugin} */
-declare export default typeof TableOfContentsPlugin;
+/** @deprecated moved to @lexical/react/LexicalTableOfContentsPlugin */
+export {
+  type TableOfContentsEntry,
+  TableOfContentsPlugin,
+} from '@lexical/react/LexicalTableOfContentsPlugin';

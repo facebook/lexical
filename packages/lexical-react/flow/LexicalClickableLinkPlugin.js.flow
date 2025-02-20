@@ -10,5 +10,3 @@
 declare export function ClickableLinkPlugin({
   newTab?: boolean,
 }): null;
-
-declare export default typeof ClickableLinkPlugin;

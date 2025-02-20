@@ -161,7 +161,7 @@ function $tableClickCommand(event: MouseEvent): boolean {
   if (!$isTableCellNode(rootNode)) {
     return false;
   }
-  blockNode.selectStart();
+  blockNode.select(0);
   return true;
 }
 

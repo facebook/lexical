@@ -379,9 +379,10 @@ export class HeadingNode extends ElementNode {
   }
 
   collapseAtStart(): true {
-    const newElement = !this.isEmpty()
-      ? $createHeadingNode(this.getTag())
-      : $createParagraphNode();
+    if (!this.isEmpty()) {
+      return true;
+    }
+    const newElement = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => newElement.append(child));
     this.replace(newElement);

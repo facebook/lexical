@@ -20,7 +20,6 @@ import type {JSX} from 'react';
 import katex from 'katex';
 import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 const EquationComponent = React.lazy(() => import('./EquationComponent'));
 
@@ -147,13 +146,11 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <EquationComponent
-          equation={this.__equation}
-          inline={this.__inline}
-          nodeKey={this.__key}
-        />
-      </Suspense>
+      <EquationComponent
+        equation={this.__equation}
+        inline={this.__inline}
+        nodeKey={this.__key}
+      />
     );
   }
 }

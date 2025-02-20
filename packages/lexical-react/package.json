@@ -1031,36 +1031,6 @@
         "default": "./LexicalTabIndentationPlugin.js"
       }
     },
-    "./LexicalTableOfContents": {
-      "import": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.mjs",
-        "production": "./LexicalTableOfContents.prod.mjs",
-        "node": "./LexicalTableOfContents.node.mjs",
-        "default": "./LexicalTableOfContents.mjs"
-      },
-      "require": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.js",
-        "production": "./LexicalTableOfContents.prod.js",
-        "default": "./LexicalTableOfContents.js"
-      }
-    },
-    "./LexicalTableOfContents.js": {
-      "import": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.mjs",
-        "production": "./LexicalTableOfContents.prod.mjs",
-        "node": "./LexicalTableOfContents.node.mjs",
-        "default": "./LexicalTableOfContents.mjs"
-      },
-      "require": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.js",
-        "production": "./LexicalTableOfContents.prod.js",
-        "default": "./LexicalTableOfContents.js"
-      }
-    },
     "./LexicalTableOfContentsPlugin": {
       "import": {
         "types": "./LexicalTableOfContentsPlugin.d.ts",

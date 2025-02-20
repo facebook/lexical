@@ -117,16 +117,10 @@ export const EQUATION: TextMatchTransformer = {
     if (!$isEquationNode(node)) {
       return null;
     }
-    const equation = node.getEquation().trim();
+    const equation = node.getEquation();
     const isInline = node.isInline();
-    
-    // For block equations, ensure proper spacing
-    if (!isInline) {
-      return `\n\$\$\n${equation}\n\$\$\n`;
-    }
-    
-    // For inline equations, keep them in the same line
-    return `\$\{equation\}\$`;
+
+    return isInline ? `$${equation}$` : `$$${equation}$$`;
   },
   // Modified regex to better handle both inline and block equations
   importRegExp: /\$\$([^$]+?)\$\$|\$([^$\n]+?)\$/,
@@ -135,7 +129,7 @@ export const EQUATION: TextMatchTransformer = {
     const fullMatch = match[0];
     const blockEq = match[1];
     const inlineEq = match[2];
-    
+
     // If the equation has $$ it's a block equation
     const isBlock = fullMatch.startsWith('$$') && fullMatch.endsWith('$$');
     const equation = isBlock ? blockEq : inlineEq;
@@ -149,6 +143,24 @@ export const EQUATION: TextMatchTransformer = {
   },
   trigger: '$',
   type: 'text-match',
+};
+
+export const TWEET: ElementTransformer = {
+  dependencies: [TweetNode],
+  export: (node) => {
+    if (!$isTweetNode(node)) {
+      return null;
+    }
+
+    return `<tweet id="${node.getId()}" />`;
+  },
+  regExp: /<tweet id="([^"]+?)"\s?\/>\s?$/,
+  replace: (textNode, _1, match) => {
+    const [, id] = match;
+    const tweetNode = $createTweetNode(id);
+    textNode.replace(tweetNode);
+  },
+  type: 'element',
 };
 
 // Very primitive table setup

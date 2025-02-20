@@ -259,5 +259,15 @@
   "257": "insertBeforeStartRow is not a TableRowNode",
   "258": "$childIterator: Cycle detected, node with key %s has already been traversed",
   "259": "Point.getNode() must return ElementNode when type is element",
-  "260": "PointType.set: node with key %s is %s and can not be used for a %s point"
+  "260": "PointType.set: node with key %s is %s and can not be used for a %s point",
+  "261": "RangeSelection.getNodes() returned %s > 1 nodes in a collapsed selection",
+  "262": "shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units",
+  "263": "NodeCaret.splice: Underflow of expected nodesToRemove during splice (keys: %s)",
+  "264": "$getTextPointCaret: invalid offset %s for size %s",
+  "265": "$getCaretRange: anchor and focus must be in the same direction",
+  "266": "$caretFromPoint: Node with type %s and key %s that does not inherit from TextNode encountered for text point",
+  "267": "$caretFromPoint: Node with type %s and key %s that does not inherit from ElementNode encountered for element point",
+  "268": "$setPointFromCaret: exhaustiveness check",
+  "269": "$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s",
+  "270": "$patchStyle must only be called with a TextNode or collapsed RangeSelection"
 }

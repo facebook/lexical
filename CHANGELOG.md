@@ -1,3 +1,41 @@
+## v0.25.0 (2025-02-20)
+
+- lexical-playground Refactor Remove redundant Suspense from node decorators (#7215) Kiran Dash
+- lexical-playground Bug Fix Optimize table cell resizer event listeners (#7194) Kiran Dash
+- lexical-playground Chore Remove insertNodes workaround in ToolbarPlugin (#7206) Bob Ippolito
+- Breaking Changelexical-playground Refactor Remove special case for collapsible forward deletion (#7204) Bob Ippolito
+- ci Chore Upgrade astro to fix mysterious integration test failure (#7196) Bob Ippolito
+- lexical-table Feature Support TableNode.style in createDOM and updateDOM (#7205) Bob Ippolito
+- Breaking Changelexicallexical-playground Bug Fix Improve character deletion around shadow roots and decorators (#7155) Bob Ippolito
+- lexical Bug Fix Workaround for delete character with emoji grapheme customers that do not include non-BMP code points (#7175) Bob Ippolito
+- lexical Bug Fix catch setTimeout wrapped setBaseAndExtent call (#7202) Storm
+- Replace substr with substring (#7188) Ivaylo Pavlov
+- Breaking Changelexical-table Bug Fix Prevent nested tables (#7192) Kiran Dash
+- lexical-table Freeze top row using pure CSS (#7190) Ivaylo Pavlov
+- Documentation Update move placeholder examples to ContentEditable  (#7193) Rob Hannay
+- Position menu immediately (#7181) Gerard Rovira
+- lexical-codelexical-playground Bug Fix Fix selection boundaries in code block (#7187) Kiran Dash
+- lexical-react Bug Fix Make typeahead menu respect read-only mode (#7185) Kiran Dash
+- lexicallexical-devtools-corelexical-playground Bug Fix fix TextNode importDom highlight formatting (#7186) Kiran Dash
+- lexical Bug Fix add missing flow type for getNearestEditorFromDOMNode (#7183) Kiran Dash
+- Breaking Changelexicallexical-link Bug Fix Collapse through inline elements in deleteCharacter (#7180) Bob Ippolito
+- fix DFS depths when starting from inline node (#7179) Maksim Horbachevsky
+- No forward slash in template (#7178) Gerard Rovira
+- lexical-react positionMenu on rendering typeahead mentions menu (#7164) Sherry
+- lexical-table Bug Fix Ensure rectangular table cell merge behavior (#7161) (#7170) Kiran Dash
+- fix dfs traversal from the middle of the tree leaves (#7174) Maksim Horbachevsky
+- lexical-table Support first column freeze (#7134) Ivaylo Pavlov
+- Update WWW build flag (#7169) Gerard Rovira
+- scripts add noEnforceES3 to build script (#7162) Sherry
+- lexical Chore Add more tests for RangeSelection.getNodes() (#7152) Bob Ippolito
+- fix Replace Twitter with X (#7118) Aaron Dewes
+- lexical-website Documentation Update CaretType has sibling and child. (#7159) Benjamin Gudehus
+- lexical Bug fix Fixes infinite loop in sibling traversal (#7157) Ivan Suslov
+- lexical-table Feature TableCellNode add verticalAlign attribute (#7077) liuwei
+- lexicallexical-utilslexical-selectionlexical-table Feature NodeCaret abstraction for traversals and ranges (#7046) Bob Ippolito
+- v0.24.0 (#7147) Bob Ippolito
+- v0.24.0 Lexical GitHub Actions Bot
+
 ## v0.24.0 (2025-02-06)
 
 - ci Chore Remove SSHKEY secret (#7143) Bob Ippolito

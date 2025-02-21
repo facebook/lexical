@@ -212,9 +212,9 @@ function TableActionMenu({
       let topPosition = menuButtonRect.top;
       if (topPosition + dropDownElementRect.height > window.innerHeight) {
         const position = menuButtonRect.bottom - dropDownElementRect.height;
-        topPosition = (position < 0 ? margin : position) + window.pageYOffset;
+        topPosition = position < 0 ? margin : position;
       }
-      dropDownElement.style.top = `${topPosition + +window.pageYOffset}px`;
+      dropDownElement.style.top = `${topPosition}px`;
     }
   }, [contextRef, dropDownRef, editor]);
 

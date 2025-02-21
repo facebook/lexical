@@ -28,7 +28,6 @@ import {
   isHTMLElement,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 const InlineImageComponent = React.lazy(() => import('./InlineImageComponent'));
 
@@ -255,18 +254,16 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <InlineImageComponent
-          src={this.__src}
-          altText={this.__altText}
-          width={this.__width}
-          height={this.__height}
-          nodeKey={this.getKey()}
-          showCaption={this.__showCaption}
-          caption={this.__caption}
-          position={this.__position}
-        />
-      </Suspense>
+      <InlineImageComponent
+        src={this.__src}
+        altText={this.__altText}
+        width={this.__width}
+        height={this.__height}
+        nodeKey={this.getKey()}
+        showCaption={this.__showCaption}
+        caption={this.__caption}
+        position={this.__position}
+      />
     );
   }
 }

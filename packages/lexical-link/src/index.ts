@@ -304,7 +304,7 @@ export class LinkNode extends ElementNode {
 
 function $convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
-  if (isHTMLAnchorElement(domNode)) {
+  if (isHTMLAnchorElement(domNode) && domNode.href) {
     const content = domNode.textContent;
     if ((content !== null && content !== '') || domNode.children.length > 0) {
       node = $createLinkNode(domNode.getAttribute('href') || '', {

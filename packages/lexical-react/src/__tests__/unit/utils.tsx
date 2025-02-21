@@ -236,6 +236,10 @@ export class Client implements Provider {
     return (this.getContainer().firstChild as HTMLElement).innerHTML;
   }
 
+  getDoc() {
+    return this._doc;
+  }
+
   getDocJSON() {
     return this._doc.toJSON();
   }

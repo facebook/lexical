@@ -34,6 +34,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import {getThemeSelector} from '../../utils/getThemeSelector';
 import {useDebounce} from '../CodeActionMenuPlugin/utils';
 
 const BUTTON_WIDTH_PX = 20;
@@ -285,16 +286,21 @@ function getMouseInfo(
   isOutside: boolean;
 } {
   const target = event.target;
+  const tableCellClass = getThemeSelector(getTheme, 'tableCell');
 
   if (isHTMLElement(target)) {
     const tableDOMNode = target.closest<HTMLElement>(
-      `td.${getTheme()?.tableCell}, th.${getTheme()?.tableCell}`,
+      `td${tableCellClass}, th${tableCellClass}`,
     );
 
     const isOutside = !(
       tableDOMNode ||
-      target.closest<HTMLElement>(`button.${getTheme()?.tableAddRows}`) ||
-      target.closest<HTMLElement>(`button.${getTheme()?.tableAddColumns}`) ||
+      target.closest<HTMLElement>(
+        `button${getThemeSelector(getTheme, 'tableAddRows')}`,
+      ) ||
+      target.closest<HTMLElement>(
+        `button${getThemeSelector(getTheme, 'tableAddColumns')}`,
+      ) ||
       target.closest<HTMLElement>('div.TableCellResizer__resizer')
     );
 

@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {$createCodeNode} from '@lexical/code';
 import {
   INSERT_CHECK_LIST_COMMAND,

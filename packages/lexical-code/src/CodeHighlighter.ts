@@ -880,22 +880,64 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (payload): boolean => $handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      (event) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        const anchorNode = anchor.getNode();
+        if (!$isSelectionInCode(selection)) {
+          return false;
+        }
+        // If at the start of a code block, prevent selection from moving out
+        if (
+          selection.isCollapsed() &&
+          anchor.offset === 0 &&
+          anchorNode.getPreviousSibling() === null &&
+          $isCodeNode(anchorNode.getParentOrThrow())
+        ) {
+          event.preventDefault();
+          return true;
+        }
+        return $handleShiftLines(KEY_ARROW_UP_COMMAND, event);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (payload): boolean => $handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
-      COMMAND_PRIORITY_LOW,
-    ),
-    editor.registerCommand(
-      MOVE_TO_END,
-      (payload): boolean => $handleMoveTo(MOVE_TO_END, payload),
+      (event) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        const anchorNode = anchor.getNode();
+        if (!$isSelectionInCode(selection)) {
+          return false;
+        }
+        // If at the end of a code block, prevent selection from moving out
+        if (
+          selection.isCollapsed() &&
+          anchor.offset === anchorNode.getTextContentSize() &&
+          anchorNode.getNextSibling() === null &&
+          $isCodeNode(anchorNode.getParentOrThrow())
+        ) {
+          event.preventDefault();
+          return true;
+        }
+        return $handleShiftLines(KEY_ARROW_DOWN_COMMAND, event);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (payload): boolean => $handleMoveTo(MOVE_TO_START, payload),
+      (event) => $handleMoveTo(MOVE_TO_START, event as KeyboardEvent),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      MOVE_TO_END,
+      (event) => $handleMoveTo(MOVE_TO_END, event as KeyboardEvent),
       COMMAND_PRIORITY_LOW,
     ),
   );

@@ -856,6 +856,7 @@ export function $computeTableMapSkipCellCheck(
       $isTableRowNode(row),
       'Expected TableNode children to be TableRowNode',
     );
+    const startMapRow = getMapRow(rowIdx);
     for (
       let cell = row.getFirstChild(), colIdx = 0;
       cell != null;
@@ -866,7 +867,6 @@ export function $computeTableMapSkipCellCheck(
         'Expected TableRowNode children to be TableCellNode',
       );
       // Skip past any columns that were merged from a higher row
-      const startMapRow = getMapRow(rowIdx);
       while (startMapRow[colIdx] !== undefined) {
         colIdx++;
       }
@@ -978,6 +978,7 @@ export function $computeTableCellRectBoundary(
   cellAMap: TableMapValueType,
   cellBMap: TableMapValueType,
 ): TableCellRectBoundary {
+  // Initial boundaries based on the anchor and focus cells
   let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
   let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
   let maxColumn = Math.max(
@@ -988,65 +989,61 @@ export function $computeTableCellRectBoundary(
     cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
     cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
   );
-  let exploredMinColumn = minColumn;
-  let exploredMinRow = minRow;
-  let exploredMaxColumn = minColumn;
-  let exploredMaxRow = minRow;
-  function expandBoundary(mapValue: TableMapValueType): void {
-    const {
-      cell,
-      startColumn: cellStartColumn,
-      startRow: cellStartRow,
-    } = mapValue;
-    minColumn = Math.min(minColumn, cellStartColumn);
-    minRow = Math.min(minRow, cellStartRow);
-    maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
-    maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
-  }
-  while (
-    minColumn < exploredMinColumn ||
-    minRow < exploredMinRow ||
-    maxColumn > exploredMaxColumn ||
-    maxRow > exploredMaxRow
-  ) {
-    if (minColumn < exploredMinColumn) {
-      // Expand on the left
-      const rowDiff = exploredMaxRow - exploredMinRow;
-      const previousColumn = exploredMinColumn - 1;
-      for (let i = 0; i <= rowDiff; i++) {
-        expandBoundary(map[exploredMinRow + i][previousColumn]);
+
+  // Keep expanding until we have a complete rectangle
+  let hasChanges;
+  do {
+    hasChanges = false;
+
+    // Check all cells in the table
+    for (let row = 0; row < map.length; row++) {
+      for (let col = 0; col < map[0].length; col++) {
+        const cell = map[row][col];
+        if (!cell) {
+          continue;
+        }
+
+        const cellEndCol = cell.startColumn + cell.cell.__colSpan - 1;
+        const cellEndRow = cell.startRow + cell.cell.__rowSpan - 1;
+
+        // Check if this cell intersects with our current selection rectangle
+        const intersectsHorizontally =
+          cell.startColumn <= maxColumn && cellEndCol >= minColumn;
+        const intersectsVertically =
+          cell.startRow <= maxRow && cellEndRow >= minRow;
+
+        // If the cell intersects either horizontally or vertically
+        if (intersectsHorizontally && intersectsVertically) {
+          // Expand boundaries to include this cell completely
+          const newMinColumn = Math.min(minColumn, cell.startColumn);
+          const newMaxColumn = Math.max(maxColumn, cellEndCol);
+          const newMinRow = Math.min(minRow, cell.startRow);
+          const newMaxRow = Math.max(maxRow, cellEndRow);
+
+          // Check if boundaries changed
+          if (
+            newMinColumn !== minColumn ||
+            newMaxColumn !== maxColumn ||
+            newMinRow !== minRow ||
+            newMaxRow !== maxRow
+          ) {
+            minColumn = newMinColumn;
+            maxColumn = newMaxColumn;
+            minRow = newMinRow;
+            maxRow = newMaxRow;
+            hasChanges = true;
+          }
+        }
       }
-      exploredMinColumn = previousColumn;
     }
-    if (minRow < exploredMinRow) {
-      // Expand on top
-      const columnDiff = exploredMaxColumn - exploredMinColumn;
-      const previousRow = exploredMinRow - 1;
-      for (let i = 0; i <= columnDiff; i++) {
-        expandBoundary(map[previousRow][exploredMinColumn + i]);
-      }
-      exploredMinRow = previousRow;
-    }
-    if (maxColumn > exploredMaxColumn) {
-      // Expand on the right
-      const rowDiff = exploredMaxRow - exploredMinRow;
-      const nextColumn = exploredMaxColumn + 1;
-      for (let i = 0; i <= rowDiff; i++) {
-        expandBoundary(map[exploredMinRow + i][nextColumn]);
-      }
-      exploredMaxColumn = nextColumn;
-    }
-    if (maxRow > exploredMaxRow) {
-      // Expand on the bottom
-      const columnDiff = exploredMaxColumn - exploredMinColumn;
-      const nextRow = exploredMaxRow + 1;
-      for (let i = 0; i <= columnDiff; i++) {
-        expandBoundary(map[nextRow][exploredMinColumn + i]);
-      }
-      exploredMaxRow = nextRow;
-    }
-  }
-  return {maxColumn, maxRow, minColumn, minRow};
+  } while (hasChanges);
+
+  return {
+    maxColumn,
+    maxRow,
+    minColumn,
+    minRow,
+  };
 }
 
 export function $getTableCellNodeRect(tableCellNode: TableCellNode): {

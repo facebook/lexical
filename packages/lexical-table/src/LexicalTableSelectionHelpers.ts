@@ -16,13 +16,11 @@ import type {
 import type {
   BaseSelection,
   EditorState,
-  ElementFormatType,
   ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  TextFormatType,
 } from 'lexical';
 
 import {
@@ -317,7 +315,7 @@ export function applyTableHandlers(
 
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         command,
         (event) =>
           $handleArrowKey(editor, event, direction, tableNode, tableObserver),
@@ -327,7 +325,7 @@ export function applyTableHandlers(
   }
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ESCAPE_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -475,7 +473,7 @@ export function applyTableHandlers(
 
   for (const command of DELETE_KEY_COMMANDS) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         command,
         $deleteCellHandler,
         COMMAND_PRIORITY_CRITICAL,
@@ -484,7 +482,7 @@ export function applyTableHandlers(
   }
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent | ClipboardEvent | null>(
+    editor.registerCommand(
       CUT_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -515,7 +513,7 @@ export function applyTableHandlers(
   );
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<TextFormatType>(
+    editor.registerCommand(
       FORMAT_TEXT_COMMAND,
       (payload) => {
         const selection = $getSelection();
@@ -546,7 +544,7 @@ export function applyTableHandlers(
   );
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<ElementFormatType>(
+    editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
       (formatType) => {
         const selection = $getSelection();
@@ -561,6 +559,12 @@ export function applyTableHandlers(
         const focusNode = selection.focus.getNode();
         if (!$isTableCellNode(anchorNode) || !$isTableCellNode(focusNode)) {
           return false;
+        }
+
+        // Align the table if the entire table is selected
+        if ($isFullTableSelection(selection, tableNode)) {
+          tableNode.setFormat(formatType);
+          return true;
         }
 
         const [tableMap, anchorCell, focusCell] = $computeTableMap(
@@ -653,7 +657,7 @@ export function applyTableHandlers(
 
   if (hasTabHandler) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_TAB_COMMAND,
         (event) => {
           const selection = $getSelection();
@@ -1577,6 +1581,24 @@ function $isSelectionInTable(
     return isAnchorInside && isFocusInside;
   }
 
+  return false;
+}
+
+function $isFullTableSelection(
+  selection: null | BaseSelection,
+  tableNode: TableNode,
+): boolean {
+  if ($isTableSelection(selection)) {
+    const anchorNode = selection.anchor.getNode() as TableCellNode;
+    const focusNode = selection.focus.getNode() as TableCellNode;
+    if (tableNode && anchorNode && focusNode) {
+      const [map] = $computeTableMap(tableNode, anchorNode, focusNode);
+      return (
+        anchorNode.getKey() === map[0][0].cell.getKey() &&
+        focusNode.getKey() === map[map.length - 1].at(-1)!.cell.getKey()
+      );
+    }
+  }
   return false;
 }
 

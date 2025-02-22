@@ -281,14 +281,18 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 100px" />
           </colgroup>
           <tr style="height: 21px">
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">a</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -300,7 +304,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
                 <span data-lexical-text="true">b</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -309,21 +315,27 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
           </tr>
           <tr style="height: 21px">
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">e</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="vertical-align: bottom">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -812,6 +824,60 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+  });
+
+  test('Copy + paste table with empty row', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <table>
+          <tr><td>1</td></tr>
+          <tr></tr>
+          <tr><td>2</td></tr>
+        </table>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">1</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <br />
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">2</span>
+              </p>
             </td>
           </tr>
         </table>

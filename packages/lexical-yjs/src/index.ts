@@ -114,6 +114,7 @@ export function setLocalStateFocus(
 export {
   getAnchorAndFocusCollabNodesForUserState,
   syncCursorPositions,
+  type SyncCursorPositionsFn,
 } from './SyncCursors';
 export {
   syncLexicalUpdateToYjs,

@@ -93,6 +93,10 @@ const theme: EditorThemeClasses = {
   specialText: 'PlaygroundEditorTheme__specialText',
   tab: 'PlaygroundEditorTheme__tabNode',
   table: 'PlaygroundEditorTheme__table',
+  tableAlignment: {
+    center: 'PlaygroundEditorTheme__tableAlignmentCenter',
+    right: 'PlaygroundEditorTheme__tableAlignmentRight',
+  },
   tableCell: 'PlaygroundEditorTheme__tableCell',
   tableCellActionButton: 'PlaygroundEditorTheme__tableCellActionButton',
   tableCellActionButtonContainer:
@@ -100,6 +104,8 @@ const theme: EditorThemeClasses = {
   tableCellHeader: 'PlaygroundEditorTheme__tableCellHeader',
   tableCellResizer: 'PlaygroundEditorTheme__tableCellResizer',
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
+  tableFrozenColumn: 'PlaygroundEditorTheme__tableFrozenColumn',
+  tableFrozenRow: 'PlaygroundEditorTheme__tableFrozenRow',
   tableRowStriping: 'PlaygroundEditorTheme__tableRowStriping',
   tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
@@ -108,6 +114,7 @@ const theme: EditorThemeClasses = {
     bold: 'PlaygroundEditorTheme__textBold',
     capitalize: 'PlaygroundEditorTheme__textCapitalize',
     code: 'PlaygroundEditorTheme__textCode',
+    highlight: 'PlaygroundEditorTheme__textHighlight',
     italic: 'PlaygroundEditorTheme__textItalic',
     lowercase: 'PlaygroundEditorTheme__textLowercase',
     strikethrough: 'PlaygroundEditorTheme__textStrikethrough',

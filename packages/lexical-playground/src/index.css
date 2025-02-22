@@ -419,6 +419,10 @@ i.superscript {
   background-image: url(images/icons/type-superscript.svg);
 }
 
+i.highlight {
+  background-image: url(images/icons/highlighter.svg);
+}
+
 i.link {
   background-image: url(images/icons/link.svg);
 }
@@ -485,8 +489,8 @@ i.columns {
   background-image: url(images/icons/3-columns.svg);
 }
 
-i.tweet {
-  background-image: url(images/icons/tweet.svg);
+i.x {
+  background-image: url(images/icons/x.svg);
 }
 
 i.youtube {
@@ -511,6 +515,21 @@ i.right-align {
 .icon.justify-align,
 i.justify-align {
   background-image: url(images/icons/justify.svg);
+}
+
+.icon.vertical-top,
+i.left-align {
+  background-image: url(images/icons/vertical-top.svg);
+}
+
+.icon.vertical-middle,
+i.center-align {
+  background-image: url(images/icons/vertical-middle.svg);
+}
+
+.icon.vertical-bottom,
+i.right-align {
+  background-image: url(images/icons/vertical-bottom.svg);
 }
 
 i.indent {
@@ -1315,6 +1334,7 @@ i.page-break,
 
 .table-cell-action-button-container {
   position: absolute;
+  z-index: 3;
   top: 0;
   left: 0;
   will-change: transform;

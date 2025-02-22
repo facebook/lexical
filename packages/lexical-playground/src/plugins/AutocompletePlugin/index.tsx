@@ -7,6 +7,7 @@
  */
 
 import type {BaseSelection, NodeKey, TextNode} from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
@@ -50,7 +51,7 @@ type SearchPromise = {
 export const uuid = Math.random()
   .toString(36)
   .replace(/[^a-z]+/g, '')
-  .substr(0, 5);
+  .substring(0, 5);
 
 // TODO lookup should be custom
 function $search(selection: null | BaseSelection): [boolean, string] {

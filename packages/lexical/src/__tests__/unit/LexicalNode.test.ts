@@ -308,12 +308,8 @@ describe('LexicalNode tests', () => {
             return;
           }
 
-          selection.anchor.type = 'text';
-          selection.anchor.offset = 1;
-          selection.anchor.key = textNode.getKey();
-          selection.focus.type = 'text';
-          selection.focus.offset = 1;
-          selection.focus.key = newTextNode.getKey();
+          selection.anchor.set(textNode.getKey(), 1, 'text');
+          selection.focus.set(newTextNode.getKey(), 1, 'text');
         });
 
         await Promise.resolve().then();
@@ -353,12 +349,8 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const rangeSelection = $createRangeSelection();
 
-          rangeSelection.anchor.type = 'text';
-          rangeSelection.anchor.offset = 1;
-          rangeSelection.anchor.key = textNode.getKey();
-          rangeSelection.focus.type = 'text';
-          rangeSelection.focus.offset = 1;
-          rangeSelection.focus.key = newTextNode.getKey();
+          rangeSelection.anchor.set(textNode.getKey(), 1, 'text');
+          rangeSelection.focus.set(newTextNode.getKey(), 1, 'text');
 
           expect(paragraphNode.isSelected(rangeSelection)).toBe(true);
           expect(textNode.isSelected(rangeSelection)).toBe(true);

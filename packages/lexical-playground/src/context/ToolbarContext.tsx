@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+import type {JSX} from 'react';
+
 import {ElementFormatType} from 'lexical';
 import React, {
   createContext,
@@ -57,6 +60,7 @@ const INITIAL_TOOLBAR_STATE = {
   fontSizeInputValue: `${DEFAULT_FONT_SIZE}`,
   isBold: false,
   isCode: false,
+  isHighlight: false,
   isImageCaption: false,
   isItalic: false,
   isLink: false,

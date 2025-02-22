@@ -14,7 +14,9 @@ import {
   moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
+  moveToLineBeginning,
   moveToParagraphEnd,
+  pressBackspace,
   redo,
   selectAll,
   selectCharacters,
@@ -1943,6 +1945,97 @@ test.describe.parallel('Nested List', () => {
             </ul>
           </li>
         </ul>
+      `,
+    );
+  });
+  test('collapseAtStart for trivial bullet list', async ({page}) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br />
+          </li>
+        </ul>
+      `,
+    );
+    await pressBackspace(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+  test('collapseAtStart for bullet list with text', async ({page}) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('Hello World');
+    await moveToLineBeginning(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello World</span>
+          </li>
+        </ul>
+      `,
+    );
+    await pressBackspace(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello World</span>
+        </p>
+      `,
+    );
+  });
+  test('collapseAtStart for bullet list with text inside autolink', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('www.example.com');
+    await moveToLineBeginning(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://www.example.com">
+              <span data-lexical-text="true">www.example.com</span>
+            </a>
+          </li>
+        </ul>
+      `,
+    );
+    await pressBackspace(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://www.example.com">
+            <span data-lexical-text="true">www.example.com</span>
+          </a>
+        </p>
       `,
     );
   });

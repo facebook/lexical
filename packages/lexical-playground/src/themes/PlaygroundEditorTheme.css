@@ -51,6 +51,13 @@
 .PlaygroundEditorTheme__textBold {
   font-weight: bold;
 }
+.PlaygroundEditorTheme__paragraph mark {
+  background-color: unset;
+}
+.PlaygroundEditorTheme__textHighlight {
+  background: rgba(255, 212, 0, 0.14);
+  border-bottom: 2px solid rgba(255, 212, 0, 0.3);
+}
 .PlaygroundEditorTheme__textItalic {
   font-style: italic;
 }
@@ -193,8 +200,16 @@
   margin: 0px 25px 30px 0px;
 }
 .PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
-  /* Remove the table's margin and put it on the wrapper */
-  margin: 0;
+  /* Remove the table's vertical margin and put it on the wrapper */
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.PlaygroundEditorTheme__tableAlignmentCenter {
+  margin-left: auto;
+  margin-right: auto;
+}
+.PlaygroundEditorTheme__tableAlignmentRight {
+  margin-left: auto;
 }
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
@@ -203,7 +218,57 @@
   overflow-x: scroll;
   table-layout: fixed;
   width: fit-content;
-  margin: 0px 25px 30px 0px;
+  margin-top: 25px;
+  margin-bottom: 30px;
+}
+.PlaygroundEditorTheme__tableFrozenRow {
+  /* position:sticky needs overflow:clip or visible
+     https://github.com/w3c/csswg-drafts/issues/865#issuecomment-350585274 */
+  overflow-x: clip;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td {
+  overflow: clip;
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  top: 44px;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th {
+  overflow: clip;
+  background-color: #f2f3f5;
+  position: sticky;
+  z-index: 2;
+  top: 44px;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th:after,
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  border-bottom: 1px solid #bbb;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
+  background-color: #f2f3f5;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 100%;
+  border-right: 1px solid #bbb;
 }
 .PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
   background-color: #f2f5fb;
@@ -507,6 +572,8 @@
 .PlaygroundEditorTheme__layoutItem {
   border: 1px dashed #ddd;
   padding: 8px 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 .PlaygroundEditorTheme__autocomplete {
   color: #ccc;

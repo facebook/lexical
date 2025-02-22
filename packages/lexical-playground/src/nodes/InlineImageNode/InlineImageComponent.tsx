@@ -7,6 +7,7 @@
  */
 import type {Position} from './InlineImageNode';
 import type {BaseSelection, LexicalEditor, NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import './InlineImageNode.css';
 

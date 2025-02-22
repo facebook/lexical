@@ -26,6 +26,7 @@ import {CollabTextNode} from './CollabTextNode';
 import {
   $syncLocalCursorPosition,
   syncCursorPositions,
+  SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
 import {
@@ -83,6 +84,7 @@ export function syncYjsChangesToLexical(
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
+  syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -129,7 +131,7 @@ export function syncYjsChangesToLexical(
     },
     {
       onUpdate: () => {
-        syncCursorPositions(binding, provider);
+        syncCursorPositionsFn(binding, provider);
         // If there was a collision on the top level paragraph
         // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
         // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
@@ -152,7 +154,8 @@ function $handleNormalizationMergeConflicts(
   // We handle the merge operations here
   const normalizedNodesKeys = Array.from(normalizedNodes);
   const collabNodeMap = binding.collabNodeMap;
-  const mergedNodes = [];
+  const mergedNodes: [CollabTextNode, string][] = [];
+  const removedNodes: CollabTextNode[] = [];
 
   for (let i = 0; i < normalizedNodesKeys.length; i++) {
     const nodeKey = normalizedNodesKeys[i];
@@ -173,22 +176,25 @@ function $handleNormalizationMergeConflicts(
 
         const parent = collabNode._parent;
         collabNode._normalized = true;
-
         parent._xmlText.delete(offset, 1);
 
-        collabNodeMap.delete(nodeKey);
-        const parentChildren = parent._children;
-        const index = parentChildren.indexOf(collabNode);
-        parentChildren.splice(index, 1);
+        removedNodes.push(collabNode);
       }
     }
   }
 
+  for (let i = 0; i < removedNodes.length; i++) {
+    const collabNode = removedNodes[i];
+    const nodeKey = collabNode.getKey();
+    collabNodeMap.delete(nodeKey);
+    const parentChildren = collabNode._parent._children;
+    const index = parentChildren.indexOf(collabNode);
+    parentChildren.splice(index, 1);
+  }
+
   for (let i = 0; i < mergedNodes.length; i++) {
     const [collabNode, text] = mergedNodes[i];
-    if (collabNode instanceof CollabTextNode && typeof text === 'string') {
-      collabNode._text = text;
-    }
+    collabNode._text = text;
   }
 }
 

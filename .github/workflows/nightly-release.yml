@@ -12,9 +12,6 @@ jobs:
       channel: nightly
       increment: prerelease
       dry-run: false
-      git-repo: 'git@github.com:facebook/lexical.git'
-    secrets:
-      SSH_KEY: ${{ secrets.SSH_KEY }}
   npm-release:
     uses: ./.github/workflows/call-npm-publish.yml
     needs: [increment-version]

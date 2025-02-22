@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {
   DecoratorNode,
   DOMConversionMap,
@@ -17,7 +19,6 @@ import {
   Spread,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 export type Options = ReadonlyArray<Option>;
 
@@ -33,7 +34,7 @@ function createUID(): string {
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
+    .substring(0, 5);
 }
 
 export function createPollOption(text = ''): Option {
@@ -184,13 +185,11 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <PollComponent
-          question={this.__question}
-          options={this.__options}
-          nodeKey={this.__key}
-        />
-      </Suspense>
+      <PollComponent
+        question={this.__question}
+        options={this.__options}
+        nodeKey={this.__key}
+      />
     );
   }
 }

@@ -21,7 +21,7 @@ import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
   $commitPendingUpdates,
@@ -88,6 +88,8 @@ export type EditorUpdateOptions = {
   skipTransforms?: true;
   tag?: string | Array<string>;
   discrete?: true;
+  /** @internal */
+  event?: undefined | UIEvent | Event | null;
 };
 
 export type EditorSetOptions = {
@@ -445,7 +447,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   ];
   const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes: Map<string, RegisteredNode>;
+  let registeredNodes: RegisteredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -1154,7 +1156,7 @@ export class LexicalEditor {
         : null;
     }
 
-    $flushRootMutations(this);
+    flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;

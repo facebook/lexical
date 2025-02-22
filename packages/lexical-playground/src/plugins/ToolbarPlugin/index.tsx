@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {
   $isCodeNode,
   CODE_LANGUAGE_FRIENDLY_NAME_MAP,
@@ -610,6 +612,7 @@ export default function ToolbarPlugin({
       );
       updateToolbarState('isSubscript', selection.hasFormat('subscript'));
       updateToolbarState('isSuperscript', selection.hasFormat('superscript'));
+      updateToolbarState('isHighlight', selection.hasFormat('highlight'));
       updateToolbarState('isCode', selection.hasFormat('code'));
       updateToolbarState(
         'fontSize',
@@ -986,6 +989,20 @@ export default function ToolbarPlugin({
                 <span className="text">Superscript</span>
               </div>
               <span className="shortcut">{SHORTCUTS.SUPERSCRIPT}</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'highlight');
+              }}
+              className={
+                'item wide ' + dropDownActiveClass(toolbarState.isHighlight)
+              }
+              title="Highlight"
+              aria-label="Format text with a highlight">
+              <div className="icon-text-container">
+                <i className="icon highlight" />
+                <span className="text">Highlight</span>
+              </div>
             </DropDownItem>
             <DropDownItem
               onClick={() => clearFormatting(activeEditor)}

@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -103,6 +105,10 @@ describe('LexicalEditor tests', () => {
           nodes: nodes ?? [],
           onError: onError || jest.fn(),
           theme: {
+            tableAlignment: {
+              center: 'editor-table-alignment-center',
+              right: 'editor-table-alignment-right',
+            },
             text: {
               bold: 'editor-text-bold',
               italic: 'editor-text-italic',

@@ -7,6 +7,7 @@
  */
 
 import type {Option, Options, PollNode} from './PollNode';
+import type {JSX} from 'react';
 
 import './PollNode.css';
 

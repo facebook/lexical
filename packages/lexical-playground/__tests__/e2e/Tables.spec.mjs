@@ -192,8 +192,8 @@ test.describe.parallel('Tables', () => {
   });
 
   test.describe
-    .parallel(`Can exit tables with the horizontal arrow keys`, () => {
-    test(`Can exit the first cell of a non-nested table`, async ({
+    .parallel(`Can exit table with the horizontal arrow keys`, () => {
+    test(`Can exit the first cell of a table`, async ({
       page,
       isPlainText,
       isCollab,
@@ -239,7 +239,7 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the last cell of a non-nested table`, async ({
+    test(`Can exit the last cell of a table`, async ({
       page,
       isPlainText,
       isCollab,
@@ -284,62 +284,9 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(`Can exit the first cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
-
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
-      });
-
-      await moveLeft(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 0],
-      });
-    });
-
-    test(`Can exit the last cell of a nested table into the parent table cell`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
-
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await insertTable(page, 2, 2);
-
-      await moveRight(page, 3);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
-      });
-
-      await moveRight(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1, ...WRAPPER, 1, 0, 2],
-        focusOffset: 0,
-        focusPath: [1, ...WRAPPER, 1, 0, 2],
-      });
-    });
+    // Note: Tests for nested table navigation ("Can exit the first/last cell of a nested table into the parent table cell")
+    // have been removed since nested tables are no longer supported.
+    // See: https://github.com/facebook/lexical/issues/7154
   });
 
   test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({
@@ -531,6 +478,100 @@ test.describe.parallel('Tables', () => {
     );
   });
 
+  test(`Can't backwards delete from text to a table`, async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText || LEGACY_EVENTS);
+
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveDown(page, 2);
+    await page.keyboard.type('asdf');
+
+    // check initial state
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="ltr"><span data-lexical-text="true">asdf</span></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await moveLeft(page, 2);
+    await deleteBackward(page);
+    await deleteBackward(page);
+    await deleteBackward(page);
+    await deleteBackward(page);
+
+    // only 'as' should be deleted
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="ltr"><span data-lexical-text="true">df</span></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2, 0, 0],
+      focusOffset: 0,
+      focusPath: [2, 0, 0],
+    });
+  });
+
   test(`Can enter a table from a paragraph underneath via the left arrow key`, async ({
     page,
     isPlainText,
@@ -713,7 +754,10 @@ test.describe.parallel('Tables', () => {
         focusPath: [1, ...WRAPPER, 1, 0, 0, 0, 0],
       });
 
-      await waitForSelector(page, `#typeahead-menu ul li:first-child.selected`);
+      await waitForSelector(
+        page,
+        `div[class="typeahead-popover mentions-menu"] ul li:first-child.selected`,
+      );
 
       await moveDown(page, 1);
       await assertSelection(page, {
@@ -725,7 +769,7 @@ test.describe.parallel('Tables', () => {
 
       await waitForSelector(
         page,
-        '#typeahead-menu ul li:nth-child(2).selected',
+        'div[class="typeahead-popover mentions-menu"] ul li:nth-child(2).selected',
       );
     });
   });
@@ -2432,6 +2476,343 @@ test.describe.parallel('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Merge/unmerge with already merged cells', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    if (isCollab) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    // 1. Create a 5x5 table
+    await insertTable(page, 5, 5);
+
+    // 2. Type the letters in specific cells
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+
+    // Move to cell for 'a' and type
+    await moveRight(page, 1);
+    await moveDown(page, 2);
+    await page.keyboard.type('a');
+
+    // Move to cell for 'b' and type
+    await moveRight(page, 1);
+    await page.keyboard.type('b');
+
+    // Move to cell for 'c' and type
+    await moveLeft(page, 2);
+    await moveDown(page, 1);
+    await page.keyboard.type('c');
+
+    // Move to cell for 'd' and type
+    await moveRight(page, 1);
+    await page.keyboard.type('d');
+
+    // Move to cell for 'e' and type
+    await moveRight(page, 1);
+    await page.keyboard.type('e');
+
+    // Move to cell for 'f' and type
+    await moveDown(page, 1);
+    await page.keyboard.type('f');
+
+    // 3. First merge: Select and merge cells a,b,c,d
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 2},
+      {x: 2, y: 3},
+      false,
+      false,
+    );
+    await mergeTableCells(page);
+    // 4. Second merge: Select and merge cells e,f
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 3},
+      {x: 3, y: 4},
+      false,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // 5. Final merge: Non-rectangular selection attempt
+    await selectCellsFromTableCords(
+      page,
+      {x: 2, y: 4},
+      {x: 1, y: 3},
+      false,
+      false,
+    );
+    await mergeTableCells(page);
+    // 6. Assert the final state
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+          </colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              colspan="3"
+              rowspan="3">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">b</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">c</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await unmergeTableCell(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+            <col style="width: 92px;" />
+          </colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">b</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">c</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
@@ -5201,7 +5582,10 @@ test.describe.parallel('Tables', () => {
         await click(page, 'div[contenteditable] th p', {
           button: 'right',
         });
-        await click(page, '#typeahead-menu [role="option"] :text("Cut")');
+        await click(
+          page,
+          'div[class="typeahead-popover"] [role="option"] :text("Cut")',
+        );
       });
 
       await assertHTML(
@@ -5243,5 +5627,111 @@ test.describe.parallel('Tables', () => {
         {ignoreClasses: true},
       );
     });
+  });
+
+  test(`Cannot insert nested tables`, async ({page, isPlainText, isCollab}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Insert a table
+    await insertTable(page, 2, 2);
+
+    // Focus inside the first cell
+    await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+
+    // Try to insert another table inside the cell
+    await insertTable(page, 2, 2);
+
+    // Verify no nested table was created
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Cannot paste tables inside table cells`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+    await page.keyboard.type('test');
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that no content was pasted into the cell
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
   });
 });

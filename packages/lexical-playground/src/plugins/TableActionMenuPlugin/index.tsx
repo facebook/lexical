@@ -7,10 +7,12 @@
  */
 
 import type {ElementNode, LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
+  $computeTableMapSkipCellCheck,
   $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
   $getNodeTriplet,
@@ -53,6 +55,7 @@ import invariant from 'shared/invariant';
 
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
+import DropDown, {DropDownItem} from '../../ui/DropDown';
 
 function computeSelectionCount(selection: TableSelection): {
   columns: number;
@@ -265,38 +268,105 @@ function TableActionMenu({
     editor.update(() => {
       const selection = $getSelection();
       if ($isTableSelection(selection)) {
-        const {columns, rows} = computeSelectionCount(selection);
+        // Get all selected cells and compute the total area
         const nodes = selection.getNodes();
-        let firstCell: null | TableCellNode = null;
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-          if ($isTableCellNode(node)) {
-            if (firstCell === null) {
-              node.setColSpan(columns).setRowSpan(rows);
-              firstCell = node;
-              const isEmpty = $cellContainsEmptyParagraph(node);
-              let firstChild;
-              if (
-                isEmpty &&
-                $isParagraphNode((firstChild = node.getFirstChild()))
-              ) {
-                firstChild.remove();
-              }
-            } else if ($isTableCellNode(firstCell)) {
-              const isEmpty = $cellContainsEmptyParagraph(node);
-              if (!isEmpty) {
-                firstCell.append(...node.getChildren());
-              }
-              node.remove();
+        const tableCells = nodes.filter($isTableCellNode);
+
+        if (tableCells.length === 0) {
+          return;
+        }
+
+        // Find the table node
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCells[0]);
+        const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+
+        // Find the boundaries of the selection including merged cells
+        let minRow = Infinity;
+        let maxRow = -Infinity;
+        let minCol = Infinity;
+        let maxCol = -Infinity;
+
+        // First pass: find the actual boundaries considering merged cells
+        const processedCells = new Set();
+        for (const row of gridMap) {
+          for (const mapCell of row) {
+            if (!mapCell || !mapCell.cell) {
+              continue;
+            }
+
+            const cellKey = mapCell.cell.getKey();
+            if (processedCells.has(cellKey)) {
+              continue;
+            }
+
+            if (tableCells.some((cell) => cell.is(mapCell.cell))) {
+              processedCells.add(cellKey);
+              // Get the actual position of this cell in the grid
+              const cellStartRow = mapCell.startRow;
+              const cellStartCol = mapCell.startColumn;
+              const cellRowSpan = mapCell.cell.__rowSpan || 1;
+              const cellColSpan = mapCell.cell.__colSpan || 1;
+
+              // Update boundaries considering the cell's actual position and span
+              minRow = Math.min(minRow, cellStartRow);
+              maxRow = Math.max(maxRow, cellStartRow + cellRowSpan - 1);
+              minCol = Math.min(minCol, cellStartCol);
+              maxCol = Math.max(maxCol, cellStartCol + cellColSpan - 1);
             }
           }
         }
-        if (firstCell !== null) {
-          if (firstCell.getChildrenSize() === 0) {
-            firstCell.append($createParagraphNode());
-          }
-          $selectLastDescendant(firstCell);
+
+        // Validate boundaries
+        if (minRow === Infinity || minCol === Infinity) {
+          return;
         }
+
+        // The total span of the merged cell
+        const totalRowSpan = maxRow - minRow + 1;
+        const totalColSpan = maxCol - minCol + 1;
+
+        // Use the top-left cell as the target cell
+        const targetCellMap = gridMap[minRow][minCol];
+        if (!targetCellMap?.cell) {
+          return;
+        }
+        const targetCell = targetCellMap.cell;
+
+        // Set the spans for the target cell
+        targetCell.setColSpan(totalColSpan);
+        targetCell.setRowSpan(totalRowSpan);
+
+        // Move content from other cells to the target cell
+        const seenCells = new Set([targetCell.getKey()]);
+
+        // Second pass: merge content and remove other cells
+        for (let row = minRow; row <= maxRow; row++) {
+          for (let col = minCol; col <= maxCol; col++) {
+            const mapCell = gridMap[row][col];
+            if (!mapCell?.cell) {
+              continue;
+            }
+
+            const currentCell = mapCell.cell;
+            const key = currentCell.getKey();
+
+            if (!seenCells.has(key)) {
+              seenCells.add(key);
+              const isEmpty = $cellContainsEmptyParagraph(currentCell);
+              if (!isEmpty) {
+                targetCell.append(...currentCell.getChildren());
+              }
+              currentCell.remove();
+            }
+          }
+        }
+
+        // Ensure target cell has content
+        if (targetCell.getChildrenSize() === 0) {
+          targetCell.append($createParagraphNode());
+        }
+
+        $selectLastDescendant(targetCell);
         onClose();
       }
     });
@@ -446,6 +516,34 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const toggleFirstRowFreeze = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setFrozenRows(tableNode.getFrozenRows() === 0 ? 1 : 0);
+        }
+      }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
+
+  const toggleFirstColumnFreeze = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setFrozenColumns(
+            tableNode.getFrozenColumns() === 0 ? 1 : 0,
+          );
+        }
+      }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
+
   const handleCellBackgroundColor = useCallback(
     (value: string) => {
       editor.update(() => {
@@ -471,6 +569,29 @@ function TableActionMenu({
     },
     [editor],
   );
+
+  const formatVerticalAlign = (value: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+        const [cell] = $getNodeTriplet(selection.anchor);
+        if ($isTableCellNode(cell)) {
+          cell.setVerticalAlign(value);
+        }
+
+        if ($isTableSelection(selection)) {
+          const nodes = selection.getNodes();
+
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if ($isTableCellNode(node)) {
+              node.setVerticalAlign(value);
+            }
+          }
+        }
+      }
+    });
+  };
 
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
@@ -526,6 +647,55 @@ function TableActionMenu({
         onClick={() => toggleRowStriping()}
         data-test-id="table-row-striping">
         <span className="text">Toggle Row Striping</span>
+      </button>
+      <DropDown
+        buttonLabel="Vertical Align"
+        buttonClassName="item"
+        buttonAriaLabel="Formatting options for vertical alignment">
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('top');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-top" />
+            <span className="text">Top Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('middle');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-middle" />
+            <span className="text">Middle Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('bottom');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-bottom" />
+            <span className="text">Bottom Align</span>
+          </div>
+        </DropDownItem>
+      </DropDown>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleFirstRowFreeze()}
+        data-test-id="table-freeze-first-row">
+        <span className="text">Toggle First Row Freeze</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleFirstColumnFreeze()}
+        data-test-id="table-freeze-first-column">
+        <span className="text">Toggle First Column Freeze</span>
       </button>
       <hr />
       <button

@@ -8,6 +8,7 @@
 import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContentsPlugin';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import './index.css';
 
@@ -56,7 +57,7 @@ function TableOfContentsList({
     editor.getEditorState().read(() => {
       const domElement = editor.getElementByKey(key);
       if (domElement !== null) {
-        domElement.scrollIntoView();
+        domElement.scrollIntoView({behavior: 'smooth', block: 'center'});
         setSelectedKey(key);
         selectedIndex.current = currIndex;
       }

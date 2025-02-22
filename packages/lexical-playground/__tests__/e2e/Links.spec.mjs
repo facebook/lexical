@@ -524,6 +524,68 @@ test.describe.parallel('Links', () => {
     },
   );
 
+  test(
+    `Can backspace across a link and it deletes text, not the whole link`,
+    {
+      tag: '@flaky',
+    },
+    async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type(' abc def ');
+      await moveLeft(page, 5);
+      await selectCharacters(page, 'left', 3);
+
+      // link
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">abc</span>
+            </a>
+            <span data-lexical-text="true">def</span>
+          </p>
+        `,
+      );
+
+      await moveRight(page, 4);
+
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true"></span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://"
+              rel="noreferrer">
+              <span data-lexical-text="true">ab</span>
+            </a>
+            <span data-lexical-text="true">f</span>
+          </p>
+        `,
+      );
+    },
+  );
+
   test(`Can create a link then replace it with plain text`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type(' abc ');
@@ -1652,7 +1714,9 @@ test.describe.parallel('Links', () => {
     );
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0, 1],
+      // Previous to #7046 NodeCaret the selection anchor would've been
+      // inside the <a> tag but now it's normalized to the text
+      anchorPath: [0, 1, 0, 0],
       focusOffset: 5,
       focusPath: [0, 1, 0, 0],
     });
@@ -1677,21 +1741,14 @@ test.describe.parallel('Links', () => {
       `,
     );
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    }
+    // Previous to #7046 NodeCaret the selection anchor would've been
+    // inside the <a> tag but now it's normalized to the text
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0, 0],
+    });
 
     // unlink
     await click(page, '.link');
@@ -1757,21 +1814,12 @@ test.describe.parallel('Links', () => {
       `,
     );
 
-    if (browserName === 'chromium') {
-      await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 1],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 1],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 1, 0, 0],
+    });
 
     await setURL(page, 'facebook.com');
 

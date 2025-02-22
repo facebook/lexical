@@ -10,8 +10,8 @@
   <a href="https://discord.gg/KmG4wQnnD9">
     <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909"/>
   </a>
-  <a href="https://twitter.com/intent/follow?screen_name=lexicaljs">
-    <img alt="Follow us on Twitter" src="https://img.shields.io/twitter/follow/lexicaljs?style=social"/>
+  <a href="https://x.com/intent/follow?screen_name=lexicaljs">
+    <img alt="Follow us on X" src="https://img.shields.io/twitter/follow/lexicaljs?style=social"/>
   </a>
 </p>
 
@@ -113,8 +113,12 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <PlainTextPlugin
-        contentEditable={<ContentEditable />}
-        placeholder={<div>Enter some text...</div>}
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
         ErrorBoundary={LexicalErrorBoundary}
       />
       <OnChangePlugin onChange={onChange} />

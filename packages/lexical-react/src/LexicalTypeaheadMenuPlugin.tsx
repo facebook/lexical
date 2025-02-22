@@ -12,6 +12,7 @@ import type {
   MenuTextMatch,
   TriggerFn,
 } from './shared/LexicalMenu';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -241,6 +242,12 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   useEffect(() => {
     const updateListener = () => {
       editor.getEditorState().read(() => {
+        // Check if editor is in read-only mode
+        if (!editor.isEditable()) {
+          closeTypeahead();
+          return;
+        }
+
         const editorWindow = editor._window || window;
         const range = editorWindow.document.createRange();
         const selection = $getSelection();
@@ -295,6 +302,16 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     closeTypeahead,
     openTypeahead,
   ]);
+
+  useEffect(
+    () =>
+      editor.registerEditableListener((isEditable) => {
+        if (!isEditable) {
+          closeTypeahead();
+        }
+      }),
+    [editor, closeTypeahead],
+  );
 
   return resolution === null ||
     editor === null ||

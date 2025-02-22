@@ -170,15 +170,76 @@ test.describe.parallel('Nested List', () => {
 
     await selectFromColorPicker(page);
     await toggleBold(page);
-    await page.keyboard.type('Hello');
-    //Double-enter to exit list
+    await page.keyboard.type('Item one');
+    await page.keyboard.press('Enter');
+    await clickIndentButton(page);
+    await page.keyboard.type('Nested item two');
+    // Double-enter to exit nested list
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
-    await page.keyboard.type('World');
+    await page.keyboard.type('Item three');
+    // Double-enter to exit list
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Normal text');
+
+    const expectedColor = 'rgb(208, 2, 27)';
 
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">Hello</strong></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">World</strong></p>',
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              style="color: ${expectedColor};"
+              data-lexical-text="true">
+              Item one
+            </strong>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <strong
+                  class="PlaygroundEditorTheme__textBold"
+                  style="color: ${expectedColor};"
+                  data-lexical-text="true">
+                  Nested item two
+                </strong>
+              </li>
+            </ul>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              style="color: ${expectedColor};"
+              data-lexical-text="true">
+              Item three
+            </strong>
+          </li>
+        </ul>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            style="color: ${expectedColor};"
+            data-lexical-text="true">
+            Normal text
+          </strong>
+        </p>
+      `,
     );
   });
 

@@ -286,10 +286,10 @@ export function $patchStyle(
     {...prevStyles},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
-  if ($isElementNode(target)) {
-    target.setTextStyle(newCSSText);
-  } else {
+  if ($isRangeSelection(target) || $isTextNode(target)) {
     target.setStyle(newCSSText);
+  } else {
+    target.setTextStyle(newCSSText);
   }
   CSS_TO_STYLES.set(newCSSText, newStyles);
 }

@@ -7,7 +7,11 @@
  */
 
 import type {SerializedListItemNode} from './LexicalListItemNode';
-import type {ListType, SerializedListNode} from './LexicalListNode';
+import type {
+  ListNodeTagType,
+  ListType,
+  SerializedListNode,
+} from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
@@ -47,6 +51,7 @@ export {
   $removeList,
   ListItemNode,
   ListNode,
+  ListNodeTagType,
   ListType,
   SerializedListItemNode,
   SerializedListNode,

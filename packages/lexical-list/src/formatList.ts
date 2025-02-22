@@ -499,8 +499,6 @@ export function $handleListInsertParagraph(): boolean {
 
   if ($isRootOrShadowRoot(grandparent)) {
     replacementNode = $createParagraphNode();
-    replacementNode.setTextStyle(selection.style);
-    replacementNode.setTextFormat(selection.format);
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {
     replacementNode = $createListItemNode();
@@ -508,6 +506,8 @@ export function $handleListInsertParagraph(): boolean {
   } else {
     return false;
   }
+  replacementNode.setTextStyle(selection.style);
+  replacementNode.setTextFormat(selection.format);
   replacementNode.select();
 
   const nextSiblings = anchor.getNextSiblings();

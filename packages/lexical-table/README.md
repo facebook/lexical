@@ -11,32 +11,17 @@ A plugin for handling tables in Lexical.
 ## Installation
 
 ```bash
-npm install @lexical/table
+npm install @lexical/table @lexical/react
 ```
 
 ## Usage
 
-```js
-import {TablePlugin} from '@lexical/table';
+See the [react-table example](https://github.com/facebook/lexical/tree/main/examples/react-table)
+for a minimal example that uses this package and the
+[TablePlugin](https://lexical.dev/docs/api/modules/lexical_react_LexicalTablePlugin)
+from @lexical/react/LexicalTablePlugin
 
-// In your editor
-const editor = createEditor({
-  // ...other config
-  nodes: [...TablePlugin.nodes],
-});
-
-// In your React component
-function MyEditor() {
-  return (
-    <LexicalComposer>
-      <div className="editor-container">
-        <PlainTextPlugin />
-        <TablePlugin />
-      </div>
-    </LexicalComposer>
-  );
-}
-```
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-table?file=src/main.tsx)
 
 ## Features
 

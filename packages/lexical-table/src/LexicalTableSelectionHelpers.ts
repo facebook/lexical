@@ -800,6 +800,9 @@ export function applyTableHandlers(
             }
 
             const originalChildren = currentGridCellNode.getChildren();
+            currentGridCellNode.setBackgroundColor(
+              newGridCellNode.getBackgroundColor(),
+            );
             newGridCellNode.getChildren().forEach((child) => {
               if ($isTextNode(child)) {
                 const paragraphNode = $createParagraphNode();

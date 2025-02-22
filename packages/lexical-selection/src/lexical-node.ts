@@ -266,8 +266,10 @@ export function $patchStyle(
     '$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection',
   );
   const prevStyles = getStyleObjectFromCSS(
-    target instanceof TextNode || target instanceof ElementNode
+    target instanceof TextNode
       ? target.getStyle()
+      : target instanceof ElementNode
+      ? target.getTextStyle()
       : target.style,
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
@@ -284,7 +286,11 @@ export function $patchStyle(
     {...prevStyles},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
-  target.setStyle(newCSSText);
+  if (target instanceof ElementNode) {
+    target.setTextStyle(newCSSText);
+  } else {
+    target.setStyle(newCSSText);
+  }
   CSS_TO_STYLES.set(newCSSText, newStyles);
 }
 

@@ -80,8 +80,9 @@ export class ListItemNode extends ElementNode {
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
-    if (this.__style !== '') {
-      element.style.cssText = this.__style;
+    const nextStyle = this.__style || this.__textStyle;
+    if (nextStyle) {
+      element.style.cssText = nextStyle;
     }
     return element;
   }
@@ -98,8 +99,10 @@ export class ListItemNode extends ElementNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-    if (prevNode.__style !== this.__style) {
-      dom.style.cssText = this.__style;
+    const prevStyle = prevNode.__style || prevNode.__textStyle;
+    const nextStyle = this.__style || this.__textStyle;
+    if (prevStyle !== nextStyle) {
+      dom.style.cssText = nextStyle;
     }
     return false;
   }

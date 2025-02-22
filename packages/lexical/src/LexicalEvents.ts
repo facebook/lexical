@@ -350,7 +350,7 @@ function onSelectionChange(
               $isTextNode(anchorNode),
               'Point.getNode() must return TextNode when type is text',
             );
-            $updateSelectionFormatStyleFromNode(selection, anchorNode);
+            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             invariant(
               $isElementNode(anchorNode),
@@ -361,7 +361,7 @@ function onSelectionChange(
               // This previously applied to all ParagraphNode
               lastNode.isEmpty()
             ) {
-              $updateSelectionFormatStyleFromNode(selection, lastNode);
+              $updateSelectionFormatStyleFromElementNode(selection, lastNode);
             } else {
               $updateSelectionFormatStyle(selection, 0, '');
             }
@@ -425,12 +425,21 @@ function $updateSelectionFormatStyle(
   }
 }
 
-function $updateSelectionFormatStyleFromNode(
+function $updateSelectionFormatStyleFromTextNode(
   selection: RangeSelection,
-  node: TextNode | ElementNode,
+  node: TextNode,
 ) {
   const format = node.getFormat();
   const style = node.getStyle();
+  $updateSelectionFormatStyle(selection, format, style);
+}
+
+function $updateSelectionFormatStyleFromElementNode(
+  selection: RangeSelection,
+  node: ElementNode,
+) {
+  const format = node.getTextFormat();
+  const style = node.getTextStyle();
   $updateSelectionFormatStyle(selection, format, style);
 }
 
@@ -607,7 +616,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
               $isTextNode(anchorNode),
               'Anchor node must be a TextNode',
             );
-            $updateSelectionFormatStyleFromNode(selection, anchorNode);
+            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
           }
         } else {
           $setCompositionKey(null);

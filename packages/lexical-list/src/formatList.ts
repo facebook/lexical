@@ -9,11 +9,14 @@
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getChildCaret,
   $getSelection,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $normalizeCaret,
+  $setPointFromCaret,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -259,7 +262,9 @@ export function $removeList(): void {
       const listItems = $getAllListItems(listNode);
 
       for (const listItemNode of listItems) {
-        const paragraph = $createParagraphNode();
+        const paragraph = $createParagraphNode()
+          .setTextStyle(selection.style)
+          .setTextFormat(selection.format);
 
         append(paragraph, listItemNode.getChildren());
 
@@ -273,10 +278,16 @@ export function $removeList(): void {
         // When the corresponding listItemNode is deleted and replaced by the newly generated paragraph
         // we should manually set the selection's focus and anchor to the newly generated paragraph.
         if (listItemNode.__key === selection.anchor.key) {
-          selection.anchor.set(paragraph.getKey(), 0, 'element');
+          $setPointFromCaret(
+            selection.anchor,
+            $normalizeCaret($getChildCaret(paragraph, 'next')),
+          );
         }
         if (listItemNode.__key === selection.focus.key) {
-          selection.focus.set(paragraph.getKey(), 0, 'element');
+          $setPointFromCaret(
+            selection.focus,
+            $normalizeCaret($getChildCaret(paragraph, 'next')),
+          );
         }
 
         listItemNode.remove();
@@ -506,9 +517,10 @@ export function $handleListInsertParagraph(): boolean {
   } else {
     return false;
   }
-  replacementNode.setTextStyle(selection.style);
-  replacementNode.setTextFormat(selection.format);
-  replacementNode.select();
+  replacementNode
+    .setTextStyle(selection.style)
+    .setTextFormat(selection.format)
+    .select();
 
   const nextSiblings = anchor.getNextSiblings();
 

@@ -19,11 +19,9 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
-  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from 'lexical';
 
@@ -69,21 +67,6 @@ export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
 
-function $checkSelectionListener(): boolean {
-  const selection = $getSelection();
-  if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    const node = selection.anchor.getNode();
-    if (
-      $isListItemNode(node) &&
-      node.isEmpty() &&
-      selection.style !== node.getStyle()
-    ) {
-      node.setStyle(selection.style);
-    }
-  }
-  return false;
-}
-
 export function registerList(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -112,28 +95,28 @@ export function registerList(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
-      () => {
-        const hasHandledInsertParagraph = $handleListInsertParagraph();
-
-        if (hasHandledInsertParagraph) {
-          return true;
-        }
-
-        return false;
-      },
+      () => $handleListInsertParagraph(),
       COMMAND_PRIORITY_LOW,
-    ),
-    editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      $checkSelectionListener,
-      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerNodeTransform(ListItemNode, (node) => {
       const firstChild = node.getFirstChild();
-      if (firstChild && $isTextNode(firstChild)) {
-        const style = firstChild.getStyle();
-        if (node.getStyle() !== style) {
-          node.setStyle(style);
+      if (firstChild) {
+        if ($isTextNode(firstChild)) {
+          const style = firstChild.getStyle();
+          if (node.getTextStyle() !== style) {
+            node.setTextStyle(style);
+          }
+        }
+      } else {
+        // If it's empty, check the selection
+        const selection = $getSelection();
+        if (
+          $isRangeSelection(selection) &&
+          selection.style !== node.getTextStyle() &&
+          selection.isCollapsed() &&
+          node.is(selection.anchor.getNode())
+        ) {
+          node.setTextStyle(selection.style);
         }
       }
     }),
@@ -141,9 +124,10 @@ export function registerList(editor: LexicalEditor): () => void {
       const listItemParentNode = node.getParent();
       if (
         $isListItemNode(listItemParentNode) &&
-        node.is(listItemParentNode.getFirstChild())
+        node.is(listItemParentNode.getFirstChild()) &&
+        node.getStyle() !== listItemParentNode.getTextStyle()
       ) {
-        listItemParentNode.markDirty();
+        listItemParentNode.setTextStyle(node.getStyle());
       }
     }),
   );

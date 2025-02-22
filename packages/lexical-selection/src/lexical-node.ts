@@ -260,17 +260,17 @@ export function $patchStyle(
   >,
 ): void {
   invariant(
-    target instanceof TextNode ||
-      target instanceof ElementNode ||
-      target.isCollapsed(),
+    $isRangeSelection(target)
+      ? target.isCollapsed()
+      : $isTextNode(target) || $isElementNode(target),
     '$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection',
   );
   const prevStyles = getStyleObjectFromCSS(
-    target instanceof TextNode
+    $isRangeSelection(target)
+      ? target.style
+      : $isTextNode(target)
       ? target.getStyle()
-      : target instanceof ElementNode
-      ? target.getTextStyle()
-      : target.style,
+      : target.getTextStyle(),
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
@@ -286,7 +286,7 @@ export function $patchStyle(
     {...prevStyles},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
-  if (target instanceof ElementNode) {
+  if ($isElementNode(target)) {
     target.setTextStyle(newCSSText);
   } else {
     target.setStyle(newCSSText);

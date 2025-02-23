@@ -197,7 +197,8 @@ function $handleNormalizationMergeConflicts(
   // We handle the merge operations here
   const normalizedNodesKeys = Array.from(normalizedNodes);
   const collabNodeMap = binding.collabNodeMap;
-  const mergedNodes = [];
+  const mergedNodes: [CollabTextNode, string][] = [];
+  const removedNodes: CollabTextNode[] = [];
 
   for (let i = 0; i < normalizedNodesKeys.length; i++) {
     const nodeKey = normalizedNodesKeys[i];
@@ -218,22 +219,25 @@ function $handleNormalizationMergeConflicts(
 
         const parent = collabNode._parent;
         collabNode._normalized = true;
-
         parent._xmlText.delete(offset, 1);
 
-        collabNodeMap.delete(nodeKey);
-        const parentChildren = parent._children;
-        const index = parentChildren.indexOf(collabNode);
-        parentChildren.splice(index, 1);
+        removedNodes.push(collabNode);
       }
     }
   }
 
+  for (let i = 0; i < removedNodes.length; i++) {
+    const collabNode = removedNodes[i];
+    const nodeKey = collabNode.getKey();
+    collabNodeMap.delete(nodeKey);
+    const parentChildren = collabNode._parent._children;
+    const index = parentChildren.indexOf(collabNode);
+    parentChildren.splice(index, 1);
+  }
+
   for (let i = 0; i < mergedNodes.length; i++) {
     const [collabNode, text] = mergedNodes[i];
-    if (collabNode instanceof CollabTextNode && typeof text === 'string') {
-      collabNode._text = text;
-    }
+    collabNode._text = text;
   }
 }
 

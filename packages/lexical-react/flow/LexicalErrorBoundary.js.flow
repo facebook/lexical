@@ -15,6 +15,3 @@ export type LexicalErrorBoundaryProps = $ReadOnly<{
 declare export function LexicalErrorBoundary(
   props: LexicalErrorBoundaryProps,
 ): React.Node;
-
-/** @deprecated use the named export {@link LexicalErrorBoundary} */
-export default typeof LexicalErrorBoundary;

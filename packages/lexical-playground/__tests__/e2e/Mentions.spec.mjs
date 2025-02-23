@@ -16,6 +16,7 @@ import {
 import {
   assertHTML,
   assertSelection,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -1018,5 +1019,17 @@ test.describe('Mentions', () => {
       focusOffset: 8,
       focusPath: [0, 1, 0],
     });
+  });
+
+  test(`Sets correct attributes on typeahead menu container`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('@a');
+
+    const menuElement = await page.locator('#typeahead-menu:has(:scope > *)');
+    expect(await menuElement.getAttribute('aria-label')).toBe('Typeahead menu');
+    expect(await menuElement.getAttribute('id')).toBe('typeahead-menu');
+    expect(await menuElement.getAttribute('role')).toBe('listbox');
   });
 });

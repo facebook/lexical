@@ -21,8 +21,10 @@ import {
   $getSelection,
   $isElementNode,
   $isParagraphNode,
+  $isRootNode,
   $setSelection,
   getDOMSelection,
+  INSERT_PARAGRAPH_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -467,8 +469,13 @@ export class TableObserver {
 
     if (selectedNodes.length === this.table.columns * this.table.rows) {
       tableNode.selectPrevious();
+      const parent = tableNode.getParent();
       // Delete entire table
       tableNode.remove();
+      // Handle case when table was the only node
+      if ($isRootNode(parent) && parent.isEmpty()) {
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      }
       return;
     }
 

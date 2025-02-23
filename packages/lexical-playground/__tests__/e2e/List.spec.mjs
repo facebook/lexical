@@ -14,7 +14,9 @@ import {
   moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
+  moveToLineBeginning,
   moveToParagraphEnd,
+  pressBackspace,
   redo,
   selectAll,
   selectCharacters,
@@ -168,15 +170,76 @@ test.describe.parallel('Nested List', () => {
 
     await selectFromColorPicker(page);
     await toggleBold(page);
-    await page.keyboard.type('Hello');
-    //Double-enter to exit list
+    await page.keyboard.type('Item one');
+    await page.keyboard.press('Enter');
+    await clickIndentButton(page);
+    await page.keyboard.type('Nested item two');
+    // Double-enter to exit nested list
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
-    await page.keyboard.type('World');
+    await page.keyboard.type('Item three');
+    // Double-enter to exit list
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Normal text');
+
+    const expectedColor = 'rgb(208, 2, 27)';
 
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">Hello</strong></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" style="color: rgb(208, 2, 27)" data-lexical-text="true">World</strong></p>',
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              style="color: ${expectedColor};"
+              data-lexical-text="true">
+              Item one
+            </strong>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <strong
+                  class="PlaygroundEditorTheme__textBold"
+                  style="color: ${expectedColor};"
+                  data-lexical-text="true">
+                  Nested item two
+                </strong>
+              </li>
+            </ul>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              style="color: ${expectedColor};"
+              data-lexical-text="true">
+              Item three
+            </strong>
+          </li>
+        </ul>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            style="color: ${expectedColor};"
+            data-lexical-text="true">
+            Normal text
+          </strong>
+        </p>
+      `,
     );
   });
 
@@ -1943,6 +2006,97 @@ test.describe.parallel('Nested List', () => {
             </ul>
           </li>
         </ul>
+      `,
+    );
+  });
+  test('collapseAtStart for trivial bullet list', async ({page}) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br />
+          </li>
+        </ul>
+      `,
+    );
+    await pressBackspace(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+  test('collapseAtStart for bullet list with text', async ({page}) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('Hello World');
+    await moveToLineBeginning(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello World</span>
+          </li>
+        </ul>
+      `,
+    );
+    await pressBackspace(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello World</span>
+        </p>
+      `,
+    );
+  });
+  test('collapseAtStart for bullet list with text inside autolink', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('www.example.com');
+    await moveToLineBeginning(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://www.example.com">
+              <span data-lexical-text="true">www.example.com</span>
+            </a>
+          </li>
+        </ul>
+      `,
+    );
+    await pressBackspace(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://www.example.com">
+            <span data-lexical-text="true">www.example.com</span>
+          </a>
+        </p>
       `,
     );
   });

@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -25,6 +25,7 @@
     "build-release": "npm run build-prod -- --release --codes",
     "build-www": "npm run clean && npm run build -- --www && npm run build -- --www --prod && npm run prepare-www",
     "build-types": "tsc -p ./tsconfig.build.json && node ./scripts/validate-tsc-types.js",
+    "lint-flow": "node ./scripts/lint-flow-types.js",
     "clean": "node scripts/clean.js",
     "extract-codes": "node scripts/build.js --codes",
     "flow": "node ./scripts/check-flow-types.js",
@@ -163,6 +164,7 @@
     "glob": "^10.4.1",
     "google-closure-compiler": "^20220202.0.0",
     "gzip-size": "^6.0.0",
+    "hermes-estree": "^0.26.0",
     "hermes-parser": "^0.26.0",
     "hermes-transform": "^0.26.0",
     "husky": "^7.0.1",
@@ -181,6 +183,7 @@
     "rollup": "^4.22.4",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",
+    "ts-morph": "^25.0.1",
     "ts-node": "^10.9.1",
     "typedoc": "^0.25.12",
     "typescript": "^5.4.5",

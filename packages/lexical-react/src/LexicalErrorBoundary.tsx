@@ -37,7 +37,3 @@ export function LexicalErrorBoundary({
     </ReactErrorBoundary>
   );
 }
-
-/** @deprecated use the named export {@link LexicalErrorBoundary} */
-// eslint-disable-next-line no-restricted-exports
-export default LexicalErrorBoundary;

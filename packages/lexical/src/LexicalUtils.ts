@@ -667,7 +667,13 @@ function getNodeKeyFromDOMTree(
   return null;
 }
 
-export function doesContainGrapheme(str: string): boolean {
+/**
+ * Return true if `str` contains any valid surrogate pair.
+ *
+ * See also $updateCaretSelectionForUnicodeCharacter for
+ * a discussion on when and why this is useful.
+ */
+export function doesContainSurrogatePair(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }
 
@@ -687,7 +693,7 @@ export function createUID(): string {
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
+    .substring(0, 5);
 }
 
 export function getAnchorTextFromDOM(anchorNode: Node): null | string {

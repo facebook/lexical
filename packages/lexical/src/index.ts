@@ -23,6 +23,7 @@ export type {
   TextPointCaretSliceTuple,
 } from './caret/LexicalCaret';
 export {
+  $extendCaretToRange,
   $getAdjacentChildCaret,
   $getCaretRange,
   $getChildCaret,

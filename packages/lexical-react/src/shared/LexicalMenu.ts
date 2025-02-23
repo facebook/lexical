@@ -480,6 +480,20 @@ export function LexicalMenu<TOption extends MenuOption>({
   );
 }
 
+function setContainerDivAttributes(
+  containerDiv: HTMLElement,
+  className?: string,
+) {
+  if (className != null) {
+    containerDiv.className = className;
+  }
+  containerDiv.setAttribute('aria-label', 'Typeahead menu');
+  containerDiv.setAttribute('id', 'typeahead-menu');
+  containerDiv.setAttribute('role', 'listbox');
+  containerDiv.style.display = 'block';
+  containerDiv.style.position = 'absolute';
+}
+
 export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
@@ -540,14 +554,7 @@ export function useMenuAnchorRef(
       }
 
       if (!containerDiv.isConnected) {
-        if (className != null) {
-          containerDiv.className = className;
-        }
-        containerDiv.setAttribute('aria-label', 'Typeahead menu');
-        containerDiv.setAttribute('id', 'typeahead-menu');
-        containerDiv.setAttribute('role', 'listbox');
-        containerDiv.style.display = 'block';
-        containerDiv.style.position = 'absolute';
+        setContainerDivAttributes(containerDiv, className);
         parent.append(containerDiv);
       }
       anchorElementRef.current = containerDiv;
@@ -599,7 +606,7 @@ export function useMenuAnchorRef(
   // Append the context for the menu immediately
   const containerDiv = anchorElementRef.current;
   if (containerDiv != null) {
-    containerDiv.style.position = 'absolute';
+    setContainerDivAttributes(containerDiv, className);
     if (parent != null) {
       parent.append(containerDiv);
     }

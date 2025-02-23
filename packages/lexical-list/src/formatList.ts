@@ -394,8 +394,12 @@ export function $handleIndent(listItemNode: ListItemNode): void {
     // otherwise, we need to create a new nested ListNode
 
     if ($isListNode(parent)) {
-      const newListItem = $createListItemNode();
-      const newList = $createListNode(parent.getListType());
+      const newListItem = $createListItemNode()
+        .setTextFormat(parent.getTextFormat())
+        .setTextStyle(parent.getTextStyle());
+      const newList = $createListNode(parent.getListType())
+        .setTextFormat(parent.getTextFormat())
+        .setTextStyle(parent.getTextStyle());
       newListItem.append(newList);
       newList.append(listItemNode);
 

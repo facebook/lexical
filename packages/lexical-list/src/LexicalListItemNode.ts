@@ -103,6 +103,9 @@ export class ListItemNode extends ElementNode {
     const nextStyle = this.__style || this.__textStyle;
     if (prevStyle !== nextStyle) {
       dom.style.cssText = nextStyle;
+      if (nextStyle === '') {
+        dom.removeAttribute('style');
+      }
     }
     return false;
   }

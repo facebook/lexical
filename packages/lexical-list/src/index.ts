@@ -103,8 +103,12 @@ export function registerList(editor: LexicalEditor): () => void {
       if (firstChild) {
         if ($isTextNode(firstChild)) {
           const style = firstChild.getStyle();
+          const format = firstChild.getFormat();
           if (node.getTextStyle() !== style) {
             node.setTextStyle(style);
+          }
+          if (node.getTextFormat() !== format) {
+            node.setTextFormat(format);
           }
         }
       } else {
@@ -112,11 +116,12 @@ export function registerList(editor: LexicalEditor): () => void {
         const selection = $getSelection();
         if (
           $isRangeSelection(selection) &&
-          selection.style !== node.getTextStyle() &&
+          (selection.style !== node.getTextStyle() ||
+            selection.format !== node.getTextFormat()) &&
           selection.isCollapsed() &&
           node.is(selection.anchor.getNode())
         ) {
-          node.setTextStyle(selection.style);
+          node.setTextStyle(selection.style).setTextFormat(selection.format);
         }
       }
     }),
@@ -124,10 +129,16 @@ export function registerList(editor: LexicalEditor): () => void {
       const listItemParentNode = node.getParent();
       if (
         $isListItemNode(listItemParentNode) &&
-        node.is(listItemParentNode.getFirstChild()) &&
-        node.getStyle() !== listItemParentNode.getTextStyle()
+        node.is(listItemParentNode.getFirstChild())
       ) {
-        listItemParentNode.setTextStyle(node.getStyle());
+        const style = node.getStyle();
+        const format = node.getFormat();
+        if (
+          style !== listItemParentNode.getTextStyle() ||
+          format !== listItemParentNode.getTextFormat()
+        ) {
+          listItemParentNode.setTextStyle(style).setTextFormat(format);
+        }
       }
     }),
   );

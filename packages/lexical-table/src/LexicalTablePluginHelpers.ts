@@ -7,6 +7,7 @@
  */
 
 import {
+  $findMatchingParent,
   $insertFirst,
   $insertNodeToNearestRoot,
   $unwrapAndFilterDescendants,
@@ -14,10 +15,15 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  ElementNode,
+  isDOMNode,
   LexicalEditor,
   NodeKey,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -134,6 +140,29 @@ function $tableTransform(node: TableNode) {
       rowNode.append(newCell);
     }
   }
+}
+
+function $tableClickCommand(event: MouseEvent): boolean {
+  if (event.detail < 3 || !isDOMNode(event.target)) {
+    return false;
+  }
+  const startNode = $getNearestNodeFromDOMNode(event.target);
+  if (startNode === null) {
+    return false;
+  }
+  const blockNode = $findMatchingParent(
+    startNode,
+    (node): node is ElementNode => $isElementNode(node) && !node.isInline(),
+  );
+  if (blockNode === null) {
+    return false;
+  }
+  const rootNode = blockNode.getParent();
+  if (!$isTableCellNode(rootNode)) {
+    return false;
+  }
+  blockNode.select(0);
+  return true;
 }
 
 /**
@@ -276,6 +305,7 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
   if (!editor.hasNodes([TableNode])) {
     invariant(false, 'TablePlugin: TableNode is not registered on editor');
   }
+
   return mergeRegister(
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
@@ -292,6 +322,11 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
           $findTableNode(selection.anchor.getNode()) !== null;
         return isInsideTableCell && nodes.some($isTableNode);
       },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      CLICK_COMMAND,
+      $tableClickCommand,
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerNodeTransform(TableNode, $tableTransform),

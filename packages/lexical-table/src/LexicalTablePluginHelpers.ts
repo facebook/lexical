@@ -306,27 +306,7 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
     invariant(false, 'TablePlugin: TableNode is not registered on editor');
   }
 
-  // Add mousedown handler for triple clicks or more
-  const removeTripleClickHandler = editor.registerRootListener(
-    (rootElement: null | HTMLElement) => {
-      if (rootElement !== null) {
-        const onMouseDown = (event: MouseEvent) => {
-          if (event.detail >= 3) {
-            // Prevent default multi-click behavior
-            event.preventDefault();
-          }
-        };
-        rootElement.addEventListener('mousedown', onMouseDown);
-        return () => {
-          rootElement.removeEventListener('mousedown', onMouseDown);
-        };
-      }
-      return () => {};
-    },
-  );
-
   return mergeRegister(
-    removeTripleClickHandler,
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
       $insertTableCommandListener,

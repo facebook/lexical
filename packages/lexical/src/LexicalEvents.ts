@@ -622,6 +622,41 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           }
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+
+            // When deleting across paragraphs, Chrome on Android incorrectly shifts the selection rightwards
+            // We detect this and restore the selection accordingly
+            const selectionAfterDelete = $getSelection();
+            if (
+              IS_ANDROID_CHROME &&
+              $isRangeSelection(selectionAfterDelete) &&
+              selectionAfterDelete.isCollapsed()
+            ) {
+              setTimeout(() =>
+                editor.update(() => {
+                  // Verify that selection has shifted rightwards
+                  const newSelection = $getSelection();
+                  if (
+                    !$isRangeSelection(newSelection) ||
+                    !newSelection.isCollapsed()
+                  ) {
+                    return;
+                  }
+                  const newAnchor = newSelection.anchor;
+                  const newAnchorSibling = newAnchor
+                    .getNode()
+                    .getPreviousSibling();
+                  const prevAnchor = selectionAfterDelete.anchor;
+                  if (
+                    (newAnchor.key === prevAnchor.key &&
+                      newAnchor.offset === prevAnchor.offset + 1) || // Rightward shift in same node
+                    (newAnchor.offset === 1 &&
+                      prevAnchor.getNode().is(newAnchorSibling)) // Rightward shift into sibling node
+                  ) {
+                    $setSelection(selectionAfterDelete.clone()); // Restore selection if shifted
+                  }
+                }),
+              );
+            }
           }
         }
         return;

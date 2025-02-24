@@ -488,7 +488,6 @@ function setContainerDivAttributes(
     containerDiv.className = className;
   }
   containerDiv.setAttribute('aria-label', 'Typeahead menu');
-  containerDiv.setAttribute('id', 'typeahead-menu');
   containerDiv.setAttribute('role', 'listbox');
   containerDiv.style.display = 'block';
   containerDiv.style.position = 'absolute';
@@ -557,6 +556,7 @@ export function useMenuAnchorRef(
         setContainerDivAttributes(containerDiv, className);
         parent.append(containerDiv);
       }
+      containerDiv.setAttribute('id', 'typeahead-menu');
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
@@ -580,6 +580,7 @@ export function useMenuAnchorRef(
         const containerDiv = anchorElementRef.current;
         if (containerDiv !== null && containerDiv.isConnected) {
           containerDiv.remove();
+          containerDiv.removeAttribute('id');
         }
       };
     }

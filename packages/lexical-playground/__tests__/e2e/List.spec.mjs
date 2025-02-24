@@ -192,6 +192,7 @@ test.describe.parallel('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
+            style="color: ${expectedColor};"
             value="1">
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -202,11 +203,13 @@ test.describe.parallel('Nested List', () => {
           </li>
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            style="color: ${expectedColor};"
             value="2">
             <ul class="PlaygroundEditorTheme__ul">
               <li
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
                 dir="ltr"
+                style="color: ${expectedColor};"
                 value="1">
                 <strong
                   class="PlaygroundEditorTheme__textBold"
@@ -220,6 +223,7 @@ test.describe.parallel('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
+            style="color: ${expectedColor};"
             value="2">
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1898,7 +1902,6 @@ test.describe.parallel('Nested List', () => {
         </p>
       `,
     );
-    await page.pause();
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [1],
@@ -1956,7 +1959,6 @@ test.describe.parallel('Nested List', () => {
           </ul>
         `,
       );
-      await page.pause();
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [2],

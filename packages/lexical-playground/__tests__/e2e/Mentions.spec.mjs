@@ -1023,7 +1023,9 @@ test.describe('Mentions', () => {
 
   test(`Sets correct attributes on typeahead menu container`, async ({
     page,
+    isCollab,
   }) => {
+    test.skip(isCollab);
     await focusEditor(page);
     await page.keyboard.type('@a');
 

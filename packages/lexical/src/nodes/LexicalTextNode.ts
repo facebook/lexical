@@ -473,6 +473,13 @@ export class TextNode extends LexicalNode {
     return true;
   }
 
+  /**
+   * @returns true if the text node is inline, false otherwise.
+   */
+  isInline(): boolean {
+    return true;
+  }
+
   // View
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {

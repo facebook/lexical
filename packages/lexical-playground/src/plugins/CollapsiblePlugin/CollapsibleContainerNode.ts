@@ -57,6 +57,10 @@ export class CollapsibleContainerNode extends ElementNode {
     return new CollapsibleContainerNode(node.__open, node.__key);
   }
 
+  isShadowRoot(): boolean {
+    return true;
+  }
+
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     // details is not well supported in Chrome #5582
     let dom: HTMLElement;

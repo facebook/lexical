@@ -68,6 +68,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainSurrogatePair,
@@ -1894,11 +1895,10 @@ export class RangeSelection implements BaseSelection {
       this.modify('extend', isBackward, 'lineboundary');
 
       // If the selection starts at the beginning of a text node (offset 0),
-      // extend the selection by one character in the specified direction.
-      // This ensures that the parent element is deleted along with its content.
-      // Otherwise, only the text content will be deleted, leaving an empty parent node.
+      // use the deleteCharacter operation to handle all of the logic associated
+      // with navigating through the parent element
       if (this.isCollapsed() && this.anchor.offset === 0) {
-        this.modify('extend', isBackward, 'character');
+        return this.deleteCharacter(isBackward);
       }
 
       // Adjusts selection to include an extra character added for element anchors to remove it
@@ -1990,7 +1990,7 @@ function $collapseAtStart(
       if (node.collapseAtStart(selection)) {
         return true;
       }
-      if (!node.isInline()) {
+      if ($isRootOrShadowRoot(node)) {
         break;
       }
     }

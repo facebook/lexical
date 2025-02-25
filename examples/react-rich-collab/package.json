@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:local": "cross-env NODE_ENV=development concurrently \"npm:server:ws\" \"npm:server:webrtc\" \"vite\"",
+    "monorepo:dev": "cross-env LEXICAL_MONOREPO=1  run dev --",
+    "monorepo:dev:local": "cross-env LEXICAL_MONOREPO=1 npm run dev:local --",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "server:ws": "cross-env HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket",

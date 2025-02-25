@@ -11,8 +11,6 @@
 packages/**/.wxt/**
 packages/playwright
 packages/playwright-core
-packages/**/vite.config.js
-packages/**/vite.prod.config.js
 packages/lexical-website/docs/api
 packages/lexical-website/fb/*.json
 **/*.md

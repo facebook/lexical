@@ -1,11 +1,11 @@
 {
-  "name": "@lexical/vanilla-js-iframe",
+  "name": "@lexical/vanilla-js-iframe-example",
   "private": true,
   "version": "0.25.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "monorepo:dev": "vite -c vite.monorepo.config.ts",
+    "monorepo:dev": "cross-env LEXICAL_MONOREPO=1 npm run dev --",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
@@ -17,6 +17,7 @@
     "lexical": "0.25.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "typescript": "^5.2.2",
     "vite": "^5.2.11"
   }

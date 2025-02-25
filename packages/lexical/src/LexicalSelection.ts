@@ -41,6 +41,7 @@ import {
   $setSelection,
   $updateRangeSelectionFromCaretRange,
   CaretRange,
+  ChildCaret,
   NodeCaret,
   PointCaret,
   TextNode,
@@ -67,6 +68,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainSurrogatePair,
@@ -1721,11 +1723,17 @@ export class RangeSelection implements BaseSelection {
           .getTextSlices()
           .every((slice) => slice === null || slice.distance === 0)
       ) {
+        // debugger;
         // There's no text in the direction of the deletion so we can explore our options
         let state:
           | {type: 'initial'}
           | {
               type: 'merge-next-block';
+              block: ElementNode;
+            }
+          | {
+              type: 'merge-block';
+              caret: ChildCaret<ElementNode, typeof direction>;
               block: ElementNode;
             } = {type: 'initial'};
         for (const caret of initialRange.iterNodeCarets('shadowRoot')) {
@@ -1733,6 +1741,9 @@ export class RangeSelection implements BaseSelection {
             if (caret.origin.isInline()) {
               // fall through when descending an inline
             } else if (caret.origin.isShadowRoot()) {
+              if (state.type === 'merge-block') {
+                break;
+              }
               // Don't merge with a shadow root block
               if (
                 $isElementNode(initialRange.anchor.origin) &&
@@ -1747,20 +1758,15 @@ export class RangeSelection implements BaseSelection {
                 initialRange.anchor.origin.remove();
               }
               return;
-            } else if (state.type === 'merge-next-block') {
-              $updateRangeSelectionFromCaretRange(
-                this,
-                $getCaretRange(
-                  !caret.origin.isEmpty() && state.block.isEmpty()
-                    ? $rewindSiblingCaret(
-                        $getSiblingCaret(state.block, caret.direction),
-                      )
-                    : initialRange.anchor,
-                  caret,
-                ),
-              );
-              return this.removeText();
+            } else if (
+              state.type === 'merge-next-block' ||
+              state.type === 'merge-block'
+            ) {
+              // Keep descending ChildCaret to find which block to merge with
+              state = {block: state.block, caret, type: 'merge-block'};
             }
+          } else if (state.type === 'merge-block') {
+            break;
           } else if ($isSiblingCaret(caret)) {
             if ($isElementNode(caret.origin)) {
               if (!caret.origin.isInline()) {
@@ -1796,6 +1802,19 @@ export class RangeSelection implements BaseSelection {
             }
             break;
           }
+        }
+        if (state.type === 'merge-block') {
+          const {caret, block} = state;
+          $updateRangeSelectionFromCaretRange(
+            this,
+            $getCaretRange(
+              !caret.origin.isEmpty() && block.isEmpty()
+                ? $rewindSiblingCaret($getSiblingCaret(block, caret.direction))
+                : initialRange.anchor,
+              caret,
+            ),
+          );
+          return this.removeText();
         }
       }
 
@@ -1875,18 +1894,19 @@ export class RangeSelection implements BaseSelection {
 
       this.modify('extend', isBackward, 'lineboundary');
 
-      // If the selection starts at the beginning of a text node (offset 0),
-      // extend the selection by one character in the specified direction.
-      // This ensures that the parent element is deleted along with its content.
-      // Otherwise, only the text content will be deleted, leaving an empty parent node.
-      if (this.isCollapsed() && this.anchor.offset === 0) {
-        this.modify('extend', isBackward, 'character');
-      }
-
+      const useDeleteCharacter = this.isCollapsed() && this.anchor.offset === 0;
       // Adjusts selection to include an extra character added for element anchors to remove it
       if (anchorIsElement) {
         const startPoint = isBackward ? this.anchor : this.focus;
         startPoint.set(startPoint.key, startPoint.offset + 1, startPoint.type);
+      }
+      // If the selection starts at the beginning of a text node (offset 0),
+      // use the deleteCharacter operation to handle all of the logic associated
+      // with navigating through the parent element
+      if (useDeleteCharacter) {
+        // Remove the inserted space, if added above
+        this.removeText();
+        return this.deleteCharacter(isBackward);
       }
     }
     this.removeText();
@@ -1972,7 +1992,7 @@ function $collapseAtStart(
       if (node.collapseAtStart(selection)) {
         return true;
       }
-      if (!node.isInline()) {
+      if ($isRootOrShadowRoot(node)) {
         break;
       }
     }

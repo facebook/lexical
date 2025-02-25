@@ -867,60 +867,32 @@ test.describe.parallel('Selection', () => {
     const tripleClickDelay = 50;
     await lastCellText.click({clickCount: 3, delay: tripleClickDelay});
 
-    if (browserName === 'firefox') {
-      // Firefox correctly selects the last cell + full text content, unlike Chromium which selects the first cell
-      const expectedSelection = createHumanReadableSelection(
-        'the full text of the last cell in the table',
-        {
-          anchorOffset: {desc: 'beginning of cell', value: 0},
-          anchorPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'second cell', value: 1},
-            {desc: 'first paragraph', value: 0},
-            {desc: 'first span', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-          focusOffset: {desc: 'full text length', value: cellText.length},
-          focusPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'second cell', value: 1},
-            {desc: 'first paragraph', value: 0},
-            {desc: 'first span', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-        },
-      );
-      await assertSelection(page, expectedSelection);
-    } else {
-      // Only the first cell should be selected, and not the entire document
-      // Ideally the last cell should be selected since that was what was triple-clicked,
-      // but due to the complex selection logic involved, this was the best that could be done.
-      // The goal ultimately was to prevent dangerous whole document selection.
-      // Getting the last cell precisely selected can be done at a later point.
-      const expectedSelection = createHumanReadableSelection(
-        'cursor at beginning of the first cell in table',
-        {
-          anchorOffset: {desc: 'beginning of cell', value: 0},
-          anchorPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'first cell', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-          focusOffset: {desc: 'beginning of text', value: 0},
-          focusPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'first cell', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-        },
-      );
+    // Expect consistent behavior - select the clicked cell's content
+    const expectedSelection = createHumanReadableSelection(
+      'the full text of the last cell in the table',
+      {
+        anchorOffset: {desc: 'beginning of cell', value: 0},
+        anchorPath: [
+          {desc: 'index of table in root', value: 1},
+          {desc: 'first table row', value: 1},
+          {desc: 'second cell', value: 1},
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+        focusOffset: {desc: 'full text length', value: cellText.length},
+        focusPath: [
+          {desc: 'index of table in root', value: 1},
+          {desc: 'first table row', value: 1},
+          {desc: 'second cell', value: 1},
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+      },
+    );
 
-      await assertSelection(page, expectedSelection);
-    }
+    await assertSelection(page, expectedSelection);
   });
 
   /**

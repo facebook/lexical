@@ -1179,3 +1179,45 @@ declare export function $updateRangeSelectionFromCaretRange(
   selection: RangeSelection,
   caretRange: CaretRange<CaretDirection>,
 ): void;
+
+export type CommonAncestorResult<
+  A: LexicalNode,
+  B: LexicalNode,
+> =
+  | CommonAncestorResultSame<A>
+  | CommonAncestorResultAncestor<A & ElementNode>
+  | CommonAncestorResultDescendant<B & ElementNode>
+  | CommonAncestorResultBranch<A, B>;
+export interface CommonAncestorResultBranch<
+  A: LexicalNode,
+  B: LexicalNode,
+> {
+  +type: 'branch';
+  +commonAncestor: ElementNode;
+  +a: A | ElementNode;
+  +b: B | ElementNode;
+}
+export interface CommonAncestorResultAncestor<A: ElementNode> {
+  +type: 'ancestor';
+  +commonAncestor: A;
+}
+export interface CommonAncestorResultDescendant<B: ElementNode> {
+  +type: 'descendant';
+  +commonAncestor: B;
+}
+export interface CommonAncestorResultSame<A: LexicalNode> {
+  +type: 'same';
+  +commonAncestor: A;
+}
+declare export function $comparePointCaretNext(
+  a: PointCaret<'next'>,
+  b: PointCaret<'next'>,
+): -1 | 0 | 1;
+declare export function $getCommonAncestorResultBranchOrder<
+  A: LexicalNode,
+  B: LexicalNode,
+>(compare: CommonAncestorResultBranch<A, B>): -1 | 1 ;
+declare export function $getCommonAncestor<
+  A: LexicalNode,
+  B: LexicalNode,
+>(a: A, b: B): null | CommonAncestorResult<A, B>;

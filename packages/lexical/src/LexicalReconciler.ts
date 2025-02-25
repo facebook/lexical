@@ -338,7 +338,6 @@ function reconcileTextFormat(element: ElementNode): void {
     !activeEditorStateReadOnly
   ) {
     element.setTextFormat(subTreeTextFormat);
-    element.setTextStyle(subTreeTextStyle);
   }
 }
 

@@ -287,6 +287,26 @@ export function applyTableHandlers(
     onMouseDown,
     tableObserver.listenerOptions,
   );
+  tableObserver.listenersToRemove.add(() => {
+    tableElement.removeEventListener('mousedown', onMouseDown);
+  });
+
+  const onTripleClick = (event: MouseEvent) => {
+    if (event.detail >= 3 && isDOMNode(event.target)) {
+      const targetCell = getDOMCellFromTarget(event.target);
+      if (targetCell !== null) {
+        event.preventDefault();
+      }
+    }
+  };
+  tableElement.addEventListener(
+    'mousedown',
+    onTripleClick,
+    tableObserver.listenerOptions,
+  );
+  tableObserver.listenersToRemove.add(() => {
+    tableElement.removeEventListener('mousedown', onTripleClick);
+  });
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event: MouseEvent) => {
@@ -312,6 +332,9 @@ export function applyTableHandlers(
     mouseDownCallback,
     tableObserver.listenerOptions,
   );
+  tableObserver.listenersToRemove.add(() => {
+    editorWindow.removeEventListener('mousedown', mouseDownCallback);
+  });
 
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
     tableObserver.listenersToRemove.add(

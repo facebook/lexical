@@ -512,6 +512,11 @@ test.describe('Collaboration', () => {
       .frameLocator('iframe[name="right"]')
       .locator('[data-lexical-editor="true"]')
       .focus();
+    // TODO this is a workaround for Firefox so that the
+    // selection picks up the text format
+    if (browserName === 'firefox') {
+      await page.keyboard.press('ArrowLeft', {delay: 50});
+    }
     await page.keyboard.press('ArrowDown', {delay: 50});
     await page.keyboard.type(' text');
 

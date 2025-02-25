@@ -1894,17 +1894,19 @@ export class RangeSelection implements BaseSelection {
 
       this.modify('extend', isBackward, 'lineboundary');
 
-      // If the selection starts at the beginning of a text node (offset 0),
-      // use the deleteCharacter operation to handle all of the logic associated
-      // with navigating through the parent element
-      if (this.isCollapsed() && this.anchor.offset === 0) {
-        return this.deleteCharacter(isBackward);
-      }
-
+      const useDeleteCharacter = this.isCollapsed() && this.anchor.offset === 0;
       // Adjusts selection to include an extra character added for element anchors to remove it
       if (anchorIsElement) {
         const startPoint = isBackward ? this.anchor : this.focus;
         startPoint.set(startPoint.key, startPoint.offset + 1, startPoint.type);
+      }
+      // If the selection starts at the beginning of a text node (offset 0),
+      // use the deleteCharacter operation to handle all of the logic associated
+      // with navigating through the parent element
+      if (useDeleteCharacter) {
+        // Remove the inserted space, if added above
+        this.removeText();
+        return this.deleteCharacter(isBackward);
       }
     }
     this.removeText();

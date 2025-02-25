@@ -7,6 +7,9 @@
  */
 
 import {
+  $getSiblingCaret,
+  $isElementNode,
+  $rewindSiblingCaret,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -16,6 +19,7 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  RangeSelection,
   SerializedElementNode,
   Spread,
 } from 'lexical';
@@ -58,6 +62,26 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   isShadowRoot(): boolean {
+    return true;
+  }
+
+  collapseAtStart(selection: RangeSelection): boolean {
+    // Unwrap the CollapsibleContainerNode by replacing it with the children
+    // of its children (CollapsibleTitleNode, CollapsibleContentNode)
+    const nodesToInsert: LexicalNode[] = [];
+    for (const child of this.getChildren()) {
+      if ($isElementNode(child)) {
+        nodesToInsert.push(...child.getChildren());
+      }
+    }
+    const caret = $rewindSiblingCaret($getSiblingCaret(this, 'previous'));
+    caret.splice(1, nodesToInsert);
+    // Merge the first child of the CollapsibleTitleNode with the
+    // previous sibling of the CollapsibleContainerNode
+    const [firstChild] = nodesToInsert;
+    if (firstChild) {
+      firstChild.selectStart().deleteCharacter(true);
+    }
     return true;
   }
 

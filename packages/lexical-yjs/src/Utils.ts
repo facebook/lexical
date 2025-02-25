@@ -7,25 +7,24 @@
  */
 
 import type {Binding, YjsNode} from '.';
-import type {
-  DecoratorNode,
-  EditorState,
-  ElementNode,
-  LexicalNode,
-  RangeSelection,
-  TextNode,
-} from 'lexical';
 
 import {
   $getNodeByKey,
   $getRoot,
+  $getWritableNodeState,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
   createEditor,
+  DecoratorNode,
+  EditorState,
+  ElementNode,
+  LexicalNode,
   NodeKey,
+  RangeSelection,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
@@ -46,6 +45,7 @@ const baseExcludedProperties = new Set<string>([
   '__parent',
   '__next',
   '__prev',
+  '__state',
 ]);
 const elementExcludedProperties = new Set<string>([
   '__first',
@@ -60,7 +60,10 @@ function isExcludedProperty(
   node: LexicalNode,
   binding: Binding,
 ): boolean {
-  if (baseExcludedProperties.has(name)) {
+  if (
+    baseExcludedProperties.has(name) ||
+    typeof (node as unknown as Record<string, unknown>)[name] === 'function'
+  ) {
     return true;
   }
 
@@ -111,12 +114,6 @@ export function getIndexOfYjsNode(
   return i;
 }
 
-export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
-  const node = $getNodeByKey(key);
-  invariant(node !== null, 'could not find node by key');
-  return node;
-}
-
 export function $createCollabNodeFromLexicalNode(
   binding: Binding,
   lexicalNode: LexicalNode,
@@ -160,14 +157,14 @@ export function $createCollabNodeFromLexicalNode(
   return collabNode;
 }
 
-function getNodeTypeFromSharedType(
+export function getNodeTypeFromSharedType(
   sharedType: XmlText | YMap<unknown> | XmlElement,
-): string {
-  const type =
-    sharedType instanceof YMap
-      ? sharedType.get('__type')
-      : sharedType.getAttribute('__type');
-  invariant(type != null, 'Expected shared type to include type attribute');
+): string | undefined {
+  const type = sharedTypeGet(sharedType, '__type');
+  invariant(
+    typeof type === 'string' || typeof type === 'undefined',
+    'Expected shared type to include type attribute',
+  );
   return type;
 }
 
@@ -185,6 +182,10 @@ export function $getOrInitCollabNodeFromSharedType(
   if (collabNode === undefined) {
     const registeredNodes = binding.editor._nodes;
     const type = getNodeTypeFromSharedType(sharedType);
+    invariant(
+      typeof type === 'string',
+      'Expected shared type to include type attribute',
+    );
     const nodeInfo = registeredNodes.get(type);
     invariant(nodeInfo !== undefined, 'Node %s is not registered', type);
 
@@ -253,7 +254,7 @@ export function createLexicalNodeFromCollabNode(
   return lexicalNode;
 }
 
-export function syncPropertiesFromYjs(
+export function $syncPropertiesFromYjs(
   binding: Binding,
   sharedType: XmlText | YMap<unknown> | XmlElement,
   lexicalNode: LexicalNode,
@@ -265,19 +266,22 @@ export function syncPropertiesFromYjs(
         ? Array.from(sharedType.keys())
         : Object.keys(sharedType.getAttributes())
       : Array.from(keysChanged);
-  let writableNode;
+  let writableNode: LexicalNode | undefined;
 
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
     if (isExcludedProperty(property, lexicalNode, binding)) {
+      if (property === '__state') {
+        if (!writableNode) {
+          writableNode = lexicalNode.getWritable();
+        }
+        $syncNodeStateToLexical(binding, sharedType, writableNode);
+      }
       continue;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prevValue = (lexicalNode as any)[property];
-    let nextValue =
-      sharedType instanceof YMap
-        ? sharedType.get(property)
-        : sharedType.getAttribute(property);
+    let nextValue = sharedTypeGet(sharedType, property);
 
     if (prevValue !== nextValue) {
       if (nextValue instanceof Doc) {
@@ -299,8 +303,86 @@ export function syncPropertiesFromYjs(
         writableNode = lexicalNode.getWritable();
       }
 
-      writableNode[property as keyof typeof writableNode] = nextValue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      writableNode[property as keyof typeof writableNode] = nextValue as any;
     }
+  }
+}
+
+function sharedTypeGet(
+  sharedType: XmlText | YMap<unknown> | XmlElement,
+  property: string,
+): unknown {
+  if (sharedType instanceof YMap) {
+    return sharedType.get(property);
+  } else {
+    return sharedType.getAttribute(property);
+  }
+}
+
+function sharedTypeSet(
+  sharedType: XmlText | YMap<unknown> | XmlElement,
+  property: string,
+  nextValue: unknown,
+): void {
+  if (sharedType instanceof YMap) {
+    sharedType.set(property, nextValue);
+  } else {
+    sharedType.setAttribute(property, nextValue as string);
+  }
+}
+
+function $syncNodeStateToLexical(
+  binding: Binding,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
+  lexicalNode: LexicalNode,
+): void {
+  const existingState = sharedTypeGet(sharedType, '__state');
+  if (!(existingState instanceof YMap)) {
+    return;
+  }
+  // This should only called when creating the node initially,
+  // incremental updates to state come in through YMapEvent
+  // with the __state as the target.
+  $getWritableNodeState(lexicalNode).updateFromJSON(existingState.toJSON());
+}
+
+function syncNodeStateFromLexical(
+  binding: Binding,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
+  prevLexicalNode: null | LexicalNode,
+  nextLexicalNode: LexicalNode,
+): void {
+  const nextState = nextLexicalNode.__state;
+  const existingState = sharedTypeGet(sharedType, '__state');
+  if (!nextState) {
+    return;
+  }
+  const [unknown, known] = nextState.getInternalState();
+  const prevState = prevLexicalNode && prevLexicalNode.__state;
+  const stateMap: YMap<unknown> =
+    existingState instanceof YMap ? existingState : new YMap();
+  if (prevState === nextState) {
+    return;
+  }
+  const [prevUnknown, prevKnown] =
+    prevState && stateMap.doc
+      ? prevState.getInternalState()
+      : [undefined, new Map()];
+  if (unknown) {
+    for (const [k, v] of Object.entries(unknown)) {
+      if (prevUnknown && v !== prevUnknown[k]) {
+        stateMap.set(k, v);
+      }
+    }
+  }
+  for (const [stateConfig, v] of known) {
+    if (prevKnown.get(stateConfig) !== v) {
+      stateMap.set(stateConfig.key, stateConfig.unparse(v));
+    }
+  }
+  if (!existingState) {
+    sharedTypeSet(sharedType, '__state', stateMap);
   }
 }
 
@@ -322,6 +404,12 @@ export function syncPropertiesFromLexical(
 
   const EditorClass = binding.editor.constructor;
 
+  syncNodeStateFromLexical(
+    binding,
+    sharedType,
+    prevLexicalNode,
+    nextLexicalNode,
+  );
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
     const prevValue =
@@ -353,11 +441,7 @@ export function syncPropertiesFromLexical(
         });
       }
 
-      if (sharedType instanceof YMap) {
-        sharedType.set(property, nextValue);
-      } else {
-        sharedType.setAttribute(property, nextValue);
-      }
+      sharedTypeSet(sharedType, property, nextValue);
     }
   }
 }

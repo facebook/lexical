@@ -41,6 +41,7 @@ import {
   $setSelection,
   $updateRangeSelectionFromCaretRange,
   CaretRange,
+  ChildCaret,
   NodeCaret,
   PointCaret,
   TextNode,
@@ -1721,11 +1722,17 @@ export class RangeSelection implements BaseSelection {
           .getTextSlices()
           .every((slice) => slice === null || slice.distance === 0)
       ) {
+        // debugger;
         // There's no text in the direction of the deletion so we can explore our options
         let state:
           | {type: 'initial'}
           | {
               type: 'merge-next-block';
+              block: ElementNode;
+            }
+          | {
+              type: 'merge-block';
+              caret: ChildCaret<ElementNode, typeof direction>;
               block: ElementNode;
             } = {type: 'initial'};
         for (const caret of initialRange.iterNodeCarets('shadowRoot')) {
@@ -1733,6 +1740,9 @@ export class RangeSelection implements BaseSelection {
             if (caret.origin.isInline()) {
               // fall through when descending an inline
             } else if (caret.origin.isShadowRoot()) {
+              if (state.type === 'merge-block') {
+                break;
+              }
               // Don't merge with a shadow root block
               if (
                 $isElementNode(initialRange.anchor.origin) &&
@@ -1747,20 +1757,15 @@ export class RangeSelection implements BaseSelection {
                 initialRange.anchor.origin.remove();
               }
               return;
-            } else if (state.type === 'merge-next-block') {
-              $updateRangeSelectionFromCaretRange(
-                this,
-                $getCaretRange(
-                  !caret.origin.isEmpty() && state.block.isEmpty()
-                    ? $rewindSiblingCaret(
-                        $getSiblingCaret(state.block, caret.direction),
-                      )
-                    : initialRange.anchor,
-                  caret,
-                ),
-              );
-              return this.removeText();
+            } else if (
+              state.type === 'merge-next-block' ||
+              state.type === 'merge-block'
+            ) {
+              // Keep descending ChildCaret to find which block to merge with
+              state = {block: state.block, caret, type: 'merge-block'};
             }
+          } else if (state.type === 'merge-block') {
+            break;
           } else if ($isSiblingCaret(caret)) {
             if ($isElementNode(caret.origin)) {
               if (!caret.origin.isInline()) {
@@ -1796,6 +1801,19 @@ export class RangeSelection implements BaseSelection {
             }
             break;
           }
+        }
+        if (state.type === 'merge-block') {
+          const {caret, block} = state;
+          $updateRangeSelectionFromCaretRange(
+            this,
+            $getCaretRange(
+              !caret.origin.isEmpty() && block.isEmpty()
+                ? $rewindSiblingCaret($getSiblingCaret(block, caret.direction))
+                : initialRange.anchor,
+              caret,
+            ),
+          );
+          return this.removeText();
         }
       }
 

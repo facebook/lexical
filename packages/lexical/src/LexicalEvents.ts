@@ -180,6 +180,7 @@ let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let isSafariEndingComposition = false;
 let safariEndCompositionEventData = '';
+let postDeleteSelectionToRestore: RangeSelection | null = null;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
   '',
@@ -308,7 +309,30 @@ function onSelectionChange(
       return;
     }
 
-    const selection = $getSelection();
+    let selection = $getSelection();
+
+    // Restore selection in the event of incorrect rightward shift after deletion
+    if (
+      postDeleteSelectionToRestore &&
+      $isRangeSelection(selection) &&
+      selection.isCollapsed()
+    ) {
+      const curAnchor = selection.anchor;
+      const prevAnchor = postDeleteSelectionToRestore.anchor;
+      if (
+        // Rightward shift in same node
+        (curAnchor.key === prevAnchor.key &&
+          curAnchor.offset === prevAnchor.offset + 1) ||
+        // Or rightward shift into sibling node
+        (curAnchor.offset === 1 &&
+          prevAnchor.getNode().is(curAnchor.getNode().getPreviousSibling()))
+      ) {
+        // Restore selection
+        selection = postDeleteSelectionToRestore.clone();
+        $setSelection(selection);
+      }
+    }
+    postDeleteSelectionToRestore = null;
 
     // Update the selection format
     if ($isRangeSelection(selection)) {
@@ -622,40 +646,17 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           }
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
-
             // When deleting across paragraphs, Chrome on Android incorrectly shifts the selection rightwards
-            // We detect this and restore the selection accordingly
+            // We save the correct selection to restore later during handling of selectionchange event
             const selectionAfterDelete = $getSelection();
             if (
               IS_ANDROID_CHROME &&
               $isRangeSelection(selectionAfterDelete) &&
               selectionAfterDelete.isCollapsed()
             ) {
-              setTimeout(() =>
-                editor.update(() => {
-                  // Verify that selection has shifted rightwards
-                  const newSelection = $getSelection();
-                  if (
-                    !$isRangeSelection(newSelection) ||
-                    !newSelection.isCollapsed()
-                  ) {
-                    return;
-                  }
-                  const newAnchor = newSelection.anchor;
-                  const newAnchorSibling = newAnchor
-                    .getNode()
-                    .getPreviousSibling();
-                  const prevAnchor = selectionAfterDelete.anchor;
-                  if (
-                    (newAnchor.key === prevAnchor.key &&
-                      newAnchor.offset === prevAnchor.offset + 1) || // Rightward shift in same node
-                    (newAnchor.offset === 1 &&
-                      prevAnchor.getNode().is(newAnchorSibling)) // Rightward shift into sibling node
-                  ) {
-                    $setSelection(selectionAfterDelete.clone()); // Restore selection if shifted
-                  }
-                }),
-              );
+              postDeleteSelectionToRestore = selectionAfterDelete;
+              // Cleanup in case selectionchange does not fire
+              setTimeout(() => (postDeleteSelectionToRestore = null));
             }
           }
         }

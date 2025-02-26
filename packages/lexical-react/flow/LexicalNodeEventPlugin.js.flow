@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, LexicalNode, NodeKey} from 'Lexical';
+import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 declare export function NodeEventPlugin({
   nodeType: Class<LexicalNode>;

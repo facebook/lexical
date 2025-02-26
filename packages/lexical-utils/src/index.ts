@@ -17,6 +17,7 @@ import {
   $getRoot,
   $getSelection,
   $getSiblingCaret,
+  $getState,
   $isChildCaret,
   $isElementNode,
   $isRangeSelection,
@@ -25,6 +26,7 @@ import {
   $isTextNode,
   $rewindSiblingCaret,
   $setSelection,
+  $setState,
   $splitNode,
   type CaretDirection,
   type EditorState,
@@ -37,6 +39,8 @@ import {
   type NodeKey,
   RootMode,
   type SiblingCaret,
+  StateConfig,
+  ValueOrUpdater,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -859,4 +863,87 @@ export function $getAdjacentSiblingOrParentSiblingCaret<
     nextCaret = $getAdjacentChildCaret(caret);
   }
   return nextCaret && [nextCaret, depthDiff];
+}
+
+/**
+ * A wrapper that creates bound functions and methods for the
+ * StateConfig to save some boilerplate when defining methods
+ * or exporting only the accessors from your modules rather
+ * than exposing the StateConfig directly.
+ */
+export interface StateConfigWrapper<K extends string, V> {
+  /** A reference to the stateConfig */
+  readonly stateConfig: StateConfig<K, V>;
+  /** `(node) => $getState(node, stateConfig)` */
+  readonly $get: <T extends LexicalNode>(node: T) => V;
+  /** `(node, valueOrUpdater) => $setState(node, stateConfig, valueOrUpdater)` */
+  readonly $set: <T extends LexicalNode>(
+    node: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+  /** `[$get, $set]` */
+  readonly accessors: readonly [$get: this['$get'], $set: this['$set']];
+  /**
+   * `() => function () { return $get(this) }`
+   *
+   * Should be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   myGetter = myWrapper.makeGetterMethod<this>();
+   * }
+   * ```
+   */
+  makeGetterMethod<T extends LexicalNode>(): (this: T) => V;
+  /**
+   * `() => function (valueOrUpdater) { return $set(this, valueOrUpdater) }`
+   *
+   * Must be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   mySetter = myWrapper.makeSetterMethod<this>();
+   * }
+   * ```
+   */
+  makeSetterMethod<T extends LexicalNode>(): (
+    this: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+}
+
+/**
+ * EXPERIMENTAL
+ *
+ * A convenience interface for working with {@link $getState} and
+ * {@link $setState}.
+ *
+ * @param stateConfig The stateConfig to wrap with convenience functionality
+ * @returns a StateWrapper
+ */
+export function makeStateWrapper<K extends string, V>(
+  stateConfig: StateConfig<K, V>,
+): StateConfigWrapper<K, V> {
+  const $get: StateConfigWrapper<K, V>['$get'] = (node) =>
+    $getState(node, stateConfig);
+  const $set: StateConfigWrapper<K, V>['$set'] = (node, valueOrUpdater) =>
+    $setState(node, stateConfig, valueOrUpdater);
+  return {
+    $get,
+    $set,
+    accessors: [$get, $set],
+    makeGetterMethod: () =>
+      function $getter() {
+        return $get(this);
+      },
+    makeSetterMethod: () =>
+      function $setter(valueOrUpdater) {
+        return $set(this, valueOrUpdater);
+      },
+    stateConfig,
+  };
 }

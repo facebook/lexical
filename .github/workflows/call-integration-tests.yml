@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.15.1]
+        node-version: [22.14.0]
     env:
       CI: true
     steps:
@@ -17,7 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
       - name: Install dependencies
         run: npm ci
       - run: npm run test-integration

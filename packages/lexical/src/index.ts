@@ -121,6 +121,7 @@ export {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 export type {
@@ -175,6 +176,19 @@ export type {
   NodeMap,
   SerializedLexicalNode,
 } from './LexicalNode';
+export {
+  $getState,
+  $getStateChange,
+  $getWritableNodeState,
+  $setState,
+  type AnyStateConfig,
+  createState,
+  type StateConfig,
+  type StateConfigKey,
+  type StateConfigValue,
+  type StateValueConfig,
+  type ValueOrUpdater,
+} from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export type {
   BaseSelection,

@@ -905,7 +905,7 @@ export function $getTextNodeOffset(
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
   invariant(
     numericOffset >= 0 && numericOffset <= size,
-    '$getTextPointCaret: invalid offset %s for size %s',
+    '$getTextNodeOffset: invalid offset %s for size %s',
     String(offset),
     String(size),
   );

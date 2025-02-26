@@ -292,7 +292,8 @@ function onSelectionChange(
     // sibling instead.
     if (
       shouldSkipSelectionChange(anchorDOM, anchorOffset) &&
-      shouldSkipSelectionChange(focusDOM, focusOffset)
+      shouldSkipSelectionChange(focusDOM, focusOffset) &&
+      !postDeleteSelectionToRestore
     ) {
       return;
     }

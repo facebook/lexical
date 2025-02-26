@@ -150,7 +150,7 @@ export function $isScrollableTablesActive(
 export function setScrollableTablesActive(
   editor: LexicalEditor,
   active: boolean,
-) {
+): void {
   if (active) {
     if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
       console.warn(

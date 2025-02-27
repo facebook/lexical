@@ -42,6 +42,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -571,6 +572,19 @@ export function applyTableHandlers(
       FORMAT_ELEMENT_COMMAND,
       (formatType) => {
         const selection = $getSelection();
+        if (
+          $isSelectionInTable(selection, tableNode) ||
+          $isNodeSelection(selection)
+        ) {
+          selection!.getNodes().forEach((node) => {
+            const tableCellNode = $findMatchingParent(node, $isTableCellNode);
+            if (tableCellNode) {
+              tableCellNode.setFormat(formatType);
+            }
+          });
+          return false;
+        }
+
         if (
           !$isTableSelection(selection) ||
           !$isSelectionInTable(selection, tableNode)

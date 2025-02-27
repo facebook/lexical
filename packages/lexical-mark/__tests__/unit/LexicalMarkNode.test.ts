@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {$generateNodesFromDOM} from '@lexical/html';
 import {$wrapSelectionInMarkNode, MarkNode} from '@lexical/mark';
 import {
   $createParagraphNode,
@@ -12,6 +13,7 @@ import {
   $createTextNode,
   $getRoot,
   ParagraphNode,
+  TextNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
@@ -178,6 +180,39 @@ describe('LexicalMarkNode tests', () => {
           expect(markNode.getType()).toEqual('mark');
           expect(markNode.getChildren()).toHaveLength(1);
           expect(markNode.getTextContent()).toEqual('more text');
+        });
+      });
+    });
+    describe('$generateNodesFromDOM', () => {
+      beforeEach(() => {
+        testEnv.editor.update(
+          () => {
+            $getRoot().clear();
+          },
+          {discrete: true},
+        );
+      });
+
+      test('retains spaces around mark elements', () => {
+        const {editor} = testEnv;
+
+        editor.update(() => {
+          const dom = new DOMParser().parseFromString(
+            `<html><body><p><span>Foo </span><mark>Bar</mark><span> !</span></p></body></html>`,
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+
+          expect(nodes).toHaveLength(1);
+          const paragraphNode = nodes[0] as ParagraphNode;
+          expect(paragraphNode.getChildren()).toHaveLength(3);
+          const textNode1 = paragraphNode.getChildAtIndex(0) as TextNode;
+          const markNode = paragraphNode.getChildAtIndex(1) as MarkNode;
+          const textNode2 = paragraphNode.getChildAtIndex(2) as TextNode;
+
+          expect(textNode1.getTextContent()).toEqual('Foo ');
+          expect(markNode.getTextContent()).toEqual('Bar');
+          expect(textNode2.getTextContent()).toEqual(' !');
         });
       });
     });

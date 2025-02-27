@@ -79,7 +79,7 @@ type _TestStateNodeExportJSON = Expect<
   Equal<
     StateNodeExportJSON,
     {
-      state?:
+      [NODE_STATE_KEY]?:
         | (Record<string, unknown> & {
             boolState?: boolean | undefined;
           })
@@ -96,7 +96,7 @@ type _TestExtraStateNodeExportJSON = Expect<
   Equal<
     ExtraStateNodeExportJSON,
     {
-      state?:
+      [NODE_STATE_KEY]?:
         | (Record<string, unknown> & {
             boolState?: boolean | undefined;
           })

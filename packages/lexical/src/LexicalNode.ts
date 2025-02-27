@@ -9,8 +9,13 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
+import type {
+  DecoratorNode,
+  ElementNode,
+  Klass,
+  KlassConstructor,
+} from 'lexical';
 
-import {Klass, KlassConstructor, NODE_STATE_KEY} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {
@@ -21,8 +26,6 @@ import {
   $isElementNode,
   $isRootNode,
   $isTextNode,
-  type DecoratorNode,
-  ElementNode,
   NODE_STATE_KEY,
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';

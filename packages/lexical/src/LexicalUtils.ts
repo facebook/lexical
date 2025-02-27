@@ -1813,7 +1813,7 @@ export function isDocumentFragment(x: unknown): x is DocumentFragment {
  */
 export function isInlineDomNode(node: Node) {
   const inlineNodes = new RegExp(
-    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
+    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|mark|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
     'i',
   );
   return node.nodeName.match(inlineNodes) !== null;

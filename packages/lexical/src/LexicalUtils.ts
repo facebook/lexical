@@ -1604,7 +1604,8 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
 
 function needsBlockCursor(node: null | LexicalNode): boolean {
   return (
-    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
+    (($isDecoratorNode(node) && !node.isIsolated()) ||
+      ($isElementNode(node) && !node.canBeEmpty())) &&
     !node.isInline()
   );
 }

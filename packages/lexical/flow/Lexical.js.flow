@@ -1221,3 +1221,6 @@ declare export function $getCommonAncestor<
   A: LexicalNode,
   B: LexicalNode,
 >(a: A, b: B): null | CommonAncestorResult<A, B>;
+declare export function $extendCaretToRange<D: CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D>;

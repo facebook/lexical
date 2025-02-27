@@ -15,6 +15,7 @@ import type {
   NodeSelection,
   Point,
   RangeSelection,
+  TextNode,
 } from 'lexical';
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
@@ -81,3 +82,19 @@ declare export function $trimTextContentFromAnchor(
 
 /** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
 declare export const trimTextContentFromAnchor: typeof $trimTextContentFromAnchor;
+
+declare export function $ensureForwardRangeSelection(selection: RangeSelection): void;
+
+declare export function $forEachSelectedTextNode(
+  fn: (textNode: TextNode) => void,
+): void;
+
+declare export function $sliceSelectedTextNodeContent(
+  selection: BaseSelection,
+  textNode: TextNode,
+): LexicalNode;
+
+declare export function $copyBlockFormatIndent(
+  srcNode: ElementNode,
+  destNode: ElementNode,
+): void;

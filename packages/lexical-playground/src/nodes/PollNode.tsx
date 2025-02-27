@@ -8,8 +8,9 @@
 
 import type {JSX} from 'react';
 
-import {makeStateWrapper} from '@lexical/utils';
 import {
+  $getState,
+  $setState,
   createState,
   DecoratorNode,
   DOMConversionMap,
@@ -18,7 +19,9 @@ import {
   LexicalNode,
   SerializedLexicalNode,
   Spread,
+  StateConfigValue,
 } from 'lexical';
+import {StateValueOrUpdater} from 'packages/lexical/src/LexicalNodeState';
 import * as React from 'react';
 
 export type Options = ReadonlyArray<Option>;
@@ -94,39 +97,37 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = makeStateWrapper(
-  createState('question', {
-    parse: (v) => (typeof v === 'string' ? v : ''),
-  }),
-);
-const optionsState = makeStateWrapper(
-  createState('options', {
-    isEqual: (a, b) =>
-      a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
-    parse: parseOptions,
-  }),
-);
+const questionState = createState('question', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
+const optionsState = createState('options', {
+  isEqual: (a, b) =>
+    a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
+  parse: parseOptions,
+});
 
 export class PollNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'poll';
+  $config() {
+    return this.config('poll', {
+      stateConfigs: [
+        {flat: true, stateConfig: questionState},
+        {flat: true, stateConfig: optionsState},
+      ],
+    });
   }
 
-  static clone(node: PollNode): PollNode {
-    return new PollNode(node.__key);
+  getQuestion(): StateConfigValue<typeof questionState> {
+    return $getState(this, questionState);
   }
-
-  static importJSON(serializedNode: SerializedPollNode): PollNode {
-    return $createPollNode(
-      serializedNode.question,
-      serializedNode.options,
-    ).updateFromJSON(serializedNode);
+  setQuestion(valueOrUpdater: StateValueOrUpdater<typeof questionState>): this {
+    return $setState(this, questionState, valueOrUpdater);
   }
-
-  getQuestion = questionState.makeGetterMethod<this>();
-  setQuestion = questionState.makeSetterMethod<this>();
-  getOptions = optionsState.makeGetterMethod<this>();
-  setOptions = optionsState.makeSetterMethod<this>();
+  getOptions(): StateConfigValue<typeof optionsState> {
+    return $getState(this, optionsState);
+  }
+  setOptions(valueOrUpdater: StateValueOrUpdater<typeof optionsState>): this {
+    return $setState(this, optionsState, valueOrUpdater);
+  }
 
   addOption(option: Option): this {
     return this.setOptions((options) => [...options, option]);

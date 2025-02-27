@@ -98,10 +98,18 @@ export function $setBlocksType<T extends ElementNode>(
     prevNode.replace(element, true);
     if (newSelection) {
       if (key === newSelection.anchor.key) {
-        newSelection.anchor.key = element.getKey();
+        newSelection.anchor.set(
+          element.getKey(),
+          newSelection.anchor.offset,
+          newSelection.anchor.type,
+        );
       }
       if (key === newSelection.focus.key) {
-        newSelection.focus.key = element.getKey();
+        newSelection.focus.set(
+          element.getKey(),
+          newSelection.focus.offset,
+          newSelection.focus.type,
+        );
       }
     }
   }

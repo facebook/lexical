@@ -9,8 +9,8 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
-import type {Klass, KlassConstructor} from 'lexical';
 
+import {Klass, KlassConstructor, NODE_STATE_KEY} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {
@@ -24,6 +24,7 @@ import {
   type DecoratorNode,
   ElementNode,
 } from '.';
+import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -61,6 +62,7 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
 
 /**
@@ -200,6 +202,8 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /** @internal */
+  __state?: NodeState<this>;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -284,10 +288,11 @@ export class LexicalNode {
    * ```
    *
    */
-  afterCloneFrom(prevNode: this) {
+  afterCloneFrom(prevNode: this): void {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
+    this.__state = prevNode.__state;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,6 +303,12 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
+    Object.defineProperty(this, '__state', {
+      configurable: true,
+      enumerable: false,
+      value: undefined,
+      writable: true,
+    });
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -848,9 +859,12 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
+    // eslint-disable-next-line dot-notation
+    const state = this.__state ? this.__state.toJSON() : undefined;
     return {
       type: this.__type,
       version: 1,
+      ...state,
     };
   }
 
@@ -900,7 +914,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return this;
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
   }
 
   /**

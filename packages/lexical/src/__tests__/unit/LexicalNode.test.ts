@@ -36,7 +36,7 @@ import {
   TestInlineElementNode,
 } from '../utils';
 
-class TestNode extends LexicalNode {
+export class TestNode extends LexicalNode {
   static getType(): string {
     return 'test';
   }

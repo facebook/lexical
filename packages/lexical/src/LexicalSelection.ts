@@ -17,6 +17,7 @@ import invariant from 'shared/invariant';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -151,23 +152,12 @@ export class Point {
   }
 
   isBefore(b: PointType): boolean {
-    let aNode = this.getNode();
-    let bNode = b.getNode();
-    const aOffset = this.offset;
-    const bOffset = b.offset;
-
-    if ($isElementNode(aNode)) {
-      const aNodeDescendant = aNode.getDescendantByIndex<ElementNode>(aOffset);
-      aNode = aNodeDescendant != null ? aNodeDescendant : aNode;
+    if (this.key === b.key) {
+      return this.offset < b.offset;
     }
-    if ($isElementNode(bNode)) {
-      const bNodeDescendant = bNode.getDescendantByIndex<ElementNode>(bOffset);
-      bNode = bNodeDescendant != null ? bNodeDescendant : bNode;
-    }
-    if (aNode === bNode) {
-      return aOffset < bOffset;
-    }
-    return aNode.isBefore(bNode);
+    const aCaret = $normalizeCaret($caretFromPoint(this, 'next'));
+    const bCaret = $normalizeCaret($caretFromPoint(b, 'next'));
+    return $comparePointCaretNext(aCaret, bCaret) < 0;
   }
 
   getNode(): LexicalNode {

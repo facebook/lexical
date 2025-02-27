@@ -48,6 +48,9 @@
       "@lexical/react/LexicalBlockWithAlignableContents": [
         "./packages/lexical-react/src/LexicalBlockWithAlignableContents.tsx"
       ],
+      "@lexical/react/LexicalCharacterCountPlugin": [
+        "packages/lexical-react/src/LexicalCharacterCountPlugin.tsx"
+      ],
       "@lexical/react/LexicalCharacterLimitPlugin": [
         "./packages/lexical-react/src/LexicalCharacterLimitPlugin.tsx"
       ],

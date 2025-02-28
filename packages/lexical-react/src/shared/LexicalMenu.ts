@@ -577,7 +577,7 @@ export function useMenuAnchorRef(
       if (rootElement !== null) {
         rootElement.removeAttribute('aria-controls');
       }
-  
+
       const containerDiv = anchorElementRef.current;
       if (containerDiv !== null && containerDiv.isConnected) {
         containerDiv.remove();

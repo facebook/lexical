@@ -476,7 +476,7 @@ export class TextNode extends LexicalNode {
   /**
    * @returns true if the text node is inline, false otherwise.
    */
-  isInline(): boolean {
+  isInline(): true {
     return true;
   }
 

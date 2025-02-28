@@ -623,6 +623,7 @@ declare export class TextNode extends LexicalNode {
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
+  isInline(): true;
   isToken(): boolean;
   isSegmented(): boolean;
   isDirectionless(): boolean;
@@ -698,6 +699,7 @@ declare export class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
+  isInline(): true;
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode;

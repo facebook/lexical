@@ -9,12 +9,14 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
-import type {Klass, KlassConstructor} from 'lexical';
 
+import {Klass, KlassConstructor, NODE_STATE_KEY} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $getCommonAncestor,
+  $getCommonAncestorResultBranchOrder,
   $isDecoratorNode,
   $isElementNode,
   $isRootNode,
@@ -22,6 +24,7 @@ import {
   type DecoratorNode,
   ElementNode,
 } from '.';
+import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -59,6 +62,7 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
 
 /**
@@ -198,6 +202,8 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /** @internal */
+  __state?: NodeState<this>;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -282,10 +288,11 @@ export class LexicalNode {
    * ```
    *
    */
-  afterCloneFrom(prevNode: this) {
+  afterCloneFrom(prevNode: this): void {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
+    this.__state = prevNode.__state;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -296,6 +303,12 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
+    Object.defineProperty(this, '__state', {
+      configurable: true,
+      enumerable: false,
+      value: undefined,
+      writable: true,
+    });
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -571,6 +584,8 @@ export class LexicalNode {
   }
 
   /**
+   * @deprecated use {@link $getCommonAncestor}
+   *
    * Returns the closest common ancestor of this node and the provided one or null
    * if one cannot be found.
    *
@@ -579,27 +594,10 @@ export class LexicalNode {
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const a = this.getParents();
-    const b = node.getParents();
-    if ($isElementNode(this)) {
-      a.unshift(this);
-    }
-    if ($isElementNode(node)) {
-      b.unshift(node);
-    }
-    const aLength = a.length;
-    const bLength = b.length;
-    if (aLength === 0 || bLength === 0 || a[aLength - 1] !== b[bLength - 1]) {
-      return null;
-    }
-    const bSet = new Set(b);
-    for (let i = 0; i < aLength; i++) {
-      const ancestor = a[i] as T;
-      if (bSet.has(ancestor)) {
-        return ancestor;
-      }
-    }
-    return null;
+    const result = $getCommonAncestor(this, node);
+    return result
+      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
+      : null;
   }
 
   /**
@@ -616,62 +614,42 @@ export class LexicalNode {
   }
 
   /**
-   * Returns true if this node logical precedes the target node in the editor state.
+   * Returns true if this node logically precedes the target node in the
+   * editor state, false otherwise (including if there is no common ancestor).
+   *
+   * Note that this notion of isBefore is based on post-order; a descendant
+   * node is always before its ancestors. See also
+   * {@link $getCommonAncestor} and {@link $comparePointCaretNext} for
+   * more flexible ways to determine the relative positions of nodes.
    *
    * @param targetNode - the node we're testing to see if it's after this one.
    */
   isBefore(targetNode: LexicalNode): boolean {
-    if (this === targetNode) {
+    const compare = $getCommonAncestor(this, targetNode);
+    if (compare === null) {
       return false;
     }
-    if (targetNode.isParentOf(this)) {
+    if (compare.type === 'descendant') {
       return true;
     }
-    if (this.isParentOf(targetNode)) {
-      return false;
+    if (compare.type === 'branch') {
+      return $getCommonAncestorResultBranchOrder(compare) === -1;
     }
-    const commonAncestor = this.getCommonAncestor(targetNode);
-    let indexA = 0;
-    let indexB = 0;
-    let node: this | ElementNode | LexicalNode = this;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexA = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    node = targetNode;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexB = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    return indexA < indexB;
+    invariant(
+      compare.type === 'same' || compare.type === 'ancestor',
+      'LexicalNode.isBefore: exhaustiveness check',
+    );
+    return false;
   }
 
   /**
-   * Returns true if this node is the parent of the target node, false otherwise.
+   * Returns true if this node is an ancestor of and distinct from the target node, false otherwise.
    *
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const key = this.__key;
-    if (key === targetNode.__key) {
-      return false;
-    }
-    let node: ElementNode | LexicalNode | null = targetNode;
-    while (node !== null) {
-      if (node.__key === key) {
-        return true;
-      }
-      node = node.getParent();
-    }
-    return false;
+    const result = $getCommonAncestor(this, targetNode);
+    return result !== null && result.type === 'ancestor';
   }
 
   // TO-DO: this function can be simplified a lot
@@ -881,9 +859,12 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
+    // eslint-disable-next-line dot-notation
+    const state = this.__state ? this.__state.toJSON() : undefined;
     return {
       type: this.__type,
       version: 1,
+      ...state,
     };
   }
 
@@ -933,7 +914,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return this;
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
   }
 
   /**

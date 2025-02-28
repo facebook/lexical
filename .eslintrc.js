@@ -88,7 +88,10 @@ module.exports = {
         ],
         '@typescript-eslint/ban-ts-comment': OFF,
         '@typescript-eslint/no-this-alias': OFF,
-        '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
+        '@typescript-eslint/no-unused-vars': [
+          ERROR,
+          {args: 'none', argsIgnorePattern: '^_', varsIgnorePattern: '^_'},
+        ],
         'header/header': [2, 'scripts/www/headerTemplate.js'],
       },
     },
@@ -225,8 +228,6 @@ module.exports = {
     'no-shadow': ERROR,
 
     'no-unused-expressions': ERROR,
-
-    'no-unused-vars': [ERROR, {args: 'none'}],
 
     'no-use-before-define': OFF,
 

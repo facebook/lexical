@@ -18,6 +18,7 @@ import {
   $isTextNode,
   $isTokenOrSegmented,
   BaseSelection,
+  ElementNode,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -243,15 +244,14 @@ export function $addNodeStyle(node: TextNode): void {
 }
 
 /**
- * Applies the provided styles to the given TextNodes or collapsed RangeSelection.
- * Will update partially selected TextNodes by splitting the TextNode and applying
- * the styles to the appropriate one.
+ * Applies the provided styles to the given TextNode, ElementNode, or
+ * collapsed RangeSelection.
  *
- * @param target - The TextNode or collapsed RangeSelection to apply the styles to
+ * @param target - The TextNode, ElementNode, or collapsed RangeSelection to apply the styles to
  * @param patch - The patch to apply, which can include multiple styles. \\{CSSProperty: value\\} . Can also accept a function that returns the new property value.
  */
 export function $patchStyle(
-  target: TextNode | RangeSelection,
+  target: TextNode | RangeSelection | ElementNode,
   patch: Record<
     string,
     | string
@@ -260,11 +260,17 @@ export function $patchStyle(
   >,
 ): void {
   invariant(
-    target instanceof TextNode || target.isCollapsed(),
-    '$patchStyle must only be called with a TextNode or collapsed RangeSelection',
+    $isRangeSelection(target)
+      ? target.isCollapsed()
+      : $isTextNode(target) || $isElementNode(target),
+    '$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection',
   );
   const prevStyles = getStyleObjectFromCSS(
-    target instanceof TextNode ? target.getStyle() : target.style,
+    $isRangeSelection(target)
+      ? target.style
+      : $isTextNode(target)
+      ? target.getStyle()
+      : target.getTextStyle(),
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
@@ -280,7 +286,11 @@ export function $patchStyle(
     {...prevStyles},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
-  target.setStyle(newCSSText);
+  if ($isRangeSelection(target) || $isTextNode(target)) {
+    target.setStyle(newCSSText);
+  } else {
+    target.setTextStyle(newCSSText);
+  }
   CSS_TO_STYLES.set(newCSSText, newStyles);
 }
 
@@ -299,12 +309,16 @@ export function $patchStyleText(
     | null
     | ((
         currentStyleValue: string | null,
-        target: TextNode | RangeSelection,
+        target: TextNode | RangeSelection | ElementNode,
       ) => string)
   >,
 ): void {
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    return $patchStyle(selection, patch);
+    $patchStyle(selection, patch);
+    const emptyNode = selection.anchor.getNode();
+    if ($isElementNode(emptyNode) && emptyNode.isEmpty()) {
+      $patchStyle(emptyNode, patch);
+    }
   }
   $forEachSelectedTextNode((textNode) => {
     $patchStyle(textNode, patch);

@@ -14,10 +14,13 @@ import {
   ListNode,
 } from '@lexical/list';
 import {
+  $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getCaretInDirection,
   $getRoot,
   $getSelection,
   $isParagraphNode,
@@ -1391,6 +1394,45 @@ describe('Regression #7173', () => {
           const children = $getRoot().getChildren();
           expect(children).toHaveLength(2);
           expect(children).toEqual(insertedNodes);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('Regression #3181', () => {
+  initializeUnitTest((testEnv) => {
+    test('Point.isBefore edge case with mixed TextNode & ElementNode and matching descendants', () => {
+      testEnv.editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          const targetText = $createTextNode('target').setMode('token');
+          $getRoot()
+            .clear()
+            .append(
+              paragraph.append(
+                $createTextNode('a').setMode('token'),
+                $createTextNode('b').setMode('token'),
+                targetText,
+              ),
+            );
+          const selection = paragraph.select(2, 2);
+          selection.focus.set(targetText.getKey(), 1, 'text');
+          expect(selection).toMatchObject({
+            anchor: {key: paragraph.getKey(), offset: 2, type: 'element'},
+            focus: {key: targetText.getKey(), offset: 1, type: 'text'},
+          });
+          const caretRange = $caretRangeFromSelection(selection);
+          expect(
+            $comparePointCaretNext(
+              // These are no-op when isBefore is correct
+              $getCaretInDirection(caretRange.anchor, 'next'),
+              $getCaretInDirection(caretRange.focus, 'next'),
+            ),
+          ).toBe(-1);
+          expect(selection.anchor.isBefore(selection.focus)).toBe(true);
+          expect(selection.focus.isBefore(selection.anchor)).toBe(false);
         },
         {discrete: true},
       );

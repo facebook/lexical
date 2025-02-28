@@ -39,6 +39,7 @@ import {
   type TextNode,
 } from '../nodes/LexicalTextNode';
 import {
+  $comparePointCaretNext,
   $getAdjacentChildCaret,
   $getCaretRange,
   $getChildCaret,
@@ -56,7 +57,7 @@ import {
  * @returns a PointCaret for the point
  */
 export function $caretFromPoint<D extends CaretDirection>(
-  point: PointType,
+  point: Pick<PointType, 'type' | 'key' | 'offset'>,
   direction: D,
 ): PointCaret<D> {
   const {type, key, offset} = point;
@@ -154,10 +155,13 @@ export function $caretRangeFromSelection(
   selection: RangeSelection,
 ): CaretRange {
   const {anchor, focus} = selection;
-  const direction = focus.isBefore(anchor) ? 'previous' : 'next';
+  const anchorCaret = $caretFromPoint(anchor, 'next');
+  const focusCaret = $caretFromPoint(focus, 'next');
+  const direction =
+    $comparePointCaretNext(anchorCaret, focusCaret) <= 0 ? 'next' : 'previous';
   return $getCaretRange(
-    $caretFromPoint(anchor, direction),
-    $caretFromPoint(focus, direction),
+    $getCaretInDirection(anchorCaret, direction),
+    $getCaretInDirection(focusCaret, direction),
   );
 }
 

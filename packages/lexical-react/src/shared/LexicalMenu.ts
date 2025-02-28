@@ -572,18 +572,18 @@ export function useMenuAnchorRef(
     const rootElement = editor.getRootElement();
     if (resolution !== null) {
       positionMenu();
-      return () => {
-        if (rootElement !== null) {
-          rootElement.removeAttribute('aria-controls');
-        }
-
-        const containerDiv = anchorElementRef.current;
-        if (containerDiv !== null && containerDiv.isConnected) {
-          containerDiv.remove();
-          containerDiv.removeAttribute('id');
-        }
-      };
     }
+    return () => {
+      if (rootElement !== null) {
+        rootElement.removeAttribute('aria-controls');
+      }
+  
+      const containerDiv = anchorElementRef.current;
+      if (containerDiv !== null && containerDiv.isConnected) {
+        containerDiv.remove();
+        containerDiv.removeAttribute('id');
+      }
+    };
   }, [editor, positionMenu, resolution]);
 
   const onVisibilityChange = useCallback(

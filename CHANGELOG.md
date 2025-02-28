@@ -1,3 +1,33 @@
+## v0.26.0 (2025-03-01)
+
+- Fix selection shifting when deleting paragraphs on android (#7239) Wayne
+- lexicalreact  Bug Fix anchor element not cleanup when component unmount (#7264) Y2
+- lexical Bug Fix Point.isBefore could return incorrect result due to normalization (#7256) Bob Ippolito
+- lexical Feature add a generic state property to all nodes (#7117) Germn Jabloski
+- lexicallexical-mark Bug Fix Identify mark as inline element (#7255) Peter Dekkers
+- lexical-playgroundexamples Refactor Unify vite devprodexample configurations (#7208) Bob Ippolito
+- lexicallexical-utils Chore Add some missing flow types for NodeCaret and table related functionality (#7253) Bob Ippolito
+- lexical-playground Bug Fix Table Action Menu dropdown positioning (#7229) Syed Umar Anis
+- fix Add missing flow types for node event plugin (#7252) Maksim Horbachevsky
+- lexical fix typo in Caret error msg (#7249) Sherry
+- Breaking Changeslexicallexical-listlexical-playground Bug Fix deleteCharacter through ListNode-ListItemNode (#7248) Bob Ippolito
+- Update Upgrade docusaurus version (#7244) Yuncheng Lu
+- lexical-react fix ensure attributes are set immediately on menu (#7237) Dennis Soehnen
+- lexical-table Bug Fix Prevent adjacent cell selection on triple-click (#7213) Kiran Dash
+- lexical-list Bullet item color matches text color (#7024) Ivaylo Pavlov
+- lexicallexical-code Refactor Use NodeCaret to implement RangeSelection.getNodes() (#7135) Bob Ippolito
+- lexical-playground Refactor Image component rerenders on every editor update (#7233) Jash Vithlani
+-  Feature Add linter to check that flow types are consistent with typescript types (#7230) Bob Ippolito
+- lexical-playground fix hard coded theme classes for table hover actions (#7182) Syed Umar Anis
+- lexical-list Bug Fix retain selection styling when exiting nested list (#7225) Divyansh Kumar
+- lexicallist Feature export ListNodeTagType (#7228) Dani Guardiola
+- lexical-table Docs Fix lexicaltable README.md (#7224) Bob Ippolito
+- lexical-yjs Bug Fix Normalize multiple adjacent merge conflicts in one block (#7217) James Fitzsimmons
+- Breaking Changelexicalreact Chore Remove deprecated default exports (#7219) Kiran Dash
+- v0.25.0 (#7221) Bob Ippolito
+- 2024 recap shortcut (#7223) Gerard Rovira
+- v0.25.0 Lexical GitHub Actions Bot
+
 ## v0.25.0 (2025-02-20)
 
 - lexical-playground Refactor Remove redundant Suspense from node decorators (#7215) Kiran Dash

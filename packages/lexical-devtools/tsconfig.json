@@ -126,9 +126,6 @@
       "@lexical/react/LexicalTabIndentationPlugin": [
         "../lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],
-      "@lexical/react/LexicalTableOfContents": [
-        "../lexical-react/src/LexicalTableOfContents.tsx"
-      ],
       "@lexical/react/LexicalTableOfContentsPlugin": [
         "../lexical-react/src/LexicalTableOfContentsPlugin.tsx"
       ],

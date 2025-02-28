@@ -8,13 +8,13 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "main": "LexicalTable.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/clipboard": "0.25.0",
-    "@lexical/utils": "0.25.0",
-    "lexical": "0.25.0"
+    "@lexical/clipboard": "0.26.0",
+    "@lexical/utils": "0.26.0",
+    "lexical": "0.26.0"
   },
   "repository": {
     "type": "git",

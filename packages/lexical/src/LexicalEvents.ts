@@ -180,6 +180,7 @@ let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let isSafariEndingComposition = false;
 let safariEndCompositionEventData = '';
+let postDeleteSelectionToRestore: RangeSelection | null = null;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
   '',
@@ -291,7 +292,8 @@ function onSelectionChange(
     // sibling instead.
     if (
       shouldSkipSelectionChange(anchorDOM, anchorOffset) &&
-      shouldSkipSelectionChange(focusDOM, focusOffset)
+      shouldSkipSelectionChange(focusDOM, focusOffset) &&
+      !postDeleteSelectionToRestore
     ) {
       return;
     }
@@ -308,7 +310,30 @@ function onSelectionChange(
       return;
     }
 
-    const selection = $getSelection();
+    let selection = $getSelection();
+
+    // Restore selection in the event of incorrect rightward shift after deletion
+    if (
+      postDeleteSelectionToRestore &&
+      $isRangeSelection(selection) &&
+      selection.isCollapsed()
+    ) {
+      const curAnchor = selection.anchor;
+      const prevAnchor = postDeleteSelectionToRestore.anchor;
+      if (
+        // Rightward shift in same node
+        (curAnchor.key === prevAnchor.key &&
+          curAnchor.offset === prevAnchor.offset + 1) ||
+        // Or rightward shift into sibling node
+        (curAnchor.offset === 1 &&
+          prevAnchor.getNode().is(curAnchor.getNode().getPreviousSibling()))
+      ) {
+        // Restore selection
+        selection = postDeleteSelectionToRestore.clone();
+        $setSelection(selection);
+      }
+    }
+    postDeleteSelectionToRestore = null;
 
     // Update the selection format
     if ($isRangeSelection(selection)) {
@@ -647,6 +672,18 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           }
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+            // When deleting across paragraphs, Chrome on Android incorrectly shifts the selection rightwards
+            // We save the correct selection to restore later during handling of selectionchange event
+            const selectionAfterDelete = $getSelection();
+            if (
+              IS_ANDROID_CHROME &&
+              $isRangeSelection(selectionAfterDelete) &&
+              selectionAfterDelete.isCollapsed()
+            ) {
+              postDeleteSelectionToRestore = selectionAfterDelete;
+              // Cleanup in case selectionchange does not fire
+              setTimeout(() => (postDeleteSelectionToRestore = null));
+            }
           }
         }
         return;

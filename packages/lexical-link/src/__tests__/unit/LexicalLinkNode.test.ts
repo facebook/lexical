@@ -6,6 +6,7 @@
  *
  */
 
+import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {
   $createLinkNode,
   $isLinkNode,
@@ -28,7 +29,11 @@ import {
   RangeSelection,
   SerializedParagraphNode,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  DataTransferMock,
+  initializeUnitTest,
+  invariant,
+} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -261,6 +266,54 @@ describe('LexicalLinkNode tests', () => {
         expect(domElement.outerHTML).toBe(
           '<a href="https://example.com/bar" class="my-link-class"></a>',
         );
+      });
+    });
+
+    describe('LinkNode.importDOM()', () => {
+      const url = 'https://example.com/foo';
+      const target = '_blank';
+      const rel = 'noopener noreferrer';
+      const title = 'Hello world';
+
+      beforeEach(async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectStart();
+        });
+      });
+
+      const PASTING_TESTS = [
+        {
+          expectedHTML: `<p><a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" title="Hello world" dir="ltr"><span data-lexical-text="true">Hello world</span></a></p>`,
+          name: 'with target, rel and title',
+          pastedHTML: `<a href="${url}" target="${target}" rel="${rel}" title="${title}">Hello world</a>`,
+        },
+        {
+          expectedHTML: `<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>`,
+          name: 'with empty href',
+          pastedHTML: `<a>Hello world</a>`,
+        },
+      ];
+
+      PASTING_TESTS.forEach(({expectedHTML, name, pastedHTML}) => {
+        test(`LinkNode.importDOM() ${name}`, async () => {
+          const {editor} = testEnv;
+          const dataTransfer = new DataTransferMock();
+          dataTransfer.setData('text/html', pastedHTML);
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'isRangeSelection(selection)',
+            );
+            $insertDataTransferForRichText(dataTransfer, selection, editor);
+          });
+          expect(testEnv.innerHTML).toBe(expectedHTML);
+        });
       });
     });
 

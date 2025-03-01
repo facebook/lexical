@@ -71,14 +71,14 @@ module.exports = function (babel, opts) {
           //
           // invariant(condition, 'A %s message that contains %s', adj, noun);
           //
-          // into this:
+          // into something equivalent to this:
           //
           // if (!condition) {
-          //   throw Error(
-          //     __DEV__
-          //       ? `A ${adj} message that contains ${noun}`
-          //       : formatProdErrorMessage(ERR_CODE, adj, noun)
-          //   );
+          //   if (__DEV__ || ERR_CODE === undefined) {
+          //     formatDevErrorMessage(`A ${adj} message that contains ${noun}`);
+          //   } else {
+          //     formatProdErrorMessage(ERR_CODE, adj, noun)
+          //   };
           // }
           //
           // where ERR_CODE is an error code: a unique identifier (a number
@@ -113,24 +113,60 @@ module.exports = function (babel, opts) {
             extractCodes,
           );
 
-          if (noMinify) {
+          /** @type {babel.types.CallExpression} */
+          let callExpression;
+          if (noMinify || prodErrorId === undefined) {
             // Error minification is disabled for this build.
             //
             // Outputs:
             //   if (!condition) {
-            //     throw Error(`A ${adj} message that contains ${noun}`);
+            //     formatDevErrorMessage(`A ${adj} message that contains ${noun}`);
             //   }
-            parentStatementPath.replaceWith(
-              t.ifStatement(
-                t.unaryExpression('!', condition),
-                t.blockStatement([
-                  t.throwStatement(
-                    t.callExpression(t.identifier('Error'), [devMessage]),
-                  ),
-                ]),
-              ),
+            const formatDevErrorMessageIdentifier =
+              helperModuleImports.addDefault(
+                path,
+                'shared/formatDevErrorMessage',
+                {
+                  nameHint: 'formatDevErrorMessage',
+                },
+              );
+            callExpression = t.callExpression(formatDevErrorMessageIdentifier, [
+              devMessage,
+            ]);
+          } else {
+            // Error minification enabled for this build.
+            //
+            // Outputs:
+            // if (!condition) {
+            //   formatProdErrorMessage(ERR_CODE, adj, noun)
+            // }
+
+            // Import ReactErrorProd
+            const formatProdErrorMessageIdentifier =
+              helperModuleImports.addDefault(
+                path,
+                'shared/formatProdErrorMessage',
+                {
+                  nameHint: 'formatProdErrorMessage',
+                },
+              );
+
+            // Outputs:
+            //   formatProdErrorMessage(ERR_CODE, adj, noun);
+            callExpression = t.callExpression(
+              formatProdErrorMessageIdentifier,
+              [t.numericLiteral(prodErrorId), ...errorMsgExpressions],
             );
-          } else if (prodErrorId === undefined) {
+          }
+
+          parentStatementPath.replaceWith(
+            t.ifStatement(
+              t.unaryExpression('!', condition),
+              t.blockStatement([t.expressionStatement(callExpression)]),
+            ),
+          );
+
+          if (!noMinify && prodErrorId === undefined) {
             // There is no error code for this message. Add an inline comment
             // that flags this as an unminified error. This allows the build
             // to proceed, while also allowing a post-build linter to detect it.
@@ -138,47 +174,11 @@ module.exports = function (babel, opts) {
             // Outputs:
             //   /* FIXME (minify-errors-in-prod): Unminified error message in production build! */
             //   if (!condition) {
-            //     throw Error(`A ${adj} message that contains ${noun}`);
+            //     formatDevErrorMessage(`A ${adj} message that contains ${noun}`);
             //   }
-            parentStatementPath.replaceWith(
-              t.ifStatement(
-                t.unaryExpression('!', condition),
-                t.blockStatement([
-                  t.throwStatement(
-                    t.callExpression(t.identifier('Error'), [devMessage]),
-                  ),
-                ]),
-              ),
-            );
             parentStatementPath.addComment(
               'leading',
               'FIXME (minify-errors-in-prod): Unminified error message in production build!',
-            );
-          } else {
-            // Import ReactErrorProd
-            const formatProdErrorMessageIdentifier =
-              helperModuleImports.addDefault(path, 'formatProdErrorMessage', {
-                nameHint: 'formatProdErrorMessage',
-              });
-
-            // Outputs:
-            //   formatProdErrorMessage(ERR_CODE, adj, noun);
-            const prodMessage = t.callExpression(
-              formatProdErrorMessageIdentifier,
-              [t.numericLiteral(prodErrorId), ...errorMsgExpressions],
-            );
-
-            // Outputs:
-            // if (!condition) {
-            //   formatProdErrorMessage(ERR_CODE, adj, noun)
-            // }
-            parentStatementPath.replaceWith(
-              t.ifStatement(
-                t.unaryExpression('!', condition),
-                t.blockStatement([
-                  t.blockStatement([t.expressionStatement(prodMessage)]),
-                ]),
-              ),
             );
           }
         }

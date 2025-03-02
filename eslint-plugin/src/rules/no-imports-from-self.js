@@ -1,4 +1,6 @@
 /**
+ * From: From: https://github.com/payloadcms/payload/blob/main/packages/eslint-plugin/customRules/no-imports-from-self.js
+ *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * Portions Copyright (c) Payload CMS, Inc. <info@payloadcms.com>
  *

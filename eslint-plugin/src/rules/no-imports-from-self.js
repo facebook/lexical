@@ -17,7 +17,7 @@ const path = require('node:path');
 /** @type {import('eslint').Rule.RuleModule} */
 module.exports = {
   create(context) {
-    let packageName = null;
+    let packageJson = null;
 
     return {
       ImportDeclaration(node) {
@@ -27,10 +27,15 @@ module.exports = {
         }
 
         const importPath = node.source.value;
-        const pkgName = getPackageName(context, packageName);
-        if (pkgName && importPath.startsWith(pkgName)) {
+        packageJson = getPackageJson(context, packageJson);
+
+        // Skip if package is private
+        if (!packageJson || packageJson.private === true) {
+          return;
+        }
+        if (importPath.startsWith(packageJson.name)) {
           context.report({
-            message: `Package "${pkgName}" should not import from itself. Use relative instead.`,
+            message: `Package "${packageJson.name}" should not import from itself. Use relative instead.`,
             node,
           });
         }
@@ -51,17 +56,19 @@ module.exports = {
 
 /**
  * @param {import('eslint').Rule.RuleContext} context
- * @param {string|undefined} packageName
+ * @param {object|undefined} packageName
+ *
+ * @returns
  */
-function getPackageName(context, packageName) {
-  if (packageName) {
-    return packageName;
+function getPackageJson(context, packageJson) {
+  if (packageJson) {
+    return packageJson;
   }
 
   const fileName = context.getFilename();
   const pkg = findNearestPackageJson(path.dirname(fileName));
   if (pkg) {
-    return pkg.name;
+    return pkg;
   }
 }
 

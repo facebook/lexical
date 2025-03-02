@@ -115,13 +115,7 @@ module.exports = {
       },
     },
     {
-      files: [
-        'packages/lexical-playground/**',
-        'packages/lexical-devtools/**',
-        'packages/lexical-react/**',
-        'packages/shared/**',
-        'packages/**/__tests__/**',
-      ],
+      files: ['packages/lexical-react/**', 'packages/**/__tests__/**'],
       rules: {
         'lexical/no-imports-from-self': OFF,
       },

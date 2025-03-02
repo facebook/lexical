@@ -7,10 +7,14 @@
  */
 
 /* eslint-disable no-constant-condition */
-import type {EditorConfig, LexicalEditor} from './LexicalEditor';
+import type {
+  EditorConfig,
+  Klass,
+  KlassConstructor,
+  LexicalEditor,
+} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
-import {Klass, KlassConstructor, NODE_STATE_KEY} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {
@@ -23,6 +27,7 @@ import {
   $isTextNode,
   type DecoratorNode,
   ElementNode,
+  NODE_STATE_KEY,
 } from '.';
 import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
 import {

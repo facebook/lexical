@@ -65,7 +65,7 @@ function getPackageJson(context, packageJson) {
     return packageJson;
   }
 
-  const fileName = context.getFilename();
+  const fileName = context.filename;
   const pkg = findNearestPackageJson(path.dirname(fileName));
   if (pkg) {
     return pkg;

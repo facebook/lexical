@@ -1598,6 +1598,9 @@ function $isSelectionInTable(
   tableNode: TableNode,
 ): boolean {
   if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+    // TODO this should probably return false if there's an unrelated
+    //      shadow root between the node and the table (e.g. another table,
+    //      collapsible, etc.)
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
 

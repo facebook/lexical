@@ -3315,6 +3315,21 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   granularity: 'character' | 'word' | 'lineboundary',
   mode: 'decorators-and-blocks' | 'decorators' = 'decorators-and-blocks',
 ): boolean {
+  if (
+    alter === 'move' &&
+    granularity === 'character' &&
+    !selection.isCollapsed()
+  ) {
+    // moving left or right when the selection isn't collapsed will
+    // just set the anchor to the focus or vice versa depending on
+    // direction
+    const [src, dst] =
+      isBackward === selection.isBackward()
+        ? [selection.focus, selection.anchor]
+        : [selection.anchor, selection.focus];
+    dst.set(src.key, src.offset, src.type);
+    return true;
+  }
   const initialFocus = $caretFromPoint(
     selection.focus,
     isBackward ? 'previous' : 'next',

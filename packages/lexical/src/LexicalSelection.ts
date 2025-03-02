@@ -27,10 +27,10 @@ import {
   $getCaretRangeInDirection,
   $getChildCaret,
   $getSiblingCaret,
-  $getTextNodeOffset,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
+  $isExtendableTextPointCaret,
   $isLineBreakNode,
   $isRootNode,
   $isSiblingCaret,
@@ -1522,7 +1522,12 @@ export class RangeSelection implements BaseSelection {
     granularity: 'character' | 'word' | 'lineboundary',
   ): void {
     if (
-      $modifySelectionAroundDecorators(this, alter, isBackward, granularity)
+      $modifySelectionAroundDecoratorsAndBlocks(
+        this,
+        alter,
+        isBackward,
+        granularity,
+      )
     ) {
       return;
     }
@@ -1641,7 +1646,13 @@ export class RangeSelection implements BaseSelection {
       }
     }
     if (granularity === 'lineboundary') {
-      $modifySelectionAroundDecorators(this, alter, isBackward, granularity);
+      $modifySelectionAroundDecoratorsAndBlocks(
+        this,
+        alter,
+        isBackward,
+        granularity,
+        'decorators',
+      );
     }
   }
   /**
@@ -3294,14 +3305,15 @@ function $getNodesFromCaretRangeCompat(
 /**
  * @internal
  *
- * Modify the focus of the focus around possible decorators and return true
+ * Modify the focus of the focus around possible decorators and blocks and return true
  * if the movement is done.
  */
-function $modifySelectionAroundDecorators(
+function $modifySelectionAroundDecoratorsAndBlocks(
   selection: RangeSelection,
   alter: 'move' | 'extend',
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
+  mode: 'decorators-and-blocks' | 'decorators' = 'decorators-and-blocks',
 ): boolean {
   const initialFocus = $caretFromPoint(
     selection.focus,
@@ -3310,13 +3322,10 @@ function $modifySelectionAroundDecorators(
   const isLineBoundary = granularity === 'lineboundary';
   const collapse = alter === 'move';
   let focus = initialFocus;
-  if (
-    !(
-      $isTextPointCaret(focus) &&
-      focus.offset !== $getTextNodeOffset(focus.origin, focus.direction)
-    )
-  ) {
+  let checkForBlock = mode === 'decorators-and-blocks';
+  if (!$isExtendableTextPointCaret(focus)) {
     for (const siblingCaret of focus) {
+      checkForBlock = false;
       const {origin} = siblingCaret;
       if ($isDecoratorNode(origin) && !origin.isIsolated()) {
         focus = siblingCaret;
@@ -3326,12 +3335,29 @@ function $modifySelectionAroundDecorators(
       }
       break;
     }
+    if (checkForBlock) {
+      for (const nextCaret of $extendCaretToRange(initialFocus).iterNodeCarets(
+        alter === 'extend' ? 'shadowRoot' : 'root',
+      )) {
+        if ($isChildCaret(nextCaret)) {
+          if (!nextCaret.origin.isInline()) {
+            focus = nextCaret;
+          }
+        } else if ($isElementNode(nextCaret.origin)) {
+          continue;
+        }
+        break;
+      }
+    }
   }
   if (focus === initialFocus) {
     return false;
   }
+  // After this point checkForBlock is true if and only if we moved to a
+  // different block, so we should stop regardless of the granularity
   if (
     collapse &&
+    !checkForBlock &&
     !isLineBoundary &&
     $isDecoratorNode(focus.origin) &&
     focus.origin.isKeyboardSelectable()
@@ -3348,5 +3374,5 @@ function $modifySelectionAroundDecorators(
     $setPointFromCaret(selection.anchor, focus);
   }
   $setPointFromCaret(selection.focus, focus);
-  return !isLineBoundary;
+  return checkForBlock || !isLineBoundary;
 }

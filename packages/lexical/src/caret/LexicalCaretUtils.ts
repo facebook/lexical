@@ -486,6 +486,26 @@ export function $normalizeCaret<D extends CaretDirection>(
     : caret;
 }
 
+declare const PointCaretIsExtendableBrand: unique symbol;
+/**
+ * Determine whether the TextPointCaret's offset can be extended further without leaving the TextNode.
+ * Returns false if the given caret is not a TextPointCaret or the offset can not be moved further in
+ * direction.
+ *
+ * @param caret A PointCaret
+ * @returns true if caret is a TextPointCaret with an offset that is not at the end of the text given the direction.
+ */
+export function $isExtendableTextPointCaret<D extends CaretDirection>(
+  caret: PointCaret<D>,
+): caret is TextPointCaret<TextNode, D> & {
+  [PointCaretIsExtendableBrand]: never;
+} {
+  return (
+    $isTextPointCaret(caret) &&
+    caret.offset !== $getTextNodeOffset(caret.origin, caret.direction)
+  );
+}
+
 /**
  * Return the caret if it's in the given direction, otherwise return
  * caret.getFlipped().

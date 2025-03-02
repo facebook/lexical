@@ -116,6 +116,18 @@ module.exports = {
     },
     {
       files: [
+        'packages/lexical-playground/**',
+        'packages/lexical-devtools/**',
+        'packages/lexical-react/**',
+        'packages/shared/**',
+        'packages/**/__tests__/**',
+      ],
+      rules: {
+        'lexical-monorepo/no-imports-from-self': OFF,
+      },
+    },
+    {
+      files: [
         'packages/*/src/index.ts',
         'packages/*/src/index.tsx',
         'packages/lexical-react/src/*.ts',

@@ -161,6 +161,7 @@ module.exports = {
     'no-only-tests',
     'lexical',
     '@lexical',
+    'lexical-monorepo',
   ],
 
   // Stop ESLint from looking for a configuration file in parent folders
@@ -169,7 +170,6 @@ module.exports = {
   // and then enable some React specific ones.
   rules: {
     'accessor-pairs': OFF,
-
     'consistent-return': OFF,
     curly: [ERROR, 'all'],
     'dot-location': [ERROR, 'property'],
@@ -199,6 +199,8 @@ module.exports = {
     'jsx-quotes': [ERROR, 'prefer-double'],
 
     'keyword-spacing': [ERROR, {after: true, before: true}],
+
+    'lexical-monorepo/no-imports-from-self': ERROR,
 
     // Enforced by Prettier
     // TODO: Prettier doesn't handle long strings or long comments. Not a big

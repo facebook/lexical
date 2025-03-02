@@ -153,6 +153,7 @@
     "eslint-plugin-jest": "^28.5.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",
     "eslint-plugin-lexical": "file:./eslint-plugin",
+    "eslint-plugin-lexical-monorepo": "file:./scripts/eslint",
     "eslint-plugin-no-function-declare-after-return": "^1.1.0",
     "eslint-plugin-no-only-tests": "^3.1.0",
     "eslint-plugin-react": "^7.34.1",

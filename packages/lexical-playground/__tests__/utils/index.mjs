@@ -241,7 +241,7 @@ async function assertHTMLOnPageOrFrame(
       ignoreInlineStyles,
     });
 
-    actual = actualHtmlModificationsCallback(actual);
+    actual = await actualHtmlModificationsCallback(actual);
 
     expect(
       actual,

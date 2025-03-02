@@ -1226,3 +1226,7 @@ declare export function $getCommonAncestor<
 declare export function $extendCaretToRange<D: CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D>;
+
+declare export function $isExtendableTextPointCaret<D: CaretDirection>(
+  caret: PointCaret<D>
+): implies caret is TextPointCaret<TextNode, D>;

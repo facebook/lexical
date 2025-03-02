@@ -1,6 +1,6 @@
 {
   "name": "shared",
-  "private": "true",
+  "private": true,
   "keywords": [
     "react",
     "lexical",

@@ -312,6 +312,29 @@ export async function assertHTML(
 /**
  * @param {import('@playwright/test').Page} page
  */
+export async function assertTableHTML(
+  page,
+  expectedHtml,
+  expectedHtmlFrameRight = undefined,
+  options = undefined,
+  ...args
+) {
+  return await assertHTML(
+    page,
+    IS_TABLE_HORIZONTAL_SCROLL
+      ? wrapTableHtml(expectedHtml, options)
+      : expectedHtml,
+    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
+      ? wrapTableHtml(expectedHtmlFrameRight, options)
+      : expectedHtmlFrameRight,
+    options,
+    ...args,
+  );
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ */
 export function getPageOrFrame(page) {
   return IS_COLLAB ? page.frame('left') : page;
 }

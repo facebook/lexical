@@ -36,6 +36,11 @@ module.exports = {
 
     return {
       ImportDeclaration(node) {
+        // Skip type-only imports
+        if (node.importKind === 'type' || node.importKind === 'typeof') {
+          return;
+        }
+
         const importPath = node.source.value;
         const pkgName = getPackageName(context, packageName);
         if (pkgName && importPath.startsWith(pkgName)) {
@@ -51,7 +56,8 @@ module.exports = {
   meta: {
     docs: {
       category: 'Best Practices',
-      description: 'Disallow a package from importing from itself',
+      description:
+        'Disallow a package from importing from itself, except type-only imports',
       recommended: true,
     },
     schema: [],

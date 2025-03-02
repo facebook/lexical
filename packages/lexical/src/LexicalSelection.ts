@@ -3345,6 +3345,11 @@ function $modifySelectionAroundDecoratorsAndBlocks(
           }
         } else if ($isElementNode(nextCaret.origin)) {
           continue;
+        } else if (
+          $isDecoratorNode(nextCaret.origin) &&
+          !nextCaret.origin.isInline()
+        ) {
+          focus = nextCaret;
         }
         break;
       }
@@ -3357,7 +3362,6 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   // different block, so we should stop regardless of the granularity
   if (
     collapse &&
-    !checkForBlock &&
     !isLineBoundary &&
     $isDecoratorNode(focus.origin) &&
     focus.origin.isKeyboardSelectable()

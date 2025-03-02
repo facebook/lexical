@@ -123,7 +123,7 @@ module.exports = {
         'packages/**/__tests__/**',
       ],
       rules: {
-        'lexical-monorepo/no-imports-from-self': OFF,
+        'lexical/no-imports-from-self': OFF,
       },
     },
     {
@@ -173,7 +173,6 @@ module.exports = {
     'no-only-tests',
     'lexical',
     '@lexical',
-    'lexical-monorepo',
   ],
 
   // Stop ESLint from looking for a configuration file in parent folders
@@ -212,7 +211,7 @@ module.exports = {
 
     'keyword-spacing': [ERROR, {after: true, before: true}],
 
-    'lexical-monorepo/no-imports-from-self': ERROR,
+    'lexical/no-imports-from-self': ERROR,
 
     // Enforced by Prettier
     // TODO: Prettier doesn't handle long strings or long comments. Not a big

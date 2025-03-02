@@ -33,7 +33,7 @@ module.exports = {
         if (!packageJson || packageJson.private === true) {
           return;
         }
-        if (importPath.startsWith(packageJson.name)) {
+        if (importPath === packageJson.name) {
           context.report({
             message: `Package "${packageJson.name}" should not import from itself. Use relative instead.`,
             node,

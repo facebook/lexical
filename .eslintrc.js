@@ -115,7 +115,7 @@ module.exports = {
       },
     },
     {
-      files: ['packages/lexical-react/**', 'packages/**/__tests__/**'],
+      files: ['packages/**/__tests__/**'],
       rules: {
         'lexical/no-imports-from-self': OFF,
       },

@@ -9,7 +9,9 @@
 'use strict';
 
 const noOptionalChaining = require('./no-optional-chaining');
+const noImportsFromSelf = require('./no-imports-from-self');
 
 module.exports = {
+  'no-imports-from-self': noImportsFromSelf,
   'no-optional-chaining': noOptionalChaining,
 };

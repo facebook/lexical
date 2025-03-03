@@ -162,6 +162,12 @@
       "shared/canUseDOM": ["../shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["../shared/src/caretFromPoint.ts"],
       "shared/environment": ["../shared/src/environment.ts"],
+      "shared/formatDevErrorMessage": [
+        "../shared/src/formatDevErrorMessage.ts"
+      ],
+      "shared/formatProdErrorMessage": [
+        "../shared/src/formatProdErrorMessage.ts"
+      ],
       "shared/invariant": ["../shared/src/invariant.ts"],
       "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],
       "shared/react-test-utils": ["../shared/src/react-test-utils.ts"],

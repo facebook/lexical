@@ -240,23 +240,32 @@ export function $dfsIterator(
   return $dfsCaretIterator('next', startNode, endNode);
 }
 
+function $getEndCaret<D extends CaretDirection>(
+  startNode: LexicalNode,
+  direction: D,
+): null | NodeCaret<D> {
+  const rval = $getAdjacentSiblingOrParentSiblingCaret(
+    $getSiblingCaret(startNode, direction),
+  );
+  return rval && rval[0];
+}
+
 function $dfsCaretIterator<D extends CaretDirection>(
   direction: D,
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  const rootMode = 'root';
   const root = $getRoot();
   const start = startNode || root;
   const startCaret = $isElementNode(start)
     ? $getChildCaret(start, direction)
     : $getSiblingCaret(start, direction);
   const startDepth = $getDepth(start);
-  const endCaret = $getAdjacentChildCaret(
-    endNode
-      ? $getChildCaretOrSelf($getSiblingCaret(endNode, direction))
-      : startCaret.getParentCaret(rootMode),
-  );
+  const endCaret = endNode
+    ? $getAdjacentChildCaret(
+        $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
+      )
+    : $getEndCaret(start, direction);
   let depth = startDepth;
   return makeStepwiseIterator({
     hasNext: (state): state is NodeCaret<'next'> => state !== null,

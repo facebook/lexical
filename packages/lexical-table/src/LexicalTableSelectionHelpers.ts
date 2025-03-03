@@ -198,27 +198,27 @@ export function applyTableHandlers(
     };
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDOMNode(moveEvent.target)) {
-        return;
-      }
       if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
         tableObserver.isSelecting = false;
         editorWindow.removeEventListener('mouseup', onMouseUp);
         editorWindow.removeEventListener('mousemove', onMouseMove);
         return;
       }
-      const override = !tableElement.contains(moveEvent.target);
+      if (!isDOMNode(moveEvent.target)) {
+        return;
+      }
       let focusCell: null | TableDOMCell = null;
-      if (!override) {
-        focusCell = getDOMCellFromTarget(moveEvent.target);
+      // In firefox the moveEvent.target may be captured so we must always
+      // consult the coordinates #7245
+      const override = !(IS_FIREFOX || tableElement.contains(moveEvent.target));
+      if (override) {
+        focusCell = getDOMCellInTableFromTarget(tableElement, moveEvent.target);
       } else {
         for (const el of document.elementsFromPoint(
           moveEvent.clientX,
           moveEvent.clientY,
         )) {
-          focusCell = tableElement.contains(el)
-            ? getDOMCellFromTarget(el)
-            : null;
+          focusCell = getDOMCellInTableFromTarget(tableElement, el);
           if (focusCell) {
             break;
           }
@@ -1165,6 +1165,31 @@ export function getDOMCellFromTarget(node: null | Node): TableDOMCell | null {
     currentNode = currentNode.parentNode;
   }
 
+  return null;
+}
+
+export function getDOMCellInTableFromTarget(
+  table: HTMLTableElementWithWithTableSelectionState,
+  node: null | Node,
+): TableDOMCell | null {
+  if (!table.contains(node)) {
+    return null;
+  }
+  let cell: null | TableDOMCell = null;
+  for (
+    let currentNode: ParentNode | Node | null = node;
+    currentNode != null;
+    currentNode = currentNode.parentNode
+  ) {
+    if (currentNode === table) {
+      return cell;
+    }
+    const nodeName = currentNode.nodeName;
+    if (nodeName === 'TD' || nodeName === 'TH') {
+      // @ts-expect-error: internal field
+      cell = currentNode._cell || null;
+    }
+  }
   return null;
 }
 

@@ -606,7 +606,10 @@ test.describe('Images', () => {
       page,
       'span[data-lexical-text="true"]',
     );
-    await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
+    await dragMouse(page, textBoundingBox, textBoundingBox, {
+      positionEnd: 'middle',
+      positionStart: 'start',
+    });
 
     const lexicalSelection = await evaluate(page, (editor) => {
       return window.lexicalEditor._editorState._selection;

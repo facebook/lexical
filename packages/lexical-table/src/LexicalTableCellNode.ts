@@ -131,6 +131,7 @@ export class TableCellNode extends ElementNode {
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
+    this.__verticalAlign = undefined;
   }
 
   createDOM(config: EditorConfig): HTMLTableCellElement {

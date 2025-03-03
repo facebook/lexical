@@ -91,11 +91,6 @@ export class ParagraphNode extends ElementNode {
 
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
-
-      const direction = this.getDirection();
-      if (direction) {
-        element.dir = direction;
-      }
     }
 
     return {

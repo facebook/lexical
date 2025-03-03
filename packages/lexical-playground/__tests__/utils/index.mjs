@@ -986,6 +986,11 @@ export async function toggleColumnHeader(page) {
   await click(page, '.item[data-test-id="table-column-header"]');
 }
 
+export async function toggleRowHeader(page) {
+  await clickTableCellActiveButton(page);
+  await click(page, '.item[data-test-id="table-row-header"]');
+}
+
 export async function deleteTableRows(page) {
   await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-delete-rows"]');

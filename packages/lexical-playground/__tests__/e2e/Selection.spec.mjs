@@ -998,7 +998,7 @@ test.describe.parallel('Selection', () => {
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
         <h1

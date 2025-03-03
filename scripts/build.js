@@ -216,15 +216,6 @@ async function build(
           ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
-      {
-        resolveId(importee, importer) {
-          if (importee === 'formatProdErrorMessage') {
-            return path.resolve(
-              './scripts/error-codes/formatProdErrorMessage.js',
-            );
-          }
-        },
-      },
       commonjs(),
       json(),
       replace(

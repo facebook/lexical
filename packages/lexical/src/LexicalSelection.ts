@@ -17,25 +17,35 @@ import invariant from 'shared/invariant';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $extendCaretToRange,
+  $getAdjacentChildCaret,
   $getCaretRange,
+  $getCaretRangeInDirection,
+  $getChildCaret,
   $getSiblingCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
+  $isExtendableTextPointCaret,
   $isLineBreakNode,
   $isRootNode,
   $isSiblingCaret,
   $isTextNode,
+  $isTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
   $updateRangeSelectionFromCaretRange,
+  CaretRange,
+  ChildCaret,
+  NodeCaret,
+  PointCaret,
   TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -52,7 +62,6 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $getAdjacentNode,
   $getAncestor,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
@@ -60,6 +69,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainSurrogatePair,
@@ -142,23 +152,12 @@ export class Point {
   }
 
   isBefore(b: PointType): boolean {
-    let aNode = this.getNode();
-    let bNode = b.getNode();
-    const aOffset = this.offset;
-    const bOffset = b.offset;
-
-    if ($isElementNode(aNode)) {
-      const aNodeDescendant = aNode.getDescendantByIndex<ElementNode>(aOffset);
-      aNode = aNodeDescendant != null ? aNodeDescendant : aNode;
+    if (this.key === b.key) {
+      return this.offset < b.offset;
     }
-    if ($isElementNode(bNode)) {
-      const bNodeDescendant = bNode.getDescendantByIndex<ElementNode>(bOffset);
-      bNode = bNodeDescendant != null ? bNodeDescendant : bNode;
-    }
-    if (aNode === bNode) {
-      return aOffset < bOffset;
-    }
-    return aNode.isBefore(bNode);
+    const aCaret = $normalizeCaret($caretFromPoint(this, 'next'));
+    const bCaret = $normalizeCaret($caretFromPoint(b, 'next'));
+    return $comparePointCaretNext(aCaret, bCaret) < 0;
   }
 
   getNode(): LexicalNode {
@@ -502,6 +501,11 @@ export class RangeSelection implements BaseSelection {
    * Gets all the nodes in the Selection. Uses caching to make it generally suitable
    * for use in hot paths.
    *
+   * See also the {@link CaretRange} APIs (starting with
+   * {@link $caretRangeFromSelection}), which are likely to provide a better
+   * foundation for any operation where partial selection is relevant
+   * (e.g. the anchor or focus are inside an ElementNode and TextNode)
+   *
    * @returns an Array containing all the nodes in the Selection
    */
   getNodes(): Array<LexicalNode> {
@@ -509,95 +513,11 @@ export class RangeSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes;
     }
-    const anchor = this.anchor;
-    const focus = this.focus;
-    const isBefore = anchor.isBefore(focus);
-    const firstPoint = isBefore ? anchor : focus;
-    const lastPoint = isBefore ? focus : anchor;
-    const firstPointNode = firstPoint.getNode();
-    const lastPointNode = lastPoint.getNode();
-    let firstNode: LexicalNode = firstPointNode;
-    let lastNode: LexicalNode = lastPointNode;
-    let overselectedFirstNode = false;
-    const overselectedLastNodes = new Set<NodeKey>();
-
-    if ($isElementNode(firstPointNode)) {
-      overselectedFirstNode =
-        firstPoint.offset > 0 &&
-        firstPoint.offset >= firstPointNode.getChildrenSize();
-      firstNode =
-        firstPointNode.getDescendantByIndex(firstPoint.offset) ||
-        firstPointNode;
-    }
-    if ($isElementNode(lastPointNode)) {
-      const lastPointChild = lastPointNode.getChildAtIndex(lastPoint.offset);
-      if (lastPointChild) {
-        overselectedLastNodes.add(lastPointChild.getKey());
-        lastNode =
-          ($isElementNode(lastPointChild) &&
-            lastPointChild.getFirstDescendant()) ||
-          lastPointChild;
-        for (
-          let overselected: LexicalNode | null = lastNode;
-          overselected && !overselected.is(lastPointChild);
-          overselected = overselected.getParent()
-        ) {
-          overselectedLastNodes.add(overselected.getKey());
-        }
-      } else {
-        const beforeChild =
-          lastPoint.offset > 0 &&
-          lastPointNode.getChildAtIndex(lastPoint.offset - 1);
-        if (beforeChild) {
-          // This case is not an overselection
-          lastNode =
-            ($isElementNode(beforeChild) && beforeChild.getLastDescendant()) ||
-            beforeChild;
-        } else {
-          // It's the last node and we have to find something at or after lastNode
-          // and mark all of the ancestors inbetween as overselected
-          let parent = lastPointNode.getParent();
-          for (; parent !== null; parent = parent.getParent()) {
-            overselectedLastNodes.add(parent.getKey());
-            const parentSibling = parent.getNextSibling();
-            if (parentSibling) {
-              lastNode = parentSibling;
-              break;
-            }
-          }
-          if (!(lastPointNode.isEmpty() && lastPointNode.is(lastNode))) {
-            overselectedLastNodes.add(lastNode.getKey());
-          }
-        }
-      }
-    }
-
-    let nodes: Array<LexicalNode>;
-
-    if (firstNode.is(lastNode) || this.isCollapsed()) {
-      if ($isElementNode(firstNode) && firstNode.getChildrenSize() > 0) {
-        nodes = [];
-      } else {
-        nodes = [firstNode];
-      }
-    } else {
-      // Prevent over-selection due to the edge case of getDescendantByIndex always returning something #6974
-      nodes = firstNode.getNodesBetween(lastNode);
-      if (overselectedLastNodes.size > 0) {
-        while (
-          nodes.length > 0 &&
-          overselectedLastNodes.has(nodes[nodes.length - 1].getKey())
-        ) {
-          nodes.pop();
-        }
-      }
-      if (overselectedFirstNode) {
-        const deleteCount = nodes.findIndex(
-          (node) => !node.is(firstNode) && !node.isBefore(firstNode),
-        );
-        nodes.splice(0, deleteCount);
-      }
-    }
+    const range = $getCaretRangeInDirection(
+      $caretRangeFromSelection(this),
+      'next',
+    );
+    const nodes = $getNodesFromCaretRangeCompat(range);
     if (__DEV__) {
       if (this.isCollapsed() && nodes.length > 1) {
         invariant(
@@ -1601,55 +1521,18 @@ export class RangeSelection implements BaseSelection {
     isBackward: boolean,
     granularity: 'character' | 'word' | 'lineboundary',
   ): void {
-    const focus = this.focus;
-    const anchor = this.anchor;
+    if (
+      $modifySelectionAroundDecoratorsAndBlocks(
+        this,
+        alter,
+        isBackward,
+        granularity,
+      )
+    ) {
+      return;
+    }
     const collapse = alter === 'move';
 
-    // Handle the selection movement around decorators.
-    const possibleNode = $getAdjacentNode(focus, isBackward);
-    if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
-      // Make it possible to move selection from range selection to
-      // node selection on the node.
-      if (collapse && possibleNode.isKeyboardSelectable()) {
-        const nodeSelection = $createNodeSelection();
-        nodeSelection.add(possibleNode.__key);
-        $setSelection(nodeSelection);
-        return;
-      }
-      const sibling = isBackward
-        ? possibleNode.getPreviousSibling()
-        : possibleNode.getNextSibling();
-
-      if (!$isTextNode(sibling)) {
-        const parent = possibleNode.getParentOrThrow();
-        let offset;
-        let elementKey;
-
-        if ($isElementNode(sibling)) {
-          elementKey = sibling.__key;
-          offset = isBackward ? sibling.getChildrenSize() : 0;
-        } else {
-          offset = possibleNode.getIndexWithinParent();
-          elementKey = parent.__key;
-          if (!isBackward) {
-            offset++;
-          }
-        }
-        focus.set(elementKey, offset, 'element');
-        if (collapse) {
-          anchor.set(elementKey, offset, 'element');
-        }
-        return;
-      } else {
-        const siblingKey = sibling.__key;
-        const offset = isBackward ? sibling.getTextContent().length : 0;
-        focus.set(siblingKey, offset, 'text');
-        if (collapse) {
-          anchor.set(siblingKey, offset, 'text');
-        }
-        return;
-      }
-    }
     const editor = getActiveEditor();
     const domSelection = getDOMSelection(getWindow(editor));
 
@@ -1658,17 +1541,43 @@ export class RangeSelection implements BaseSelection {
     }
     const blockCursorElement = editor._blockCursorElement;
     const rootElement = editor._rootElement;
+    const focusNode = this.focus.getNode();
     // Remove the block cursor element if it exists. This will ensure selection
     // works as intended. If we leave it in the DOM all sorts of strange bugs
     // occur. :/
     if (
       rootElement !== null &&
       blockCursorElement !== null &&
-      $isElementNode(possibleNode) &&
-      !possibleNode.isInline() &&
-      !possibleNode.canBeEmpty()
+      $isElementNode(focusNode) &&
+      !focusNode.isInline() &&
+      !focusNode.canBeEmpty()
     ) {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
+    }
+    if (this.dirty) {
+      let nextAnchorDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
+        editor,
+        this.anchor.key,
+      );
+      let nextFocusDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
+        editor,
+        this.focus.key,
+      );
+      if (this.anchor.type === 'text') {
+        nextAnchorDOM = getDOMTextNode(nextAnchorDOM);
+      }
+      if (this.focus.type === 'text') {
+        nextFocusDOM = getDOMTextNode(nextFocusDOM);
+      }
+      if (nextAnchorDOM && nextFocusDOM) {
+        setDOMSelectionBaseAndExtent(
+          domSelection,
+          nextAnchorDOM,
+          this.anchor.offset,
+          nextFocusDOM,
+          this.focus.offset,
+        );
+      }
     }
     // We use the DOM selection.modify API here to "tell" us what the selection
     // will be. We then use it to update the Lexical selection accordingly. This
@@ -1736,6 +1645,15 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
+    if (granularity === 'lineboundary') {
+      $modifySelectionAroundDecoratorsAndBlocks(
+        this,
+        alter,
+        isBackward,
+        granularity,
+        'decorators',
+      );
+    }
   }
   /**
    * Helper for handling forward character and word deletion that prevents element nodes
@@ -1799,12 +1717,20 @@ export class RangeSelection implements BaseSelection {
           | {
               type: 'merge-next-block';
               block: ElementNode;
+            }
+          | {
+              type: 'merge-block';
+              caret: ChildCaret<ElementNode, typeof direction>;
+              block: ElementNode;
             } = {type: 'initial'};
         for (const caret of initialRange.iterNodeCarets('shadowRoot')) {
           if ($isChildCaret(caret)) {
             if (caret.origin.isInline()) {
               // fall through when descending an inline
             } else if (caret.origin.isShadowRoot()) {
+              if (state.type === 'merge-block') {
+                break;
+              }
               // Don't merge with a shadow root block
               if (
                 $isElementNode(initialRange.anchor.origin) &&
@@ -1819,20 +1745,15 @@ export class RangeSelection implements BaseSelection {
                 initialRange.anchor.origin.remove();
               }
               return;
-            } else if (state.type === 'merge-next-block') {
-              $updateRangeSelectionFromCaretRange(
-                this,
-                $getCaretRange(
-                  !caret.origin.isEmpty() && state.block.isEmpty()
-                    ? $rewindSiblingCaret(
-                        $getSiblingCaret(state.block, caret.direction),
-                      )
-                    : initialRange.anchor,
-                  caret,
-                ),
-              );
-              return this.removeText();
+            } else if (
+              state.type === 'merge-next-block' ||
+              state.type === 'merge-block'
+            ) {
+              // Keep descending ChildCaret to find which block to merge with
+              state = {block: state.block, caret, type: 'merge-block'};
             }
+          } else if (state.type === 'merge-block') {
+            break;
           } else if ($isSiblingCaret(caret)) {
             if ($isElementNode(caret.origin)) {
               if (!caret.origin.isInline()) {
@@ -1868,6 +1789,19 @@ export class RangeSelection implements BaseSelection {
             }
             break;
           }
+        }
+        if (state.type === 'merge-block') {
+          const {caret, block} = state;
+          $updateRangeSelectionFromCaretRange(
+            this,
+            $getCaretRange(
+              !caret.origin.isEmpty() && block.isEmpty()
+                ? $rewindSiblingCaret($getSiblingCaret(block, caret.direction))
+                : initialRange.anchor,
+              caret,
+            ),
+          );
+          return this.removeText();
         }
       }
 
@@ -1937,31 +1871,16 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      // Since `domSelection.modify('extend', ..., 'lineboundary')` works well for text selections
-      // but doesn't properly handle selections which end on elements, a space character is added
-      // for such selections transforming their anchor's type to 'text'
-      const anchorIsElement = this.anchor.type === 'element';
-      if (anchorIsElement) {
-        this.insertText(' ');
-      }
-
       this.modify('extend', isBackward, 'lineboundary');
-
-      // If the selection starts at the beginning of a text node (offset 0),
-      // extend the selection by one character in the specified direction.
-      // This ensures that the parent element is deleted along with its content.
-      // Otherwise, only the text content will be deleted, leaving an empty parent node.
-      if (this.isCollapsed() && this.anchor.offset === 0) {
-        this.modify('extend', isBackward, 'character');
-      }
-
-      // Adjusts selection to include an extra character added for element anchors to remove it
-      if (anchorIsElement) {
-        const startPoint = isBackward ? this.anchor : this.focus;
-        startPoint.set(startPoint.key, startPoint.offset + 1, startPoint.type);
-      }
     }
-    this.removeText();
+    if (this.isCollapsed()) {
+      // If the selection was already collapsed at the lineboundary,
+      // use the deleteCharacter operation to handle all of the logic associated
+      // with navigating through the parent element
+      this.deleteCharacter(isBackward);
+    } else {
+      this.removeText();
+    }
   }
 
   /**
@@ -2044,7 +1963,7 @@ function $collapseAtStart(
       if (node.collapseAtStart(selection)) {
         return true;
       }
-      if (!node.isInline()) {
+      if ($isRootOrShadowRoot(node)) {
         break;
       }
     }
@@ -2975,6 +2894,32 @@ export function adjustPointOffsetForMergedSibling(
   }
 }
 
+function setDOMSelectionBaseAndExtent(
+  domSelection: Selection,
+  nextAnchorDOM: HTMLElement | Text,
+  nextAnchorOffset: number,
+  nextFocusDOM: HTMLElement | Text,
+  nextFocusOffset: number,
+): void {
+  // Apply the updated selection to the DOM. Note: this will trigger
+  // a "selectionchange" event, although it will be asynchronous.
+  try {
+    domSelection.setBaseAndExtent(
+      nextAnchorDOM,
+      nextAnchorOffset,
+      nextFocusDOM,
+      nextFocusOffset,
+    );
+  } catch (error) {
+    // If we encounter an error, continue. This can sometimes
+    // occur with FF and there's no good reason as to why it
+    // should happen.
+    if (__DEV__) {
+      console.warn(error);
+    }
+  }
+}
+
 export function updateDOMSelection(
   prevSelection: BaseSelection | null,
   nextSelection: BaseSelection | null,
@@ -3094,21 +3039,13 @@ export function updateDOMSelection(
 
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
-  try {
-    domSelection.setBaseAndExtent(
-      nextAnchorNode,
-      nextAnchorOffset,
-      nextFocusNode,
-      nextFocusOffset,
-    );
-  } catch (error) {
-    // If we encounter an error, continue. This can sometimes
-    // occur with FF and there's no good reason as to why it
-    // should happen.
-    if (__DEV__) {
-      console.warn(error);
-    }
-  }
+  setDOMSelectionBaseAndExtent(
+    domSelection,
+    nextAnchorNode,
+    nextAnchorOffset,
+    nextFocusNode,
+    nextFocusOffset,
+  );
   if (
     !tags.has('skip-scroll-into-view') &&
     nextSelection.isCollapsed() &&
@@ -3269,4 +3206,192 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
   }
 
   return virtualRoot;
+}
+
+/**
+ * Get all nodes in a CaretRange in a way that complies with all of the
+ * quirks of the original RangeSelection.getNodes().
+ *
+ * @param range The CaretRange
+ */
+function $getNodesFromCaretRangeCompat(
+  // getNodes returned nodes in document order
+  range: CaretRange<'next'>,
+): LexicalNode[] {
+  const nodes: LexicalNode[] = [];
+  const [beforeSlice, afterSlice] = range.getTextSlices();
+  if (beforeSlice) {
+    nodes.push(beforeSlice.caret.origin);
+  }
+  const seenAncestors = new Set<ElementNode>();
+  const seenElements = new Set<ElementNode>();
+  for (const caret of range) {
+    if ($isChildCaret(caret)) {
+      // Emulate the leading under-selection behavior of getNodes by
+      // ignoring the 'enter' of any ElementNode until we've seen a
+      // SiblingCaret
+      const {origin} = caret;
+      if (nodes.length === 0) {
+        seenAncestors.add(origin);
+      } else {
+        seenElements.add(origin);
+        nodes.push(origin);
+      }
+    } else {
+      const {origin} = caret;
+      if (!$isElementNode(origin) || !seenElements.has(origin)) {
+        nodes.push(origin);
+      }
+    }
+  }
+  if (afterSlice) {
+    nodes.push(afterSlice.caret.origin);
+  }
+  // Emulate the trailing underselection behavior when the last offset of
+  // an element is selected
+  if (
+    $isSiblingCaret(range.focus) &&
+    $isElementNode(range.focus.origin) &&
+    range.focus.getNodeAtCaret() === null
+  ) {
+    for (
+      let reverseCaret: null | NodeCaret<'previous'> = $getChildCaret(
+        range.focus.origin,
+        'previous',
+      );
+      $isChildCaret(reverseCaret) &&
+      seenAncestors.has(reverseCaret.origin) &&
+      !reverseCaret.origin.isEmpty() &&
+      reverseCaret.origin.is(nodes[nodes.length - 1]);
+      reverseCaret = $getAdjacentChildCaret(reverseCaret)
+    ) {
+      seenAncestors.delete(reverseCaret.origin);
+      nodes.pop();
+    }
+  }
+  while (nodes.length > 1) {
+    const lastIncludedNode = nodes[nodes.length - 1];
+    if ($isElementNode(lastIncludedNode)) {
+      if (
+        seenElements.has(lastIncludedNode) ||
+        lastIncludedNode.isEmpty() ||
+        seenAncestors.has(lastIncludedNode)
+      ) {
+        // fall through to break
+      } else {
+        nodes.pop();
+        continue;
+      }
+    }
+    break;
+  }
+  if (nodes.length === 0 && range.isCollapsed()) {
+    // Emulate the collapsed behavior of getNodes by returning the descendant
+    const normCaret = $normalizeCaret(range.anchor);
+    const flippedNormCaret = $normalizeCaret(range.anchor.getFlipped());
+    const $getCandidate = (caret: PointCaret): LexicalNode | null =>
+      $isTextPointCaret(caret) ? caret.origin : caret.getNodeAtCaret();
+    const node =
+      $getCandidate(normCaret) ||
+      $getCandidate(flippedNormCaret) ||
+      (range.anchor.getNodeAtCaret()
+        ? normCaret.origin
+        : flippedNormCaret.origin);
+    nodes.push(node);
+  }
+  return nodes;
+}
+
+/**
+ * @internal
+ *
+ * Modify the focus of the focus around possible decorators and blocks and return true
+ * if the movement is done.
+ */
+function $modifySelectionAroundDecoratorsAndBlocks(
+  selection: RangeSelection,
+  alter: 'move' | 'extend',
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'lineboundary',
+  mode: 'decorators-and-blocks' | 'decorators' = 'decorators-and-blocks',
+): boolean {
+  if (
+    alter === 'move' &&
+    granularity === 'character' &&
+    !selection.isCollapsed()
+  ) {
+    // moving left or right when the selection isn't collapsed will
+    // just set the anchor to the focus or vice versa depending on
+    // direction
+    const [src, dst] =
+      isBackward === selection.isBackward()
+        ? [selection.focus, selection.anchor]
+        : [selection.anchor, selection.focus];
+    dst.set(src.key, src.offset, src.type);
+    return true;
+  }
+  const initialFocus = $caretFromPoint(
+    selection.focus,
+    isBackward ? 'previous' : 'next',
+  );
+  const isLineBoundary = granularity === 'lineboundary';
+  const collapse = alter === 'move';
+  let focus = initialFocus;
+  let checkForBlock = mode === 'decorators-and-blocks';
+  if (!$isExtendableTextPointCaret(focus)) {
+    for (const siblingCaret of focus) {
+      checkForBlock = false;
+      const {origin} = siblingCaret;
+      if ($isDecoratorNode(origin) && !origin.isIsolated()) {
+        focus = siblingCaret;
+        if (isLineBoundary && origin.isInline()) {
+          continue;
+        }
+      }
+      break;
+    }
+    if (checkForBlock) {
+      for (const nextCaret of $extendCaretToRange(initialFocus).iterNodeCarets(
+        alter === 'extend' ? 'shadowRoot' : 'root',
+      )) {
+        if ($isChildCaret(nextCaret)) {
+          if (!nextCaret.origin.isInline()) {
+            focus = nextCaret;
+          }
+        } else if ($isElementNode(nextCaret.origin)) {
+          continue;
+        } else if (
+          $isDecoratorNode(nextCaret.origin) &&
+          !nextCaret.origin.isInline()
+        ) {
+          focus = nextCaret;
+        }
+        break;
+      }
+    }
+  }
+  if (focus === initialFocus) {
+    return false;
+  }
+  // After this point checkForBlock is true if and only if we moved to a
+  // different block, so we should stop regardless of the granularity
+  if (
+    collapse &&
+    !isLineBoundary &&
+    $isDecoratorNode(focus.origin) &&
+    focus.origin.isKeyboardSelectable()
+  ) {
+    // Make it possible to move selection from range selection to
+    // node selection on the node.
+    const nodeSelection = $createNodeSelection();
+    nodeSelection.add(focus.origin.getKey());
+    $setSelection(nodeSelection);
+    return true;
+  }
+  focus = $normalizeCaret(focus);
+  if (collapse) {
+    $setPointFromCaret(selection.anchor, focus);
+  }
+  $setPointFromCaret(selection.focus, focus);
+  return checkForBlock || !isLineBoundary;
 }

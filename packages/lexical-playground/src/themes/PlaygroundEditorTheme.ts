@@ -94,6 +94,8 @@ const theme: EditorThemeClasses = {
   specialText: 'PlaygroundEditorTheme__specialText',
   tab: 'PlaygroundEditorTheme__tabNode',
   table: 'PlaygroundEditorTheme__table',
+  tableAddColumns: 'PlaygroundEditorTheme__tableAddColumns',
+  tableAddRows: 'PlaygroundEditorTheme__tableAddRows',
   tableAlignment: {
     center: 'PlaygroundEditorTheme__tableAlignmentCenter',
     right: 'PlaygroundEditorTheme__tableAlignmentRight',

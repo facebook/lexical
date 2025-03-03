@@ -39,6 +39,7 @@ import {
   type TextNode,
 } from '../nodes/LexicalTextNode';
 import {
+  $comparePointCaretNext,
   $getAdjacentChildCaret,
   $getCaretRange,
   $getChildCaret,
@@ -56,7 +57,7 @@ import {
  * @returns a PointCaret for the point
  */
 export function $caretFromPoint<D extends CaretDirection>(
-  point: PointType,
+  point: Pick<PointType, 'type' | 'key' | 'offset'>,
   direction: D,
 ): PointCaret<D> {
   const {type, key, offset} = point;
@@ -154,10 +155,13 @@ export function $caretRangeFromSelection(
   selection: RangeSelection,
 ): CaretRange {
   const {anchor, focus} = selection;
-  const direction = focus.isBefore(anchor) ? 'previous' : 'next';
+  const anchorCaret = $caretFromPoint(anchor, 'next');
+  const focusCaret = $caretFromPoint(focus, 'next');
+  const direction =
+    $comparePointCaretNext(anchorCaret, focusCaret) <= 0 ? 'next' : 'previous';
   return $getCaretRange(
-    $caretFromPoint(anchor, direction),
-    $caretFromPoint(focus, direction),
+    $getCaretInDirection(anchorCaret, direction),
+    $getCaretInDirection(focusCaret, direction),
   );
 }
 
@@ -480,6 +484,26 @@ export function $normalizeCaret<D extends CaretDirection>(
   return $isSiblingCaret(adj) && $isTextNode(adj.origin)
     ? $getTextPointCaret(adj.origin, direction, flipDirection(direction))
     : caret;
+}
+
+declare const PointCaretIsExtendableBrand: unique symbol;
+/**
+ * Determine whether the TextPointCaret's offset can be extended further without leaving the TextNode.
+ * Returns false if the given caret is not a TextPointCaret or the offset can not be moved further in
+ * direction.
+ *
+ * @param caret A PointCaret
+ * @returns true if caret is a TextPointCaret with an offset that is not at the end of the text given the direction.
+ */
+export function $isExtendableTextPointCaret<D extends CaretDirection>(
+  caret: PointCaret<D>,
+): caret is TextPointCaret<TextNode, D> & {
+  [PointCaretIsExtendableBrand]: never;
+} {
+  return (
+    $isTextPointCaret(caret) &&
+    caret.offset !== $getTextNodeOffset(caret.origin, caret.direction)
+  );
 }
 
 /**

@@ -135,9 +135,6 @@
       "@lexical/react/LexicalTabIndentationPlugin": [
         "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],
-      "@lexical/react/LexicalTableOfContents": [
-        "./packages/lexical-react/src/LexicalTableOfContents.tsx"
-      ],
       "@lexical/react/LexicalTableOfContentsPlugin": [
         "./packages/lexical-react/src/LexicalTableOfContentsPlugin.tsx"
       ],
@@ -222,6 +219,7 @@
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",
+    "**/build/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

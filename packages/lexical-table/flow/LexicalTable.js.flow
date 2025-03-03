@@ -114,6 +114,21 @@ declare export function $isTableNode(
   node: ?LexicalNode,
 ): node is TableNode;
 
+declare export function $isScrollableTablesActive(
+  editor?: LexicalEditor
+): boolean;
+declare export function setScrollableTablesActive(
+  editor: LexicalEditor,
+  active: boolean,
+): void;
+declare export function $getTableAndElementByKey(
+  tableNodeKey: NodeKey,
+  editor?: LexicalEditor,
+): {
+  tableNode: TableNode;
+  tableElement: HTMLTableElementWithWithTableSelectionState;
+};
+
 /**
  * LexicalTableRowNode
  */
@@ -139,6 +154,8 @@ declare export function $isTableRowNode(
  * LexicalTableSelectionHelpers
  */
 
+export const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
+
 export type TableDOMCell = {
   elem: HTMLElement,
   highlighted: boolean,
@@ -153,6 +170,10 @@ export type TableDOMTable = {
   columns: number,
   rows: number,
 };
+
+export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & Partial<{
+  [typeof LEXICAL_ELEMENT_KEY]: TableObserver | void;
+}>;
 
 declare export function applyTableHandlers(
   tableNode: TableNode,
@@ -175,6 +196,11 @@ declare export function getDOMCellFromTarget(node: Node): null | TableDOMCell;
 declare export function $findTableNode(node: LexicalNode): null | TableNode;
 
 declare export function $findCellNode(node: LexicalNode): null | TableCellNode;
+
+declare export function getTableElement<T: HTMLElement | null>(
+  tableNode: TableNode,
+  dom: T,
+): HTMLTableElementWithWithTableSelectionState | (T & null);
 
 /**
  * LexicalTableUtils
@@ -263,6 +289,16 @@ declare export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   colSpan: number;
 } | null;
 
+declare export function $computeTableMapSkipCellCheck(
+  tableNode: TableNode,
+  cellA: null | TableCellNode,
+  cellB: null | TableCellNode,
+): [
+  tableMap: TableMapType,
+  cellAValue: TableMapValueType | null,
+  cellBValue: TableMapValueType | null,
+];
+
 /**
  * LexicalTableObserver.js
  */
@@ -329,6 +365,12 @@ declare export function $isTableSelection(
 
 declare export function $createTableSelection(): TableSelection;
 
+declare export function $createTableSelectionFrom(
+  tableNode: TableNode,
+  anchorCell: TableCellNode,
+  focusCell: TableCellNode,
+): TableSelection;
+
 /**
  * LexicalTableCommands
  */
@@ -357,3 +399,4 @@ declare export function registerTableCellUnmergeTransform(editor: LexicalEditor)
 declare export function registerTablePlugin(editor: LexicalEditor): () => void;
 
 declare export function registerTableSelectionObserver(editor: LexicalEditor, hasTabHandler?: boolean): () => void;
+

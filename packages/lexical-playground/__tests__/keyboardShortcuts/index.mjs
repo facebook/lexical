@@ -103,6 +103,24 @@ export async function deleteNextWord(page) {
   await keyUpCtrlOrAlt(page);
 }
 
+export async function deleteLineBackward(page) {
+  if (!IS_MAC) {
+    throw new Error('deleteLineBackward is only supported on Mac');
+  }
+  await page.keyboard.down('Meta');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.up('Meta');
+}
+
+export async function deleteLineForward(page) {
+  if (!IS_MAC) {
+    throw new Error('deleteLineForward is only supported on Mac');
+  }
+  await page.keyboard.down('Meta');
+  await page.keyboard.press('Delete');
+  await page.keyboard.up('Meta');
+}
+
 export async function deleteBackward(page) {
   if (IS_MAC) {
     await page.keyboard.down('Control');

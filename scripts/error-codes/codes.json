@@ -269,5 +269,15 @@
   "267": "$caretFromPoint: Node with type %s and key %s that does not inherit from ElementNode encountered for element point",
   "268": "$setPointFromCaret: exhaustiveness check",
   "269": "$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s",
-  "270": "$patchStyle must only be called with a TextNode or collapsed RangeSelection"
+  "270": "$patchStyle must only be called with a TextNode or collapsed RangeSelection",
+  "271": "$setState: State key collision %s detected in %s node with type %s and key %s. Only one StateConfig with a given key should be used on a node.",
+  "272": "NodeState: size != computedSize (%s != %s)",
+  "273": "NodeState: sharedConfigMap missing knownState key %s",
+  "274": "$getTextNodeOffset: invalid offset %s for size %s",
+  "275": "$comparePointCaretNext: a (key %s) and b (key %s) do not have a common ancestor",
+  "276": "$originComparison: ancestor logic error",
+  "277": "$originComparison: descendant logic error",
+  "278": "$originComparison: branch logic error",
+  "279": "LexicalNode.isBefore: exhaustiveness check",
+  "280": "$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection"
 }

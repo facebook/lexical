@@ -1,6 +1,6 @@
 {
   "name": "@lexical/website",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -14,11 +14,11 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@docusaurus/core": "3.6.0",
-    "@docusaurus/faster": "3.6.0",
+    "@docusaurus/core": "^3.6.0",
+    "@docusaurus/faster": "^3.6.0",
     "@docusaurus/plugin-client-redirects": "^3.6.0",
-    "@docusaurus/preset-classic": "3.6.0",
-    "@docusaurus/theme-search-algolia": "3.6.0",
+    "@docusaurus/preset-classic": "^3.6.0",
+    "@docusaurus/theme-search-algolia": "^3.6.0",
     "@mdx-js/react": "^3.0.1",
     "@radix-ui/react-tabs": "^1.0.4",
     "@vercel/analytics": "^1.0.1",

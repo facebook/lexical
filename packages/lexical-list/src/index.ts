@@ -7,14 +7,22 @@
  */
 
 import type {SerializedListItemNode} from './LexicalListItemNode';
-import type {ListType, SerializedListNode} from './LexicalListNode';
+import type {
+  ListNodeTagType,
+  ListType,
+  SerializedListNode,
+} from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
+  TextNode,
 } from 'lexical';
 
 import {
@@ -41,6 +49,7 @@ export {
   $removeList,
   ListItemNode,
   ListNode,
+  ListNodeTagType,
   ListType,
   SerializedListItemNode,
   SerializedListNode,
@@ -86,17 +95,52 @@ export function registerList(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
-      () => {
-        const hasHandledInsertParagraph = $handleListInsertParagraph();
-
-        if (hasHandledInsertParagraph) {
-          return true;
-        }
-
-        return false;
-      },
+      () => $handleListInsertParagraph(),
       COMMAND_PRIORITY_LOW,
     ),
+    editor.registerNodeTransform(ListItemNode, (node) => {
+      const firstChild = node.getFirstChild();
+      if (firstChild) {
+        if ($isTextNode(firstChild)) {
+          const style = firstChild.getStyle();
+          const format = firstChild.getFormat();
+          if (node.getTextStyle() !== style) {
+            node.setTextStyle(style);
+          }
+          if (node.getTextFormat() !== format) {
+            node.setTextFormat(format);
+          }
+        }
+      } else {
+        // If it's empty, check the selection
+        const selection = $getSelection();
+        if (
+          $isRangeSelection(selection) &&
+          (selection.style !== node.getTextStyle() ||
+            selection.format !== node.getTextFormat()) &&
+          selection.isCollapsed() &&
+          node.is(selection.anchor.getNode())
+        ) {
+          node.setTextStyle(selection.style).setTextFormat(selection.format);
+        }
+      }
+    }),
+    editor.registerNodeTransform(TextNode, (node) => {
+      const listItemParentNode = node.getParent();
+      if (
+        $isListItemNode(listItemParentNode) &&
+        node.is(listItemParentNode.getFirstChild())
+      ) {
+        const style = node.getStyle();
+        const format = node.getFormat();
+        if (
+          style !== listItemParentNode.getTextStyle() ||
+          format !== listItemParentNode.getTextFormat()
+        ) {
+          listItemParentNode.setTextStyle(style).setTextFormat(format);
+        }
+      }
+    }),
   );
   return removeListener;
 }

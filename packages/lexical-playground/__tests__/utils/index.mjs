@@ -241,7 +241,7 @@ async function assertHTMLOnPageOrFrame(
       ignoreInlineStyles,
     });
 
-    actual = actualHtmlModificationsCallback(actual);
+    actual = await actualHtmlModificationsCallback(actual);
 
     expect(
       actual,
@@ -307,6 +307,29 @@ export async function assertHTML(
       actualHtmlModificationsCallback,
     );
   }
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ */
+export async function assertTableHTML(
+  page,
+  expectedHtml,
+  expectedHtmlFrameRight = undefined,
+  options = undefined,
+  ...args
+) {
+  return await assertHTML(
+    page,
+    IS_TABLE_HORIZONTAL_SCROLL
+      ? wrapTableHtml(expectedHtml, options)
+      : expectedHtml,
+    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
+      ? wrapTableHtml(expectedHtmlFrameRight, options)
+      : expectedHtmlFrameRight,
+    options,
+    ...args,
+  );
 }
 
 /**
@@ -961,6 +984,11 @@ export async function unmergeTableCell(page) {
 export async function toggleColumnHeader(page) {
   await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-column-header"]');
+}
+
+export async function toggleRowHeader(page) {
+  await clickTableCellActiveButton(page);
+  await click(page, '.item[data-test-id="table-row-header"]');
 }
 
 export async function deleteTableRows(page) {

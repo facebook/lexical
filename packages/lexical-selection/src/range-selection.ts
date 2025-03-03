@@ -18,13 +18,16 @@ import type {
 
 import {TableSelection} from '@lexical/table';
 import {
+  $caretFromPoint,
   $createRangeSelection,
-  $getAdjacentNode,
+  $extendCaretToRange,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
+  $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
+  $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
@@ -98,10 +101,18 @@ export function $setBlocksType<T extends ElementNode>(
     prevNode.replace(element, true);
     if (newSelection) {
       if (key === newSelection.anchor.key) {
-        newSelection.anchor.key = element.getKey();
+        newSelection.anchor.set(
+          element.getKey(),
+          newSelection.anchor.offset,
+          newSelection.anchor.type,
+        );
       }
       if (key === newSelection.focus.key) {
-        newSelection.focus.key = element.getKey();
+        newSelection.focus.set(
+          element.getKey(),
+          newSelection.focus.offset,
+          newSelection.focus.type,
+        );
       }
     }
   }
@@ -415,14 +426,24 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
-  const possibleNode = $getAdjacentNode(selection.focus, isBackward);
-
-  return (
-    ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) ||
-    ($isElementNode(possibleNode) &&
-      !possibleNode.isInline() &&
-      !possibleNode.canBeEmpty())
+  const focusCaret = $caretFromPoint(
+    selection.focus,
+    isBackward ? 'previous' : 'next',
   );
+  if ($isExtendableTextPointCaret(focusCaret)) {
+    return false;
+  }
+  for (const nextCaret of $extendCaretToRange(focusCaret)) {
+    if ($isChildCaret(nextCaret)) {
+      return !nextCaret.origin.isInline();
+    } else if ($isElementNode(nextCaret.origin)) {
+      continue;
+    } else if ($isDecoratorNode(nextCaret.origin)) {
+      return true;
+    }
+    break;
+  }
+  return false;
 }
 
 /**

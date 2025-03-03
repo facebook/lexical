@@ -180,6 +180,7 @@ let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let isSafariEndingComposition = false;
 let safariEndCompositionEventData = '';
+let postDeleteSelectionToRestore: RangeSelection | null = null;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
   '',
@@ -291,7 +292,8 @@ function onSelectionChange(
     // sibling instead.
     if (
       shouldSkipSelectionChange(anchorDOM, anchorOffset) &&
-      shouldSkipSelectionChange(focusDOM, focusOffset)
+      shouldSkipSelectionChange(focusDOM, focusOffset) &&
+      !postDeleteSelectionToRestore
     ) {
       return;
     }
@@ -308,7 +310,30 @@ function onSelectionChange(
       return;
     }
 
-    const selection = $getSelection();
+    let selection = $getSelection();
+
+    // Restore selection in the event of incorrect rightward shift after deletion
+    if (
+      postDeleteSelectionToRestore &&
+      $isRangeSelection(selection) &&
+      selection.isCollapsed()
+    ) {
+      const curAnchor = selection.anchor;
+      const prevAnchor = postDeleteSelectionToRestore.anchor;
+      if (
+        // Rightward shift in same node
+        (curAnchor.key === prevAnchor.key &&
+          curAnchor.offset === prevAnchor.offset + 1) ||
+        // Or rightward shift into sibling node
+        (curAnchor.offset === 1 &&
+          prevAnchor.getNode().is(curAnchor.getNode().getPreviousSibling()))
+      ) {
+        // Restore selection
+        selection = postDeleteSelectionToRestore.clone();
+        $setSelection(selection);
+      }
+    }
+    postDeleteSelectionToRestore = null;
 
     // Update the selection format
     if ($isRangeSelection(selection)) {
@@ -343,31 +368,27 @@ function onSelectionChange(
           anchor.offset === lastOffset &&
           anchor.key === lastKey
         ) {
-          selection.format = lastFormat;
-          selection.style = lastStyle;
+          $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
         } else {
           if (anchor.type === 'text') {
             invariant(
               $isTextNode(anchorNode),
               'Point.getNode() must return TextNode when type is text',
             );
-            selection.format = anchorNode.getFormat();
-            selection.style = anchorNode.getStyle();
+            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             invariant(
               $isElementNode(anchorNode),
               'Point.getNode() must return ElementNode when type is element',
             );
             const lastNode = anchor.getNode();
-            selection.style = '';
             if (
               // This previously applied to all ParagraphNode
               lastNode.isEmpty()
             ) {
-              selection.format = lastNode.getTextFormat();
-              selection.style = lastNode.getTextStyle();
+              $updateSelectionFormatStyleFromElementNode(selection, lastNode);
             } else {
-              selection.format = 0;
+              $updateSelectionFormatStyle(selection, 0, '');
             }
           }
         }
@@ -415,6 +436,36 @@ function onSelectionChange(
 
     dispatchCommand(editor, SELECTION_CHANGE_COMMAND, undefined);
   });
+}
+
+function $updateSelectionFormatStyle(
+  selection: RangeSelection,
+  format: number,
+  style: string,
+) {
+  if (selection.format !== format || selection.style !== style) {
+    selection.format = format;
+    selection.style = style;
+    selection.dirty = true;
+  }
+}
+
+function $updateSelectionFormatStyleFromTextNode(
+  selection: RangeSelection,
+  node: TextNode,
+) {
+  const format = node.getFormat();
+  const style = node.getStyle();
+  $updateSelectionFormatStyle(selection, format, style);
+}
+
+function $updateSelectionFormatStyleFromElementNode(
+  selection: RangeSelection,
+  node: ElementNode,
+) {
+  const format = node.getTextFormat();
+  const style = node.getTextStyle();
+  $updateSelectionFormatStyle(selection, format, style);
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -586,12 +637,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           if ($isRangeSelection(selection)) {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
-            selection.format = anchorNode.getFormat();
             invariant(
               $isTextNode(anchorNode),
               'Anchor node must be a TextNode',
             );
-            selection.style = anchorNode.getStyle();
+            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
           }
         } else {
           $setCompositionKey(null);
@@ -622,6 +672,18 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           }
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+            // When deleting across paragraphs, Chrome on Android incorrectly shifts the selection rightwards
+            // We save the correct selection to restore later during handling of selectionchange event
+            const selectionAfterDelete = $getSelection();
+            if (
+              IS_ANDROID_CHROME &&
+              $isRangeSelection(selectionAfterDelete) &&
+              selectionAfterDelete.isCollapsed()
+            ) {
+              postDeleteSelectionToRestore = selectionAfterDelete;
+              // Cleanup in case selectionchange does not fire
+              setTimeout(() => (postDeleteSelectionToRestore = null));
+            }
           }
         }
         return;

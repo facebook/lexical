@@ -7,14 +7,13 @@
  */
 
 /* eslint-disable no-constant-condition */
-import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {BaseSelection, RangeSelection} from './LexicalSelection';
 import type {
-  DecoratorNode,
-  ElementNode,
+  EditorConfig,
   Klass,
   KlassConstructor,
-} from 'lexical';
+  LexicalEditor,
+} from './LexicalEditor';
+import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
 import invariant from 'shared/invariant';
 
@@ -26,6 +25,8 @@ import {
   $isElementNode,
   $isRootNode,
   $isTextNode,
+  type DecoratorNode,
+  type ElementNode,
   NODE_STATE_KEY,
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';

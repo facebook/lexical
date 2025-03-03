@@ -50,6 +50,10 @@ export class LineBreakNode extends LexicalNode {
     return false;
   }
 
+  isInline(): true {
+    return true;
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {

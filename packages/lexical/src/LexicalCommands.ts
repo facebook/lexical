@@ -6,13 +6,11 @@
  *
  */
 
-import type {
-  BaseSelection,
-  ElementFormatType,
-  LexicalCommand,
-  LexicalNode,
-  TextFormatType,
-} from 'lexical';
+import type {LexicalCommand} from './LexicalEditor';
+import type {LexicalNode} from './LexicalNode';
+import type {BaseSelection} from './LexicalSelection';
+import type {ElementFormatType} from './nodes/LexicalElementNode';
+import type {TextFormatType} from './nodes/LexicalTextNode';
 
 export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
 

@@ -241,7 +241,7 @@ async function assertHTMLOnPageOrFrame(
       ignoreInlineStyles,
     });
 
-    actual = actualHtmlModificationsCallback(actual);
+    actual = await actualHtmlModificationsCallback(actual);
 
     expect(
       actual,
@@ -307,6 +307,29 @@ export async function assertHTML(
       actualHtmlModificationsCallback,
     );
   }
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ */
+export async function assertTableHTML(
+  page,
+  expectedHtml,
+  expectedHtmlFrameRight = undefined,
+  options = undefined,
+  ...args
+) {
+  return await assertHTML(
+    page,
+    IS_TABLE_HORIZONTAL_SCROLL
+      ? wrapTableHtml(expectedHtml, options)
+      : expectedHtml,
+    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
+      ? wrapTableHtml(expectedHtmlFrameRight, options)
+      : expectedHtmlFrameRight,
+    options,
+    ...args,
+  );
 }
 
 /**
@@ -733,11 +756,15 @@ export async function dragMouse(
   page,
   fromBoundingBox,
   toBoundingBox,
-  positionStart = 'middle',
-  positionEnd = 'middle',
-  mouseUp = true,
-  slow = false,
+  opts = {},
 ) {
+  const {
+    positionStart = 'middle',
+    positionEnd = 'middle',
+    mouseDown = true,
+    mouseUp = true,
+    slow = false,
+  } = opts;
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
   if (positionStart === 'middle') {
@@ -758,7 +785,9 @@ export async function dragMouse(
   }
 
   await page.mouse.move(fromX, fromY);
-  await page.mouse.down();
+  if (mouseDown) {
+    await page.mouse.down();
+  }
   await page.mouse.move(toX, toY, slow ? 10 : 1);
   if (mouseUp) {
     await page.mouse.up();
@@ -775,8 +804,7 @@ export async function dragImage(
     page,
     await selectorBoundingBox(page, '.editor-image img'),
     await selectorBoundingBox(page, toSelector),
-    positionStart,
-    positionEnd,
+    {positionEnd, positionStart},
   );
 }
 
@@ -918,7 +946,7 @@ export async function selectCellsFromTableCords(
 
   // const firstBox = await firstRowFirstColumnCell.boundingBox();
   // const secondBox = await secondRowSecondCell.boundingBox();
-  // await dragMouse(page, firstBox, secondBox, 'middle', 'middle', true, true);
+  // await dragMouse(page, firstBox, secondBox, {slow: true});
 }
 
 export async function clickTableCellActiveButton(page) {
@@ -961,6 +989,11 @@ export async function unmergeTableCell(page) {
 export async function toggleColumnHeader(page) {
   await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-column-header"]');
+}
+
+export async function toggleRowHeader(page) {
+  await clickTableCellActiveButton(page);
+  await click(page, '.item[data-test-id="table-row-header"]');
 }
 
 export async function deleteTableRows(page) {
@@ -1031,8 +1064,7 @@ export async function dragDraggableMenuTo(
     page,
     await selectorBoundingBox(page, '.draggable-block-menu'),
     await selectorBoundingBox(page, toSelector),
-    positionStart,
-    positionEnd,
+    {positionEnd, positionStart},
   );
 }
 

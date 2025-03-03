@@ -55,6 +55,7 @@ export {
   $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
+  $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
   $rewindSiblingCaret,

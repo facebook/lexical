@@ -53,10 +53,10 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]) {
     .replace(/.use strict.;\n/g, '')
     .replace(/var _[^;]+;\n/g, '')
     .replace(/function _interopRequireDefault\([^)]*\) {[^;]+?;[\s\n]*}\n/g, '')
-    .replace(/_formatProdErrorMessage\d+/g, 'formatProdErrorMessage')
+    .replace(/_format(Dev|Prod)ErrorMessage\d+/g, 'format$1ErrorMessage')
     .replace(
-      /\(0,\s*formatProdErrorMessage\.default\)/g,
-      'formatProdErrorMessage',
+      /\(0,\s*format(Dev|Prod)ErrorMessage\.default\)/g,
+      'format$1ErrorMessage',
     )
     .trim();
   return prettier.format(before, {
@@ -108,14 +108,10 @@ describe('transform-error-messages', () => {
         `,
         codeExpect: `
         if (!condition) {
-          {
-            formatProdErrorMessage(1);
-          }
+          formatProdErrorMessage(1);
         }
         if (!condition) {
-          {
-            formatProdErrorMessage(0, adj, noun);
-          }
+          formatProdErrorMessage(0, adj, noun);
         }`,
         messageMapBefore: KNOWN_MSG_MAP,
         messageMapExpect: NEW_MSG_MAP,
@@ -133,10 +129,10 @@ describe('transform-error-messages', () => {
         `,
         codeExpect: `
         if (!condition) {
-          throw Error(\`A new invariant\`);
+          formatDevErrorMessage(\`A new invariant\`);
         }
         if (!condition) {
-          throw Error(\`A \${adj} message that contains \${noun}\`);
+          formatDevErrorMessage(\`A \${adj} message that contains \${noun}\`);
         }`,
         messageMapBefore: KNOWN_MSG_MAP,
         messageMapExpect: NEW_MSG_MAP,
@@ -153,9 +149,7 @@ describe('transform-error-messages', () => {
         )}, adj, noun)`,
         codeExpect: `
           if (!condition) {
-            {
-              formatProdErrorMessage(0, adj, noun);
-            }
+            formatProdErrorMessage(0, adj, noun);
           }
         `,
         messageMapBefore: KNOWN_MSG_MAP,
@@ -169,7 +163,7 @@ describe('transform-error-messages', () => {
         codeExpect: `
           /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/
           if (!condition) {
-            throw Error(\`A new invariant\`);
+            formatDevErrorMessage(\`A new invariant\`);
           }
        `,
         messageMapBefore: KNOWN_MSG_MAP,

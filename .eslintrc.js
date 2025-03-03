@@ -115,6 +115,12 @@ module.exports = {
       },
     },
     {
+      files: ['packages/**/__tests__/**'],
+      rules: {
+        'lexical/no-imports-from-self': OFF,
+      },
+    },
+    {
       files: [
         'packages/*/src/index.ts',
         'packages/*/src/index.tsx',
@@ -169,7 +175,6 @@ module.exports = {
   // and then enable some React specific ones.
   rules: {
     'accessor-pairs': OFF,
-
     'consistent-return': OFF,
     curly: [ERROR, 'all'],
     'dot-location': [ERROR, 'property'],
@@ -199,6 +204,8 @@ module.exports = {
     'jsx-quotes': [ERROR, 'prefer-double'],
 
     'keyword-spacing': [ERROR, {after: true, before: true}],
+
+    'lexical/no-imports-from-self': ERROR,
 
     // Enforced by Prettier
     // TODO: Prettier doesn't handle long strings or long comments. Not a big

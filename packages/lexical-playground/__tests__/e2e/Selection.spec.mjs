@@ -9,12 +9,15 @@
 import {
   deleteBackward,
   deleteForward,
+  deleteLineBackward,
+  deleteLineForward,
   moveDown,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
   moveToLineBeginning,
+  moveToLineEnd,
   moveToPrevWord,
   moveUp,
   pressShiftEnter,
@@ -41,11 +44,11 @@ import {
   IS_LINUX,
   IS_MAC,
   IS_WINDOWS,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
   pasteFromClipboard,
   pressToggleBold,
   pressToggleItalic,
+  prettifyHTML,
+  SAMPLE_IMAGE_URL,
   selectFromFormatDropdown,
   sleep,
   test,
@@ -165,7 +168,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('can delete text by line with CMD+delete', async ({
+  test('can delete text by line backwards with CMD+delete', async ({
     page,
     isPlainText,
   }) => {
@@ -178,55 +181,85 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Three');
 
-    const deleteLine = async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('Backspace');
-      await keyUpCtrlOrMeta(page);
-    };
-
-    const lines = [
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">One</span>
-        </p>
-      `,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Two</span>
-        </p>
-      `,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Three</span>
-        </p>
-      `,
-    ];
-    const empty = html`
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+    const p = (text) =>
+      text
+        ? html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">${text}</span>
+            </p>
+          `
+        : html`
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          `;
+    const lines = (...args) => html`
+      ${args.map(p).join('')}
     `;
 
-    await deleteLine();
-    await assertHTML(page, [lines[0], lines[1], lines[2], empty].join(''));
+    await deleteLineBackward(page);
+    await assertHTML(page, lines('One', 'Two', '', ''));
     await page.keyboard.press('Backspace');
-    await deleteLine();
-    await assertHTML(page, [lines[0], lines[1]].join(''));
-    await deleteLine();
-    await assertHTML(page, [lines[0], empty].join(''));
+    await deleteLineBackward(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await deleteLineBackward(page);
+    await assertHTML(page, lines('One', ''));
     await page.keyboard.press('Backspace');
-    await deleteLine();
-    await assertHTML(page, empty);
+    await deleteLineBackward(page);
+    await assertHTML(page, lines(''));
   });
 
-  test('can delete line which ends with element with CMD+delete', async ({
+  test('can delete text by line forwards with opt+CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Three');
+
+    const p = (text) =>
+      text
+        ? html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">${text}</span>
+            </p>
+          `
+        : html`
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          `;
+    const lines = (...args) => html`
+      ${args.map(p).join('')}
+    `;
+    await assertHTML(page, lines('One', 'Two', '', 'Three'));
+    // Move to the end of the line of 'Two'
+    await moveUp(page, 2);
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'Two', 'Three'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'TwoThree'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await moveToEditorBeginning(page);
+    await deleteLineForward(page);
+    await assertHTML(page, lines('', 'Two'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('Two'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines(''));
+    await deleteLineForward(page);
+    await assertHTML(page, lines(''));
+  });
+
+  test('can delete line which ends with element backwards with CMD+delete', async ({
     page,
     isPlainText,
   }) => {
@@ -240,19 +273,12 @@ test.describe.parallel('Selection', () => {
       'text/html': `
           <span class="editor-image" data-lexical-decorator="true" contenteditable="false">
             <div draggable="false">
-              <img src="/assets/yellow-flower-vav9Hsve.jpg" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
+              <img src="${SAMPLE_IMAGE_URL}" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
             </div>
           </span>
         `,
     });
-
-    const deleteLine = async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('Backspace');
-      await keyUpCtrlOrMeta(page);
-    };
-
-    await deleteLine();
+    await deleteLineBackward(page);
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
@@ -265,8 +291,182 @@ test.describe.parallel('Selection', () => {
       `,
     );
     await page.keyboard.press('Backspace');
-    await deleteLine();
+    await deleteLineBackward(page);
     await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('can delete line which starts with element forwards with opt+CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    const modifyImageHTML = async (originalHtml) =>
+      await prettifyHTML(
+        originalHtml
+          .replace(
+            /<button\s+class="image-edit-button">\s*Edit\s*<\/button>/gi,
+            '',
+          )
+          .replace(/(src=")https?:\/\/[^/]+/gi, '$1'),
+      );
+    const assertImageHTML = async (page_, expectedHtml) => {
+      await assertHTML(
+        page_,
+        expectedHtml,
+        expectedHtml,
+        {ignoreInlineStyles: true},
+        modifyImageHTML,
+      );
+    };
+    const pasteImageHtml = html`
+      <img
+        alt="Yellow flower in tilt shift lens"
+        draggable="false"
+        src="${SAMPLE_IMAGE_URL}"
+        style="height: inherit; max-width: 500px; width: inherit;" />
+    `;
+    const imageHtml = html`
+      <span
+        class="inline-editor-image"
+        contenteditable="false"
+        data-lexical-decorator="true">
+        <span draggable="false">${pasteImageHtml}</span>
+      </span>
+    `;
+
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await pasteFromClipboard(page, {
+      'text/html': pasteImageHtml,
+    });
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          ${imageHtml}
+          <br />
+        </p>
+      `,
+    );
+
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          ${imageHtml}
+          <span data-lexical-text="true">Two</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    // This puts the caret before the decorator in an awkward way, see comments below
+    await moveToEditorBeginning(page);
+    await moveToLineEnd(page);
+    await moveRight(page, 1);
+    // TODO: move arrow down doesn't work for this because it skips over the inline decorator
+    // if (arrow_down_works_with_decorators) {
+    //   await moveToEditorBeginning(page);
+    //   await moveDown(page, 1);
+    // }
+    // TODO: move to line beginning stops after the inline decorator
+    // if (line_beginning_works_with_decorators) {
+    //   await moveUp(page, 1);
+    //   await moveToLineBeginning(page);
+    // }
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    // We're now at the end of the document so delete forward is a no-op
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await moveToEditorBeginning(page);
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await deleteLineForward(page);
+    await assertImageHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -282,12 +482,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('ArrowUp');
 
-    const deleteLine = async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('Backspace');
-      await keyUpCtrlOrMeta(page);
-    };
-    await deleteLine();
+    await deleteLineBackward(page);
     await assertHTML(
       page,
       html`
@@ -803,7 +998,7 @@ test.describe.parallel('Selection', () => {
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
         <h1

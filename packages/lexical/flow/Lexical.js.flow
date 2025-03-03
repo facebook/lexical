@@ -623,6 +623,7 @@ declare export class TextNode extends LexicalNode {
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
+  isInline(): true;
   isToken(): boolean;
   isSegmented(): boolean;
   isDirectionless(): boolean;
@@ -698,6 +699,7 @@ declare export class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
+  isInline(): true;
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode;
@@ -1224,3 +1226,7 @@ declare export function $getCommonAncestor<
 declare export function $extendCaretToRange<D: CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D>;
+
+declare export function $isExtendableTextPointCaret<D: CaretDirection>(
+  caret: PointCaret<D>
+): implies caret is TextPointCaret<TextNode, D>;

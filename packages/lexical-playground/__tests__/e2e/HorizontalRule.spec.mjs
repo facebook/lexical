@@ -409,7 +409,7 @@ test.describe('HorizontalRule', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
       `,
@@ -438,7 +438,7 @@ test.describe('HorizontalRule', () => {
       page,
       html`
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
       `,

@@ -1,3 +1,16 @@
+## v0.27.0 (2025-03-03)
+
+- lexical-playgroundlexical-react Feature add HR theme config for selected state (#7279) Rob Hannay
+- lexical-utils Bug Fix dont include parents siblings when starting dfs at last child (#7275) James Fitzsimmons
+- chore add no-imports-from-self eslint rule to monorepo (#7272) Alessio Gravili
+- ci Chore Remove unused GITHUBTOKEN secrets from workflows (#7209) Bob Ippolito
+- lexical-playground Bug Fix apply correct column headers when column contains vertically merged cells (#7273) Riley Langbein
+-  Chore Refactor sharedinvariant for easier dev debugging (#7269) Bob Ippolito
+- Breaking Changeslexical Bug Fix Address deleteLine regression in #7248 (#7270) Bob Ippolito
+- lexical Bug Fix invalid import from self (#7271) Alessio Gravili
+- v0.26.0 (#7265) Bob Ippolito
+- v0.26.0 Lexical GitHub Actions Bot
+
 ## v0.26.0 (2025-03-01)
 
 - Fix selection shifting when deleting paragraphs on android (#7239) Wayne

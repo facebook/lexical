@@ -23,7 +23,6 @@ import {
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
-  $isTableRowNode,
   $isTableSelection,
   $unmergeCell,
   getTableElement,
@@ -31,7 +30,6 @@ import {
   TableCellHeaderStates,
   TableCellNode,
   TableObserver,
-  TableRowNode,
   TableSelection,
 } from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
@@ -432,28 +430,25 @@ function TableActionMenu({
 
       const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
 
-      const tableRows = tableNode.getChildren();
+      const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
 
-      if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
-        throw new Error('Expected table cell to be inside of table row.');
-      }
-
-      const tableRow = tableRows[tableRowIndex];
-
-      if (!$isTableRowNode(tableRow)) {
-        throw new Error('Expected table row');
-      }
+      const rowCells = new Set<TableCellNode>();
 
       const newStyle =
         tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.ROW;
-      tableRow.getChildren().forEach((tableCell) => {
-        if (!$isTableCellNode(tableCell)) {
-          throw new Error('Expected table cell');
+
+      for (let col = 0; col < gridMap[tableRowIndex].length; col++) {
+        const mapCell = gridMap[tableRowIndex][col];
+
+        if (!mapCell?.cell) {
+          continue;
         }
 
-        tableCell.setHeaderStyles(newStyle, TableCellHeaderStates.ROW);
-      });
-
+        if (!rowCells.has(mapCell.cell)) {
+          rowCells.add(mapCell.cell);
+          mapCell.cell.setHeaderStyles(newStyle, TableCellHeaderStates.ROW);
+        }
+      }
       clearTableSelection();
       onClose();
     });
@@ -466,37 +461,23 @@ function TableActionMenu({
       const tableColumnIndex =
         $getTableColumnIndexFromTableCellNode(tableCellNode);
 
-      const tableRows = tableNode.getChildren<TableRowNode>();
-      const maxRowsLength = Math.max(
-        ...tableRows.map((row) => row.getChildren().length),
-      );
+      const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
 
-      if (tableColumnIndex >= maxRowsLength || tableColumnIndex < 0) {
-        throw new Error('Expected table cell to be inside of table row.');
-      }
-
+      const columnCells = new Set<TableCellNode>();
       const newStyle =
         tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.COLUMN;
-      for (let r = 0; r < tableRows.length; r++) {
-        const tableRow = tableRows[r];
 
-        if (!$isTableRowNode(tableRow)) {
-          throw new Error('Expected table row');
-        }
+      for (let row = 0; row < gridMap.length; row++) {
+        const mapCell = gridMap[row][tableColumnIndex];
 
-        const tableCells = tableRow.getChildren();
-        if (tableColumnIndex >= tableCells.length) {
-          // if cell is outside of bounds for the current row (for example various merge cell cases) we shouldn't highlight it
+        if (!mapCell?.cell) {
           continue;
         }
 
-        const tableCell = tableCells[tableColumnIndex];
-
-        if (!$isTableCellNode(tableCell)) {
-          throw new Error('Expected table cell');
+        if (!columnCells.has(mapCell.cell)) {
+          columnCells.add(mapCell.cell);
+          mapCell.cell.setHeaderStyles(newStyle, TableCellHeaderStates.COLUMN);
         }
-
-        tableCell.setHeaderStyles(newStyle, TableCellHeaderStates.COLUMN);
       }
       clearTableSelection();
       onClose();
@@ -773,7 +754,8 @@ function TableActionMenu({
       <button
         type="button"
         className="item"
-        onClick={() => toggleTableRowIsHeader()}>
+        onClick={() => toggleTableRowIsHeader()}
+        data-test-id="table-row-header">
         <span className="text">
           {(tableCellNode.__headerState & TableCellHeaderStates.ROW) ===
           TableCellHeaderStates.ROW

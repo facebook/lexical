@@ -18,8 +18,8 @@ import {
   selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
-  assertHTML as rawAssertHTML,
   assertSelection,
+  assertTableHTML as assertHTML,
   click,
   clickSelectors,
   copyToClipboard,
@@ -54,7 +54,6 @@ import {
   unmergeTableCell,
   waitForSelector,
   withExclusiveClipboardAccess,
-  wrapTableHtml,
 } from '../utils/index.mjs';
 
 async function fillTablePartiallyWithText(page) {
@@ -76,26 +75,6 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('f');
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('c');
-}
-
-async function assertHTML(
-  page,
-  expectedHtml,
-  expectedHtmlFrameRight = undefined,
-  options = undefined,
-  ...args
-) {
-  return await rawAssertHTML(
-    page,
-    IS_TABLE_HORIZONTAL_SCROLL
-      ? wrapTableHtml(expectedHtml, options)
-      : expectedHtml,
-    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
-      ? wrapTableHtml(expectedHtmlFrameRight, options)
-      : expectedHtmlFrameRight,
-    options,
-    ...args,
-  );
 }
 
 const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
@@ -4295,12 +4274,12 @@ test.describe.parallel('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="3"
               rowspan="2">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
+            </th>
           </tr>
           <tr>
             <th

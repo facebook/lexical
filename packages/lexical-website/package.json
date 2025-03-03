@@ -1,6 +1,6 @@
 {
   "name": "@lexical/website",
-  "version": "0.26.0",
+  "version": "0.26.1-nightly.20250303.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",

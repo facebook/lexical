@@ -184,27 +184,25 @@ describe('LexicalNodeHelpers tests', () => {
         });
       });
 
-      test('DFS from the middle', async () => {
+      test('DFS from the middle returns descendants but not siblings', async () => {
         const editor: LexicalEditor = testEnv.editor;
         editor.update(
           () => {
             const root = $getRoot();
+            const p1 = $createParagraphNode().append($createTextNode('Text'));
+            const p2 = $createParagraphNode().append(
+              $createTextNode('Hello'),
+              $createTextNode('world').toggleFormat('bold'),
+            );
+            const p3 = $createParagraphNode().append($createTextNode('!!'));
 
-            root
-              .clear()
-              .append(
-                $createParagraphNode().append(
-                  $createTextNode('Hello'),
-                  $createTextNode('world').toggleFormat('bold'),
-                  $createTextNode('!'),
-                ),
-              );
+            root.clear().append(p1, p2, p3);
 
-            const paragraph = root.getFirstChildOrThrow<ElementNode>();
-            const children = paragraph.getChildren();
-            expect($dfs(children[1])).toEqual([
-              {depth: 2, node: children[1]},
-              {depth: 2, node: children[2]},
+            const textNodes = p2.getChildren();
+            expect($dfs(p2)).toEqual([
+              {depth: 1, node: p2},
+              {depth: 2, node: textNodes[0]},
+              {depth: 2, node: textNodes[1]},
             ]);
           },
           {discrete: true},

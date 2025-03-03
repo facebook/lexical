@@ -6,7 +6,7 @@
  *
  */
 
-import {$createMarkNode, MarkNode} from '@lexical/mark';
+import {$createMarkNode, $isMarkNode} from '@lexical/mark';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -223,7 +223,8 @@ describe('LexicalNodeHelpers tests', () => {
 
           root.clear().append(p1, p2);
 
-          const markNode = p1.getChildAtIndex<MarkNode>(1)!;
+          const markNode = p1.getChildAtIndex(1);
+          invariant($isMarkNode(markNode), 'first child must be MarkNode');
           const textNodes = markNode.getChildren();
           expect($dfs(markNode)).toEqual([
             {depth: 2, node: markNode},

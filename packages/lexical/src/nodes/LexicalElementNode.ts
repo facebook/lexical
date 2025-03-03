@@ -832,6 +832,10 @@ export class ElementNode extends LexicalNode {
         // (see https://github.com/facebook/lexical/pull/4025)
         element.style.paddingInlineStart = `${indent * 40}px`;
       }
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
     }
 
     return {element};

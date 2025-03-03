@@ -6,6 +6,7 @@
  *
  */
 
+import {$createMarkNode, MarkNode} from '@lexical/mark';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -184,7 +185,7 @@ describe('LexicalNodeHelpers tests', () => {
         });
       });
 
-      test('DFS from the middle', async () => {
+      test('DFS from middle leaf node should only include that node', async () => {
         const editor: LexicalEditor = testEnv.editor;
         editor.update(
           () => {
@@ -202,13 +203,33 @@ describe('LexicalNodeHelpers tests', () => {
 
             const paragraph = root.getFirstChildOrThrow<ElementNode>();
             const children = paragraph.getChildren();
-            expect($dfs(children[1])).toEqual([
-              {depth: 2, node: children[1]},
-              {depth: 2, node: children[2]},
-            ]);
+            expect($dfs(children[1])).toEqual([{depth: 2, node: children[1]}]);
           },
           {discrete: true},
         );
+      });
+
+      test("DFS starting at last child of element node should not include parent's siblings", async () => {
+        const editor: LexicalEditor = testEnv.editor;
+        editor.update(() => {
+          const root = $getRoot();
+          const p1 = $createParagraphNode().append(
+            $createTextNode('Hello'),
+            $createMarkNode().append(
+              $createTextNode('world').toggleFormat('bold'),
+            ),
+          );
+          const p2 = $createParagraphNode().append($createTextNode('!!'));
+
+          root.clear().append(p1, p2);
+
+          const markNode = p1.getChildAtIndex<MarkNode>(1)!;
+          const textNodes = markNode.getChildren();
+          expect($dfs(markNode)).toEqual([
+            {depth: 2, node: markNode},
+            {depth: 3, node: textNodes[0]},
+          ]);
+        });
       });
     });
 

@@ -766,6 +766,7 @@ describe('LexicalNode tests', () => {
           bazParagraphNode = new ParagraphNode();
           bazTextNode = new TextNode('baz');
           bazTextNode.toggleUnmergeable();
+          expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(null);
           quxTextNode = new TextNode('qux');
           quxTextNode.toggleUnmergeable();
           paragraphNode.append(quxTextNode);
@@ -773,6 +774,9 @@ describe('LexicalNode tests', () => {
           barParagraphNode.append(barTextNode);
           bazParagraphNode.append(bazTextNode);
           expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
+          expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(
+            bazParagraphNode,
+          );
           rootNode.append(barParagraphNode, bazParagraphNode);
         });
 

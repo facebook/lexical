@@ -599,7 +599,9 @@ export class LexicalNode {
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const result = $getCommonAncestor(this, node);
+    const a = $isElementNode(this) ? this : this.getParent();
+    const b = $isElementNode(node) ? node : node.getParent();
+    const result = a && b ? $getCommonAncestor(a, b) : null;
     return result
       ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
       : null;

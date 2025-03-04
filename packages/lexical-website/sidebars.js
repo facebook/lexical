@@ -42,6 +42,7 @@ const sidebars = {
         'concepts/editor-state',
         'concepts/nodes',
         'concepts/node-replacement',
+        'concepts/node-state',
         'concepts/listeners',
         'concepts/transforms',
         'concepts/commands',

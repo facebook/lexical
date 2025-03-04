@@ -1,0 +1,156 @@
+# NodeState
+
+The NodeState API introduced in v0.26.0 allows arbitrary state to be added
+ad-hoc to any node in a way that participates with reconciliation, history,
+and JSON serialization.
+
+## Stability
+
+🧪 This API is experimental, and may evolve without a long deprecation
+period.
+
+## Use Case
+
+NodeState allows your application to define keys that can be stored on
+any node with automatic JSON support, you can even add state to the root
+node to store document-level metadata.
+
+:::tip
+
+You can even add node state to the RootNode to store document-level metadata
+
+:::
+
+With a combination of NodeState and other APIs such as
+[Listeners](https://lexical.dev/docs/concepts/listeners) or
+[Transforms](https://lexical.dev/docs/concepts/transforms) you can
+likely shape the editor to meet your needs without having to do much
+[Node Customization](https://lexical.dev/docs/concepts/node-replacement).
+
+Even when you are subclassing nodes, using NodeState instead of additional
+properties to store the node's data can be [more efficient](#efficiency)
+and will save you from writing a lot of boilerplate in the constructor,
+updateFromJSON, and exportJSON.
+
+## Usage
+
+### createState
+
+[createState](https://lexical.dev/docs/api/modules/lexical#createstate)
+creates a [StateConfig](https://lexical.dev/docs/api/classes/lexical.StateConfig)
+which defines the key and configuration for your NodeState value.
+
+The key must be locally unique, two distinct StateConfig must not have the
+same string key if they are to be used on the same node.
+
+Typical usage will look something like this:
+
+```ts
+const questionState = createState('question', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
+```
+
+The required `parse` function serves two purposes:
+- It provides a type-safe and runtime-safe way to parse values that were
+  serialized to JSON
+- When called with `undefined` (or any invalid value) it should return some
+  default value (which may be `undefined` or `null` or any other value you
+  choose)
+
+In this case, the question must be a string, and the default is an
+empty string.
+
+See the [createState](https://lexical.dev/docs/api/modules/lexical#createstate)
+API documentation for more details, there are other optional settings
+that you may want to define particularly if the value is not a primitive
+value such as boolean, string, number, null, or undefined.
+
+### $getState
+
+[$getState](https://lexical.dev/docs/api/modules/lexical#getstate) gets the
+NodeState value from the given node, or the default if that key was never
+set on the node.
+
+```ts
+const question = $getValue(pollNode, questionState);
+```
+
+See also [$getStateChange](https://lexical.dev/docs/api/modules/lexical#getstatechange)
+if you need an efficient way to determine if the state has changed on two versions
+of the same node (typcially used in updateDOM, but may be useful in an update listener
+or mutation listener).
+
+### $setState
+
+[$setState](https://lexical.dev/docs/api/modules/lexical#setstate) sets the
+NodeState value on the given node.
+
+```ts
+const question = $setValue(
+  pollNode,
+  questionState,
+  'Are you planning to use NodeState?',
+);
+```
+
+:::tip
+
+The last argument is a ValueOrUpdater, just like with React's useState setters.
+If you use an updater function and the value does not change, the node and its
+NodeState *won't* be marked dirty.
+
+:::
+
+## Efficiency
+
+NodeState uses a copy-on-write scheme to manage each node's state. If
+none of the state has changed, then the NodeState instance will be
+shared across multiple versions of that node.
+
+:::info
+
+In a given update cycle, the first time a Lexical node is marked dirty
+via `getWritable` will create a new instance of that node. All properties
+of the previous version are set on the new instance. NodeState is stored
+as a single property, and no copying of the internal state is done
+until the NodeState itself is marked writable.
+
+:::
+
+When serializing to JSON, each key will only be stored if the value
+is not equal to the default value. This can save quite a lot of space
+and bandwidth.
+
+Parsing and serialization is only done at network boundaries, when
+integrating with JSON or Yjs. When a value changes from an external
+source, it is only parsed once the first time it is read.
+Values that do not come from external sources are not parsed, and
+values that are not used are never parsed.
+
+## Capabilities
+
+Current:
+
+- Allows you to define and add state to any node
+- Serializes that state automatically in the node's JSON, supporting
+  versioning and copy+paste
+- Works with the reconciler, TextNodes with differing state will not
+  be implicitly merged
+- @lexical/yjs support, NodeState will be automatically synchronized
+  like any other property
+- NodeState values that are not used will simply pass-through, making
+  it a bit easier for situations where multiple configurations are used
+  on the same data (e.g. older and newer versions of your editor,
+  a different set of plugins based on context, etc.).
+
+Future:
+
+- Does not yet have a pre-registration system for nodes to declare
+  required state, the first release focuses only on ad-hoc usage
+  (see [#7260](https://github.com/facebook/lexical/issues/7260))
+- Does not yet integrate directly with importDOM, createDOM or
+  exportDOM (see [#7259](https://github.com/facebook/lexical/issues/7259))
+- Does not yet support direct integration with Yjs, e.g.
+  you can not store a Y.Map as a NodeState value
+  (see [#7293](https://github.com/facebook/lexical/issues/7293))

@@ -1,3 +1,11 @@
+## v0.27.1 (2025-03-04)
+
+- CI Feature Add a fixer for the no-imports-from-self lint (#7284) Bob Ippolito
+- lexical-table Bug Fix Click and drag table selection in Firefox (#7283) Bob Ippolito
+- lexical-listlexical Bug Fix Add RTL direction support for list items in output HTML (#7282) Kiran Dash
+- v0.27.0 (#7281) Bob Ippolito
+- v0.27.0 Lexical GitHub Actions Bot
+
 ## v0.27.0 (2025-03-03)
 
 - lexical-playgroundlexical-react Feature add HR theme config for selected state (#7279) Rob Hannay

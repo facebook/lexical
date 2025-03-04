@@ -20,8 +20,8 @@ import {
   SerializedLexicalNode,
   Spread,
   StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
-import {StateValueOrUpdater} from 'packages/lexical/src/LexicalNodeState';
 import * as React from 'react';
 
 export type Options = ReadonlyArray<Option>;

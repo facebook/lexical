@@ -6,6 +6,8 @@
  *
  */
 
+import invariant from 'shared/invariant';
+
 import {
   $getEditor,
   type Klass,
@@ -14,9 +16,7 @@ import {
   NODE_STATE_KEY,
   type Spread,
   type StaticNodeConfigRecord,
-} from 'lexical';
-import invariant from 'shared/invariant';
-
+} from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';

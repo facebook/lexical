@@ -65,6 +65,7 @@ export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
   $splitNode,
+  createUID,
   isBlockDomNode,
   isHTMLAnchorElement,
   isHTMLElement,

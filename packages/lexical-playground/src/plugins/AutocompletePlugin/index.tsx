@@ -11,7 +11,7 @@ import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
-import {mergeRegister} from '@lexical/utils';
+import {createUID, mergeRegister} from '@lexical/utils';
 import {
   $addUpdateTag,
   $createTextNode,
@@ -48,10 +48,7 @@ type SearchPromise = {
   promise: Promise<null | string>;
 };
 
-export const uuid = Math.random()
-  .toString(36)
-  .replace(/[^a-z]+/g, '')
-  .substring(0, 5);
+export const uuid = createUID();
 
 // TODO lookup should be custom
 function $search(selection: null | BaseSelection): [boolean, string] {

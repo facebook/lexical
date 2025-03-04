@@ -9,19 +9,7 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
-  plugins: [
-    // This is only used for development in the lexical repository
-    ...(process.env.LEXICAL_MONOREPO === '1'
-      ? [
-          (
-            await import(
-              '../../packages/shared/lexicalMonorepoPlugin' as string
-            )
-          ).default(),
-        ]
-      : []),
-  ],
+export default defineConfig({
   resolve: {
     alias: {
       '@emoji-datasource-facebook': path.resolve(
@@ -30,4 +18,4 @@ export default defineConfig(async () => ({
       ),
     },
   },
-}));
+});

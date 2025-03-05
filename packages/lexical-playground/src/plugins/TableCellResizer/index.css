@@ -10,3 +10,10 @@
 .TableCellResizer__resizer {
   position: absolute;
 }
+
+@media (pointer: coarse) {
+  .TableCellResizer__resizer {
+    background-color: #adf;
+    mix-blend-mode: color;
+  }
+}

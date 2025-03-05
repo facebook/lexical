@@ -95,7 +95,9 @@ export class CollabDecoratorNode {
 
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
-    collabNodeMap.delete(this._key);
+    if (collabNodeMap.get(this._key) === this) {
+      collabNodeMap.delete(this._key);
+    }
   }
 }
 

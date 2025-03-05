@@ -679,7 +679,9 @@ export class CollabElementNode {
       children[i].destroy(binding);
     }
 
-    collabNodeMap.delete(this._key);
+    if (collabNodeMap.get(this._key) === this) {
+      collabNodeMap.delete(this._key);
+    }
   }
 }
 

@@ -7,7 +7,8 @@ and JSON serialization.
 ## Stability
 
 🧪 This API is experimental, and may evolve without a long deprecation
-period.
+period. See also [Capabilities](#capabilities) for nodes on what it
+can and can not do out of the box today.
 
 ## Use Case
 
@@ -17,7 +18,8 @@ node to store document-level metadata.
 
 :::tip
 
-You can even add node state to the RootNode to store document-level metadata
+You can even add node state to the RootNode to store document-level metadata,
+which wasn't possible at all before!
 
 :::
 
@@ -37,7 +39,8 @@ updateFromJSON, and exportJSON.
 ### createState
 
 [createState](https://lexical.dev/docs/api/modules/lexical#createstate)
-creates a [StateConfig](https://lexical.dev/docs/api/classes/lexical.StateConfig)
+creates a
+[StateConfig](https://lexical.dev/docs/api/classes/lexical.StateConfig)
 which defines the key and configuration for your NodeState value.
 
 The key must be locally unique, two distinct StateConfig must not have the
@@ -61,10 +64,23 @@ The required `parse` function serves two purposes:
 In this case, the question must be a string, and the default is an
 empty string.
 
-See the [createState](https://lexical.dev/docs/api/modules/lexical#createstate)
+See the
+[createState](https://lexical.dev/docs/api/modules/lexical#createstate)
 API documentation for more details, there are other optional settings
 that you may want to define particularly if the value is not a primitive
 value such as boolean, string, number, null, or undefined.
+
+::: tip
+
+We recommend building a library of small reusable parse functions for the data
+types that you use, or a library that can be used to generate them such as
+[zod](https://zod.dev/),
+[ArkType](https://arktype.io/),
+[Effect](https://effect.website/),
+[Valibot](https://valibot.dev/),
+etc. especially when working with non-primitive data types.
+
+:::
 
 ### $getState
 
@@ -76,10 +92,11 @@ set on the node.
 const question = $getValue(pollNode, questionState);
 ```
 
-See also [$getStateChange](https://lexical.dev/docs/api/modules/lexical#getstatechange)
-if you need an efficient way to determine if the state has changed on two versions
-of the same node (typcially used in updateDOM, but may be useful in an update listener
-or mutation listener).
+See also
+[$getStateChange](https://lexical.dev/docs/api/modules/lexical#getstatechange)
+if you need an efficient way to determine if the state has changed on two
+versions of the same node (typcially used in updateDOM, but may be useful in
+an update listener or mutation listener).
 
 ### $setState
 
@@ -96,9 +113,38 @@ const question = $setValue(
 
 :::tip
 
-The last argument is a ValueOrUpdater, just like with React's useState setters.
-If you use an updater function and the value does not change, the node and its
-NodeState *won't* be marked dirty.
+The last argument is a ValueOrUpdater, just like with React's useState
+setters. If you use an updater function and the value does not change,
+the node and its NodeState *won't* be marked dirty.
+
+:::
+
+## Serialization
+
+The NodeState for a node, if any values are set to non-default values, is
+serialized to a record under a single
+[NODE_STATE_KEY](https://lexical.dev/docs/api/modules/lexical#node_state_key)
+which is equal to `'$'`. In the future, it is expected that nodes will be
+able to declare required state and lift those values to the top-level of
+their serialized nodes
+(see [#7260](https://github.com/facebook/lexical/issues/7260)).
+
+```json
+{
+  "type": "poll",
+  "$": {
+    "question": "Are you planning to use NodeState?",
+  }
+}
+```
+
+:::tip
+
+By default, it is assumed that your parsed values are JSON serializable,
+but for advanced use cases you may use values such as Date, Map, or Set
+that need to be transformed before JSON serialization. See the
+[StateValueConfig](https://lexical.dev/docs/api/interfaces/lexical.StateValueConfig)
+API documentation.
 
 :::
 
@@ -110,7 +156,7 @@ shared across multiple versions of that node.
 
 :::info
 
-In a given update cycle, the first time a Lexical node is marked dirty
+In a given reconciliation cycle, the first time a Lexical node is marked dirty
 via `getWritable` will create a new instance of that node. All properties
 of the previous version are set on the new instance. NodeState is stored
 as a single property, and no copying of the internal state is done
@@ -148,7 +194,7 @@ Future:
 
 - Does not yet have a pre-registration system for nodes to declare
   required state, the first release focuses only on ad-hoc usage
-  (see [#7260](https://github.com/facebook/lexical/issues/7260))
+  (see [#7260](https://github.com/facebook/lexical/issues/7260)).
 - Does not yet integrate directly with importDOM, createDOM or
   exportDOM (see [#7259](https://github.com/facebook/lexical/issues/7259))
 - Does not yet support direct integration with Yjs, e.g.

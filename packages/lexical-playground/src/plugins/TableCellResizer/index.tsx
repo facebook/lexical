@@ -173,24 +173,25 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
     const onClick = (event: MouseEvent) => {
       const pointerEvent = event as PointerEvent;
-      if (pointerEvent.pointerType !== 'touch') {
-        return;
+      if (pointerEvent.pointerType === 'touch') {
+        updateIsMouseDown(false);
+        onPointerMove(pointerEvent);
       }
-      updateIsMouseDown(false);
-      onPointerMove(pointerEvent);
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!event.touches || event.touches.length === 0) {
-        return;
+      if (draggingDirection) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.touches || event.touches.length === 0) {
+          return;
+        }
+        const touch = event.touches[0];
+        updateMouseCurrentPos({
+          x: touch.clientX,
+          y: touch.clientY,
+        });
       }
-      const touch = event.touches[0];
-      updateMouseCurrentPos({
-        x: touch.clientX,
-        y: touch.clientY,
-      });
     };
 
     const resizerContainer = resizerRef.current;
@@ -407,16 +408,16 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           backgroundColor: 'none',
           cursor: 'row-resize',
           height: `${zoneWidth}px`,
-          left: `${window.scrollX + tableRect.left}px`,
+          left: `${window.scrollX + left}px`,
           top: `${window.scrollY + top + height - zoneWidth / 2}px`,
-          width: `${tableRect.width}px`,
+          width: `${width}px`,
         },
         right: {
           backgroundColor: 'none',
           cursor: 'col-resize',
-          height: `${tableRect.height}px`,
+          height: `${height}px`,
           left: `${window.scrollX + left + width - zoneWidth / 2}px`,
-          top: `${window.scrollY + tableRect.top}px`,
+          top: `${window.scrollY + top}px`,
           width: `${zoneWidth}px`,
         },
       };

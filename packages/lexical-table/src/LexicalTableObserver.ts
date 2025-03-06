@@ -103,7 +103,6 @@ export class TableObserver {
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
-  pointerType: string | null;
   shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
@@ -130,7 +129,6 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
     this.isSelecting = false;
-    this.pointerType = null;
     this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};

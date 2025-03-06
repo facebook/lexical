@@ -59,7 +59,6 @@ import {
   $normalizeCaret,
   $setPointFromCaret,
   $setSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -107,7 +106,7 @@ import {
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
-const isMouseDownOnEvent = (event: MouseEvent) => {
+const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
 
@@ -188,21 +187,21 @@ export function applyTableHandlers(
     detatchTableObserverFromTableElement(tableElement, tableObserver),
   );
 
-  const createMouseHandlers = () => {
+  const createPointerHandlers = () => {
     if (tableObserver.isSelecting) {
       return;
     }
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       tableObserver.isSelecting = false;
-      editorWindow.removeEventListener('mouseup', onMouseUp);
-      editorWindow.removeEventListener('mousemove', onMouseMove);
+      editorWindow.removeEventListener('pointerup', onPointerUp);
+      editorWindow.removeEventListener('pointermove', onPointerMove);
     };
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
         tableObserver.isSelecting = false;
-        editorWindow.removeEventListener('mouseup', onMouseUp);
-        editorWindow.removeEventListener('mousemove', onMouseMove);
+        editorWindow.removeEventListener('pointerup', onPointerUp);
+        editorWindow.removeEventListener('pointermove', onPointerMove);
         return;
       }
       if (!isDOMNode(moveEvent.target)) {
@@ -236,18 +235,18 @@ export function applyTableHandlers(
     };
     tableObserver.isSelecting = true;
     editorWindow.addEventListener(
-      'mouseup',
-      onMouseUp,
+      'pointerup',
+      onPointerUp,
       tableObserver.listenerOptions,
     );
     editorWindow.addEventListener(
-      'mousemove',
-      onMouseMove,
+      'pointermove',
+      onPointerMove,
       tableObserver.listenerOptions,
     );
   };
 
-  const onMouseDown = (event: MouseEvent) => {
+  const onPointerDown = (event: PointerEvent) => {
     if (event.button !== 0 || !isDOMNode(event.target) || !editorWindow) {
       return;
     }
@@ -259,9 +258,11 @@ export function applyTableHandlers(
         // We can't trust Firefox to do the right thing with the selection and
         // we don't have a proper state machine to do this "correctly" but
         // if we go ahead and make the table selection now it will work
+        // Handle case when tapping on a cell with touch device
         if (
-          IS_FIREFOX &&
-          event.shiftKey &&
+          ((IS_FIREFOX && event.shiftKey) ||
+            (event.pointerType === 'touch' &&
+              !$isTableSelection(prevSelection))) &&
           $isSelectionInTable(prevSelection, tableNode) &&
           ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
         ) {
@@ -295,19 +296,7 @@ export function applyTableHandlers(
       });
     }
 
-    createMouseHandlers();
-  };
-  tableElement.addEventListener(
-    'mousedown',
-    onMouseDown,
-    tableObserver.listenerOptions,
-  );
-  tableObserver.listenersToRemove.add(() => {
-    tableElement.removeEventListener('mousedown', onMouseDown);
-  });
-
-  const onPointerDown = (event: PointerEvent) => {
-    tableObserver.pointerType = event.pointerType;
+    createPointerHandlers();
   };
   tableElement.addEventListener(
     'pointerdown',
@@ -318,40 +307,7 @@ export function applyTableHandlers(
     tableElement.removeEventListener('pointerdown', onPointerDown);
   });
 
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand(
-      CLICK_COMMAND,
-      (event: PointerEvent) => {
-        if (tableObserver.pointerType !== 'touch' || !isDOMNode(event.target)) {
-          return false;
-        }
-        const targetCell = getDOMCellFromTarget(event.target);
-        if (targetCell !== null) {
-          const prevSelection = $getPreviousSelection();
-          if ($isRangeSelection(prevSelection)) {
-            const prevAnchorNode = prevSelection.anchor.getNode();
-            const prevAnchorCell = $findParentTableCellNodeInTable(
-              tableNode,
-              prevAnchorNode,
-            );
-            if (prevAnchorCell !== null) {
-              tableObserver.$setAnchorCellForSelection(
-                $getObserverCellFromCellNodeOrThrow(
-                  tableObserver,
-                  prevAnchorCell,
-                ),
-              );
-              tableObserver.$setFocusCellForSelection(targetCell);
-            }
-          }
-        }
-        return false;
-      },
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  const onTripleClick = (event: MouseEvent) => {
+  const onTripleClick = (event: PointerEvent) => {
     if (event.detail >= 3 && isDOMNode(event.target)) {
       const targetCell = getDOMCellFromTarget(event.target);
       if (targetCell !== null) {
@@ -360,16 +316,16 @@ export function applyTableHandlers(
     }
   };
   tableElement.addEventListener(
-    'mousedown',
+    'pointerdown',
     onTripleClick,
     tableObserver.listenerOptions,
   );
   tableObserver.listenersToRemove.add(() => {
-    tableElement.removeEventListener('mousedown', onTripleClick);
+    tableElement.removeEventListener('pointerdown', onTripleClick);
   });
 
   // Clear selection when clicking outside of dom.
-  const mouseDownCallback = (event: MouseEvent) => {
+  const pointerDownCallback = (event: PointerEvent) => {
     const target = event.target;
     if (event.button !== 0 || !isDOMNode(target)) {
       return;
@@ -388,12 +344,12 @@ export function applyTableHandlers(
   };
 
   editorWindow.addEventListener(
-    'mousedown',
-    mouseDownCallback,
+    'pointerdown',
+    pointerDownCallback,
     tableObserver.listenerOptions,
   );
   tableObserver.listenersToRemove.add(() => {
-    editorWindow.removeEventListener('mousedown', mouseDownCallback);
+    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
   });
 
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {

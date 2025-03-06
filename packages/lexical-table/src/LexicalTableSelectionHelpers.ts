@@ -307,7 +307,7 @@ export function applyTableHandlers(
     tableElement.removeEventListener('pointerdown', onPointerDown);
   });
 
-  const onTripleClick = (event: PointerEvent) => {
+  const onTripleClick = (event: MouseEvent) => {
     if (event.detail >= 3 && isDOMNode(event.target)) {
       const targetCell = getDOMCellFromTarget(event.target);
       if (targetCell !== null) {
@@ -316,12 +316,12 @@ export function applyTableHandlers(
     }
   };
   tableElement.addEventListener(
-    'pointerdown',
+    'mousedown',
     onTripleClick,
     tableObserver.listenerOptions,
   );
   tableObserver.listenersToRemove.add(() => {
-    tableElement.removeEventListener('pointerdown', onTripleClick);
+    tableElement.removeEventListener('mousedown', onTripleClick);
   });
 
   // Clear selection when clicking outside of dom.

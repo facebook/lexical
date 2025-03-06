@@ -108,7 +108,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     }
 
     const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType === 'touch' && event.type !== 'click') {
+      if (event.pointerType === 'touch') {
         return;
       }
       const target = event.target;
@@ -171,12 +171,16 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       updateIsMouseDown(false);
     };
 
-    const onClick = (event: MouseEvent) => {
-      const pointerEvent = event as PointerEvent;
-      if (pointerEvent.pointerType === 'touch') {
-        updateIsMouseDown(false);
-        onPointerMove(pointerEvent);
-      }
+    const onTouchEnd = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+      const pointerEvent = new PointerEvent('pointermove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+      });
+      const target = event.target;
+      target?.dispatchEvent(pointerEvent);
     };
 
     const onTouchMove = (event: TouchEvent) => {
@@ -202,11 +206,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     const removeRootListener = editor.registerRootListener(
       (rootElement, prevRootElement) => {
         prevRootElement?.removeEventListener('pointermove', onPointerMove);
-        prevRootElement?.removeEventListener('click', onClick);
+        prevRootElement?.removeEventListener('touchend', onTouchEnd);
         prevRootElement?.removeEventListener('mousedown', onMouseDown);
         prevRootElement?.removeEventListener('mouseup', onMouseUp);
         rootElement?.addEventListener('pointermove', onPointerMove);
-        rootElement?.addEventListener('click', onClick);
+        rootElement?.addEventListener('touchend', onTouchEnd);
         rootElement?.addEventListener('mousedown', onMouseDown);
         rootElement?.addEventListener('mouseup', onMouseUp);
       },
@@ -397,8 +401,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   );
 
   const getResizers = useCallback(() => {
-    const tableRect = tableRectRef.current;
-    if (activeCell && tableRect) {
+    if (activeCell) {
       const {height, width, top, left} =
         activeCell.elem.getBoundingClientRect();
       const zoom = calculateZoomLevel(activeCell.elem);
@@ -422,17 +425,25 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         },
       };
 
-      if (draggingDirection && mouseCurrentPos) {
+      const tableRect = tableRectRef.current;
+
+      if (draggingDirection && mouseCurrentPos && tableRect) {
         if (isHeightChanging(draggingDirection)) {
+          styles[draggingDirection].left = `${
+            window.scrollX + tableRect.left
+          }px`;
           styles[draggingDirection].top = `${
             window.scrollY + mouseCurrentPos.y / zoom
           }px`;
           styles[draggingDirection].height = '3px';
+          styles[draggingDirection].width = `${tableRect.width}px`;
         } else {
+          styles[draggingDirection].top = `${window.scrollY + tableRect.top}px`;
           styles[draggingDirection].left = `${
             window.scrollX + mouseCurrentPos.x / zoom
           }px`;
           styles[draggingDirection].width = '3px';
+          styles[draggingDirection].height = `${tableRect.height}px`;
         }
 
         styles[draggingDirection].backgroundColor = '#adf';

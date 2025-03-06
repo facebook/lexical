@@ -59,7 +59,6 @@ import {
   $normalizeCaret,
   $setPointFromCaret,
   $setSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -306,38 +305,45 @@ export function applyTableHandlers(
     tableElement.removeEventListener('mousedown', onMouseDown);
   });
 
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand(
-      CLICK_COMMAND,
-      (event: PointerEvent) => {
-        if (event.pointerType !== 'touch' || !isDOMNode(event.target)) {
-          return false;
-        }
-        const targetCell = getDOMCellFromTarget(event.target);
-        if (targetCell !== null) {
-          const prevSelection = $getPreviousSelection();
-          if ($isRangeSelection(prevSelection)) {
-            const prevAnchorNode = prevSelection.anchor.getNode();
-            const prevAnchorCell = $findParentTableCellNodeInTable(
-              tableNode,
-              prevAnchorNode,
+  const onTouchEnd = (event: TouchEvent) => {
+    if (!isDOMNode(event.target)) {
+      return;
+    }
+
+    const targetCell = getDOMCellFromTarget(event.target);
+    if (targetCell !== null) {
+      editor.update(() => {
+        const prevSelection = $getPreviousSelection();
+        if ($isRangeSelection(prevSelection)) {
+          const prevAnchorNode = prevSelection.anchor.getNode();
+          const prevAnchorCell = $findParentTableCellNodeInTable(
+            tableNode,
+            prevAnchorNode,
+          );
+          if (prevAnchorCell) {
+            tableObserver.$setAnchorCellForSelection(
+              $getObserverCellFromCellNodeOrThrow(
+                tableObserver,
+                prevAnchorCell,
+              ),
             );
-            if (prevAnchorCell !== null) {
-              tableObserver.$setAnchorCellForSelection(
-                $getObserverCellFromCellNodeOrThrow(
-                  tableObserver,
-                  prevAnchorCell,
-                ),
-              );
-              tableObserver.$setFocusCellForSelection(targetCell);
-            }
+            tableObserver.$setFocusCellForSelection(targetCell);
+            stopEvent(event);
           }
         }
-        return false;
-      },
-      COMMAND_PRIORITY_HIGH,
-    ),
+      });
+    }
+  };
+
+  tableElement.addEventListener(
+    'touchend',
+    onTouchEnd,
+    tableObserver.listenerOptions,
   );
+
+  tableObserver.listenersToRemove.add(() => {
+    tableElement.removeEventListener('touchend', onTouchEnd);
+  });
 
   const onTripleClick = (event: MouseEvent) => {
     if (event.detail >= 3 && isDOMNode(event.target)) {

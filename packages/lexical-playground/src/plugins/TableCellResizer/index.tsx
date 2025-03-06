@@ -52,7 +52,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);
   const resizerRef = useRef<HTMLDivElement | null>(null);
   const tableRectRef = useRef<ClientRect | null>(null);
-  const pointerTypeRef = useRef<string | null>(null);
   const [hasTable, setHasTable] = useState(false);
 
   const pointerStartPosRef = useRef<PointerPosition | null>(null);
@@ -60,7 +59,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     useState<PointerPosition | null>(null);
 
   const [activeCell, updateActiveCell] = useState<TableDOMCell | null>(null);
-  const [isPointerDown, updateIsPointerDown] = useState<boolean>(false);
   const [draggingDirection, updateDraggingDirection] =
     useState<PointerDraggingDirection | null>(null);
 
@@ -71,10 +69,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     pointerStartPosRef.current = null;
     tableRectRef.current = null;
   }, []);
-
-  const isPointerDownOnEvent = (event: PointerEvent) => {
-    return (event.buttons & 1) === 1;
-  };
 
   useEffect(() => {
     const tableKeys = new Set<NodeKey>();
@@ -109,22 +103,20 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     }
 
     const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') {
-        return;
-      }
       const target = event.target;
       if (!isHTMLElement(target)) {
         return;
       }
 
       if (draggingDirection) {
+        event.preventDefault();
+        event.stopPropagation();
         updatePointerCurrentPos({
           x: event.clientX,
           y: event.clientY,
         });
         return;
       }
-      updateIsPointerDown(isPointerDownOnEvent(event));
       if (resizerRef.current && resizerRef.current.contains(target)) {
         return;
       }
@@ -165,64 +157,29 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     };
 
     const onPointerDown = (event: PointerEvent) => {
-      pointerTypeRef.current = event.pointerType;
-      updateIsPointerDown(true);
-    };
-
-    const onPointerUp = (event: PointerEvent) => {
-      updateIsPointerDown(false);
-    };
-
-    const onClick = (event: MouseEvent) => {
-      const pointerType = pointerTypeRef.current || 'mouse';
-      if (pointerType === 'touch') {
-        const pointerEvent = new PointerEvent('pointermove', {
-          ...event,
-          bubbles: true,
-          cancelable: true,
-        });
-        const target = event.target;
-        target?.dispatchEvent(pointerEvent);
-        updateIsPointerDown(false);
-      }
-    };
-
-    const onTouchMove = (event: TouchEvent) => {
-      if (draggingDirection) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!event.touches || event.touches.length === 0) {
-          return;
-        }
-        const touch = event.touches[0];
-        updatePointerCurrentPos({
-          x: touch.clientX,
-          y: touch.clientY,
-        });
+      const isTouchEvent = event.pointerType === 'touch';
+      if (isTouchEvent) {
+        onPointerMove(event);
       }
     };
 
     const resizerContainer = resizerRef.current;
-    resizerContainer?.addEventListener('touchmove', onTouchMove, {
+    resizerContainer?.addEventListener('pointermove', onPointerMove, {
       capture: true,
     });
 
     const removeRootListener = editor.registerRootListener(
       (rootElement, prevRootElement) => {
         prevRootElement?.removeEventListener('pointermove', onPointerMove);
-        prevRootElement?.removeEventListener('click', onClick);
         prevRootElement?.removeEventListener('pointerdown', onPointerDown);
-        prevRootElement?.removeEventListener('pointerup', onPointerUp);
         rootElement?.addEventListener('pointermove', onPointerMove);
-        rootElement?.addEventListener('click', onClick);
         rootElement?.addEventListener('pointerdown', onPointerDown);
-        rootElement?.addEventListener('pointerup', onPointerUp);
       },
     );
 
     return () => {
       removeRootListener();
-      resizerContainer?.removeEventListener('touchmove', onTouchMove);
+      resizerContainer?.removeEventListener('pointermove', onPointerMove);
     };
   }, [activeCell, draggingDirection, editor, resetState, hasTable]);
 
@@ -471,7 +428,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
   return (
     <div ref={resizerRef}>
-      {activeCell != null && !isPointerDown && (
+      {activeCell != null && (
         <>
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"

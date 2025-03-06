@@ -9,6 +9,7 @@
 
 .TableCellResizer__resizer {
   position: absolute;
+  touch-action: none;
 }
 
 @media (pointer: coarse) {

@@ -6084,4 +6084,101 @@ test.describe.parallel('Tables', () => {
       `,
     );
   });
+
+  test('Resize row with merged cells spanning multiple rows', async ({
+    browserName,
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
+    await initialize({isCollab, page});
+
+    if (isCollab) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    // Create a 3x3 table
+    await insertTable(page, 3, 3);
+
+    // Merge first two rows
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 2, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // Click on the merged cell to select it
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+
+    // Get the resizer element and its position
+    const resizerBoundingBox = await selectorBoundingBox(
+      page,
+      '.TableCellResizer__resizer:nth-child(2)',
+    );
+    const x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+    const y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+
+    // Simulate dragging the resizer down
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 50);
+    await page.mouse.up();
+
+    // Verify the row height was updated correctly
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr style="height: 69px">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              colspan="3"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr><br /></tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+      undefined,
+      {
+        ignoreClasses: false,
+        ignoreInlineStyles: false,
+      },
+      (actualHtml) =>
+        // flaky fix: handle height differences in the assertion
+        actualHtml.replace(
+          /<tr style="height: \d+px">/,
+          '<tr style="height: 69px">',
+        ),
+    );
+  });
 });

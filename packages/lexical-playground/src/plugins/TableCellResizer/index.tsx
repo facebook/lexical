@@ -204,13 +204,18 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-          const tableRowIndex =
-            $getTableRowIndexFromTableCellNode(tableCellNode) +
-            tableCellNode.getRowSpan() -
-            1;
-
+          const baseRowIndex =
+            $getTableRowIndexFromTableCellNode(tableCellNode);
           const tableRows = tableNode.getChildren();
+
+          // Determine if this is a full row merge by checking colspan
+          const isFullRowMerge =
+            tableCellNode.getColSpan() === tableNode.getColumnCount();
+
+          // For full row merges, apply to first row. For partial merges, apply to last row
+          const tableRowIndex = isFullRowMerge
+            ? baseRowIndex
+            : baseRowIndex + tableCellNode.getRowSpan() - 1;
 
           if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
             throw new Error('Expected table cell to be inside of table row.');
@@ -222,13 +227,18 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
+          // Calculate the height for the target row
           let height = tableRow.getHeight();
           if (height === undefined) {
             const rowCells = tableRow.getChildren<TableCellNode>();
             height = Math.min(
-              ...rowCells.map(
-                (cell) => getCellNodeHeight(cell, editor) ?? Infinity,
-              ),
+              ...rowCells.map((cell) => {
+                const cellHeight = getCellNodeHeight(cell, editor);
+                if (cellHeight === undefined) {
+                  return Infinity;
+                }
+                return cellHeight;
+              }),
             );
           }
 

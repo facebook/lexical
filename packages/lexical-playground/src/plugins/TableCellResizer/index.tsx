@@ -232,13 +232,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           if (height === undefined) {
             const rowCells = tableRow.getChildren<TableCellNode>();
             height = Math.min(
-              ...rowCells.map((cell) => {
-                const cellHeight = getCellNodeHeight(cell, editor);
-                if (cellHeight === undefined) {
-                  return Infinity;
-                }
-                return cellHeight;
-              }),
+              ...rowCells.map(
+                (cell) => getCellNodeHeight(cell, editor) ?? Infinity,
+              ),
             );
           }
 

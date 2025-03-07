@@ -227,7 +227,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
-          // Calculate the height for the target row
           let height = tableRow.getHeight();
           if (height === undefined) {
             const rowCells = tableRow.getChildren<TableCellNode>();

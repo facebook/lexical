@@ -8,6 +8,7 @@
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
@@ -22,11 +23,12 @@ import {
   ParagraphNode,
   TextNode,
 } from 'lexical';
+import {useEffect} from 'react';
 
 import ExampleTheme from './ExampleTheme';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import {$getStyleProperties} from './styleState';
+import {$getStyleObject, applyStyle, registerStyleState} from './styleState';
 
 const placeholder = 'Enter some rich text...';
 
@@ -47,9 +49,7 @@ function $applyNodeStylesToElement(
   node: LexicalNode,
   element: HTMLElement,
 ): void {
-  for (const [k, v] of $getStyleProperties(node)) {
-    element.style.setProperty(k, v ?? null);
-  }
+  applyStyle(element, $getStyleObject(node));
 }
 
 const exportMap: DOMExportOutputMap = new Map<
@@ -72,6 +72,12 @@ const editorConfig = {
   theme: ExampleTheme,
 };
 
+function StyleStatePlugin() {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => registerStyleState(editor), [editor]);
+  return null;
+}
+
 export default function App() {
   return (
     <LexicalComposer initialConfig={editorConfig}>
@@ -93,6 +99,7 @@ export default function App() {
           <HistoryPlugin />
           <AutoFocusPlugin />
           <TreeViewPlugin />
+          <StyleStatePlugin />
         </div>
       </div>
     </LexicalComposer>

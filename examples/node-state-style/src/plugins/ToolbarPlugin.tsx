@@ -12,7 +12,7 @@ import {
   $isRangeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
-  FORMAT_ELEMENT_COMMAND,
+  COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -20,7 +20,7 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-const LowPriority = 1;
+import {PATCH_TEXT_STYLE_COMMAND} from '../styleState';
 
 function Divider() {
   return <div className="divider" />;
@@ -60,7 +60,7 @@ export default function ToolbarPlugin() {
           $updateToolbar();
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
@@ -68,7 +68,7 @@ export default function ToolbarPlugin() {
           setCanUndo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         CAN_REDO_COMMAND,
@@ -76,7 +76,7 @@ export default function ToolbarPlugin() {
           setCanRedo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [editor, $updateToolbar]);
@@ -137,36 +137,14 @@ export default function ToolbarPlugin() {
       <Divider />
       <button
         onClick={() => {
-          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
+          editor.dispatchCommand(PATCH_TEXT_STYLE_COMMAND, {
+            'text-shadow': '1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue',
+          });
         }}
         className="toolbar-item spaced"
-        aria-label="Left Align">
+        aria-label="Toggle Text Shadow">
         <i className="format left-align" />
       </button>
-      <button
-        onClick={() => {
-          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
-        }}
-        className="toolbar-item spaced"
-        aria-label="Center Align">
-        <i className="format center-align" />
-      </button>
-      <button
-        onClick={() => {
-          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
-        }}
-        className="toolbar-item spaced"
-        aria-label="Right Align">
-        <i className="format right-align" />
-      </button>
-      <button
-        onClick={() => {
-          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
-        }}
-        className="toolbar-item"
-        aria-label="Justify Align">
-        <i className="format justify-align" />
-      </button>{' '}
     </div>
   );
 }

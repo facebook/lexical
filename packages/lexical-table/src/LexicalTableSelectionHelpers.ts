@@ -247,6 +247,7 @@ export function applyTableHandlers(
   };
 
   const onPointerDown = (event: PointerEvent) => {
+    tableObserver.pointerType = event.pointerType;
     if (event.button !== 0 || !isDOMNode(event.target) || !editorWindow) {
       return;
     }
@@ -260,9 +261,8 @@ export function applyTableHandlers(
         // if we go ahead and make the table selection now it will work
         // Handle case when tapping on a cell with touch device
         if (
-          ((IS_FIREFOX && event.shiftKey) ||
-            (event.pointerType === 'touch' &&
-              !$isTableSelection(prevSelection))) &&
+          IS_FIREFOX &&
+          event.shiftKey &&
           $isSelectionInTable(prevSelection, tableNode) &&
           ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
         ) {
@@ -998,6 +998,36 @@ export function applyTableHandlers(
                 ),
                 true,
               );
+            }
+
+            // Handle case when the pointer type is touch and the current and
+            // previous selection are collapsed, and the previous anchor and current
+            // focus cell nodes are different, then we convert it into table selection
+            if (
+              tableObserver.pointerType === 'touch' &&
+              selection.isCollapsed() &&
+              $isRangeSelection(prevSelection) &&
+              prevSelection.isCollapsed()
+            ) {
+              const prevAnchorCellNode = $findCellNode(
+                prevSelection.anchor.getNode(),
+              );
+              if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
+                tableObserver.$setAnchorCellForSelection(
+                  $getObserverCellFromCellNodeOrThrow(
+                    tableObserver,
+                    prevAnchorCellNode,
+                  ),
+                );
+                tableObserver.$setFocusCellForSelection(
+                  $getObserverCellFromCellNodeOrThrow(
+                    tableObserver,
+                    focusCellNode,
+                  ),
+                  true,
+                );
+                tableObserver.pointerType = null;
+              }
             }
           }
         } else if (

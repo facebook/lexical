@@ -25,6 +25,9 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useExtensionStore} from '../../../store';
 import {SerializedRawEditorState} from '../../../types';
+import {CollapsibleTreeView} from './tree-view/CollapsibleTreeView';
+
+const IS_COLLAPSIBLE_TREE = import.meta.env.VITE_COLLAPSIBLE_TREE === '1';
 
 interface Props {
   tabID: number;
@@ -81,28 +84,53 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
             </AccordionButton>
           </h2>
           <AccordionPanel pb={4}>
-            <TreeView
-              viewClassName="tree-view-output"
-              treeTypeButtonClassName="debug-treetype-button"
-              timeTravelPanelClassName="debug-timetravel-panel"
-              timeTravelButtonClassName="debug-timetravel-button"
-              timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
-              timeTravelPanelButtonClassName="debug-timetravel-panel-button"
-              setEditorReadOnly={(isReadonly) =>
-                injectedPegasusService
-                  .setEditorReadOnly(key, isReadonly)
-                  .catch((e) => setErrorMessage(e.stack))
-              }
-              editorState={state as EditorState}
-              setEditorState={(editorState) =>
-                injectedPegasusService
-                  .setEditorState(key, editorState as SerializedRawEditorState)
-                  .catch((e) => setErrorMessage(e.stack))
-              }
-              generateContent={(exportDOM) =>
-                injectedPegasusService.generateTreeViewContent(key, exportDOM)
-              }
-            />
+            {IS_COLLAPSIBLE_TREE ? (
+              <CollapsibleTreeView
+                viewContainerClassName="collapsible-tree-view-container"
+                treeClassName="collapsible-tree-view"
+                detailsViewClassName="collapsible-tree-view-details"
+                editorState={state as EditorState}
+                generateTreeViewNodes={() =>
+                  injectedPegasusService.generateTreeViewNodes(key)
+                }
+                onNodeSelect={(element, isSelected) =>
+                  injectedPegasusService.highlightEditorNode(
+                    key,
+                    element,
+                    isSelected,
+                  )
+                }
+                onBlur={() => {
+                  injectedPegasusService.clearHighlightEditorNode(key);
+                }}
+              />
+            ) : (
+              <TreeView
+                viewClassName="tree-view-output"
+                treeTypeButtonClassName="debug-treetype-button"
+                timeTravelPanelClassName="debug-timetravel-panel"
+                timeTravelButtonClassName="debug-timetravel-button"
+                timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
+                timeTravelPanelButtonClassName="debug-timetravel-panel-button"
+                setEditorReadOnly={(isReadonly) =>
+                  injectedPegasusService
+                    .setEditorReadOnly(key, isReadonly)
+                    .catch((e) => setErrorMessage(e.stack))
+                }
+                editorState={state as EditorState}
+                setEditorState={(editorState) =>
+                  injectedPegasusService
+                    .setEditorState(
+                      key,
+                      editorState as SerializedRawEditorState,
+                    )
+                    .catch((e) => setErrorMessage(e.stack))
+                }
+                generateContent={(exportDOM) =>
+                  injectedPegasusService.generateTreeViewContent(key, exportDOM)
+                }
+              />
+            )}
           </AccordionPanel>
         </AccordionItem>
       ))}

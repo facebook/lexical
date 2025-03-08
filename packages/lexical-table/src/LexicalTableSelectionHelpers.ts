@@ -259,7 +259,6 @@ export function applyTableHandlers(
         // We can't trust Firefox to do the right thing with the selection and
         // we don't have a proper state machine to do this "correctly" but
         // if we go ahead and make the table selection now it will work
-        // Handle case when tapping on a cell with touch device
         if (
           IS_FIREFOX &&
           event.shiftKey &&

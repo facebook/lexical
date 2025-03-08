@@ -141,6 +141,7 @@ export type {
   KlassConstructor,
   LexicalCommand,
   LexicalEditor,
+  LexicalNodeConfig,
   LexicalNodeReplacement,
   MutationListener,
   NodeMutation,
@@ -164,6 +165,7 @@ export type {
 } from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export type {
+  BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
@@ -171,11 +173,15 @@ export type {
   DOMConversionOutput,
   DOMExportOutput,
   DOMExportOutputMap,
+  LexicalExportJSON,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  StaticNodeConfig,
+  StaticNodeConfigRecord,
+  StaticNodeConfigValue,
 } from './LexicalNode';
 export {
   $getState,
@@ -183,11 +189,14 @@ export {
   $getWritableNodeState,
   $setState,
   type AnyStateConfig,
+  createSharedNodeState,
   createState,
+  type NodeStateJSON,
   type StateConfig,
   type StateConfigKey,
   type StateConfigValue,
   type StateValueConfig,
+  type StateValueOrUpdater,
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
@@ -220,6 +229,7 @@ export {
   $applyNodeReplacement,
   $cloneWithProperties,
   $copyNode,
+  $create,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
@@ -245,6 +255,8 @@ export {
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  getRegisteredNode,
+  getRegisteredNodeOrThrow,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,

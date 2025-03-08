@@ -161,6 +161,36 @@
         "default": "./LexicalBlockWithAlignableContents.js"
       }
     },
+    "./LexicalCharacterCountPlugin": {
+      "import": {
+        "types": "./LexicalCharacterCountPlugin.d.ts",
+        "development": "./LexicalCharacterCountPlugin.dev.mjs",
+        "production": "./LexicalCharacterCountPlugin.prod.mjs",
+        "node": "./LexicalCharacterCountPlugin.node.mjs",
+        "default": "./LexicalCharacterCountPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalCharacterCountPlugin.d.ts",
+        "development": "./LexicalCharacterCountPlugin.dev.js",
+        "production": "./LexicalCharacterCountPlugin.prod.js",
+        "default": "./LexicalCharacterCountPlugin.js"
+      }
+    },
+    "./LexicalCharacterCountPlugin.js": {
+      "import": {
+        "types": "./LexicalCharacterCountPlugin.d.ts",
+        "development": "./LexicalCharacterCountPlugin.dev.mjs",
+        "production": "./LexicalCharacterCountPlugin.prod.mjs",
+        "node": "./LexicalCharacterCountPlugin.node.mjs",
+        "default": "./LexicalCharacterCountPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalCharacterCountPlugin.d.ts",
+        "development": "./LexicalCharacterCountPlugin.dev.js",
+        "production": "./LexicalCharacterCountPlugin.prod.js",
+        "default": "./LexicalCharacterCountPlugin.js"
+      }
+    },
     "./LexicalCharacterLimitPlugin": {
       "import": {
         "types": "./LexicalCharacterLimitPlugin.d.ts",

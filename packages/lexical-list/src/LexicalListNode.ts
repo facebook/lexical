@@ -41,6 +41,7 @@ import {$getListDepth, $wrapInListItem} from './utils';
 export type SerializedListNode = Spread<
   {
     listType: ListType;
+    listStyleType?: ListStyleType;
     start: number;
     tag: ListNodeTagType;
   },
@@ -48,6 +49,27 @@ export type SerializedListNode = Spread<
 >;
 
 export type ListType = 'number' | 'bullet' | 'check';
+
+export type ListStyleType =
+  | undefined // default
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {}) // string means custom style
+  | 'none'
+  | 'disc'
+  | 'circle'
+  | 'square'
+  | 'decimal'
+  | 'decimal-leading-zero'
+  | 'lower-roman'
+  | 'upper-roman'
+  | 'lower-greek'
+  | 'lower-alpha'
+  | 'lower-latin'
+  | 'upper-alpha'
+  | 'upper-latin'
+  | 'armenian'
+  | 'georgian'
+  | 'hebrew';
 
 export type ListNodeTagType = 'ul' | 'ol';
 
@@ -59,6 +81,8 @@ export class ListNode extends ElementNode {
   __start: number;
   /** @internal */
   __listType: ListType;
+  /** @internal */
+  __listStyleType: ListStyleType;
 
   static getType(): string {
     return 'list';
@@ -70,11 +94,17 @@ export class ListNode extends ElementNode {
     return new ListNode(listType, node.__start, node.__key);
   }
 
-  constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
+  constructor(
+    listType: ListType = 'number',
+    start: number = 1,
+    key?: NodeKey,
+    listStyleType?: ListStyleType,
+  ) {
     super(key);
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';
+    this.__listStyleType = listStyleType;
     this.__start = start;
   }
 
@@ -91,6 +121,16 @@ export class ListNode extends ElementNode {
 
   getListType(): ListType {
     return this.__listType;
+  }
+
+  setListStyleType(type: ListStyleType): this {
+    const writable = this.getWritable();
+    writable.__listStyleType = type;
+    return writable;
+  }
+
+  getListStyleType(): ListStyleType {
+    return this.__listStyleType;
   }
 
   getStart(): number {
@@ -114,6 +154,11 @@ export class ListNode extends ElementNode {
     }
     // @ts-expect-error Internal field.
     dom.__lexicalListType = this.__listType;
+    if (this.__listStyleType) {
+      dom.style.setProperty('list-style-type', this.__listStyleType);
+    } else {
+      dom.style.removeProperty('list-style-type');
+    }
     $setListThemeClassNames(dom, config.theme, this);
 
     return dom;
@@ -124,6 +169,11 @@ export class ListNode extends ElementNode {
       return true;
     }
 
+    if (this.__listStyleType) {
+      dom.style.setProperty('list-style-type', this.__listStyleType);
+    } else {
+      dom.style.removeProperty('list-style-type');
+    }
     $setListThemeClassNames(dom, config.theme, this);
 
     return false;
@@ -158,6 +208,7 @@ export class ListNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setListType(serializedNode.listType)
+      .setListStyleType(serializedNode.listStyleType)
       .setStart(serializedNode.start);
   }
 
@@ -179,6 +230,7 @@ export class ListNode extends ElementNode {
   exportJSON(): SerializedListNode {
     return {
       ...super.exportJSON(),
+      listStyleType: this.getListStyleType(),
       listType: this.getListType(),
       start: this.getStart(),
       tag: this.getTag(),

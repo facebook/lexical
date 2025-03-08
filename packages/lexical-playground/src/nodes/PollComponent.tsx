@@ -20,7 +20,6 @@ import {
   $getSelection,
   $isNodeSelection,
   BaseSelection,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
@@ -143,7 +142,6 @@ export default function PollComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [selection, setSelection] = useState<BaseSelection | null>(null);
-  const ref = useRef(null);
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
@@ -167,23 +165,6 @@ export default function PollComponent({
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        (payload) => {
-          const event = payload;
-
-          if (event.target === ref.current) {
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-            setSelected(!isSelected);
-            return true;
-          }
-
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
         $onDelete,
@@ -221,9 +202,7 @@ export default function PollComponent({
   const isFocused = $isNodeSelection(selection) && isSelected;
 
   return (
-    <div
-      className={`PollNode__container ${isFocused ? 'focused' : ''}`}
-      ref={ref}>
+    <div className={`PollNode__container ${isFocused ? 'focused' : ''}`}>
       <div className="PollNode__inner">
         <h2 className="PollNode__heading">{question}</h2>
         {options.map((option, index) => {

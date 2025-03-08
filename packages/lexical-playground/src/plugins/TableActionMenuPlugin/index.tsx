@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
+import {getCSSFromStyleObject, getStyleObjectFromCSS} from '@lexical/selection';
 import {
   $computeTableMapSkipCellCheck,
   $deleteTableColumn__EXPERIMENTAL,
@@ -574,6 +575,34 @@ function TableActionMenu({
     });
   };
 
+  const formatLayoutAlign = (align: 'left' | 'center' | 'right') => {
+    editor.update(() => {
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const styleObj = getStyleObjectFromCSS(tableNode.__style);
+      switch (align) {
+        case 'left':
+          tableNode.setStyle(
+            getCSSFromStyleObject({...styleObj, margin: '0 auto 0 0'}),
+          );
+          break;
+
+        case 'center':
+          tableNode.setStyle(
+            getCSSFromStyleObject({...styleObj, margin: '0 auto'}),
+          );
+          break;
+
+        case 'right':
+          tableNode.setStyle(
+            getCSSFromStyleObject({...styleObj, margin: '0 0 0 auto'}),
+          );
+          break;
+      }
+
+      onClose();
+    });
+  };
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {
@@ -664,6 +693,43 @@ function TableActionMenu({
           </div>
         </DropDownItem>
       </DropDown>
+
+      <DropDown
+        buttonLabel="Layout Align"
+        buttonClassName="item"
+        buttonAriaLabel="Formatting options for layout alignment">
+        <DropDownItem
+          onClick={() => {
+            formatLayoutAlign('left');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon left-align" />
+            <span className="text">Left Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatLayoutAlign('center');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon center-align" />
+            <span className="text">Center Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatLayoutAlign('right');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon right-align" />
+            <span className="text">Right Align</span>
+          </div>
+        </DropDownItem>
+      </DropDown>
+
       <button
         type="button"
         className="item"

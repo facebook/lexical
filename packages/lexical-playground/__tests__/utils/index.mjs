@@ -1104,3 +1104,18 @@ export function createHumanReadableSelection(_overview, dto) {
     focusPath: dto.focusPath.map((p) => p.value),
   };
 }
+
+export async function insertLayoutInFirstCell(page, template) {
+  await selectFromInsertDropdown(page, '.item .columns');
+  await click(page, '.toolbar-item.dialog-dropdown');
+  const layoutLabels = {
+    '1fr 1fr': '2 columns (equal width)',
+    '1fr 1fr 1fr': '3 columns (equal width)',
+    '1fr 1fr 1fr 1fr': '4 columns (equal width)',
+    '1fr 2fr 1fr': '3 columns (25% - 50% - 25%)',
+    '1fr 3fr': '2 columns (25% - 75%)',
+  };
+  const label = layoutLabels[template];
+  await click(page, `.item span.text:has-text("${label}")`);
+  await click(page, '.Button__root:has-text("Insert")');
+}

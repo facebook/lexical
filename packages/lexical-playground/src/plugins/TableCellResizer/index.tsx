@@ -204,13 +204,18 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-          const tableRowIndex =
-            $getTableRowIndexFromTableCellNode(tableCellNode) +
-            tableCellNode.getRowSpan() -
-            1;
-
+          const baseRowIndex =
+            $getTableRowIndexFromTableCellNode(tableCellNode);
           const tableRows = tableNode.getChildren();
+
+          // Determine if this is a full row merge by checking colspan
+          const isFullRowMerge =
+            tableCellNode.getColSpan() === tableNode.getColumnCount();
+
+          // For full row merges, apply to first row. For partial merges, apply to last row
+          const tableRowIndex = isFullRowMerge
+            ? baseRowIndex
+            : baseRowIndex + tableCellNode.getRowSpan() - 1;
 
           if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
             throw new Error('Expected table cell to be inside of table row.');

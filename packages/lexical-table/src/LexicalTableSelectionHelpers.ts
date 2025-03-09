@@ -106,7 +106,7 @@ import {
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
-const isMouseDownOnEvent = (event: MouseEvent) => {
+const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
 
@@ -187,21 +187,21 @@ export function applyTableHandlers(
     detatchTableObserverFromTableElement(tableElement, tableObserver),
   );
 
-  const createMouseHandlers = () => {
+  const createPointerHandlers = () => {
     if (tableObserver.isSelecting) {
       return;
     }
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       tableObserver.isSelecting = false;
-      editorWindow.removeEventListener('mouseup', onMouseUp);
-      editorWindow.removeEventListener('mousemove', onMouseMove);
+      editorWindow.removeEventListener('pointerup', onPointerUp);
+      editorWindow.removeEventListener('pointermove', onPointerMove);
     };
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
         tableObserver.isSelecting = false;
-        editorWindow.removeEventListener('mouseup', onMouseUp);
-        editorWindow.removeEventListener('mousemove', onMouseMove);
+        editorWindow.removeEventListener('pointerup', onPointerUp);
+        editorWindow.removeEventListener('pointermove', onPointerMove);
         return;
       }
       if (!isDOMNode(moveEvent.target)) {
@@ -235,18 +235,19 @@ export function applyTableHandlers(
     };
     tableObserver.isSelecting = true;
     editorWindow.addEventListener(
-      'mouseup',
-      onMouseUp,
+      'pointerup',
+      onPointerUp,
       tableObserver.listenerOptions,
     );
     editorWindow.addEventListener(
-      'mousemove',
-      onMouseMove,
+      'pointermove',
+      onPointerMove,
       tableObserver.listenerOptions,
     );
   };
 
-  const onMouseDown = (event: MouseEvent) => {
+  const onPointerDown = (event: PointerEvent) => {
+    tableObserver.pointerType = event.pointerType;
     if (event.button !== 0 || !isDOMNode(event.target) || !editorWindow) {
       return;
     }
@@ -294,15 +295,15 @@ export function applyTableHandlers(
       });
     }
 
-    createMouseHandlers();
+    createPointerHandlers();
   };
   tableElement.addEventListener(
-    'mousedown',
-    onMouseDown,
+    'pointerdown',
+    onPointerDown,
     tableObserver.listenerOptions,
   );
   tableObserver.listenersToRemove.add(() => {
-    tableElement.removeEventListener('mousedown', onMouseDown);
+    tableElement.removeEventListener('pointerdown', onPointerDown);
   });
 
   const onTripleClick = (event: MouseEvent) => {
@@ -323,7 +324,7 @@ export function applyTableHandlers(
   });
 
   // Clear selection when clicking outside of dom.
-  const mouseDownCallback = (event: MouseEvent) => {
+  const pointerDownCallback = (event: PointerEvent) => {
     const target = event.target;
     if (event.button !== 0 || !isDOMNode(target)) {
       return;
@@ -342,12 +343,12 @@ export function applyTableHandlers(
   };
 
   editorWindow.addEventListener(
-    'mousedown',
-    mouseDownCallback,
+    'pointerdown',
+    pointerDownCallback,
     tableObserver.listenerOptions,
   );
   tableObserver.listenersToRemove.add(() => {
-    editorWindow.removeEventListener('mousedown', mouseDownCallback);
+    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
   });
 
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
@@ -996,6 +997,36 @@ export function applyTableHandlers(
                 ),
                 true,
               );
+            }
+
+            // Handle case when the pointer type is touch and the current and
+            // previous selection are collapsed, and the previous anchor and current
+            // focus cell nodes are different, then we convert it into table selection
+            if (
+              tableObserver.pointerType === 'touch' &&
+              selection.isCollapsed() &&
+              $isRangeSelection(prevSelection) &&
+              prevSelection.isCollapsed()
+            ) {
+              const prevAnchorCellNode = $findCellNode(
+                prevSelection.anchor.getNode(),
+              );
+              if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
+                tableObserver.$setAnchorCellForSelection(
+                  $getObserverCellFromCellNodeOrThrow(
+                    tableObserver,
+                    prevAnchorCellNode,
+                  ),
+                );
+                tableObserver.$setFocusCellForSelection(
+                  $getObserverCellFromCellNodeOrThrow(
+                    tableObserver,
+                    focusCellNode,
+                  ),
+                  true,
+                );
+                tableObserver.pointerType = null;
+              }
             }
           }
         } else if (

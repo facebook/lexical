@@ -10,16 +10,18 @@ import type {PropertiesHyphenFallback} from 'csstype';
 
 import {$forEachSelectedTextNode} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
+import InlineStyleParser from 'inline-style-parser';
 import {
   $getNodeByKey,
   $getState,
+  $isTextNode,
   $setState,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   createState,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
+  TextNode,
   ValueOrUpdater,
 } from 'lexical';
 
@@ -30,17 +32,10 @@ import {
  */
 export function getStyleObjectFromRawCSS(css: string): StyleObject {
   let styleObject: undefined | Record<string, string>;
-  for (const style of css.split(';')) {
-    if (style !== '') {
-      const [key, value] = style.split(/:([^]+)/); // split on first colon
-      if (key && value) {
-        const keyTrim = key.trim();
-        const valueTrim = value.trim();
-        if (keyTrim && valueTrim) {
-          styleObject = styleObject || {};
-          styleObject[keyTrim] = valueTrim;
-        }
-      }
+  for (const token of InlineStyleParser(css, {silent: true})) {
+    if (token.type === 'declaration' && token.value) {
+      styleObject = styleObject || {};
+      styleObject[token.property] = token.value;
     }
   }
   return styleObject || NO_STYLE;
@@ -210,47 +205,32 @@ interface HTMLElementWithManagedStyle extends HTMLElement {
   [PREV_STYLE_STATE]?: StyleObject;
 }
 
-function makeStyleUpdateListener(editor: LexicalEditor) {
-  let cleanup: undefined | (() => void);
-  // Listen to all updates, but only when the editor is mounted
-  return (rootElement: null | HTMLElement) => {
-    if (cleanup) {
-      cleanup();
-    }
-    if (!rootElement) {
-      cleanup = undefined;
-      return;
-    }
-    cleanup = editor.registerUpdateListener(
-      ({dirtyElements, dirtyLeaves, editorState}) => {
-        const handleNode = (nodeKey: NodeKey) => {
+function makeStyleUpdateListener(editor: LexicalEditor): () => void {
+  // In the general case this feature would need a LexicalNode mutation listener
+  return editor.registerMutationListener(TextNode, (nodes) => {
+    editor.getEditorState().read(
+      () => {
+        for (const [nodeKey, nodeMutation] of nodes) {
+          if (nodeMutation === 'destroyed') {
+            continue;
+          }
+          const node = $getNodeByKey(nodeKey);
           const dom: null | HTMLElementWithManagedStyle =
             editor.getElementByKey(nodeKey);
-          if (!dom) {
+          if (!dom || !$isTextNode(node)) {
             return;
           }
-          const prevStyleObject =
-            dom[PREV_STYLE_STATE] ?? styleState.defaultValue;
-          const nextStyleObject = editorState.read(() => {
-            const node = $getNodeByKey(nodeKey);
-            return node ? $getStyleObject(node) : styleState.defaultValue;
-          });
+          const prevStyleObject = dom[PREV_STYLE_STATE] ?? NO_STYLE;
+          const nextStyleObject = $getStyleObject(node);
           dom[PREV_STYLE_STATE] = nextStyleObject;
           if (prevStyleObject !== nextStyleObject) {
             applyStyle(dom, diffStyleObjects(prevStyleObject, nextStyleObject));
           }
-        };
-        for (const [nodeKey, intentional] of dirtyElements) {
-          if (intentional) {
-            handleNode(nodeKey);
-          }
-        }
-        for (const nodeKey of dirtyLeaves) {
-          handleNode(nodeKey);
         }
       },
+      {editor},
     );
-  };
+  });
 }
 
 export function registerStyleState(editor: LexicalEditor): () => void {
@@ -260,6 +240,7 @@ export function registerStyleState(editor: LexicalEditor): () => void {
       $patchSelectedTextStyle,
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerRootListener(makeStyleUpdateListener(editor)),
+    makeStyleUpdateListener(editor),
+    // TODO there's no way to hook into importDOM/exportDOM from a plug-in https://github.com/facebook/lexical/issues/7259
   );
 }

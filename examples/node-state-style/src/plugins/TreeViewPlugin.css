@@ -1,0 +1,128 @@
+/* tree-view */
+[data-scope='tree-view'][data-part='tree'] {
+  margin-top: 20px;
+  width: 240px;
+}
+
+[data-scope='tree-view'][data-part='item'],
+[data-scope='tree-view'][data-part='branch-control'] {
+  user-select: none;
+  --padding-inline: 16px;
+  padding-inline-start: calc(var(--depth) * var(--padding-inline));
+  padding-inline-end: var(--padding-inline);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 2px;
+  min-height: 32px;
+
+  & svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.5;
+  }
+
+  &:hover {
+    background: rgb(243, 243, 243);
+  }
+
+  &[data-selected] {
+    background: rgb(226, 226, 226);
+  }
+
+  &:focus {
+    outline: 1px solid rgb(148, 148, 148);
+    outline-offset: -1px;
+  }
+}
+
+[data-scope='tree-view'][data-part='item-text'],
+[data-scope='tree-view'][data-part='branch-text'] {
+  flex: 1;
+}
+
+[data-scope='tree-view'][data-part='branch-content'] {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-scope='tree-view'][data-part='branch-indent-guide'] {
+  position: absolute;
+  content: '';
+  border-left: 1px solid rgb(226, 226, 226);
+  height: 100%;
+  translate: calc(var(--depth) * 1.25rem);
+  z-index: 0;
+}
+
+[data-scope='tree-view'][data-part='branch-indicator'] {
+  display: flex;
+  align-items: center;
+  &[data-state='open'] svg {
+    transform: rotate(90deg);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0.01;
+    height: 0;
+  }
+  to {
+    opacity: 1;
+    height: var(--height);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    height: var(--height);
+  }
+  to {
+    opacity: 0.01;
+    height: 0;
+  }
+}
+
+[data-scope='tree-view'][data-part='branch-content'] {
+  overflow: hidden;
+  max-width: 400px;
+}
+
+[data-scope='tree-view'][data-part='branch-content'][data-state='open'] {
+  animation: slideDown 250ms cubic-bezier(0, 0, 0.38, 0.9);
+}
+
+[data-scope='tree-view'][data-part='branch-content'][data-state='closed'] {
+  animation: slideUp 200ms cubic-bezier(0, 0, 0.38, 0.9);
+}
+
+/* splitter */
+[data-scope='splitter'][data-part='root'] {
+  gap: 4px;
+}
+
+[data-scope='splitter'][data-part='root'][data-orientation='horizontal'] {
+  min-height: 300px;
+}
+
+[data-scope='splitter'][data-part='root'][data-orientation='vertical'] {
+  min-height: 300px;
+}
+
+[data-scope='splitter'][data-part='panel'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid lightgray;
+  overflow: auto;
+}
+
+[data-scope='splitter'][data-part='panel']:has([data-scope='splitter'][data-part='panel']) {
+  border: none;
+}
+
+[data-scope='splitter'][data-part='resize-trigger'][data-orientation='vertical'] {
+  min-height: 12px;
+}

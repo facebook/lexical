@@ -7,7 +7,10 @@
  */
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {
+  InitialConfigType,
+  LexicalComposer,
+} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -16,7 +19,6 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
   DOMExportOutput,
   DOMExportOutputMap,
-  isHTMLElement,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -28,41 +30,23 @@ import {useEffect} from 'react';
 import ExampleTheme from './ExampleTheme';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import {$getStyleObject, applyStyle, registerStyleState} from './styleState';
+import {
+  $exportNodeStyle,
+  constructStyleImportMap,
+  registerStyleState,
+} from './styleState';
 
 const placeholder = 'Enter some rich text...';
-
-// TODO https://github.com/facebook/lexical/issues/7259
-// there should be a better way to do this, this does not compose with other exportDOM overrides
-function $exportNodeStyle(
-  editor: LexicalEditor,
-  target: LexicalNode,
-): DOMExportOutput {
-  const output = target.exportDOM(editor);
-  if (output && isHTMLElement(output.element)) {
-    $applyNodeStylesToElement(target, output.element);
-  }
-  return output;
-}
-
-function $applyNodeStylesToElement(
-  node: LexicalNode,
-  element: HTMLElement,
-): void {
-  applyStyle(element, $getStyleObject(node));
-}
 
 const exportMap: DOMExportOutputMap = new Map<
   Klass<LexicalNode>,
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
->([
-  [ParagraphNode, $exportNodeStyle],
-  [TextNode, $exportNodeStyle],
-]);
+>([[TextNode, $exportNodeStyle]]);
 
-const editorConfig = {
+const editorConfig: InitialConfigType = {
   html: {
     export: exportMap,
+    import: constructStyleImportMap(),
   },
   namespace: 'NodeState Demo',
   nodes: [ParagraphNode, TextNode],
@@ -98,10 +82,10 @@ export default function App() {
           />
           <HistoryPlugin />
           <AutoFocusPlugin />
-          <TreeViewPlugin />
           <StyleStatePlugin />
         </div>
       </div>
+      <TreeViewPlugin />
     </LexicalComposer>
   );
 }

@@ -19,6 +19,10 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   createState,
+  DOMConversionMap,
+  DOMExportOutput,
+  isDocumentFragment,
+  isHTMLElement,
   LexicalEditor,
   LexicalNode,
   TextNode,
@@ -206,31 +210,139 @@ interface HTMLElementWithManagedStyle extends HTMLElement {
 }
 
 function makeStyleUpdateListener(editor: LexicalEditor): () => void {
-  // In the general case this feature would need a LexicalNode mutation listener
-  return editor.registerMutationListener(TextNode, (nodes) => {
-    editor.getEditorState().read(
-      () => {
-        for (const [nodeKey, nodeMutation] of nodes) {
-          if (nodeMutation === 'destroyed') {
-            continue;
+  // TODO In the general case this feature would need a global mutation listener
+  //      or an update listener with equivalent metadata
+  return editor.registerMutationListener(
+    TextNode,
+    (nodes, {prevEditorState}) => {
+      editor.getEditorState().read(
+        () => {
+          for (const [nodeKey, nodeMutation] of nodes) {
+            if (nodeMutation === 'destroyed') {
+              continue;
+            }
+            const node = $getNodeByKey(nodeKey);
+            const dom: null | HTMLElementWithManagedStyle =
+              editor.getElementByKey(nodeKey);
+            if (!dom || !$isTextNode(node)) {
+              return;
+            }
+            const prevNode = $getNodeByKey(nodeKey, prevEditorState);
+            const prevStyleObject =
+              ($isTextNode(prevNode) && prevNode.__style === node.__style
+                ? dom[PREV_STYLE_STATE]
+                : undefined) ?? NO_STYLE;
+            const nextStyleObject = $getStyleObject(node);
+            dom[PREV_STYLE_STATE] = nextStyleObject;
+            if (prevStyleObject !== nextStyleObject) {
+              applyStyle(
+                dom,
+                diffStyleObjects(prevStyleObject, nextStyleObject),
+              );
+            }
           }
-          const node = $getNodeByKey(nodeKey);
-          const dom: null | HTMLElementWithManagedStyle =
-            editor.getElementByKey(nodeKey);
-          if (!dom || !$isTextNode(node)) {
-            return;
+        },
+        {editor},
+      );
+    },
+  );
+}
+
+// TODO https://github.com/facebook/lexical/issues/7259
+// there should be a better way to do this, this does not compose with other exportDOM overrides
+export function $exportNodeStyle(
+  editor: LexicalEditor,
+  target: LexicalNode,
+): DOMExportOutput {
+  const output = target.exportDOM(editor);
+  const style = $getStyleObject(target);
+  if (style === NO_STYLE) {
+    return output;
+  }
+  return {
+    ...output,
+    after: (generatedElement) => {
+      const el = output.after
+        ? output.after(generatedElement)
+        : generatedElement;
+      if (isHTMLElement(el)) {
+        applyStyle(el, style);
+      } else if (isDocumentFragment(el)) {
+        // Work around a bug in the type
+        return el as unknown as ReturnType<
+          NonNullable<DOMExportOutput['after']>
+        >;
+      }
+      return el;
+    },
+  };
+}
+
+const IGNORE_STYLES: Set<keyof StyleObject> = new Set([
+  'font-weight',
+  'text-decoration',
+  'font-style',
+  'vertical-align',
+]);
+
+export type StyleMapping = (input: StyleObject) => StyleObject;
+
+// TODO there's no reasonable way to hook into importDOM/exportDOM from a plug-in https://github.com/facebook/lexical/issues/7259
+export function constructStyleImportMap(
+  styleMapping: StyleMapping = (input) => input,
+): DOMConversionMap {
+  const importMap: DOMConversionMap = {};
+
+  // Wrap all TextNode importers with a function that also imports
+  // styles that are not otherwise imported
+  for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
+    importMap[tag] = (importNode) => {
+      const importer = fn(importNode);
+      if (!importer) {
+        return null;
+      }
+      return {
+        ...importer,
+        conversion: (element) => {
+          const output = importer.conversion(element);
+          if (
+            output === null ||
+            output.forChild === undefined ||
+            output.after !== undefined ||
+            output.node !== null ||
+            !element.hasAttribute('style')
+          ) {
+            return output;
           }
-          const prevStyleObject = dom[PREV_STYLE_STATE] ?? NO_STYLE;
-          const nextStyleObject = $getStyleObject(node);
-          dom[PREV_STYLE_STATE] = nextStyleObject;
-          if (prevStyleObject !== nextStyleObject) {
-            applyStyle(dom, diffStyleObjects(prevStyleObject, nextStyleObject));
+          let extraStyles: undefined | Record<string, string>;
+          for (const k of element.style) {
+            if (IGNORE_STYLES.has(k as keyof StyleObject)) {
+              continue;
+            }
+            extraStyles = extraStyles || {};
+            extraStyles[k] = element.style.getPropertyValue(k);
           }
-        }
-      },
-      {editor},
-    );
-  });
+          if (extraStyles) {
+            const {forChild} = output;
+            return {
+              ...output,
+              forChild: (child, parent) => {
+                const node = forChild(child, parent);
+                return $isTextNode(node)
+                  ? $setStyleObject(
+                      node,
+                      styleMapping(extraStyles as StyleObject),
+                    )
+                  : node;
+              },
+            };
+          }
+          return output;
+        },
+      };
+    };
+  }
+  return importMap;
 }
 
 export function registerStyleState(editor: LexicalEditor): () => void {
@@ -241,6 +353,5 @@ export function registerStyleState(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     makeStyleUpdateListener(editor),
-    // TODO there's no way to hook into importDOM/exportDOM from a plug-in https://github.com/facebook/lexical/issues/7259
   );
 }

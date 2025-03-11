@@ -1,3 +1,14 @@
+## v0.27.2 (2025-03-11)
+
+- lexical-table Bug Fix Fix unintended touch table cell selection when scrolling (#7309) Ibrahim El-bastawisi
+- lexical-playground Bug Fix row height resizing for merged cells (#7305) Kiran Dash
+- lexical-table Add table cell selection handler for touch devices (#7297) Ibrahim El-bastawisi
+- lexical-playground Feature Add touch support for TableCellResizer (#7299) Ibrahim El-bastawisi
+- lexical-yjs Bug Fix prevent collab element nodes from removing other nodes from node map (#7295) James Fitzsimmons
+- lexical-website Bug Fix Fix vite.config.ts for gallery examples (#7290) Bob Ippolito
+- v0.27.1 (#7288) Bob Ippolito
+- v0.27.1 Lexical GitHub Actions Bot
+
 ## v0.27.1 (2025-03-04)
 
 - CI Feature Add a fixer for the no-imports-from-self lint (#7284) Bob Ippolito

@@ -116,6 +116,11 @@ export function $getStyleProperty<Prop extends keyof StyleObject>(
   return $getStyleObject(node)[prop];
 }
 
+// eslint-disable-next-line @lexical/rules-of-lexical
+export function getStyleObjectDirect(node: LexicalNode): StyleObject {
+  return $getState(node, styleState, 'direct');
+}
+
 export function $getStyleObject(node: LexicalNode): StyleObject {
   return $getState(node, styleState);
 }

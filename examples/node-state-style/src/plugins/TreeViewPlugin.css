@@ -57,7 +57,7 @@
 
 [data-scope='tree-view'][data-part='branch-indicator'] {
   display: flex;
-  align-items: center;
+  /* align-items: center; */
   &[data-state='open'] svg {
     transform: rotate(90deg);
   }
@@ -113,8 +113,8 @@
 
 [data-scope='splitter'][data-part='panel'] {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* align-items: center; */
+  /* justify-content: center; */
   border: 1px solid lightgray;
   overflow: auto;
 }

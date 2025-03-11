@@ -32,7 +32,7 @@ import {
   FileIcon,
   FolderIcon,
 } from 'lucide-react';
-import {
+import React, {
   createContext,
   Fragment,
   type JSX,
@@ -42,6 +42,8 @@ import {
   useReducer,
   useState,
 } from 'react';
+
+import {getStyleObjectDirect} from '../styleState';
 
 const EditorStateContext = createContext<undefined | EditorState>(undefined);
 function useEditorState() {
@@ -183,28 +185,97 @@ function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {
   }, [id, node, indexPathString]);
 }
 
-function useSelectedNode() {
+function useSelectedNodeKey() {
   const api = useNodeTreeViewContext();
-  const nodeKey = api.selectedValue.at(0) || 'root';
-  return [
-    nodeKey,
-    useEditorState().read(() => $getNodeByKey(nodeKey)),
-  ] as const;
+  return api.selectedValue.at(0) || 'root';
+}
+
+interface SelectedNodeState {
+  nodeKey: NodeKey;
+  editorState: EditorState;
+  node: LexicalNode | null;
+  cached: React.ReactNode;
+}
+
+function LexicalTextSelectionPaneContents({
+  node,
+  nodeKey,
+}: Pick<SelectedNodeState, 'nodeKey' | 'node' | 'editorState'>) {
+  if (node === null) {
+    return <span>Node {nodeKey} no longer in the document</span>;
+  }
+  const styles = getStyleObjectDirect(node);
+  return (
+    <div>
+      <span>{describeNode(node)[1]}</span>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: 'left'}}>style</th>
+            <th style={{textAlign: 'left'}}>value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(styles).map(([k, v]) => {
+            return (
+              <tr key={k}>
+                <td style={{textAlign: 'left'}}>{k}</td>
+                <td style={{textAlign: 'left'}}>{v}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function initTextSelectionPaneReducer(
+  action:
+    | SelectedNodeState
+    | Pick<SelectedNodeState, 'nodeKey' | 'editorState'>,
+): SelectedNodeState {
+  const node = action.editorState.read(() => $getNodeByKey(action.nodeKey));
+  if ('node' in action && action.node === node) {
+    return action;
+  }
+  return {
+    ...action,
+    cached: (
+      <LexicalTextSelectionPaneContents
+        node={node}
+        nodeKey={action.nodeKey}
+        editorState={action.editorState}
+      />
+    ),
+    node,
+  };
+}
+
+function textSelectionPaneReducer(
+  state: SelectedNodeState,
+  action: Pick<SelectedNodeState, 'nodeKey' | 'editorState'>,
+): SelectedNodeState {
+  if (state.nodeKey === action.nodeKey) {
+    return state.editorState === action.editorState
+      ? state
+      : initTextSelectionPaneReducer({...state, ...action});
+  }
+  return initTextSelectionPaneReducer(action);
 }
 
 function LexicalTextSelectionPane() {
-  const [nodeKey, selectedNode] = useSelectedNode();
-  return useMemo(() => {
-    if (selectedNode === null) {
-      return <span>NodeKey {nodeKey} was removed</span>;
-    }
-    return (
-      <>
-        <span>{describeNode(selectedNode)[0]}</span>
-        describe it here
-      </>
-    );
-  }, [nodeKey, selectedNode]);
+  const nodeKey = useSelectedNodeKey();
+  const editorState = useEditorState();
+  const [state, dispatch] = useReducer(
+    textSelectionPaneReducer,
+    {editorState, nodeKey},
+    initTextSelectionPaneReducer,
+  );
+  useEffect(() => {
+    dispatch({editorState, nodeKey});
+  }, [nodeKey, editorState]);
+  return state.cached || null;
 }
 
 function LexicalTreeView() {

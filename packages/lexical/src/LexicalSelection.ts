@@ -1554,30 +1554,59 @@ export class RangeSelection implements BaseSelection {
     ) {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
-    if (this.dirty) {
-      let nextAnchorDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.anchor.key,
+    let nextAnchorOffset = this.anchor.offset;
+    let nextAnchorDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
+      editor,
+      this.anchor.key,
+    );
+    let nextFocusOffset = this.focus.offset;
+    let nextFocusDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
+      editor,
+      this.focus.key,
+    );
+    if (this.anchor.type === 'text') {
+      nextAnchorDOM = getDOMTextNode(nextAnchorDOM);
+    }
+    if (this.focus.type === 'text') {
+      const originalFocusDOM = nextFocusDOM;
+      const domText = getDOMTextNode(nextFocusDOM);
+      nextFocusDOM = domText;
+      // Workaround for https://github.com/facebook/lexical/issues/7301
+      // We want to make sure we are moving the selection into the next
+      // text node if we are at a boundary. This is a zero distance movement
+      // in lexical coordinates.
+      if (isBackward && nextFocusOffset === 0) {
+        if ($isTextNode(focusNode.getPreviousSibling())) {
+          const siblingDOM = getDOMTextNode(originalFocusDOM.previousSibling);
+          if (siblingDOM) {
+            nextFocusDOM = siblingDOM;
+            nextFocusOffset = siblingDOM.length;
+          }
+        }
+      } else if (
+        !isBackward &&
+        nextFocusOffset === focusNode.getTextContentSize() &&
+        $isTextNode(focusNode.getNextSibling())
+      ) {
+        const siblingDOM = getDOMTextNode(originalFocusDOM.nextSibling);
+        if (siblingDOM) {
+          nextFocusDOM = siblingDOM;
+          nextFocusOffset = 0;
+        }
+      }
+      if (collapse) {
+        nextAnchorOffset = nextFocusOffset;
+        nextAnchorDOM = nextFocusDOM;
+      }
+    }
+    if (nextAnchorDOM && nextFocusDOM) {
+      setDOMSelectionBaseAndExtent(
+        domSelection,
+        nextAnchorDOM,
+        nextAnchorOffset,
+        nextFocusDOM,
+        nextFocusOffset,
       );
-      let nextFocusDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.focus.key,
-      );
-      if (this.anchor.type === 'text') {
-        nextAnchorDOM = getDOMTextNode(nextAnchorDOM);
-      }
-      if (this.focus.type === 'text') {
-        nextFocusDOM = getDOMTextNode(nextFocusDOM);
-      }
-      if (nextAnchorDOM && nextFocusDOM) {
-        setDOMSelectionBaseAndExtent(
-          domSelection,
-          nextAnchorDOM,
-          this.anchor.offset,
-          nextFocusDOM,
-          this.focus.offset,
-        );
-      }
     }
     // We use the DOM selection.modify API here to "tell" us what the selection
     // will be. We then use it to update the Lexical selection accordingly. This

@@ -15,6 +15,7 @@ import type {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  ParagraphNode,
   SerializedElementNode,
   Spread,
 } from 'lexical';
@@ -23,7 +24,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
-  $isElementNode,
+  $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
@@ -364,39 +365,53 @@ export function $convertTableCellNodeElement(
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
   return {
     after: (childLexicalNodes) => {
-      if (childLexicalNodes.length === 0) {
-        childLexicalNodes.push($createParagraphNode());
-      }
-      return childLexicalNodes;
-    },
-    forChild: (lexicalNode, parentLexicalNode) => {
-      if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
-        const paragraphNode = $createParagraphNode();
-        if (
-          $isLineBreakNode(lexicalNode) &&
-          lexicalNode.getTextContent() === '\n'
+      const result: LexicalNode[] = [];
+      let paragraphNode: ParagraphNode | null = null;
+
+      for (let i = 0; i < childLexicalNodes.length; i++) {
+        const prevChild = childLexicalNodes[i - 1];
+        const child = childLexicalNodes[i];
+
+        if ($isLineBreakNode(child)) {
+          if ($isLineBreakNode(prevChild)) {
+            result.push($createParagraphNode());
+          }
+          paragraphNode = null;
+        } else if (
+          $isInlineElementOrDecoratorNode(child) ||
+          $isTextNode(child)
         ) {
-          return null;
+          if ($isTextNode(child)) {
+            if (hasBoldFontWeight) {
+              child.toggleFormat('bold');
+            }
+            if (hasLinethroughTextDecoration) {
+              child.toggleFormat('strikethrough');
+            }
+            if (hasItalicFontStyle) {
+              child.toggleFormat('italic');
+            }
+            if (hasUnderlineTextDecoration) {
+              child.toggleFormat('underline');
+            }
+          }
+
+          if (paragraphNode) {
+            paragraphNode.append(child);
+          } else {
+            paragraphNode = $createParagraphNode().append(child);
+            result.push(paragraphNode);
+          }
+        } else {
+          result.push(child);
+          paragraphNode = null;
         }
-        if ($isTextNode(lexicalNode)) {
-          if (hasBoldFontWeight) {
-            lexicalNode.toggleFormat('bold');
-          }
-          if (hasLinethroughTextDecoration) {
-            lexicalNode.toggleFormat('strikethrough');
-          }
-          if (hasItalicFontStyle) {
-            lexicalNode.toggleFormat('italic');
-          }
-          if (hasUnderlineTextDecoration) {
-            lexicalNode.toggleFormat('underline');
-          }
-        }
-        paragraphNode.append(lexicalNode);
-        return paragraphNode;
       }
 
-      return lexicalNode;
+      if (result.length === 0) {
+        result.push($createParagraphNode());
+      }
+      return result;
     },
     node: tableCellNode,
   };

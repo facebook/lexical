@@ -252,7 +252,7 @@ export interface UpdateListenerPayload {
    */
   editorState: EditorState;
   /**
-   * The Map of LexicalNode constructors to a Map<NodeKey, NodeMutation>,
+   * The Map of LexicalNode constructors to a `Map<NodeKey, NodeMutation>`,
    * this is useful when you have a mutation listener type use cases that
    * should apply to all or most nodes. Will be null if no DOM was mutated,
    * such as when only the selection changed.

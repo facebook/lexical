@@ -8,12 +8,12 @@
     "mark"
   ],
   "license": "MIT",
-  "version": "0.27.2",
+  "version": "0.27.3-nightly.20250312.0",
   "main": "LexicalMark.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.27.2",
-    "lexical": "0.27.2"
+    "@lexical/utils": "0.27.3-nightly.20250312.0",
+    "lexical": "0.27.3-nightly.20250312.0"
   },
   "repository": {
     "type": "git",

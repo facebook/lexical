@@ -148,6 +148,7 @@ export type {
   Spread,
   Transform,
   UpdateListener,
+  UpdateListenerPayload,
 } from './LexicalEditor';
 export {
   COMMAND_PRIORITY_CRITICAL,

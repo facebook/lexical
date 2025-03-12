@@ -231,14 +231,60 @@ export interface MutationListenerOptions {
 
 const DEFAULT_SKIP_INITIALIZATION = false;
 
-export type UpdateListener = (arg0: {
+/**
+ * The payload passed to an UpdateListener
+ */
+export interface UpdateListenerPayload {
+  /**
+   * A Map of NodeKeys of ElementNodes to a boolean that is true
+   * if the node was intentionally mutated ('unintentional' mutations
+   * are triggered when an indirect descendant is marked dirty)
+   */
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  /**
+   * A Set of NodeKeys of all nodes that were marked dirty that
+   * do not inherit from ElementNode.
+   */
   dirtyLeaves: Set<NodeKey>;
+  /**
+   * The new EditorState after all updates have been processed,
+   * equivalent to `editor.getEditorState()`
+   */
   editorState: EditorState;
+  /**
+   * The Map of LexicalNode constructors to a Map<NodeKey, NodeMutation>,
+   * this is useful when you have a mutation listener type use cases that
+   * should apply to all or most nodes. Will be null if no DOM was mutated,
+   * such as when only the selection changed.
+   *
+   * Added in v0.28.0
+   */
+  mutatedNodes: null | MutatedNodes;
+  /**
+   * For advanced use cases only.
+   *
+   * Tracks the keys of TextNode descendants that have been merged
+   * with their siblings by normalization. Note that these keys may
+   * not exist in either editorState or prevEditorState and generally
+   * this is only used for conflict resolution edge cases in collab.
+   */
   normalizedNodes: Set<NodeKey>;
+  /**
+   * The previous EditorState that is being discarded
+   */
   prevEditorState: EditorState;
+  /**
+   * The set of tags added with update options or {@link $addUpdateTag},
+   * node that this includes all tags that were processed in this
+   * reconciliation which may have been added by separate updates.
+   */
   tags: Set<string>;
-}) => void;
+}
+
+/**
+ * A listener that gets called after the editor is updated
+ */
+export type UpdateListener = (payload: UpdateListenerPayload) => void;
 
 export type DecoratorListener<T = never> = (
   decorator: Record<NodeKey, T>,
@@ -304,30 +350,27 @@ type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
 >;
-type Listeners = {
-  decorator: Set<DecoratorListener>;
+
+export interface Listeners {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  decorator: Set<DecoratorListener<any>>;
   mutation: MutationListeners;
   editable: Set<EditableListener>;
   root: Set<RootListener>;
   textcontent: Set<TextContentListener>;
   update: Set<UpdateListener>;
+}
+
+export type SetListeners = {
+  [K in keyof Listeners as Listeners[K] extends Set<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (...args: any[]) => void
+  >
+    ? K
+    : never]: Listeners[K] extends Set<(...args: infer Args) => void>
+    ? Args
+    : never;
 };
-
-export type Listener =
-  | DecoratorListener
-  | EditableListener
-  | MutationListener
-  | RootListener
-  | TextContentListener
-  | UpdateListener;
-
-export type ListenerType =
-  | 'update'
-  | 'root'
-  | 'decorator'
-  | 'textcontent'
-  | 'mutation'
-  | 'editable';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 

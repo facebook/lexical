@@ -158,17 +158,10 @@ describe('LexicalTableCellNode tests', () => {
                     ">
                     <p>
                       <span style="white-space: pre-wrap;">1</span>
-                    </p>
-                    <p>
                       <br />
-                    </p>
-                    <p>
                       <br />
-                    </p>
-                    <p>
                       <br />
-                    </p>
-                    <p>
+                      <br />
                       <span style="white-space: pre-wrap;">2</span>
                     </p>
                   </td>

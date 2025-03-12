@@ -41,6 +41,7 @@ import {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
+  $setSelectionFromCaretRange,
   $updateRangeSelectionFromCaretRange,
   CaretRange,
   ChildCaret,
@@ -430,6 +431,22 @@ export class NodeSelection implements BaseSelection {
       textContent += nodes[i].getTextContent();
     }
     return textContent;
+  }
+
+  /**
+   * Remove all nodes in the NodeSelection. If there were any nodes,
+   * replace the selection with a new RangeSelection at the previous
+   * location of the first node.
+   */
+  deleteNodes(): void {
+    const nodes = this.getNodes();
+    if (($getSelection() || $getPreviousSelection()) === this && nodes[0]) {
+      const firstCaret = $getSiblingCaret(nodes[0], 'next');
+      $setSelectionFromCaretRange($getCaretRange(firstCaret, firstCaret));
+    }
+    for (const node of nodes) {
+      node.remove();
+    }
   }
 }
 

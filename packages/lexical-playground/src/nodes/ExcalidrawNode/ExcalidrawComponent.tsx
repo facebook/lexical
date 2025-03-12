@@ -20,8 +20,6 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   isDOMNode,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
@@ -53,20 +51,6 @@ export default function ExcalidrawComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
-
-  const $onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      if (isSelected) {
-        event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if (node) {
-          node.remove();
-        }
-      }
-      return false;
-    },
-    [isSelected, nodeKey],
-  );
 
   useEffect(() => {
     if (!isEditable) {
@@ -105,26 +89,8 @@ export default function ExcalidrawComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [
-    clearSelection,
-    editor,
-    isSelected,
-    isResizing,
-    $onDelete,
-    setSelected,
-    isEditable,
-  ]);
+  }, [clearSelection, editor, isSelected, isResizing, setSelected, isEditable]);
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);

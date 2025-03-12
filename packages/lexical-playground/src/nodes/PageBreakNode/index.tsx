@@ -14,22 +14,18 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $getSelection,
-  $isNodeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
   DOMConversionMap,
   DOMConversionOutput,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect} from 'react';
+import {useEffect} from 'react';
 
 export type SerializedPageBreakNode = SerializedLexicalNode;
 
@@ -37,22 +33,6 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
-
-  const $onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      event.preventDefault();
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        deleteSelection.getNodes().forEach((node) => {
-          if ($isPageBreakNode(node)) {
-            node.remove();
-          }
-        });
-      }
-      return false;
-    },
-    [isSelected],
-  );
 
   useEffect(() => {
     return mergeRegister(
@@ -73,18 +53,8 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
 
   useEffect(() => {
     const pbElem = editor.getElementByKey(nodeKey);

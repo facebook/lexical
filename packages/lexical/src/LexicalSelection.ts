@@ -1571,32 +1571,34 @@ export class RangeSelection implements BaseSelection {
       const originalFocusDOM = nextFocusDOM;
       const domText = getDOMTextNode(nextFocusDOM);
       nextFocusDOM = domText;
-      // Workaround for https://github.com/facebook/lexical/issues/7301
-      // We want to make sure we are moving the selection into the next
-      // text node if we are at a boundary. This is a zero distance movement
-      // in lexical coordinates.
-      if (isBackward && nextFocusOffset === 0) {
-        if ($isTextNode(focusNode.getPreviousSibling())) {
-          const siblingDOM = getDOMTextNode(originalFocusDOM.previousSibling);
+      if (granularity === 'character') {
+        // Workaround for https://github.com/facebook/lexical/issues/7301
+        // We want to make sure we are moving the selection into the next
+        // text node if we are at a boundary. This is a zero distance movement
+        // in lexical coordinates.
+        if (isBackward && nextFocusOffset === 0) {
+          if ($isTextNode(focusNode.getPreviousSibling())) {
+            const siblingDOM = getDOMTextNode(originalFocusDOM.previousSibling);
+            if (siblingDOM) {
+              nextFocusDOM = siblingDOM;
+              nextFocusOffset = siblingDOM.length;
+            }
+          }
+        } else if (
+          !isBackward &&
+          nextFocusOffset === focusNode.getTextContentSize() &&
+          $isTextNode(focusNode.getNextSibling())
+        ) {
+          const siblingDOM = getDOMTextNode(originalFocusDOM.nextSibling);
           if (siblingDOM) {
             nextFocusDOM = siblingDOM;
-            nextFocusOffset = siblingDOM.length;
+            nextFocusOffset = 0;
           }
         }
-      } else if (
-        !isBackward &&
-        nextFocusOffset === focusNode.getTextContentSize() &&
-        $isTextNode(focusNode.getNextSibling())
-      ) {
-        const siblingDOM = getDOMTextNode(originalFocusDOM.nextSibling);
-        if (siblingDOM) {
-          nextFocusDOM = siblingDOM;
-          nextFocusOffset = 0;
+        if (collapse) {
+          nextAnchorOffset = nextFocusOffset;
+          nextAnchorDOM = nextFocusDOM;
         }
-      }
-      if (collapse) {
-        nextAnchorOffset = nextFocusOffset;
-        nextAnchorDOM = nextFocusDOM;
       }
     }
     if (nextAnchorDOM && nextFocusDOM) {

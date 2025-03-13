@@ -24,7 +24,8 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
-  $isElementNode,
+  $isInlineElementOrDecoratorNode,
+  $isLineBreakNode,
   $isTextNode,
   ElementNode,
   isHTMLElement,
@@ -367,8 +368,24 @@ export function $convertTableCellNodeElement(
       const result: LexicalNode[] = [];
       let paragraphNode: ParagraphNode | null = null;
 
+      const removeSingleLineBreakNode = () => {
+        if (paragraphNode) {
+          const firstChild = paragraphNode.getFirstChild();
+          if (
+            $isLineBreakNode(firstChild) &&
+            paragraphNode.getChildrenSize() === 1
+          ) {
+            firstChild.remove();
+          }
+        }
+      };
+
       for (const child of childLexicalNodes) {
-        if (!$isElementNode(child)) {
+        if (
+          $isInlineElementOrDecoratorNode(child) ||
+          $isTextNode(child) ||
+          $isLineBreakNode(child)
+        ) {
           if ($isTextNode(child)) {
             if (hasBoldFontWeight) {
               child.toggleFormat('bold');
@@ -392,9 +409,12 @@ export function $convertTableCellNodeElement(
           }
         } else {
           result.push(child);
+          removeSingleLineBreakNode();
           paragraphNode = null;
         }
       }
+
+      removeSingleLineBreakNode();
 
       if (result.length === 0) {
         result.push($createParagraphNode());

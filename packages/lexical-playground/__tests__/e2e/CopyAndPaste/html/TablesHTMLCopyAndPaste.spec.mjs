@@ -212,11 +212,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
                 dir="ltr"
                 style="text-align: left;">
                 <span data-lexical-text="true">b</span>
-              </p>
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr"
-                style="text-align: left;">
+                <br />
                 <span data-lexical-text="true">b</span>
               </p>
             </td>
@@ -297,10 +293,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">b</span>
-              </p>
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                <br />
                 <span data-lexical-text="true">b</span>
               </p>
             </td>

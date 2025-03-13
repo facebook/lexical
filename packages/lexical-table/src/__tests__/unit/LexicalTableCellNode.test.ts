@@ -113,12 +113,7 @@ describe('LexicalTableCellNode tests', () => {
               <tbody>
                 <tr>
                   <td
-                    style="
-                      border: 1px solid black;
-                      width: 75px;
-                      vertical-align:
-                      top; text-align: start;
-                    ">
+                    style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
                     <p>
                       <test-decorator></test-decorator>
                       <span style="white-space: pre-wrap;">1</span>
@@ -150,18 +145,47 @@ describe('LexicalTableCellNode tests', () => {
               <tbody>
                 <tr>
                   <td
-                    style="
-                      border: 1px solid black;
-                      width: 75px;
-                      vertical-align:
-                      top; text-align: start;
-                    ">
+                    style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
                     <p>
                       <span style="white-space: pre-wrap;">1</span>
                       <br />
                       <br />
                       <br />
                       <br />
+                      <span style="white-space: pre-wrap;">2</span>
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          `,
+        ],
+        [
+          html`
+            <table>
+              <tr>
+                <td>
+                  <p>1</p>
+                  <br />
+                  <p>2</p>
+                </td>
+              </tr>
+            </table>
+          `,
+          html`
+            <table>
+              <colgroup><col /></colgroup>
+              <tbody>
+                <tr>
+                  <td
+                    style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+                    <p>
+                      <span style="white-space: pre-wrap;">1</span>
+                    </p>
+                    <p>
+                      <br />
+                    </p>
+                    <p>
                       <span style="white-space: pre-wrap;">2</span>
                     </p>
                   </td>

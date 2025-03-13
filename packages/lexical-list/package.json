@@ -12,6 +12,7 @@
   "main": "LexicalList.js",
   "types": "index.d.ts",
   "dependencies": {
+    "@lexical/selection": "0.27.2",
     "@lexical/utils": "0.27.2",
     "lexical": "0.27.2"
   },

@@ -450,6 +450,12 @@
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
 }
+.PlaygroundEditorTheme__listItem::marker {
+  color: var(--listitem-marker-color);
+  background-color: var(--listitem-marker-background-color);
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
+}
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {
   position: relative;

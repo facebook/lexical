@@ -19,7 +19,10 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getNodeByKey,
+  $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
+  $isRootNode,
   $isTextNode,
   type EditorState,
   LexicalEditor,
@@ -29,8 +32,11 @@ import {
 import {
   CheckSquareIcon,
   ChevronRightIcon,
-  FileIcon,
+  CodeXmlIcon,
+  CornerDownLeftIcon,
   FolderIcon,
+  FolderRoot,
+  TextIcon,
 } from 'lucide-react';
 import React, {
   createContext,
@@ -128,25 +134,27 @@ function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {
         indexPath={[...indexPath.slice(0, -1), (indexPath.at(-1) || 0) + 1]}
       />
     );
-    // const icon = $isElementNode(node) ? null : $isTextNode(node) ? (
-    //   <TypographyIcon />
-    // ) : $isDecoratorNode(node) ? (
-    //   <FileMediaIcon />
-    // ) : $isLineBreakNode(node) ? (
-    //   <span style={{display: 'inline-block', height: '16px', width: '16px'}}>
-    //     &crarr;
-    //   </span>
-    // ) : null;
+    const icon = $isRootNode(node) ? (
+      <FolderRoot />
+    ) : $isElementNode(node) ? (
+      <FolderIcon />
+    ) : $isTextNode(node) ? (
+      <TextIcon />
+    ) : $isDecoratorNode(node) ? (
+      <CodeXmlIcon />
+    ) : $isLineBreakNode(node) ? (
+      <CornerDownLeftIcon />
+    ) : null;
     let content: React.ReactNode;
     if ($isElementNode(node)) {
       content = (
         <TreeView.Branch>
           <TreeView.BranchControl>
             <TreeView.BranchText>
-              <FolderIcon /> {label}
+              {icon} {label}
             </TreeView.BranchText>
             <TreeView.BranchIndicator>
-              <ChevronRightIcon />
+              {node.__first ? <ChevronRightIcon /> : null}
             </TreeView.BranchIndicator>
           </TreeView.BranchControl>
           <TreeView.BranchContent>
@@ -168,8 +176,7 @@ function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {
             <CheckSquareIcon />
           </TreeView.ItemIndicator>
           <TreeView.ItemText>
-            <FileIcon />
-            {label}
+            {icon} {label}
           </TreeView.ItemText>
         </TreeView.Item>
       );

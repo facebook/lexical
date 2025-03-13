@@ -20,6 +20,8 @@
     width: 16px;
     height: 16px;
     opacity: 0.5;
+    position: relative;
+    top: 3px;
   }
 
   &:hover {

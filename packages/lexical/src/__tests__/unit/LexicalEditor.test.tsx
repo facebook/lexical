@@ -26,10 +26,13 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $extendCaretToRange,
+  $getChildCaret,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
+  $isElementNode,
   $isParagraphNode,
   $isTextNode,
   $parseSerializedNode,
@@ -49,6 +52,7 @@ import {
   ParagraphNode,
   RootNode,
   TextNode,
+  UpdateListenerPayload,
 } from 'lexical';
 import * as React from 'react';
 import {
@@ -75,6 +79,78 @@ import {
   TestComposer,
   TestTextNode,
 } from '../utils';
+
+function $getAllNodes(): Set<LexicalNode> {
+  const root = $getRoot();
+  const set = new Set<LexicalNode>();
+  for (const {origin} of $extendCaretToRange($getChildCaret(root, 'next'))) {
+    set.add(origin);
+  }
+  set.add(root);
+  return set;
+}
+
+function computeUpdateListenerPayload(
+  editor: LexicalEditor,
+  prevEditorState: EditorState,
+  hasDOM: boolean,
+): UpdateListenerPayload {
+  return editor.read((): UpdateListenerPayload => {
+    const dirtyElements: UpdateListenerPayload['dirtyElements'] = new Map();
+    const dirtyLeaves: UpdateListenerPayload['dirtyLeaves'] = new Set();
+    const mutatedNodes: UpdateListenerPayload['mutatedNodes'] = new Map();
+    const tags: UpdateListenerPayload['tags'] = new Set();
+    const normalizedNodes: UpdateListenerPayload['normalizedNodes'] = new Set();
+    if (hasDOM) {
+      for (const node of prevEditorState.read($getAllNodes)) {
+        const key = node.getKey();
+        const klass = node.constructor;
+        const m = mutatedNodes.get(klass) || new Map();
+        m.set(key, 'destroyed');
+        mutatedNodes.set(klass, m);
+      }
+    }
+    for (const node of $getAllNodes()) {
+      const key = node.getKey();
+      if ($isElementNode(node)) {
+        dirtyElements.set(key, true);
+      } else {
+        dirtyLeaves.add(key);
+      }
+      if (hasDOM) {
+        const klass = node.constructor;
+        const m = mutatedNodes.get(klass) || new Map();
+        m.set(
+          key,
+          prevEditorState.read(() =>
+            $getNodeByKey(key) ? 'updated' : 'created',
+          ),
+        );
+        mutatedNodes.set(klass, m);
+      }
+    }
+    // This looks like a corner case in element tracking where
+    // dirtyElements has keys that were destroyed!
+    for (const [klass, m] of mutatedNodes) {
+      if ($isElementNode(klass.prototype)) {
+        for (const [nodeKey, value] of m) {
+          if (value === 'destroyed') {
+            dirtyElements.set(nodeKey, true);
+          }
+        }
+      }
+    }
+    return {
+      dirtyElements,
+      dirtyLeaves,
+      editorState: editor.getEditorState(),
+      mutatedNodes,
+      normalizedNodes,
+      prevEditorState,
+      tags,
+    };
+  });
+}
 
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
@@ -468,6 +544,7 @@ describe('LexicalEditor tests', () => {
     init();
     const onUpdate = jest.fn();
     editor.registerUpdateListener(onUpdate);
+    const prevEditorState = editor.getEditorState();
     editor.update(() => {
       $setSelection($createRangeSelection());
       editor.update(() => {
@@ -484,6 +561,10 @@ describe('LexicalEditor tests', () => {
       .read(() => $getRoot().getTextContent());
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
+    // Calculate an expected update listener paylaod
+    expect(onUpdate.mock.calls).toEqual([
+      [computeUpdateListenerPayload(editor, prevEditorState, false)],
+    ]);
   });
 
   it('update does not call onUpdate callback when no dirty nodes', () => {
@@ -1773,6 +1854,8 @@ describe('LexicalEditor tests', () => {
 
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
+    const onUpdate = jest.fn();
+    editor.registerUpdateListener(onUpdate);
     editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
       skipInitialization: false,
     });
@@ -1781,6 +1864,7 @@ describe('LexicalEditor tests', () => {
     });
     const paragraphKeys: string[] = [];
     const textNodeKeys: string[] = [];
+    let prevEditorState = editor.getEditorState();
 
     // No await intentional (batch with next)
     editor.update(() => {
@@ -1803,10 +1887,25 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push(textNode3.getKey());
     });
 
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    // Calculate an expected update listener paylaod
+    expect(onUpdate.mock.lastCall).toEqual([
+      computeUpdateListenerPayload(editor, prevEditorState, true),
+    ]);
+
+    prevEditorState = editor.getEditorState();
     await editor.update(() => {
       $getRoot().clear();
     });
 
+    expect(onUpdate).toHaveBeenCalledTimes(2);
+    // Calculate an expected update listener payload after destroying
+    // everything
+    expect(onUpdate.mock.lastCall).toEqual([
+      computeUpdateListenerPayload(editor, prevEditorState, true),
+    ]);
+
+    prevEditorState = editor.getEditorState();
     await editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
@@ -1817,6 +1916,13 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push($createTextNode('zzz').getKey());
       root.append(paragraph);
     });
+
+    expect(onUpdate).toHaveBeenCalledTimes(3);
+    // Calculate an expected update listener payload after destroying
+    // everything
+    expect(onUpdate.mock.lastCall).toEqual([
+      computeUpdateListenerPayload(editor, prevEditorState, true),
+    ]);
 
     expect(paragraphNodeMutations.mock.calls.length).toBe(3);
     expect(textNodeMutations.mock.calls.length).toBe(2);
@@ -2444,6 +2550,7 @@ describe('LexicalEditor tests', () => {
     init();
     const onUpdate = jest.fn();
     editor.registerUpdateListener(onUpdate);
+    const prevEditorState = editor.getEditorState();
     editor.update(
       () => {
         $getRoot().append(
@@ -2460,6 +2567,10 @@ describe('LexicalEditor tests', () => {
       .read(() => $getRoot().getTextContent());
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
+    // Calculate an expected update listener paylaod
+    expect(onUpdate.mock.calls).toEqual([
+      [computeUpdateListenerPayload(editor, prevEditorState, false)],
+    ]);
   });
 
   it('can use discrete after a non-discrete update to flush the entire queue', () => {

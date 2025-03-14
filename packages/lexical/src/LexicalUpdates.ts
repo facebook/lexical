@@ -18,10 +18,10 @@ import {
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
-  Listener,
   MutatedNodes,
   RegisteredNodes,
   resetEditor,
+  SetListeners,
   Transform,
 } from './LexicalEditor';
 import {
@@ -685,6 +685,7 @@ export function $commitPendingUpdates(
     dirtyElements,
     dirtyLeaves,
     editorState: pendingEditorState,
+    mutatedNodes,
     normalizedNodes,
     prevEditorState: recoveryEditorState || currentEditorState,
     tags,
@@ -729,19 +730,20 @@ function triggerMutationListeners(
   }
 }
 
-export function triggerListeners(
-  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'editable',
+export function triggerListeners<T extends keyof SetListeners>(
+  type: T,
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
-  ...payload: unknown[]
+  ...payload: SetListeners[T]
 ): void {
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
 
   try {
-    const listeners = Array.from<Listener>(editor._listeners[type]);
+    const listeners = Array.from(
+      editor._listeners[type] as Set<(...args: SetListeners[T]) => void>,
+    );
     for (let i = 0; i < listeners.length; i++) {
-      // @ts-ignore
       listeners[i].apply(null, payload);
     }
   } finally {

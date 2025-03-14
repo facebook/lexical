@@ -7,7 +7,7 @@ and JSON serialization.
 ## Stability
 
 🧪 This API is experimental, and may evolve without a long deprecation
-period. See also [Capabilities](#capabilities) for nodes on what it
+period. See also [Capabilities](#capabilities) for notes on what it
 can and can not do out of the box today.
 
 ## Use Case
@@ -70,7 +70,7 @@ API documentation for more details, there are other optional settings
 that you may want to define particularly if the value is not a primitive
 value such as boolean, string, number, null, or undefined.
 
-::: tip
+:::tip
 
 We recommend building a library of small reusable parse functions for the data
 types that you use, or a library that can be used to generate them such as

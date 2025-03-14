@@ -18,12 +18,19 @@ import {
 } from '@ark-ui/react/tree-view';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
+  $getCaretRange,
+  $getChildCaretOrSelf,
   $getNodeByKey,
+  $getSelection,
+  $getSiblingCaret,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $normalizeCaret,
+  $setSelectionFromCaretRange,
   type EditorState,
   LexicalEditor,
   LexicalNode,
@@ -46,6 +53,7 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from 'react';
 
@@ -192,22 +200,32 @@ function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {
   }, [id, node, indexPathString]);
 }
 
-function useSelectedNodeKey() {
-  const api = useNodeTreeViewContext();
-  return api.selectedValue.at(0) || 'root';
+function getSelectedNodeKey(
+  api: UseTreeViewReturn<NodeKey>,
+): undefined | NodeKey {
+  return api.selectedValue.at(0);
 }
 
-interface SelectedNodeState {
-  nodeKey: NodeKey;
+interface SelectedNodeStateAction {
+  panelNodeKey: undefined | NodeKey;
   editorState: EditorState;
-  node: LexicalNode | null;
+}
+interface SelectedNodeState extends SelectedNodeStateAction {
+  panelNodeKey: NodeKey;
+  selectionNodeKey: NodeKey | null;
+  panelNode: LexicalNode | null;
   cached: React.ReactNode;
+}
+interface InitialSelectedNodeState extends SelectedNodeStateAction {
+  selectionNodeKey?: undefined;
+  panelNode?: undefined;
+  cached?: undefined;
 }
 
 function LexicalTextSelectionPaneContents({
-  node,
-  nodeKey,
-}: Pick<SelectedNodeState, 'nodeKey' | 'node' | 'editorState'>) {
+  panelNode: node,
+  panelNodeKey: nodeKey,
+}: Pick<SelectedNodeState, 'panelNodeKey' | 'panelNode' | 'editorState'>) {
   if (node === null) {
     return <span>Node {nodeKey} no longer in the document</span>;
   }
@@ -237,57 +255,93 @@ function LexicalTextSelectionPaneContents({
   );
 }
 
-function initTextSelectionPaneReducer(
-  action:
-    | SelectedNodeState
-    | Pick<SelectedNodeState, 'nodeKey' | 'editorState'>,
-): SelectedNodeState {
-  const node = action.editorState.read(() => $getNodeByKey(action.nodeKey));
-  if ('node' in action && action.node === node) {
-    return action;
-  }
-  return {
-    ...action,
-    cached: (
-      <LexicalTextSelectionPaneContents
-        node={node}
-        nodeKey={action.nodeKey}
-        editorState={action.editorState}
-      />
-    ),
-    node,
-  };
+function initTextSelectionPaneReducer(action: SelectedNodeStateAction) {
+  return textSelectionPaneReducer(action, action);
 }
 
 function textSelectionPaneReducer(
-  state: SelectedNodeState,
-  action: Pick<SelectedNodeState, 'nodeKey' | 'editorState'>,
+  state: InitialSelectedNodeState | SelectedNodeState,
+  action: SelectedNodeStateAction,
 ): SelectedNodeState {
-  if (state.nodeKey === action.nodeKey) {
-    return state.editorState === action.editorState
-      ? state
-      : initTextSelectionPaneReducer({...state, ...action});
-  }
-  return initTextSelectionPaneReducer(action);
+  return action.editorState.read(() => {
+    const selection = $getSelection();
+    const selectionNodeKey = $isRangeSelection(selection)
+      ? selection.focus.key
+      : null;
+    const {
+      // selectionNodeKey: prevSelectionNodeKey = null,
+      panelNode: prevPanelNode = null,
+      cached: prevCached = null,
+    } = state;
+    let panelNodeKey = selectionNodeKey || action.panelNodeKey;
+    if (selectionNodeKey) {
+      panelNodeKey = selectionNodeKey;
+    } else if (!panelNodeKey) {
+      panelNodeKey = 'root';
+    }
+    const panelNode = $getNodeByKey(panelNodeKey);
+    if (panelNode === prevPanelNode && state.cached) {
+      return state;
+    }
+    const cached =
+      panelNode === prevPanelNode && prevCached ? (
+        prevCached
+      ) : (
+        <LexicalTextSelectionPaneContents
+          panelNode={panelNode}
+          panelNodeKey={panelNodeKey}
+          editorState={action.editorState}
+        />
+      );
+    return {...action, cached, panelNode, panelNodeKey, selectionNodeKey};
+  });
 }
 
 function LexicalTextSelectionPane() {
-  const nodeKey = useSelectedNodeKey();
   const editorState = useEditorState();
+  const api = useNodeTreeViewContext();
+  const panelNodeKey = getSelectedNodeKey(api);
   const [state, dispatch] = useReducer(
     textSelectionPaneReducer,
-    {editorState, nodeKey},
+    {editorState, panelNodeKey},
     initTextSelectionPaneReducer,
   );
   useEffect(() => {
-    dispatch({editorState, nodeKey});
-  }, [nodeKey, editorState]);
+    dispatch({editorState, panelNodeKey});
+  }, [panelNodeKey, editorState]);
   return state.cached || null;
 }
 
 function LexicalTreeView() {
   const collection = useEditorCollection();
-  const treeView = useTreeView({collection});
+  const [editor] = useLexicalComposerContext();
+  const editorRef = useRef(editor);
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
+  const treeView = useTreeView({
+    collection,
+    onSelectionChange: (details) => {
+      editorRef.current.update(() => {
+        if (!details.focusedValue) {
+          return;
+        }
+        const selection = $getSelection();
+        const focusNode = $getNodeByKey(details.focusedValue);
+        if (
+          focusNode &&
+          (!selection ||
+            ($isRangeSelection(selection) &&
+              selection.focus.key !== focusNode.getKey()))
+        ) {
+          const caret = $normalizeCaret(
+            $getChildCaretOrSelf($getSiblingCaret(focusNode, 'next')),
+          );
+          $setSelectionFromCaretRange($getCaretRange(caret, caret));
+        }
+      });
+    },
+  });
   const splitter = useSplitter({
     defaultSize: [
       {id: 'tree', size: 50},

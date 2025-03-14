@@ -818,10 +818,10 @@ declare export function $isElementNode(
 /**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot<T: HTMLElement> {
-  element: HTMLElement;
-  before: Node | null;
-  after: Node | null;
+declare export class ElementDOMSlot<+T: HTMLElement> {
+  +element: HTMLElement;
+  +before: Node | null;
+  +after: Node | null;
   constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
   withBefore(before: Node | null | void): ElementDOMSlot<T>;
   withAfter(after: Node | null | void): ElementDOMSlot<T>;

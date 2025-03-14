@@ -84,9 +84,9 @@ export interface ElementNode {
  * A utility class for managing the DOM children of an ElementNode
  */
 export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
-  element: T;
-  before: Node | null;
-  after: Node | null;
+  readonly element: T;
+  readonly before: Node | null;
+  readonly after: Node | null;
   constructor(
     /** The element returned by createDOM */
     element: T,

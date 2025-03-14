@@ -805,10 +805,10 @@ function TableCellActionMenuContainer({
     (tableCellParentNodeDOM: HTMLElement): boolean => {
       // Check if the cell is overflowed by checking the element directly
       const isOverflowed =
-        (tableCellParentNodeDOM as HTMLElement).scrollWidth >
-          (tableCellParentNodeDOM as HTMLElement).clientWidth ||
-        (tableCellParentNodeDOM as HTMLElement).scrollHeight >
-          (tableCellParentNodeDOM as HTMLElement).clientHeight;
+        tableCellParentNodeDOM.scrollWidth >
+          tableCellParentNodeDOM.clientWidth ||
+        tableCellParentNodeDOM.scrollHeight >
+          tableCellParentNodeDOM.clientHeight;
 
       // Check if the cell is within the visible bounds of its scrollable container
       const scrollableContainer = tableCellParentNodeDOM.closest(

@@ -809,7 +809,7 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
-  getDOMSlot(dom: HTMLElement): ElementDOMSlot;
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
@@ -818,14 +818,14 @@ declare export function $isElementNode(
 /**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot {
-  element: HTMLElement;
-  before: Node | null;
-  after: Node | null;
+declare export class ElementDOMSlot<+T: HTMLElement> {
+  +element: HTMLElement;
+  +before: Node | null;
+  +after: Node | null;
   constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
-  withBefore(before: Node | null | void): ElementDOMSlot;
-  withAfter(after: Node | null | void): ElementDOMSlot;
-  withElement(element: HTMLElement): ElementDOMSlot;
+  withBefore(before: Node | null | void): ElementDOMSlot<T>;
+  withAfter(after: Node | null | void): ElementDOMSlot<T>;
+  withElement<ElementType: HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   insertChild(dom: Node): this;
   removeChild(dom: Node): this;
   replaceChild(dom: Node, prevDom: Node): this;

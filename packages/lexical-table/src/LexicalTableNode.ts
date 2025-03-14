@@ -41,6 +41,7 @@ import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
+  isHTMLTableElement,
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
 
@@ -55,7 +56,7 @@ export type SerializedTableNode = Spread<
 >;
 
 function updateColgroup(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   colCount: number,
   colWidths?: number[] | readonly number[],
@@ -77,7 +78,7 @@ function updateColgroup(
 }
 
 function setRowStriping(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   rowStriping: boolean,
 ): void {
@@ -91,7 +92,7 @@ function setRowStriping(
 }
 
 function setFrozenColumns(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   frozenColumnCount: number,
 ): void {
@@ -105,7 +106,7 @@ function setFrozenColumns(
 }
 
 function setFrozenRows(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   frozenRowCount: number,
 ): void {
@@ -119,7 +120,7 @@ function setFrozenRows(
 }
 
 function alignTableElement(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   formatType: ElementFormatType,
 ): void {
@@ -249,16 +250,17 @@ export class TableNode extends ElementNode {
     return destination === 'html';
   }
 
-  getDOMSlot(element: HTMLElement): ElementDOMSlot {
-    const tableElement =
-      (element.nodeName !== 'TABLE' && element.querySelector('table')) ||
-      element;
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLTableElement> {
+    const tableElement = !isHTMLTableElement(element)
+      ? element.querySelector('table')
+      : element;
     invariant(
-      tableElement.nodeName === 'TABLE',
+      isHTMLTableElement(tableElement),
       'TableNode.getDOMSlot: createDOM() did not return a table',
     );
     return super
-      .getDOMSlot(tableElement)
+      .getDOMSlot(element)
+      .withElement(tableElement)
       .withAfter(tableElement.querySelector('colgroup'));
   }
 
@@ -269,25 +271,9 @@ export class TableNode extends ElementNode {
     }
     const colGroup = document.createElement('colgroup');
     tableElement.appendChild(colGroup);
-    updateColgroup(
-      tableElement,
-      config,
-      this.getColumnCount(),
-      this.getColWidths(),
-    );
     setDOMUnmanaged(colGroup);
-
     addClassNamesToElement(tableElement, config.theme.table);
-    alignTableElement(tableElement, config, this.getFormatType());
-    if (this.__frozenColumnCount) {
-      setFrozenColumns(tableElement, config, this.__frozenColumnCount);
-    }
-    if (this.__frozenRowCount) {
-      setFrozenRows(tableElement, config, this.__frozenRowCount);
-    }
-    if (this.__rowStriping) {
-      setRowStriping(tableElement, config, true);
-    }
+    this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {
       const wrapperElement = document.createElement('div');
       const classes = config.theme.tableScrollableWrapper;
@@ -299,26 +285,39 @@ export class TableNode extends ElementNode {
       wrapperElement.appendChild(tableElement);
       return wrapperElement;
     }
-
     return tableElement;
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (prevNode.__rowStriping !== this.__rowStriping) {
-      setRowStriping(dom, config, this.__rowStriping);
-    }
-    if (prevNode.__frozenColumnCount !== this.__frozenColumnCount) {
-      setFrozenColumns(dom, config, this.__frozenColumnCount);
-    }
-    if (prevNode.__frozenRowCount !== this.__frozenRowCount) {
-      setFrozenRows(dom, config, this.__frozenRowCount);
-    }
-    updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
-    const tableElement = this.getDOMSlot(dom).element;
-    if (prevNode.__style !== this.__style) {
+  updateTableElement(
+    prevNode: this | null,
+    tableElement: HTMLTableElement,
+    config: EditorConfig,
+  ): void {
+    if (this.__style !== (prevNode ? prevNode.__style : '')) {
       tableElement.style.cssText = this.__style;
     }
+    if (this.__rowStriping !== (prevNode ? prevNode.__rowStriping : false)) {
+      setRowStriping(tableElement, config, this.__rowStriping);
+    }
+    if (
+      this.__frozenColumnCount !== (prevNode ? prevNode.__frozenColumnCount : 0)
+    ) {
+      setFrozenColumns(tableElement, config, this.__frozenColumnCount);
+    }
+    if (this.__frozenRowCount !== (prevNode ? prevNode.__frozenRowCount : 0)) {
+      setFrozenRows(tableElement, config, this.__frozenRowCount);
+    }
+    updateColgroup(
+      tableElement,
+      config,
+      this.getColumnCount(),
+      this.getColWidths(),
+    );
     alignTableElement(tableElement, config, this.getFormatType());
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    this.updateTableElement(prevNode, this.getDOMSlot(dom).element, config);
     return false;
   }
 
@@ -329,20 +328,14 @@ export class TableNode extends ElementNode {
       after: (tableElement) => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
-          if (this.__format) {
-            alignTableElement(
-              tableElement as HTMLElement,
-              editor._config,
-              this.getFormatType(),
-            );
-          }
         }
-        if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {
+        if (!isHTMLTableElement(tableElement) && isHTMLElement(tableElement)) {
           tableElement = tableElement.querySelector('table');
         }
-        if (!isHTMLElement(tableElement)) {
+        if (!isHTMLTableElement(tableElement)) {
           return null;
         }
+        alignTableElement(tableElement, editor._config, this.getFormatType());
 
         // Scan the table map to build a map of table cell key to the columns it needs
         const [tableMap] = $computeTableMapSkipCellCheck(this, null, null);
@@ -404,7 +397,7 @@ export class TableNode extends ElementNode {
         return tableElement;
       },
       element:
-        isHTMLElement(element) && element.nodeName !== 'TABLE'
+        !isHTMLTableElement(element) && isHTMLElement(element)
           ? element.querySelector('table')
           : element,
     };

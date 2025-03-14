@@ -387,10 +387,12 @@ function reconcileBlockDirection(
         classList.remove(...previousDirectionTheme);
       }
 
-      if (
+      const nodeDirection =
         direction === null ||
         (hasEmptyDirectionedTextContent && direction === 'ltr')
-      ) {
+          ? null
+          : direction;
+      if (nodeDirection === null) {
         // Remove direction
         dom.removeAttribute('dir');
       } else {
@@ -408,12 +410,12 @@ function reconcileBlockDirection(
         }
 
         // Update direction
-        dom.dir = direction;
+        dom.dir = nodeDirection;
       }
 
       if (!activeEditorStateReadOnly) {
         const writableNode = element.getWritable();
-        writableNode.__dir = direction;
+        writableNode.__dir = nodeDirection;
       }
     }
 

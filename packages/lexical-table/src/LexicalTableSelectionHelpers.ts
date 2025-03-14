@@ -72,6 +72,7 @@ import {
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
   isDOMNode,
+  isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -110,6 +111,10 @@ const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
 
+export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
+  return isHTMLElement(el) && el.nodeName === 'TABLE';
+}
+
 export function getTableElement<T extends HTMLElement | null>(
   tableNode: TableNode,
   dom: T,
@@ -118,7 +123,7 @@ export function getTableElement<T extends HTMLElement | null>(
     return dom as T & null;
   }
   const element = (
-    dom.nodeName === 'TABLE' ? dom : tableNode.getDOMSlot(dom).element
+    isHTMLTableElement(dom) ? dom : tableNode.getDOMSlot(dom).element
   ) as HTMLTableElementWithWithTableSelectionState;
   invariant(
     element.nodeName === 'TABLE',

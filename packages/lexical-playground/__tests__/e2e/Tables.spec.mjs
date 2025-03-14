@@ -6170,7 +6170,7 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(`Table action menu is hidden when cell overflows due to column resize`, async ({
+  test(`Table action menu is hidden when cell overflows`, async ({
     page,
     isPlainText,
     isCollab,

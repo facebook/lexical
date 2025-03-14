@@ -200,3 +200,9 @@ Future:
 - Does not yet support direct integration with Yjs, e.g.
   you can not store a Y.Map as a NodeState value
   (see [#7293](https://github.com/facebook/lexical/issues/7293))
+- There isn't yet an easy way to listen for updates to NodeState
+  without registering listeners for every class
+  (see [#7321](https://github.com/facebook/lexical/pull/7321))
+- Similarly, there isn't the equivalent of a node transform for
+  NodeState. Transforms must be registered on individual node
+  classes.

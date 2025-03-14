@@ -18,6 +18,7 @@ import {
 } from '@ark-ui/react/tree-view';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
+  $addUpdateTag,
   $getCaretRange,
   $getChildCaretOrSelf,
   $getNodeByKey,
@@ -57,7 +58,12 @@ import React, {
   useState,
 } from 'react';
 
-import {getStyleObjectDirect} from '../styleState';
+import {
+  $setStyleProperty,
+  getStyleObjectDirect,
+  StyleObject,
+  styleObjectToArray,
+} from '../styleState';
 
 const EditorStateContext = createContext<undefined | EditorState>(undefined);
 function useEditorState() {
@@ -222,13 +228,11 @@ interface InitialSelectedNodeState extends SelectedNodeStateAction {
   cached?: undefined;
 }
 
-function LexicalTextSelectionPaneContents({
-  panelNode: node,
-  panelNodeKey: nodeKey,
-}: Pick<SelectedNodeState, 'panelNodeKey' | 'panelNode' | 'editorState'>) {
-  if (node === null) {
-    return <span>Node {nodeKey} no longer in the document</span>;
-  }
+function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
+  const [editor] = useLexicalComposerContext();
+  const [registeredNodes] = useState(
+    () => new Map<keyof StyleObject, [HTMLDivElement, AbortController]>(),
+  );
   const styles = getStyleObjectDirect(node);
   return (
     <div>
@@ -241,14 +245,48 @@ function LexicalTextSelectionPaneContents({
           </tr>
         </thead>
         <tbody>
-          {Object.entries(styles).map(([k, v]) => {
-            return (
-              <tr key={k}>
-                <td style={{textAlign: 'left'}}>{k}</td>
-                <td style={{textAlign: 'left'}}>{v}</td>
-              </tr>
-            );
-          })}
+          {styleObjectToArray(styles).map(([k, v]) => (
+            <tr key={k}>
+              <td style={{textAlign: 'left'}}>{k}</td>
+              <td style={{textAlign: 'left'}}>
+                <div
+                  style={{padding: '4px'}}
+                  contentEditable="plaintext-only"
+                  ref={(el) => {
+                    const ref = registeredNodes.get(k);
+                    if (el === null) {
+                      if (ref) {
+                        ref[1].abort();
+                      }
+                      registeredNodes.delete(k);
+                      return;
+                    }
+                    if (document.activeElement !== el) {
+                      el.textContent = v || '';
+                    }
+                    if (!ref) {
+                      const abortController = new AbortController();
+                      el.addEventListener(
+                        'input',
+                        () => {
+                          editor.update(() => {
+                            $addUpdateTag('skip-dom-selection');
+                            $setStyleProperty(
+                              node,
+                              k,
+                              el.textContent || undefined,
+                            );
+                          });
+                        },
+                        {signal: abortController.signal},
+                      );
+                      registeredNodes.set(k, [el, abortController]);
+                    }
+                  }}
+                />
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -286,12 +324,10 @@ function textSelectionPaneReducer(
     const cached =
       panelNode === prevPanelNode && prevCached ? (
         prevCached
+      ) : panelNode === null ? (
+        <span>Node {panelNodeKey} no longer in the document</span>
       ) : (
-        <LexicalTextSelectionPaneContents
-          panelNode={panelNode}
-          panelNodeKey={panelNodeKey}
-          editorState={action.editorState}
-        />
+        <LexicalTextSelectionPaneContents key={panelNodeKey} node={panelNode} />
       );
     return {...action, cached, panelNode, panelNodeKey, selectionNodeKey};
   });

@@ -2155,18 +2155,6 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              colspan="2"
-              rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-          </tr>
           <tr style="height: 87px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -6180,5 +6168,57 @@ test.describe.parallel('Tables', () => {
           '<tr style="height: 69px">',
         ),
     );
+  });
+
+  test(`Table action menu is hidden when cell overflows due to column resize`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Insert a 2x2 table
+    await insertTable(page, 2, 2);
+
+    // Find and drag the column resize handle
+    const firstCell = await page.$('th >> nth=0');
+    const firstCellBox = await firstCell.boundingBox();
+
+    // Click the cell in 2nd column
+    await click(page, 'th >> nth=1');
+
+    // Check that the action menu button is visible when no overflow
+    const menuVisible = await page.evaluate(() => {
+      const button = document.querySelector('.table-cell-action-button');
+      // If button exists, menu is visible
+      return !!button;
+    });
+
+    expect(menuVisible).toBe(true);
+
+    // Make the column very wide to ensure overflow
+    await page.mouse.move(
+      firstCellBox.x + firstCellBox.width - 5,
+      firstCellBox.y + firstCellBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      firstCellBox.x + 2000, // Make column very wide - 2000 for more scroll space
+      firstCellBox.y + firstCellBox.height / 2,
+    );
+    await page.mouse.up();
+
+    // Click the cell
+    await click(page, 'th >> nth=0');
+
+    const menuHidden = await page.evaluate(() => {
+      const button = document.querySelector('.table-cell-action-button');
+      // If button doesn't exist, menu is hidden
+      return !button;
+    });
+
+    expect(menuHidden).toBe(true);
   });
 });

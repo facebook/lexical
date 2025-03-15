@@ -144,6 +144,7 @@ export type {
   LexicalNodeReplacement,
   MutationListener,
   NodeMutation,
+  RootListener,
   SerializedEditor,
   Spread,
   Transform,

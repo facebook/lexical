@@ -24,6 +24,7 @@ import {
 import {
   DragEvent as ReactDragEvent,
   ReactNode,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -269,12 +270,23 @@ function useDraggableBlockMenu(
   menuComponent: ReactNode,
   targetLineComponent: ReactNode,
   isOnMenu: (element: HTMLElement) => boolean,
+  onElementChanged?: (element: HTMLElement | null) => void,
 ): JSX.Element {
   const scrollerElem = anchorElem.parentElement;
 
   const isDraggingBlockRef = useRef<boolean>(false);
-  const [draggableBlockElem, setDraggableBlockElem] =
+  const [draggableBlockElem, setDraggableBlockElemState] =
     useState<HTMLElement | null>(null);
+
+  const setDraggableBlockElem = useCallback(
+    (elem: HTMLElement | null) => {
+      setDraggableBlockElemState(elem);
+      if (onElementChanged) {
+        onElementChanged(elem);
+      }
+    },
+    [onElementChanged],
+  );
 
   useEffect(() => {
     function onMouseMove(event: MouseEvent) {
@@ -308,7 +320,7 @@ function useDraggableBlockMenu(
         scrollerElem.removeEventListener('mouseleave', onMouseLeave);
       }
     };
-  }, [scrollerElem, anchorElem, editor, isOnMenu]);
+  }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
 
   useEffect(() => {
     if (menuRef.current) {
@@ -401,7 +413,7 @@ function useDraggableBlockMenu(
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [anchorElem, editor, targetLineRef]);
+  }, [anchorElem, editor, targetLineRef, setDraggableBlockElem]);
 
   function onDragStart(event: ReactDragEvent<HTMLDivElement>): void {
     const dataTransfer = event.dataTransfer;
@@ -442,6 +454,7 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
   menuComponent,
   targetLineComponent,
   isOnMenu,
+  onElementChanged,
 }: {
   anchorElem?: HTMLElement;
   menuRef: React.RefObject<HTMLElement>;
@@ -449,6 +462,7 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
   menuComponent: ReactNode;
   targetLineComponent: ReactNode;
   isOnMenu: (element: HTMLElement) => boolean;
+  onElementChanged?: (element: HTMLElement | null) => void;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   return useDraggableBlockMenu(
@@ -460,5 +474,6 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
     menuComponent,
     targetLineComponent,
     isOnMenu,
+    onElementChanged,
   );
 }

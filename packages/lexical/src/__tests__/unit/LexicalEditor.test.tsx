@@ -9,6 +9,12 @@
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -76,6 +82,8 @@ import {
   $createTestInlineElementNode,
   createTestEditor,
   createTestHeadlessEditor,
+  expectHtmlToBeEqual,
+  html,
   TestComposer,
   TestTextNode,
 } from '../utils';
@@ -206,11 +214,14 @@ describe('LexicalEditor tests', () => {
 
   let editor: LexicalEditor;
 
-  function init(onError?: (error: Error) => void) {
+  function init(
+    onError?: (error: Error) => void,
+    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+  ) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
-      editor = useLexicalEditor(ref, onError);
+      editor = useLexicalEditor(ref, onError, nodes);
 
       return <div ref={ref} contentEditable={true} />;
     }
@@ -859,6 +870,86 @@ describe('LexicalEditor tests', () => {
 
     removeParagraphTransform();
     removeTextNodeTransform();
+  });
+
+  it('transforms do not discard unintentional dirtyElements', () => {
+    // See https://github.com/facebook/lexical/issues/7333
+    // We are assuming that ListNode automatically registers a transform
+    // to merge adjacent lists
+    init(undefined, [ListItemNode, ListNode]);
+    function $createNestedListNode(text: string) {
+      return $createListNode('bullet').append(
+        $createListItemNode().append(
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode(text)),
+          ),
+        ),
+      );
+    }
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createNestedListNode('1'),
+            $createParagraphNode(),
+            $createNestedListNode('2'),
+          );
+      },
+      {discrete: true},
+    );
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <div
+          contenteditable="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul>
+            <li value="1">
+              <ul>
+                <li value="1"><span data-lexical-text="true">1</span></li>
+              </ul>
+            </li>
+          </ul>
+          <p><br /></p>
+          <ul>
+            <li value="1">
+              <ul>
+                <li value="1"><span data-lexical-text="true">2</span></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      `,
+    );
+    editor.update(
+      () => {
+        $getRoot()
+          .getChildren()
+          .filter($isParagraphNode)
+          .forEach((node) => node.remove());
+      },
+      {discrete: true},
+    );
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <div
+          contenteditable="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul>
+            <li value="1">
+              <ul>
+                <li value="1"><span data-lexical-text="true">1</span></li>
+                <li value="2"><span data-lexical-text="true">2</span></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      `,
+    );
   });
 
   describe('transforms on siblings', () => {
@@ -2997,10 +3088,8 @@ describe('LexicalEditor tests', () => {
       newEditor.setRootElement(container);
 
       newEditor.update(() => {
-        const html = '<figure></figure>';
-
         const parser = new DOMParser();
-        const dom = parser.parseFromString(html, 'text/html');
+        const dom = parser.parseFromString('<figure></figure>', 'text/html');
         const node = $generateNodesFromDOM(newEditor, dom)[0];
 
         expect(node).toEqual({

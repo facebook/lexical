@@ -56,7 +56,7 @@ function onCopyForPlainText(
     if (event !== null) {
       const clipboardData = objectKlassEquals(event, KeyboardEvent)
         ? null
-        : (event as ClipboardEvent).clipboardData;
+        : event.clipboardData;
       const selection = $getSelection();
 
       if (selection !== null && clipboardData != null) {

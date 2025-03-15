@@ -453,7 +453,7 @@ function onPasteForRichText(
         objectKlassEquals(event, InputEvent) ||
         objectKlassEquals(event, KeyboardEvent)
           ? null
-          : (event as ClipboardEvent).clipboardData;
+          : event.clipboardData;
       if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
@@ -470,7 +470,7 @@ async function onCutForRichText(
 ): Promise<void> {
   await copyToClipboard(
     editor,
-    objectKlassEquals(event, ClipboardEvent) ? (event as ClipboardEvent) : null,
+    objectKlassEquals(event, ClipboardEvent) ? event : null,
   );
   editor.update(() => {
     const selection = $getSelection();
@@ -490,9 +490,9 @@ export function eventFiles(
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
   if (objectKlassEquals(event, DragEvent)) {
-    dataTransfer = (event as DragEvent).dataTransfer;
+    dataTransfer = event.dataTransfer;
   } else if (objectKlassEquals(event, ClipboardEvent)) {
-    dataTransfer = (event as ClipboardEvent).clipboardData;
+    dataTransfer = event.clipboardData;
   }
 
   if (dataTransfer === null) {
@@ -1052,9 +1052,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
       (event) => {
         copyToClipboard(
           editor,
-          objectKlassEquals(event, ClipboardEvent)
-            ? (event as ClipboardEvent)
-            : null,
+          objectKlassEquals(event, ClipboardEvent) ? event : null,
         );
         return true;
       },

@@ -537,9 +537,7 @@ export function applyTableHandlers(
           // before we delete it
           void copyToClipboard(
             editor,
-            objectKlassEquals(event, ClipboardEvent)
-              ? (event as ClipboardEvent)
-              : null,
+            objectKlassEquals(event, ClipboardEvent) ? event : null,
             $getClipboardDataFromSelection(selection),
           );
           const intercepted = $deleteCellHandler(event);

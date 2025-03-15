@@ -56,7 +56,7 @@ function onCopyForPlainText(
     if (event !== null) {
       const clipboardData = objectKlassEquals(event, KeyboardEvent)
         ? null
-        : (event as ClipboardEvent).clipboardData;
+        : event.clipboardData;
       const selection = $getSelection();
 
       if (selection !== null && clipboardData != null) {
@@ -81,7 +81,9 @@ function onPasteForPlainText(
   editor.update(
     () => {
       const selection = $getSelection();
-      const {clipboardData} = event as ClipboardEvent;
+      const clipboardData = objectKlassEquals(event, ClipboardEvent)
+        ? event.clipboardData
+        : null;
       if (clipboardData != null && $isRangeSelection(selection)) {
         $insertDataTransferForPlainText(clipboardData, selection);
       }

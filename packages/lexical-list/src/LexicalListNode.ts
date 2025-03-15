@@ -33,8 +33,8 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {
-  mergeNextSiblingListIfSameType,
-  updateChildrenListItemValue,
+  $mergeNextSiblingListIfSameType,
+  $updateChildrenListItemValue,
 } from './formatList';
 import {$getListDepth, $wrapInListItem} from './utils';
 
@@ -132,8 +132,8 @@ export class ListNode extends ElementNode {
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
       invariant($isListNode(node), 'node is not a ListNode');
-      mergeNextSiblingListIfSameType(node);
-      updateChildrenListItemValue(node);
+      $mergeNextSiblingListIfSameType(node);
+      $updateChildrenListItemValue(node);
     };
   }
 

@@ -41,8 +41,8 @@ import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
-import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {$handleIndent, $handleOutdent, $mergeLists} from './formatList';
+import {$isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -289,10 +289,10 @@ export class ListItemNode extends ElementNode {
     if (
       prevSibling &&
       nextSibling &&
-      isNestedListNode(prevSibling) &&
-      isNestedListNode(nextSibling)
+      $isNestedListNode(prevSibling) &&
+      $isNestedListNode(nextSibling)
     ) {
-      mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
+      $mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
     }
   }

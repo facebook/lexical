@@ -36,8 +36,8 @@ import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
   $getTopListNode,
+  $isNestedListNode,
   $removeHighestEmptyListParent,
-  isNestedListNode,
 } from './utils';
 
 function $isSelectingEmptyListItem(
@@ -204,26 +204,13 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
  * @param list1 - The first list to be merged.
  * @param list2 - The second list to be merged.
  */
-export function mergeLists(list1: ListNode, list2: ListNode): void {
-  const listItem1 = list1.getLastChild();
-  const listItem2 = list2.getFirstChild();
-
-  if (
-    listItem1 &&
-    listItem2 &&
-    isNestedListNode(listItem1) &&
-    isNestedListNode(listItem2)
-  ) {
-    mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
-    listItem2.remove();
-  }
-
-  const toMerge = list2.getChildren();
-  if (toMerge.length > 0) {
-    list1.append(...toMerge);
-  }
-
+export function $mergeLists(list1: ListNode, list2: ListNode): void {
+  const lastChild = list1.getLastChild();
+  list1.splice(list1.getChildrenSize(), 0, list2.getChildren());
   list2.remove();
+  if (lastChild) {
+    $mergeNestedLists(lastChild, lastChild.getNextSibling());
+  }
 }
 
 /**
@@ -303,7 +290,7 @@ export function $removeList(): void {
  * parent does not have a list type of 'check'.
  * @param list - The list whose children are updated.
  */
-export function updateChildrenListItemValue(list: ListNode): void {
+export function $updateChildrenListItemValue(list: ListNode): void {
   const isNotChecklist = list.getListType() !== 'check';
   let value = list.getStart();
   for (const child of list.getChildren()) {
@@ -326,14 +313,32 @@ export function updateChildrenListItemValue(list: ListNode): void {
  * <ul> will merge with <ul>, but NOT <ul> with <ol>.
  * @param list - The list whose next sibling should be potentially merged
  */
-export function mergeNextSiblingListIfSameType(list: ListNode): void {
-  const nextSibling = list.getNextSibling();
-  if (
-    $isListNode(nextSibling) &&
-    list.getListType() === nextSibling.getListType()
-  ) {
-    mergeLists(list, nextSibling);
+export function $mergeNextSiblingListIfSameType(list: ListNode): void {
+  $mergeListsIfSameType(list, list.getNextSibling());
+}
+
+export function $mergeListsIfSameType(
+  list: ListNode,
+  sibling: null | LexicalNode,
+): boolean {
+  if ($isListNode(sibling) && list.getType() === sibling.getType()) {
+    $mergeLists(list, sibling);
+    return true;
   }
+  return false;
+}
+
+export function $mergeNestedLists(
+  node1: null | LexicalNode,
+  node2: null | LexicalNode,
+): boolean {
+  if ($isNestedListNode(node1) && $isNestedListNode(node2)) {
+    if ($mergeListsIfSameType(node1.getFirstChild(), node2.getFirstChild())) {
+      node2.remove();
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -346,20 +351,17 @@ export function $handleIndent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
   const removed = new Set<NodeKey>();
 
-  if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
+  if ($isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
     return;
   }
 
   const parent = listItemNode.getParent();
 
-  // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
-  const nextSibling =
-    listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
-  const previousSibling =
-    listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
+  const nextSibling = listItemNode.getNextSibling();
+  const previousSibling = listItemNode.getPreviousSibling();
   // if there are nested lists on either side, merge them all together.
 
-  if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
+  if ($isNestedListNode(nextSibling) && $isNestedListNode(previousSibling)) {
     const innerList = previousSibling.getFirstChild();
 
     if ($isListNode(innerList)) {
@@ -373,7 +375,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         removed.add(nextSibling.getKey());
       }
     }
-  } else if (isNestedListNode(nextSibling)) {
+  } else if ($isNestedListNode(nextSibling)) {
     // if the ListItemNode is next to a nested ListNode, merge them
     const innerList = nextSibling.getFirstChild();
 
@@ -384,7 +386,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         firstChild.insertBefore(listItemNode);
       }
     }
-  } else if (isNestedListNode(previousSibling)) {
+  } else if ($isNestedListNode(previousSibling)) {
     const innerList = previousSibling.getFirstChild();
 
     if ($isListNode(innerList)) {
@@ -423,7 +425,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
 export function $handleOutdent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
 
-  if (isNestedListNode(listItemNode)) {
+  if ($isNestedListNode(listItemNode)) {
     return;
   }
   const parentList = listItemNode.getParent();

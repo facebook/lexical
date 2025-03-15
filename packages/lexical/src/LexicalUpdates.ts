@@ -308,6 +308,7 @@ function $applyAllTransforms(
     for (const currentUntransformedDirtyElement of untransformedDirtyElements) {
       const nodeKey = currentUntransformedDirtyElement[0];
       const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
+      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
       if (nodeKey !== 'root' && !intentionallyMarkedAsDirty) {
         continue;
       }
@@ -320,8 +321,6 @@ function $applyAllTransforms(
       ) {
         $applyTransforms(editor, node, transformsCache);
       }
-
-      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
     }
 
     untransformedDirtyLeaves = editor._dirtyLeaves;

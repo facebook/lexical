@@ -101,12 +101,16 @@ export function InsertTableDialog({
   }, [rows, columns]);
 
   const onClick = () => {
-    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {
-      columns,
-      rows,
-    });
+    setIsDisabled(true);
+    // Large tables can take a moment. Defer insert to render button disabled
+    setTimeout(() => {
+      activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {
+        columns,
+        rows,
+      });
 
-    onClose();
+      onClose();
+    }, 0);
   };
 
   return (

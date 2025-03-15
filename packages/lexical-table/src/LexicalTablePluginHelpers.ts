@@ -16,6 +16,7 @@ import {
 import {
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
+  $getPreviousSelection,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
@@ -60,7 +61,7 @@ function $insertTableCommandListener({
   columns,
   includeHeaders,
 }: InsertTableCommandPayload): boolean {
-  const selection = $getSelection();
+  const selection = $getSelection() || $getPreviousSelection();
   if (!selection || !$isRangeSelection(selection)) {
     return false;
   }

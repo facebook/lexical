@@ -16,7 +16,7 @@ type Props = $ReadOnly<{
   menuComponent: React.Node,
   targetLineComponent: React.Node,
   isOnMenu: (element: HTMLElement) => boolean,
-  onTargetElementChanged?: (targetElement: HTMLElement | null) => void
+  onElementChanged?: (element: HTMLElement | null) => void
 }>;
 	
 declare export function DraggableBlockPlugin_EXPERIMENTAL(

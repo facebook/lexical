@@ -35,12 +35,12 @@ import {
 import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getRoot,
   $getSelection,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   getDOMSelection,
   isDOMNode,
@@ -256,9 +256,7 @@ function TableActionMenu({
         tableNode.markDirty();
         updateTableCellNode(tableCellNode.getLatest());
       }
-
-      const rootNode = $getRoot();
-      rootNode.selectStart();
+      $setSelection(null);
     });
   }, [editor, tableCellNode]);
 

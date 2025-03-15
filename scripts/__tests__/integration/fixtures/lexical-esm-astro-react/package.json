@@ -2,6 +2,7 @@
   "name": "lexical-esm-astro-react",
   "type": "module",
   "version": "0.27.2",
+  "private": true,
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -22,6 +23,5 @@
     "react-dom": "^18.2.0",
     "typescript": "^5.4.2"
   },
-  "sideEffects": false,
-  "exports": {}
+  "sideEffects": false
 }

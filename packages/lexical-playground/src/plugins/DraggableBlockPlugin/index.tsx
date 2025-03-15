@@ -64,7 +64,7 @@ export default function DraggableBlockPlugin({
         <div ref={targetLineRef} className="draggable-block-target-line" />
       }
       isOnMenu={isOnMenu}
-      onTargetElementChanged={setDraggableElement}
+      onElementChanged={setDraggableElement}
     />
   );
 }

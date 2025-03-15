@@ -624,7 +624,7 @@ export type ObjectKlass<T> = new (...args: any[]) => T;
 export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
-): boolean {
+): object is T {
   return object !== null
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;

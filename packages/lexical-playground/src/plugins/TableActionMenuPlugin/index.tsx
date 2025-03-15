@@ -799,6 +799,36 @@ function TableCellActionMenuContainer({
 
   const [colorPickerModal, showColorPickerModal] = useModal();
 
+  const checkTableCellOverflow = useCallback(
+    (tableCellParentNodeDOM: HTMLElement): boolean => {
+      // Check if the cell is overflowed by checking the element directly
+      const isOverflowed =
+        tableCellParentNodeDOM.scrollWidth >
+          tableCellParentNodeDOM.clientWidth ||
+        tableCellParentNodeDOM.scrollHeight >
+          tableCellParentNodeDOM.clientHeight;
+
+      // Check if the cell is within the visible bounds of its scrollable container
+      const scrollableContainer = tableCellParentNodeDOM.closest(
+        '.PlaygroundEditorTheme__tableScrollableWrapper',
+      );
+      if (scrollableContainer) {
+        const containerRect = (
+          scrollableContainer as HTMLElement
+        ).getBoundingClientRect();
+        const cellRect = tableCellParentNodeDOM.getBoundingClientRect();
+
+        // Check if the cell's right edge is beyond the container's right edge
+        if (cellRect.right > containerRect.right) {
+          return true;
+        }
+      }
+
+      return isOverflowed;
+    },
+    [],
+  );
+
   const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
@@ -845,6 +875,10 @@ function TableCellActionMenuContainer({
         return disable();
       }
 
+      if (checkTableCellOverflow(tableCellParentNodeDOM)) {
+        return disable();
+      }
+
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(
         tableCellNodeFromSelection,
       );
@@ -879,6 +913,14 @@ function TableCellActionMenuContainer({
       );
       tableObserver = getTableObserverFromTableElement(tableElement);
       tableCellParentNodeDOM = editor.getElementByKey(anchorNode.getKey());
+
+      if (tableCellParentNodeDOM === null) {
+        return disable();
+      }
+
+      if (checkTableCellOverflow(tableCellParentNodeDOM)) {
+        return disable();
+      }
     } else if (!activeElement) {
       return disable();
     }
@@ -901,7 +943,7 @@ function TableCellActionMenuContainer({
       const left = tableCellRect.right - anchorRect.left;
       menu.style.transform = `translate(${left}px, ${top}px)`;
     }
-  }, [editor, anchorElem]);
+  }, [editor, anchorElem, checkTableCellOverflow]);
 
   useEffect(() => {
     // We call the $moveMenu callback every time the selection changes,

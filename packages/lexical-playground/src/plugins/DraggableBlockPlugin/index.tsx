@@ -32,7 +32,7 @@ export default function DraggableBlockPlugin({
     null,
   );
 
-  function insertBlockBefore() {
+  function insertBlock(e: React.MouseEvent) {
     if (!draggableElement || !editor) {
       return;
     }
@@ -44,7 +44,11 @@ export default function DraggableBlockPlugin({
       }
 
       const pNode = $createParagraphNode();
-      node.insertBefore(pNode);
+      if (e.metaKey || e.ctrlKey) {
+        node.insertBefore(pNode);
+      } else {
+        node.insertAfter(pNode);
+      }
       pNode.select();
     });
   }
@@ -56,7 +60,7 @@ export default function DraggableBlockPlugin({
       targetLineRef={targetLineRef}
       menuComponent={
         <div ref={menuRef} className="icon draggable-block-menu">
-          <div className="icon icon-plus" onClick={insertBlockBefore} />
+          <div className="icon icon-plus" onClick={insertBlock} />
           <div className="icon" />
         </div>
       }

@@ -43,6 +43,7 @@ import {
   $getAdjacentChildCaret,
   $getCaretRange,
   $getChildCaret,
+  $getCollapsedCaretRange,
   $getSiblingCaret,
   $getTextNodeOffset,
   $getTextPointCaret,
@@ -357,7 +358,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       $normalizeCaret(bestCandidate),
       initialRange.direction,
     );
-    return $getCaretRange(anchor, anchor);
+    return $getCollapsedCaretRange(anchor);
   }
   invariant(
     false,
@@ -609,4 +610,96 @@ export function $getAdjacentSiblingOrParentSiblingCaret<
     nextCaret = $getAdjacentChildCaret(caret);
   }
   return nextCaret && [nextCaret, depthDiff];
+}
+
+/**
+ * Get the adjacent nodes to initialCaret in the given direction.
+ *
+ * @example
+ * ```ts
+ * expect($getAdjacentNodes($getChildCaret(parent, 'next'))).toEqual(parent.getChildren());
+ * expect($getAdjacentNodes($getChildCaret(parent, 'previous'))).toEqual(parent.getChildren().reverse());
+ * expect($getAdjacentNodes($getSiblingCaret(node, 'next'))).toEqual(node.getNextSiblings());
+ * expect($getAdjacentNodes($getSiblingCaret(node, 'previous'))).toEqual(node.getPreviousSiblings().reverse());
+ * ```
+ *
+ * @param initialCaret The caret to start at (the origin will not be included)
+ * @returns An array of siblings.
+ */
+export function $getAdjacentNodes(
+  initialCaret: NodeCaret<CaretDirection>,
+): LexicalNode[] {
+  const siblings = [];
+  for (
+    let caret = initialCaret.getAdjacentCaret();
+    caret;
+    caret = caret.getAdjacentCaret()
+  ) {
+    siblings.push(caret.origin);
+  }
+  return siblings;
+}
+
+export interface SplitAtPointCaretNextOptions {
+  /** The function to create the right side of a split ElementNode */
+  $copyElementNode: (node: ElementNode) => ElementNode;
+  /** If the parent matches rootMode a split will not occur, default is 'shadowRoot' */
+  rootMode?: RootMode;
+  /** If true (default false), the parent may be split before its first child when parent.canBeEmpty() is true */
+  allowEmptyLeftSplit?: boolean;
+  /** If true (default false), the parent may be split after its last child when parent.canBeEmpty() is true */
+  allowEmptyRightSplit?: boolean;
+}
+
+/**
+ * Split a node at a PointCaret and return a NodeCaret at that point, or null if the
+ * node can't be split. This is non-recursive and will only perform at most one split.
+ *
+ * @returns The NodeCaret pointing to the location of the split (or null if a split is not possible)
+ */
+export function $splitAtPointCaretNext(
+  pointCaret: PointCaret<'next'>,
+  {
+    $copyElementNode,
+    rootMode = 'shadowRoot',
+    allowEmptyLeftSplit = false,
+    allowEmptyRightSplit = false,
+  }: SplitAtPointCaretNextOptions,
+): null | NodeCaret<'next'> {
+  if ($isTextPointCaret(pointCaret)) {
+    if (
+      pointCaret.offset === $getTextNodeOffset(pointCaret.origin, 'previous')
+    ) {
+      return $rewindSiblingCaret(pointCaret.getSiblingCaret());
+    }
+    const origin = $isExtendableTextPointCaret(pointCaret)
+      ? pointCaret.origin.splitText(pointCaret.offset)[0]
+      : pointCaret.origin;
+    invariant(
+      $isTextNode(origin),
+      '$splitTextAtPointCaretNext: splitText must return at least one TextNode',
+    );
+    return $getSiblingCaret(origin, 'next');
+  }
+  const parentCaret = pointCaret.getParentCaret(rootMode);
+  if (parentCaret) {
+    if (
+      $isChildCaret(pointCaret) &&
+      !(allowEmptyLeftSplit && parentCaret.origin.canBeEmpty())
+    ) {
+      // No split necessary, the left side would be empty
+      return $rewindSiblingCaret(parentCaret);
+    }
+    const siblings = $getAdjacentNodes(pointCaret);
+    if (
+      siblings.length > 0 ||
+      (allowEmptyRightSplit && parentCaret.origin.canBeEmpty())
+    ) {
+      // Split and insert the siblings into the new tree
+      parentCaret.insert(
+        $copyElementNode(parentCaret.origin).splice(0, 0, siblings),
+      );
+    }
+  }
+  return parentCaret;
 }

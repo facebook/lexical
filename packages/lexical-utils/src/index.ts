@@ -7,12 +7,14 @@
  */
 
 import {
+  $caretFromPoint,
   $cloneWithProperties,
+  $copyNode,
   $createParagraphNode,
   $getAdjacentChildCaret,
   $getChildCaret,
-  $getChildCaretAtIndex,
   $getChildCaretOrSelf,
+  $getCollapsedCaretRange,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
@@ -21,13 +23,13 @@ import {
   $isChildCaret,
   $isElementNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   $isSiblingCaret,
-  $isTextNode,
+  $normalizeCaret,
   $rewindSiblingCaret,
   $setSelection,
+  $setSelectionFromCaretRange,
   $setState,
-  $splitNode,
+  $splitAtPointCaretNext,
   type CaretDirection,
   type EditorState,
   ElementNode,
@@ -37,8 +39,10 @@ import {
   makeStepwiseIterator,
   type NodeCaret,
   type NodeKey,
+  PointCaret,
   RootMode,
   type SiblingCaret,
+  SplitAtPointCaretNextOptions,
   StateConfig,
   ValueOrUpdater,
 } from 'lexical';
@@ -546,53 +550,76 @@ export function $restoreEditorState(
   $setSelection(selection === null ? null : selection.clone());
 }
 
+export interface InsertNodeToNearestRootOptions {
+  /** If true (default false), do not insert an empty paragraph before the inserted node at the root */
+  skipEmptyParagraph?: boolean;
+  /** If true (default false), do not split an ElementNode even if it can be empty */
+  preventEmptyElements?: boolean;
+}
+
 /**
  * If the selected insertion area is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
  * the node will be appended there, otherwise, it will be inserted before the insertion area.
  * If there is no selection where the node is to be inserted, it will be appended after any current nodes
- * within the tree, as a child of the root node. A paragraph node will then be added after the inserted node and selected.
+ * within the tree, as a child of the root node. A paragraph node will then be added after the inserted
+ * node and selected unless skipEmptyParagraph is true.
  * @param node - The node to be inserted
+ * @param options - see {@link InsertNodeToNearestRootOptions}
  * @returns The node after its insertion
  */
-export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
+export function $insertNodeToNearestRoot<T extends LexicalNode>(
+  node: T,
+  {
+    skipEmptyParagraph = false,
+    preventEmptyElements = false,
+  }: InsertNodeToNearestRootOptions = {},
+): T {
   const selection = $getSelection() || $getPreviousSelection();
-
+  let initialCaret: undefined | PointCaret<'next'>;
   if ($isRangeSelection(selection)) {
-    const {focus} = selection;
-    const focusNode = focus.getNode();
-    const focusOffset = focus.offset;
-
-    if ($isRootOrShadowRoot(focusNode)) {
-      $getChildCaretAtIndex(focusNode, focusOffset, 'next').insert(node);
-      node.selectNext();
-    } else {
-      let splitNode: ElementNode;
-      let splitOffset: number;
-      if ($isTextNode(focusNode)) {
-        splitNode = focusNode.getParentOrThrow();
-        splitOffset = focusNode.getIndexWithinParent();
-        if (focusOffset > 0) {
-          splitOffset += 1;
-          focusNode.splitText(focusOffset);
-        }
-      } else {
-        splitNode = focusNode;
-        splitOffset = focusOffset;
-      }
-      const [, rightTree] = $splitNode(splitNode, splitOffset);
-      rightTree.insertBefore(node);
-      rightTree.selectStart();
-    }
+    initialCaret = $caretFromPoint(selection.focus, 'next');
   } else {
     if (selection != null) {
       const nodes = selection.getNodes();
-      nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
-    } else {
-      $getRoot().append(node);
+      const lastNode = nodes[nodes.length - 1];
+      if (lastNode) {
+        initialCaret = $getSiblingCaret(lastNode, 'next');
+      }
     }
-    const paragraphNode = $createParagraphNode();
-    node.insertAfter(paragraphNode);
-    paragraphNode.select();
+  }
+  const splitOptions: SplitAtPointCaretNextOptions = {
+    $copyElementNode: $copyNode,
+    allowEmptyLeftSplit: !preventEmptyElements,
+    allowEmptyRightSplit: !preventEmptyElements,
+    rootMode: 'shadowRoot',
+  };
+  let insertCaret =
+    initialCaret || $getChildCaret($getRoot(), 'previous').getFlipped();
+  for (
+    let nextCaret: null | PointCaret<'next'> = insertCaret;
+    nextCaret;
+    nextCaret = $splitAtPointCaretNext(nextCaret, splitOptions)
+  ) {
+    insertCaret = nextCaret;
+  }
+  const emptyParagraphAfter = !(
+    skipEmptyParagraph ||
+    initialCaret ||
+    node.isInline()
+  )
+    ? $createParagraphNode()
+    : null;
+  if (emptyParagraphAfter) {
+    insertCaret.insert(emptyParagraphAfter);
+    emptyParagraphAfter.select();
+  }
+  insertCaret.insert(
+    node.isInline() ? $createParagraphNode().append(node) : node,
+  );
+  if (!emptyParagraphAfter) {
+    $setSelectionFromCaretRange(
+      $getCollapsedCaretRange($normalizeCaret($getSiblingCaret(node, 'next'))),
+    );
   }
   return node.getLatest();
 }

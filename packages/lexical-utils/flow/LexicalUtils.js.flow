@@ -102,7 +102,12 @@ declare export function $restoreEditorState(
   editorState: EditorState,
 ): void;
 
-declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T): T;
+
+export interface InsertNodeToNearestRootOptions {
+  skipEmptyParagraph?: boolean;
+  preventEmptyElements?: boolean;
+}
+declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T, options?: InsertNodeToNearestRootOptions): T;
 
 declare export function $wrapNodeInElement(
   node: LexicalNode,

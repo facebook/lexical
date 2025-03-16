@@ -1122,6 +1122,15 @@ export function $extendCaretToRange<D extends CaretDirection>(
 }
 
 /**
+ * Construct a collapsed CaretRange that starts and ends at anchor.
+ */
+export function $getCollapsedCaretRange<D extends CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D> {
+  return $getCaretRange(anchor, anchor);
+}
+
+/**
  * Construct a CaretRange from anchor and focus carets pointing in the
  * same direction. In order to get the expected behavior,
  * the anchor must point towards the focus or be the same point.

@@ -1227,7 +1227,22 @@ declare export function $getCommonAncestor<
 declare export function $extendCaretToRange<D: CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D>;
-
+declare export function $getCollapsedCaretRange<D: CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D>;
 declare export function $isExtendableTextPointCaret<D: CaretDirection>(
   caret: PointCaret<D>
 ): implies caret is TextPointCaret<TextNode, D>;
+
+export interface SplitAtPointCaretNextOptions {
+  $copyElementNode?: (node: ElementNode) => ElementNode;
+  $splitTextPointCaretNext?: (
+    caret: TextPointCaret<TextNode, 'next'>,
+  ) => NodeCaret<'next'>;
+  rootMode?: RootMode;
+  $shouldSplit?: (node: ElementNode, edge: 'first' | 'last') => boolean;
+}
+declare export function $splitAtPointCaretNext(
+  pointCaret: PointCaret<'next'>,
+  options?: SplitAtPointCaretNextOptions,
+): null | NodeCaret<'next'>;

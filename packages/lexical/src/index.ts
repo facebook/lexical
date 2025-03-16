@@ -34,6 +34,7 @@ export {
   $getCaretRange,
   $getChildCaret,
   $getChildCaretOrSelf,
+  $getCollapsedCaretRange,
   $getCommonAncestor,
   $getCommonAncestorResultBranchOrder,
   $getSiblingCaret,
@@ -61,7 +62,9 @@ export {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelectionFromCaretRange,
+  $splitAtPointCaretNext,
   $updateRangeSelectionFromCaretRange,
+  type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';
 export type {PasteCommandType} from './LexicalCommands';
 export {

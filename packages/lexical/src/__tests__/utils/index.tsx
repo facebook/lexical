@@ -36,10 +36,12 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   RangeSelection,
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
+  Spread,
   TextNode,
 } from 'lexical';
 import path from 'path';
@@ -335,9 +337,13 @@ export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElem
   return new TestExcludeFromCopyElementNode();
 }
 
-export type SerializedTestDecoratorNode = SerializedLexicalNode;
+export type SerializedTestDecoratorNode = Spread<
+  SerializedLexicalNode,
+  {block?: boolean}
+>;
 
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
+  __block: boolean = false;
   static getType(): string {
     return 'test_decorator';
   }
@@ -362,6 +368,37 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
     };
   }
 
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTestDecoratorNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setIsInline(!serializedNode.block);
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__block = prevNode.__block;
+  }
+
+  isInline(): boolean {
+    return !this.getLatest().__block;
+  }
+
+  setIsInline(inline: boolean): this {
+    const self = this.getWritable();
+    self.__block = !inline;
+    return self;
+  }
+
+  exportJSON(): SerializedTestDecoratorNode {
+    const json: SerializedTestDecoratorNode = super.exportJSON();
+    if (this.__block) {
+      json.block = this.__block;
+    }
+    return json;
+  }
+
   exportDOM() {
     return {
       element: document.createElement('test-decorator'),
@@ -373,11 +410,11 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM() {
-    return document.createElement('span');
+    return document.createElement(this.__block ? 'div' : 'span');
   }
 
-  updateDOM() {
-    return false;
+  updateDOM(prevNode: this) {
+    return this.__block !== prevNode.__block;
   }
 
   decorate() {

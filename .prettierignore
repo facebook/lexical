@@ -23,4 +23,3 @@ flow-typed
 **/.docusaurus
 /playwright-report
 test-results
-/libdefs/*.js

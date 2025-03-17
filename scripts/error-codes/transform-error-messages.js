@@ -13,7 +13,7 @@ const fs = require('fs-extra');
 const ErrorMap = require('./ErrorMap');
 const evalToString = require('./evalToString');
 const helperModuleImports = require('@babel/helper-module-imports');
-const prettierSync = require('@prettier/sync');
+const prettier = require('prettier');
 
 /** @type {Map<string, ErrorMap>} */
 const errorMaps = new Map();
@@ -29,13 +29,13 @@ function getErrorMap(filepath) {
   let errorMap = errorMaps.get(filepath);
   if (!errorMap) {
     const prettierConfig = {
-      ...(prettierSync.resolveConfig('./') || {}),
+      ...(prettier.resolveConfig.sync('./') || {}),
       filepath,
     };
     errorMap = new ErrorMap(fs.readJsonSync(filepath), (newErrorMap) =>
       fs.writeFileSync(
         filepath,
-        prettierSync.format(JSON.stringify(newErrorMap), prettierConfig),
+        prettier.format(JSON.stringify(newErrorMap), prettierConfig),
       ),
     );
     errorMaps.set(filepath, errorMap);

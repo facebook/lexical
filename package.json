@@ -130,6 +130,7 @@
     "@types/jsdom": "^21.1.6",
     "@types/katex": "^0.16.7",
     "@types/node": "^17.0.31",
+    "@types/prettier": "^2.7.3",
     "@types/prismjs": "^1.26.0",
     "@types/proper-lockfile": "^4.1.4",
     "@types/react": "^18.0.8",
@@ -173,10 +174,10 @@
     "lint-staged": "^11.1.0",
     "minimist": "^1.2.5",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.5.3",
+    "prettier": "^2.3.2",
     "prettier-plugin-hermes-parser": "^0.26.0",
-    "prettier-plugin-organize-attributes": "^1.0.0",
-    "prettier-plugin-tailwindcss": "^0.6.11",
+    "prettier-plugin-organize-attributes": "^0.0.5",
+    "prettier-plugin-tailwindcss": "^0.4.1",
     "proper-lockfile": "^4.1.2",
     "react-test-renderer": "^17.0.2",
     "rollup": "^4.22.4",
@@ -189,7 +190,6 @@
     "vite": "^5.2.11"
   },
   "dependencies": {
-    "@prettier/sync": "^0.5.2",
     "yjs": "^13.5.42"
   }
 }

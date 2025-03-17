@@ -6,7 +6,7 @@
  *
  */
 import {expect} from '@playwright/test';
-import * as prettierSync from '@prettier/sync';
+import prettier from 'prettier';
 
 // This tag function is just used to trigger prettier auto-formatting.
 // (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
@@ -29,5 +29,5 @@ export function expectHtmlToBeEqual(expected: string, actual: string): void {
 }
 
 export function prettifyHtml(s: string): string {
-  return prettierSync.format(s.replace(/\n/g, ''), {parser: 'html'});
+  return prettier.format(s.replace(/\n/g, ''), {parser: 'html'});
 }

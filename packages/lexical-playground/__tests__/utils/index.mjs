@@ -9,7 +9,7 @@
 import {expect, test as base} from '@playwright/test';
 import * as glob from 'glob';
 import {randomUUID} from 'node:crypto';
-import * as prettier from 'prettier';
+import prettier from 'prettier';
 import * as lockfile from 'proper-lockfile';
 import {URLSearchParams} from 'url';
 

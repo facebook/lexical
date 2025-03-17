@@ -366,7 +366,7 @@ function useFloatingLinkEditorToolbar(
           if ($isRangeSelection(selection)) {
             const node = getSelectedNode(selection);
             const linkNode = $findMatchingParent(node, $isLinkNode);
-            if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
+            if ($isLinkNode(linkNode) && (payload.altKey || payload.ctrlKey)) {
               window.open(linkNode.getURL(), '_blank');
               return true;
             }

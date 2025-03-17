@@ -12,9 +12,9 @@ const fs = require('fs-extra');
 const path = require('node:path');
 const transformErrorMessages = require('../../transform-error-messages');
 const babel = require('@babel/core');
-const prettier = require('prettier');
+const prettierSync = require('@prettier/sync');
 
-const prettierConfig = prettier.resolveConfig.sync('./') || {};
+const prettierConfig = prettierSync.resolveConfig('./') || {};
 
 /** @returns {Promise<void>} */
 function waitTick() {
@@ -39,7 +39,13 @@ async function withCodes(before, after, cb) {
   }
 }
 
-function fmt(strings: TemplateStringsArray, ...keys: unknown[]) {
+/**
+ *
+ * @param {TemplateStringsArray} strings
+ * @param  {...unknown} keys
+ * @returns
+ */
+function fmt(strings, ...keys) {
   const result = [strings[0]];
   keys.forEach((key, i) => {
     result.push(String(key), strings[i + 1]);
@@ -59,7 +65,7 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]) {
       'format$1ErrorMessage',
     )
     .trim();
-  return prettier.format(before, {
+  return prettierSync.format(before, {
     ...prettierConfig,
     filepath: 'test.js',
   });

@@ -6,10 +6,10 @@
  *
  */
 
+import * as prettierSync from '@prettier/sync';
 import {RuleTester} from 'eslint';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as prettier from 'prettier';
 
 import plugin from '../../LexicalEslintPlugin.js';
 import {type RulesOfLexicalOptions} from '../../rules/rules-of-lexical.js';
@@ -39,7 +39,7 @@ function fmt(
     keys.forEach((key, i) => {
       result.push(key(name), strings[i + 1]);
     });
-    return prettier.format(result.join(''), {parser: 'typescript'});
+    return prettierSync.format(result.join(''), {parser: 'typescript'});
   };
   rval.keys = keys;
   rval.setOptions = (opts: RulesOfLexicalOptions) => {

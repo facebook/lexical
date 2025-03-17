@@ -44,7 +44,7 @@ export default function DraggableBlockPlugin({
       }
 
       const pNode = $createParagraphNode();
-      if (e.metaKey || e.ctrlKey) {
+      if (e.altKey || e.ctrlKey) {
         node.insertBefore(pNode);
       } else {
         node.insertAfter(pNode);

@@ -133,7 +133,7 @@ function collectBuildInformation(): string {
       } else if (editor) {
         let version = String(
           (
-            editor.constructor as (typeof editor)['constructor'] &
+            editor.constructor as typeof editor['constructor'] &
               Record<string, unknown>
           ).version || '<0.17.1',
         );

@@ -76,8 +76,8 @@ export default function ImageResizer({
   const maxWidthContainer = maxWidth
     ? maxWidth
     : editorRootElement !== null
-      ? editorRootElement.getBoundingClientRect().width - 20
-      : 100;
+    ? editorRootElement.getBoundingClientRect().width - 20
+    : 100;
   const maxHeightContainer =
     editorRootElement !== null
       ? editorRootElement.getBoundingClientRect().height - 20

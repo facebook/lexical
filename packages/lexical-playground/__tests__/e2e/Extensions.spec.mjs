@@ -25,9 +25,13 @@ test.describe('Extensions', () => {
   test(`document.execCommand("insertText")`, async ({page}) => {
     await focusEditor(page);
 
-    await evaluate(page, () => {
-      document.execCommand('insertText', false, 'foo');
-    }, []);
+    await evaluate(
+      page,
+      () => {
+        document.execCommand('insertText', false, 'foo');
+      },
+      [],
+    );
     await assertHTML(
       page,
       html`
@@ -54,27 +58,31 @@ test.describe('Extensions', () => {
     }
     await focusEditor(page);
 
-    await evaluate(page, () => {
-      function paste() {
-        const dataTransfer = new DataTransfer();
-        function dispatchPaste(target, text) {
-          dataTransfer.setData('text/plain', text);
-          target.dispatchEvent(
-            new ClipboardEvent('paste', {
-              bubbles: true,
-              cancelable: true,
-              clipboardData: dataTransfer,
-            }),
-          );
-          dataTransfer.clearData();
+    await evaluate(
+      page,
+      () => {
+        function paste() {
+          const dataTransfer = new DataTransfer();
+          function dispatchPaste(target, text) {
+            dataTransfer.setData('text/plain', text);
+            target.dispatchEvent(
+              new ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                clipboardData: dataTransfer,
+              }),
+            );
+            dataTransfer.clearData();
+          }
+          return dispatchPaste;
         }
-        return dispatchPaste;
-      }
 
-      const editor = document.querySelector('div[contenteditable="true"]');
-      const dispatchPaste = paste();
-      dispatchPaste(editor, 'foo');
-    }, []);
+        const editor = document.querySelector('div[contenteditable="true"]');
+        const dispatchPaste = paste();
+        dispatchPaste(editor, 'foo');
+      },
+      [],
+    );
     await assertHTML(
       page,
       html`
@@ -206,25 +214,29 @@ test.describe('Extensions', () => {
     await page.keyboard.press('ArrowUp');
 
     // Selection is on the last paragraph
-    await evaluate(page, async () => {
-      const editor = document.querySelector('div[contenteditable="true"]');
-      const selection = window.getSelection();
-      const secondParagraphTextNode =
-        editor.firstChild.nextSibling.firstChild.firstChild;
-      selection.setBaseAndExtent(
-        secondParagraphTextNode,
-        0,
-        secondParagraphTextNode,
-        3,
-      );
+    await evaluate(
+      page,
+      async () => {
+        const editor = document.querySelector('div[contenteditable="true"]');
+        const selection = window.getSelection();
+        const secondParagraphTextNode =
+          editor.firstChild.nextSibling.firstChild.firstChild;
+        selection.setBaseAndExtent(
+          secondParagraphTextNode,
+          0,
+          secondParagraphTextNode,
+          3,
+        );
 
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          document.execCommand('insertText', false, 'and');
-          resolve();
-        }, 50);
-      });
-    }, []);
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            document.execCommand('insertText', false, 'and');
+            resolve();
+          }, 50);
+        });
+      },
+      [],
+    );
     await assertHTML(
       page,
       html`
@@ -266,9 +278,13 @@ test.describe('Extensions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await evaluate(page, () => {
-      document.execCommand('insertText', false, 'New text');
-    }, []);
+    await evaluate(
+      page,
+      () => {
+        document.execCommand('insertText', false, 'New text');
+      },
+      [],
+    );
     await assertHTML(
       page,
       html`
@@ -305,9 +321,13 @@ test.describe('Extensions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await evaluate(page, () => {
-      document.execCommand('insertText', false, 'New text');
-    }, []);
+    await evaluate(
+      page,
+      () => {
+        document.execCommand('insertText', false, 'New text');
+      },
+      [],
+    );
     await assertHTML(
       page,
       html`

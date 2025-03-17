@@ -563,8 +563,8 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
     ariaCheckedAttr === 'true'
       ? true
       : ariaCheckedAttr === 'false'
-        ? false
-        : undefined;
+      ? false
+      : undefined;
   return {node: $createListItemNode(checked)};
 }
 

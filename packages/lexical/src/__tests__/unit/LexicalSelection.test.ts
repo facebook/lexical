@@ -88,8 +88,8 @@ describe('LexicalSelection tests', () => {
           mode === 'start-of-paragraph'
             ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>'
             : mode === 'mid-paragraph'
-              ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>'
-              : '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a></p></div>';
+            ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>'
+            : '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a></p></div>';
 
         expect(container.innerHTML).toBe(expectation);
 

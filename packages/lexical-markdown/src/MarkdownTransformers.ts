@@ -299,8 +299,8 @@ const listExport = (
         listType === 'number'
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
-            ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
-            : '- ';
+          ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
+          : '- ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }

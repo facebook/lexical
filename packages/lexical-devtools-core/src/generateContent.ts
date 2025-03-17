@@ -145,10 +145,10 @@ export function generateContent(
     return selection === null
       ? ': null'
       : $isRangeSelection(selection)
-        ? printRangeSelection(selection)
-        : $isTableSelection(selection)
-          ? printTableSelection(selection)
-          : printNodeSelection(selection);
+      ? printRangeSelection(selection)
+      : $isTableSelection(selection)
+      ? printTableSelection(selection)
+      : printNodeSelection(selection);
   });
 
   res += '\n selection' + selectionString;

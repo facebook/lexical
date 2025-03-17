@@ -346,8 +346,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
   const toggleResize = useCallback(
     (
-      direction: PointerDraggingDirection,
-    ): PointerEventHandler<HTMLDivElement> =>
+        direction: PointerDraggingDirection,
+      ): PointerEventHandler<HTMLDivElement> =>
       (event) => {
         event.preventDefault();
         event.stopPropagation();

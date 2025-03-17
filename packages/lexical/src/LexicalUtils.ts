@@ -1333,8 +1333,8 @@ export function getDOMOwnerDocument(
   return isDOMDocumentNode(target)
     ? target
     : isHTMLElement(target)
-      ? target.ownerDocument
-      : null;
+    ? target.ownerDocument
+    : null;
 }
 
 export function scrollIntoViewIfNeeded(

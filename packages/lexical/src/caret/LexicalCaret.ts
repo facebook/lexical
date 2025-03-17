@@ -22,8 +22,7 @@ export type CaretDirection = 'next' | 'previous';
 /**
  * A type utility to flip next and previous
  */
-export type FlipDirection<D extends CaretDirection> =
-  (typeof FLIP_DIRECTION)[D];
+export type FlipDirection<D extends CaretDirection> = typeof FLIP_DIRECTION[D];
 /**
  * A sibling caret type points from a LexicalNode origin to its next or previous sibling,
  * and a child caret type points from an ElementNode origin to its first or last child.
@@ -1236,14 +1235,14 @@ export function $comparePointCaretNext(
       return aIsText && bIsText
         ? compareNumber(a.offset, b.offset)
         : a.type === b.type
-          ? 0
-          : aIsText
-            ? -1
-            : bIsText
-              ? 1
-              : a.type === 'child'
-                ? -1
-                : 1;
+        ? 0
+        : aIsText
+        ? -1
+        : bIsText
+        ? 1
+        : a.type === 'child'
+        ? -1
+        : 1;
     }
     case 'ancestor': {
       return a.type === 'child' ? -1 : 1;

@@ -303,8 +303,8 @@ function isLastChildLineBreakOrDecorator(
         return $isLineBreakNode(node)
           ? 'line-break'
           : $isDecoratorNode(node) && node.isInline()
-            ? 'decorator'
-            : null;
+          ? 'decorator'
+          : null;
       }
     }
     return 'empty';

@@ -21,6 +21,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $setSelection,
   createEditor,
   LexicalEditor,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -74,6 +75,35 @@ describe('LexicalTablePlugin', () => {
       }
       const firstRowCells = firstRow.getChildren();
       expect(firstRowCells.length).toBe(3);
+    });
+  });
+
+  test('INSERT_TABLE_COMMAND inserts a table when the editor is blurred', async () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.select();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        // Simulate a blur event
+        $setSelection(null);
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+          columns: '3',
+          rows: '2',
+        });
+      },
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const root = $getRoot();
+      const table = root.getFirstChild();
+
+      expect($isTableNode(table)).toBe(true);
     });
   });
 

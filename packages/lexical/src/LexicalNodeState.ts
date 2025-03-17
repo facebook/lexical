@@ -75,21 +75,13 @@ export type AnyStateConfig = StateConfig<any, any>;
 /**
  * Get the value type (V) from a StateConfig
  */
-export type StateConfigValue<S extends AnyStateConfig> = S extends StateConfig<
-  infer _K,
-  infer V
->
-  ? V
-  : never;
+export type StateConfigValue<S extends AnyStateConfig> =
+  S extends StateConfig<infer _K, infer V> ? V : never;
 /**
  * Get the key type (K) from a StateConfig
  */
-export type StateConfigKey<S extends AnyStateConfig> = S extends StateConfig<
-  infer K,
-  infer _V
->
-  ? K
-  : never;
+export type StateConfigKey<S extends AnyStateConfig> =
+  S extends StateConfig<infer K, infer _V> ? K : never;
 /**
  * A value type, or an updater for that value type. For use with
  * {@link $setState} or any user-defined wrappers around it.

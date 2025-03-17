@@ -58,11 +58,10 @@ export type KlassConstructor<Cls extends GenericConstructor<any>> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GenericConstructor<T> = new (...args: any[]) => T;
 
-export type Klass<T extends LexicalNode> = InstanceType<
-  T['constructor']
-> extends T
-  ? T['constructor']
-  : GenericConstructor<T> & T['constructor'];
+export type Klass<T extends LexicalNode> =
+  InstanceType<T['constructor']> extends T
+    ? T['constructor']
+    : GenericConstructor<T> & T['constructor'];
 
 export type EditorThemeClassName = string;
 

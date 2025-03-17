@@ -124,7 +124,7 @@ export default function ColorPicker({
       <div className="color-picker-basic-color">
         {basicColors.map((basicColor) => (
           <button
-            className={basicColor === selfColor.hex ? ' active' : ''}
+            className={basicColor === selfColor.hex ? 'active' : ''}
             key={basicColor}
             style={{backgroundColor: basicColor}}
             onClick={() => {
@@ -307,8 +307,8 @@ function rgb2hsv({r, g, b}: RGB): HSV {
     ? (max === r
         ? (g - b) / d + (g < b ? 6 : 0)
         : max === g
-        ? 2 + (b - r) / d
-        : 4 + (r - g) / d) * 60
+          ? 2 + (b - r) / d
+          : 4 + (r - g) / d) * 60
     : 0;
   const s = max ? (d / max) * 100 : 0;
   const v = max * 100;

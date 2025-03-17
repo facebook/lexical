@@ -269,8 +269,8 @@ export function $patchStyle(
     $isRangeSelection(target)
       ? target.style
       : $isTextNode(target)
-      ? target.getStyle()
-      : target.getTextStyle(),
+        ? target.getStyle()
+        : target.getTextStyle(),
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {

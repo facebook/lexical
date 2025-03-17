@@ -22,7 +22,8 @@ export type CaretDirection = 'next' | 'previous';
 /**
  * A type utility to flip next and previous
  */
-export type FlipDirection<D extends CaretDirection> = typeof FLIP_DIRECTION[D];
+export type FlipDirection<D extends CaretDirection> =
+  (typeof FLIP_DIRECTION)[D];
 /**
  * A sibling caret type points from a LexicalNode origin to its next or previous sibling,
  * and a child caret type points from an ElementNode origin to its first or last child.
@@ -1119,6 +1120,15 @@ export function $extendCaretToRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D> {
   return $getCaretRange(anchor, $getSiblingCaret($getRoot(), anchor.direction));
+}
+
+/**
+ * Construct a collapsed CaretRange that starts and ends at anchor.
+ */
+export function $getCollapsedCaretRange<D extends CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D> {
+  return $getCaretRange(anchor, anchor);
 }
 
 /**

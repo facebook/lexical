@@ -133,7 +133,7 @@ function collectBuildInformation(): string {
       } else if (editor) {
         let version = String(
           (
-            editor.constructor as typeof editor['constructor'] &
+            editor.constructor as (typeof editor)['constructor'] &
               Record<string, unknown>
           ).version || '<0.17.1',
         );
@@ -305,11 +305,18 @@ function $applyAllTransforms(
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
 
+    // The root is always considered intentionally dirty if any attached node
+    // is dirty and by deleting and re-inserting we will apply its transforms
+    // last (e.g. its transform can be used as a sort of "update finalizer")
+    const rootDirty = untransformedDirtyElements.delete('root');
+    if (rootDirty) {
+      untransformedDirtyElements.set('root', true);
+    }
     for (const currentUntransformedDirtyElement of untransformedDirtyElements) {
       const nodeKey = currentUntransformedDirtyElement[0];
       const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
       dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
-      if (nodeKey !== 'root' && !intentionallyMarkedAsDirty) {
+      if (!intentionallyMarkedAsDirty) {
         continue;
       }
 

@@ -27,6 +27,7 @@ import {
   type RangeSelection,
 } from '../LexicalSelection';
 import {
+  $copyNode,
   $getNodeByKeyOrThrow,
   $isRootOrShadowRoot,
   $setSelection,
@@ -640,15 +641,42 @@ export function $getAdjacentNodes(
   return siblings;
 }
 
+export function $splitTextPointCaret<D extends CaretDirection>(
+  textPointCaret: TextPointCaret<TextNode, D>,
+): NodeCaret<D> {
+  const {origin, offset, direction} = textPointCaret;
+  if (offset === $getTextNodeOffset(origin, direction)) {
+    return textPointCaret.getSiblingCaret();
+  } else if (offset === $getTextNodeOffset(origin, flipDirection(direction))) {
+    return $rewindSiblingCaret(textPointCaret.getSiblingCaret());
+  }
+  const [textNode] = origin.splitText(offset);
+  invariant(
+    $isTextNode(textNode),
+    '$splitTextPointCaret: splitText must return at least one TextNode',
+  );
+  return $getCaretInDirection($getSiblingCaret(textNode, 'next'), direction);
+}
+
 export interface SplitAtPointCaretNextOptions {
-  /** The function to create the right side of a split ElementNode */
-  $copyElementNode: (node: ElementNode) => ElementNode;
+  /** The function to create the right side of a split ElementNode (default {@link $copyNode}) */
+  $copyElementNode?: (node: ElementNode) => ElementNode;
+  /** The function to split a TextNode (default {@link $splitTextPointCaret}) */
+  $splitTextPointCaretNext?: (
+    caret: TextPointCaret<TextNode, 'next'>,
+  ) => NodeCaret<'next'>;
   /** If the parent matches rootMode a split will not occur, default is 'shadowRoot' */
   rootMode?: RootMode;
-  /** If true (default false), the parent may be split before its first child when parent.canBeEmpty() is true */
-  allowEmptyLeftSplit?: boolean;
-  /** If true (default false), the parent may be split after its last child when parent.canBeEmpty() is true */
-  allowEmptyRightSplit?: boolean;
+  /**
+   * If element.canBeEmpty() and would create an empty split, this function will be
+   * called with the element and 'first' | 'last'. If it returns false, the empty
+   * split will not be created. Default is `() => true` to always split when possible.
+   */
+  $shouldSplit?: (node: ElementNode, edge: 'first' | 'last') => boolean;
+}
+
+function $alwaysSplit(_node: ElementNode, _edge: 'first' | 'last'): true {
+  return true;
 }
 
 /**
@@ -660,32 +688,21 @@ export interface SplitAtPointCaretNextOptions {
 export function $splitAtPointCaretNext(
   pointCaret: PointCaret<'next'>,
   {
-    $copyElementNode,
+    $copyElementNode = $copyNode,
+    $splitTextPointCaretNext = $splitTextPointCaret,
     rootMode = 'shadowRoot',
-    allowEmptyLeftSplit = false,
-    allowEmptyRightSplit = false,
-  }: SplitAtPointCaretNextOptions,
+    $shouldSplit = $alwaysSplit,
+  }: SplitAtPointCaretNextOptions = {},
 ): null | NodeCaret<'next'> {
   if ($isTextPointCaret(pointCaret)) {
-    if (
-      pointCaret.offset === $getTextNodeOffset(pointCaret.origin, 'previous')
-    ) {
-      return $rewindSiblingCaret(pointCaret.getSiblingCaret());
-    }
-    const origin = $isExtendableTextPointCaret(pointCaret)
-      ? pointCaret.origin.splitText(pointCaret.offset)[0]
-      : pointCaret.origin;
-    invariant(
-      $isTextNode(origin),
-      '$splitTextAtPointCaretNext: splitText must return at least one TextNode',
-    );
-    return $getSiblingCaret(origin, 'next');
+    return $splitTextPointCaretNext(pointCaret);
   }
   const parentCaret = pointCaret.getParentCaret(rootMode);
   if (parentCaret) {
+    const {origin} = parentCaret;
     if (
       $isChildCaret(pointCaret) &&
-      !(allowEmptyLeftSplit && parentCaret.origin.canBeEmpty())
+      !(origin.canBeEmpty() && $shouldSplit(origin, 'first'))
     ) {
       // No split necessary, the left side would be empty
       return $rewindSiblingCaret(parentCaret);
@@ -693,12 +710,10 @@ export function $splitAtPointCaretNext(
     const siblings = $getAdjacentNodes(pointCaret);
     if (
       siblings.length > 0 ||
-      (allowEmptyRightSplit && parentCaret.origin.canBeEmpty())
+      (origin.canBeEmpty() && $shouldSplit(origin, 'last'))
     ) {
       // Split and insert the siblings into the new tree
-      parentCaret.insert(
-        $copyElementNode(parentCaret.origin).splice(0, 0, siblings),
-      );
+      parentCaret.insert($copyElementNode(origin).splice(0, 0, siblings));
     }
   }
   return parentCaret;

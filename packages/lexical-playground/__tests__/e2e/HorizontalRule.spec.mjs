@@ -245,6 +245,7 @@ test.describe('HorizontalRule', () => {
       focusPath: [0, 0, 0],
     });
 
+    await page.pause();
     await selectFromInsertDropdown(page, '.horizontal-rule');
 
     await waitForSelector(page, 'hr');
@@ -269,6 +270,7 @@ test.describe('HorizontalRule', () => {
       `,
     );
 
+    await page.pause();
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [2, 0, 0],

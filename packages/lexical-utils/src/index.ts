@@ -9,9 +9,9 @@
 import {
   $caretFromPoint,
   $cloneWithProperties,
-  $copyNode,
   $createParagraphNode,
   $getAdjacentChildCaret,
+  $getCaretInDirection,
   $getChildCaret,
   $getChildCaretOrSelf,
   $getCollapsedCaretRange,
@@ -24,6 +24,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isSiblingCaret,
+  $isTextPointCaret,
   $normalizeCaret,
   $rewindSiblingCaret,
   $setSelection,
@@ -550,30 +551,15 @@ export function $restoreEditorState(
   $setSelection(selection === null ? null : selection.clone());
 }
 
-export interface InsertNodeToNearestRootOptions {
-  /** If true (default false), do not insert an empty paragraph before the inserted node at the root */
-  skipEmptyParagraph?: boolean;
-  /** If true (default false), do not split an ElementNode even if it can be empty */
-  preventEmptyElements?: boolean;
-}
-
 /**
  * If the selected insertion area is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
  * the node will be appended there, otherwise, it will be inserted before the insertion area.
  * If there is no selection where the node is to be inserted, it will be appended after any current nodes
- * within the tree, as a child of the root node. A paragraph node will then be added after the inserted
- * node and selected unless skipEmptyParagraph is true.
+ * within the tree, as a child of the root node. A paragraph will then be added after the inserted node and selected.
  * @param node - The node to be inserted
- * @param options - see {@link InsertNodeToNearestRootOptions}
  * @returns The node after its insertion
  */
-export function $insertNodeToNearestRoot<T extends LexicalNode>(
-  node: T,
-  {
-    skipEmptyParagraph = false,
-    preventEmptyElements = false,
-  }: InsertNodeToNearestRootOptions = {},
-): T {
+export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   const selection = $getSelection() || $getPreviousSelection();
   let initialCaret: undefined | PointCaret<'next'>;
   if ($isRangeSelection(selection)) {
@@ -586,42 +572,56 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(
         initialCaret = $getSiblingCaret(lastNode, 'next');
       }
     }
+    initialCaret =
+      initialCaret ||
+      $getChildCaret($getRoot(), 'previous')
+        .getFlipped()
+        .insert($createParagraphNode());
   }
-  const splitOptions: SplitAtPointCaretNextOptions = {
-    $copyElementNode: $copyNode,
-    allowEmptyLeftSplit: !preventEmptyElements,
-    allowEmptyRightSplit: !preventEmptyElements,
-    rootMode: 'shadowRoot',
-  };
-  let insertCaret =
-    initialCaret || $getChildCaret($getRoot(), 'previous').getFlipped();
+  const insertCaret = $insertNodeToNearestRootAtCaret(node, initialCaret);
+  const adjacent = $getAdjacentChildCaret(insertCaret);
+  const selectionCaret = $isChildCaret(adjacent)
+    ? $normalizeCaret(adjacent)
+    : insertCaret;
+  $setSelectionFromCaretRange($getCollapsedCaretRange(selectionCaret));
+  return node.getLatest();
+}
+
+/**
+ * If the insertion caret is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
+ * the node will be inserted there, otherwise the parent nodes will be split according to the
+ * given options.
+ * @param node - The node to be inserted
+ * @param caret - The location to insert or split from
+ * @returns The node after its insertion
+ */
+export function $insertNodeToNearestRootAtCaret<
+  T extends LexicalNode,
+  D extends CaretDirection,
+>(
+  node: T,
+  caret: PointCaret<D>,
+  options?: SplitAtPointCaretNextOptions,
+): NodeCaret<D> {
+  let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
   for (
     let nextCaret: null | PointCaret<'next'> = insertCaret;
     nextCaret;
-    nextCaret = $splitAtPointCaretNext(nextCaret, splitOptions)
+    nextCaret = $splitAtPointCaretNext(nextCaret, options)
   ) {
     insertCaret = nextCaret;
   }
-  const emptyParagraphAfter = !(
-    skipEmptyParagraph ||
-    initialCaret ||
-    node.isInline()
-  )
-    ? $createParagraphNode()
-    : null;
-  if (emptyParagraphAfter) {
-    insertCaret.insert(emptyParagraphAfter);
-    emptyParagraphAfter.select();
-  }
+  invariant(
+    !$isTextPointCaret(insertCaret),
+    '$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split',
+  );
   insertCaret.insert(
     node.isInline() ? $createParagraphNode().append(node) : node,
   );
-  if (!emptyParagraphAfter) {
-    $setSelectionFromCaretRange(
-      $getCollapsedCaretRange($normalizeCaret($getSiblingCaret(node, 'next'))),
-    );
-  }
-  return node.getLatest();
+  return $getCaretInDirection(
+    $getSiblingCaret(node.getLatest(), 'next'),
+    caret.direction,
+  );
 }
 
 /**

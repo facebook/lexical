@@ -121,7 +121,9 @@
   overflow: auto;
 }
 
-[data-scope='splitter'][data-part='panel']:has([data-scope='splitter'][data-part='panel']) {
+[data-scope='splitter'][data-part='panel']:has(
+    [data-scope='splitter'][data-part='panel']
+  ) {
   border: none;
 }
 

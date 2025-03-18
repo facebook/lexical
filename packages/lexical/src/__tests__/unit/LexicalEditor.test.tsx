@@ -237,6 +237,119 @@ describe('LexicalEditor tests', () => {
     return Promise.resolve().then();
   }
 
+  describe('registerNodeTransform', () => {
+    it('Calls the RootNode transform last on every update', async () => {
+      init(function onError(err) {
+        throw err;
+      });
+      const events: string[] = [];
+      const $transform = (node: LexicalNode) =>
+        events.push(`transform ${node.getType()} ${node.getKey()}`);
+      editor.registerNodeTransform(RootNode, $transform);
+      editor.registerNodeTransform(ParagraphNode, $transform);
+      editor.registerNodeTransform(TextNode, $transform);
+      editor.registerNodeTransform(ParagraphNode, (node) => {
+        const lastChild = node.getLastChild();
+        if (
+          $isTextNode(lastChild) &&
+          lastChild.getTextContent() === '[third]'
+        ) {
+          node.append($createTextNode('fourth').setMode('token'));
+        }
+      });
+      // clear any transforms that occurred with the initial state on register
+      await Promise.resolve();
+      events.length = 0;
+      let paragraphNode: ParagraphNode;
+      editor.update(
+        () => {
+          paragraphNode = $createParagraphNode();
+          $getRoot()
+            .clear()
+            .append(
+              paragraphNode.append(
+                $createTextNode('first').setMode('token'),
+                $createTextNode('second').setMode('token'),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      let textNodes = editor.read(() => $getRoot().getAllTextNodes());
+      expect(events).toEqual([
+        `transform text ${textNodes[0].getKey()}`,
+        `transform text ${textNodes[1].getKey()}`,
+        `transform paragraph ${paragraphNode!.getKey()}`,
+        'transform root root',
+      ]);
+      events.length = 0;
+      // Add a transform that mutates the text
+      await editor.registerNodeTransform(TextNode, (node) => {
+        const textContent = node.getTextContent();
+        if (textContent.startsWith('[')) {
+          return;
+        }
+        node.setTextContent(`[${textContent}]`);
+      });
+      textNodes = editor.read(() => $getRoot().getAllTextNodes());
+      expect(events).toEqual([
+        // leaf transform runs once with mutations
+        `transform text ${textNodes[0].getKey()}`,
+        `transform text ${textNodes[1].getKey()}`,
+        // leaf transforms run again with no mutations
+        `transform text ${textNodes[0].getKey()}`,
+        `transform text ${textNodes[1].getKey()}`,
+        // element transforms run, but the paragraph is not intentionally dirty
+        'transform root root',
+      ]);
+      expect(
+        editor.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map((node) => node.getTextContent()),
+        ),
+      ).toEqual(['[first]', '[second]']);
+      events.length = 0;
+      await editor.update(() => {
+        $getRoot()
+          .getAllTextNodes()
+          .forEach((node) =>
+            node.setTextContent(`:${node.getTextContent().slice(1, -1)}:`),
+          );
+        paragraphNode.append($createTextNode('third').setMode('token'));
+      });
+      textNodes = editor.read(() => $getRoot().getAllTextNodes());
+      expect(events).toEqual([
+        // leaf transform runs once with mutations
+        `transform text ${textNodes[0].getKey()}`,
+        `transform text ${textNodes[1].getKey()}`,
+        `transform text ${textNodes[2].getKey()}`,
+        // leaf transforms run again with no mutations
+        `transform text ${textNodes[0].getKey()}`,
+        `transform text ${textNodes[1].getKey()}`,
+        `transform text ${textNodes[2].getKey()}`,
+        // element transforms run, now the paragraph
+        // is dirty because its last child changed
+        `transform paragraph ${paragraphNode!.getKey()}`,
+        'transform root root',
+        // leaf transforms run again because the ParagraphNode transform created one,
+        // which creates another one, and one of the nodes is dirty because it is a sibling
+        `transform text ${textNodes[3].getKey()}`,
+        `transform text ${textNodes[2].getKey()}`,
+        `transform text ${textNodes[3].getKey()}`,
+        // The paragraph is still intentionally dirty due to the append
+        `transform paragraph ${paragraphNode!.getKey()}`,
+        'transform root root',
+      ]);
+      expect(
+        editor.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map((node) => node.getTextContent()),
+        ),
+      ).toEqual(['[:first:]', '[:second:]', '[third]', '[fourth]']);
+    });
+  });
   describe('read()', () => {
     it('Can read the editor state', async () => {
       init(function onError(err) {

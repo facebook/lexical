@@ -73,12 +73,10 @@ export function LinkPlugin({validateUrl, attributes}: Props): null {
               ) {
                 return false;
               }
-              const clipboardEvent = event as ClipboardEvent;
-              if (clipboardEvent.clipboardData === null) {
+              if (event.clipboardData === null) {
                 return false;
               }
-              const clipboardText =
-                clipboardEvent.clipboardData.getData('text');
+              const clipboardText = event.clipboardData.getData('text');
               if (!validateUrl(clipboardText)) {
                 return false;
               }

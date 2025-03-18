@@ -40,8 +40,6 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   DRAGSTART_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   LineBreakNode,
@@ -174,23 +172,6 @@ export default function ImageComponent({
   const activeEditorRef = useRef<LexicalEditor | null>(null);
   const [isLoadError, setIsLoadError] = useState<boolean>(false);
   const isEditable = useLexicalEditable();
-
-  const $onDelete = useCallback(
-    (payload: KeyboardEvent) => {
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        const event: KeyboardEvent = payload;
-        event.preventDefault();
-        deleteSelection.getNodes().forEach((node) => {
-          if ($isImageNode(node)) {
-            node.remove();
-          }
-        });
-      }
-      return false;
-    },
-    [isSelected],
-  );
 
   const $onEnter = useCallback(
     (event: KeyboardEvent) => {
@@ -326,16 +307,6 @@ export default function ImageComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
@@ -356,7 +327,6 @@ export default function ImageComponent({
     isResizing,
     isSelected,
     nodeKey,
-    $onDelete,
     $onEnter,
     $onEscape,
     onClick,

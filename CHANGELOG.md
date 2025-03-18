@@ -1,3 +1,32 @@
+## v0.28.0 (2025-03-18)
+
+- lexical-website Docs Fix broken links to React Rich Collab Example (#7347) Bob Ippolito
+- lexical-playgroundlexical-react Feature Push Draggable Element to Parent (#7338) Stphane
+- Breaking Changelexicallexical-utils Bug Fix Handle canBeEmpty in splitNodes (#7342) Bob Ippolito
+- Breaking Changelexical-table Bug Fix Table cell line breaks behave differently from the intended HTML behavior. (#7318) SeungHwan-Lee
+- Breaking Changelexical Bug Fix Fix bug in transformer loop that would cause nodes not to get reconciled (#7341) Bob Ippolito
+- lexical-utils Feature Add type predicate to objectKlassEquals (#7340) wnhlee
+- lexical-playground Table actions should clear selection instead of moving it to the beginning (#7337) Bob Ippolito
+- Breaking Changelexicallexical-playground Feature Add a default delete handler for NodeSelection (#7323) Bob Ippolito
+- Breaking Changelexical-list Bug Fix Move ListItemNode text style inheritance to custom properties and CSS (#7325) Bob Ippolito
+- lexical Feature Add mutatedNodes to UpdateListener payload (#7321) Bob Ippolito
+- Breaking Changelexicallexical-table Bug Fix Scrollable TableNode updateDOM fixes and getDOMSlot type refactoring (#7336) Bob Ippolito
+- lexical-editorBug fix Add LexicalEditor.hasNode to flow typing to match typescript (#7320) Alex Zhang
+- lexical-react Chore remove unused dependencies from lexicalreact (#7315) Alessio Gravili
+- v0.27.2 (#7314) Bob Ippolito
+- v0.27.2 Lexical GitHub Actions Bot
+
+## v0.27.2 (2025-03-11)
+
+- lexical-table Bug Fix Fix unintended touch table cell selection when scrolling (#7309) Ibrahim El-bastawisi
+- lexical-playground Bug Fix row height resizing for merged cells (#7305) Kiran Dash
+- lexical-table Add table cell selection handler for touch devices (#7297) Ibrahim El-bastawisi
+- lexical-playground Feature Add touch support for TableCellResizer (#7299) Ibrahim El-bastawisi
+- lexical-yjs Bug Fix prevent collab element nodes from removing other nodes from node map (#7295) James Fitzsimmons
+- lexical-website Bug Fix Fix vite.config.ts for gallery examples (#7290) Bob Ippolito
+- v0.27.1 (#7288) Bob Ippolito
+- v0.27.1 Lexical GitHub Actions Bot
+
 ## v0.27.1 (2025-03-04)
 
 - CI Feature Add a fixer for the no-imports-from-self lint (#7284) Bob Ippolito

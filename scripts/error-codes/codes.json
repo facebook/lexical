@@ -279,5 +279,8 @@
   "277": "$originComparison: descendant logic error",
   "278": "$originComparison: branch logic error",
   "279": "LexicalNode.isBefore: exhaustiveness check",
-  "280": "$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection"
+  "280": "$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection",
+  "281": "$splitTextPointCaret: splitText must return at least one TextNode",
+  "282": "rootNode.splice: Only element or decorator nodes can be inserted to the root node",
+  "283": "$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split"
 }

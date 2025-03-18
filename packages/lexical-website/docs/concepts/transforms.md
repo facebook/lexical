@@ -126,6 +126,17 @@ editor.addListener('update', ({editorState}) => {
 });
 ```
 
+:::info
+
+The transform heuristic considers `RootNode` to be Intentionally Dirty whenever
+any node is dirty, and it ensures that this transform is applied last after all
+other transforms. In this way, you can consider it a "pre-update" listener,
+which occurs before any DOM reconciliation has happened. As with any other
+transform, it may get called multiple times in a given update (especially if
+your RootNode transform makes any node dirty).
+
+:::
+
 ## Transforms on parent nodes
 
 Transforms are very specific to a type of node. This applies to both the declaration (`registerNodeTransform(ImageNode)`) and the times it triggers during an update cycle.

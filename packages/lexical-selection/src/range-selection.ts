@@ -27,12 +27,12 @@ import {
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
-  $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
+  $isTextPointCaret,
   $setSelection,
   INTERNAL_$isBlock,
 } from 'lexical';
@@ -430,8 +430,19 @@ export function $shouldOverrideDefaultCharacterSelection(
     selection.focus,
     isBackward ? 'previous' : 'next',
   );
-  if ($isExtendableTextPointCaret(focusCaret)) {
-    return false;
+
+  if ($isTextPointCaret(focusCaret)) {
+    // https://github.com/facebook/lexical/issues/7301
+    // Always handle the event manually at the boundaries of a TextNode
+    // because the DOM selection may not be normalized to the same Text
+    // child as the point. It could be on another node entirely that
+    // happens to be zero distance away.
+    // Conversely, *never* handle the event if it is internal to the
+    // TextNode.
+    return (
+      focusCaret.offset === 0 ||
+      focusCaret.offset === focusCaret.origin.getTextContentSize()
+    );
   }
   for (const nextCaret of $extendCaretToRange(focusCaret)) {
     if ($isChildCaret(nextCaret)) {

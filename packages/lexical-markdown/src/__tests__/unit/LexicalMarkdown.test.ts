@@ -492,7 +492,7 @@ describe('Markdown', () => {
     {
       // Export only: import will use $...$ to transform <span /> to <mark /> due to HIGHLIGHT_TEXT_MATCH_IMPORT
       html: "<p><span style='white-space: pre-wrap;'>$$H$&e$`l$'l$o$</span></p>",
-      md: "$$H$&e$`l$'l$o$",
+      md: "$$H$&e$\\`l$'l$o$",
       skipImport: true,
     },
     {
@@ -570,6 +570,18 @@ describe('Markdown', () => {
     {
       html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>Bold Code</strong></code></b></p>',
       md: '**`Bold Code`**',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">This is an asterisk: *</span></p>',
+      md: 'This is an asterisk: \\*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">Backtick and asteriks: `**`.</span></p>',
+      md: 'Backtick and asteriks: \\`\\*\\*\\`.',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">Backtick and asteriks: `**`.</strong></b></p>',
+      md: '**Backtick and asteriks: \\`\\*\\*\\`.**',
     },
   ];
 

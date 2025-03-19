@@ -24,9 +24,9 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isTextNode,
   ElementNode,
 } from 'lexical';
-import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 import {importTextTransformers} from './importTextTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
@@ -248,6 +248,15 @@ function $importBlocks(
     textMatchTransformers,
   );
 
+  // Go through every text node in the element node and handle escape characters
+  for (const child of elementNode.getChildren()) {
+    if ($isTextNode(child)) {
+      const textContent = child.getTextContent();
+      const escapedText = textContent.replace(/\\([*_`~])/g, '$1');
+      child.setTextContent(escapedText);
+    }
+  }
+
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
@@ -294,15 +303,9 @@ function createTextFormatTransformersIndex(
     const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
-    if (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT) {
-      fullMatchRegExpByTag[tag] = new RegExp(
-        `(${tagRegExp})(?![${tagRegExp}\\s])(.*?[^${tagRegExp}\\s])${tagRegExp}(?!${tagRegExp})`,
-      );
-    } else {
-      fullMatchRegExpByTag[tag] = new RegExp(
-        `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
-      );
-    }
+    fullMatchRegExpByTag[tag] = new RegExp(
+      `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+    );
   }
 
   return {
@@ -310,10 +313,7 @@ function createTextFormatTransformersIndex(
     fullMatchRegExpByTag,
     // Reg exp to find opening tags
     openTagsRegExp: new RegExp(
-      (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
-        '(' +
-        openTagsRegExp.join('|') +
-        ')',
+      `${escapeRegExp}(${openTagsRegExp.join('|')})`,
       'g',
     ),
     transformersByTag,

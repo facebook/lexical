@@ -576,12 +576,12 @@ describe('Markdown', () => {
       md: 'This is an asterisk: \\*',
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">Backtick and asteriks: `**`.</span></p>',
-      md: 'Backtick and asteriks: \\`\\*\\*\\`.',
+      html: '<p><span style="white-space: pre-wrap;">Backtick and asteriks: `**`</span></p>',
+      md: 'Backtick and asteriks: \\`\\*\\*\\`',
     },
     {
-      html: '<p><b><strong style="white-space: pre-wrap;">Backtick and asteriks: `**`.</strong></b></p>',
-      md: '**Backtick and asteriks: \\`\\*\\*\\`.**',
+      html: '<p><b><strong style="white-space: pre-wrap;">Backtick and asteriks: `**`</strong></b></p>',
+      md: '**Backtick and asteriks: \\`\\*\\*\\`**',
     },
     {
       html: '<p><b><strong style="white-space: pre-wrap;">*test*</strong></b></p>',

@@ -297,10 +297,6 @@ function createTextFormatTransformersIndex(
   const openTagsRegExp: string[] = [];
   const escapeRegExp = `(?<![\\\\])`;
 
-  // Sort `textTransformers` so that longer tags come before shorter ones
-  // (prevents `*` from "stealing" text that should match `**`).
-  textTransformers.sort((a, b) => b.tag.length - a.tag.length);
-
   for (const transformer of textTransformers) {
     const {tag} = transformer;
     transformersByTag[tag] = transformer;

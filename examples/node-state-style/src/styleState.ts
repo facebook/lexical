@@ -64,7 +64,7 @@ export type StyleTuple = Exclude<
   undefined
 >;
 
-const NO_STYLE: StyleObject = {};
+const NO_STYLE: StyleObject = Object.freeze({});
 
 function parse(v: unknown): StyleObject {
   return typeof v === 'string' ? getStyleObjectFromRawCSS(v) : NO_STYLE;
@@ -77,7 +77,7 @@ function unparse(style: StyleObject): string {
       styles.push(`${k}: ${v};`);
     }
   }
-  return styles.join(' ');
+  return styles.sort().join(' ');
 }
 
 function isEqualValue(
@@ -161,19 +161,21 @@ export function diffStyleObjects(
   nextStyles: StyleObject,
 ): StyleObject {
   let styleDiff: undefined | Record<string, string | undefined>;
-  for (const k_ in nextStyles) {
-    const k = k_ as keyof StyleObject;
-    const nextV = nextStyles[k];
-    const prevV = prevStyles[k];
-    if (!isEqualValue(nextV, prevV)) {
-      styleDiff = styleDiff || {};
-      styleDiff[k] = nextV;
+  if (prevStyles !== nextStyles) {
+    for (const k_ in nextStyles) {
+      const k = k_ as keyof StyleObject;
+      const nextV = nextStyles[k];
+      const prevV = prevStyles[k];
+      if (!isEqualValue(nextV, prevV)) {
+        styleDiff = styleDiff || {};
+        styleDiff[k] = nextV;
+      }
     }
-  }
-  for (const k in prevStyles) {
-    if (!(k in nextStyles)) {
-      styleDiff = styleDiff || {};
-      styleDiff[k] = undefined;
+    for (const k in prevStyles) {
+      if (!(k in nextStyles)) {
+        styleDiff = styleDiff || {};
+        styleDiff[k] = undefined;
+      }
     }
   }
   return styleDiff || NO_STYLE;
@@ -212,6 +214,9 @@ export function $patchSelectedTextStyle(styleObject: StyleObject): false {
 
 const PREV_STYLE_STATE = Symbol.for('styleState');
 interface HTMLElementWithManagedStyle extends HTMLElement {
+  // Store the last reconciled style object directly on the DOM
+  // so we don't have to track the previous DOM
+  // which can happen even when nodeMutation is 'updated'
   [PREV_STYLE_STATE]?: StyleObject;
 }
 
@@ -219,17 +224,25 @@ interface LexicalNodeWithUnknownStyle extends LexicalNode {
   // This property exists on all TextNode and ElementNode
   // and likely also some DecoratorNode by convention.
   // We use it as a heuristic to see if the style has likely
-  // been overwritten.
+  // been overwritten to see if we should apply a diff
+  // or all styles.
   __style?: unknown;
 }
 
-function getPreviousStyleObject(
+function styleStringChanged(
   node: LexicalNodeWithUnknownStyle,
-  prevNode: null | LexicalNodeWithUnknownStyle,
+  prevNode: LexicalNodeWithUnknownStyle,
+): boolean {
+  return typeof node.__style === 'string' && prevNode.__style !== node.__style;
+}
+
+function getPreviousStyleObject(
+  node: LexicalNode,
+  prevNode: null | LexicalNode,
   dom: HTMLElementWithManagedStyle,
 ): StyleObject {
   const prevStyleObject = dom[PREV_STYLE_STATE];
-  return prevStyleObject && prevNode && node.__style === prevNode.__style
+  return prevStyleObject && prevNode && !styleStringChanged(node, prevNode)
     ? prevStyleObject
     : NO_STYLE;
 }
@@ -245,29 +258,26 @@ function makeStyleUpdateListener(editor: LexicalEditor): () => void {
       const {prevEditorState, mutatedNodes} = payload;
       editor.getEditorState().read(
         () => {
-          if (!mutatedNodes) {
-            return;
-          }
-          for (const nodes of mutatedNodes.values()) {
-            for (const [nodeKey, nodeMutation] of nodes) {
-              if (nodeMutation === 'destroyed') {
-                continue;
-              }
-              const node = $getNodeByKey(nodeKey);
-              const dom: null | HTMLElementWithManagedStyle =
-                editor.getElementByKey(nodeKey);
-              if (!dom || !node) {
-                return;
-              }
-              const prevNode = $getNodeByKey(nodeKey, prevEditorState);
-              const prevStyleObject = getPreviousStyleObject(
-                node,
-                prevNode,
-                dom,
-              );
-              const nextStyleObject = $getStyleObject(node);
-              dom[PREV_STYLE_STATE] = nextStyleObject;
-              if (prevStyleObject !== nextStyleObject) {
+          if (mutatedNodes) {
+            for (const nodes of mutatedNodes.values()) {
+              for (const [nodeKey, nodeMutation] of nodes) {
+                if (nodeMutation === 'destroyed') {
+                  continue;
+                }
+                const node = $getNodeByKey(nodeKey);
+                const dom: null | HTMLElementWithManagedStyle =
+                  editor.getElementByKey(nodeKey);
+                if (!dom || !node) {
+                  return;
+                }
+                const prevNode = $getNodeByKey(nodeKey, prevEditorState);
+                const prevStyleObject = getPreviousStyleObject(
+                  node,
+                  prevNode,
+                  dom,
+                );
+                const nextStyleObject = $getStyleObject(node);
+                dom[PREV_STYLE_STATE] = nextStyleObject;
                 applyStyle(
                   dom,
                   diffStyleObjects(prevStyleObject, nextStyleObject),

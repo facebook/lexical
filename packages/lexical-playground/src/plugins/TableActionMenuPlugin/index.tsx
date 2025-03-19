@@ -803,14 +803,6 @@ function TableCellActionMenuContainer({
 
   const checkTableCellOverflow = useCallback(
     (tableCellParentNodeDOM: HTMLElement): boolean => {
-      // Check if the cell is overflowed by checking the element directly
-      const isOverflowed =
-        tableCellParentNodeDOM.scrollWidth >
-          tableCellParentNodeDOM.clientWidth ||
-        tableCellParentNodeDOM.scrollHeight >
-          tableCellParentNodeDOM.clientHeight;
-
-      // Check if the cell is within the visible bounds of its scrollable container
       const scrollableContainer = tableCellParentNodeDOM.closest(
         '.PlaygroundEditorTheme__tableScrollableWrapper',
       );
@@ -820,17 +812,20 @@ function TableCellActionMenuContainer({
         ).getBoundingClientRect();
         const cellRect = tableCellParentNodeDOM.getBoundingClientRect();
 
-        // Check if the cell's right edge is beyond the container's right edge
-        // or if the cell's left edge is before the container's left edge
+        // Calculate where the action button would be positioned (5px from right edge of cell)
+        // Also account for the button width (20px) and its right margin (5px)
+        const actionButtonRight = cellRect.right - 5;
+        const actionButtonLeft = actionButtonRight - 20;
+
+        // Only hide if the action button would overflow the container
         if (
-          cellRect.right > containerRect.right ||
-          cellRect.left < containerRect.left
+          actionButtonRight > containerRect.right ||
+          actionButtonLeft < containerRect.left
         ) {
           return true;
         }
       }
-
-      return isOverflowed;
+      return false;
     },
     [],
   );

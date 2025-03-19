@@ -587,6 +587,20 @@ describe('Markdown', () => {
       html: '<p><b><strong style="white-space: pre-wrap;">*test*</strong></b></p>',
       md: '**\\*test\\***',
     },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">some bold text with an escaped star: *</strong></b><span style="white-space: pre-wrap;"> normal text</span></p>',
+      md: '**some bold text with an escaped star: \\*** normal text',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*This text should </span><b><strong style="white-space: pre-wrap;">not</strong></b><span style="white-space: pre-wrap;"> be italic*</span></p>',
+      md: '\\*This text should **not** be italic*',
+      mdAfterExport: '\\*This text should **not** be italic\\*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*some text*</span></p>',
+      md: '\\*some text*',
+      mdAfterExport: '\\*some text\\*',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

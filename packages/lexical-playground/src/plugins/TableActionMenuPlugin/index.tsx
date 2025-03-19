@@ -813,9 +813,9 @@ function TableCellActionMenuContainer({
         const cellRect = tableCellParentNodeDOM.getBoundingClientRect();
 
         // Calculate where the action button would be positioned (5px from right edge of cell)
-        // Also account for the button width (20px) and its right margin (5px)
+        // Also account for the button width and table cell padding (8px)
         const actionButtonRight = cellRect.right - 5;
-        const actionButtonLeft = actionButtonRight - 20;
+        const actionButtonLeft = actionButtonRight - 28; // 20px width + 8px padding
 
         // Only hide if the action button would overflow the container
         if (

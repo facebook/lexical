@@ -294,24 +294,38 @@ function createTextFormatTransformersIndex(
 ): TextFormatTransformersIndex {
   const transformersByTag: Record<string, TextFormatTransformer> = {};
   const fullMatchRegExpByTag: Record<string, RegExp> = {};
-  const openTagsRegExp = [];
+  const openTagsRegExp: string[] = [];
   const escapeRegExp = `(?<![\\\\])`;
+
+  // Sort `textTransformers` so that longer tags come before shorter ones
+  // (prevents `*` from "stealing" text that should match `**`).
+  textTransformers.sort((a, b) => b.tag.length - a.tag.length);
 
   for (const transformer of textTransformers) {
     const {tag} = transformer;
     transformersByTag[tag] = transformer;
+
     const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
-    fullMatchRegExpByTag[tag] = new RegExp(
-      `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
-    );
+    // Single-char tag (e.g. "*"),
+    if (tag.length === 1) {
+      fullMatchRegExpByTag[tag] = new RegExp(
+        `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+      );
+    } else {
+      // Multi‐char tags (e.g. "**")
+      fullMatchRegExpByTag[tag] = new RegExp(
+        `(?<!\\\\)(${tagRegExp})((\\\\${tagRegExp})?.*?[^\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?!\\\\)`,
+      );
+    }
   }
 
   return {
     // Reg exp to find open tag + content + close tag
     fullMatchRegExpByTag,
-    // Reg exp to find opening tags
+
+    // Regexp to locate *any* potential opening tag (longest first).
     openTagsRegExp: new RegExp(
       `${escapeRegExp}(${openTagsRegExp.join('|')})`,
       'g',

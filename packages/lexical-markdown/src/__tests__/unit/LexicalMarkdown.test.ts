@@ -583,6 +583,10 @@ describe('Markdown', () => {
       html: '<p><b><strong style="white-space: pre-wrap;">Backtick and asteriks: `**`.</strong></b></p>',
       md: '**Backtick and asteriks: \\`\\*\\*\\`.**',
     },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">*test*</strong></b></p>',
+      md: '**\\*test\\***',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

@@ -19,7 +19,10 @@
 }
 
 .draggable-block-menu .icon-plus {
+  display: inline-block;
+  border: none;
   cursor: pointer;
+  background-color: transparent;
   background-image: url(../../images/icons/plus.svg);
 }
 

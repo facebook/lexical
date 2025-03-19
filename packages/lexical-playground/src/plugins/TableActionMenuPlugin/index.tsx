@@ -821,7 +821,11 @@ function TableCellActionMenuContainer({
         const cellRect = tableCellParentNodeDOM.getBoundingClientRect();
 
         // Check if the cell's right edge is beyond the container's right edge
-        if (cellRect.right > containerRect.right) {
+        // or if the cell's left edge is before the container's left edge
+        if (
+          cellRect.right > containerRect.right ||
+          cellRect.left < containerRect.left
+        ) {
           return true;
         }
       }

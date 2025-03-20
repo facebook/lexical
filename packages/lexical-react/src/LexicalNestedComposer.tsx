@@ -51,6 +51,12 @@ export interface LexicalNestedComposerProps {
   initialTheme?: EditorThemeClasses;
   /**
    * @deprecated This feature is not safe or correctly implemented and will be removed in v0.30.0. The only correct time to configure the nodes is when creating the initialEditor.
+   *
+   * @example
+   * ```ts
+   * // This is normally in the implementation of a LexicalNode that owns the nested editor
+   * editor = createEditor({nodes: [], parentEditor: $getEditor()});
+   * ```
    */
   initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   /**
@@ -60,7 +66,7 @@ export interface LexicalNestedComposerProps {
 }
 
 const initialNodesWarning = warnOnlyOnce(
-  `LexicalNestedComposer initialNodes is deprecated and will be removed in v0.30.0. It does not work correctly. You should configure your editor's nodes with createEditor({nodes})`,
+  `LexicalNestedComposer initialNodes is deprecated and will be removed in v0.30.0. It does not work correctly. You should configure your editor's nodes with createEditor({nodes, parentEditor: $getEditor()})`,
 );
 
 export function LexicalNestedComposer({

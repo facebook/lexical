@@ -24,7 +24,6 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
-  $isTextNode,
   ElementNode,
 } from 'lexical';
 
@@ -247,15 +246,6 @@ function $importBlocks(
     textFormatTransformersIndex,
     textMatchTransformers,
   );
-
-  // Go through every text node in the element node and handle escape characters
-  for (const child of elementNode.getChildren()) {
-    if ($isTextNode(child)) {
-      const textContent = child.getTextContent();
-      const escapedText = textContent.replace(/\\([*_`~])/g, '$1');
-      child.setTextContent(escapedText);
-    }
-  }
 
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node

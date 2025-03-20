@@ -175,6 +175,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__caption =
       caption ||
       createEditor({
+        namespace: 'Playground/ImageNodeCaption',
         nodes: [
           RootNode,
           TextNode,

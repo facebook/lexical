@@ -129,6 +129,7 @@ export function LexicalNestedComposer({
             parentEditor._nodes,
           ));
           if (!explicitNamespace) {
+            // This is the only safe situation to inherit the parent's namespace
             initialEditor._config.namespace = parentEditor._config.namespace;
           }
           for (const [type, entry] of parentNodes) {
@@ -142,6 +143,7 @@ export function LexicalNestedComposer({
           }
         } else if (!explicitNamespace) {
           explicitNamespaceWarning();
+          initialEditor._config.namespace = parentEditor._config.namespace;
         }
       } else {
         initialNodesWarning();

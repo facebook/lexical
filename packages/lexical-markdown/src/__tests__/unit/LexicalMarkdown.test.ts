@@ -601,6 +601,10 @@ describe('Markdown', () => {
       md: '\\*some text*',
       mdAfterExport: '\\*some text\\*',
     },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">text </span><b><strong style="white-space: pre-wrap;">bold</strong></b><span style="white-space: pre-wrap;"> *normal*</span></a></p>',
+      md: '[text **bold** \\*normal\\*](https://lexical.dev)',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

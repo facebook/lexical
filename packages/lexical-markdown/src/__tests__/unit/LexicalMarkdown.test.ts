@@ -605,6 +605,10 @@ describe('Markdown', () => {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">text </span><b><strong style="white-space: pre-wrap;">bold</strong></b><span style="white-space: pre-wrap;"> *normal*</span></a></p>',
       md: '[text **bold** \\*normal\\*](https://lexical.dev)',
     },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*Hello* world</span></p>',
+      md: '\\*Hello\\* world',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

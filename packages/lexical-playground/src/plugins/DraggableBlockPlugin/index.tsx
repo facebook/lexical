@@ -60,7 +60,11 @@ export default function DraggableBlockPlugin({
       targetLineRef={targetLineRef}
       menuComponent={
         <div ref={menuRef} className="icon draggable-block-menu">
-          <div className="icon icon-plus" onClick={insertBlock} />
+          <button
+            title="Click to add below"
+            className="icon icon-plus"
+            onClick={insertBlock}
+          />
           <div className="icon" />
         </div>
       }

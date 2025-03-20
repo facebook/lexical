@@ -21,8 +21,21 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {$applyNodeReplacement, createEditor, DecoratorNode} from 'lexical';
+import {HashtagNode} from '@lexical/hashtag';
+import {LinkNode} from '@lexical/link';
+import {
+  $applyNodeReplacement,
+  createEditor,
+  DecoratorNode,
+  LineBreakNode,
+  ParagraphNode,
+  RootNode,
+  TextNode,
+} from 'lexical';
 import * as React from 'react';
+
+import {EmojiNode} from './EmojiNode';
+import {KeywordNode} from './KeywordNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
@@ -162,7 +175,16 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__caption =
       caption ||
       createEditor({
-        nodes: [],
+        nodes: [
+          RootNode,
+          TextNode,
+          LineBreakNode,
+          ParagraphNode,
+          LinkNode,
+          EmojiNode,
+          HashtagNode,
+          KeywordNode,
+        ],
       });
     this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
   }

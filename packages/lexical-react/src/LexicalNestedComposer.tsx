@@ -25,6 +25,7 @@ import {
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 function getTransformSetFromKlass(
   klass: KlassConstructor<typeof LexicalNode>,
@@ -35,19 +36,40 @@ function getTransformSetFromKlass(
     : new Set<Transform<LexicalNode>>();
 }
 
+export interface LexicalNestedComposerProps {
+  /**
+   * Any children (e.g. plug-ins) for this editor
+   */
+  children: ReactNode;
+  /**
+   * The nested editor, created outside of this component with {@link createEditor}
+   */
+  initialEditor: LexicalEditor;
+  /**
+   * Optionally overwrite the theme of the initialEditor
+   */
+  initialTheme?: EditorThemeClasses;
+  /**
+   * @deprecated This feature is not safe or correctly implemented and will be removed in v0.30.0. The only correct time to configure the nodes is when creating the initialEditor.
+   */
+  initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  /**
+   * If this is not explicitly set to true, and the collab plugin is active, rendering the children of this component will not happen until collab is ready.
+   */
+  skipCollabChecks?: true;
+}
+
+const initialNodesWarning = warnOnlyOnce(
+  `LexicalNestedComposer initialNodes is deprecated and will be removed in v0.30.0. It does not work correctly. You should configure your editor's nodes with createEditor({nodes})`,
+);
+
 export function LexicalNestedComposer({
   initialEditor,
   children,
   initialNodes,
   initialTheme,
   skipCollabChecks,
-}: {
-  children: ReactNode;
-  initialEditor: LexicalEditor;
-  initialTheme?: EditorThemeClasses;
-  initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
-  skipCollabChecks?: true;
-}): JSX.Element {
+}: LexicalNestedComposerProps): JSX.Element {
   const wasCollabPreviouslyReadyRef = useRef(false);
   const parentContext = useContext(LexicalComposerContext);
 
@@ -87,6 +109,7 @@ export function LexicalNestedComposer({
           });
         }
       } else {
+        initialNodesWarning();
         for (let klass of initialNodes) {
           let replace = null;
           let replaceWithKlass = null;

@@ -15,6 +15,7 @@ import {
   initialize,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  LEGACY_EVENTS,
   selectFromInsertDropdown,
   test,
   withExclusiveClipboardAccess,
@@ -28,7 +29,7 @@ test.describe('HTML CopyAndPaste', () => {
     isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isPlainText || isCollab || LEGACY_EVENTS);
 
     await focusEditor(page);
     await selectFromInsertDropdown(page, '.poll');

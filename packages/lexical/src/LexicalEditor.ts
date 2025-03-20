@@ -1280,7 +1280,11 @@ export class LexicalEditor {
   }
 
   /**
-   * Focuses the editor
+   * Focuses the editor by marking the existing selection as dirty, or by
+   * creating a new selection at `defaultSelection` if one does not already
+   * exist. If you want to force a specific selection, you should call
+   * `root.selectStart()` or `root.selectEnd()` in an update.
+   *
    * @param callbackFn - A function to run after the editor is focused.
    * @param options - A bag of options
    * @param options.defaultSelection - Where to move selection when the editor is

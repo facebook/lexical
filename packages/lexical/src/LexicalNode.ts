@@ -148,7 +148,12 @@ export function $removeNode(
   ) {
     $removeNode(parent, restoreSelection);
   }
-  if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
+  if (
+    restoreSelection &&
+    selection &&
+    $isRootNode(parent) &&
+    parent.isEmpty()
+  ) {
     parent.selectEnd();
   }
 }

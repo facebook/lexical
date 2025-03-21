@@ -6,7 +6,6 @@
  *
  */
 
-import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
@@ -38,12 +37,10 @@ const RICH_TEXT_NODES = [
   ListNode,
   ListItemNode,
   QuoteNode,
-  CodeNode,
   TableNode,
   TableCellNode,
   TableRowNode,
   HashtagNode,
-  CodeHighlightNode,
   AutoLinkNode,
   LinkNode,
   OverflowNode,

@@ -15,6 +15,8 @@ import type {
   CaretDirection,
   SiblingCaret,
   RootMode,
+  SplitAtPointCaretNextOptions,
+  PointCaret,
 } from 'lexical';
 declare export function addClassNamesToElement(
   element: HTMLElement,
@@ -102,7 +104,9 @@ declare export function $restoreEditorState(
   editorState: EditorState,
 ): void;
 
+
 declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T): T;
+declare export function $insertNodeToNearestRootAtCaret<T: LexicalNode>(node: T, caret: PointCaret<CaretDirection>, options?: SplitAtPointCaretNextOptions): T;
 
 declare export function $wrapNodeInElement(
   node: LexicalNode,

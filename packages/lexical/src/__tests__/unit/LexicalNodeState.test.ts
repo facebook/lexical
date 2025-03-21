@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {makeStateWrapper} from '@lexical/utils';
+
 import {
   $createParagraphNode,
   $createTextNode,
@@ -15,13 +15,15 @@ import {
   $isParagraphNode,
   $setState,
   createState,
+  LexicalExportJSON,
   NODE_STATE_KEY,
+  type NodeStateJSON,
   ParagraphNode,
   RootNode,
-  SerializedLexicalNode,
+  StateValueOrUpdater,
 } from 'lexical';
 
-import {$nodeStatesAreEquivalent} from '../../LexicalNodeState';
+import {nodeStatesAreEquivalent} from '../../LexicalNodeState';
 import {initializeUnitTest, invariant} from '../utils';
 import {TestNode} from './LexicalNode.test';
 
@@ -36,20 +38,77 @@ type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
 const numberState = createState('numberState', {
   parse: (v) => (typeof v === 'number' ? v : 0),
 });
-const numberStateWrapper = makeStateWrapper(numberState);
+const boolState = createState('boolState', {parse: Boolean});
 class StateNode extends TestNode {
-  static getType() {
-    return 'state';
+  $config() {
+    return this.config('state', {
+      extends: TestNode,
+      stateConfigs: [{flat: true, stateConfig: numberState}, boolState],
+    });
   }
-  static clone(node: StateNode) {
-    return new StateNode(node.__key);
+  getNumber() {
+    return $getState(this, numberState);
   }
-  static importJSON(serializedNode: SerializedLexicalNode): TestNode {
-    return new StateNode().updateFromJSON(serializedNode);
+  setNumber(valueOrUpdater: StateValueOrUpdater<typeof numberState>): this {
+    return $setState(this, numberState, valueOrUpdater);
   }
-  getNumber = numberStateWrapper.makeGetterMethod<this>();
-  setNumber = numberStateWrapper.makeSetterMethod<this>();
 }
+
+const extraState = createState('extra', {parse: String});
+class ExtraStateNode extends StateNode {
+  $config() {
+    return this.config('extra-state', {
+      extends: StateNode,
+      stateConfigs: [{flat: true, stateConfig: extraState}],
+    });
+  }
+}
+
+type StateNodeStateJSON = NodeStateJSON<StateNode>;
+type _TestNodeStateJSON = Expect<
+  Equal<
+    StateNodeStateJSON,
+    {
+      [NODE_STATE_KEY]?: {boolState?: boolean | undefined} | undefined;
+      numberState?: number | undefined;
+    }
+  >
+>;
+type StateNodeExportJSON = LexicalExportJSON<StateNode>;
+type _TestStateNodeExportJSON = Expect<
+  Equal<
+    StateNodeExportJSON,
+    {
+      [NODE_STATE_KEY]?:
+        | (Record<string, unknown> & {
+            boolState?: boolean | undefined;
+          })
+        | undefined;
+      version: number;
+      type: 'state';
+      numberState?: number | undefined;
+    }
+  >
+>;
+
+type ExtraStateNodeExportJSON = LexicalExportJSON<ExtraStateNode>;
+type _TestExtraStateNodeExportJSON = Expect<
+  Equal<
+    ExtraStateNodeExportJSON,
+    {
+      [NODE_STATE_KEY]?:
+        | (Record<string, unknown> & {
+            boolState?: boolean | undefined;
+          })
+        | undefined;
+      version: number;
+      type: 'extra-state';
+      numberState?: number | undefined;
+      extra?: string | undefined;
+    }
+  >
+>;
+
 function $createStateNode() {
   return new StateNode();
 }
@@ -168,8 +227,11 @@ describe('LexicalNode state', () => {
           expect(stateNode.getNumber()).toBe(1);
           stateNode.setNumber((n) => n + 1);
           expect(stateNode.getNumber()).toBe(2);
-          expect(stateNode.exportJSON()[NODE_STATE_KEY]).toStrictEqual({
+          $setState(stateNode, boolState, true);
+          expect(stateNode.exportJSON()).toMatchObject({
+            [NODE_STATE_KEY]: {boolState: true},
             numberState: 2,
+            type: 'state',
           });
         });
       });
@@ -291,9 +353,9 @@ describe('LexicalNode state', () => {
         expect(noState.read(() => $getState(v0, vk, 'direct'))).toBe(0);
         expect(noState.read(() => $getState(v1, vk, 'direct'))).toBe(1);
       });
-      describe('$nodeStatesAreEquivalent', () => {
+      describe('nodeStatesAreEquivalent', () => {
         test('undefined states are equivalent', () => {
-          expect($nodeStatesAreEquivalent(undefined, undefined)).toBe(true);
+          expect(nodeStatesAreEquivalent(undefined, undefined)).toBe(true);
         });
         test('TextNode merging only with equivalent state', () => {
           const {editor} = testEnv;
@@ -437,8 +499,8 @@ describe('LexicalNode state', () => {
               const bSet = equivalences[j];
               for (const a of aSet) {
                 for (const b of bSet) {
-                  expect($nodeStatesAreEquivalent(a, b)).toBe(false);
-                  expect($nodeStatesAreEquivalent(b, a)).toBe(false);
+                  expect(nodeStatesAreEquivalent(a, b)).toBe(false);
+                  expect(nodeStatesAreEquivalent(b, a)).toBe(false);
                 }
               }
             }
@@ -446,8 +508,8 @@ describe('LexicalNode state', () => {
               const a0 = aSet[j];
               for (let k = j + 1; k < aSet.length; k++) {
                 const a1 = aSet[k];
-                expect($nodeStatesAreEquivalent(a0, a1)).toBe(true);
-                expect($nodeStatesAreEquivalent(a1, a0)).toBe(true);
+                expect(nodeStatesAreEquivalent(a0, a1)).toBe(true);
+                expect(nodeStatesAreEquivalent(a1, a0)).toBe(true);
               }
             }
           }

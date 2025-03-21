@@ -6,7 +6,13 @@
  *
  */
 
-import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
+import type {
+  ElementNode,
+  LexicalCommand,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -22,6 +28,9 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  DELETE_CHARACTER_COMMAND,
+  DELETE_LINE_COMMAND,
+  DELETE_WORD_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -113,6 +122,44 @@ export function LayoutPlugin(): null {
         node.remove();
         return true;
       }
+      return false;
+    };
+
+    // Helper function to handle deletion of layout container
+    const $handleLayoutDelete = (selection: RangeSelection): boolean => {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      const anchorNode = anchor.getNode();
+
+      // Find if we're inside a layout container
+      const layoutContainer = $findMatchingParent(
+        anchorNode,
+        $isLayoutContainerNode,
+      );
+
+      if (!layoutContainer) {
+        return false;
+      }
+
+      // Check if the selection contains or is within the layout container
+      const isWithinContainer =
+        (anchor.key === layoutContainer.getKey() &&
+          focus.key === layoutContainer.getKey()) ||
+        layoutContainer.isSelected() ||
+        (layoutContainer.getDescendantByIndex(0)?.isSelected() &&
+          layoutContainer
+            .getDescendantByIndex(layoutContainer.getChildrenSize() - 1)
+            ?.isSelected());
+
+      if (isWithinContainer) {
+        // Delete the entire container and replace with an empty paragraph
+        const paragraph = $createParagraphNode();
+        layoutContainer.insertAfter(paragraph);
+        layoutContainer.remove();
+        paragraph.select();
+        return true;
+      }
+
       return false;
     };
 
@@ -227,6 +274,39 @@ export function LayoutPlugin(): null {
           node.remove();
         }
       }),
+      editor.registerCommand(
+        DELETE_CHARACTER_COMMAND,
+        (payload) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          return $handleLayoutDelete(selection);
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        DELETE_WORD_COMMAND,
+        (payload) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          return $handleLayoutDelete(selection);
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        DELETE_LINE_COMMAND,
+        (payload) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          return $handleLayoutDelete(selection);
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [editor]);
 

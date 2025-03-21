@@ -6181,4 +6181,60 @@ test.describe.parallel('Tables', () => {
         ),
     );
   });
+
+  test(`Table action menu is hidden when cell overflows`, async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    // The way that the clicks happen in test doesn't work in firefox for some reason
+    // but it does seem to work when you do it by hand
+    test.fixme(browserName === 'firefox');
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Insert a 2x2 table
+    await insertTable(page, 2, 2);
+
+    // Find and drag the column resize handle
+    const firstCell = await page.$('th >> nth=0');
+    const firstCellBox = await firstCell.boundingBox();
+
+    // Click the cell in 2nd column
+    await click(page, 'th >> nth=1');
+
+    // Check that the action menu button is visible when no overflow
+    const menuVisible = await page.evaluate(() => {
+      const button = document.querySelector('.table-cell-action-button');
+      // If button exists, menu is visible
+      return !!button;
+    });
+
+    expect(menuVisible).toBe(true);
+
+    // Make the column very wide to ensure overflow
+    await page.mouse.move(
+      firstCellBox.x + firstCellBox.width - 5,
+      firstCellBox.y + firstCellBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      firstCellBox.x + 2000, // Make column very wide - 2000 for more scroll space
+      firstCellBox.y + firstCellBox.height / 2,
+    );
+    await page.mouse.up();
+
+    // Click the cell
+    await click(page, 'th >> nth=0');
+
+    const menuHidden = await page.evaluate(() => {
+      const button = document.querySelector('.table-cell-action-button');
+      // If button doesn't exist, menu is hidden
+      return !button;
+    });
+
+    expect(menuHidden).toBe(true);
+  });
 });

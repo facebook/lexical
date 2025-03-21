@@ -20,6 +20,7 @@ import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isLineBreakNode,
+  $isNodeSelection,
   $isRangeSelection,
   BaseSelection,
   CLICK_COMMAND,
@@ -70,8 +71,13 @@ function FloatingLinkEditor({
 
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const node = getSelectedNode(selection);
+    const node = $isRangeSelection(selection)
+      ? getSelectedNode(selection)
+      : $isNodeSelection(selection) && selection.getNodes()[0]?.isInline()
+      ? selection.getNodes()[0]
+      : null;
+
+    if (node) {
       const linkParent = $findMatchingParent(node, $isLinkNode);
 
       if (linkParent) {
@@ -105,10 +111,17 @@ function FloatingLinkEditor({
       const domRect: DOMRect | undefined =
         nativeSelection.focusNode?.parentElement?.getBoundingClientRect();
       if (domRect) {
-        domRect.y += 40;
         setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
       }
       setLastSelection(selection);
+    } else if ($isNodeSelection(selection)) {
+      const domRect = editor
+        .getElementByKey(selection.getNodes()[0].getKey())
+        ?.getBoundingClientRect();
+
+      if (domRect) {
+        setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
+      }
     } else if (!activeElement || activeElement.className !== 'link-input') {
       if (rootElement !== null) {
         setFloatingElemPositionForLinkEditor(null, editorElem, anchorElem);
@@ -311,37 +324,50 @@ function useFloatingLinkEditorToolbar(
   useEffect(() => {
     function $updateToolbar() {
       const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        const focusNode = getSelectedNode(selection);
-        const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
-        const focusAutoLinkNode = $findMatchingParent(
-          focusNode,
-          $isAutoLinkNode,
-        );
-        if (!(focusLinkNode || focusAutoLinkNode)) {
-          setIsLink(false);
-          return;
-        }
-        const badNode = selection
-          .getNodes()
-          .filter((node) => !$isLineBreakNode(node))
-          .find((node) => {
-            const linkNode = $findMatchingParent(node, $isLinkNode);
-            const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
-            return (
-              (focusLinkNode && !focusLinkNode.is(linkNode)) ||
-              (linkNode && !linkNode.is(focusLinkNode)) ||
-              (focusAutoLinkNode && !focusAutoLinkNode.is(autoLinkNode)) ||
-              (autoLinkNode &&
-                (!autoLinkNode.is(focusAutoLinkNode) ||
-                  autoLinkNode.getIsUnlinked()))
-            );
-          });
-        if (!badNode) {
-          setIsLink(true);
-        } else {
-          setIsLink(false);
-        }
+      if (!selection) {
+        setIsLink(false);
+        return;
+      }
+
+      const focusNode = $isRangeSelection(selection)
+        ? getSelectedNode(selection)
+        : $isNodeSelection(selection) && selection.getNodes()[0]?.isInline()
+        ? selection.getNodes()[0]
+        : null;
+
+      if (!focusNode) {
+        setIsLink(false);
+        return;
+      }
+
+      const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
+      const focusAutoLinkNode = $findMatchingParent(focusNode, $isAutoLinkNode);
+
+      if (!(focusLinkNode || focusAutoLinkNode)) {
+        setIsLink(false);
+        return;
+      }
+
+      const badNode = selection
+        .getNodes()
+        .filter((node) => !$isLineBreakNode(node))
+        .find((node) => {
+          const linkNode = $findMatchingParent(node, $isLinkNode);
+          const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
+
+          return (
+            (focusLinkNode && !focusLinkNode.is(linkNode)) ||
+            (linkNode && !linkNode.is(focusLinkNode)) ||
+            (focusAutoLinkNode && !focusAutoLinkNode.is(autoLinkNode)) ||
+            (autoLinkNode &&
+              (!autoLinkNode.is(focusAutoLinkNode) ||
+                autoLinkNode.getIsUnlinked()))
+          );
+        });
+      if (!badNode) {
+        setIsLink(true);
+      } else {
+        setIsLink(false);
       }
     }
     return mergeRegister(

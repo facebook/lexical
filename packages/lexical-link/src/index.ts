@@ -29,6 +29,7 @@ import {
   $applyNodeReplacement,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $normalizeSelection__EXPERIMENTAL,
   $setSelection,
@@ -562,9 +563,13 @@ export function $toggleLink(
   const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();
 
-  if (!$isRangeSelection(selection)) {
+  if (
+    !$isRangeSelection(selection) &&
+    (!$isNodeSelection(selection) || !selection.getNodes()[0].isInline())
+  ) {
     return;
   }
+
   const nodes = selection.extract();
 
   if (url === null) {

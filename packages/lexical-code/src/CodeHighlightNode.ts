@@ -38,7 +38,7 @@ import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 
-type SerializedCodeHighlightNode = Spread<
+export type SerializedCodeHighlightNode = Spread<
   {
     highlightType: string | null | undefined;
   },

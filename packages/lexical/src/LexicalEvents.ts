@@ -20,6 +20,7 @@ import {
   IS_SAFARI,
 } from 'shared/environment';
 import invariant from 'shared/invariant';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {
   $getPreviousSelection,
@@ -1412,13 +1413,18 @@ export function addRootElementEvents(
   }
 }
 
+const rootElementNotRegisteredWarning = warnOnlyOnce(
+  'Root element not registered',
+);
+
 export function removeRootElementEvents(rootElement: HTMLElement): void {
   const doc = rootElement.ownerDocument;
   const documentRootElementsCount = rootElementsRegistered.get(doc);
-  invariant(
-    documentRootElementsCount !== undefined,
-    'Root element not registered',
-  );
+  if (documentRootElementsCount === undefined) {
+    // This can happen if setRootElement() failed
+    rootElementNotRegisteredWarning();
+    return;
+  }
 
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.

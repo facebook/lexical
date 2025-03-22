@@ -42,7 +42,7 @@ export interface LexicalNestedComposerProps {
    * operation of those nodes) from the parent editor. If you are using nodes
    * that require plug-ins they must also be instantiated here.
    */
-  children: ReactNode;
+  children?: ReactNode;
   /**
    * The nested editor, created outside of this component (typically in the
    * implementation of a LexicalNode) with {@link createEditor}

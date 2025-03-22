@@ -11,10 +11,22 @@
   gap: 2px;
 }
 
+.draggable-block-highlight {
+  outline: 1px dashed deepskyblue;
+}
+
+.draggable-block-depth-0 {
+  left: -40px;
+}
+
+.draggable-block-depth-1 {
+  left: -20px;
+}
+
 .draggable-block-menu .icon {
   width: 16px;
   height: 16px;
-  opacity: 0.3;
+  opacity: 0.6;
   background-image: url(../../images/icons/draggable-block-menu.svg);
 }
 

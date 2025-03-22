@@ -43,7 +43,7 @@ const Downward = 1;
 const Upward = -1;
 const Indeterminate = 0;
 
-export interface ElementInfosHolder {
+interface ElementInfosHolder {
   element: HTMLElement;
   nodeKey: string;
   depth: number;
@@ -348,7 +348,11 @@ function useDraggableBlockMenu(
   menuComponent: ReactNode,
   targetLineComponent: ReactNode,
   isOnMenu: (element: HTMLElement) => boolean,
-  onElementChanged: (element: ElementInfosHolder | null) => void,
+  onElementChanged: (
+    element: HTMLElement | null,
+    nodeKey: string,
+    depth: number,
+  ) => void,
   $getInnerNodes?: (node: LexicalNode, depth: number) => string[],
 ): JSX.Element {
   const scrollerElem = anchorElem.parentElement;
@@ -358,7 +362,15 @@ function useDraggableBlockMenu(
     useState<ElementInfosHolder | null>(null);
 
   useEffect(() => {
-    onElementChanged(draggableBlock);
+    if (draggableBlock) {
+      onElementChanged(
+        draggableBlock.element,
+        draggableBlock.nodeKey,
+        draggableBlock.depth,
+      );
+    } else {
+      onElementChanged(null, '', 0);
+    }
   }, [draggableBlock, onElementChanged]);
 
   useEffect(() => {
@@ -555,7 +567,11 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
   menuComponent: ReactNode;
   targetLineComponent: ReactNode;
   isOnMenu: (element: HTMLElement) => boolean;
-  onElementChanged?: (element: ElementInfosHolder | null) => void;
+  onElementChanged?: (
+    element: HTMLElement | null,
+    nodeKey: string,
+    depth: number,
+  ) => void;
   $getInnerNodes?: (node: LexicalNode, depth: number) => string[];
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();

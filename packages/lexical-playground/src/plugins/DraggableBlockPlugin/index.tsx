@@ -10,10 +10,7 @@ import type {JSX} from 'react';
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  DraggableBlockPlugin_EXPERIMENTAL,
-  ElementInfosHolder,
-} from '@lexical/react/LexicalDraggableBlockPlugin';
+import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
@@ -40,20 +37,27 @@ export default function DraggableBlockPlugin({
   const [editor] = useLexicalComposerContext();
   const menuRef = useRef<HTMLDivElement>(null);
   const targetLineRef = useRef<HTMLDivElement>(null);
-  const [draggableElement, setDraggableElement] =
-    useState<ElementInfosHolder | null>(null);
+  const [draggableElement, setDraggableElement] = useState<HTMLElement | null>(
+    null,
+  );
+  const [draggableElementDepth, setDraggableElementDepth] = useState<number>(0);
 
-  function handleDraggableElementChanged(eih: ElementInfosHolder | null) {
+  function handleDraggableElementChanged(
+    element: HTMLElement | null,
+    nodeKey: string,
+    depth: number,
+  ) {
+    setDraggableElementDepth(depth);
     setDraggableElement((prev) => {
       if (prev) {
-        prev.element.classList.remove('draggable-block-highlight');
+        prev.classList.remove('draggable-block-highlight');
       }
 
-      if (eih) {
-        eih.element.classList.add('draggable-block-highlight');
+      if (element) {
+        element.classList.add('draggable-block-highlight');
       }
 
-      return eih;
+      return element;
     });
   }
 
@@ -64,7 +68,7 @@ export default function DraggableBlockPlugin({
       }
 
       editor.update(() => {
-        const node = $getNearestNodeFromDOMNode(draggableElement.element);
+        const node = $getNearestNodeFromDOMNode(draggableElement);
         if (!node) {
           return;
         }
@@ -113,7 +117,7 @@ export default function DraggableBlockPlugin({
           ref={menuRef}
           className={`icon draggable-block-menu ${
             draggableElement
-              ? `draggable-block-depth-${draggableElement.depth}`
+              ? `draggable-block-depth-${draggableElementDepth}`
               : ''
           }`}>
           <button
@@ -121,9 +125,7 @@ export default function DraggableBlockPlugin({
             className="icon icon-plus"
             onClick={insertBlock}
           />
-          {draggableElement && draggableElement.depth === 0 && (
-            <div className="icon" />
-          )}
+          {draggableElementDepth === 0 && <div className="icon" />}
         </div>
       }
       targetLineComponent={

@@ -12,7 +12,7 @@
 }
 
 .draggable-block-highlight {
-  outline: 1px dashed deepskyblue;
+  box-shadow: -3px 0px 0px 0px rgba(0, 191, 255, 0.3);
 }
 
 .draggable-block-depth-0 {

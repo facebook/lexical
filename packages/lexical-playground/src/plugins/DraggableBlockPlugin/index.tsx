@@ -49,7 +49,7 @@ export default function DraggableBlockPlugin({
         prev.element.classList.remove('draggable-block-highlight');
       }
 
-      if (eih && eih.depth > 0) {
+      if (eih) {
         eih.element.classList.add('draggable-block-highlight');
       }
 

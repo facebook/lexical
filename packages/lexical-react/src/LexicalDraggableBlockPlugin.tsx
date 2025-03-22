@@ -278,17 +278,9 @@ function setMenuPosition(
   }
 
   const targetRect = targetInfos.element.getBoundingClientRect();
-  const targetStyle = window.getComputedStyle(targetInfos.element);
   const anchorElementRect = anchorElem.getBoundingClientRect();
 
-  // top left
-  let targetCalculateHeight: number = parseInt(targetStyle.lineHeight, 10);
-  if (isNaN(targetCalculateHeight)) {
-    // middle
-    targetCalculateHeight = targetRect.bottom - targetRect.top;
-  }
   const top = targetRect.top - anchorElementRect.top;
-
   const left = targetRect.left - anchorElementRect.left;
 
   floatingElem.style.opacity = '1';

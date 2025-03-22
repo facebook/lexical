@@ -109,18 +109,22 @@ export default function DraggableBlockPlugin({
       menuRef={menuRef}
       targetLineRef={targetLineRef}
       menuComponent={
-        draggableElement && (
-          <div
-            ref={menuRef}
-            className={`icon draggable-block-menu draggable-block-depth-${draggableElement.depth}`}>
-            <button
-              title="Click to add below"
-              className="icon icon-plus"
-              onClick={insertBlock}
-            />
-            {draggableElement.depth === 0 && <div className="icon" />}
-          </div>
-        )
+        <div
+          ref={menuRef}
+          className={`icon draggable-block-menu ${
+            draggableElement
+              ? `draggable-block-depth-${draggableElement.depth}`
+              : ''
+          }`}>
+          <button
+            title="Click to add below&#10;Cmd/Alt+Click to add above"
+            className="icon icon-plus"
+            onClick={insertBlock}
+          />
+          {draggableElement && draggableElement.depth === 0 && (
+            <div className="icon" />
+          )}
+        </div>
       }
       targetLineComponent={
         <div ref={targetLineRef} className="draggable-block-target-line" />

@@ -49,17 +49,50 @@ interface ElementInfosHolder {
   depth: number;
 }
 
-let prevIndex = Infinity;
-
-function getCurrentIndex(keysLength: number): number {
-  if (keysLength === 0) {
-    return Infinity;
+const prevIndex: {groupIndex: number; index: number}[] = [];
+function getCurrentIndex(
+  depth: number,
+  groupsKeysLength: number[],
+): {groupIndex: number; index: number} {
+  if (groupsKeysLength.length === 0) {
+    return {groupIndex: Infinity, index: Infinity};
   }
-  if (prevIndex >= 0 && prevIndex < keysLength) {
-    return prevIndex;
+
+  const prevRefDepth = prevIndex[depth];
+  if (!prevRefDepth) {
+    return {
+      groupIndex: Math.floor(groupsKeysLength.length / 2),
+      index: Math.floor(
+        groupsKeysLength[Math.floor(groupsKeysLength.length / 2)] / 2,
+      ),
+    };
   }
 
-  return Math.floor(keysLength / 2);
+  if (
+    prevRefDepth.groupIndex < 0 ||
+    prevRefDepth.groupIndex >= groupsKeysLength.length
+  ) {
+    return {
+      groupIndex: Math.floor(groupsKeysLength.length / 2),
+      index: Math.floor(
+        groupsKeysLength[Math.floor(groupsKeysLength.length / 2)] / 2,
+      ),
+    };
+  }
+
+  if (
+    prevRefDepth.index < 0 ||
+    prevRefDepth.index >= groupsKeysLength[prevRefDepth.groupIndex]
+  ) {
+    return {
+      groupIndex: Math.floor(groupsKeysLength.length / 2),
+      index: Math.floor(
+        groupsKeysLength[Math.floor(groupsKeysLength.length / 2)] / 2,
+      ),
+    };
+  }
+
+  return prevRefDepth;
 }
 
 function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
@@ -98,21 +131,25 @@ function getCollapsedMargins(elem: HTMLElement): {
 }
 
 function getBlockElementFromNodes(
-  nodeKeys: string[],
+  // Array of array: from left to right then top to bottom
+  nodeKeys: string[][],
   anchorElementRect: DOMRect,
   editor: LexicalEditor,
   event: MouseEvent,
   useEdgeAsDefault = false,
   depth = 0,
-  $getInnerNodes?: (node: LexicalNode, nodeDepth: number) => string[],
+  $getInnerNodes?: (node: LexicalNode, nodeDepth: number) => string[][],
 ): ElementInfosHolder | null {
   let blockElem: HTMLElement | null = null;
   let nodeKey: string | null = null;
 
   editor.getEditorState().read(() => {
     if (useEdgeAsDefault) {
-      const firstLevelNode = nodeKeys[0];
-      const lastLevelNode = nodeKeys[nodeKeys.length - 1];
+      const firstGroup = nodeKeys[0];
+      const lastGroup = nodeKeys[nodeKeys.length - 1];
+
+      const firstLevelNode = firstGroup[0];
+      const lastLevelNode = lastGroup[lastGroup.length - 1];
 
       if (firstLevelNode && lastLevelNode) {
         const [firstNode, lastNode] = [
@@ -143,11 +180,16 @@ function getBlockElementFromNodes(
       }
     }
 
-    let index = getCurrentIndex(nodeKeys.length);
+    let {groupIndex, index} = getCurrentIndex(
+      depth,
+      nodeKeys.map((group) => group.length),
+    );
     let direction = Indeterminate;
 
-    while (index >= 0 && index < nodeKeys.length) {
-      const key = nodeKeys[index];
+    let watchdog = 0;
+    while (index >= 0 && index < nodeKeys[groupIndex].length && watchdog < 50) {
+      watchdog += 1;
+      const key = nodeKeys[groupIndex][index];
       if (key === undefined) {
         break;
       }
@@ -182,27 +224,49 @@ function getBlockElementFromNodes(
       if (result) {
         blockElem = elem;
         nodeKey = key;
-        prevIndex = index;
+        prevIndex[depth] = {groupIndex, index};
         break;
       }
 
-      if (direction === Indeterminate) {
-        if (isOnTopSide || isOnLeftSide) {
-          direction = Upward;
-        } else if (isOnBottomSide || isOnRightSide) {
-          direction = Downward;
-        } else {
+      if (isOnLeftSide) {
+        // Change group
+        groupIndex -= 1;
+        if (groupIndex < 0) {
           // stop search block element
-          direction = Infinity;
+          break;
         }
-      }
 
-      index += direction;
+        index = Math.floor(nodeKeys[groupIndex].length / 2);
+        direction = Indeterminate;
+      } else if (isOnRightSide) {
+        // Change group
+        groupIndex += 1;
+        if (groupIndex >= nodeKeys.length) {
+          // stop search block element
+          break;
+        }
+
+        index = Math.floor(nodeKeys[groupIndex].length / 2);
+        direction = Indeterminate;
+      } else {
+        if (direction === Indeterminate) {
+          if (isOnTopSide) {
+            direction = Upward;
+          } else if (isOnBottomSide) {
+            direction = Downward;
+          } else {
+            // stop search block element
+            break;
+          }
+        }
+
+        index += direction;
+      }
     }
   });
 
   if ($getInnerNodes && nodeKey !== null) {
-    let innerNodes: string[] = [];
+    let innerNodes: string[][] = [];
     editor.read(() => {
       if (nodeKey) {
         const node = $getNodeByKey(nodeKey);
@@ -250,13 +314,13 @@ function getBlockElement(
   editor: LexicalEditor,
   event: MouseEvent,
   useEdgeAsDefault = false,
-  $getInnerNodes?: (node: LexicalNode, depth: number) => string[],
+  $getInnerNodes?: (node: LexicalNode, depth: number) => string[][],
 ): ElementInfosHolder | null {
   const anchorElementRect = anchorElem.getBoundingClientRect();
   const topLevelNodeKeys = getTopLevelNodeKeys(editor);
 
   return getBlockElementFromNodes(
-    topLevelNodeKeys,
+    [topLevelNodeKeys],
     anchorElementRect,
     editor,
     event,
@@ -353,7 +417,7 @@ function useDraggableBlockMenu(
     nodeKey: string,
     depth: number,
   ) => void,
-  $getInnerNodes?: (node: LexicalNode, depth: number) => string[],
+  $getInnerNodes?: (node: LexicalNode, depth: number) => string[][],
 ): JSX.Element {
   const scrollerElem = anchorElem.parentElement;
 
@@ -572,7 +636,7 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
     nodeKey: string,
     depth: number,
   ) => void;
-  $getInnerNodes?: (node: LexicalNode, depth: number) => string[];
+  $getInnerNodes?: (node: LexicalNode, depth: number) => string[][];
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   return useDraggableBlockMenu(

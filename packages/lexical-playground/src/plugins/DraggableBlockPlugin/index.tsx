@@ -86,7 +86,7 @@ export default function DraggableBlockPlugin({
   );
 
   const $getInnerNodes = useCallback(
-    (node: LexicalNode, depth: number): string[] => {
+    (node: LexicalNode, depth: number): string[][] => {
       if (depth >= MAX_DRAGGABLEPLUGIN_DEPTH) {
         return [];
       }
@@ -95,7 +95,7 @@ export default function DraggableBlockPlugin({
         return [];
       }
 
-      return node.getChildrenKeys().flatMap((childKey) => {
+      return node.getChildrenKeys().map((childKey) => {
         const childNode = $getNodeByKey(childKey);
         if ($isLayoutItemNode(childNode)) {
           return childNode.getChildrenKeys();

@@ -29,6 +29,7 @@ import {
   $applyNodeReplacement,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $normalizeSelection__EXPERIMENTAL,
   $setSelection,
@@ -562,9 +563,64 @@ export function $toggleLink(
   const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();
 
-  if (!$isRangeSelection(selection)) {
+  if (
+    selection === null ||
+    (!$isRangeSelection(selection) && !$isNodeSelection(selection))
+  ) {
     return;
   }
+
+  if ($isNodeSelection(selection)) {
+    const nodes = selection.getNodes();
+    if (nodes.length === 0) {
+      return;
+    }
+
+    const node = nodes[0];
+    if (url === null) {
+      // If we're removing the link and the node is inside a link, move it out
+      const linkParent = $findMatchingParent(
+        node,
+        (parent): parent is LinkNode =>
+          !$isAutoLinkNode(parent) && $isLinkNode(parent),
+      );
+      if (linkParent) {
+        linkParent.insertBefore(node);
+        if (linkParent.getChildren().length === 0) {
+          linkParent.remove();
+        }
+      }
+      return;
+    }
+
+    // If the node is already inside a link, update that link
+    const existingLink = $findMatchingParent(
+      node,
+      (parent): parent is LinkNode =>
+        !$isAutoLinkNode(parent) && $isLinkNode(parent),
+    );
+    if (existingLink) {
+      existingLink.setURL(url);
+      if (target !== undefined) {
+        existingLink.setTarget(target);
+      }
+      if (rel !== undefined) {
+        existingLink.setRel(rel);
+      }
+      if (title !== undefined) {
+        existingLink.setTitle(title);
+      }
+      return;
+    }
+
+    // Otherwise, wrap the node in a new link
+    const linkNode = $createLinkNode(url, {rel, target, title});
+    node.insertAfter(linkNode);
+    linkNode.append(node);
+    return;
+  }
+
+  // Handle RangeSelection
   const nodes = selection.extract();
 
   if (url === null) {

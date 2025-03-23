@@ -21,7 +21,6 @@ import {
   $getSelection,
   $isLineBreakNode,
   $isNodeSelection,
-  $isRangeSelection,
   BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -71,11 +70,7 @@ function FloatingLinkEditor({
 
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
-    const node = $isRangeSelection(selection)
-      ? getSelectedNode(selection)
-      : $isNodeSelection(selection) && selection.getNodes()[0]?.isInline()
-      ? selection.getNodes()[0]
-      : null;
+    const node = getSelectedNode(selection);
 
     if (node) {
       const linkParent = $findMatchingParent(node, $isLinkNode);
@@ -91,6 +86,7 @@ function FloatingLinkEditor({
         setEditedLinkUrl(linkUrl);
       }
     }
+
     const editorElem = editorRef.current;
     const nativeSelection = getDOMSelection(editor._window);
     const activeElement = document.activeElement;
@@ -225,8 +221,9 @@ function FloatingLinkEditor({
             sanitizeUrl(editedLinkUrl),
           );
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const parent = getSelectedNode(selection).getParent();
+          const node = getSelectedNode(selection);
+          if (node) {
+            const parent = node.getParent();
             if ($isAutoLinkNode(parent)) {
               const linkNode = $createLinkNode(parent.getURL(), {
                 rel: parent.__rel,
@@ -326,15 +323,11 @@ function useFloatingLinkEditorToolbar(
       const selection = $getSelection();
       if (!selection) {
         setIsLink(false);
+
         return;
       }
 
-      const focusNode = $isRangeSelection(selection)
-        ? getSelectedNode(selection)
-        : $isNodeSelection(selection) && selection.getNodes()[0]?.isInline()
-        ? selection.getNodes()[0]
-        : null;
-
+      const focusNode = getSelectedNode(selection);
       if (!focusNode) {
         setIsLink(false);
         return;
@@ -389,8 +382,8 @@ function useFloatingLinkEditorToolbar(
         CLICK_COMMAND,
         (payload) => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const node = getSelectedNode(selection);
+          const node = getSelectedNode(selection);
+          if (node) {
             const linkNode = $findMatchingParent(node, $isLinkNode);
             if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
               window.open(linkNode.getURL(), '_blank');

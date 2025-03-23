@@ -233,6 +233,7 @@ export {
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
+  $isInlineElementNode,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,

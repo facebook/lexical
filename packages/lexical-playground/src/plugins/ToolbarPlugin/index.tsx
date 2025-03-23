@@ -521,15 +521,17 @@ export default function ToolbarPlugin({
 
       // Update links
       const node = getSelectedNode(selection);
-      const parent = node.getParent();
+      const parent = node?.getParent();
       const isLink = $isLinkNode(parent) || $isLinkNode(node);
       updateToolbarState('isLink', isLink);
 
-      const tableNode = $findMatchingParent(node, $isTableNode);
-      if ($isTableNode(tableNode)) {
-        updateToolbarState('rootType', 'table');
-      } else {
-        updateToolbarState('rootType', 'root');
+      if (node) {
+        const tableNode = $findMatchingParent(node, $isTableNode);
+        if ($isTableNode(tableNode)) {
+          updateToolbarState('rootType', 'table');
+        } else {
+          updateToolbarState('rootType', 'root');
+        }
       }
 
       if (elementDOM !== null) {
@@ -586,7 +588,7 @@ export default function ToolbarPlugin({
       if ($isLinkNode(parent)) {
         // If node is a link, we need to fetch the parent paragraph node to set format
         matchingParent = $findMatchingParent(
-          node,
+          node!, // if we have a parent, node is not null
           (parentNode) => $isElementNode(parentNode) && !parentNode.isInline(),
         );
       }
@@ -601,6 +603,7 @@ export default function ToolbarPlugin({
           : parent?.getFormatType() || 'left',
       );
     }
+
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
       // Update text format
       updateToolbarState('isBold', selection.hasFormat('bold'));

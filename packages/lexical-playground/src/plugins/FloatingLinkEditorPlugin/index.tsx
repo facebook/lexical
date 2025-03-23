@@ -110,7 +110,11 @@ function FloatingLinkEditor({
         setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
       }
       setLastSelection(selection);
-    } else if ($isNodeSelection(selection)) {
+    } else if (
+      $isNodeSelection(selection) &&
+      selection.getNodes().length > 0 &&
+      editor.isEditable()
+    ) {
       const domRect = editor
         .getElementByKey(selection.getNodes()[0].getKey())
         ?.getBoundingClientRect();

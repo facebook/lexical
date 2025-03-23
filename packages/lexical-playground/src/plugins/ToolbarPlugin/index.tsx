@@ -532,13 +532,11 @@ export default function ToolbarPlugin({
 
       updateToolbarState('isRTL', $isParentElementRTL(selection));
 
-      if (node) {
-        const tableNode = $findMatchingParent(node, $isTableNode);
-        if ($isTableNode(tableNode)) {
-          updateToolbarState('rootType', 'table');
-        } else {
-          updateToolbarState('rootType', 'root');
-        }
+      const tableNode = $findMatchingParent(node, $isTableNode);
+      if ($isTableNode(tableNode)) {
+        updateToolbarState('rootType', 'table');
+      } else {
+        updateToolbarState('rootType', 'root');
       }
 
       if (elementDOM !== null) {
@@ -595,7 +593,7 @@ export default function ToolbarPlugin({
       if ($isLinkNode(parent)) {
         // If node is a link, we need to fetch the parent paragraph node to set format
         matchingParent = $findMatchingParent(
-          node!, // if we have a parent, node is not null
+          node,
           (parentNode) => $isElementNode(parentNode) && !parentNode.isInline(),
         );
       }

@@ -7,20 +7,15 @@
  */
 import {$isAtNodeEnd} from '@lexical/selection';
 import {
-  $isDecoratorNode,
-  $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
-  $isTextNode,
   BaseSelection,
-  DecoratorNode,
-  ElementNode,
-  TextNode,
+  LexicalNode,
 } from 'lexical';
 
-export function getSelectedNode<T>(
+export function getSelectedNode(
   selection: BaseSelection | null,
-): TextNode | ElementNode | DecoratorNode<T> | null {
+): LexicalNode | null {
   if (!selection) {
     return null;
   }
@@ -42,24 +37,9 @@ export function getSelectedNode<T>(
   }
 
   if ($isNodeSelection(selection)) {
-    const nodes = selection
-      .getNodes()
-      .filter(
-        (n) => $isTextNode(n) || $isElementNode(n) || $isDecoratorNode<T>(n),
-      );
+    const nodes = selection.getNodes();
 
-    if (nodes.length === 0) {
-      return null;
-    }
-
-    if (nodes.length === 1) {
-      return nodes[0];
-    }
-
-    const isBackward = selection.isBackward();
-    const n = isBackward ? nodes[nodes.length - 1] : nodes[0];
-
-    return n;
+    return nodes.length > 0 ? nodes[0] : null;
   }
 
   return null;

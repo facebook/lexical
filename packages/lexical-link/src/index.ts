@@ -648,11 +648,6 @@ export function $toggleLink(
         continue;
       }
 
-      // Pas sûr....
-      if ($isDecoratorNode(node) && !node.isInline()) {
-        continue;
-      }
-
       if ($isElementNode(node)) {
         if (!node.isInline()) {
           // Ignore block nodes, if there are any children we will see them
@@ -678,6 +673,12 @@ export function $toggleLink(
           continue;
         }
       }
+
+      if ($isDecoratorNode(node) && !node.isInline()) {
+        // Like for ElementNode: ignore Block nodes
+        continue;
+      }
+
       const prevLinkNode = node.getPreviousSibling();
       if ($isLinkNode(prevLinkNode) && prevLinkNode.is(linkNode)) {
         prevLinkNode.append(node);

@@ -488,6 +488,19 @@ export default function ToolbarPlugin({
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
+    const node = getSelectedNode(selection);
+    const parent = node?.getParent();
+
+    if (!node) {
+      updateToolbarState('isLink', false);
+
+      return;
+    }
+
+    // Update links
+    const isLink = $isLinkNode(parent) || $isLinkNode(node);
+    updateToolbarState('isLink', isLink);
+
     if ($isRangeSelection(selection)) {
       if (activeEditor !== editor && $isEditorIsNestedEditor(activeEditor)) {
         const rootElement = activeEditor.getRootElement();
@@ -506,8 +519,8 @@ export default function ToolbarPlugin({
         anchorNode.getKey() === 'root'
           ? anchorNode
           : $findMatchingParent(anchorNode, (e) => {
-              const parent = e.getParent();
-              return parent !== null && $isRootOrShadowRoot(parent);
+              const p = e.getParent();
+              return p !== null && $isRootOrShadowRoot(p);
             });
 
       if (element === null) {
@@ -518,12 +531,6 @@ export default function ToolbarPlugin({
       const elementDOM = activeEditor.getElementByKey(elementKey);
 
       updateToolbarState('isRTL', $isParentElementRTL(selection));
-
-      // Update links
-      const node = getSelectedNode(selection);
-      const parent = node?.getParent();
-      const isLink = $isLinkNode(parent) || $isLinkNode(node);
-      updateToolbarState('isLink', isLink);
 
       if (node) {
         const tableNode = $findMatchingParent(node, $isTableNode);

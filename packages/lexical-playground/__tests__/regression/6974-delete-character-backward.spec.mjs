@@ -38,7 +38,11 @@ test.describe('Regression tests for #6974', () => {
     const beforeHtml = html`
       <p>
         <span contenteditable="false" data-lexical-decorator="true">
-          <img alt="" src="#" />
+          <img
+            alt=""
+            height="0"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+            width="0" />
           <span role="button" tabindex="-1">
             <span>
               <span aria-hidden="true">
@@ -49,7 +53,11 @@ test.describe('Regression tests for #6974', () => {
               </span>
             </span>
           </span>
-          <img alt="" src="#" />
+          <img
+            alt=""
+            height="0"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+            width="0" />
         </span>
         <br />
       </p>
@@ -64,7 +72,11 @@ test.describe('Regression tests for #6974', () => {
     const afterHtml = html`
       <p dir="ltr">
         <span contenteditable="false" data-lexical-decorator="true">
-          <img alt="" src="#" />
+          <img
+            alt=""
+            height="0"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+            width="0" />
           <span role="button" tabindex="-1">
             <span>
               <span aria-hidden="true">
@@ -75,7 +87,11 @@ test.describe('Regression tests for #6974', () => {
               </span>
             </span>
           </span>
-          <img alt="" src="#" />
+          <img
+            alt=""
+            height="0"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+            width="0" />
         </span>
         <span data-lexical-text="true">test</span>
       </p>

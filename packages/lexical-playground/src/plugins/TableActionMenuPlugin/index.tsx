@@ -49,7 +49,6 @@ import {
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-import invariant from 'shared/invariant';
 
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
@@ -243,10 +242,11 @@ function TableActionMenu({
           editor.getElementByKey(tableNode.getKey()),
         );
 
-        invariant(
-          tableElement !== null,
-          'TableActionMenu: Expected to find tableElement in DOM',
-        );
+        if (tableElement === null) {
+          throw new Error(
+            'TableActionMenu: Expected to find tableElement in DOM',
+          );
+        }
 
         const tableObserver = getTableObserverFromTableElement(tableElement);
         if (tableObserver !== null) {
@@ -886,10 +886,11 @@ function TableCellActionMenuContainer({
         editor.getElementByKey(tableNode.getKey()),
       );
 
-      invariant(
-        tableElement !== null,
-        'TableActionMenu: Expected to find tableElement in DOM',
-      );
+      if (tableElement === null) {
+        throw new Error(
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
+      }
 
       tableObserver = getTableObserverFromTableElement(tableElement);
       setTableMenuCellNode(tableCellNodeFromSelection);
@@ -897,19 +898,19 @@ function TableCellActionMenuContainer({
       const anchorNode = $getTableCellNodeFromLexicalNode(
         selection.anchor.getNode(),
       );
-      invariant(
-        $isTableCellNode(anchorNode),
-        'TableSelection anchorNode must be a TableCellNode',
-      );
+      if (!$isTableCellNode(anchorNode)) {
+        throw new Error('TableSelection anchorNode must be a TableCellNode');
+      }
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorNode);
       const tableElement = getTableElement(
         tableNode,
         editor.getElementByKey(tableNode.getKey()),
       );
-      invariant(
-        tableElement !== null,
-        'TableActionMenu: Expected to find tableElement in DOM',
-      );
+      if (tableElement === null) {
+        throw new Error(
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
+      }
       tableObserver = getTableObserverFromTableElement(tableElement);
       tableCellParentNodeDOM = editor.getElementByKey(anchorNode.getKey());
 

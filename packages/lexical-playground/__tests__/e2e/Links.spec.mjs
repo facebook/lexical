@@ -30,6 +30,7 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
+  SAMPLE_IMAGE_URL,
   test,
   withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
@@ -2157,7 +2158,7 @@ test.describe.parallel('Links', () => {
                   class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg"
+                  src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
               <div>
@@ -2206,7 +2207,7 @@ test.describe.parallel('Links', () => {
                   class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg"
+                  src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
               <div>
@@ -2246,7 +2247,7 @@ test.describe.parallel('Links', () => {
                 class="focused draggable"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="/src/images/yellow-flower.jpg"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
             <div>

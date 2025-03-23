@@ -576,47 +576,43 @@ export function $toggleLink(
       return;
     }
 
-    const node = nodes[0];
-    if (url === null) {
-      // If we're removing the link and the node is inside a link, move it out
-      const linkParent = $findMatchingParent(
-        node,
-        (parent): parent is LinkNode =>
-          !$isAutoLinkNode(parent) && $isLinkNode(parent),
-      );
-      if (linkParent) {
-        linkParent.insertBefore(node);
-        if (linkParent.getChildren().length === 0) {
-          linkParent.remove();
+    // Handle all selected nodes
+    nodes.forEach((node) => {
+      if (url === null) {
+        // Remove link
+        const linkParent = $findMatchingParent(
+          node,
+          (parent): parent is LinkNode =>
+            !$isAutoLinkNode(parent) && $isLinkNode(parent),
+        );
+        if (linkParent) {
+          linkParent.insertBefore(node);
+          if (linkParent.getChildren().length === 0) {
+            linkParent.remove();
+          }
+        }
+      } else {
+        // Add/Update link
+        const existingLink = $findMatchingParent(
+          node,
+          (parent): parent is LinkNode =>
+            !$isAutoLinkNode(parent) && $isLinkNode(parent),
+        );
+        if (existingLink) {
+          existingLink.setURL(url);
+          if (target !== undefined) {
+            existingLink.setTarget(target);
+          }
+          if (rel !== undefined) {
+            existingLink.setRel(rel);
+          }
+        } else {
+          const linkNode = $createLinkNode(url, {rel, target});
+          node.insertBefore(linkNode);
+          linkNode.append(node);
         }
       }
-      return;
-    }
-
-    // If the node is already inside a link, update that link
-    const existingLink = $findMatchingParent(
-      node,
-      (parent): parent is LinkNode =>
-        !$isAutoLinkNode(parent) && $isLinkNode(parent),
-    );
-    if (existingLink) {
-      existingLink.setURL(url);
-      if (target !== undefined) {
-        existingLink.setTarget(target);
-      }
-      if (rel !== undefined) {
-        existingLink.setRel(rel);
-      }
-      if (title !== undefined) {
-        existingLink.setTitle(title);
-      }
-      return;
-    }
-
-    // Otherwise, wrap the node in a new link
-    const linkNode = $createLinkNode(url, {rel, target, title});
-    node.insertAfter(linkNode);
-    linkNode.append(node);
+    });
     return;
   }
 

@@ -121,31 +121,34 @@ export function $insertList(listType: ListType): void {
         continue;
       }
 
-      if ($isLeafNode(node)) {
-        let parent = node.getParent();
-        while (parent != null) {
-          const parentKey = parent.getKey();
+      let parent = $isLeafNode(node)
+        ? node.getParent()
+        : $isListItemNode(node) && node.isEmpty()
+        ? node
+        : null;
 
-          if ($isListNode(parent)) {
-            if (!handled.has(parentKey)) {
-              const newListNode = $createListNode(listType);
-              append(newListNode, parent.getChildren());
-              parent.replace(newListNode);
-              handled.add(parentKey);
-            }
+      while (parent != null) {
+        const parentKey = parent.getKey();
 
-            break;
-          } else {
-            const nextParent = parent.getParent();
-
-            if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
-              handled.add(parentKey);
-              $createListOrMerge(parent, listType);
-              break;
-            }
-
-            parent = nextParent;
+        if ($isListNode(parent)) {
+          if (!handled.has(parentKey)) {
+            const newListNode = $createListNode(listType);
+            append(newListNode, parent.getChildren());
+            parent.replace(newListNode);
+            handled.add(parentKey);
           }
+
+          break;
+        } else {
+          const nextParent = parent.getParent();
+
+          if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
+            handled.add(parentKey);
+            $createListOrMerge(parent, listType);
+            break;
+          }
+
+          parent = nextParent;
         }
       }
     }

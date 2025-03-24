@@ -6,17 +6,7 @@
  *
  */
 
-/*@__INLINE__*/
 export default function warnOnlyOnce(message: string): () => void {
-  if (__DEV__) {
-    let run = false;
-    return () => {
-      if (!run) {
-        console.warn(message);
-      }
-      run = true;
-    };
-  } else {
-    return () => {};
-  }
+  // The mock for this warns every time
+  return () => console.warn(message);
 }

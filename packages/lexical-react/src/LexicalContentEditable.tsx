@@ -6,17 +6,21 @@
  *
  */
 
-import type {Props as ElementProps} from './shared/LexicalContentEditableElement';
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
 
-import {ContentEditableElement} from './shared/LexicalContentEditableElement';
+import {
+  ContentEditableElement,
+  type ContentEditableElementProps,
+} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
-export type ContentEditableProps = Omit<ElementProps, 'editor'> &
+export {ContentEditableElement, type ContentEditableElementProps};
+
+export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
   (
     | {
         'aria-placeholder'?: void;

@@ -592,6 +592,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
+    editorConfig,
   );
 
   if (initialEditorState !== undefined) {
@@ -665,6 +666,8 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /** @internal */
+  _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
   constructor(
@@ -675,7 +678,9 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
+    createEditorArgs?: CreateEditorArgs,
   ) {
+    this._createEditorArgs = createEditorArgs;
     this._parentEditor = parentEditor;
     // The root element associated with this editor
     this._rootElement = null;

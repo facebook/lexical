@@ -896,6 +896,13 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditorSync(
     editor,
     () => {
+      if (
+        isHTMLElement(event.target) &&
+        $isSelectionCapturedInDecorator(event.target)
+      ) {
+        return;
+      }
+
       const selection = $getSelection();
       const data = event.data;
       const targetRange = getTargetRange(event);

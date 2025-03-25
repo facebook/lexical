@@ -29,6 +29,7 @@ import {
   $findMatchingParent,
   $getNearestNodeOfType,
   $isEditorIsNestedEditor,
+  IS_APPLE,
   mergeRegister,
 } from '@lexical/utils';
 import {
@@ -54,7 +55,6 @@ import {
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
-import {IS_APPLE} from 'shared/environment';
 
 import {
   blockTypeToBlockName,

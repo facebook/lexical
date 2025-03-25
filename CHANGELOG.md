@@ -1,3 +1,18 @@
+## v0.29.0 (2025-03-24)
+
+- Breaking Changelexical-tablelexical-playground Bug Fix Set tableFrozenColumn and tableFrozenRow classes only on the scrollable table wrapper (#7372) Bob Ippolito
+- lexical Bug Fix Ignore input event from inside decorators (#7354) Bob Ippolito
+- Breaking Changelexical-react Refactor LexicalNestedComposer add skipEditableListener prop and deprecate initialNodes prop and implicit namespace setting (#7357) Bob Ippolito
+- lexical-playground Bug Fix Fix equation rendering in Safari (#7362) Kiran Dash
+- Update react.md, fix typo (#7365) Bohdan Ptyts
+- lexical-table Bug Fix Add fallback selection to InsertTableCommand (#7316) Patrick Moody
+- Breaking Changelexical-markdown Feature Support escaping markdown characters (#7353) Alessio Gravili
+- lexical-playground Bug Fix Table action menu visibility with cell overflow (#7334) Kiran Dash
+- Breaking Changelexical Bug Fix Only select RootNode on removal of last child if there was an existing selection (#7351) Bob Ippolito
+- lexical-playground Chore Improve accessibility of DraggableBlockPlugin add block button (#7352) Bob Ippolito
+- v0.28.0 (#7348) Bob Ippolito
+- v0.28.0 Lexical GitHub Actions Bot
+
 ## v0.28.0 (2025-03-18)
 
 - lexical-website Docs Fix broken links to React Rich Collab Example (#7347) Bob Ippolito

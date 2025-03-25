@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $createTableCellNode,
   $createTableNode,
@@ -14,11 +13,18 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $nodesOfType,
+  $selectAll,
+} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {$insertList} from '../../formatList';
-import {$isListNode} from '../../LexicalListNode';
+import {$createListItemNode} from '../../LexicalListItemNode';
+import {$createListNode, $isListNode, ListNode} from '../../LexicalListNode';
 
 describe('insertList', () => {
   initializeUnitTest((testEnv) => {
@@ -95,6 +101,33 @@ describe('insertList', () => {
         const firstChild = cell.getFirstChildOrThrow();
 
         expect($isListNode(firstChild)).toBe(true);
+      });
+    });
+
+    test('formatting empty list items', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        $getRoot().append(
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('Level 1')),
+            $createListItemNode().append(
+              $createListNode('bullet').append($createListItemNode()),
+            ),
+          ),
+        );
+      });
+
+      await editor.update(() => {
+        $selectAll();
+        $insertList('number');
+      });
+
+      editor.read(() => {
+        const lists = $nodesOfType(ListNode).filter(
+          (node) => node.getListType() === 'number',
+        );
+        expect(lists.length).toBe(2);
       });
     });
   });

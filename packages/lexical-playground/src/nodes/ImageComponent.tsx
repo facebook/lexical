@@ -99,6 +99,39 @@ function LazyImage({
   onError: () => void;
 }): JSX.Element {
   useSuspenseImage(src);
+  const [dimensions, setDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (imageRef.current) {
+      const {naturalWidth, naturalHeight} = imageRef.current;
+      setDimensions({
+        height: naturalHeight,
+        width: naturalWidth,
+      });
+    }
+  }, [imageRef]);
+
+  let imageWidth = width === 'inherit' ? dimensions?.width || 200 : width;
+  let imageHeight = height === 'inherit' ? dimensions?.height || 200 : height;
+
+  // If width exceeds maxWidth, scale down proportionally
+  if (imageWidth > maxWidth) {
+    const scale = maxWidth / imageWidth;
+    imageWidth = maxWidth;
+    imageHeight *= scale;
+  }
+
+  // If height is too large, scale down further
+  const maxHeight = 500; // reasonable max height for editor
+  if (imageHeight > maxHeight) {
+    const scale = maxHeight / imageHeight;
+    imageHeight = maxHeight;
+    imageWidth *= scale;
+  }
+
   return (
     <img
       className={className || undefined}
@@ -106,12 +139,21 @@ function LazyImage({
       alt={altText}
       ref={imageRef}
       style={{
-        height,
+        height: imageHeight,
         maxWidth,
-        width,
+        minWidth: 100,
+        objectFit: 'contain',
+        width: imageWidth,
       }}
       onError={onError}
       draggable="false"
+      onLoad={(e) => {
+        const img = e.currentTarget;
+        setDimensions({
+          height: img.naturalHeight,
+          width: img.naturalWidth,
+        });
+      }}
     />
   );
 }

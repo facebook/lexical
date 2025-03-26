@@ -764,14 +764,6 @@ export function triggerCommandListeners<
   type: TCommand,
   payload: CommandPayloadType<TCommand>,
 ): boolean {
-  if (editor._updating === false || activeEditor !== editor) {
-    let returnVal = false;
-    editor.update(() => {
-      returnVal = triggerCommandListeners(editor, type, payload);
-    });
-    return returnVal;
-  }
-
   const editors = getEditorsToPropagate(editor);
 
   for (let i = 4; i >= 0; i--) {
@@ -787,10 +779,17 @@ export function triggerCommandListeners<
           const listeners = Array.from(listenersSet);
           const listenersLength = listeners.length;
 
-          for (let j = 0; j < listenersLength; j++) {
-            if (listeners[j](payload, editor) === true) {
-              return true;
+          let returnVal = false;
+          updateEditorSync(currentEditor, () => {
+            for (let j = 0; j < listenersLength; j++) {
+              if (listeners[j](payload, editor)) {
+                returnVal = true;
+                return;
+              }
             }
+          });
+          if (returnVal) {
+            return returnVal;
           }
         }
       }
@@ -1047,12 +1046,10 @@ export function updateEditorSync(
   updateFn: () => void,
   options?: EditorUpdateOptions,
 ): void {
-  if (!editor._updating) {
-    $beginUpdate(editor, updateFn, options);
-  } else if (activeEditor === editor) {
+  if (activeEditor === editor && options === undefined) {
     updateFn();
   } else {
-    editor._updates.push([updateFn, options]);
+    $beginUpdate(editor, updateFn, options);
   }
 }
 

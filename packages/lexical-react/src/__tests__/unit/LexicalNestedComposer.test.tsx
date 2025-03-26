@@ -7,16 +7,21 @@
  */
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {mergeRegister} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
   $createTextNode,
   $getEditor,
   $getRoot,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
   createEditor,
   DecoratorNode,
   EditorConfig,
@@ -29,6 +34,7 @@ import {
   invariant,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
+import {useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
@@ -634,7 +640,6 @@ describe('LexicalNestedComposer', () => {
             editorState: () => {
               editor = $getEditor();
               nestedEditor = createEditor({
-                // this gets overwritten immediately
                 editable: false,
                 namespace: 'nested',
                 nodes: [],
@@ -688,10 +693,10 @@ describe('LexicalNestedComposer', () => {
     });
     invariant(editor !== undefined, 'editor defined');
     invariant(nestedEditor !== undefined, 'nestedEditor defined');
-    // namespace inherited
+    // namespace not inherited
     expect(editor._config.namespace).toBe('parent');
     expect(nestedEditor._config.namespace).toBe('nested');
-    // nodes inherited
+    // nodes not inherited
     expect([...nestedEditor._nodes.keys()].sort()).toEqual(
       [...editor._nodes.keys()]
         .filter((k) => k !== ReactDecoratorNode.getType())
@@ -759,6 +764,241 @@ describe('LexicalNestedComposer', () => {
     });
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(false);
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(null);
+    });
+  });
+
+  test('command listener delegation', async () => {
+    let editor: undefined | LexicalEditor;
+    let nestedEditor: undefined | LexicalEditor;
+    const DELEGATED_COMMAND = createCommand<unknown>('DELEGATED_COMMAND');
+    const $commandListener = jest.fn((_) => false);
+    function DelegateListenerPlugin() {
+      const [currentEditor] = useLexicalComposerContext();
+      useEffect(() => {
+        return mergeRegister(
+          currentEditor.registerCommand(
+            DELEGATED_COMMAND,
+            (payload, dispatchEditor) =>
+              $commandListener({
+                currentEditor: $getEditor(),
+                dispatchEditor,
+                payload,
+                priority: COMMAND_PRIORITY_CRITICAL,
+              }),
+            COMMAND_PRIORITY_CRITICAL,
+          ),
+          currentEditor.registerCommand(
+            DELEGATED_COMMAND,
+            (payload, dispatchEditor) =>
+              $commandListener({
+                currentEditor: $getEditor(),
+                dispatchEditor,
+                payload,
+                priority: COMMAND_PRIORITY_EDITOR,
+              }),
+            COMMAND_PRIORITY_EDITOR,
+          ),
+        );
+      }, [currentEditor]);
+      return null;
+    }
+    function App() {
+      return (
+        <LexicalComposer
+          initialConfig={{
+            editorState: () => {
+              editor = $getEditor();
+              nestedEditor = createEditor({
+                namespace: 'nested',
+                nodes: [],
+                parentEditor: editor,
+              });
+              nestedEditor.update(() =>
+                $getRoot()
+                  .clear()
+                  .append(
+                    $createParagraphNode().append($createTextNode('nested')),
+                  ),
+              );
+              $getRoot()
+                .clear()
+                .append(
+                  $createParagraphNode().append($createTextNode('parent')),
+                  $createReactDecoratorNode()
+                    .setInline(false)
+                    .setDecorate(() => {
+                      return nestedEditor ? (
+                        <LexicalNestedComposer
+                          initialEditor={nestedEditor}
+                          skipEditableListener={true}>
+                          <RichTextPlugin
+                            contentEditable={<ContentEditable />}
+                            placeholder={<></>}
+                            ErrorBoundary={LexicalErrorBoundary}
+                          />
+                          <DelegateListenerPlugin />
+                        </LexicalNestedComposer>
+                      ) : null;
+                    }),
+                );
+            },
+            namespace: 'parent',
+            nodes: [ReactDecoratorNode],
+            onError: () => {
+              throw Error();
+            },
+          }}>
+          <RichTextPlugin
+            contentEditable={<ContentEditable />}
+            placeholder={<></>}
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+          <DelegateListenerPlugin />
+        </LexicalComposer>
+      );
+    }
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(<App />);
+    });
+    invariant(editor !== undefined, 'editor defined');
+    invariant(nestedEditor !== undefined, 'nestedEditor defined');
+    // namespace not inherited
+    expect(editor._config.namespace).toBe('parent');
+    expect(nestedEditor._config.namespace).toBe('nested');
+    // nodes not inherited
+    expect([...nestedEditor._nodes.keys()].sort()).toEqual(
+      [...editor._nodes.keys()]
+        .filter((k) => k !== ReactDecoratorNode.getType())
+        .sort(),
+    );
+    expect(warn.mock.calls).toEqual([]);
+    await ReactTestUtils.act(async () => {
+      expect(editor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(false);
+      expect($commandListener.mock.calls).toEqual([
+        [
+          {
+            currentEditor: editor,
+            dispatchEditor: editor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+        [
+          {
+            currentEditor: editor,
+            dispatchEditor: editor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_EDITOR,
+          },
+        ],
+      ]);
+      $commandListener.mockClear();
+      expect(nestedEditor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(
+        false,
+      );
+      expect($commandListener.mock.calls).toEqual([
+        [
+          {
+            currentEditor: nestedEditor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+        [
+          {
+            currentEditor: editor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+        [
+          {
+            currentEditor: nestedEditor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_EDITOR,
+          },
+        ],
+        [
+          {
+            currentEditor: editor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_EDITOR,
+          },
+        ],
+      ]);
+      $commandListener.mockClear();
+      // Can stop propagation from nested editor
+      $commandListener.mockImplementation(
+        (opts) =>
+          opts.dispatchEditor === opts.currentEditor &&
+          opts.priority === COMMAND_PRIORITY_EDITOR,
+      );
+      expect(nestedEditor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(
+        true,
+      );
+      expect($commandListener.mock.calls).toEqual([
+        [
+          {
+            currentEditor: nestedEditor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+        [
+          {
+            currentEditor: editor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+        [
+          {
+            currentEditor: nestedEditor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_EDITOR,
+          },
+        ],
+      ]);
+      $commandListener.mockClear();
+
+      // Can stop propagation from parent editor
+      $commandListener.mockImplementation(
+        (opts) => opts.dispatchEditor !== opts.currentEditor,
+      );
+      expect(nestedEditor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(
+        true,
+      );
+      expect($commandListener.mock.calls).toEqual([
+        [
+          {
+            currentEditor: nestedEditor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+        [
+          {
+            currentEditor: editor,
+            dispatchEditor: nestedEditor,
+            payload: undefined,
+            priority: COMMAND_PRIORITY_CRITICAL,
+          },
+        ],
+      ]);
+      $commandListener.mockClear();
+    });
 
     await ReactTestUtils.act(async () => {
       reactRoot.render(null);

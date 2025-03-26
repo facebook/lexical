@@ -25,6 +25,7 @@ import {
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
+const WHITESPACE_CHAR = '&#160;';
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
@@ -205,14 +206,19 @@ function exportTextFormat(
   // Where it would be invalid markdown to generate: "**   foo   **"
   // We instead want to trim the whitespace out, apply formatting, and then
   // bring the whitespace back. So our returned string looks like this: "   **foo**   "
+  // for whitespace only string case like: "  ", we replace the whitespace with &#160;
   const frozenString = textContent.trim();
   let output = frozenString;
+  const isWhitespaceOnly = frozenString.length === 0;
+
+  if (isWhitespaceOnly) {
+    output = textContent.replace(/\s/g, WHITESPACE_CHAR);
+  }
 
   if (!node.hasFormat('code')) {
     // Escape any markdown characters in the text content
     output = output.replace(/([*_`~\\])/g, '\\$1');
   }
-
   // the opening tags to be added to the result
   let openingTags = '';
   // the closing tags to be added to the result
@@ -286,6 +292,9 @@ function exportTextFormat(
   }
 
   output = openingTags + output + closingTagsAfter;
+  if (isWhitespaceOnly) {
+    return closingTagsBefore + output;
+  }
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
   return closingTagsBefore + textContent.replace(frozenString, () => output);
 }

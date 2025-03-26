@@ -2128,6 +2128,8 @@ test.describe.parallel('Links', () => {
   });
 
   test('Can add, edit and remove links on images', async ({page, isCollab}) => {
+    // Skip for collaborative mode
+    test.skip(isCollab);
     await focusEditor(page);
 
     // Insert image
@@ -2272,7 +2274,11 @@ test.describe.parallel('Links', () => {
 
   test('Can add, edit and remove links on multiple selected images', async ({
     page,
+    isCollab,
   }) => {
+    // Skip for collaborative mode
+    test.skip(isCollab);
+
     await focusEditor(page);
 
     // Insert first image

@@ -209,9 +209,10 @@ function exportTextFormat(
   // for whitespace only string case like: "  ", we replace the whitespace with &#160;
   const frozenString = textContent.trim();
   let output = frozenString;
-  const isWhitespaceOnly = frozenString.length === 0;
+  const isFormattedWhitespace =
+    frozenString.length === 0 && node.getFormat() !== 0;
 
-  if (isWhitespaceOnly) {
+  if (isFormattedWhitespace) {
     output = textContent.replace(/\s/g, WHITESPACE_CHAR);
   }
 
@@ -292,7 +293,7 @@ function exportTextFormat(
   }
 
   output = openingTags + output + closingTagsAfter;
-  if (isWhitespaceOnly) {
+  if (isFormattedWhitespace) {
     return closingTagsBefore + output;
   }
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified

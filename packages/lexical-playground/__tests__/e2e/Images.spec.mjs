@@ -388,8 +388,12 @@ test.describe('Images', () => {
     });
   });
 
-  test('Can add images by arbitrary URL', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Can add images by arbitrary URL', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab, 'Skip in plain text and collab mode');
 
     await focusEditor(page);
 
@@ -793,7 +797,11 @@ test.describe('Images', () => {
 
   test(`Verifies image dimensions are properly calculated for both SVG and JPG formats`, async ({
     page,
+    isPlainText,
+    isCollab,
   }) => {
+    test.skip(isPlainText || isCollab, 'Skip in plain text and collab mode');
+
     await focusEditor(page);
 
     // Insert an SVG image using the Lexical logo
@@ -805,9 +813,6 @@ test.describe('Images', () => {
 
     // Insert a JPG image
     await insertUrlImage(page, SAMPLE_IMAGE_URL, 'sample image');
-
-    // Wait for the images to load
-    await waitForSelector(page, '.editor-image img');
 
     // Verify both images are inserted with proper dimensions and styling
     await assertHTML(

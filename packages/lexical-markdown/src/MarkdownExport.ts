@@ -25,7 +25,6 @@ import {
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
-const WHITESPACE_CHAR = '&#160;';
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
@@ -213,7 +212,10 @@ function exportTextFormat(
     frozenString.length === 0 && node.getFormat() !== 0;
 
   if (isFormattedWhitespace) {
-    output = textContent.replace(/\s/g, WHITESPACE_CHAR);
+    // Convert whitespaces to the code entity
+    output = [...textContent]
+      .map((char) => '&#' + char.charCodeAt(0) + ';')
+      .join('');
   }
 
   if (!node.hasFormat('code')) {

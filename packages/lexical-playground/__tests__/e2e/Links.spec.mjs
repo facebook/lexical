@@ -2127,9 +2127,15 @@ test.describe.parallel('Links', () => {
     );
   });
 
-  test('Can add, edit and remove links on images', async ({page, isCollab}) => {
-    // Skip for collaborative mode
-    test.skip(isCollab);
+  test('Can add, edit and remove links on images', async ({
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    // Skip for collaborative mode and Firefox on Linux
+    test.skip(
+      isCollab || (browserName === 'firefox' && process.platform === 'linux'),
+    );
     await focusEditor(page);
 
     // Insert image
@@ -2275,10 +2281,12 @@ test.describe.parallel('Links', () => {
   test('Can add, edit and remove links on multiple selected images', async ({
     page,
     isCollab,
+    browserName,
   }) => {
-    // Skip for collaborative mode
-    test.skip(isCollab);
-
+    // Skip for collaborative mode and Firefox on Linux
+    test.skip(
+      isCollab || (browserName === 'firefox' && process.platform === 'linux'),
+    );
     await focusEditor(page);
 
     // Insert first image

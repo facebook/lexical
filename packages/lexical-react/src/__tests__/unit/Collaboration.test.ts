@@ -7,6 +7,7 @@
  */
 
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -286,6 +287,55 @@ describe('Collaboration', () => {
       root: '',
     });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+    client1.stop();
+    client2.stop();
+  });
+
+  it('Should not sync direction of element node', async () => {
+    const connector = createTestConnection();
+    const client1 = connector.createClient('1');
+    const client2 = connector.createClient('2');
+    client1.start(container!);
+    client2.start(container!);
+
+    await expectCorrectInitialContent(client1, client2);
+
+    // Add paragraph with RTL text, then another with a non-TextNode child
+    await waitForReact(() => {
+      client1.update(() => {
+        const root = $getRoot().clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('فرعي')),
+          $createParagraphNode().append($createLineBreakNode()),
+        );
+      });
+    });
+
+    // Check that the second paragraph has RTL direction
+    expect(client1.getHTML()).toEqual(
+      '<p dir="rtl"><span data-lexical-text="true">فرعي</span></p><p dir="rtl"><br><br></p>',
+    );
+    expect(client2.getHTML()).toEqual(client1.getHTML());
+
+    // Mark the second paragraph's child as dirty to force the reconciler to run.
+    await waitForReact(() => {
+      client1.update(() => {
+        const pargraph = $getRoot().getChildAtIndex<ParagraphNode>(1)!;
+        const lineBreak = pargraph.getFirstChildOrThrow();
+        lineBreak.markDirty();
+      });
+    });
+
+    // There was no activeEditorDirection when processing this node, so direction should be set back to null.
+    expect(client1.getHTML()).toEqual(
+      '<p dir="rtl"><span data-lexical-text="true">فرعي</span></p><p><br><br></p>',
+    );
+
+    // Check that the second paragraph still has RTL direction on client 2, as __dir is not synced.
+    expect(client2.getHTML()).toEqual(
+      '<p dir="rtl"><span data-lexical-text="true">فرعي</span></p><p dir="rtl"><br><br></p>',
+    );
+
     client1.stop();
     client2.stop();
   });

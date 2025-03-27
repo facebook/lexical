@@ -16,69 +16,34 @@ import {
 
 import {initializeUnitTest} from '../utils';
 
-describe('LexicalNode state', () => {
+describe('LexicalReconciler', () => {
   initializeUnitTest((testEnv) => {
-    test('Should set "rtl" direction if node has no directioned text and previous sibling is "rtl"', async () => {
-      const {editor} = testEnv;
-      const rtlText = '\u0591';
-
-      // Add paragraph with RTL text, then another with a non-TextNode child
-      editor.update(() => {
-        const root = $getRoot().clear();
-        root.append(
-          $createParagraphNode().append($createTextNode(rtlText)),
-          $createParagraphNode().append($createLineBreakNode()),
-        );
-      });
-
-      const para2Dir = editor.read(() => {
-        return $getRoot().getChildAtIndex<ParagraphNode>(1)!.getDirection();
-      });
-      expect(para2Dir).toEqual('rtl');
-    });
-
-    test('Should not set "ltr" direction if node has no directioned text and previous sibling is "ltr"', async () => {
-      const {editor} = testEnv;
-      const ltrText = 'Hello';
-
-      editor.update(() => {
-        const root = $getRoot().clear();
-        root.append(
-          $createParagraphNode().append($createTextNode(ltrText)),
-          $createParagraphNode().append($createLineBreakNode()),
-        );
-      });
-
-      const para2Dir = editor.read(() => {
-        return $getRoot().getChildAtIndex<ParagraphNode>(1)!.getDirection();
-      });
-      expect(para2Dir).toBeNull();
-    });
-
     test('Should use activeEditorDirection as the direction for a node with no directioned text', async () => {
       const {editor} = testEnv;
-      const ltrText = 'Hello';
-      const rtlText = '\u0591';
 
       editor.update(() => {
         const root = $getRoot().clear();
         root.append(
-          $createParagraphNode().append($createTextNode(rtlText)),
-          $createParagraphNode().append($createTextNode(ltrText)),
+          $createParagraphNode().append($createTextNode('فرعي')),
+          $createParagraphNode().append($createTextNode('Hello')),
           $createParagraphNode().append($createLineBreakNode()),
         );
       });
 
+      // The third paragraph has no directioned text, so it should be set to the direction of the previous sibling.
       let para3Dir = editor.read(() => {
         return $getRoot().getChildAtIndex<ParagraphNode>(2)!.getDirection();
       });
-      expect(para3Dir).toBeNull();
+      expect(para3Dir).toEqual('ltr');
 
+      // Mark the first and third paragraphs as dirty to force the reconciler to run.
       editor.update(() => {
         $getRoot().getChildAtIndex<ParagraphNode>(0)!.markDirty();
         $getRoot().getChildAtIndex<ParagraphNode>(2)!.markDirty();
       });
 
+      // Note: this is arguably a bug. It would be preferable for the node to keep its LTR direction. Added as a
+      // test so that the behaviour is at least documented.
       para3Dir = editor.read(() => {
         return $getRoot().getChildAtIndex<ParagraphNode>(2)!.getDirection();
       });

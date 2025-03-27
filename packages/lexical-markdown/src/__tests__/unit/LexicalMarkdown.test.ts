@@ -381,7 +381,7 @@ describe('Markdown', () => {
       shouldMergeAdjacentLines: false,
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">world</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">hello</span></p><p><span style="white-space: pre-wrap;">world</span></p>',
       md: 'hello\nworld',
       shouldPreserveNewLines: true,
     },

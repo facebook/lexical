@@ -79,6 +79,10 @@ function useSuspenseImage(src: string) {
   }
 }
 
+function isSVG(src: string): boolean {
+  return src.toLowerCase().endsWith('.svg');
+}
+
 function LazyImage({
   altText,
   className,
@@ -99,19 +103,82 @@ function LazyImage({
   onError: () => void;
 }): JSX.Element {
   useSuspenseImage(src);
+  const [dimensions, setDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const isSVGImage = isSVG(src);
+
+  // Set initial dimensions for SVG images
+  useEffect(() => {
+    if (imageRef.current && isSVGImage) {
+      const {naturalWidth, naturalHeight} = imageRef.current;
+      setDimensions({
+        height: naturalHeight,
+        width: naturalWidth,
+      });
+    }
+  }, [imageRef, isSVGImage]);
+
+  // Calculate final dimensions with proper scaling
+  const calculateDimensions = () => {
+    if (!isSVGImage) {
+      return {
+        height,
+        maxWidth,
+        width,
+      };
+    }
+
+    // Use natural dimensions if available, otherwise fallback to defaults
+    const naturalWidth = dimensions?.width || 200;
+    const naturalHeight = dimensions?.height || 200;
+
+    let finalWidth = naturalWidth;
+    let finalHeight = naturalHeight;
+
+    // Scale down if width exceeds maxWidth while maintaining aspect ratio
+    if (finalWidth > maxWidth) {
+      const scale = maxWidth / finalWidth;
+      finalWidth = maxWidth;
+      finalHeight = Math.round(finalHeight * scale);
+    }
+
+    // Scale down if height exceeds maxHeight while maintaining aspect ratio
+    const maxHeight = 500;
+    if (finalHeight > maxHeight) {
+      const scale = maxHeight / finalHeight;
+      finalHeight = maxHeight;
+      finalWidth = Math.round(finalWidth * scale);
+    }
+
+    return {
+      height: finalHeight,
+      maxWidth,
+      width: finalWidth,
+    };
+  };
+
+  const imageStyle = calculateDimensions();
+
   return (
     <img
       className={className || undefined}
       src={src}
       alt={altText}
       ref={imageRef}
-      style={{
-        height,
-        maxWidth,
-        width,
-      }}
+      style={imageStyle}
       onError={onError}
       draggable="false"
+      onLoad={(e) => {
+        if (isSVGImage) {
+          const img = e.currentTarget;
+          setDimensions({
+            height: img.naturalHeight,
+            width: img.naturalWidth,
+          });
+        }
+      }}
     />
   );
 }

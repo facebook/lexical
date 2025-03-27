@@ -65,7 +65,7 @@ export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
 
 function useSuspenseImage(src: string) {
   if (!imageCache.has(src)) {
-    throw new Promise((resolve) => {
+    throw new Promise((resolve, reject) => {
       const img = new Image();
       img.src = src;
       img.onload = () => {
@@ -73,7 +73,8 @@ function useSuspenseImage(src: string) {
         resolve(null);
       };
       img.onerror = () => {
-        imageCache.add(src);
+        // Don't cache failed images to allow retry
+        reject(new Error('Failed to load image'));
       };
     });
   }
@@ -102,7 +103,6 @@ function LazyImage({
   width: 'inherit' | number;
   onError: () => void;
 }): JSX.Element {
-  useSuspenseImage(src);
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
@@ -119,6 +119,13 @@ function LazyImage({
       });
     }
   }, [imageRef, isSVGImage]);
+
+  try {
+    useSuspenseImage(src);
+  } catch (error) {
+    onError();
+    return <BrokenImage />;
+  }
 
   // Calculate final dimensions with proper scaling
   const calculateDimensions = () => {
@@ -229,7 +236,6 @@ export default function ImageComponent({
   const [editor] = useLexicalComposerContext();
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
-  const [isLoadError, setIsLoadError] = useState<boolean>(false);
   const isEditable = useLexicalEditable();
 
   const $onEnter = useCallback(
@@ -434,24 +440,20 @@ export default function ImageComponent({
     <Suspense fallback={null}>
       <>
         <div draggable={draggable}>
-          {isLoadError ? (
-            <BrokenImage />
-          ) : (
-            <LazyImage
-              className={
-                isFocused
-                  ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
-                  : null
-              }
-              src={src}
-              altText={altText}
-              imageRef={imageRef}
-              width={width}
-              height={height}
-              maxWidth={maxWidth}
-              onError={() => setIsLoadError(true)}
-            />
-          )}
+          <LazyImage
+            className={
+              isFocused
+                ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                : null
+            }
+            src={src}
+            altText={altText}
+            imageRef={imageRef}
+            width={width}
+            height={height}
+            maxWidth={maxWidth}
+            onError={() => {}}
+          />
         </div>
 
         {showCaption && (
@@ -496,7 +498,7 @@ export default function ImageComponent({
             maxWidth={maxWidth}
             onResizeStart={onResizeStart}
             onResizeEnd={onResizeEnd}
-            captionsEnabled={!isLoadError && captionsEnabled}
+            captionsEnabled={captionsEnabled}
           />
         )}
       </>

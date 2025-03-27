@@ -29,6 +29,7 @@ import {
   $applyNodeReplacement,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $normalizeSelection__EXPERIMENTAL,
   $setSelection,
@@ -562,9 +563,60 @@ export function $toggleLink(
   const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();
 
-  if (!$isRangeSelection(selection)) {
+  if (
+    selection === null ||
+    (!$isRangeSelection(selection) && !$isNodeSelection(selection))
+  ) {
     return;
   }
+
+  if ($isNodeSelection(selection)) {
+    const nodes = selection.getNodes();
+    if (nodes.length === 0) {
+      return;
+    }
+
+    // Handle all selected nodes
+    nodes.forEach((node) => {
+      if (url === null) {
+        // Remove link
+        const linkParent = $findMatchingParent(
+          node,
+          (parent): parent is LinkNode =>
+            !$isAutoLinkNode(parent) && $isLinkNode(parent),
+        );
+        if (linkParent) {
+          linkParent.insertBefore(node);
+          if (linkParent.getChildren().length === 0) {
+            linkParent.remove();
+          }
+        }
+      } else {
+        // Add/Update link
+        const existingLink = $findMatchingParent(
+          node,
+          (parent): parent is LinkNode =>
+            !$isAutoLinkNode(parent) && $isLinkNode(parent),
+        );
+        if (existingLink) {
+          existingLink.setURL(url);
+          if (target !== undefined) {
+            existingLink.setTarget(target);
+          }
+          if (rel !== undefined) {
+            existingLink.setRel(rel);
+          }
+        } else {
+          const linkNode = $createLinkNode(url, {rel, target});
+          node.insertBefore(linkNode);
+          linkNode.append(node);
+        }
+      }
+    });
+    return;
+  }
+
+  // Handle RangeSelection
   const nodes = selection.extract();
 
   if (url === null) {

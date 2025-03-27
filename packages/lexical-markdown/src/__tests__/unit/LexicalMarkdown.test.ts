@@ -609,6 +609,11 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">*Hello* world</span></p>',
       md: '\\*Hello\\* world',
     },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">&nbsp;</strong></b></p>',
+      md: '**&#160;**',
+      mdAfterExport: '**&#160;**',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

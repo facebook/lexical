@@ -79,6 +79,10 @@ function useSuspenseImage(src: string) {
   }
 }
 
+function isSVG(src: string): boolean {
+  return src.toLowerCase().endsWith('.svg');
+}
+
 function LazyImage({
   altText,
   className,
@@ -103,34 +107,59 @@ function LazyImage({
     width: number;
     height: number;
   } | null>(null);
+  const isSVGImage = isSVG(src);
 
+  // Set initial dimensions for SVG images
   useEffect(() => {
-    if (imageRef.current) {
+    if (imageRef.current && isSVGImage) {
       const {naturalWidth, naturalHeight} = imageRef.current;
       setDimensions({
         height: naturalHeight,
         width: naturalWidth,
       });
     }
-  }, [imageRef]);
+  }, [imageRef, isSVGImage]);
 
-  let imageWidth = width === 'inherit' ? dimensions?.width || 200 : width;
-  let imageHeight = height === 'inherit' ? dimensions?.height || 200 : height;
+  // Calculate final dimensions with proper scaling
+  const calculateDimensions = () => {
+    if (!isSVGImage) {
+      return {
+        height,
+        maxWidth,
+        width,
+      };
+    }
 
-  // If width exceeds maxWidth, scale down proportionally
-  if (imageWidth > maxWidth) {
-    const scale = maxWidth / imageWidth;
-    imageWidth = maxWidth;
-    imageHeight *= scale;
-  }
+    // Use natural dimensions if available, otherwise fallback to defaults
+    const naturalWidth = dimensions?.width || 200;
+    const naturalHeight = dimensions?.height || 200;
 
-  // If height is too large, scale down further
-  const maxHeight = 500; // reasonable max height for editor
-  if (imageHeight > maxHeight) {
-    const scale = maxHeight / imageHeight;
-    imageHeight = maxHeight;
-    imageWidth *= scale;
-  }
+    let finalWidth = naturalWidth;
+    let finalHeight = naturalHeight;
+
+    // Scale down if width exceeds maxWidth while maintaining aspect ratio
+    if (finalWidth > maxWidth) {
+      const scale = maxWidth / finalWidth;
+      finalWidth = maxWidth;
+      finalHeight = Math.round(finalHeight * scale);
+    }
+
+    // Scale down if height exceeds maxHeight while maintaining aspect ratio
+    const maxHeight = 500;
+    if (finalHeight > maxHeight) {
+      const scale = maxHeight / finalHeight;
+      finalHeight = maxHeight;
+      finalWidth = Math.round(finalWidth * scale);
+    }
+
+    return {
+      height: finalHeight,
+      maxWidth,
+      width: finalWidth,
+    };
+  };
+
+  const imageStyle = calculateDimensions();
 
   return (
     <img
@@ -138,21 +167,17 @@ function LazyImage({
       src={src}
       alt={altText}
       ref={imageRef}
-      style={{
-        height: imageHeight,
-        maxWidth,
-        minWidth: 100,
-        objectFit: 'contain',
-        width: imageWidth,
-      }}
+      style={imageStyle}
       onError={onError}
       draggable="false"
       onLoad={(e) => {
-        const img = e.currentTarget;
-        setDimensions({
-          height: img.naturalHeight,
-          width: img.naturalWidth,
-        });
+        if (isSVGImage) {
+          const img = e.currentTarget;
+          setDimensions({
+            height: img.naturalHeight,
+            width: img.naturalWidth,
+          });
+        }
       }}
     />
   );

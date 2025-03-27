@@ -1460,10 +1460,13 @@ export function getWindow(editor: LexicalEditor): Window {
   return windowObj;
 }
 
+export function $isInlineElementNode(node: LexicalNode): node is ElementNode {
+  return $isElementNode(node) && node.isInline();
+}
+
 export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
   return (
-    ($isElementNode(node) && node.isInline()) ||
-    ($isDecoratorNode(node) && node.isInline())
+    $isInlineElementNode(node) || ($isDecoratorNode(node) && node.isInline())
   );
 }
 

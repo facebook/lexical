@@ -20,7 +20,7 @@ import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isLineBreakNode,
-  $isRangeSelection,
+  $isNodeSelection,
   BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -70,8 +70,9 @@ function FloatingLinkEditor({
 
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const node = getSelectedNode(selection);
+    const node = getSelectedNode(selection);
+
+    if (node) {
       const linkParent = $findMatchingParent(node, $isLinkNode);
 
       if (linkParent) {
@@ -85,6 +86,7 @@ function FloatingLinkEditor({
         setEditedLinkUrl(linkUrl);
       }
     }
+
     const editorElem = editorRef.current;
     const nativeSelection = getDOMSelection(editor._window);
     const activeElement = document.activeElement;
@@ -105,10 +107,21 @@ function FloatingLinkEditor({
       const domRect: DOMRect | undefined =
         nativeSelection.focusNode?.parentElement?.getBoundingClientRect();
       if (domRect) {
-        domRect.y += 40;
         setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
       }
       setLastSelection(selection);
+    } else if (
+      $isNodeSelection(selection) &&
+      selection.getNodes().length > 0 &&
+      editor.isEditable()
+    ) {
+      const domRect = editor
+        .getElementByKey(selection.getNodes()[0].getKey())
+        ?.getBoundingClientRect();
+
+      if (domRect) {
+        setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
+      }
     } else if (!activeElement || activeElement.className !== 'link-input') {
       if (rootElement !== null) {
         setFloatingElemPositionForLinkEditor(null, editorElem, anchorElem);
@@ -212,8 +225,9 @@ function FloatingLinkEditor({
             sanitizeUrl(editedLinkUrl),
           );
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const parent = getSelectedNode(selection).getParent();
+          const node = getSelectedNode(selection);
+          if (node) {
+            const parent = node.getParent();
             if ($isAutoLinkNode(parent)) {
               const linkNode = $createLinkNode(parent.getURL(), {
                 rel: parent.__rel,
@@ -311,37 +325,46 @@ function useFloatingLinkEditorToolbar(
   useEffect(() => {
     function $updateToolbar() {
       const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        const focusNode = getSelectedNode(selection);
-        const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
-        const focusAutoLinkNode = $findMatchingParent(
-          focusNode,
-          $isAutoLinkNode,
-        );
-        if (!(focusLinkNode || focusAutoLinkNode)) {
-          setIsLink(false);
-          return;
-        }
-        const badNode = selection
-          .getNodes()
-          .filter((node) => !$isLineBreakNode(node))
-          .find((node) => {
-            const linkNode = $findMatchingParent(node, $isLinkNode);
-            const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
-            return (
-              (focusLinkNode && !focusLinkNode.is(linkNode)) ||
-              (linkNode && !linkNode.is(focusLinkNode)) ||
-              (focusAutoLinkNode && !focusAutoLinkNode.is(autoLinkNode)) ||
-              (autoLinkNode &&
-                (!autoLinkNode.is(focusAutoLinkNode) ||
-                  autoLinkNode.getIsUnlinked()))
-            );
-          });
-        if (!badNode) {
-          setIsLink(true);
-        } else {
-          setIsLink(false);
-        }
+      if (!selection) {
+        setIsLink(false);
+
+        return;
+      }
+
+      const focusNode = getSelectedNode(selection);
+      if (!focusNode) {
+        setIsLink(false);
+        return;
+      }
+
+      const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
+      const focusAutoLinkNode = $findMatchingParent(focusNode, $isAutoLinkNode);
+
+      if (!(focusLinkNode || focusAutoLinkNode)) {
+        setIsLink(false);
+        return;
+      }
+
+      const badNode = selection
+        .getNodes()
+        .filter((node) => !$isLineBreakNode(node))
+        .find((node) => {
+          const linkNode = $findMatchingParent(node, $isLinkNode);
+          const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
+
+          return (
+            (focusLinkNode && !focusLinkNode.is(linkNode)) ||
+            (linkNode && !linkNode.is(focusLinkNode)) ||
+            (focusAutoLinkNode && !focusAutoLinkNode.is(autoLinkNode)) ||
+            (autoLinkNode &&
+              (!autoLinkNode.is(focusAutoLinkNode) ||
+                autoLinkNode.getIsUnlinked()))
+          );
+        });
+      if (!badNode) {
+        setIsLink(true);
+      } else {
+        setIsLink(false);
       }
     }
     return mergeRegister(
@@ -363,8 +386,8 @@ function useFloatingLinkEditorToolbar(
         CLICK_COMMAND,
         (payload) => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const node = getSelectedNode(selection);
+          const node = getSelectedNode(selection);
+          if (node) {
             const linkNode = $findMatchingParent(node, $isLinkNode);
             if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
               window.open(linkNode.getURL(), '_blank');

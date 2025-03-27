@@ -28,7 +28,10 @@ import {
 import {
   $applyNodeReplacement,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
+  $isInlineElementOrDecoratorNode,
+  $isNodeSelection,
   $isRangeSelection,
   $normalizeSelection__EXPERIMENTAL,
   $setSelection,
@@ -501,6 +504,21 @@ function $getPointNode(point: Point, offset: number): LexicalNode | null {
   return null;
 }
 
+function $extractNodes(selection: BaseSelection | null) {
+  if (!selection) {
+    return [];
+  }
+
+  if ($isRangeSelection(selection)) {
+    return selection.extract();
+  }
+
+  if ($isNodeSelection(selection)) {
+    return selection.extract().filter($isInlineElementOrDecoratorNode);
+  }
+  return [];
+}
+
 /**
  * Preserve the logical start/end of a RangeSelection in situations where
  * the point is an element that may be reparented in the callback.
@@ -513,6 +531,7 @@ function $withSelectedNodes<T>($fn: () => T): T {
   if (!$isRangeSelection(initialSelection)) {
     return $fn();
   }
+
   const normalized = $normalizeSelection__EXPERIMENTAL(initialSelection);
   const isBackwards = normalized.isBackward();
   const anchorNode = $getPointNode(normalized.anchor, isBackwards ? -1 : 0);
@@ -562,10 +581,11 @@ export function $toggleLink(
   const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();
 
-  if (!$isRangeSelection(selection)) {
+  const nodes = $extractNodes(selection);
+
+  if (nodes.length === 0) {
     return;
   }
-  const nodes = selection.extract();
 
   if (url === null) {
     // Remove LinkNodes
@@ -627,6 +647,7 @@ export function $toggleLink(
         updateLinkNode(parentLinkNode);
         continue;
       }
+
       if ($isElementNode(node)) {
         if (!node.isInline()) {
           // Ignore block nodes, if there are any children we will see them
@@ -652,6 +673,12 @@ export function $toggleLink(
           continue;
         }
       }
+
+      if ($isDecoratorNode(node) && !node.isInline()) {
+        // Like for ElementNode: ignore Block nodes
+        continue;
+      }
+
       const prevLinkNode = node.getPreviousSibling();
       if ($isLinkNode(prevLinkNode) && prevLinkNode.is(linkNode)) {
         prevLinkNode.append(node);

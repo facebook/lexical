@@ -355,13 +355,20 @@ function useFloatingTextFormatToolbar(
         return;
       }
 
+      const node = getSelectedNode(selection);
+      // Update links
+      const parent = node?.getParent();
+      if ($isLinkNode(parent) || $isLinkNode(node)) {
+        setIsLink(true);
+      } else {
+        setIsLink(false);
+      }
+
+      // Update text format
       if (!$isRangeSelection(selection)) {
         return;
       }
 
-      const node = getSelectedNode(selection);
-
-      // Update text format
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
@@ -372,14 +379,6 @@ function useFloatingTextFormatToolbar(
       setIsSubscript(selection.hasFormat('subscript'));
       setIsSuperscript(selection.hasFormat('superscript'));
       setIsCode(selection.hasFormat('code'));
-
-      // Update links
-      const parent = node.getParent();
-      if ($isLinkNode(parent) || $isLinkNode(node)) {
-        setIsLink(true);
-      } else {
-        setIsLink(false);
-      }
 
       if (
         !$isCodeHighlightNode(selection.anchor.getNode()) &&

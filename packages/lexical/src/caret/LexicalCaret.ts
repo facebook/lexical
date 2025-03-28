@@ -902,14 +902,21 @@ export function $getTextNodeOffset(
   offset: number | CaretDirection,
 ): number {
   const size = origin.getTextContentSize();
-  const numericOffset =
+  let numericOffset =
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
-  invariant(
-    numericOffset >= 0 && numericOffset <= size,
-    '$getTextNodeOffset: invalid offset %s for size %s',
-    String(offset),
-    String(size),
-  );
+  if (numericOffset < 0 || numericOffset > size) {
+    if (__DEV__) {
+      invariant(
+        false,
+        '$getTextNodeOffset: invalid offset %s for size %s at key %s',
+        String(offset),
+        String(size),
+        origin.getKey(),
+      );
+    }
+    // Silently clamp invalid offsets in prod
+    numericOffset = numericOffset > 0 ? size : 0;
+  }
   return numericOffset;
 }
 

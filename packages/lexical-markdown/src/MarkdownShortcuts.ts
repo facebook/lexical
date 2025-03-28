@@ -254,6 +254,9 @@ function $runTextFormatTransformers(
       }
 
       if ($isTextNode(sibling)) {
+        if (sibling.hasFormat('code')) {
+          continue;
+        }
         const siblingTextContent = sibling.getTextContent();
         openNode = sibling;
         openTagStartIndex = getOpenTagStartIndex(

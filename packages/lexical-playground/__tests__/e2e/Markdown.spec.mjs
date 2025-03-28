@@ -1047,6 +1047,29 @@ test.describe.parallel('Markdown', () => {
     );
   });
 
+  test('does not use code-formatted text in text format transformers (#7349)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('`void*` or `int*`');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <code spellcheck="false" data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textCode">void*</span>
+          </code>
+          <span data-lexical-text="true">or</span>
+          <code spellcheck="false" data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textCode">int*</span>
+          </code>
+        </p>
+      `,
+    );
+  });
+
   test('can adjust selection after text match transformer', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello  world');

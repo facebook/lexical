@@ -7,6 +7,7 @@
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
 
+import devInvariant from 'shared/devInvariant';
 import invariant from 'shared/invariant';
 
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
@@ -890,7 +891,7 @@ export function $getTextPointCaret(
 
 /**
  * Get a normalized offset into a TextNode given a numeric offset or a
- * direction for which end of the string to use. Throws if the offset
+ * direction for which end of the string to use. Throws in dev if the offset
  * is not in the bounds of the text content size.
  *
  * @param origin a TextNode
@@ -905,17 +906,15 @@ export function $getTextNodeOffset(
   let numericOffset =
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
   if (numericOffset < 0 || numericOffset > size) {
-    if (__DEV__) {
-      invariant(
-        false,
-        '$getTextNodeOffset: invalid offset %s for size %s at key %s',
-        String(offset),
-        String(size),
-        origin.getKey(),
-      );
-    }
-    // Silently clamp invalid offsets in prod
-    numericOffset = numericOffset > 0 ? size : 0;
+    devInvariant(
+      false,
+      '$getTextNodeOffset: invalid offset %s for size %s at key %s',
+      String(offset),
+      String(size),
+      origin.getKey(),
+    );
+    // Clamp invalid offsets in prod
+    numericOffset = numericOffset < 0 ? 0 : size;
   }
   return numericOffset;
 }

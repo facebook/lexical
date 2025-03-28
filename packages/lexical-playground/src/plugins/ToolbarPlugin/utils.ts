@@ -276,7 +276,11 @@ export const clearFormatting = (editor: LexicalEditor) => {
           }
           if (textNode.__format !== 0) {
             textNode.setFormat(0);
-            $getNearestBlockElementAncestorOrThrow(textNode).setFormat('');
+          }
+          const nearestBlockElement =
+            $getNearestBlockElementAncestorOrThrow(textNode);
+          if (nearestBlockElement.__format !== 0) {
+            nearestBlockElement.setFormat('');
           }
           node = textNode;
         } else if ($isHeadingNode(node) || $isQuoteNode(node)) {

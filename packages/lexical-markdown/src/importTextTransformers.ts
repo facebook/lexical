@@ -136,7 +136,7 @@ export function importTextTransformers(
   const escapedText = textContent
     .replace(/\\([*_`~])/g, '$1')
     .replace(/&#(\d+);/g, (_, codePoint) => {
-      return String.fromCharCode(codePoint);
+      return String.fromCodePoint(codePoint);
     });
   textNode.setTextContent(escapedText);
 }

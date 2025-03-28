@@ -214,7 +214,7 @@ function exportTextFormat(
   if (isFormattedWhitespace) {
     // Convert whitespaces to the code entity
     output = [...textContent]
-      .map((char) => '&#' + char.charCodeAt(0) + ';')
+      .map((char) => '&#' + char.codePointAt(0) + ';')
       .join('');
   }
 

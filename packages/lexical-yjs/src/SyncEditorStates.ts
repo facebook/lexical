@@ -9,6 +9,7 @@
 import type {EditorState, NodeKey} from 'lexical';
 
 import {
+  $addUpdateTag,
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
@@ -170,6 +171,12 @@ export function syncYjsChangesToLexical(
         } else {
           $syncLocalCursorPosition(binding, provider);
         }
+      }
+
+      if (!isFromUndoManger) {
+        // If it is an external change, we don't want the current scroll position to get changed
+        // since the user might've intentionally scrolled somewhere else in the document.
+        $addUpdateTag('skip-scroll-into-view');
       }
     },
     {

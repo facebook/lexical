@@ -1305,6 +1305,7 @@ export class LexicalEditor {
       updateEditorSync(this, () => {
         const selection = $getSelection();
         const root = $getRoot();
+
         if (selection !== null) {
           // Marking the selection dirty will force the selection back to it
           if (!selection.dirty) {

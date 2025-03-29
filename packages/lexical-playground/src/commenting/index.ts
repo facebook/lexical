@@ -8,6 +8,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
+import {createUID} from '@lexical/utils';
 import {Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {COMMAND_PRIORITY_LOW} from 'lexical';
 import {useEffect, useState} from 'react';
@@ -36,13 +37,6 @@ export type Thread = {
 };
 
 export type Comments = Array<Thread | Comment>;
-
-function createUID(): string {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z]+/g, '')
-    .substring(0, 5);
-}
 
 export function createComment(
   content: string,

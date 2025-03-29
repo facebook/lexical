@@ -203,20 +203,12 @@ function exportTextFormat(
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
-  // We instead want to trim the whitespace out, apply formatting, and then
-  // bring the whitespace back. So our returned string looks like this: "   **foo**   "
-  // for whitespace only string case like: "  ", we replace the whitespace with &#160;
-  const frozenString = textContent.trim();
-  let output = frozenString;
-  const isFormattedWhitespace =
-    frozenString.length === 0 && node.getFormat() !== 0;
-
-  if (isFormattedWhitespace) {
-    // Convert whitespaces to the code entity
-    output = [...textContent]
-      .map((char) => '&#' + char.codePointAt(0) + ';')
-      .join('');
-  }
+  // If the node has no format, we use the original text. Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
+  // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
+  let output =
+    node.getFormat() === 0
+      ? textContent
+      : escapeLeadingAndTrailingWhitespaces(textContent);
 
   if (!node.hasFormat('code')) {
     // Escape any markdown characters in the text content
@@ -295,11 +287,8 @@ function exportTextFormat(
   }
 
   output = openingTags + output + closingTagsAfter;
-  if (isFormattedWhitespace) {
-    return closingTagsBefore + output;
-  }
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
-  return closingTagsBefore + textContent.replace(frozenString, () => output);
+  return closingTagsBefore + output;
 }
 
 // Get next or previous text sibling a text node, including cases
@@ -353,4 +342,10 @@ function hasFormat(
   format: TextFormatType,
 ): boolean {
   return $isTextNode(node) && node.hasFormat(format);
+}
+
+function escapeLeadingAndTrailingWhitespaces(textContent: string) {
+  return textContent.replace(/^\s+|\s+$/g, (match) => {
+    return [...match].map((char) => '&#' + char.codePointAt(0) + ';').join('');
+  });
 }

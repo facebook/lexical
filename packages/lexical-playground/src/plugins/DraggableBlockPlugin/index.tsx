@@ -11,7 +11,11 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
-import {$createParagraphNode, $getNearestNodeFromDOMNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getNearestNodeFromDOMNode,
+} from 'lexical';
 import {useRef, useState} from 'react';
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
@@ -43,13 +47,14 @@ export default function DraggableBlockPlugin({
         return;
       }
 
-      const pNode = $createParagraphNode();
+      const nodeToInsert = $createParagraphNode().append($createTextNode('/'));
+
       if (e.altKey || e.ctrlKey) {
-        node.insertBefore(pNode);
+        node.insertBefore(nodeToInsert);
       } else {
-        node.insertAfter(pNode);
+        node.insertAfter(nodeToInsert);
       }
-      pNode.select();
+      nodeToInsert.select();
     });
   }
 

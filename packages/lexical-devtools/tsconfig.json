@@ -161,12 +161,16 @@
       "@lexical/yjs": ["../lexical-yjs/src/index.ts"],
       "shared/canUseDOM": ["../shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["../shared/src/caretFromPoint.ts"],
+      "shared/devInvariant": ["../shared/src/devInvariant.ts"],
       "shared/environment": ["../shared/src/environment.ts"],
       "shared/formatDevErrorMessage": [
         "../shared/src/formatDevErrorMessage.ts"
       ],
       "shared/formatProdErrorMessage": [
         "../shared/src/formatProdErrorMessage.ts"
+      ],
+      "shared/formatProdWarningMessage": [
+        "../shared/src/formatProdWarningMessage.ts"
       ],
       "shared/invariant": ["../shared/src/invariant.ts"],
       "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],

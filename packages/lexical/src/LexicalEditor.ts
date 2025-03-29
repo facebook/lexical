@@ -1302,12 +1302,18 @@ export class LexicalEditor {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
       updateEditorSync(this, () => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         const root = $getRoot();
-
         if (selection !== null) {
           // Marking the selection dirty will force the selection back to it
-          selection.dirty = true;
+          // In DEV mode, we freeze the selection in $commitPendingUpdates
+          // so clone a node here to prevent an error.
+          if (__DEV__ && Object.isFrozen(selection)) {
+            selection = selection.clone();
+          }
+          if (!selection.dirty) {
+            selection.dirty = true;
+          }
         } else if (root.getChildrenSize() !== 0) {
           if (options.defaultSelection === 'rootStart') {
             root.selectStart();

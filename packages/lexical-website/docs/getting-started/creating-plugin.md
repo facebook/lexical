@@ -32,7 +32,7 @@ Lexical as a framework provides 2 ways to customize appearance of it's content:
    - [`ElementNode`](/docs/concepts/nodes#elementnode) – used as parent for other nodes, can be block level or inline.
    - [`TextNode`](/docs/concepts/nodes#textnode) - leaf type (_so it can't have child elements_) of node that contains text.
    - [`DecoratorNode`](/docs/concepts/nodes#decoratornode) - useful to insert arbitrary view (component) inside the editor.
-- Via [Node Overrides](/docs/concepts/node-replacement) – useful if you want to augment behavior of the built in nodes, such as `ParagraphNode`.
+- Via [Node Replacement](/docs/concepts/node-replacement) – useful if you want to augment behavior of the built in nodes, such as `ParagraphNode`.
 
 As in our case we don't expect `EmojiNode` to have any child nodes nor we aim to insert arbitrary component the best choice for us is to proceed with [`TextNode`](/docs/concepts/nodes#textnode) extension.
 

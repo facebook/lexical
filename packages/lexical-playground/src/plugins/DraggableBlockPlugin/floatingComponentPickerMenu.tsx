@@ -1,8 +1,8 @@
-import React from 'react';
-import useModal from '../../hooks/useModal';
-import {getBaseOptions, ComponentPickerOption} from '../ComponentPickerPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $getNearestNodeFromDOMNode} from 'lexical';
+import React from 'react';
+import useModal from '../../hooks/useModal';
+import {ComponentPickerOption, getBaseOptions} from '../ComponentPickerPlugin';
 
 interface Props {
   draggableElement: HTMLElement | null;
@@ -18,7 +18,10 @@ const FloatingComponentPickerMenu = ({
   const [modal, showModal] = useModal();
   const [editor] = useLexicalComposerContext();
 
-  const options = React.useMemo(() => getBaseOptions(editor, showModal), []);
+  const options = React.useMemo(
+    () => getBaseOptions(editor, showModal),
+    [editor, showModal],
+  );
   const onOptionClick = (option: ComponentPickerOption) => {
     return () => {
       if (!editor || !draggableElement) return;
@@ -45,7 +48,7 @@ const FloatingComponentPickerMenu = ({
 
   return (
     <ul className="floating-component-picker-menu">
-      {options.map((option, i: number) => {
+      {options.map((option) => {
         return (
           <li
             key={option.key}

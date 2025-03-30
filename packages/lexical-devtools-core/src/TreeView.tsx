@@ -95,11 +95,15 @@ export const TreeView = forwardRef<
       lastCommandsLogRef.current !== commandsLog;
 
     if (shouldUpdate) {
+      // Check if it's a real editor state change
+      const isEditorStateChange = lastEditorStateRef.current !== editorState;
+
       lastEditorStateRef.current = editorState;
       lastCommandsLogRef.current = commandsLog;
       generateTree(showExportDOM);
 
-      if (!timeTravelEnabled && lastEditorStateRef.current !== editorState) {
+      // Only record in time travel if there was an actual editor state change
+      if (!timeTravelEnabled && isEditorStateChange) {
         setTimeStampedEditorStates((currentEditorStates) => [
           ...currentEditorStates,
           [Date.now(), editorState],

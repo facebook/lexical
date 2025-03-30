@@ -55,6 +55,7 @@ export const TreeView = forwardRef<
   const [isLimited, setIsLimited] = useState(false);
   const [showLimited, setShowLimited] = useState(false);
   const lastEditorStateRef = useRef<null | EditorState>();
+  const lastCommandsLogRef = useRef<string>('');
   const lastGenerationID = useRef(0);
 
   const generateTree = useCallback(
@@ -63,6 +64,13 @@ export const TreeView = forwardRef<
       generateContent(exportDOM)
         .then((treeText) => {
           if (myID === lastGenerationID.current) {
+            // Extract and store the commands log part for comparison
+            const commandsLogStartIndex = treeText.indexOf('\n\n commands:');
+            if (commandsLogStartIndex !== -1) {
+              const commandsLogPart = treeText.substring(commandsLogStartIndex);
+              lastCommandsLogRef.current = commandsLogPart;
+            }
+
             setContent(treeText);
           }
         })
@@ -85,8 +93,9 @@ export const TreeView = forwardRef<
       }
     }
 
-    // Prevent re-rendering if the editor state hasn't changed
-    if (lastEditorStateRef.current !== editorState) {
+    // Force generation when the editor state changes
+    const shouldRegenerateTree = lastEditorStateRef.current !== editorState;
+    if (shouldRegenerateTree) {
       lastEditorStateRef.current = editorState;
       generateTree(showExportDOM);
 
@@ -96,10 +105,28 @@ export const TreeView = forwardRef<
           [Date.now(), editorState],
         ]);
       }
+    } else {
+      // This will check if there are new commands to render even when the editor state hasn't changed
+      generateContent(showExportDOM)
+        .then((treeText) => {
+          const commandsLogStartIndex = treeText.indexOf('\n\n commands:');
+          if (commandsLogStartIndex !== -1) {
+            const commandsLogPart = treeText.substring(commandsLogStartIndex);
+            if (commandsLogPart !== lastCommandsLogRef.current) {
+              // Commands log has changed, update the content
+              setContent(treeText);
+              lastCommandsLogRef.current = commandsLogPart;
+            }
+          }
+        })
+        .catch(() => {
+          // Silently ignore errors here, as the regular update will handle them
+        });
     }
   }, [
     editorState,
     generateTree,
+    generateContent,
     showExportDOM,
     showLimited,
     timeTravelEnabled,

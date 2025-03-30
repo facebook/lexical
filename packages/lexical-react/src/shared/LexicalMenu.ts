@@ -267,7 +267,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   onSelectOption,
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
-  autoSelectFirstItem = true,
+  preselectFirstItem = true,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -283,17 +283,17 @@ export function LexicalMenu<TOption extends MenuOption>({
     matchingString: string,
   ) => void;
   commandPriority?: CommandListenerPriority;
-  autoSelectFirstItem?: boolean;
+  preselectFirstItem?: boolean;
 }): JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
 
   const matchingString = resolution.match && resolution.match.matchingString;
 
   useEffect(() => {
-    if (autoSelectFirstItem) {
+    if (preselectFirstItem) {
       setHighlightedIndex(0);
     }
-  }, [matchingString, autoSelectFirstItem]);
+  }, [matchingString, preselectFirstItem]);
 
   const selectOptionAndCleanUp = useCallback(
     (selectedEntry: TOption) => {
@@ -340,10 +340,10 @@ export function LexicalMenu<TOption extends MenuOption>({
   useLayoutEffect(() => {
     if (options === null) {
       setHighlightedIndex(null);
-    } else if (selectedIndex === null && autoSelectFirstItem) {
+    } else if (selectedIndex === null && preselectFirstItem) {
       updateSelectedIndex(0);
     }
-  }, [options, selectedIndex, updateSelectedIndex, autoSelectFirstItem]);
+  }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
 
   useEffect(() => {
     return mergeRegister(

@@ -1,10 +1,6 @@
 import React from 'react';
 import useModal from '../../hooks/useModal';
-import {
-  getBaseOptions,
-  ComponentPickerMenuItem,
-  ComponentPickerOption,
-} from '../ComponentPickerPlugin';
+import {getBaseOptions, ComponentPickerOption} from '../ComponentPickerPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $getNearestNodeFromDOMNode} from 'lexical';
 

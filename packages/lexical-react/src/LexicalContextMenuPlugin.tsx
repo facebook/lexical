@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
+import type {MenuResolution} from './shared/LexicalMenu';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -16,29 +16,10 @@ import {
   isDOMNode,
   LexicalNode,
 } from 'lexical';
-import {
-  MutableRefObject,
-  ReactPortal,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
-
-export type ContextMenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
-  itemProps: {
-    selectedIndex: number | null;
-    selectOptionAndCleanUp: (option: TOption) => void;
-    setHighlightedIndex: (index: number) => void;
-    options: Array<TOption>;
-  },
-  menuProps: {
-    setMenuRef: (element: HTMLElement | null) => void;
-  },
-) => ReactPortal | JSX.Element | null;
 
 export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   onSelectOption: (
@@ -51,7 +32,6 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   onClose?: () => void;
   onWillOpen?: (event: MouseEvent) => void;
   onOpen?: (resolution: MenuResolution) => void;
-  menuRenderFn: ContextMenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
@@ -65,7 +45,6 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   onClose,
   onOpen,
   onSelectOption,
-  menuRenderFn: contextMenuRenderFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
   parent,
@@ -156,17 +135,10 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
-      menuRenderFn={(anchorRef, itemProps) =>
-        contextMenuRenderFn(anchorRef, itemProps, {
-          setMenuRef: (ref) => {
-            menuRef.current = ref;
-          },
-        })
-      }
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
     />
   );
 }
 
-export {MenuOption, MenuRenderFn, MenuResolution};
+export {MenuOption, MenuResolution};

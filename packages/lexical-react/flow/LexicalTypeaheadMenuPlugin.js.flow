@@ -21,31 +21,12 @@ export type MenuResolution = {
   getRect: () => ClientRect,
 };
 
-export const PUNCTUATION: string =
-  '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
-
 declare export class MenuOption {
   key: string;
   ref: {current: HTMLElement | null};
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
-
-declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number,
-  option: MenuOption,
-}>;
-
-export type MenuRenderFn<TOption> = (
-  anchorElementRef: {current: HTMLElement | null},
-  itemProps: {
-    selectedIndex: number | null,
-    selectOptionAndCleanUp: (option: TOption) => void,
-    setHighlightedIndex: (index: number) => void,
-    options: Array<TOption>,
-  },
-  matchingString: string,
-) => React.Portal | React.MixedElement | null;
 
 declare export function getScrollParent(
   element: HTMLElement,
@@ -66,7 +47,6 @@ export type TypeaheadMenuPluginProps<TOption> = {
     matchingString: string,
   ) => void,
   options: Array<TOption>,
-  menuRenderFn: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
   onOpen?: (resolution: MenuResolution) => void,
   onClose?: () => void,

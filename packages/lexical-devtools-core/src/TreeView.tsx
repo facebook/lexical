@@ -93,7 +93,7 @@ export const TreeView = forwardRef<
       }
     }
 
-    // Force generation when the editor state changes
+    // Force generation when the editor state changes or when new commands are logged
     const shouldRegenerateTree = lastEditorStateRef.current !== editorState;
     if (shouldRegenerateTree) {
       lastEditorStateRef.current = editorState;
@@ -105,24 +105,24 @@ export const TreeView = forwardRef<
           [Date.now(), editorState],
         ]);
       }
-    } else {
-      // This will check if there are new commands to render even when the editor state hasn't changed
-      generateContent(showExportDOM)
-        .then((treeText) => {
-          const commandsLogStartIndex = treeText.indexOf('\n\n commands:');
-          if (commandsLogStartIndex !== -1) {
-            const commandsLogPart = treeText.substring(commandsLogStartIndex);
-            if (commandsLogPart !== lastCommandsLogRef.current) {
-              // Commands log has changed, update the content
-              setContent(treeText);
-              lastCommandsLogRef.current = commandsLogPart;
-            }
-          }
-        })
-        .catch(() => {
-          // Silently ignore errors here, as the regular update will handle them
-        });
     }
+
+    // This will check if there are new commands to render even when the editor state hasn't changed
+    generateContent(showExportDOM)
+      .then((treeText) => {
+        const commandsLogStartIndex = treeText.indexOf('\n\n commands:');
+        if (commandsLogStartIndex !== -1) {
+          const commandsLogPart = treeText.substring(commandsLogStartIndex);
+          if (commandsLogPart !== lastCommandsLogRef.current) {
+            // Commands log has changed, update the content
+            setContent(treeText);
+            lastCommandsLogRef.current = commandsLogPart;
+          }
+        }
+      })
+      .catch(() => {
+        // Silently ignore errors here, as the regular update will handle them
+      });
   }, [
     editorState,
     generateTree,

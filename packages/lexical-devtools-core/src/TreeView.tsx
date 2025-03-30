@@ -6,6 +6,7 @@
  *
  */
 
+import type {LexicalCommandLog} from './useLexicalCommandsLog';
 import type {EditorSetOptions, EditorState} from 'lexical';
 import type {JSX} from 'react';
 
@@ -27,7 +28,7 @@ export const TreeView = forwardRef<
     generateContent: (exportDOM: boolean) => Promise<string>;
     setEditorState: (state: EditorState, options?: EditorSetOptions) => void;
     setEditorReadOnly: (isReadonly: boolean) => void;
-    commandsLog?: string[];
+    commandsLog?: LexicalCommandLog;
   }
 >(function TreeViewWrapped(
   {
@@ -57,7 +58,7 @@ export const TreeView = forwardRef<
   const [isLimited, setIsLimited] = useState(false);
   const [showLimited, setShowLimited] = useState(false);
   const lastEditorStateRef = useRef<null | EditorState>();
-  const lastCommandsLogRef = useRef<string[]>([]);
+  const lastCommandsLogRef = useRef<LexicalCommandLog>([]);
   const lastGenerationID = useRef(0);
 
   const generateTree = useCallback(

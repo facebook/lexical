@@ -6,7 +6,7 @@
  *
  */
 
-import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
+import type {MenuResolution} from './shared/LexicalMenu';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -34,7 +34,6 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
   nodeKey: NodeKey | null;
   onClose?: () => void;
   onOpen?: (resolution: MenuResolution) => void;
-  menuRenderFn: MenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
@@ -46,7 +45,6 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   onClose,
   onOpen,
   onSelectOption,
-  menuRenderFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
   parent,
@@ -120,11 +118,10 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
-      menuRenderFn={menuRenderFn}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
     />
   );
 }
 
-export {MenuOption, MenuRenderFn, MenuResolution};
+export {MenuOption, MenuResolution};

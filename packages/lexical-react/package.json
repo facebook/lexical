@@ -10,6 +10,7 @@
   "license": "MIT",
   "version": "0.29.0",
   "dependencies": {
+    "@floating-ui/react": "^0.27.5",
     "@lexical/devtools-core": "0.29.0",
     "@lexical/dragon": "0.29.0",
     "@lexical/hashtag": "0.29.0",

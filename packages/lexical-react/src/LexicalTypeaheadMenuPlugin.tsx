@@ -199,6 +199,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
+  autoSelectFirstItem?: boolean;
 };
 
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
@@ -212,6 +213,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
   parent,
+  autoSelectFirstItem = true,
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -326,6 +328,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
+      autoSelectFirstItem={autoSelectFirstItem}
     />
   );
 }

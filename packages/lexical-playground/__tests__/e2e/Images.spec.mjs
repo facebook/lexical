@@ -388,8 +388,12 @@ test.describe('Images', () => {
     });
   });
 
-  test('Can add images by arbitrary URL', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Can add images by arbitrary URL', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab, 'Skip in plain text and collab mode');
 
     await focusEditor(page);
 
@@ -418,7 +422,7 @@ test.describe('Images', () => {
                 alt="lexical logo"
                 draggable="false"
                 src="https://lexical.dev/img/logo.svg"
-                style="height: inherit; max-width: 500px; width: inherit;" />
+                style="height: 112px; max-width: 500px; width: 500px" />
             </div>
           </span>
           <span
@@ -783,6 +787,60 @@ test.describe('Images', () => {
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+  });
+
+  test(`Verifies image dimensions are properly calculated for both SVG and JPG formats`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab, 'Skip in plain text and collab mode');
+
+    await focusEditor(page);
+
+    // Insert an SVG image using the Lexical logo
+    await insertUrlImage(
+      page,
+      'https://lexical.dev/img/logo.svg',
+      'lexical logo',
+    );
+
+    // Insert a JPG image
+    await insertUrlImage(page, SAMPLE_IMAGE_URL, 'sample image');
+
+    // Verify both images are inserted with proper dimensions and styling
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="lexical logo"
+                draggable="false"
+                src="https://lexical.dev/img/logo.svg"
+                style="height: 112px; max-width: 500px; width: 500px" />
+            </div>
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="sample image"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
           <br />

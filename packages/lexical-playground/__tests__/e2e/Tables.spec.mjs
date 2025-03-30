@@ -1233,21 +1233,21 @@ test.describe.parallel('Tables', () => {
               <p dir="ltr"><span data-lexical-text="true">aa</span></p>
             </th>
             <th>
-              <p><span data-lexical-text="true">bb</span></p>
+              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
             </th>
             <th>
-              <p><span data-lexical-text="true">cc</span></p>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
             </th>
           </tr>
           <tr>
             <th>
-              <p><span data-lexical-text="true">d</span></p>
+              <p dir="ltr"><span data-lexical-text="true">d</span></p>
             </th>
             <td>
-              <p><span data-lexical-text="true">e</span></p>
+              <p dir="ltr"><span data-lexical-text="true">e</span></p>
             </td>
             <td>
-              <p><span data-lexical-text="true">f</span></p>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
             </td>
           </tr>
         </table>

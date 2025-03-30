@@ -1,6 +1,14 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $getNearestNodeFromDOMNode} from 'lexical';
-import React from 'react';
+import {useMemo} from 'react';
 import useModal from '../../hooks/useModal';
 import {ComponentPickerOption, getBaseOptions} from '../ComponentPickerPlugin';
 
@@ -18,13 +26,14 @@ const FloatingComponentPickerMenu = ({
   const [modal, showModal] = useModal();
   const [editor] = useLexicalComposerContext();
 
-  const options = React.useMemo(
-    () => getBaseOptions(editor, showModal),
-    [editor, showModal],
-  );
+  const options = useMemo(() => {
+    return getBaseOptions(editor, showModal);
+  }, [editor, showModal]);
   const onOptionClick = (option: ComponentPickerOption) => {
     return () => {
-      if (!editor || !draggableElement) return;
+      if (!editor || !draggableElement) {
+        return;
+      }
 
       editor.update(() => {
         const node = $getNearestNodeFromDOMNode(draggableElement);
@@ -54,7 +63,6 @@ const FloatingComponentPickerMenu = ({
             key={option.key}
             tabIndex={-1}
             ref={option.setRefElement}
-            role="option"
             onClick={onOptionClick(option)}>
             {option.icon}
             <span className="text">{option.title}</span>

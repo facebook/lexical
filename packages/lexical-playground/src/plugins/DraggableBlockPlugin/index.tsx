@@ -11,11 +11,6 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getNearestNodeFromDOMNode,
-} from 'lexical';
 import {useRef, useState} from 'react';
 import FloatingComponentPickerMenu from './floatingComponentPickerMenu';
 

@@ -27,6 +27,7 @@ export const TreeView = forwardRef<
     generateContent: (exportDOM: boolean) => Promise<string>;
     setEditorState: (state: EditorState, options?: EditorSetOptions) => void;
     setEditorReadOnly: (isReadonly: boolean) => void;
+    commandsLog?: string[];
   }
 >(function TreeViewWrapped(
   {
@@ -40,6 +41,7 @@ export const TreeView = forwardRef<
     setEditorState,
     setEditorReadOnly,
     generateContent,
+    commandsLog = [],
   },
   ref,
 ): JSX.Element {
@@ -55,6 +57,7 @@ export const TreeView = forwardRef<
   const [isLimited, setIsLimited] = useState(false);
   const [showLimited, setShowLimited] = useState(false);
   const lastEditorStateRef = useRef<null | EditorState>();
+  const lastCommandsLogRef = useRef<string[]>([]);
   const lastGenerationID = useRef(0);
 
   const generateTree = useCallback(
@@ -85,12 +88,17 @@ export const TreeView = forwardRef<
       }
     }
 
-    // Prevent re-rendering if the editor state hasn't changed
-    if (lastEditorStateRef.current !== editorState) {
+    // Update view when either editor state changes or new commands are logged
+    const shouldUpdate =
+      lastEditorStateRef.current !== editorState ||
+      lastCommandsLogRef.current !== commandsLog;
+
+    if (shouldUpdate) {
       lastEditorStateRef.current = editorState;
+      lastCommandsLogRef.current = commandsLog;
       generateTree(showExportDOM);
 
-      if (!timeTravelEnabled) {
+      if (!timeTravelEnabled && lastEditorStateRef.current !== editorState) {
         setTimeStampedEditorStates((currentEditorStates) => [
           ...currentEditorStates,
           [Date.now(), editorState],
@@ -103,6 +111,7 @@ export const TreeView = forwardRef<
     showExportDOM,
     showLimited,
     timeTravelEnabled,
+    commandsLog,
   ]);
 
   const totalEditorStates = timeStampedEditorStates.length;

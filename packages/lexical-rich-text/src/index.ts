@@ -737,7 +737,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           if (indent > 0) {
-            block.setIndent(indent - 1);
+            block.setIndent(Math.max(0, indent - 1));
           }
         });
       },

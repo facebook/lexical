@@ -1978,7 +1978,7 @@ export function setNodeIndentFromDOM(
   elementNode: ElementNode,
 ) {
   const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
-  const indent = indentSize / 40;
+  const indent = Math.round(indentSize / 40);
   elementNode.setIndent(indent);
 }
 

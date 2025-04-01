@@ -1178,7 +1178,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isDeleteLineBackward(key, metaKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, true);
-  } else if (isDeleteLineForward(key, metaKey)) {
+  } else if (isDeleteLineForward(key, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
   } else if (isBold(key, altKey, metaKey, ctrlKey)) {

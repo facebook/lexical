@@ -22,6 +22,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -101,7 +102,12 @@ import {
   $computeTableCellRectBoundary,
   $computeTableCellRectSpans,
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $getNodeTriplet,
+  $insertTableColumnAtNode,
+  $insertTableRowAtNode,
+  $mergeCells,
+  $unmergeCellNode,
   TableCellRectBoundary,
 } from './LexicalTableUtils';
 
@@ -767,95 +773,174 @@ export function applyTableHandlers(
         ) {
           return false;
         }
-        const [anchor] = anchorAndFocus;
 
-        const newGrid = nodes[0];
-        const newGridRows = newGrid.getChildren();
-        const newColumnCount = newGrid
-          .getFirstChildOrThrow<TableNode>()
-          .getChildrenSize();
-        const newRowCount = newGrid.getChildrenSize();
-        const gridCellNode = $findMatchingParent(anchor.getNode(), (n) =>
+        const [anchor, focus] = anchorAndFocus;
+        const [anchorCellNode, anchorRowNode, gridNode] =
+          $getNodeTriplet(anchor);
+        const focusCellNode = $findMatchingParent(focus.getNode(), (n) =>
           $isTableCellNode(n),
         );
-        const gridRowNode =
-          gridCellNode &&
-          $findMatchingParent(gridCellNode, (n) => $isTableRowNode(n));
-        const gridNode =
-          gridRowNode &&
-          $findMatchingParent(gridRowNode, (n) => $isTableNode(n));
 
         if (
-          !$isTableCellNode(gridCellNode) ||
-          !$isTableRowNode(gridRowNode) ||
+          !$isTableCellNode(anchorCellNode) ||
+          !$isTableCellNode(focusCellNode) ||
+          !$isTableRowNode(anchorRowNode) ||
           !$isTableNode(gridNode)
         ) {
           return false;
         }
 
-        const startY = gridRowNode.getIndexWithinParent();
-        const stopY = Math.min(
-          gridNode.getChildrenSize() - 1,
-          startY + newRowCount - 1,
+        const templateGrid = nodes[0];
+        const [initialGridMap, anchorCellMap, focusCellMap] = $computeTableMap(
+          gridNode,
+          anchorCellNode,
+          focusCellNode,
         );
-        const startX = gridCellNode.getIndexWithinParent();
-        const stopX = Math.min(
-          gridRowNode.getChildrenSize() - 1,
-          startX + newColumnCount - 1,
+        const [templateGridMap] = $computeTableMapSkipCellCheck(
+          templateGrid,
+          null,
+          null,
         );
-        const fromX = Math.min(startX, stopX);
-        const fromY = Math.min(startY, stopY);
-        const toX = Math.max(startX, stopX);
-        const toY = Math.max(startY, stopY);
-        const gridRowNodes = gridNode.getChildren();
-        let newRowIdx = 0;
+        const initialRowCount = initialGridMap.length;
+        const initialColCount =
+          initialRowCount > 0 ? initialGridMap[0].length : 0;
 
-        for (let r = fromY; r <= toY; r++) {
-          const currentGridRowNode = gridRowNodes[r];
+        // If we have a range selection, we'll fit the template grid into the
+        // table, growing the table if necessary.
+        let startRow = anchorCellMap.startRow;
+        let startCol = anchorCellMap.startColumn;
+        let affectedRowCount = templateGridMap.length;
+        let affectedColCount =
+          affectedRowCount > 0 ? templateGridMap[0].length : 0;
 
-          if (!$isTableRowNode(currentGridRowNode)) {
-            return false;
+        if (isTableSelection) {
+          // If we have a table selection, we'll only modify the cells within
+          // the selection boundary.
+          const selectionBoundary = $computeTableCellRectBoundary(
+            initialGridMap,
+            anchorCellMap,
+            focusCellMap,
+          );
+          const selectionRowCount =
+            selectionBoundary.maxRow - selectionBoundary.minRow + 1;
+          const selectionColCount =
+            selectionBoundary.maxColumn - selectionBoundary.minColumn + 1;
+          startRow = selectionBoundary.minRow;
+          startCol = selectionBoundary.minColumn;
+          affectedRowCount = Math.min(affectedRowCount, selectionRowCount);
+          affectedColCount = Math.min(affectedColCount, selectionColCount);
+        }
+
+        // Step 1: Unmerge all merged cells within the affected area
+        let didPerformMergeOperations = false;
+        const lastRowForUnmerge =
+          Math.min(initialRowCount, startRow + affectedRowCount) - 1;
+        const lastColForUnmerge =
+          Math.min(initialColCount, startCol + affectedColCount) - 1;
+        const unmergedKeys = new Set<NodeKey>();
+        for (let row = startRow; row <= lastRowForUnmerge; row++) {
+          for (let col = startCol; col <= lastColForUnmerge; col++) {
+            const cellMap = initialGridMap[row][col];
+            if (unmergedKeys.has(cellMap.cell.getKey())) {
+              continue; // cell was a merged cell that was already handled
+            }
+            if (cellMap.cell.__rowSpan === 1 && cellMap.cell.__colSpan === 1) {
+              continue; // cell is not a merged cell
+            }
+            $unmergeCellNode(cellMap.cell);
+            unmergedKeys.add(cellMap.cell.getKey());
+            didPerformMergeOperations = true;
           }
+        }
 
-          const newGridRowNode = newGridRows[newRowIdx];
+        let [interimGridMap] = $computeTableMapSkipCellCheck(
+          gridNode.getWritable(),
+          null,
+          null,
+        );
 
-          if (!$isTableRowNode(newGridRowNode)) {
-            return false;
-          }
+        // Step 2: Expand current table (if needed)
+        const rowsToInsert = affectedRowCount - initialRowCount + startRow;
+        for (let i = 0; i < rowsToInsert; i++) {
+          const cellMap = interimGridMap[initialRowCount - 1][0];
+          $insertTableRowAtNode(cellMap.cell);
+        }
+        const colsToInsert = affectedColCount - initialColCount + startCol;
+        for (let i = 0; i < colsToInsert; i++) {
+          const cellMap = interimGridMap[0][initialColCount - 1];
+          $insertTableColumnAtNode(cellMap.cell, true, false);
+        }
 
-          const gridCellNodes = currentGridRowNode.getChildren();
-          const newGridCellNodes = newGridRowNode.getChildren();
-          let newColumnIdx = 0;
+        [interimGridMap] = $computeTableMapSkipCellCheck(
+          gridNode.getWritable(),
+          null,
+          null,
+        );
 
-          for (let c = fromX; c <= toX; c++) {
-            const currentGridCellNode = gridCellNodes[c];
-
-            if (!$isTableCellNode(currentGridCellNode)) {
-              return false;
+        // Step 3: Merge cells and set cell content, to match template grid
+        for (let row = startRow; row < startRow + affectedRowCount; row++) {
+          for (let col = startCol; col < startCol + affectedColCount; col++) {
+            const templateRow = row - startRow;
+            const templateCol = col - startCol;
+            const templateCellMap = templateGridMap[templateRow][templateCol];
+            if (
+              templateCellMap.startRow !== templateRow ||
+              templateCellMap.startColumn !== templateCol
+            ) {
+              continue; // cell is a merged cell that was already handled
             }
 
-            const newGridCellNode = newGridCellNodes[newColumnIdx];
-
-            if (!$isTableCellNode(newGridCellNode)) {
-              return false;
+            const templateCell = templateCellMap.cell;
+            if (templateCell.__rowSpan !== 1 || templateCell.__colSpan !== 1) {
+              const cellsToMerge = [];
+              const lastRowForMerge =
+                Math.min(
+                  row + templateCell.__rowSpan,
+                  startRow + affectedRowCount,
+                ) - 1;
+              const lastColForMerge =
+                Math.min(
+                  col + templateCell.__colSpan,
+                  startCol + affectedColCount,
+                ) - 1;
+              for (let r = row; r <= lastRowForMerge; r++) {
+                for (let c = col; c <= lastColForMerge; c++) {
+                  const cellMap = interimGridMap[r][c];
+                  cellsToMerge.push(cellMap.cell);
+                }
+              }
+              $mergeCells(cellsToMerge);
+              didPerformMergeOperations = true;
             }
 
-            const originalChildren = currentGridCellNode.getChildren();
-            newGridCellNode.getChildren().forEach((child) => {
+            const {cell} = interimGridMap[row][col];
+            const originalChildren = cell.getChildren();
+            templateCell.getChildren().forEach((child) => {
               if ($isTextNode(child)) {
                 const paragraphNode = $createParagraphNode();
                 paragraphNode.append(child);
-                currentGridCellNode.append(child);
+                cell.append(child);
               } else {
-                currentGridCellNode.append(child);
+                cell.append(child);
               }
             });
             originalChildren.forEach((n) => n.remove());
-            newColumnIdx++;
           }
-
-          newRowIdx++;
         }
+
+        if (isTableSelection && didPerformMergeOperations) {
+          // reset the table selection in case the anchor or focus cell was
+          // removed via merge operations
+          const [finalGridMap] = $computeTableMapSkipCellCheck(
+            gridNode.getWritable(),
+            null,
+            null,
+          );
+          const newAnchorCellMap =
+            finalGridMap[anchorCellMap.startRow][anchorCellMap.startColumn];
+          newAnchorCellMap.cell.selectEnd();
+        }
+
         return true;
       },
       COMMAND_PRIORITY_CRITICAL,

@@ -911,8 +911,15 @@ export function isDeleteLineBackward(key: string, metaKey: boolean): boolean {
   return IS_APPLE && metaKey && isBackspace(key);
 }
 
-export function isDeleteLineForward(key: string, metaKey: boolean): boolean {
-  return IS_APPLE && metaKey && isDelete(key);
+export function isDeleteLineForward(
+  key: string,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return (
+    IS_APPLE &&
+    ((metaKey && isDelete(key)) || (ctrlKey && key.toLowerCase() === 'k'))
+  );
 }
 
 export function isDeleteBackward(

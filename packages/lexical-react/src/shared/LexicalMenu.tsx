@@ -12,7 +12,6 @@ import {
   flip,
   FloatingFocusManager,
   FloatingList,
-  FloatingOverlay,
   FloatingPortal,
   shift,
   useDismiss,
@@ -520,7 +519,15 @@ export function LexicalMenu<TOption extends MenuOption>({
         padding: 10,
       }),
     ],
-    onOpenChange: setIsOpen,
+    onOpenChange(nextOpen, event, reason) {
+      setIsOpen(nextOpen);
+
+      if (event && reason === 'outside-press') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        close();
+      }
+    },
     open: isOpen,
     placement: 'bottom-start',
     strategy: 'fixed',
@@ -542,35 +549,33 @@ export function LexicalMenu<TOption extends MenuOption>({
   return (
     <FloatingPortal>
       {isOpen && (
-        <FloatingOverlay lockScroll={false}>
-          <FloatingFocusManager context={context} initialFocus={-1}>
-            <div
-              className="typeahead-popover component-picker-menu"
-              ref={refs.setFloating}
-              style={floatingStyles}
-              {...getFloatingProps()}>
-              <FloatingList elementsRef={elementsRef} labelsRef={labelsRef}>
-                <ul>
-                  {options.map((option, index: number) => (
-                    <MenuItem
-                      index={index}
-                      isSelected={selectedIndex === index}
-                      onClick={() => {
-                        setHighlightedIndex(index);
-                        selectOptionAndCleanUp(option);
-                      }}
-                      onMouseEnter={() => {
-                        setHighlightedIndex(index);
-                      }}
-                      key={option.key}
-                      option={option}
-                    />
-                  ))}
-                </ul>
-              </FloatingList>
-            </div>
-          </FloatingFocusManager>
-        </FloatingOverlay>
+        <FloatingFocusManager context={context} initialFocus={-1}>
+          <div
+            className="typeahead-popover component-picker-menu"
+            ref={refs.setFloating}
+            style={floatingStyles}
+            {...getFloatingProps()}>
+            <FloatingList elementsRef={elementsRef} labelsRef={labelsRef}>
+              <ul>
+                {options.map((option, index: number) => (
+                  <MenuItem
+                    index={index}
+                    isSelected={selectedIndex === index}
+                    onClick={() => {
+                      setHighlightedIndex(index);
+                      selectOptionAndCleanUp(option);
+                    }}
+                    onMouseEnter={() => {
+                      setHighlightedIndex(index);
+                    }}
+                    key={option.key}
+                    option={option}
+                  />
+                ))}
+              </ul>
+            </FloatingList>
+          </div>
+        </FloatingFocusManager>
       )}
     </FloatingPortal>
   );

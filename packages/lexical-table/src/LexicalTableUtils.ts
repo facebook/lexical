@@ -469,6 +469,7 @@ export function $insertTableColumn__EXPERIMENTAL(
 export function $insertTableColumnAtNode(
   cellNode: TableCellNode,
   insertAfter = true,
+  shouldSetSelection = true,
 ): TableCellNode | null {
   const [, , grid] = $getNodeTriplet(cellNode);
   const [gridMap, cellMap] = $computeTableMap(grid, cellNode, cellNode);
@@ -550,7 +551,7 @@ export function $insertTableColumnAtNode(
       currentCell.setColSpan(currentCell.__colSpan + 1);
     }
   }
-  if (firstInsertedCell !== null) {
+  if (firstInsertedCell !== null && shouldSetSelection) {
     $moveSelectionToCell(firstInsertedCell);
   }
   const colWidths = grid.getColWidths();

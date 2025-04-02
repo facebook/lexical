@@ -7,9 +7,9 @@
  */
 
 import {
+  centerAlign,
   indent,
   outdent,
-  centerAlign,
   rightAlign,
   selectAll,
   toggleBold,

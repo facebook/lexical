@@ -166,6 +166,9 @@ export function $removeTableRowAtIndex(
   return tableNode;
 }
 
+/**
+ * @deprecated This function does not support merged cells. Use {@link $insertTableRowAtSelection} or {@link $insertTableRowAtNode} instead.
+ */
 export function $insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
@@ -251,7 +254,7 @@ const getHeaderState = (
  * taking into account any spans. If successful, returns the
  * inserted table row node.
  */
-export function $insertTableRow__EXPERIMENTAL(
+export function $insertTableRowAtSelection(
   insertAfter = true,
 ): TableRowNode | null {
   const selection = $getSelection();
@@ -285,6 +288,11 @@ export function $insertTableRow__EXPERIMENTAL(
     );
   }
 }
+
+/**
+ * @deprecated renamed to {@link $insertTableRowAtSelection}
+ */
+export const $insertTableRow__EXPERIMENTAL = $insertTableRowAtSelection;
 
 /**
  * Inserts a table row before or after the given cell node,
@@ -362,6 +370,9 @@ export function $insertTableRowAtNode(
   return insertedRow;
 }
 
+/**
+ * @deprecated This function does not support merged cells. Use {@link $insertTableColumnAtSelection} or {@link $insertTableColumnAtNode} instead.
+ */
 export function $insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -426,7 +437,7 @@ export function $insertTableColumn(
  * taking into account any spans. If successful, returns the
  * first inserted cell node.
  */
-export function $insertTableColumn__EXPERIMENTAL(
+export function $insertTableColumnAtSelection(
   insertAfter = true,
 ): TableCellNode | null {
   const selection = $getSelection();
@@ -460,6 +471,11 @@ export function $insertTableColumn__EXPERIMENTAL(
     );
   }
 }
+
+/**
+ * @deprecated renamed to {@link $insertTableColumnAtSelection}
+ */
+export const $insertTableColumn__EXPERIMENTAL = $insertTableColumnAtSelection;
 
 /**
  * Inserts a column before or after the given cell node,
@@ -565,6 +581,9 @@ export function $insertTableColumnAtNode(
   return firstInsertedCell;
 }
 
+/**
+ * @deprecated This function does not support merged cells. Use {@link $deleteTableColumnAtSelection} instead.
+ */
 export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -588,7 +607,7 @@ export function $deleteTableColumn(
   return tableNode;
 }
 
-export function $deleteTableRow__EXPERIMENTAL(): void {
+export function $deleteTableRowAtSelection(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -681,7 +700,12 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   }
 }
 
-export function $deleteTableColumn__EXPERIMENTAL(): void {
+/**
+ * @deprecated renamed to {@link $deleteTableRowAtSelection}
+ */
+export const $deleteTableRow__EXPERIMENTAL = $deleteTableRowAtSelection;
+
+export function $deleteTableColumnAtSelection(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -759,6 +783,11 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
     grid.setColWidths(newColWidths);
   }
 }
+
+/**
+ * @deprecated renamed to {@link $deleteTableColumnAtSelection}
+ */
+export const $deleteTableColumn__EXPERIMENTAL = $deleteTableColumnAtSelection;
 
 function $moveSelectionToCell(cell: TableCellNode): void {
   const firstDescendant = cell.getFirstDescendant();

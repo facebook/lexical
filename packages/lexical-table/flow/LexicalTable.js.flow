@@ -239,6 +239,7 @@ declare export function $removeTableRowAtIndex(
   indexToDelete: number,
 ): TableNode;
 
+/** @deprecated This function does not support merged cells. Use {@link $insertTableRowAtSelection} or {@link $insertTableRowAtNode} instead. */
 declare export function $insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
@@ -247,6 +248,7 @@ declare export function $insertTableRow(
   table: TableDOMTable,
 ): TableNode;
 
+/** @deprecated This function does not support merged cells. Use {@link $insertTableColumnAtSelection} or {@link $insertTableColumnAtNode} instead. */
 declare export function $insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -255,21 +257,49 @@ declare export function $insertTableColumn(
   table: TableDOMTable,
 ): TableNode;
 
+/** @deprecated This function does not support merged cells. Use {@link $deleteTableColumnAtSelection} instead. */
 declare export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
 ): TableNode;
 
+declare export function $insertTableRowAtSelection(
+  insertAfter?: boolean,
+): TableRowNode | null;
+
+declare export function $insertTableRowAtNode(
+  cellNode: TableCellNode,
+  insertAfter?: boolean,
+): TableRowNode | null;
+
+declare export function $insertTableColumnAtSelection(
+  insertAfter?: boolean,
+): TableCellNode | null;
+
+declare export function $insertTableColumnAtNode(
+  cellNode: TableCellNode,
+  insertAfter?: boolean,
+  shouldSetSelection?: boolean,
+): TableCellNode | null
+
+declare export function $deleteTableRowAtSelection(): void;
+
+declare export function $deleteTableColumnAtSelection(): void;
+
+/** @deprecated renamed to {@link $insertTableRowAtSelection} */ 
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
 ): TableRowNode | null;
 
+/** @deprecated renamed to {@link $insertTableColumnAtSelection} */ 
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
 ): TableCellNode | null;
 
+/** @deprecated renamed to {@link $deleteTableRowAtSelection} */ 
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
 
+/** @deprecated renamed to {@link $deleteTableColumnAtSelection} */ 
 declare export function $deleteTableColumn__EXPERIMENTAL(): void;
 
 declare export function $unmergeCell(): void;

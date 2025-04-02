@@ -16,7 +16,7 @@ import {
   $createTableRowNode,
   $createTableSelection,
   $getElementForTableNode,
-  $insertTableColumn__EXPERIMENTAL,
+  $insertTableColumnAtSelection,
   $isTableCellNode,
   $isTableNode,
   TableNode,
@@ -1788,7 +1788,7 @@ describe('LexicalTableNode tests', () => {
                 table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
               );
               $setSelection(selection);
-              $insertTableColumn__EXPERIMENTAL();
+              $insertTableColumnAtSelection();
               table!.setColWidths([50, 50, 100]);
             });
 

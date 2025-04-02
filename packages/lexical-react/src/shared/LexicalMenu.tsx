@@ -546,39 +546,37 @@ export function LexicalMenu<TOption extends MenuOption>({
 
   const {getFloatingProps} = useInteractions([role, dismiss, listNavigation]);
 
-  return (
+  return isOpen ? (
     <FloatingPortal>
-      {isOpen && (
-        <FloatingFocusManager context={context} initialFocus={-1}>
-          <div
-            className="typeahead-popover component-picker-menu"
-            ref={refs.setFloating}
-            style={floatingStyles}
-            {...getFloatingProps()}>
-            <FloatingList elementsRef={elementsRef} labelsRef={labelsRef}>
-              <ul>
-                {options.map((option, index: number) => (
-                  <MenuItem
-                    index={index}
-                    isSelected={selectedIndex === index}
-                    onClick={() => {
-                      setHighlightedIndex(index);
-                      selectOptionAndCleanUp(option);
-                    }}
-                    onMouseEnter={() => {
-                      setHighlightedIndex(index);
-                    }}
-                    key={option.key}
-                    option={option}
-                  />
-                ))}
-              </ul>
-            </FloatingList>
-          </div>
-        </FloatingFocusManager>
-      )}
+      <FloatingFocusManager context={context} initialFocus={-1}>
+        <div
+          className="typeahead-popover component-picker-menu"
+          ref={refs.setFloating}
+          style={floatingStyles}
+          {...getFloatingProps()}>
+          <FloatingList elementsRef={elementsRef} labelsRef={labelsRef}>
+            <ul>
+              {options.map((option, index: number) => (
+                <MenuItem
+                  index={index}
+                  isSelected={selectedIndex === index}
+                  onClick={() => {
+                    setHighlightedIndex(index);
+                    selectOptionAndCleanUp(option);
+                  }}
+                  onMouseEnter={() => {
+                    setHighlightedIndex(index);
+                  }}
+                  key={option.key}
+                  option={option}
+                />
+              ))}
+            </ul>
+          </FloatingList>
+        </div>
+      </FloatingFocusManager>
     </FloatingPortal>
-  );
+  ) : null;
 }
 
 function setContainerDivAttributes(

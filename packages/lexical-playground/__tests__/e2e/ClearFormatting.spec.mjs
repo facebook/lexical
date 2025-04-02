@@ -7,6 +7,9 @@
  */
 
 import {
+  indent,
+  outdent,
+  rightAlign,
   selectAll,
   toggleBold,
   toggleItalic,
@@ -192,4 +195,58 @@ test.describe('Clear All Formatting', () => {
       );
     },
   );
+
+  test(`Can clear when only indent/outdent alignment is applied`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello World');
+    await indent(page);
+    await page.keyboard.type(' Test');
+    await indent(page);
+    await selectAll(page);
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="">
+          <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can clear indent/outdent alignment when other formatting options like BIU or left/right/center align are also applied`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello');
+    await toggleBold(page);
+    await toggleItalic(page);
+    await page.keyboard.type(' World');
+    await indent(page);
+    await indent(page);
+    await indent(page);
+    await rightAlign(page);
+    await page.keyboard.type(' Test');
+    await outdent(page);
+    await selectAll(page);
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="">
+          <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
 });

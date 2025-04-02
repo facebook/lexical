@@ -34,6 +34,7 @@ import {
 import {
   $addUpdateTag,
   $onUpdate,
+  $setSelection,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -1307,7 +1308,9 @@ export class LexicalEditor {
 
         if (selection !== null) {
           // Marking the selection dirty will force the selection back to it
-          selection.dirty = true;
+          if (!selection.dirty) {
+            $setSelection(selection.clone());
+          }
         } else if (root.getChildrenSize() !== 0) {
           if (options.defaultSelection === 'rootStart') {
             root.selectStart();

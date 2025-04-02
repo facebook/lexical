@@ -79,6 +79,7 @@ export function createMarkdownImport(
         byType.element,
         textFormatTransformersIndex,
         byType.textMatch,
+        shouldPreserveNewLines,
       );
     }
 
@@ -224,6 +225,7 @@ function $importBlocks(
   elementTransformers: Array<ElementTransformer>,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
+  shouldPreserveNewLines: boolean,
 ) {
   const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
@@ -253,9 +255,10 @@ function $importBlocks(
   if (elementNode.isAttached() && lineText.length > 0) {
     const previousNode = elementNode.getPreviousSibling();
     if (
-      $isParagraphNode(previousNode) ||
-      $isQuoteNode(previousNode) ||
-      $isListNode(previousNode)
+      !shouldPreserveNewLines && // Only append if we're not preserving newlines
+      ($isParagraphNode(previousNode) ||
+        $isQuoteNode(previousNode) ||
+        $isListNode(previousNode))
     ) {
       let targetNode: typeof previousNode | ListItemNode | null = previousNode;
 

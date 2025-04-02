@@ -9,6 +9,7 @@
 import {
   indent,
   outdent,
+  centerAlign,
   rightAlign,
   selectAll,
   toggleBold,
@@ -195,6 +196,55 @@ test.describe('Clear All Formatting', () => {
       );
     },
   );
+
+  test(`Can clear left/center/right alignment when BIU formatting already applied`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello');
+    await toggleBold(page);
+    await page.keyboard.type(' World');
+    await rightAlign(page);
+    await page.keyboard.type(' Test');
+    await selectAll(page);
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="">
+          <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can clear left/center/right alignment when BIU formatting not applied`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello World');
+    await rightAlign(page);
+    await page.keyboard.type(' Test');
+    await centerAlign(page);
+    await selectAll(page);
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          style="">
+          <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
 
   test(`Can clear when only indent/outdent alignment is applied`, async ({
     page,

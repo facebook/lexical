@@ -133,6 +133,10 @@ export function importTextTransformers(
 
   // Handle escape characters
   const textContent = textNode.getTextContent();
-  const escapedText = textContent.replace(/\\([*_`~])/g, '$1');
+  const escapedText = textContent
+    .replace(/\\([*_`~])/g, '$1')
+    .replace(/&#(\d+);/g, (_, codePoint) => {
+      return String.fromCodePoint(codePoint);
+    });
   textNode.setTextContent(escapedText);
 }

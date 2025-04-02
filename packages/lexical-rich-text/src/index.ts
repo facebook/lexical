@@ -737,7 +737,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         return $handleIndentAndOutdent((block) => {
           const indent = block.getIndent();
           if (indent > 0) {
-            block.setIndent(indent - 1);
+            block.setIndent(Math.max(0, indent - 1));
           }
         });
       },
@@ -747,10 +747,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
       KEY_ARROW_UP_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !$isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
@@ -839,10 +836,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
       KEY_ARROW_RIGHT_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !$isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();

@@ -916,6 +916,20 @@ export async function insertCollapsible(page) {
   await selectFromInsertDropdown(page, '.item .caret-right');
 }
 
+export async function selectCellFromTableCoord(page, coord, isHeader = false) {
+  const leftFrame = getPageOrFrame(page);
+  if (IS_COLLAB) {
+    await focusEditor(page);
+  }
+
+  const cell = await leftFrame.locator(
+    `table:first-of-type > :nth-match(tr, ${coord.y + 1}) > ${
+      isHeader ? 'th' : 'td'
+    }:nth-child(${coord.x + 1})`,
+  );
+  await cell.click();
+}
+
 export async function selectCellsFromTableCords(
   page,
   firstCords,

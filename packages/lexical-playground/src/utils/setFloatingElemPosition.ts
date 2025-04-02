@@ -31,6 +31,25 @@ export function setFloatingElemPosition(
   let top = targetRect.top - floatingElemRect.height - verticalGap;
   let left = targetRect.left - horizontalOffset;
 
+  // Check if text is end-aligned
+  const selection = window.getSelection();
+  if (selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    const textNode = range.startContainer;
+    if (textNode.nodeType === Node.ELEMENT_NODE || textNode.parentElement) {
+      const textElement =
+        textNode.nodeType === Node.ELEMENT_NODE
+          ? (textNode as Element)
+          : (textNode.parentElement as Element);
+      const textAlign = window.getComputedStyle(textElement).textAlign;
+
+      if (textAlign === 'right' || textAlign === 'end') {
+        // For end-aligned text, position the toolbar relative to the text end
+        left = targetRect.right - floatingElemRect.width + horizontalOffset;
+      }
+    }
+  }
+
   if (top < editorScrollerRect.top) {
     // adjusted height for link element if the element is at top
     top +=
@@ -41,6 +60,10 @@ export function setFloatingElemPosition(
 
   if (left + floatingElemRect.width > editorScrollerRect.right) {
     left = editorScrollerRect.right - floatingElemRect.width - horizontalOffset;
+  }
+
+  if (left < editorScrollerRect.left) {
+    left = editorScrollerRect.left + horizontalOffset;
   }
 
   top -= anchorElementRect.top;

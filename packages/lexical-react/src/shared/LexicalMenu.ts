@@ -267,6 +267,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   onSelectOption,
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
+  preselectFirstItem = true,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -282,14 +283,17 @@ export function LexicalMenu<TOption extends MenuOption>({
     matchingString: string,
   ) => void;
   commandPriority?: CommandListenerPriority;
+  preselectFirstItem?: boolean;
 }): JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
 
   const matchingString = resolution.match && resolution.match.matchingString;
 
   useEffect(() => {
-    setHighlightedIndex(0);
-  }, [matchingString]);
+    if (preselectFirstItem) {
+      setHighlightedIndex(0);
+    }
+  }, [matchingString, preselectFirstItem]);
 
   const selectOptionAndCleanUp = useCallback(
     (selectedEntry: TOption) => {
@@ -336,10 +340,10 @@ export function LexicalMenu<TOption extends MenuOption>({
   useLayoutEffect(() => {
     if (options === null) {
       setHighlightedIndex(null);
-    } else if (selectedIndex === null) {
+    } else if (selectedIndex === null && preselectFirstItem) {
       updateSelectedIndex(0);
     }
-  }, [options, selectedIndex, updateSelectedIndex]);
+  }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
 
   useEffect(() => {
     return mergeRegister(
@@ -364,9 +368,13 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_DOWN_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && options.length && selectedIndex !== null) {
+          if (options !== null && options.length) {
             const newSelectedIndex =
-              selectedIndex !== options.length - 1 ? selectedIndex + 1 : 0;
+              selectedIndex === null
+                ? 0
+                : selectedIndex !== options.length - 1
+                ? selectedIndex + 1
+                : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -389,9 +397,13 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_UP_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && options.length && selectedIndex !== null) {
+          if (options !== null && options.length) {
             const newSelectedIndex =
-              selectedIndex !== 0 ? selectedIndex - 1 : options.length - 1;
+              selectedIndex === null
+                ? options.length - 1
+                : selectedIndex !== 0
+                ? selectedIndex - 1
+                : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {

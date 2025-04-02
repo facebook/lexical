@@ -911,8 +911,15 @@ export function isDeleteLineBackward(key: string, metaKey: boolean): boolean {
   return IS_APPLE && metaKey && isBackspace(key);
 }
 
-export function isDeleteLineForward(key: string, metaKey: boolean): boolean {
-  return IS_APPLE && metaKey && isDelete(key);
+export function isDeleteLineForward(
+  key: string,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return (
+    IS_APPLE &&
+    ((metaKey && isDelete(key)) || (ctrlKey && key.toLowerCase() === 'k'))
+  );
 }
 
 export function isDeleteBackward(
@@ -1971,7 +1978,7 @@ export function setNodeIndentFromDOM(
   elementNode: ElementNode,
 ) {
   const indentSize = parseInt(elementDom.style.paddingInlineStart, 10) || 0;
-  const indent = indentSize / 40;
+  const indent = Math.round(indentSize / 40);
   elementNode.setIndent(indent);
 }
 

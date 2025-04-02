@@ -31,6 +31,7 @@ import {
   setNodeIndentFromDOM,
 } from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
+import {$isRootNode} from './LexicalRootNode';
 import {$isTextNode} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
@@ -132,10 +133,16 @@ export class ParagraphNode extends ElementNode {
     const children = this.getChildren();
     // If we have an empty (trimmed) first paragraph and try and remove it,
     // delete the paragraph as long as we have another sibling to go to
+    // AND we're not the first node in the editor
     if (
       children.length === 0 ||
       ($isTextNode(children[0]) && children[0].getTextContent().trim() === '')
     ) {
+      const parent = this.getParent();
+      // Don't delete if we're the first node in the editor
+      if ($isRootNode(parent) && this.getPreviousSibling() === null) {
+        return false;
+      }
       const nextSibling = this.getNextSibling();
       if (nextSibling !== null) {
         this.selectNext();

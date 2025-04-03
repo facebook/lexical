@@ -175,7 +175,7 @@ export function registerListStrictIndentTransform(
           const prevDepth = $getListDepth(endListNode);
           const depth = $getListDepth(listNode);
 
-          if (prevDepth < depth) {
+          if (prevDepth + 1 < depth) {
             listItemNode.setIndent(prevDepth);
           }
         }

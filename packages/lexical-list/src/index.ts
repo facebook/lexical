@@ -14,7 +14,7 @@ import type {
 } from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -143,6 +143,75 @@ export function registerList(editor: LexicalEditor): () => void {
     }),
   );
   return removeListener;
+}
+
+export function registerListStrictIndentTransform(
+  editor: LexicalEditor,
+): () => void {
+  const $formatListIndentStrict = (listItemNode: ListItemNode): void => {
+    const listNode = listItemNode.getParent();
+    if ($isListNode(listItemNode.getFirstChild()) || !$isListNode(listNode)) {
+      return;
+    }
+
+    const startingListItemNode = $findMatchingParent(
+      listItemNode,
+      (node) =>
+        $isListItemNode(node) &&
+        $isListNode(node.getParent()) &&
+        $isListItemNode(node.getPreviousSibling()),
+    );
+
+    if (startingListItemNode === null) {
+      listItemNode.setIndent(0);
+    } else if ($isListItemNode(startingListItemNode)) {
+      const prevListItemNode = startingListItemNode.getPreviousSibling();
+
+      if ($isListItemNode(prevListItemNode)) {
+        const endListItemNode = $findChildrenEndListItemNode(prevListItemNode);
+        const endListNode = endListItemNode.getParent();
+
+        if ($isListNode(endListNode)) {
+          const prevDepth = $getListDepth(endListNode);
+          const depth = $getListDepth(listNode);
+
+          if (prevDepth < depth) {
+            listItemNode.setIndent(prevDepth);
+          }
+        }
+      }
+    }
+  };
+
+  const $processListWithStrictIndent = (listNode: ListNode): void => {
+    for (const child of listNode.getChildren()) {
+      if ($isListItemNode(child)) {
+        $formatListIndentStrict(child);
+
+        const firstChild = child.getFirstChild();
+        if ($isListNode(firstChild)) {
+          $processListWithStrictIndent(firstChild);
+        }
+      }
+    }
+  };
+
+  return editor.registerNodeTransform(ListNode, $processListWithStrictIndent);
+}
+
+function $findChildrenEndListItemNode(
+  listItemNode: ListItemNode,
+): ListItemNode {
+  const firstChild = listItemNode.getFirstChild();
+  if ($isListNode(firstChild)) {
+    const lastChild = firstChild.getLastChild();
+
+    if ($isListItemNode(lastChild)) {
+      return $findChildrenEndListItemNode(lastChild);
+    }
+  }
+
+  return listItemNode;
 }
 
 /**

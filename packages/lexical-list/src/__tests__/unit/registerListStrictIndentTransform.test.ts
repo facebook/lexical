@@ -34,19 +34,16 @@ describe('Lexical List StrictIndentTransform tests', () => {
           <li value="2">
             <ul>
               <li value="1">
-                <!-- Indent: 1 -->
                 <span style="white-space: pre-wrap;">1</span>
               </li>
               <li value="2">
                 <ul>
                   <li value="1">
-                    <!-- Indent: 2 -->
                     <span style="white-space: pre-wrap;">2</span>
                   </li>
                   <li value="2">
                     <ul>
                       <li value="1">
-                        <!-- Indent: 3 -->
                         <span style="white-space: pre-wrap;">3</span>
                       </li>
                     </ul>

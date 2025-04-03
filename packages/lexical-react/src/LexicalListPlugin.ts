@@ -24,9 +24,7 @@ export interface ListPluginProps {
   hasStrictIndent?: boolean;
 }
 
-export function ListPlugin({
-  hasStrictIndent = false,
-}: ListPluginProps = {}): null {
+export function ListPlugin({hasStrictIndent = false}: ListPluginProps): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

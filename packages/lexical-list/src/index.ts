@@ -184,13 +184,22 @@ export function registerListStrictIndentTransform(
   };
 
   const $processListWithStrictIndent = (listNode: ListNode): void => {
-    for (const child of listNode.getChildren()) {
-      if ($isListItemNode(child)) {
-        $formatListIndentStrict(child);
+    const stack: ListNode[] = [listNode];
 
-        const firstChild = child.getFirstChild();
-        if ($isListNode(firstChild)) {
-          $processListWithStrictIndent(firstChild);
+    while (stack.length > 0) {
+      const node = stack.pop();
+      if (!$isListNode(node)) {
+        continue;
+      }
+
+      for (const child of node.getChildren()) {
+        if ($isListItemNode(child)) {
+          $formatListIndentStrict(child);
+
+          const firstChild = child.getFirstChild();
+          if ($isListNode(firstChild)) {
+            stack.push(firstChild);
+          }
         }
       }
     }
@@ -202,16 +211,21 @@ export function registerListStrictIndentTransform(
 function $findChildrenEndListItemNode(
   listItemNode: ListItemNode,
 ): ListItemNode {
-  const firstChild = listItemNode.getFirstChild();
-  if ($isListNode(firstChild)) {
+  let current = listItemNode;
+  let firstChild = current.getFirstChild();
+
+  while ($isListNode(firstChild)) {
     const lastChild = firstChild.getLastChild();
 
     if ($isListItemNode(lastChild)) {
-      return $findChildrenEndListItemNode(lastChild);
+      current = lastChild;
+      firstChild = current.getFirstChild();
+    } else {
+      break;
     }
   }
 
-  return listItemNode;
+  return current;
 }
 
 /**

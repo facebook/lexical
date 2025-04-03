@@ -162,7 +162,7 @@ export function registerListStrictIndentTransform(
         $isListItemNode(node.getPreviousSibling()),
     );
 
-    if (startingListItemNode === null) {
+    if (startingListItemNode === null && listItemNode.getIndent() > 0) {
       listItemNode.setIndent(0);
     } else if ($isListItemNode(startingListItemNode)) {
       const prevListItemNode = startingListItemNode.getPreviousSibling();

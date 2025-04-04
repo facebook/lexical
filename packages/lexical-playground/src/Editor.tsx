@@ -100,6 +100,7 @@ export default function Editor(): JSX.Element {
       tableHorizontalScroll,
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
+      listStrictIndent,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -199,7 +200,7 @@ export default function Editor(): JSX.Element {
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
-            <ListPlugin />
+            <ListPlugin hasStrictIndent={listStrictIndent} />
             <CheckListPlugin />
             <TablePlugin
               hasCellMerge={tableCellMerge}

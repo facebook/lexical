@@ -184,10 +184,10 @@ export function registerListStrictIndentTransform(
   };
 
   const $processListWithStrictIndent = (listNode: ListNode): void => {
-    const stack: ListNode[] = [listNode];
+    const queue: ListNode[] = [listNode];
 
-    while (stack.length > 0) {
-      const node = stack.pop();
+    while (queue.length > 0) {
+      const node = queue.shift();
       if (!$isListNode(node)) {
         continue;
       }
@@ -198,7 +198,7 @@ export function registerListStrictIndentTransform(
 
           const firstChild = child.getFirstChild();
           if ($isListNode(firstChild)) {
-            stack.push(firstChild);
+            queue.push(firstChild);
           }
         }
       }

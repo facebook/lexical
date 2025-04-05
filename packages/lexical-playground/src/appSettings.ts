@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS = {
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
+  listStrictIndent: false,
   measureTypingPerf: false,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,

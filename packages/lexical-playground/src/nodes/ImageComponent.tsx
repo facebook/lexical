@@ -73,7 +73,8 @@ function useSuspenseImage(src: string) {
         resolve(null);
       };
       img.onerror = () => {
-        imageCache.add(src);
+        // Don't cache failed images to allow retry
+        resolve(null);
       };
     });
   }
@@ -102,11 +103,11 @@ function LazyImage({
   width: 'inherit' | number;
   onError: () => void;
 }): JSX.Element {
-  useSuspenseImage(src);
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
   } | null>(null);
+  const [hasError, setHasError] = useState(false);
   const isSVGImage = isSVG(src);
 
   // Set initial dimensions for SVG images
@@ -119,6 +120,16 @@ function LazyImage({
       });
     }
   }, [imageRef, isSVGImage]);
+
+  try {
+    useSuspenseImage(src);
+  } catch (error) {
+    // Let the component handle the error through onError
+  }
+
+  if (hasError) {
+    return <BrokenImage />;
+  }
 
   // Calculate final dimensions with proper scaling
   const calculateDimensions = () => {
@@ -168,7 +179,10 @@ function LazyImage({
       alt={altText}
       ref={imageRef}
       style={imageStyle}
-      onError={onError}
+      onError={() => {
+        setHasError(true);
+        onError();
+      }}
       draggable="false"
       onLoad={(e) => {
         if (isSVGImage) {
@@ -193,6 +207,7 @@ function BrokenImage(): JSX.Element {
         width: 200,
       }}
       draggable="false"
+      alt="Broken image"
     />
   );
 }

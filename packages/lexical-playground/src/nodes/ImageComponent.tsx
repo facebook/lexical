@@ -124,8 +124,14 @@ function LazyImage({
   }, [imageRef, isSVGImage]);
 
   const hasError = useSuspenseImage(src);
+
+  useEffect(() => {
+    if (hasError) {
+      onError();
+    }
+  }, [hasError, onError]);
+
   if (hasError) {
-    onError();
     return <BrokenImage />;
   }
 

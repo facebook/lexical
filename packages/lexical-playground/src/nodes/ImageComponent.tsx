@@ -58,26 +58,29 @@ import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import {$isImageNode} from './ImageNode';
 
-const imageCache = new Set();
+const imageCache = new Map<string, Promise<boolean> | boolean>();
 
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('RIGHT_CLICK_IMAGE_COMMAND');
 
 function useSuspenseImage(src: string) {
-  if (!imageCache.has(src)) {
-    throw new Promise((resolve) => {
+  let cached = imageCache.get(src);
+  if (typeof cached === 'boolean') {
+    return cached;
+  } else if (!cached) {
+    cached = new Promise<boolean>((resolve) => {
       const img = new Image();
       img.src = src;
-      img.onload = () => {
-        imageCache.add(src);
-        resolve(null);
-      };
-      img.onerror = () => {
-        // Don't cache failed images to allow retry
-        resolve(null);
-      };
+      img.onload = () => resolve(false);
+      img.onerror = () => resolve(true);
+    }).then((hasError) => {
+      imageCache.set(src, hasError);
+      return hasError;
     });
+    imageCache.set(src, cached);
+    throw cached;
   }
+  throw cached;
 }
 
 function isSVG(src: string): boolean {
@@ -107,7 +110,6 @@ function LazyImage({
     width: number;
     height: number;
   } | null>(null);
-  const [hasError, setHasError] = useState(false);
   const isSVGImage = isSVG(src);
 
   // Set initial dimensions for SVG images
@@ -121,13 +123,9 @@ function LazyImage({
     }
   }, [imageRef, isSVGImage]);
 
-  try {
-    useSuspenseImage(src);
-  } catch (error) {
-    // Let the component handle the error through onError
-  }
-
+  const hasError = useSuspenseImage(src);
   if (hasError) {
+    onError();
     return <BrokenImage />;
   }
 
@@ -179,10 +177,7 @@ function LazyImage({
       alt={altText}
       ref={imageRef}
       style={imageStyle}
-      onError={() => {
-        setHasError(true);
-        onError();
-      }}
+      onError={onError}
       draggable="false"
       onLoad={(e) => {
         if (isSVGImage) {

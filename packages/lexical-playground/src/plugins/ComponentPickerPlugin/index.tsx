@@ -373,24 +373,26 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         ) =>
           anchorElementRef.current && options.length
             ? ReactDOM.createPortal(
-                <div className="typeahead-popover component-picker-menu">
-                  <ul>
-                    {options.map((option, i: number) => (
-                      <ComponentPickerMenuItem
-                        index={i}
-                        isSelected={selectedIndex === i}
-                        onClick={() => {
-                          setHighlightedIndex(i);
-                          selectOptionAndCleanUp(option);
-                        }}
-                        onMouseEnter={() => {
-                          setHighlightedIndex(i);
-                        }}
-                        key={option.key}
-                        option={option}
-                      />
-                    ))}
-                  </ul>
+                <div className="typeahead-popover-container">
+                  <div className="typeahead-popover component-picker-menu">
+                    <ul>
+                      {options.map((option, i: number) => (
+                        <ComponentPickerMenuItem
+                          index={i}
+                          isSelected={selectedIndex === i}
+                          onClick={() => {
+                            setHighlightedIndex(i);
+                            selectOptionAndCleanUp(option);
+                          }}
+                          onMouseEnter={() => {
+                            setHighlightedIndex(i);
+                          }}
+                          key={option.key}
+                          option={option}
+                        />
+                      ))}
+                    </ul>
+                  </div>
                 </div>,
                 anchorElementRef.current,
               )

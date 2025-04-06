@@ -170,24 +170,26 @@ export default function EmojiPickerPlugin() {
 
         return anchorElementRef.current && options.length
           ? ReactDOM.createPortal(
-              <div className="typeahead-popover emoji-menu">
-                <ul>
-                  {options.map((option: EmojiOption, index) => (
-                    <EmojiMenuItem
-                      key={option.key}
-                      index={index}
-                      isSelected={selectedIndex === index}
-                      onClick={() => {
-                        setHighlightedIndex(index);
-                        selectOptionAndCleanUp(option);
-                      }}
-                      onMouseEnter={() => {
-                        setHighlightedIndex(index);
-                      }}
-                      option={option}
-                    />
-                  ))}
-                </ul>
+              <div className="typeahead-popover-container">
+                <div className="typeahead-popover emoji-menu">
+                  <ul>
+                    {options.map((option: EmojiOption, index) => (
+                      <EmojiMenuItem
+                        key={option.key}
+                        index={index}
+                        isSelected={selectedIndex === index}
+                        onClick={() => {
+                          setHighlightedIndex(index);
+                          selectOptionAndCleanUp(option);
+                        }}
+                        onMouseEnter={() => {
+                          setHighlightedIndex(index);
+                        }}
+                        option={option}
+                      />
+                    ))}
+                  </ul>
+                </div>
               </div>,
               anchorElementRef.current,
             )

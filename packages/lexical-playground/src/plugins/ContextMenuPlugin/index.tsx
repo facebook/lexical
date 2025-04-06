@@ -252,25 +252,30 @@ export default function ContextMenuPlugin(): JSX.Element {
       ) =>
         anchorElementRef.current
           ? ReactDOM.createPortal(
-              <div
-                className="typeahead-popover auto-embed-menu"
-                style={{
-                  marginLeft: anchorElementRef.current.style.width,
-                  userSelect: 'none',
-                  width: 200,
-                }}
-                ref={setMenuRef}>
-                <ContextMenu
-                  options={options}
-                  selectedItemIndex={selectedIndex}
-                  onOptionClick={(option: ContextMenuOption, index: number) => {
-                    setHighlightedIndex(index);
-                    selectOptionAndCleanUp(option);
+              <div className="typeahead-popover-container">
+                <div
+                  className="typeahead-popover auto-embed-menu"
+                  style={{
+                    marginLeft: anchorElementRef.current.style.width,
+                    userSelect: 'none',
+                    width: 200,
                   }}
-                  onOptionMouseEnter={(index: number) => {
-                    setHighlightedIndex(index);
-                  }}
-                />
+                  ref={setMenuRef}>
+                  <ContextMenu
+                    options={options}
+                    selectedItemIndex={selectedIndex}
+                    onOptionClick={(
+                      option: ContextMenuOption,
+                      index: number,
+                    ) => {
+                      setHighlightedIndex(index);
+                      selectOptionAndCleanUp(option);
+                    }}
+                    onOptionMouseEnter={(index: number) => {
+                      setHighlightedIndex(index);
+                    }}
+                  />
+                </div>
               </div>,
               anchorElementRef.current,
             )

@@ -327,26 +327,31 @@ export default function AutoEmbedPlugin(): JSX.Element {
         ) =>
           anchorElementRef.current
             ? ReactDOM.createPortal(
-                <div
-                  className="typeahead-popover auto-embed-menu"
-                  style={{
-                    marginLeft: `${Math.max(
-                      parseFloat(anchorElementRef.current.style.width) - 200,
-                      0,
-                    )}px`,
-                    width: 200,
-                  }}>
-                  <AutoEmbedMenu
-                    options={options}
-                    selectedItemIndex={selectedIndex}
-                    onOptionClick={(option: AutoEmbedOption, index: number) => {
-                      setHighlightedIndex(index);
-                      selectOptionAndCleanUp(option);
-                    }}
-                    onOptionMouseEnter={(index: number) => {
-                      setHighlightedIndex(index);
-                    }}
-                  />
+                <div className="typeahead-popover-container">
+                  <div
+                    className="typeahead-popover auto-embed-menu"
+                    style={{
+                      marginLeft: `${Math.max(
+                        parseFloat(anchorElementRef.current.style.width) - 200,
+                        0,
+                      )}px`,
+                      width: 200,
+                    }}>
+                    <AutoEmbedMenu
+                      options={options}
+                      selectedItemIndex={selectedIndex}
+                      onOptionClick={(
+                        option: AutoEmbedOption,
+                        index: number,
+                      ) => {
+                        setHighlightedIndex(index);
+                        selectOptionAndCleanUp(option);
+                      }}
+                      onOptionMouseEnter={(index: number) => {
+                        setHighlightedIndex(index);
+                      }}
+                    />
+                  </div>
                 </div>,
                 anchorElementRef.current,
               )

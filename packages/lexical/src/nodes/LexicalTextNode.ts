@@ -645,6 +645,16 @@ export class TextNode extends LexicalNode {
       'Expected TextNode createDOM to always return a HTMLElement',
     );
     element.style.whiteSpace = 'pre-wrap';
+
+    // Add text-transform styles for capitalization formats
+    if (this.hasFormat('lowercase')) {
+      element.style.textTransform = 'lowercase';
+    } else if (this.hasFormat('uppercase')) {
+      element.style.textTransform = 'uppercase';
+    } else if (this.hasFormat('capitalize')) {
+      element.style.textTransform = 'capitalize';
+    }
+
     // This is the only way to properly add support for most clients,
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.

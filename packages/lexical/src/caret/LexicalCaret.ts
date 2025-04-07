@@ -112,7 +112,7 @@ export interface CaretRange<D extends CaretDirection = CaretDirection>
   /**
    * There are between zero and two non-null TextSliceCarets for a CaretRange.
    * Note that when anchor and focus share an origin node the second element
-   * will be null becaues the slice is entirely represented by the first element.
+   * will be null because the slice is entirely represented by the first element.
    *
    * `[slice, slice]`: anchor and focus are TextPointCaret with distinct origin nodes
    * `[slice, null]`: anchor is a TextPointCaret
@@ -190,8 +190,8 @@ export interface SiblingCaret<
    */
   getParentCaret: (mode?: RootMode) => null | SiblingCaret<ElementNode, D>;
   /**
-   * Retun true if other is a SiblingCaret or TextPointCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a SiblingCaret or TextPointCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSameNodeCaret: (
     other: null | undefined | PointCaret,
@@ -199,8 +199,8 @@ export interface SiblingCaret<
     ? TextPointCaret<T & TextNode, D>
     : never;
   /**
-   * Retun true if other is a SiblingCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a SiblingCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSamePointCaret: (
     other: null | undefined | PointCaret,
@@ -235,15 +235,15 @@ export interface ChildCaret<
   /** Return this, the ChildCaret is already a child caret of its origin */
   getChildCaret: () => this;
   /**
-   * Retun true if other is a ChildCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a ChildCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSameNodeCaret: (
     other: null | undefined | PointCaret,
   ) => other is ChildCaret<T, D>;
   /**
-   * Retun true if other is a ChildCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a ChildCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSamePointCaret: (
     other: null | undefined | PointCaret,
@@ -297,15 +297,15 @@ export interface TextPointCaret<
    */
   getParentCaret: (mode?: RootMode) => null | SiblingCaret<ElementNode, D>;
   /**
-   * Retun true if other is a TextPointCaret or SiblingCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a TextPointCaret or SiblingCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSameNodeCaret: (
     other: null | undefined | PointCaret,
   ) => other is TextPointCaret<T, D> | SiblingCaret<T, D>;
   /**
-   * Retun true if other is a ChildCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a ChildCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSamePointCaret: (
     other: null | undefined | PointCaret,

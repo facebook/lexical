@@ -905,7 +905,7 @@ test.describe.parallel('Selection', () => {
     },
   );
 
-  test('Can adjust tripple click selection', async ({
+  test('Can adjust triple click selection', async ({
     page,
     isPlainText,
     isCollab,
@@ -940,7 +940,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can adjust tripple click selection with', async ({
+  test('Can adjust triple click selection with', async ({
     page,
     isPlainText,
     isCollab,

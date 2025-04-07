@@ -195,7 +195,7 @@ export function applyTableHandlers(
   const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
   tableObserver.listenersToRemove.add(() =>
-    detatchTableObserverFromTableElement(tableElement, tableObserver),
+    detachTableObserverFromTableElement(tableElement, tableObserver),
   );
 
   const createPointerHandlers = () => {
@@ -1238,7 +1238,7 @@ export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {
   [LEXICAL_ELEMENT_KEY]?: TableObserver | undefined;
 };
 
-export function detatchTableObserverFromTableElement(
+export function detachTableObserverFromTableElement(
   tableElement: HTMLTableElementWithWithTableSelectionState,
   tableObserver: TableObserver,
 ) {

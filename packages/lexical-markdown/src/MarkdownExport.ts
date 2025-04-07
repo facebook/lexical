@@ -236,7 +236,7 @@ function exportTextFormat(
       // Multiple tags might be used for the same format (*, _)
       applied.add(format);
 
-      // append the tag to openningTags, if it's not applied to the previous nodes,
+      // append the tag to openingTags, if it's not applied to the previous nodes,
       // or the nodes before that (which would result in an unclosed tag)
       if (
         !hasFormat(prevNode, format) ||

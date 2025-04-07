@@ -82,7 +82,7 @@ export function ClickableLinkPlugin({
         return;
       }
 
-      // Allow user to select link text without follwing url
+      // Allow user to select link text without following url
       const selection = editor.getEditorState().read($getSelection);
       if ($isRangeSelection(selection) && !selection.isCollapsed()) {
         event.preventDefault();

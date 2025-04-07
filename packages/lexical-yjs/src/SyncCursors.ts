@@ -234,7 +234,7 @@ function updateCursor(
 
   // In the case of a collapsed selection on a linebreak, we need
   // to improvise as the browser will return nothing here as <br>
-  // apparantly take up no visual space :/
+  // apparently take up no visual space :/
   // This won't work in all cases, but it's better than just showing
   // nothing all the time.
   if (anchorNode === focusNode && $isLineBreakNode(anchorNode)) {

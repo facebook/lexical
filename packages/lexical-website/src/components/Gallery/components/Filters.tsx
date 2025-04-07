@@ -69,7 +69,7 @@ function HeadingText({filteredPlugins}: {filteredPlugins: Array<Example>}) {
       <Heading as="h2">Filters</Heading>
       <span>
         {filteredPlugins.length === 1
-          ? '1 exampe'
+          ? '1 example'
           : `${filteredPlugins.length} examples`}
       </span>
     </div>

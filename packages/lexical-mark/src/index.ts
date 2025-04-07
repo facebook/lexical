@@ -78,7 +78,7 @@ export function $wrapSelectionInMarkNode(
     } else if ($isMarkNode(node)) {
       // Case 2: the node is a mark node and we can ignore it as a target,
       // moving on to its children. Note that when we make a mark inside
-      // another mark, it may utlimately be unnested by a call to
+      // another mark, it may ultimately be unnested by a call to
       // `registerNestedElementResolver<MarkNode>` somewhere else in the
       // codebase.
       continue;

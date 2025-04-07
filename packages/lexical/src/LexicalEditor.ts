@@ -1327,7 +1327,7 @@ export class LexicalEditor {
         });
       });
       // In the case where onUpdate doesn't fire (due to the focus update not
-      // occuring).
+      // occurring).
       if (this._pendingEditorState === null) {
         rootElement.removeAttribute('autocapitalize');
       }

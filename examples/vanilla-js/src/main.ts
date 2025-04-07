@@ -45,7 +45,7 @@ const initialConfig = {
 const editor = createEditor(initialConfig);
 editor.setRootElement(editorRef);
 
-// Registring Plugins
+// Registering Plugins
 mergeRegister(
   registerRichText(editor),
   registerDragonSupport(editor),

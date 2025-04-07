@@ -76,6 +76,7 @@ import {
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates';
+import {KNOWN_UPDATE_TAGS} from './LexicalUpdateTags';
 
 export const emptyFunction = () => {
   return;
@@ -1402,9 +1403,16 @@ export function $hasUpdateTag(tag: string): boolean {
   return editor._updateTags.has(tag);
 }
 
-export function $addUpdateTag(tag: string): void {
+export function $addUpdateTag(tag: string, validateTag: boolean = false): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
+  if (validateTag && !KNOWN_UPDATE_TAGS.has(tag)) {
+    console.warn(
+      `Warning: "${tag}" is not a known update tag. This may be a typo. Known tags are: ${Array.from(
+        KNOWN_UPDATE_TAGS,
+      ).join(', ')}`,
+    );
+  }
   editor._updateTags.add(tag);
 }
 

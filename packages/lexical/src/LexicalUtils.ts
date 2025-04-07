@@ -835,270 +835,305 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
   }
 }
 
-export function isTab(
-  key: string,
-  altKey: boolean,
-  ctrlKey: boolean,
-  metaKey: boolean,
+export function isExactShortcutMatch(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+  expectedKey: string,
+  expectedModifiers: Partial<
+    Pick<KeyboardEvent, 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>
+  >,
 ): boolean {
-  return key === 'Tab' && !altKey && !ctrlKey && !metaKey;
+  return (
+    event.key.toLowerCase() === expectedKey.toLowerCase() &&
+    (expectedModifiers.metaKey || false) === event.metaKey &&
+    (expectedModifiers.ctrlKey || false) === event.ctrlKey &&
+    (expectedModifiers.shiftKey || false) === event.shiftKey &&
+    (expectedModifiers.altKey || false) === event.altKey
+  );
+}
+
+export function isTab(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Tab', {});
 }
 
 export function isBold(
-  key: string,
-  altKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return (
-    key.toLowerCase() === 'b' && !altKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  return isExactShortcutMatch(event, 'b', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isItalic(
-  key: string,
-  altKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return (
-    key.toLowerCase() === 'i' && !altKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  return isExactShortcutMatch(event, 'i', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isUnderline(
-  key: string,
-  altKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return (
-    key.toLowerCase() === 'u' && !altKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  return isExactShortcutMatch(event, 'u', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
-export function isParagraph(key: string, shiftKey: boolean): boolean {
-  return isReturn(key) && !shiftKey;
+export function isParagraph(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Enter', {});
 }
 
-export function isLineBreak(key: string, shiftKey: boolean): boolean {
-  return isReturn(key) && shiftKey;
+export function isLineBreak(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Enter', {shiftKey: true});
 }
 
 // Inserts a new line after the selection
 
-export function isOpenLineBreak(key: string, ctrlKey: boolean): boolean {
+export function isOpenLineBreak(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
   // 79 = KeyO
-  return IS_APPLE && ctrlKey && key.toLowerCase() === 'o';
+  return isExactShortcutMatch(event, 'o', {metaKey: IS_APPLE});
 }
 
 export function isDeleteWordBackward(
-  key: string,
-  altKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isBackspace(key) && (IS_APPLE ? altKey : ctrlKey);
+  return isExactShortcutMatch(event, 'Backspace', {
+    altKey: IS_APPLE,
+    ctrlKey: !IS_APPLE,
+  });
 }
 
 export function isDeleteWordForward(
-  key: string,
-  altKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isDelete(key) && (IS_APPLE ? altKey : ctrlKey);
+  return isExactShortcutMatch(event, 'Delete', {
+    altKey: IS_APPLE,
+    ctrlKey: !IS_APPLE,
+  });
 }
 
-export function isDeleteLineBackward(key: string, metaKey: boolean): boolean {
-  return IS_APPLE && metaKey && isBackspace(key);
+export function isDeleteLineBackward(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Backspace', {metaKey: IS_APPLE});
 }
 
 export function isDeleteLineForward(
-  key: string,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
   return (
-    IS_APPLE &&
-    ((metaKey && isDelete(key)) || (ctrlKey && key.toLowerCase() === 'k'))
+    isExactShortcutMatch(event, 'Delete', {metaKey: IS_APPLE}) ||
+    (IS_APPLE && isExactShortcutMatch(event, 'k', {ctrlKey: true}))
   );
 }
 
 export function isDeleteBackward(
-  key: string,
-  altKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
   if (IS_APPLE) {
-    if (altKey || metaKey) {
-      return false;
-    }
-    return isBackspace(key) || (key.toLowerCase() === 'h' && ctrlKey);
+    return (
+      isExactShortcutMatch(event, 'Backspace', {}) ||
+      isExactShortcutMatch(event, 'h', {ctrlKey: true})
+    );
   }
-  if (ctrlKey || altKey || metaKey) {
-    return false;
-  }
-  return isBackspace(key);
+  return isExactShortcutMatch(event, 'Backspace', {});
 }
 
 export function isDeleteForward(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
   if (IS_APPLE) {
-    if (shiftKey || altKey || metaKey) {
-      return false;
-    }
-    return isDelete(key) || (key.toLowerCase() === 'd' && ctrlKey);
+    return (
+      isExactShortcutMatch(event, 'Delete', {}) ||
+      isExactShortcutMatch(event, 'd', {ctrlKey: true})
+    );
   }
-  if (ctrlKey || altKey || metaKey) {
-    return false;
-  }
-  return isDelete(key);
+  return isExactShortcutMatch(event, 'Delete', {});
 }
 
 export function isUndo(
-  key: string,
-  shiftKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return (
-    key.toLowerCase() === 'z' && !shiftKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  return isExactShortcutMatch(event, 'z', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isRedo(
-  key: string,
-  shiftKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
   if (IS_APPLE) {
-    return key.toLowerCase() === 'z' && metaKey && shiftKey;
+    return isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true});
   }
   return (
-    (key.toLowerCase() === 'y' && ctrlKey) ||
-    (key.toLowerCase() === 'z' && ctrlKey && shiftKey)
+    isExactShortcutMatch(event, 'y', {ctrlKey: true}) ||
+    isExactShortcutMatch(event, 'z', {ctrlKey: true, shiftKey: true})
   );
 }
 
 export function isCopy(
-  key: string,
-  shiftKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  if (shiftKey) {
+  if (event.shiftKey) {
     return false;
   }
-  if (key.toLowerCase() === 'c') {
-    return IS_APPLE ? metaKey : ctrlKey;
-  }
-
-  return false;
+  return isExactShortcutMatch(event, 'c', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isCut(
-  key: string,
-  shiftKey: boolean,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  if (shiftKey) {
+  if (event.shiftKey) {
     return false;
   }
-  if (key.toLowerCase() === 'x') {
-    return IS_APPLE ? metaKey : ctrlKey;
-  }
-
-  return false;
-}
-
-function isArrowLeft(key: string): boolean {
-  return key === 'ArrowLeft';
-}
-
-function isArrowRight(key: string): boolean {
-  return key === 'ArrowRight';
-}
-
-function isArrowUp(key: string): boolean {
-  return key === 'ArrowUp';
-}
-
-function isArrowDown(key: string): boolean {
-  return key === 'ArrowDown';
+  return isExactShortcutMatch(event, 'x', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isMoveBackward(
-  key: string,
-  ctrlKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isArrowLeft(key) && !ctrlKey && !metaKey && !altKey;
+  return isExactShortcutMatch(event, 'ArrowLeft', {});
 }
 
 export function isMoveToStart(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isArrowLeft(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return isExactShortcutMatch(event, 'ArrowLeft', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isMoveForward(
-  key: string,
-  ctrlKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isArrowRight(key) && !ctrlKey && !metaKey && !altKey;
+  return isExactShortcutMatch(event, 'ArrowRight', {});
 }
 
 export function isMoveToEnd(
-  key: string,
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isArrowRight(key) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return isExactShortcutMatch(event, 'ArrowRight', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function isMoveUp(
-  key: string,
-  ctrlKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isArrowUp(key) && !ctrlKey && !metaKey;
+  return isExactShortcutMatch(event, 'ArrowUp', {});
 }
 
 export function isMoveDown(
-  key: string,
-  ctrlKey: boolean,
-  metaKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return isArrowDown(key) && !ctrlKey && !metaKey;
+  return isExactShortcutMatch(event, 'ArrowDown', {});
 }
 
 export function isModifier(
-  ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
-  metaKey: boolean,
+  event: Pick<KeyboardEvent, 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
 ): boolean {
-  return ctrlKey || shiftKey || altKey || metaKey;
+  return event.ctrlKey || event.shiftKey || event.altKey || event.metaKey;
 }
 
-export function isSpace(key: string): boolean {
-  return key === ' ';
+export function isSpace(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, ' ', {});
 }
 
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
@@ -1108,28 +1143,52 @@ export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   return ctrlKey;
 }
 
-export function isReturn(key: string): boolean {
-  return key === 'Enter';
+export function isReturn(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Enter', {});
 }
 
-export function isBackspace(key: string): boolean {
-  return key === 'Backspace';
+export function isBackspace(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Backspace', {});
 }
 
-export function isEscape(key: string): boolean {
-  return key === 'Escape';
+export function isEscape(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Escape', {});
 }
 
-export function isDelete(key: string): boolean {
-  return key === 'Delete';
+export function isDelete(
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
+): boolean {
+  return isExactShortcutMatch(event, 'Delete', {});
 }
 
 export function isSelectAll(
-  key: string,
-  metaKey: boolean,
-  ctrlKey: boolean,
+  event: Pick<
+    KeyboardEvent,
+    'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  >,
 ): boolean {
-  return key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey);
+  return isExactShortcutMatch(event, 'a', {
+    ctrlKey: !IS_APPLE,
+    metaKey: IS_APPLE,
+  });
 }
 
 export function $selectAll(selection?: RangeSelection | null): RangeSelection {

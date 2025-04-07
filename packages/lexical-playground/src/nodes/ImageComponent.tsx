@@ -58,25 +58,29 @@ import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import {$isImageNode} from './ImageNode';
 
-const imageCache = new Set();
+const imageCache = new Map<string, Promise<boolean> | boolean>();
 
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('RIGHT_CLICK_IMAGE_COMMAND');
 
 function useSuspenseImage(src: string) {
-  if (!imageCache.has(src)) {
-    throw new Promise((resolve) => {
+  let cached = imageCache.get(src);
+  if (typeof cached === 'boolean') {
+    return cached;
+  } else if (!cached) {
+    cached = new Promise<boolean>((resolve) => {
       const img = new Image();
       img.src = src;
-      img.onload = () => {
-        imageCache.add(src);
-        resolve(null);
-      };
-      img.onerror = () => {
-        imageCache.add(src);
-      };
+      img.onload = () => resolve(false);
+      img.onerror = () => resolve(true);
+    }).then((hasError) => {
+      imageCache.set(src, hasError);
+      return hasError;
     });
+    imageCache.set(src, cached);
+    throw cached;
   }
+  throw cached;
 }
 
 function isSVG(src: string): boolean {
@@ -102,7 +106,6 @@ function LazyImage({
   width: 'inherit' | number;
   onError: () => void;
 }): JSX.Element {
-  useSuspenseImage(src);
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
@@ -119,6 +122,18 @@ function LazyImage({
       });
     }
   }, [imageRef, isSVGImage]);
+
+  const hasError = useSuspenseImage(src);
+
+  useEffect(() => {
+    if (hasError) {
+      onError();
+    }
+  }, [hasError, onError]);
+
+  if (hasError) {
+    return <BrokenImage />;
+  }
 
   // Calculate final dimensions with proper scaling
   const calculateDimensions = () => {
@@ -193,6 +208,7 @@ function BrokenImage(): JSX.Element {
         width: 200,
       }}
       draggable="false"
+      alt="Broken image"
     />
   );
 }

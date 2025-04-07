@@ -8,14 +8,13 @@
 
 import {registerCheckList} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {useEffect} from 'react';
 
 export function CheckListPlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return mergeRegister(registerCheckList(editor));
+    return registerCheckList(editor);
   }, [editor]);
   return null;
 }

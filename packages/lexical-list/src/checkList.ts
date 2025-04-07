@@ -51,14 +51,14 @@ export function registerCheckList(editor: LexicalEditor) {
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_DOWN_COMMAND,
       (event) => {
-        return handleArrownUpOrDown(event, editor, false);
+        return handleArrowUpOrDown(event, editor, false);
       },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_UP_COMMAND,
       (event) => {
-        return handleArrownUpOrDown(event, editor, true);
+        return handleArrowUpOrDown(event, editor, true);
       },
       COMMAND_PRIORITY_LOW,
     ),
@@ -265,7 +265,7 @@ function findCheckListItemSibling(
   return null;
 }
 
-function handleArrownUpOrDown(
+function handleArrowUpOrDown(
   event: KeyboardEvent,
   editor: LexicalEditor,
   backward: boolean,

@@ -9,7 +9,6 @@
 import type {
   BaseSelection,
   ElementNode,
-  LexicalEditor,
   LexicalNode,
   NodeKey,
   Point,
@@ -22,6 +21,7 @@ import {
   $caretFromPoint,
   $createRangeSelection,
   $extendCaretToRange,
+  $getEditor,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
@@ -418,18 +418,37 @@ export function $wrapNodesImpl(
 }
 
 /**
+ * Tests if the selection's parent element has vertical writing mode.
+ * @param selection - The selection whose parent to test.
+ * @returns true if the selection's parent has vertical writing mode (writing-mode: vertical-rl), false otherwise.
+ */
+export function $isEditorVerticalOrientation(
+  selection: RangeSelection,
+): boolean {
+  const anchorNode = selection.anchor.getNode();
+  const parent = $isRootNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParentOrThrow();
+  const editor = $getEditor();
+  const domElement = editor.getElementByKey(parent.getKey());
+  if (domElement === null) {
+    return false;
+  }
+  const computedStyle = window.getComputedStyle(domElement);
+  return computedStyle.writingMode === 'vertical-rl';
+}
+
+/**
  * Determines if the default character selection should be overridden. Used with DecoratorNodes
  * @param selection - The selection whose default character selection may need to be overridden.
  * @param isBackward - Is the selection backwards (the focus comes before the anchor)?
- * @param editor - The editor instance to check for vertical writing mode.
  * @returns true if it should be overridden, false if not.
  */
 export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
-  editor?: LexicalEditor,
 ): boolean {
-  const isVertical = editor ? $isEditorVerticalOrientation(editor) : false;
+  const isVertical = $isEditorVerticalOrientation(selection);
 
   // In vertical writing mode, we adjust the direction for correct caret movement
   const adjustedIsBackward = isVertical ? !isBackward : isBackward;
@@ -485,34 +504,18 @@ export function $isParentElementRTL(selection: RangeSelection): boolean {
 }
 
 /**
- * Tests if the editor root has vertical writing mode.
- * @param editor - The editor instance.
- * @returns true if the editor has vertical writing mode (writing-mode: vertical-rl), false otherwise.
- */
-export function $isEditorVerticalOrientation(editor: LexicalEditor): boolean {
-  const rootElement = editor.getRootElement();
-  if (rootElement === null) {
-    return false;
-  }
-  const computedStyle = window.getComputedStyle(rootElement);
-  return computedStyle.writingMode === 'vertical-rl';
-}
-
-/**
  * Moves selection by character according to arguments.
  * @param selection - The selection of the characters to move.
  * @param isHoldingShift - Is the shift key being held down during the operation.
  * @param isBackward - Is the selection backward (the focus comes before the anchor)?
- * @param editor - The editor instance.
  */
 export function $moveCharacter(
   selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
-  editor?: LexicalEditor,
 ): void {
   const isRTL = $isParentElementRTL(selection);
-  const isVertical = editor ? $isEditorVerticalOrientation(editor) : false;
+  const isVertical = $isEditorVerticalOrientation(selection);
 
   // In vertical-rl writing mode, arrow key directions need to be flipped
   // to match the visual flow of text (top to bottom, right to left)

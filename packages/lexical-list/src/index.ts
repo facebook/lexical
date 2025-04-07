@@ -25,6 +25,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
 import {
   $handleListInsertParagraph,
   $insertList,
@@ -47,10 +48,12 @@ export {
   $isListItemNode,
   $isListNode,
   $removeList,
+  INSERT_CHECK_LIST_COMMAND,
   ListItemNode,
   ListNode,
   ListNodeTagType,
   ListType,
+  registerCheckList,
   SerializedListItemNode,
   SerializedListNode,
 };
@@ -59,9 +62,6 @@ export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_UNORDERED_LIST_COMMAND');
 export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_ORDERED_LIST_COMMAND',
-);
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_CHECK_LIST_COMMAND',
 );
 export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',

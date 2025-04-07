@@ -9,6 +9,7 @@
 import type {
   BaseSelection,
   ElementNode,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   Point,
@@ -420,15 +421,22 @@ export function $wrapNodesImpl(
  * Determines if the default character selection should be overridden. Used with DecoratorNodes
  * @param selection - The selection whose default character selection may need to be overridden.
  * @param isBackward - Is the selection backwards (the focus comes before the anchor)?
+ * @param editor - The editor instance to check for vertical writing mode.
  * @returns true if it should be overridden, false if not.
  */
 export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
+  editor?: LexicalEditor,
 ): boolean {
+  const isVertical = editor ? $isEditorVerticalOrientation(editor) : false;
+
+  // In vertical writing mode, we adjust the direction for correct caret movement
+  const adjustedIsBackward = isVertical ? !isBackward : isBackward;
+
   const focusCaret = $caretFromPoint(
     selection.focus,
-    isBackward ? 'previous' : 'next',
+    adjustedIsBackward ? 'previous' : 'next',
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
@@ -477,21 +485,57 @@ export function $isParentElementRTL(selection: RangeSelection): boolean {
 }
 
 /**
+ * Tests if the editor root has vertical writing mode.
+ * @param editor - The editor instance.
+ * @returns true if the editor has vertical writing mode (writing-mode: vertical-rl), false otherwise.
+ */
+export function $isEditorVerticalOrientation(editor: LexicalEditor): boolean {
+  const rootElement = editor.getRootElement();
+  if (rootElement === null) {
+    return false;
+  }
+  const computedStyle = window.getComputedStyle(rootElement);
+  return computedStyle.writingMode === 'vertical-rl';
+}
+
+/**
  * Moves selection by character according to arguments.
  * @param selection - The selection of the characters to move.
  * @param isHoldingShift - Is the shift key being held down during the operation.
  * @param isBackward - Is the selection backward (the focus comes before the anchor)?
+ * @param editor - The editor instance.
  */
 export function $moveCharacter(
   selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
+  editor?: LexicalEditor,
 ): void {
   const isRTL = $isParentElementRTL(selection);
+  const isVertical = editor ? $isEditorVerticalOrientation(editor) : false;
+
+  // In vertical-rl writing mode, arrow key directions need to be flipped
+  // to match the visual flow of text (top to bottom, right to left)
+  let adjustedIsBackward;
+
+  if (isVertical) {
+    // In vertical-rl mode, we need to completely invert the direction
+    // Left arrow (backward) should move down (forward)
+    // Right arrow (forward) should move up (backward)
+    adjustedIsBackward = !isBackward;
+  } else if (isRTL) {
+    // In horizontal RTL mode, use the standard RTL behavior
+    adjustedIsBackward = !isBackward;
+  } else {
+    // Standard LTR horizontal text
+    adjustedIsBackward = isBackward;
+  }
+
+  // Apply the direction adjustment to move the caret
   $moveCaretSelection(
     selection,
     isHoldingShift,
-    isBackward ? !isRTL : isRTL,
+    adjustedIsBackward,
     'character',
   );
 }

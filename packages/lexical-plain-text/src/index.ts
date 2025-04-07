@@ -235,9 +235,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
         const event = payload;
         const isHoldingShift = event.shiftKey;
 
-        if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+        if ($shouldOverrideDefaultCharacterSelection(selection, true, editor)) {
           event.preventDefault();
-          $moveCharacter(selection, isHoldingShift, true);
+          $moveCharacter(selection, isHoldingShift, true, editor);
           return true;
         }
 
@@ -257,9 +257,11 @@ export function registerPlainText(editor: LexicalEditor): () => void {
         const event = payload;
         const isHoldingShift = event.shiftKey;
 
-        if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
+        if (
+          $shouldOverrideDefaultCharacterSelection(selection, false, editor)
+        ) {
           event.preventDefault();
-          $moveCharacter(selection, isHoldingShift, false);
+          $moveCharacter(selection, isHoldingShift, false, editor);
           return true;
         }
 

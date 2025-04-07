@@ -44,6 +44,7 @@ declare export function $moveCharacter(
   selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
+  editor?: LexicalEditor,
 ): void;
 declare export function $selectAll(selection: RangeSelection): void;
 declare export function $wrapNodes(
@@ -59,6 +60,7 @@ declare export function $isAtNodeEnd(point: Point): boolean;
 declare export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
+  editor?: LexicalEditor,
 ): boolean;
 
 declare export function createDOMRange(

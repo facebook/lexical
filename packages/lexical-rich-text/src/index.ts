@@ -822,10 +822,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+        if ($shouldOverrideDefaultCharacterSelection(selection, true, editor)) {
           const isHoldingShift = event.shiftKey;
           event.preventDefault();
-          $moveCharacter(selection, isHoldingShift, true);
+          $moveCharacter(selection, isHoldingShift, true, editor);
           return true;
         }
         return false;
@@ -850,9 +850,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return false;
         }
         const isHoldingShift = event.shiftKey;
-        if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
+        if (
+          $shouldOverrideDefaultCharacterSelection(selection, false, editor)
+        ) {
           event.preventDefault();
-          $moveCharacter(selection, isHoldingShift, false);
+          $moveCharacter(selection, isHoldingShift, false, editor);
           return true;
         }
         return false;

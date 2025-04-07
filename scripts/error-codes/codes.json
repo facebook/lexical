@@ -282,5 +282,6 @@
   "280": "$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection",
   "281": "$splitTextPointCaret: splitText must return at least one TextNode",
   "282": "rootNode.splice: Only element or decorator nodes can be inserted to the root node",
-  "283": "$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split"
+  "283": "$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split",
+  "284": "$getTextNodeOffset: invalid offset %s for size %s at key %s"
 }

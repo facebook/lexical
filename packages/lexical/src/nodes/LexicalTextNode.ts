@@ -373,7 +373,7 @@ export class TextNode extends LexicalNode {
 
   /**
    * Returns whether or not the node is in "token" mode. TextNodes in token mode can be navigated through character-by-character
-   * with a RangeSelection, but are deleted as a single entity (not invdividually by character).
+   * with a RangeSelection, but are deleted as a single entity (not individually by character).
    *
    * @returns true if the node is in token mode, false otherwise.
    */
@@ -392,7 +392,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * Returns whether or not the node is in "segemented" mode. TextNodes in segemented mode can be navigated through character-by-character
+   * Returns whether or not the node is in "segmented" mode. TextNodes in segmented mode can be navigated through character-by-character
    * with a RangeSelection, but are deleted in space-delimited "segments".
    *
    * @returns true if the node is in segmented mode, false otherwise.
@@ -909,7 +909,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when a user event would cause text to be inserted before them in the editor. If true, Lexical will attempt
    * to insert text into this node. If false, it will insert the text in a new sibling node.
    *
@@ -920,7 +920,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when a user event would cause text to be inserted after them in the editor. If true, Lexical will attempt
    * to insert text into this node. If false, it will insert the text in a new sibling node.
    *
@@ -1151,7 +1151,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when used with the registerLexicalTextEntity function. If you're using registerLexicalTextEntity, the
    * node class that you create and replace matched text with should return true from this method.
    *
@@ -1251,7 +1251,7 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
     return {node: null};
   }
   if (textContent[0] === ' ') {
-    // Traverse backward while in the same line. If content contains new line or tab -> pontential
+    // Traverse backward while in the same line. If content contains new line or tab -> potential
     // delete, other elements can borrow from this one. Deletion depends on whether it's also the
     // last space (see next condition: textContent[textContent.length - 1] === ' '))
     let previousText: null | Text = domNode_;

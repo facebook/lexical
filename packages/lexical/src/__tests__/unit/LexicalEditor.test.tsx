@@ -3077,7 +3077,7 @@ describe('LexicalEditor tests', () => {
     });
 
     // Cause reconciler error in update dom, so that it attempts to fallback by
-    // reseting editor and rerendering whole content
+    // resetting editor and rerendering whole content
     jest.spyOn(ParagraphNode.prototype, 'updateDOM').mockImplementation(() => {
       throw updateError;
     });

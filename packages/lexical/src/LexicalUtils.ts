@@ -1965,7 +1965,7 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
       mutableNode.__parent === latestNode.__parent &&
         mutableNode.__next === latestNode.__next &&
         mutableNode.__prev === latestNode.__prev,
-      "$cloneWithProperties: %s.clone(node) (with type '%s') overrided afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
+      "$cloneWithProperties: %s.clone(node) (with type '%s') overrode afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
       constructor.name,
       constructor.getType(),
     );

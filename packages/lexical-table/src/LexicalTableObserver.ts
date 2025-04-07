@@ -324,7 +324,7 @@ export class TableObserver {
       // set one then the reconciler will undo it.
       // TODO - it would make sense to have one so that native
       //        copy/paste worked. Right now we have to emulate with
-      //        keyboard events but it won't fire if trigged from the menu
+      //        keyboard events but it won't fire if triggered from the menu
       if (domSelection && domSelection.rangeCount > 0) {
         domSelection.removeAllRanges();
       }

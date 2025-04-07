@@ -53,7 +53,7 @@ test.describe('Grapheme deleteCharacter', () => {
       // Unclear why Firefox behaves differently here
       firefoxCaretDistance: 2,
 
-      // Devangari 'kshi' tailored grapheme cluster.
+      // Devanagari 'kshi' tailored grapheme cluster.
       // http://unicode.org/reports/tr29/#Table_Sample_Grapheme_Clusters
       grapheme: '\u0915\u094D\u0937\u093F',
     },

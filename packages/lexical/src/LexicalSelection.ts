@@ -488,7 +488,7 @@ export class RangeSelection implements BaseSelection {
 
   /**
    * Used to check if the provided selections is equal to this one by value,
-   * inluding anchor, focus, format, and style properties.
+   * including anchor, focus, format, and style properties.
    * @param selection - the Selection to compare this one to.
    * @returns true if the Selections are equal, false otherwise.
    */

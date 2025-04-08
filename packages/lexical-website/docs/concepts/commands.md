@@ -1,3 +1,5 @@
+
+
 # Commands
 
 Commands are a very powerful feature of Lexical that lets you register listeners for events like `KEY_ENTER_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them _wherever_ & _however_ you'd like.
@@ -10,22 +12,8 @@ When registering a `command` you supply a `priority` and can return `true` to ma
 
 You can view all of the existing commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
 
-### Built-in vs Custom Commands
-
-Lexical optimizes built-in commands for production builds while maintaining debuggability:
-
-- Built-in commands use short numeric IDs in production to reduce bundle size
-- Custom commands preserve their descriptive string types for better developer experience
-- The mapping between command strings and IDs is preserved for debugging purposes
-
-For example:
-
 ```js
-// Built-in command - automatically optimized
-const DELETE_COMMAND = createCommand('DELETE_COMMAND');
-
-// Custom command - preserves descriptive type
-const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand('HELLO_WORLD_COMMAND');
+const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand();
 
 editor.dispatchCommand(HELLO_WORLD_COMMAND, 'Hello World!');
 

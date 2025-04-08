@@ -321,7 +321,7 @@ export const COMMAND_PRIORITY_CRITICAL = 4;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<TPayload> = {
-  type?: string | number;
+  type?: string;
 };
 
 /**

@@ -79,14 +79,32 @@ Lexical provides several built-in update tags that are exported as constants:
 
 ### Tag Validation
 
-To help catch typos and ensure you're using known tags, you can enable tag validation by passing `true` as the second argument to `$addUpdateTag`. It's recommended to use the exported constants instead of string literals to avoid typos:
+To prevent typos and ensure type safety when using update tags, Lexical exports constants for all built-in tags. It's recommended to always use these constants instead of string literals:
 
 ```js
-import {HISTORIC_TAG} from 'lexical';
+import {
+  HISTORIC_TAG,
+  HISTORY_PUSH_TAG,
+  COLLABORATION_TAG,
+} from 'lexical';
 
 editor.update(() => {
   // Using constants ensures type safety and prevents typos
-  $addUpdateTag(HISTORIC_TAG, true);
+  $addUpdateTag(HISTORIC_TAG);
+  
+  // These constants can be used in update options
+  editor.update(() => {
+    // Your update code
+  }, {
+    tag: HISTORY_PUSH_TAG
+  });
+  
+  // And in listener checks
+  editor.registerUpdateListener(({tags}) => {
+    if (tags.has(COLLABORATION_TAG)) {
+      // Handle collaborative updates
+    }
+  });
 });
 ```
 

@@ -51,17 +51,3 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
  * This is useful when you want to make updates without changing the selection or focus
  */
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
-
-/**
- * A set of all known update tags for validation purposes
- */
-export const KNOWN_UPDATE_TAGS = new Set([
-  HISTORIC_TAG,
-  HISTORY_PUSH_TAG,
-  HISTORY_MERGE_TAG,
-  PASTE_TAG,
-  COLLABORATION_TAG,
-  SKIP_COLLAB_TAG,
-  SKIP_SCROLL_INTO_VIEW_TAG,
-  SKIP_DOM_SELECTION_TAG,
-]);

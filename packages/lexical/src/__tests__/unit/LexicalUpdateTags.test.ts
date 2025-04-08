@@ -13,10 +13,14 @@ import {
   $createParagraphNode,
   $getRoot,
   $hasUpdateTag,
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
   SKIP_DOM_SELECTION_TAG,
+  SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 
-import {KNOWN_UPDATE_TAGS} from '../../LexicalUpdateTags';
 import {initializeUnitTest} from '../utils';
 
 type TestEnv = {
@@ -25,10 +29,19 @@ type TestEnv = {
 
 describe('LexicalUpdateTags tests', () => {
   initializeUnitTest((testEnv: TestEnv) => {
-    test('All exported tags are in KNOWN_UPDATE_TAGS', async () => {
+    test('Built-in update tags work correctly', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        for (const tag of KNOWN_UPDATE_TAGS) {
+        const builtInTags = [
+          HISTORIC_TAG,
+          HISTORY_PUSH_TAG,
+          HISTORY_MERGE_TAG,
+          COLLABORATION_TAG,
+          SKIP_DOM_SELECTION_TAG,
+          SKIP_SCROLL_INTO_VIEW_TAG,
+        ];
+
+        for (const tag of builtInTags) {
           $addUpdateTag(tag);
           expect($hasUpdateTag(tag)).toBe(true);
         }
@@ -71,24 +84,9 @@ describe('LexicalUpdateTags tests', () => {
       expect(hasTag).toBe(true);
     });
 
-    test('Unknown tags trigger warning with validateTag', async () => {
-      const {editor} = testEnv;
-      const consoleSpy = jest
-        .spyOn(console, 'warn')
-        .mockImplementation(() => {});
-      await editor.update(() => {
-        $addUpdateTag('unknown-tag', true);
-        expect(consoleSpy).toHaveBeenCalledWith(
-          'Warning: "unknown-tag" is not a known update tag. This may be a typo. Known tags are: ' +
-            Array.from(KNOWN_UPDATE_TAGS).join(', '),
-        );
-      });
-      consoleSpy.mockRestore();
-    });
-
     test('Update tags are cleared after update', async () => {
       const {editor} = testEnv;
-      const tag = 'test-tag';
+      const tag = HISTORIC_TAG;
       await editor.update(() => {
         $addUpdateTag(tag);
         expect($hasUpdateTag(tag)).toBe(true);

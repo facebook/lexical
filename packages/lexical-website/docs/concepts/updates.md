@@ -1,6 +1,6 @@
 # Updates
 
-Updates in Lexical are the way you can mutate the editor state. All updates are run asynchronously and batched by default. This means that if you have multiple updates back-to-back, they'll be batched together and run in a single update. This is done for performance reasons, as it means we can avoid unnecessary re-renders and DOM updates.
+Updates in Lexical are synchronous operations that mutate the editor state (except in nested update scenarios which should be deprecated). The reconciliation process (DOM updates) is batched for performance reasons. This batching of DOM updates means we can avoid unnecessary re-renders and optimize the rendering process.
 
 ## Update Tags
 

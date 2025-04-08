@@ -855,7 +855,7 @@ export function isExactShortcutMatch(
 }
 
 const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
-const CONTROL_OR_ALT = {ctrlKey: !IS_APPLE, altKey: IS_APPLE};
+const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
 
 export function isTab(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'Tab', {});

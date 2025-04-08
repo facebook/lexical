@@ -855,6 +855,7 @@ export function isExactShortcutMatch(
 }
 
 const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
+const CONTROL_OR_ALT = {ctrlKey: !IS_APPLE, altKey: IS_APPLE};
 
 export function isTab(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'Tab', {});
@@ -884,15 +885,15 @@ export function isLineBreak(event: KeyboardEventModifiers): boolean {
 
 export function isOpenLineBreak(event: KeyboardEventModifiers): boolean {
   // 79 = KeyO
-  return IS_APPLE && isExactShortcutMatch(event, 'o', {metaKey: true});
+  return IS_APPLE && isExactShortcutMatch(event, 'o', {ctrlKey: true});
 }
 
 export function isDeleteWordBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Backspace', CONTROL_OR_META);
+  return isExactShortcutMatch(event, 'Backspace', CONTROL_OR_ALT);
 }
 
 export function isDeleteWordForward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Delete', CONTROL_OR_META);
+  return isExactShortcutMatch(event, 'Delete', CONTROL_OR_ALT);
 }
 
 export function isDeleteLineBackward(event: KeyboardEventModifiers): boolean {

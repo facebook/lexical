@@ -15,7 +15,7 @@ import type {TextFormatType} from './nodes/LexicalTextNode';
 export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
 
 export function createCommand<T>(type?: string): LexicalCommand<T> {
-  return __DEV__ ? {type} : {};
+  return {type};
 }
 
 export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> = createCommand(

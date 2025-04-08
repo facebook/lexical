@@ -936,16 +936,10 @@ export function isRedo(event: KeyboardEventModifiers): boolean {
 }
 
 export function isCopy(event: KeyboardEventModifiers): boolean {
-  if (event.shiftKey) {
-    return false;
-  }
   return isExactShortcutMatch(event, 'c', CONTROL_OR_META);
 }
 
 export function isCut(event: KeyboardEventModifiers): boolean {
-  if (event.shiftKey) {
-    return false;
-  }
   return isExactShortcutMatch(event, 'x', CONTROL_OR_META);
 }
 

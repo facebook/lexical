@@ -39,7 +39,22 @@ editor.update(() => {
 });
 ```
 
-Note: Update tags are cleared after each update. If you need to check for tags, make sure to do it within the same update callback where they were added.
+Note: While update tags can be checked within the same update using `$hasUpdateTag()`, they are typically accessed in update and mutation listeners through the `tags` and `updateTags` properties in their respective payloads. Here's the more common usage pattern:
+
+```js
+editor.registerUpdateListener(({tags}) => {
+  if (tags.has('my-tag')) {
+    // Handle updates with 'my-tag'
+  }
+});
+
+editor.registerMutationListener(MyNode, (mutations) => {
+  // updateTags contains tags from the current update
+  if (mutations.updateTags.has('my-tag')) {
+    // Handle mutations with 'my-tag'
+  }
+});
+```
 
 ### Common Update Tags
 

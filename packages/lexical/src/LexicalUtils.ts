@@ -1403,6 +1403,7 @@ export function $hasUpdateTag(tag: string): boolean {
 }
 
 export function $addUpdateTag(tag: string): void {
+  errorOnReadOnly();
   const editor = getActiveEditor();
   editor._updateTags.add(tag);
 }

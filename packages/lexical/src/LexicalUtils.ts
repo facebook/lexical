@@ -896,34 +896,29 @@ export function isDeleteWordForward(event: KeyboardEventModifiers): boolean {
 }
 
 export function isDeleteLineBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Backspace', {metaKey: IS_APPLE});
+  return IS_APPLE && isExactShortcutMatch(event, 'Backspace', {metaKey: true});
 }
 
 export function isDeleteLineForward(event: KeyboardEventModifiers): boolean {
   return (
-    isExactShortcutMatch(event, 'Delete', {metaKey: IS_APPLE}) ||
-    (IS_APPLE && isExactShortcutMatch(event, 'k', {ctrlKey: true}))
+    IS_APPLE &&
+    (isExactShortcutMatch(event, 'Delete', {metaKey: true}) ||
+      isExactShortcutMatch(event, 'k', {ctrlKey: true}))
   );
 }
 
 export function isDeleteBackward(event: KeyboardEventModifiers): boolean {
-  if (IS_APPLE) {
-    return (
-      isExactShortcutMatch(event, 'Backspace', {}) ||
-      isExactShortcutMatch(event, 'h', {ctrlKey: true})
-    );
-  }
-  return isExactShortcutMatch(event, 'Backspace', {});
+  return (
+    isExactShortcutMatch(event, 'Backspace', {}) ||
+    (IS_APPLE && isExactShortcutMatch(event, 'h', {ctrlKey: true}))
+  );
 }
 
 export function isDeleteForward(event: KeyboardEventModifiers): boolean {
-  if (IS_APPLE) {
-    return (
-      isExactShortcutMatch(event, 'Delete', {}) ||
-      isExactShortcutMatch(event, 'd', {ctrlKey: true})
-    );
-  }
-  return isExactShortcutMatch(event, 'Delete', {});
+  return (
+    isExactShortcutMatch(event, 'Delete', {}) ||
+    (IS_APPLE && isExactShortcutMatch(event, 'd', {ctrlKey: true}))
+  );
 }
 
 export function isUndo(event: KeyboardEventModifiers): boolean {

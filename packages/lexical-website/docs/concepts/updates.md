@@ -10,91 +10,104 @@ You can add tags in two ways:
 
 1. Using the `tag` option in `editor.update()`:
 ```js
+import {HISTORY_PUSH_TAG, PASTE_TAG} from 'lexical';
+
 editor.update(() => {
   // Your update code
 }, {
-  tag: 'history-push' // Single tag
+  tag: HISTORY_PUSH_TAG // Single tag
 });
 
 editor.update(() => {
   // Your update code
 }, {
-  tag: ['history-push', 'paste'] // Multiple tags
+  tag: [HISTORY_PUSH_TAG, PASTE_TAG] // Multiple tags
 });
 ```
 
 2. Using the `$addUpdateTag()` function within an update:
 ```js
+import {HISTORY_PUSH_TAG} from 'lexical';
+
 editor.update(() => {
-  $addUpdateTag('history-push');
+  $addUpdateTag(HISTORY_PUSH_TAG);
   // Your update code
 });
 ```
 
 You can check if a tag is present using `$hasUpdateTag()`:
 ```js
+import {HISTORIC_TAG} from 'lexical';
+
 editor.update(() => {
-  $addUpdateTag('my-tag');
-  console.log($hasUpdateTag('my-tag')); // true
+  $addUpdateTag(HISTORIC_TAG);
+  console.log($hasUpdateTag(HISTORIC_TAG)); // true
 });
 ```
 
 Note: While update tags can be checked within the same update using `$hasUpdateTag()`, they are typically accessed in update and mutation listeners through the `tags` and `updateTags` properties in their respective payloads. Here's the more common usage pattern:
 
 ```js
+import {HISTORIC_TAG} from 'lexical';
+
 editor.registerUpdateListener(({tags}) => {
-  if (tags.has('my-tag')) {
-    // Handle updates with 'my-tag'
+  if (tags.has(HISTORIC_TAG)) {
+    // Handle updates with historic tag
   }
 });
 
 editor.registerMutationListener(MyNode, (mutations) => {
   // updateTags contains tags from the current update
-  if (mutations.updateTags.has('my-tag')) {
-    // Handle mutations with 'my-tag'
+  if (mutations.updateTags.has(HISTORIC_TAG)) {
+    // Handle mutations with historic tag
   }
 });
 ```
 
 ### Common Update Tags
 
-Lexical provides several built-in update tags that serve specific purposes:
+Lexical provides several built-in update tags that are exported as constants:
 
-- `historic`: Indicates that the update is related to history operations (undo/redo)
-- `history-push`: Forces a new history entry to be created
-- `history-merge`: Merges the current update with the previous history entry
-- `paste`: Indicates that the update is related to a paste operation
-- `collaboration`: Indicates that the update is related to collaborative editing
-- `skip-collab`: Indicates that the update should skip collaborative sync
-- `skip-scroll-into-view`: Prevents scrolling the selection into view
-- `skip-dom-selection`: Prevents updating the DOM selection (useful for updates that shouldn't affect focus)
+- `HISTORIC_TAG`: Indicates that the update is related to history operations (undo/redo)
+- `HISTORY_PUSH_TAG`: Forces a new history entry to be created
+- `HISTORY_MERGE_TAG`: Merges the current update with the previous history entry
+- `PASTE_TAG`: Indicates that the update is related to a paste operation
+- `COLLABORATION_TAG`: Indicates that the update is related to collaborative editing
+- `SKIP_COLLAB_TAG`: Indicates that the update should skip collaborative sync
+- `SKIP_SCROLL_INTO_VIEW_TAG`: Prevents scrolling the selection into view
+- `SKIP_DOM_SELECTION_TAG`: Prevents updating the DOM selection (useful for updates that shouldn't affect focus)
 
 ### Tag Validation
 
-To help catch typos and ensure you're using known tags, you can enable tag validation by passing `true` as the second argument to `$addUpdateTag`:
+To help catch typos and ensure you're using known tags, you can enable tag validation by passing `true` as the second argument to `$addUpdateTag`. It's recommended to use the exported constants instead of string literals to avoid typos:
 
 ```js
+import {HISTORIC_TAG} from 'lexical';
+
 editor.update(() => {
-  // Will warn if "unknown-tag" is not a known tag
-  $addUpdateTag('unknown-tag', true);
-  // Warning: "unknown-tag" is not a known update tag. This may be a typo. Known tags are: historic, history-push...
+  // Using constants ensures type safety and prevents typos
+  $addUpdateTag(HISTORIC_TAG, true);
 });
 ```
 
 ### Custom Tags
 
-While Lexical provides common tags, you can also use custom tags for your own purposes. These are useful for tracking the source or purpose of updates in your application:
+While Lexical provides common tags as constants, you can also define your own constants for custom tags to maintain consistency and type safety:
 
 ```js
+// Define your custom tags as constants
+const MY_FEATURE_TAG = 'my-custom-feature';
+const MY_UPDATE_TAG = 'my-custom-update';
+
 editor.update(() => {
-  $addUpdateTag('my-custom-feature');
+  $addUpdateTag(MY_FEATURE_TAG);
 }, {
-  tag: 'my-custom-update'
+  tag: MY_UPDATE_TAG
 });
 
 // Listen for updates with specific tags
 editor.registerUpdateListener(({tags}) => {
-  if (tags.has('my-custom-feature')) {
+  if (tags.has(MY_FEATURE_TAG)) {
     // Handle updates from your custom feature
   }
 });

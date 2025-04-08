@@ -884,7 +884,7 @@ export function isLineBreak(event: KeyboardEventModifiers): boolean {
 
 export function isOpenLineBreak(event: KeyboardEventModifiers): boolean {
   // 79 = KeyO
-  return isExactShortcutMatch(event, 'o', {metaKey: IS_APPLE});
+  return IS_APPLE && isExactShortcutMatch(event, 'o', {metaKey: true});
 }
 
 export function isDeleteWordBackward(event: KeyboardEventModifiers): boolean {

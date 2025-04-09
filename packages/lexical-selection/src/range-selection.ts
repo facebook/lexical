@@ -434,7 +434,11 @@ export function $isEditorVerticalOrientation(
   if (domElement === null) {
     return false;
   }
-  const computedStyle = window.getComputedStyle(domElement);
+  const view = domElement.ownerDocument.defaultView;
+  if (view === null) {
+    return false;
+  }
+  const computedStyle = view.getComputedStyle(domElement);
   return computedStyle.writingMode === 'vertical-rl';
 }
 

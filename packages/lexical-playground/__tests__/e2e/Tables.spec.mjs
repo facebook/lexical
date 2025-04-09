@@ -6840,6 +6840,52 @@ test.describe.parallel('Tables', () => {
       `,
     );
   });
+
+  test('Can delete table when fully selected with merged cells', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(isCollab, 'Flaky on Collab');
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    // Insert a 3x3 table
+    await insertTable(page, 3, 3);
+
+    // Merge some cells to create a complex merged cell structure
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // Select the entire table
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 2, y: 2},
+      true,
+      false,
+    );
+
+    // Press backspace to delete
+    await page.keyboard.press('Backspace');
+
+    // Assert that the table is deleted and only empty paragraphs remain
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
 });
 
 const TABLE_WITH_MERGED_CELLS = `

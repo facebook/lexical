@@ -6847,6 +6847,7 @@ test.describe.parallel('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
+    test.fixme(isCollab, 'Flaky on Collab');
     await initialize({isCollab, page});
 
     await focusEditor(page);

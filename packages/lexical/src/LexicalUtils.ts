@@ -51,6 +51,7 @@ import {
   $isTextNode,
   DecoratorNode,
   ElementNode,
+  HISTORY_MERGE_TAG,
   LineBreakNode,
 } from '.';
 import {
@@ -555,7 +556,7 @@ export function markNodesWithTypesAsDirty(
     },
     editor._pendingEditorState === null
       ? {
-          tag: 'history-merge',
+          tag: HISTORY_MERGE_TAG,
         }
       : undefined,
   );

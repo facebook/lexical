@@ -566,47 +566,38 @@ export function removeFromParent(node: LexicalNode): void {
     const writableParent = oldParent.getWritable();
     const prevSibling = node.getPreviousSibling();
     const nextSibling = node.getNextSibling();
-    // TODO: this function duplicates a bunch of operations, can be simplified.
+
+    // Get writable siblings once
+    const writablePrevSibling =
+      prevSibling !== null ? prevSibling.getWritable() : null;
+    const writableNextSibling =
+      nextSibling !== null ? nextSibling.getWritable() : null;
+
+    // Update parent's first/last pointers
     if (prevSibling === null) {
-      if (nextSibling !== null) {
-        const writableNextSibling = nextSibling.getWritable();
-        writableParent.__first = nextSibling.__key;
-        writableNextSibling.__prev = null;
-      } else {
-        writableParent.__first = null;
-      }
-    } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      if (nextSibling !== null) {
-        const writableNextSibling = nextSibling.getWritable();
-        writableNextSibling.__prev = writablePrevSibling.__key;
-        writablePrevSibling.__next = writableNextSibling.__key;
-      } else {
-        writablePrevSibling.__next = null;
-      }
-      writableNode.__prev = null;
+      writableParent.__first = nextSibling !== null ? nextSibling.__key : null;
     }
     if (nextSibling === null) {
-      if (prevSibling !== null) {
-        const writablePrevSibling = prevSibling.getWritable();
-        writableParent.__last = prevSibling.__key;
-        writablePrevSibling.__next = null;
-      } else {
-        writableParent.__last = null;
-      }
-    } else {
-      const writableNextSibling = nextSibling.getWritable();
-      if (prevSibling !== null) {
-        const writablePrevSibling = prevSibling.getWritable();
-        writablePrevSibling.__next = writableNextSibling.__key;
-        writableNextSibling.__prev = writablePrevSibling.__key;
-      } else {
-        writableNextSibling.__prev = null;
-      }
-      writableNode.__next = null;
+      writableParent.__last = prevSibling !== null ? prevSibling.__key : null;
     }
-    writableParent.__size--;
+
+    // Update sibling links
+    if (writablePrevSibling !== null) {
+      writablePrevSibling.__next =
+        nextSibling !== null ? nextSibling.__key : null;
+    }
+    if (writableNextSibling !== null) {
+      writableNextSibling.__prev =
+        prevSibling !== null ? prevSibling.__key : null;
+    }
+
+    // Clear node's links
+    writableNode.__prev = null;
+    writableNode.__next = null;
     writableNode.__parent = null;
+
+    // Update parent size
+    writableParent.__size--;
   }
 }
 

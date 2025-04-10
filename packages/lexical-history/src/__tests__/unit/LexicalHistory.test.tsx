@@ -30,6 +30,7 @@ import {
   CAN_UNDO_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
+  HISTORY_MERGE_TAG,
   type KlassConstructor,
   LexicalEditor,
   LexicalNode,
@@ -362,7 +363,7 @@ describe('LexicalHistory tests', () => {
         paragraph.selectEnd();
       },
       {
-        tag: 'history-merge',
+        tag: HISTORY_MERGE_TAG,
       },
     );
     nestedEditor._parentEditor = editor_;

@@ -24,6 +24,8 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -472,7 +474,7 @@ export function registerMarkdownShortcuts(
   return editor.registerUpdateListener(
     ({tags, dirtyLeaves, editorState, prevEditorState}) => {
       // Ignore updates from collaboration and undo/redo (as changes already calculated)
-      if (tags.has('collaboration') || tags.has('historic')) {
+      if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
         return;
       }
 

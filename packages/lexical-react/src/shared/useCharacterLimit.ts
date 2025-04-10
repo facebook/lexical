@@ -24,6 +24,7 @@ import {
   $setSelection,
   COMMAND_PRIORITY_LOW,
   DELETE_CHARACTER_COMMAND,
+  HISTORY_MERGE_TAG,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -88,7 +89,7 @@ export function useCharacterLimit(
               $wrapOverflowedNodes(offset);
             },
             {
-              tag: 'history-merge',
+              tag: HISTORY_MERGE_TAG,
             },
           );
         }

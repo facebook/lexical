@@ -840,6 +840,20 @@ export type KeyboardEventModifiers = Pick<
   'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
 >;
 
+export function isKeyWithExcludedModifiers(
+  event: KeyboardEventModifiers,
+  expectedKey: string,
+  excludedModifiers: Partial<KeyboardEventModifiers>,
+): boolean {
+  return (
+    event.key.toLowerCase() === expectedKey.toLowerCase() &&
+    !(excludedModifiers.metaKey && event.metaKey) &&
+    !(excludedModifiers.ctrlKey && event.ctrlKey) &&
+    !(excludedModifiers.shiftKey && event.shiftKey) &&
+    !(excludedModifiers.altKey && event.altKey)
+  );
+}
+
 export function isExactShortcutMatch(
   event: KeyboardEventModifiers,
   expectedKey: string,
@@ -858,7 +872,10 @@ const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
 const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
 
 export function isTab(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Tab', {});
+  return isKeyWithExcludedModifiers(event, 'Tab', {
+    ctrlKey: true,
+    metaKey: true,
+  });
 }
 
 export function isBold(event: KeyboardEventModifiers): boolean {
@@ -945,7 +962,11 @@ export function isCut(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', {});
+  return isKeyWithExcludedModifiers(event, 'ArrowLeft', {
+    altKey: true,
+    ctrlKey: true,
+    metaKey: true,
+  });
 }
 
 export function isMoveToStart(event: KeyboardEventModifiers): boolean {
@@ -953,7 +974,11 @@ export function isMoveToStart(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveForward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', {});
+  return isKeyWithExcludedModifiers(event, 'ArrowRight', {
+    altKey: true,
+    ctrlKey: true,
+    metaKey: true,
+  });
 }
 
 export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
@@ -961,11 +986,17 @@ export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveUp(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowUp', {});
+  return isKeyWithExcludedModifiers(event, 'ArrowUp', {
+    ctrlKey: true,
+    metaKey: true,
+  });
 }
 
 export function isMoveDown(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowDown', {});
+  return isKeyWithExcludedModifiers(event, 'ArrowDown', {
+    ctrlKey: true,
+    metaKey: true,
+  });
 }
 
 export function isModifier(event: KeyboardEventModifiers): boolean {
@@ -973,7 +1004,7 @@ export function isModifier(event: KeyboardEventModifiers): boolean {
 }
 
 export function isSpace(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, ' ', {});
+  return event.key === ' ';
 }
 
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
@@ -984,19 +1015,19 @@ export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
 }
 
 export function isReturn(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {});
+  return event.key === 'Enter';
 }
 
 export function isBackspace(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Backspace', {});
+  return event.key === 'Backspace';
 }
 
 export function isEscape(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Escape', {});
+  return event.key === 'Escape';
 }
 
 export function isDelete(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Delete', {});
+  return event.key === 'Delete';
 }
 
 export function isSelectAll(event: KeyboardEventModifiers): boolean {

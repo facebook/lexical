@@ -1111,13 +1111,19 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
-  const {key} = event;
+  const keyboardState = {
+    altKey: event.altKey,
+    ctrlKey: event.ctrlKey,
+    key: event.key,
+    metaKey: event.metaKey,
+    shiftKey: event.shiftKey,
+  };
 
   if (dispatchCommand(editor, KEY_DOWN_COMMAND, event)) {
     return;
   }
 
-  if (key == null) {
+  if (keyboardState.key == null) {
     return;
   }
   if (isSafariEndingComposition && isBackspace(event)) {
@@ -1129,97 +1135,97 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
-  if (isMoveForward(event)) {
+  if (isMoveForward(keyboardState)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
-  } else if (isMoveToEnd(event)) {
+  } else if (isMoveToEnd(keyboardState)) {
     dispatchCommand(editor, MOVE_TO_END, event);
-  } else if (isMoveBackward(event)) {
+  } else if (isMoveBackward(keyboardState)) {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
-  } else if (isMoveToStart(event)) {
+  } else if (isMoveToStart(keyboardState)) {
     dispatchCommand(editor, MOVE_TO_START, event);
-  } else if (isMoveUp(event)) {
+  } else if (isMoveUp(keyboardState)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
-  } else if (isMoveDown(event)) {
+  } else if (isMoveDown(keyboardState)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
-  } else if (isLineBreak(event)) {
+  } else if (isLineBreak(keyboardState)) {
     isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isSpace(event)) {
+  } else if (isSpace(keyboardState)) {
     dispatchCommand(editor, KEY_SPACE_COMMAND, event);
-  } else if (isOpenLineBreak(event)) {
+  } else if (isOpenLineBreak(keyboardState)) {
     event.preventDefault();
     isInsertLineBreak = true;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
-  } else if (isParagraph(event)) {
+  } else if (isParagraph(keyboardState)) {
     isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isDeleteBackward(event)) {
-    if (isBackspace(event)) {
+  } else if (isDeleteBackward(keyboardState)) {
+    if (isBackspace(keyboardState)) {
       dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
     }
-  } else if (isEscape(event)) {
+  } else if (isEscape(keyboardState)) {
     dispatchCommand(editor, KEY_ESCAPE_COMMAND, event);
-  } else if (isDeleteForward(event)) {
-    if (isDelete(event)) {
+  } else if (isDeleteForward(keyboardState)) {
+    if (isDelete(keyboardState)) {
       dispatchCommand(editor, KEY_DELETE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
     }
-  } else if (isDeleteWordBackward(event)) {
+  } else if (isDeleteWordBackward(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, true);
-  } else if (isDeleteWordForward(event)) {
+  } else if (isDeleteWordForward(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, false);
-  } else if (isDeleteLineBackward(event)) {
+  } else if (isDeleteLineBackward(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, true);
-  } else if (isDeleteLineForward(event)) {
+  } else if (isDeleteLineForward(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
-  } else if (isBold(event)) {
+  } else if (isBold(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
-  } else if (isUnderline(event)) {
+  } else if (isUnderline(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
-  } else if (isItalic(event)) {
+  } else if (isItalic(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
-  } else if (isTab(event)) {
+  } else if (isTab(keyboardState)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
-  } else if (isUndo(event)) {
+  } else if (isUndo(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, UNDO_COMMAND, undefined);
-  } else if (isRedo(event)) {
+  } else if (isRedo(keyboardState)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
     if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
       // Only RangeSelection can use the native cut/copy/select all
-      if (isCopy(event)) {
+      if (isCopy(keyboardState)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);
-      } else if (isCut(event)) {
+      } else if (isCut(keyboardState)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
-      } else if (isSelectAll(event)) {
+      } else if (isSelectAll(keyboardState)) {
         event.preventDefault();
         dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
       // FF does it well (no need to override behavior)
-    } else if (!IS_FIREFOX && isSelectAll(event)) {
+    } else if (!IS_FIREFOX && isSelectAll(keyboardState)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }
   }
 
-  if (isModifier(event)) {
+  if (isModifier(keyboardState)) {
     dispatchCommand(editor, KEY_MODIFIER_COMMAND, event);
   }
 }

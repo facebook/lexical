@@ -973,7 +973,7 @@ export function isModifier(event: KeyboardEventModifiers): boolean {
 }
 
 export function isSpace(event: KeyboardEventModifiers): boolean {
-  return event.key === ' ';
+  return isExactShortcutMatch(event, ' ', {});
 }
 
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
@@ -984,19 +984,19 @@ export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
 }
 
 export function isReturn(event: KeyboardEventModifiers): boolean {
-  return event.key === 'Enter';
+  return isExactShortcutMatch(event, 'Enter', {});
 }
 
 export function isBackspace(event: KeyboardEventModifiers): boolean {
-  return event.key === 'Backspace';
+  return isExactShortcutMatch(event, 'Backspace', {});
 }
 
 export function isEscape(event: KeyboardEventModifiers): boolean {
-  return event.key === 'Escape';
+  return isExactShortcutMatch(event, 'Escape', {});
 }
 
 export function isDelete(event: KeyboardEventModifiers): boolean {
-  return event.key === 'Delete';
+  return isExactShortcutMatch(event, 'Delete', {});
 }
 
 export function isSelectAll(event: KeyboardEventModifiers): boolean {

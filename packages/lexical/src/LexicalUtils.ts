@@ -879,8 +879,8 @@ const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
 export function isTab(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'Tab', {
     altKey: 'any',
-    ctrlKey: true,
-    metaKey: true,
+    ctrlKey: false,
+    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -970,9 +970,9 @@ export function isCut(event: KeyboardEventModifiers): boolean {
 
 export function isMoveBackward(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowLeft', {
-    altKey: true,
-    ctrlKey: true,
-    metaKey: true,
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -983,9 +983,9 @@ export function isMoveToStart(event: KeyboardEventModifiers): boolean {
 
 export function isMoveForward(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowRight', {
-    altKey: true,
-    ctrlKey: true,
-    metaKey: true,
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -997,8 +997,8 @@ export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
 export function isMoveUp(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowUp', {
     altKey: 'any',
-    ctrlKey: true,
-    metaKey: true,
+    ctrlKey: false,
+    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -1006,8 +1006,8 @@ export function isMoveUp(event: KeyboardEventModifiers): boolean {
 export function isMoveDown(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowDown', {
     altKey: 'any',
-    ctrlKey: true,
-    metaKey: true,
+    ctrlKey: false,
+    metaKey: false,
     shiftKey: 'any',
   });
 }

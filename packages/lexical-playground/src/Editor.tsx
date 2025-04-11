@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {CharacterCountPlugin} from '@lexical/react/LexicalCharacterCountPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
@@ -87,8 +88,10 @@ export default function Editor(): JSX.Element {
       isCollab,
       isAutocomplete,
       isMaxLength,
+      isCharCount,
       isCharLimit,
       hasLinkAttributes,
+      isCharCountUtf8,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -263,6 +266,9 @@ export default function Editor(): JSX.Element {
             charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
             maxLength={5}
           />
+        )}
+        {(isCharCount || isCharCountUtf8) && (
+          <CharacterCountPlugin charset={isCharCount ? 'UTF-16' : 'UTF-8'} />
         )}
         {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>

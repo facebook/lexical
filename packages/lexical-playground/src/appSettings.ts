@@ -16,6 +16,8 @@ export const DEFAULT_SETTINGS = {
   emptyEditor: isDevPlayground,
   hasLinkAttributes: false,
   isAutocomplete: false,
+  isCharCount: false,
+  isCharCountUtf8: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: false,

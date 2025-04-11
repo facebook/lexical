@@ -353,6 +353,10 @@ export function removeFromParent(node: LexicalNode): void {
     const prevSibling = node.getPreviousSibling();
     const nextSibling = node.getNextSibling();
 
+    // Store sibling keys
+    const nextSiblingKey = nextSibling !== null ? nextSibling.__key : null;
+    const prevSiblingKey = prevSibling !== null ? prevSibling.__key : null;
+
     // Get writable siblings once
     const writablePrevSibling =
       prevSibling !== null ? prevSibling.getWritable() : null;
@@ -361,20 +365,18 @@ export function removeFromParent(node: LexicalNode): void {
 
     // Update parent's first/last pointers
     if (prevSibling === null) {
-      writableParent.__first = nextSibling !== null ? nextSibling.__key : null;
+      writableParent.__first = nextSiblingKey;
     }
     if (nextSibling === null) {
-      writableParent.__last = prevSibling !== null ? prevSibling.__key : null;
+      writableParent.__last = prevSiblingKey;
     }
 
     // Update sibling links
     if (writablePrevSibling !== null) {
-      writablePrevSibling.__next =
-        nextSibling !== null ? nextSibling.__key : null;
+      writablePrevSibling.__next = nextSiblingKey;
     }
     if (writableNextSibling !== null) {
-      writableNextSibling.__prev =
-        prevSibling !== null ? prevSibling.__key : null;
+      writableNextSibling.__prev = prevSiblingKey;
     }
 
     // Clear node's links

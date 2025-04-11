@@ -339,6 +339,13 @@ function internalMarkParentElementsAsDirty(
 }
 
 // TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
+/**
+ * Removes a node from its parent, updating all necessary pointers and links.
+ * @internal
+ *
+ * This function is for internal use of the library.
+ * Please do not use it as it may change in the future.
+ */
 export function removeFromParent(node: LexicalNode): void {
   const oldParent = node.getParent();
   if (oldParent !== null) {
@@ -346,47 +353,40 @@ export function removeFromParent(node: LexicalNode): void {
     const writableParent = oldParent.getWritable();
     const prevSibling = node.getPreviousSibling();
     const nextSibling = node.getNextSibling();
-    // TODO: this function duplicates a bunch of operations, can be simplified.
+
+    // Store sibling keys
+    const nextSiblingKey = nextSibling !== null ? nextSibling.__key : null;
+    const prevSiblingKey = prevSibling !== null ? prevSibling.__key : null;
+
+    // Get writable siblings once
+    const writablePrevSibling =
+      prevSibling !== null ? prevSibling.getWritable() : null;
+    const writableNextSibling =
+      nextSibling !== null ? nextSibling.getWritable() : null;
+
+    // Update parent's first/last pointers
     if (prevSibling === null) {
-      if (nextSibling !== null) {
-        const writableNextSibling = nextSibling.getWritable();
-        writableParent.__first = nextSibling.__key;
-        writableNextSibling.__prev = null;
-      } else {
-        writableParent.__first = null;
-      }
-    } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      if (nextSibling !== null) {
-        const writableNextSibling = nextSibling.getWritable();
-        writableNextSibling.__prev = writablePrevSibling.__key;
-        writablePrevSibling.__next = writableNextSibling.__key;
-      } else {
-        writablePrevSibling.__next = null;
-      }
-      writableNode.__prev = null;
+      writableParent.__first = nextSiblingKey;
     }
     if (nextSibling === null) {
-      if (prevSibling !== null) {
-        const writablePrevSibling = prevSibling.getWritable();
-        writableParent.__last = prevSibling.__key;
-        writablePrevSibling.__next = null;
-      } else {
-        writableParent.__last = null;
-      }
-    } else {
-      const writableNextSibling = nextSibling.getWritable();
-      if (prevSibling !== null) {
-        const writablePrevSibling = prevSibling.getWritable();
-        writablePrevSibling.__next = writableNextSibling.__key;
-        writableNextSibling.__prev = writablePrevSibling.__key;
-      } else {
-        writableNextSibling.__prev = null;
-      }
-      writableNode.__next = null;
+      writableParent.__last = prevSiblingKey;
     }
-    writableParent.__size--;
+
+    // Update sibling links
+    if (writablePrevSibling !== null) {
+      writablePrevSibling.__next = nextSiblingKey;
+    }
+    if (writableNextSibling !== null) {
+      writableNextSibling.__prev = prevSiblingKey;
+    }
+
+    // Clear node's links
+    writableNode.__prev = null;
+    writableNode.__next = null;
     writableNode.__parent = null;
+
+    // Update parent size
+    writableParent.__size--;
   }
 }
 

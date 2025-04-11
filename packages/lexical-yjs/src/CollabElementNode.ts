@@ -17,6 +17,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  removeFromParent,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -29,7 +30,6 @@ import {
   $syncPropertiesFromYjs,
   createLexicalNodeFromCollabNode,
   getPositionFromElementAndOffset,
-  removeFromParent,
   spliceString,
   syncPropertiesFromLexical,
 } from './Utils';

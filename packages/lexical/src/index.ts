@@ -262,6 +262,7 @@ export {
   isLexicalEditor,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
   setNodeIndentFromDOM,

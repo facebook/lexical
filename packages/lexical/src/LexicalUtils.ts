@@ -852,11 +852,8 @@ function matchModifier(
   mask: KeyboardEventModifierMask,
   prop: keyof KeyboardEventModifierMask,
 ): boolean {
-  const expected = mask[prop];
-
-  return (
-    expected === undefined || expected === 'any' || expected === event[prop]
-  );
+  const expected = mask[prop] || false;
+  return expected === 'any' || expected === event[prop];
 }
 
 export function isExactShortcutMatch(

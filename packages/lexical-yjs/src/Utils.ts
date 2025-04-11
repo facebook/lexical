@@ -559,48 +559,6 @@ export function syncWithTransaction(binding: Binding, fn: () => void): void {
   binding.doc.transact(fn, binding);
 }
 
-export function removeFromParent(node: LexicalNode): void {
-  const oldParent = node.getParent();
-  if (oldParent !== null) {
-    const writableNode = node.getWritable();
-    const writableParent = oldParent.getWritable();
-    const prevSibling = node.getPreviousSibling();
-    const nextSibling = node.getNextSibling();
-
-    // Get writable siblings once
-    const writablePrevSibling =
-      prevSibling !== null ? prevSibling.getWritable() : null;
-    const writableNextSibling =
-      nextSibling !== null ? nextSibling.getWritable() : null;
-
-    // Update parent's first/last pointers
-    if (prevSibling === null) {
-      writableParent.__first = nextSibling !== null ? nextSibling.__key : null;
-    }
-    if (nextSibling === null) {
-      writableParent.__last = prevSibling !== null ? prevSibling.__key : null;
-    }
-
-    // Update sibling links
-    if (writablePrevSibling !== null) {
-      writablePrevSibling.__next =
-        nextSibling !== null ? nextSibling.__key : null;
-    }
-    if (writableNextSibling !== null) {
-      writableNextSibling.__prev =
-        prevSibling !== null ? prevSibling.__key : null;
-    }
-
-    // Clear node's links
-    writableNode.__prev = null;
-    writableNode.__next = null;
-    writableNode.__parent = null;
-
-    // Update parent size
-    writableParent.__size--;
-  }
-}
-
 export function $moveSelectionToPreviousNode(
   anchorNodeKey: string,
   currentEditorState: EditorState,

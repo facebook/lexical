@@ -854,15 +854,9 @@ function matchModifier(
 ): boolean {
   const expected = mask[prop];
 
-  if (expected === undefined) {
-    return true;
-  }
-
-  if (expected === 'any') {
-    return true;
-  }
-
-  return expected === event[prop];
+  return (
+    expected === undefined || expected === 'any' || expected === event[prop]
+  );
 }
 
 export function isExactShortcutMatch(

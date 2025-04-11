@@ -407,7 +407,6 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
   if ($isElementNode(node)) {
     dirtyElements.set(key, true);
   } else {
-    // TODO split internally MarkNodeAsDirty into two dedicated Element/leave functions
     editor._dirtyLeaves.add(key);
   }
 }

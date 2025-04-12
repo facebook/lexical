@@ -69,6 +69,7 @@ import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
@@ -869,6 +870,17 @@ export default function ToolbarPlugin({
             title={`Insert link (${SHORTCUTS.INSERT_LINK})`}
             type="button">
             <i className="format link" />
+          </button>
+          <button
+            disabled={!isEditable}
+            onClick={() => {
+              activeEditor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert comment"
+            title={`Insert comment (${SHORTCUTS.ADD_COMMENT})`}
+            type="button">
+            <i className="format add-comment" />
           </button>
           <DropdownColorPicker
             disabled={!isEditable}

@@ -1803,3 +1803,28 @@ button.item.dropdown-item-active i {
   margin-bottom: 10px;
   width: 100%;
 }
+
+.zoom-menu {
+  min-width: 45px;
+}
+
+.toolbar .toolbar-item.zoom-menu .icon {
+  display: none;
+}
+
+.zoom-menu .text {
+  min-width: 35px;
+}
+
+/* Show zoom level in mobile */
+@media (max-width: 480px) {
+  .zoom-menu {
+    display: flex;
+    align-items: center;
+  }
+
+  .zoom-menu .text {
+    display: inline-block !important;
+    width: auto !important;
+  }
+}

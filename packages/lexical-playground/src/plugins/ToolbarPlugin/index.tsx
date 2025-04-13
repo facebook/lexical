@@ -93,6 +93,7 @@ import {
   formatParagraph,
   formatQuote,
 } from './utils';
+import Zoom from './zoom';
 
 const rootTypeToRootName = {
   root: 'Root',
@@ -1194,6 +1195,8 @@ export default function ToolbarPlugin({
         editor={activeEditor}
         isRTL={toolbarState.isRTL}
       />
+      <Divider />
+      <Zoom editor={editor} disabled={!isEditable} />
 
       {modal}
     </div>

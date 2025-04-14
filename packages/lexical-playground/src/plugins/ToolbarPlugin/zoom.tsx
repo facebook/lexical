@@ -29,12 +29,12 @@ export default function Zoom({
 
   const handleZoomChange = useCallback(
     (newZoom: ZoomLevel) => {
+      // Apply zoom to editor container
       const editorElement = editor.getRootElement()?.parentElement;
       if (editorElement) {
         if (newZoom === 'Fit') {
-          // Reset transform temporarily to get actual content width
-          editorElement.style.transform = 'scale(1)';
-          editorElement.style.transformOrigin = 'top left';
+          // Reset zoom temporarily to get actual content width
+          editorElement.style.zoom = '100%';
 
           // Calculate zoom level to fit content width
           const containerWidth = editorElement.parentElement?.clientWidth || 0;
@@ -46,14 +46,10 @@ export default function Zoom({
           );
 
           // Apply the calculated fit zoom
-          const scale = fitZoom / 100;
-          editorElement.style.transform = `scale(${scale})`;
-          editorElement.style.transformOrigin = 'top left';
+          editorElement.style.zoom = `${fitZoom}%`;
           updateToolbarState('zoomLevel', 'Fit');
         } else {
-          const scale = Number(newZoom) / 100;
-          editorElement.style.transform = `scale(${scale})`;
-          editorElement.style.transformOrigin = 'top left';
+          editorElement.style.zoom = `${newZoom}%`;
           updateToolbarState('zoomLevel', newZoom);
         }
       }

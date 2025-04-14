@@ -58,6 +58,53 @@ graph TD
     G[Create] -->|new key| H[New Node]
 ```
 
+### Node Map Structure
+
+The EditorState maintains a `Map<NodeKey, LexicalNode>` that tracks all nodes. Nodes refer to each other using keys in their internal pointers:
+
+```typescript
+// Internal node structure (not for direct usage)
+{
+  __prev: null | NodeKey,
+  __next: null | NodeKey,
+  __parent: null | NodeKey,
+  __firstChild: null | NodeKey,
+  __lastChild: null | NodeKey
+}
+```
+
+These internal pointers maintain the tree structure and should never be manipulated directly.
+
+### Key-Related APIs
+
+1. **Editor Methods**
+   ```typescript
+   // Get node by key
+   const node = editor.getElementByKey(key);
+   const node = $getNodeByKey(key);
+
+   // Get latest version of a node
+   const latest = node.getLatest();
+   
+   // Get mutable version for updates
+   const mutable = node.getWritable();
+   ```
+
+### Key Lifecycle
+
+NodeKeys are ephemeral and have several important characteristics:
+
+1. **Serialization**
+   - Keys are never serialized
+   - New keys are generated when deserializing (from JSON/HTML)
+   - Keys are only meaningful within their EditorState instance
+
+2. **Uniqueness**
+   - Keys are unique within an EditorState
+   - Current implementation uses serial numbers for debugging
+   - Should be treated as random and opaque values
+   - Never logically reused
+
 Keys are used internally by Lexical to:
 1. Track nodes in the editor state
 2. Manage node updates and versions

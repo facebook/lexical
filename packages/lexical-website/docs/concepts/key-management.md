@@ -80,6 +80,46 @@ Keys are used internally by Lexical to:
    node.__key = generateCustomKey();
    ```
 
+3. **Incorrect Constructor/Clone Implementation**
+   ```typescript
+   // ❌ Never do this - missing key in constructor
+   class MyCustomNode extends ElementNode {
+     constructor(someData: string) {
+       super(); // Missing key parameter
+       this.__someData = someData;
+     }
+   }
+
+   // ✅ Correct implementation
+   class MyCustomNode extends ElementNode {
+     constructor(someData: string, key?: NodeKey) {
+       super(key);
+       this.__someData = someData;
+     }
+     
+     static clone(node: MyCustomNode): MyCustomNode {
+       return new MyCustomNode(node.__someData, node.__key);
+     }
+   }
+   ```
+
+4. **Key Reuse in replace Function**
+   ```typescript
+   // ❌ Never do this - reusing key for different node type
+   class MyCustomNode extends ElementNode {
+     replace(replaceWith: LexicalNode) {
+       return new DifferentNodeType(data, this.__key); // Wrong: reusing key for different node type
+     }
+   }
+
+   // ✅ Correct: Let Lexical handle the key
+   class MyCustomNode extends ElementNode {
+     replace(replaceWith: LexicalNode) {
+       return new DifferentNodeType(data); // Correct: Lexical will assign a new key
+     }
+   }
+   ```
+
 ## Best Practices
 
 1. **Let Lexical Handle Keys**

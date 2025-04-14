@@ -34,8 +34,14 @@ class MyCustomNode extends ElementNode {
 
 2. **Node Mutations**
    ```typescript
-   // ✅ Correct: Lexical uses clone internally
-   node.getWritable().setSomeData("new data");
+   // Example of a node method implementation
+   class MyCustomNode extends ElementNode {
+     setSomeData(data: string): void {
+       this.getWritable().__data = data;
+     }
+   }
+
+   node.setSomeData("new data");
    ```
 
 ### When NOT to Use `clone`?
@@ -71,26 +77,20 @@ const copy = $copyNode(existingNode);
 
 ### What is `getWritable`?
 
-`getWritable` is the public API for getting a mutable version of a node. It handles all the necessary state management internally.
+`getWritable` is an internal API used within node method implementations to get a mutable version of a node. Node consumers should use the node's public methods instead.
 
 ```typescript
-// ✅ Correct: Modifying a node
-node.getWritable().setSomeData("new value");
+// ✅ Correct: Implementation of a node method
+class MyCustomNode extends ElementNode {
+  setData(data: string): void {
+    this.getWritable().__data = data;
+  }
+}
+
+// ✅ Correct: Using the node
+const node = new MyCustomNode();
+node.setData("new value");
 ```
-
-### When to Use `getWritable`?
-
-1. **Modifying Node Properties**
-   ```typescript
-   // ✅ Correct: Updating node data
-   node.getWritable().setData(newData);
-   ```
-
-2. **Changing Node State**
-   ```typescript
-   // ✅ Correct: Changing node state
-   node.getWritable().toggleFlag();
-   ```
 
 ## Common Patterns
 

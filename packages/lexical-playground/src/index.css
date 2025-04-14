@@ -1804,10 +1804,6 @@ button.item.dropdown-item-active i {
   width: 100%;
 }
 
-.zoom-menu {
-  min-width: 45px;
-}
-
 .toolbar .block-controls {
   display: flex;
   align-items: center;
@@ -1824,6 +1820,10 @@ button.item.dropdown-item-active i {
 
 .toolbar .toolbar-item.zoom-menu .icon {
   display: none;
+}
+
+.zoom-menu {
+  min-width: 45px;
 }
 
 .zoom-menu .text {

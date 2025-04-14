@@ -74,14 +74,7 @@ Keys are used internally by Lexical to:
    }
    ```
 
-2. **Key Storage**
-   ```typescript
-   // ❌ Never do this
-   const keys = nodes.map(node => node.__key);
-   localStorage.setItem('keys', JSON.stringify(keys));
-   ```
-
-3. **Manual Key Assignment**
+2. **Manual Key Assignment**
    ```typescript
    // ❌ Never do this
    node.__key = generateCustomKey();

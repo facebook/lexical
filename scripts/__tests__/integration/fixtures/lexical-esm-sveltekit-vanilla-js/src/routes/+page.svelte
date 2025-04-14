@@ -11,7 +11,7 @@
 	import { createEmptyHistoryState, registerHistory } from '@lexical/history';
 	import { HeadingNode, QuoteNode, registerRichText } from '@lexical/rich-text';
 	import { mergeRegister } from '@lexical/utils';
-	import { createEditor } from 'lexical';
+	import { createEditor, HISTORY_MERGE_TAG } from 'lexical';
 
 	import prepopulatedRichText from '$lib/prepopulatedRichText';
 	import { onMount } from 'svelte';
@@ -42,7 +42,7 @@
 			registerHistory(editor, createEmptyHistoryState(), 300)
 		);
 
-		editor.update(prepopulatedRichText, { tag: 'history-merge' });
+		editor.update(prepopulatedRichText, { tag: HISTORY_MERGE_TAG });
 
 		editor.registerUpdateListener(({ editorState }) => {
 			stateRef!.value = JSON.stringify(editorState.toJSON(), undefined, 2);

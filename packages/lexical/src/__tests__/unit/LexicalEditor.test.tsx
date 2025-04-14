@@ -51,12 +51,14 @@ import {
   EditorState,
   ElementNode,
   getDOMSelection,
+  HISTORY_MERGE_TAG,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
   ParagraphNode,
   RootNode,
+  SKIP_DOM_SELECTION_TAG,
   TextNode,
   UpdateListenerPayload,
 } from 'lexical';
@@ -3237,7 +3239,7 @@ describe('LexicalEditor tests', () => {
           $getRoot().append($createParagraphNode().append(textNode));
           textNode.select();
         },
-        {tag: 'history-merge'},
+        {tag: HISTORY_MERGE_TAG},
       );
       await newEditor.setRootElement(container);
       const domText = newEditor.getElementByKey(textNode.getKey())
@@ -3279,7 +3281,7 @@ describe('LexicalEditor tests', () => {
           $getRoot().append($createParagraphNode().append(textNode));
           textNode.select();
         },
-        {tag: 'history-merge'},
+        {tag: HISTORY_MERGE_TAG},
       );
       await newEditor.setRootElement(container);
       const domText = newEditor.getElementByKey(textNode.getKey())
@@ -3298,7 +3300,7 @@ describe('LexicalEditor tests', () => {
         () => {
           textNode.select(0);
         },
-        {tag: 'skip-dom-selection'},
+        {tag: SKIP_DOM_SELECTION_TAG},
       );
       selection = getDOMSelection(newEditor._window || window) as Selection;
       expect(selection).not.toBe(null);

@@ -21,6 +21,7 @@ import {Dispatch, useEffect} from 'react';
 
 import {useToolbarState} from '../../context/ToolbarContext';
 import {sanitizeUrl} from '../../utils/url';
+import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
 import {
   clearFormatting,
   formatBulletList,
@@ -34,6 +35,7 @@ import {
   UpdateFontSizeType,
 } from '../ToolbarPlugin/utils';
 import {
+  isAddComment,
   isCapitalize,
   isCenterAlign,
   isClearFormatting,
@@ -158,6 +160,9 @@ export default function ShortcutsPlugin({
         setIsLinkEditMode(!toolbarState.isLink);
 
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+      } else if (isAddComment(event)) {
+        event.preventDefault();
+        editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
       }
 
       return false;

@@ -46,6 +46,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   CLEAR_EDITOR_COMMAND,
+  COLLABORATION_TAG,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   getDOMSelection,
@@ -923,7 +924,7 @@ export default function CommentPlugin({
           if (!hasAnchorKey) {
             setActiveAnchorKey(null);
           }
-          if (!tags.has('collaboration') && $isRangeSelection(selection)) {
+          if (!tags.has(COLLABORATION_TAG) && $isRangeSelection(selection)) {
             setShowCommentInput(false);
           }
         });

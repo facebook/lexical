@@ -31,6 +31,7 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
+import {HISTORY_MERGE_TAG} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
@@ -1126,7 +1127,7 @@ export class LexicalEditor {
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
 
         $commitPendingUpdates(this);
 
@@ -1158,7 +1159,7 @@ export class LexicalEditor {
         // using a commit we preserve the readOnly invariant
         // for editor.getEditorState().
         this._window = null;
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
         $commitPendingUpdates(this);
       }
 

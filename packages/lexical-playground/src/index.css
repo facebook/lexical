@@ -1803,3 +1803,17 @@ button.item.dropdown-item-active i {
   margin-bottom: 10px;
   width: 100%;
 }
+
+.toolbar .block-controls {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar .block-controls .dropdown-button-text {
+  width: 7em;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}

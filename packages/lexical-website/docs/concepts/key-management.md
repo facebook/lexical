@@ -141,15 +141,6 @@ Keys are used internally by Lexical to:
    }
    ```
 
-3. **Store Node References**
-   ```typescript
-   // ✅ Correct: Store node identifiers, not keys
-   const nodeIdentifier = {
-     type: node.getType(),
-     data: node.getData()
-   };
-   ```
-
 ## Testing Considerations
 
 When writing tests involving node keys:
@@ -179,7 +170,7 @@ Understanding key management is crucial for performance:
 ## Common Questions
 
 **Q: How do I reference a node later?**
-A: Store node identifiers (like type and data) instead of keys. Use Lexical's APIs to find nodes when needed.
+A: You can either store the node's key directly or store additional identifying information along with it. Keys are stable within an editor instance and through serialization/deserialization.
 
 **Q: What if I need to track specific nodes?**
 A: Use Lexical's node selection and traversal APIs instead of storing keys.

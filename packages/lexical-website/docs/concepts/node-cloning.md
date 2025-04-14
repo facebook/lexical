@@ -67,13 +67,6 @@ const copy = $copyNode(existingNode);
    someParent.append(duplicate);
    ```
 
-2. **Copying Between Locations**
-   ```typescript
-   // ✅ Correct: Moving content
-   const copy = $copyNode(sourceNode);
-   targetParent.append(copy);
-   ```
-
 ## Using `getWritable`
 
 ### What is `getWritable`?

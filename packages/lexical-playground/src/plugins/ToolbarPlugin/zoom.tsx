@@ -17,6 +17,10 @@ import DropDown, {DropDownItem} from '../../ui/DropDown';
 const ZOOM_LEVELS = ['Fit', 50, 75, 90, 100, 125, 150, 200] as const;
 type ZoomLevel = (typeof ZOOM_LEVELS)[number];
 
+type StyleWithZoom = CSSStyleDeclaration & {
+  zoom: string;
+};
+
 export default function Zoom({
   editor,
   disabled = false,
@@ -32,9 +36,10 @@ export default function Zoom({
       // Apply zoom to editor container
       const editorElement = editor.getRootElement()?.parentElement;
       if (editorElement) {
+        const style = editorElement.style as StyleWithZoom;
         if (newZoom === 'Fit') {
           // Reset zoom temporarily to get actual content width
-          editorElement.style.zoom = '100%';
+          style.zoom = '100%';
 
           // Calculate zoom level to fit content width
           const containerWidth = editorElement.parentElement?.clientWidth || 0;
@@ -46,10 +51,10 @@ export default function Zoom({
           );
 
           // Apply the calculated fit zoom
-          editorElement.style.zoom = `${fitZoom}%`;
+          style.zoom = `${fitZoom}%`;
           updateToolbarState('zoomLevel', 'Fit');
         } else {
-          editorElement.style.zoom = `${newZoom}%`;
+          style.zoom = `${newZoom}%`;
           updateToolbarState('zoomLevel', newZoom);
         }
       }

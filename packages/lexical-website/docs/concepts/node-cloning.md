@@ -126,19 +126,17 @@ function duplicateNodeWrong(node: MyCustomNode) {
 
 ## Performance Considerations
 
-1. **Efficient Updates**
-   - `getWritable()` only clones when necessary
-   - Lexical optimizes state updates
-   - Avoid unnecessary cloning
+1. **Referential Integrity**
+   - `getWritable()` ensures proper EditorState updates with new clones
+   - Prevents "orphaned" nodes that won't be rendered
 
-2. **Memory Usage**
+2. **State Management**
    ```typescript
-   // ✅ Efficient: Uses Lexical's optimization
-   node.getWritable().setData(newData);
-
-   // ❌ Inefficient: Creates unnecessary copies
-   const clone = $copyNode(node);
-   clone.setData(newData);
+   class MyCustomNode extends ElementNode {
+     setData(data: string): void {
+       this.getWritable().__data = data; // Properly tracked by editor
+     }
+   }
    ```
 
 ## Testing
@@ -166,9 +164,6 @@ test('node modification', async () => {
 
 **Q: How do I duplicate a node?**
 A: Use `$copyNode(node)` to create a new copy with a new key.
-
-**Q: How do I modify a node?**
-A: Use `node.getWritable()` to get a mutable version.
 
 **Q: When should I use clone?**
 A: Never directly. Use `$copyNode()` or `getWritable()` instead. 

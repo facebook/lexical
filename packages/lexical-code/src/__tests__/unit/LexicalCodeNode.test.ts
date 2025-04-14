@@ -28,6 +28,7 @@ import {
   $isTabNode,
   $isTextNode,
   $setSelection,
+  HISTORY_MERGE_TAG,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
@@ -869,7 +870,7 @@ describe('LexicalCodeNode tests', () => {
             );
             root.append(codeBlock);
           },
-          {tag: 'history-merge'},
+          {tag: HISTORY_MERGE_TAG},
         );
         // before transform
         expect(testEnv.innerHTML).toBe(

@@ -21,6 +21,7 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_LOW,
+  HISTORY_MERGE_TAG,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
 } from 'lexical';
@@ -33,7 +34,7 @@ import {
 } from '../../nodes/AutocompleteNode';
 import {addSwipeRightListener} from '../../utils/swipe';
 
-const HISTORY_MERGE = {tag: 'history-merge'};
+const HISTORY_MERGE = {tag: HISTORY_MERGE_TAG};
 
 declare global {
   interface Navigator {

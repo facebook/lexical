@@ -94,6 +94,7 @@ import {
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
+  PASTE_TAG,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
   setNodeIndentFromDOM,
@@ -459,7 +460,7 @@ function onPasteForRichText(
       }
     },
     {
-      tag: 'paste',
+      tag: PASTE_TAG,
     },
   );
 }

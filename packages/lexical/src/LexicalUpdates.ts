@@ -11,7 +11,12 @@ import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isTextNode, SELECTION_CHANGE_COMMAND} from '.';
+import {
+  $isElementNode,
+  $isTextNode,
+  SELECTION_CHANGE_COMMAND,
+  SKIP_DOM_SELECTION_TAG,
+} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
   CommandPayloadType,
@@ -618,7 +623,7 @@ export function $commitPendingUpdates(
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty) &&
     rootElement !== null &&
-    !tags.has('skip-dom-selection')
+    !tags.has(SKIP_DOM_SELECTION_TAG)
   ) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;

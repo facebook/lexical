@@ -45,6 +45,7 @@ import {
   ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   LexicalEditor,
   NodeKey,
@@ -681,7 +682,7 @@ export default function ToolbarPlugin({
             $patchStyleText(selection, styles);
           }
         },
-        skipHistoryStack ? {tag: 'historic'} : {},
+        skipHistoryStack ? {tag: HISTORIC_TAG} : {},
       );
     },
     [activeEditor],

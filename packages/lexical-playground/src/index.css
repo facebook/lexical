@@ -1808,6 +1808,20 @@ button.item.dropdown-item-active i {
   min-width: 45px;
 }
 
+.toolbar .block-controls {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar .block-controls .dropdown-button-text {
+  width: 7em;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
 .toolbar .toolbar-item.zoom-menu .icon {
   display: none;
 }

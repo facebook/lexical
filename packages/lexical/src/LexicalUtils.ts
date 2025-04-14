@@ -51,6 +51,7 @@ import {
   $isTextNode,
   DecoratorNode,
   ElementNode,
+  HISTORY_MERGE_TAG,
   LineBreakNode,
 } from '.';
 import {
@@ -407,7 +408,6 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
   if ($isElementNode(node)) {
     dirtyElements.set(key, true);
   } else {
-    // TODO split internally MarkNodeAsDirty into two dedicated Element/leave functions
     editor._dirtyLeaves.add(key);
   }
 }
@@ -555,7 +555,7 @@ export function markNodesWithTypesAsDirty(
     },
     editor._pendingEditorState === null
       ? {
-          tag: 'history-merge',
+          tag: HISTORY_MERGE_TAG,
         }
       : undefined,
   );

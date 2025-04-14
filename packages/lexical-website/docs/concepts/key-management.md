@@ -163,8 +163,5 @@ Understanding key management is crucial for performance:
 **Q: How do I reference a node later?**
 A: Store a reference to the node. Conventionally, all node methods will use `getLatest()` or `getWritable()` which will look up the latest version of that node before reading or writing its properties, which is equivalent to using the key but is type-safe (but may cause errors if you try to use a reference to a node that no longer exists). In some situations it may be preferable to use the key directly, which is also fine.
 
-**Q: What if I need to track specific nodes?**
-A: Use Lexical's node selection and traversal APIs instead of storing keys.
-
 **Q: How do I ensure unique nodes?**
 A: Let Lexical handle key generation and management. Focus on node content and structure. 

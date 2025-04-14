@@ -73,8 +73,8 @@ const INITIAL_TOOLBAR_STATE = {
   isUppercase: false,
   isCapitalize: false,
   rootType: 'root' as keyof typeof rootTypeToRootName,
-  // Zoom level in percentage or 'Fit'
-  zoomLevel: 100 as number | 'Fit',
+  // Zoom level in percentage
+  zoomLevel: 100 as number,
 };
 
 type ToolbarState = typeof INITIAL_TOOLBAR_STATE;

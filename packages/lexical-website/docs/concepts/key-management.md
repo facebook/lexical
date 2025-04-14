@@ -132,15 +132,6 @@ Keys are used internally by Lexical to:
    }
    ```
 
-2. **Use Node References Properly**
-   ```typescript
-   // ✅ Correct: Use node keys only in constructors
-   constructor(data: string, key?: NodeKey) {
-     super(key);
-     this.__data = data;
-   }
-   ```
-
 ## Testing Considerations
 
 When writing tests involving node keys:

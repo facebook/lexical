@@ -124,8 +124,12 @@ Keys are used internally by Lexical to:
 
 1. **Let Lexical Handle Keys**
    ```typescript
-   // ✅ Correct: Let Lexical create new nodes
-   const newNode = new MyCustomNode("data");
+   import {$applyNodeReplacement} from 'lexical';
+
+   // Create node helper function
+   export function $createMyCustomNode(data: string): MyCustomNode {
+     return $applyNodeReplacement(new MyCustomNode(data));
+   }
    ```
 
 2. **Use Node References Properly**

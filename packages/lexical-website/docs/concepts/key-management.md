@@ -40,10 +40,6 @@ class MyCustomNode extends ElementNode {
 Never use keys in these situations:
 
 ```typescript
-// ❌ Don't store keys for later use
-const nodeKey = node.__key;
-saveForLater(nodeKey);
-
 // ❌ Don't pass keys between different nodes
 const newNode = new MyCustomNode(existingNode.__key);
 

@@ -834,11 +834,22 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
   }
 }
 
+/**
+ * A KeyboardEvent or structurally similar object with a string `key` as well
+ * as `altKey`, `ctrlKey`, `metaKey`, and `shiftKey` boolean properties.
+ */
 export type KeyboardEventModifiers = Pick<
   KeyboardEvent,
   'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
 >;
 
+/**
+ * A record of keyboard modifiers that must be enabled.
+ * If the value is `'any'` then the modifier key's state is ignored.
+ * If the value is `true` then the modifier key must be pressed.
+ * If the value is `false` or the property is omitted then the modifier key must
+ * not be pressed.
+ */
 export type KeyboardEventModifierMask = {
   [K in Exclude<keyof KeyboardEventModifiers, 'key'>]?:
     | boolean
@@ -855,16 +866,40 @@ function matchModifier(
   return expected === 'any' || expected === event[prop];
 }
 
-export function isExactShortcutMatch(
+/**
+ * Match a KeyboardEvent with its expected modifier state
+ *
+ * @param event A KeyboardEvent, or structurally similar object
+ * @param mask An object specifying the expected state of the modifiers
+ * @returns true if the event matches
+ */
+export function isModifierMatch(
   event: KeyboardEventModifiers,
-  expectedKey: string,
   mask: KeyboardEventModifierMask,
 ): boolean {
   return (
     matchModifier(event, mask, 'altKey') &&
     matchModifier(event, mask, 'ctrlKey') &&
     matchModifier(event, mask, 'shiftKey') &&
-    matchModifier(event, mask, 'metaKey') &&
+    matchModifier(event, mask, 'metaKey')
+  );
+}
+
+/**
+ * Match a KeyboardEvent with its expected state
+ *
+ * @param event A KeyboardEvent, or structurally similar object
+ * @param expectedKey The string to compare with event.key (case insensitive)
+ * @param mask An object specifying the expected state of the modifiers
+ * @returns true if the event matches
+ */
+export function isExactShortcutMatch(
+  event: KeyboardEventModifiers,
+  expectedKey: string,
+  mask: KeyboardEventModifierMask,
+): boolean {
+  return (
+    isModifierMatch(event, mask) &&
     event.key.toLowerCase() === expectedKey.toLowerCase()
   );
 }
@@ -874,9 +909,6 @@ const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
 
 export function isTab(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'Tab', {
-    altKey: 'any',
-    ctrlKey: false,
-    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -930,7 +962,7 @@ export function isDeleteLineForward(event: KeyboardEventModifiers): boolean {
 
 export function isDeleteBackward(event: KeyboardEventModifiers): boolean {
   return (
-    isExactShortcutMatch(event, 'Backspace', {}) ||
+    isExactShortcutMatch(event, 'Backspace', {shiftKey: 'any'}) ||
     (IS_APPLE && isExactShortcutMatch(event, 'h', {ctrlKey: true}))
   );
 }
@@ -966,9 +998,6 @@ export function isCut(event: KeyboardEventModifiers): boolean {
 
 export function isMoveBackward(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowLeft', {
-    altKey: false,
-    ctrlKey: false,
-    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -979,9 +1008,6 @@ export function isMoveToStart(event: KeyboardEventModifiers): boolean {
 
 export function isMoveForward(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowRight', {
-    altKey: false,
-    ctrlKey: false,
-    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -993,8 +1019,6 @@ export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
 export function isMoveUp(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowUp', {
     altKey: 'any',
-    ctrlKey: false,
-    metaKey: false,
     shiftKey: 'any',
   });
 }
@@ -1002,8 +1026,6 @@ export function isMoveUp(event: KeyboardEventModifiers): boolean {
 export function isMoveDown(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'ArrowDown', {
     altKey: 'any',
-    ctrlKey: false,
-    metaKey: false,
     shiftKey: 'any',
   });
 }

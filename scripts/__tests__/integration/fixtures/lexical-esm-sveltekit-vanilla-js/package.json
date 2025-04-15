@@ -17,7 +17,7 @@
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/adapter-node": "^5.0.1",
     "@sveltejs/adapter-static": "^3.0.1",
-    "@sveltejs/kit": "^2.10.1",
+    "@sveltejs/kit": "^2.20.6",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "lexical": "0.30.0",
     "prettier": "^3.1.1",

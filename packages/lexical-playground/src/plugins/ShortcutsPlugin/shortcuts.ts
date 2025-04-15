@@ -7,6 +7,7 @@
  */
 
 import {IS_APPLE} from '@lexical/utils';
+import {isModifierMatch} from 'lexical';
 
 //disable eslint sorting rule for quick reference to shortcuts
 /* eslint-disable sort-keys-fix/sort-keys-fix */
@@ -50,217 +51,189 @@ export const SHORTCUTS = Object.freeze({
   INSERT_LINK: IS_APPLE ? '⌘+K' : 'Ctrl+K',
 });
 
-export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
-  return IS_APPLE ? metaKey : ctrlKey;
-}
+const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
 
 export function isFormatParagraph(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
 
   return (
     (code === 'Numpad0' || code === 'Digit0') &&
-    !shiftKey &&
-    altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isFormatHeading(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   const keyNumber = code[code.length - 1];
 
   return (
     ['1', '2', '3'].includes(keyNumber) &&
-    !shiftKey &&
-    altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isFormatBulletList(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
     (code === 'Numpad4' || code === 'Digit4') &&
-    !shiftKey &&
-    altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isFormatNumberedList(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
     (code === 'Numpad5' || code === 'Digit5') &&
-    !shiftKey &&
-    altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isFormatCheckList(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
     (code === 'Numpad6' || code === 'Digit6') &&
-    !shiftKey &&
-    altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isFormatCode(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyC' && !shiftKey && altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyC' &&
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isFormatQuote(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyQ' && !shiftKey && altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyQ' &&
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }
 
 export function isLowercase(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
     (code === 'Numpad1' || code === 'Digit1') &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isUppercase(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
     (code === 'Numpad2' || code === 'Digit2') &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isCapitalize(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
     (code === 'Numpad3' || code === 'Digit3') &&
-    shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isStrikeThrough(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyS' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyS' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isIndent(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
-  return (
-    code === 'BracketRight' &&
-    !shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
+  const {code} = event;
+  return code === 'BracketRight' && isModifierMatch(event, CONTROL_OR_META);
 }
 
 export function isOutdent(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
-  return (
-    code === 'BracketLeft' &&
-    !shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
+  const {code} = event;
+  return code === 'BracketLeft' && isModifierMatch(event, CONTROL_OR_META);
 }
 
 export function isCenterAlign(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyE' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyE' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isLeftAlign(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyL' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyL' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isRightAlign(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyR' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyR' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isJustifyAlign(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyJ' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyJ' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isSubscript(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
-  return (
-    code === 'Comma' && !shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  const {code} = event;
+  return code === 'Comma' && isModifierMatch(event, CONTROL_OR_META);
 }
 
 export function isSuperscript(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
-  return (
-    code === 'Period' && !shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  const {code} = event;
+  return code === 'Period' && isModifierMatch(event, CONTROL_OR_META);
 }
 
 export function isInsertCodeBlock(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyC' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyC' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isIncreaseFontSize(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'Period' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'Period' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isDecreaseFontSize(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'Comma' && shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'Comma' &&
+    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
   );
 }
 
 export function isClearFormatting(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
-  return (
-    code === 'Backslash' &&
-    !shiftKey &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
-  );
+  const {code} = event;
+  return code === 'Backslash' && isModifierMatch(event, CONTROL_OR_META);
 }
 
 export function isInsertLink(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
-  return (
-    code === 'KeyK' && !shiftKey && !altKey && controlOrMeta(metaKey, ctrlKey)
-  );
+  const {code} = event;
+  return code === 'KeyK' && isModifierMatch(event, CONTROL_OR_META);
 }
 
 export function isAddComment(event: KeyboardEvent): boolean {
-  const {code, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {code} = event;
   return (
-    code === 'KeyM' && !shiftKey && altKey && controlOrMeta(metaKey, ctrlKey)
+    code === 'KeyM' &&
+    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
   );
 }

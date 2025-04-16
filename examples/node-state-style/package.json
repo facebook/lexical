@@ -1,7 +1,7 @@
 {
   "name": "@lexical/node-state-style-example",
   "private": true,
-  "version": "0.28.0",
+  "version": "0.30.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "@ark-ui/react": "^5.0.1",
-    "@lexical/react": "0.28.0",
-    "@lexical/selection": "0.28.0",
-    "@lexical/utils": "0.28.0",
+    "@lexical/react": "0.30.0",
+    "@lexical/selection": "0.30.0",
+    "@lexical/utils": "0.30.0",
     "inline-style-parser": "^0.2.4",
-    "lexical": "0.28.0",
+    "lexical": "0.30.0",
     "lucide-react": "^0.479.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

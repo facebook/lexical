@@ -12,6 +12,7 @@ import {
   $createTableRowNode,
   $isTableNode,
   INSERT_TABLE_COMMAND,
+  registerTablePlugin,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -20,6 +21,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $setSelection,
   createEditor,
   LexicalEditor,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -39,6 +41,70 @@ describe('LexicalTablePlugin', () => {
     };
     editor = createEditor(testConfig);
     editor._headless = true;
+    registerTablePlugin(editor);
+  });
+
+  test('INSERT_TABLE_COMMAND inserts a table', async () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.select();
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+          columns: '3',
+          rows: '2',
+        });
+      },
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const root = $getRoot();
+      const table = root.getFirstChild();
+
+      expect($isTableNode(table)).toBe(true);
+
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+
+      const rows = table.getChildren();
+      expect(rows.length).toBe(2);
+      const firstRow = rows[0];
+      if (!$isElementNode(firstRow)) {
+        throw new Error('Expected row node');
+      }
+      const firstRowCells = firstRow.getChildren();
+      expect(firstRowCells.length).toBe(3);
+    });
+  });
+
+  test('INSERT_TABLE_COMMAND inserts a table when the editor is blurred', async () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.select();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        // Simulate a blur event
+        $setSelection(null);
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+          columns: '3',
+          rows: '2',
+        });
+      },
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const root = $getRoot();
+      const table = root.getFirstChild();
+
+      expect($isTableNode(table)).toBe(true);
+    });
   });
 
   test('INSERT_TABLE_COMMAND handler prevents nested tables', async () => {

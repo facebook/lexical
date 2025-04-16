@@ -16,6 +16,7 @@ import {
   pressBackspace,
   selectAll,
   selectCharacters,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertSelection,
@@ -45,6 +46,7 @@ import {
   mergeTableCells,
   pasteFromClipboard,
   SAMPLE_IMAGE_URL,
+  selectCellFromTableCoord,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
   selectFromAlignDropdown,
@@ -1233,21 +1235,21 @@ test.describe.parallel('Tables', () => {
               <p dir="ltr"><span data-lexical-text="true">aa</span></p>
             </th>
             <th>
-              <p><span data-lexical-text="true">bb</span></p>
+              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
             </th>
             <th>
-              <p><span data-lexical-text="true">cc</span></p>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
             </th>
           </tr>
           <tr>
             <th>
-              <p><span data-lexical-text="true">d</span></p>
+              <p dir="ltr"><span data-lexical-text="true">d</span></p>
             </th>
             <td>
-              <p><span data-lexical-text="true">e</span></p>
+              <p dir="ltr"><span data-lexical-text="true">e</span></p>
             </td>
             <td>
-              <p><span data-lexical-text="true">f</span></p>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
             </td>
           </tr>
         </table>
@@ -6181,4 +6183,759 @@ test.describe.parallel('Tables', () => {
         ),
     );
   });
+
+  test(`Table action menu is hidden when cell overflows`, async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    // The way that the clicks happen in test doesn't work in firefox for some reason
+    // but it does seem to work when you do it by hand
+    test.fixme(browserName === 'firefox');
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // Insert a 2x2 table
+    await insertTable(page, 2, 2);
+
+    // Find and drag the column resize handle
+    const firstCell = await page.$('th >> nth=0');
+    const firstCellBox = await firstCell.boundingBox();
+
+    // Click the cell in 2nd column
+    await click(page, 'th >> nth=1');
+
+    // Check that the action menu button is visible when no overflow
+    const menuVisible = await page.evaluate(() => {
+      const button = document.querySelector('.table-cell-action-button');
+      // If button exists, menu is visible
+      return !!button;
+    });
+
+    expect(menuVisible).toBe(true);
+
+    // Make the column very wide to ensure overflow
+    await page.mouse.move(
+      firstCellBox.x + firstCellBox.width - 5,
+      firstCellBox.y + firstCellBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      firstCellBox.x + 2000, // Make column very wide - 2000 for more scroll space
+      firstCellBox.y + firstCellBox.height / 2,
+    );
+    await page.mouse.up();
+
+    // Click the cell
+    await click(page, 'th >> nth=0');
+
+    const menuHidden = await page.evaluate(() => {
+      const button = document.querySelector('.table-cell-action-button');
+      // If button doesn't exist, menu is hidden
+      return !button;
+    });
+
+    expect(menuHidden).toBe(true);
+  });
+
+  test(`Can expand table to fit content when pasting table into table`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await pasteFromClipboard(page, {'text/html': TABLE_WITH_MERGED_CELLS});
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 0},
+      {x: 2, y: 1},
+      false,
+      false,
+    );
+
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+
+      await selectCellFromTableCoord(page, {x: 0, y: 2});
+
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a3</span>
+              </p>
+            </td>
+          </tr>
+          <tr style="height: 38px">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              rowspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b3</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a3</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b3</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+
+    await undo(page);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 0},
+      {x: 2, y: 1},
+      false,
+      false,
+    );
+
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+
+      await selectCellFromTableCoord(page, {x: 2, y: 1});
+
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a3</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr style="height: 38px">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              rowspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a3</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">c2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b3</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+  });
+
+  test(`Can paste table containing merged cells into table`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await pasteFromClipboard(page, {'text/html': TABLE_WITH_MERGED_CELLS});
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 1},
+      {x: 0, y: 2},
+      false,
+      false,
+    );
+
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+
+      await selectCellFromTableCoord(page, {x: 0, y: 2});
+
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a3</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr style="height: 38px">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              rowspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b3</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              rowspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b3</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" colspan="2">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">c2</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+
+    await undo(page);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 1},
+      {x: 0, y: 2},
+      false,
+      false,
+    );
+
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+
+      await selectCellFromTableCoord(page, {x: 0, y: 0});
+
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              rowspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b3</span>
+              </p>
+            </td>
+          </tr>
+          <tr style="height: 38px">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              colspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">c2</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              colspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">c2</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+  });
+
+  test(`Can paste table into table while having table selection`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await pasteFromClipboard(page, {'text/html': TABLE_WITH_MERGED_CELLS});
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 1},
+      {x: 0, y: 2},
+      false,
+      false,
+    );
+
+    await pasteFromClipboard(page, {'text/html': TABLE_WITH_MERGED_CELLS});
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a3</span>
+              </p>
+            </td>
+          </tr>
+          <tr style="height: 38px">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              rowspan="2"
+              style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">a2</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell" style="width: 75px">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b1</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                style="text-align: start">
+                <span data-lexical-text="true">b2</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+  });
+
+  test('Can delete table when fully selected with merged cells', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    test.fixme(isCollab, 'Flaky on Collab');
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    // Insert a 3x3 table
+    await insertTable(page, 3, 3);
+
+    // Merge some cells to create a complex merged cell structure
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // Select the entire table
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 2, y: 2},
+      true,
+      false,
+    );
+
+    // Press backspace to delete
+    await page.keyboard.press('Backspace');
+
+    // Assert that the table is deleted and only empty paragraphs remain
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
 });
+
+const TABLE_WITH_MERGED_CELLS = `
+<table class="PlaygroundEditorTheme__table">
+  <colgroup>
+    <col style="width: 92px;">
+    <col style="width: 92px;">
+    <col style="width: 92px;">
+  </colgroup>
+  <tbody>
+    <tr dir="ltr">
+      <td class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">a1</span>
+        </p>
+      </td>
+      <td class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">a2</span>
+        </p>
+      </td>
+      <td class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">a3</span>
+        </p>
+      </td>
+    </tr>
+    <tr style="height: 38px;">
+      <td rowspan="2" class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">b1</span>
+        </p>
+      </td>
+      <td class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">b2</span>
+        </p>
+      </td>
+      <td class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">b3</span>
+        </p>
+      </td>
+    </tr>
+    <tr dir="ltr">
+      <td colspan="2" class="PlaygroundEditorTheme__tableCell" dir="ltr" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span style="white-space: pre-wrap;">c2</span>
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>`;

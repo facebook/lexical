@@ -7,18 +7,17 @@
  */
 
 import {EditorThemeClasses} from 'lexical';
-import invariant from 'shared/invariant';
 
 export function getThemeSelector(
   getTheme: () => EditorThemeClasses | null | undefined,
   name: keyof EditorThemeClasses,
 ): string {
   const className = getTheme()?.[name];
-  invariant(
-    typeof className === 'string',
-    'getThemeClass: required theme property %s not defined',
-    String(name),
-  );
+  if (typeof className !== 'string') {
+    throw new Error(
+      `getThemeClass: required theme property ${name} not defined`,
+    );
+  }
   return className
     .split(/\s+/g)
     .map((cls) => `.${cls}`)

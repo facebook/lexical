@@ -6,13 +6,25 @@
  *
  */
 
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  ListItemNode,
+  ListNode,
+  registerListStrictIndentTransform,
+} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
 import {useList} from './shared/useList';
 
-export function ListPlugin(): null {
+export interface ListPluginProps {
+  /**
+   * When `true`, enforces strict indentation rules for list items, ensuring consistent structure.
+   * When `false` (default), indentation is more flexible.
+   */
+  hasStrictIndent?: boolean;
+}
+
+export function ListPlugin({hasStrictIndent = false}: ListPluginProps): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -22,6 +34,14 @@ export function ListPlugin(): null {
       );
     }
   }, [editor]);
+
+  useEffect(() => {
+    if (!hasStrictIndent) {
+      return;
+    }
+
+    return registerListStrictIndentTransform(editor);
+  }, [editor, hasStrictIndent]);
 
   useList(editor);
 

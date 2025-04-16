@@ -85,7 +85,7 @@ function Editor() {
         id="lexical/react-rich-collab"
         providerFactory={providerFactory}
         // Optional initial editor state in case collaborative Y.Doc won't
-        // have any existing data on server. Then it'll user this value to populate editor.
+        // have any existing data on server. Then it'll use this value to populate editor.
         // It accepts same type of values as LexicalComposer editorState
         // prop (json string, state object, or a function)
         initialEditorState={$initialEditorState}

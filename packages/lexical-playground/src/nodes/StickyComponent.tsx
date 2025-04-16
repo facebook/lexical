@@ -21,8 +21,7 @@ import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {calculateZoomLevel} from '@lexical/utils';
 import {$getNodeByKey} from 'lexical';
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {useEffect, useLayoutEffect, useRef} from 'react';
 
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';

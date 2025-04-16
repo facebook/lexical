@@ -31,6 +31,7 @@ import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelection,
   $createTableSelectionFrom,
@@ -324,7 +325,7 @@ export class TableObserver {
       // set one then the reconciler will undo it.
       // TODO - it would make sense to have one so that native
       //        copy/paste worked. Right now we have to emulate with
-      //        keyboard events but it won't fire if trigged from the menu
+      //        keyboard events but it won't fire if triggered from the menu
       if (domSelection && domSelection.rangeCount > 0) {
         domSelection.removeAllRanges();
       }
@@ -469,7 +470,20 @@ export class TableObserver {
 
     const selectedNodes = selection.getNodes().filter($isTableCellNode);
 
-    if (selectedNodes.length === this.table.columns * this.table.rows) {
+    // Check if the entire table is selected by verifying first and last cells
+    const firstRow = tableNode.getFirstChild();
+    const lastRow = tableNode.getLastChild();
+
+    const isEntireTableSelected =
+      selectedNodes.length > 0 &&
+      firstRow !== null &&
+      lastRow !== null &&
+      $isTableRowNode(firstRow) &&
+      $isTableRowNode(lastRow) &&
+      selectedNodes[0] === firstRow.getFirstChild() &&
+      selectedNodes[selectedNodes.length - 1] === lastRow.getLastChild();
+
+    if (isEntireTableSelected) {
       tableNode.selectPrevious();
       const parent = tableNode.getParent();
       // Delete entire table

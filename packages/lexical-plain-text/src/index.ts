@@ -38,6 +38,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   PASTE_COMMAND,
+  PASTE_TAG,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
 } from 'lexical';
@@ -89,7 +90,7 @@ function onPasteForPlainText(
       }
     },
     {
-      tag: 'paste',
+      tag: PASTE_TAG,
     },
   );
 }

@@ -148,7 +148,12 @@ export function $removeNode(
   ) {
     $removeNode(parent, restoreSelection);
   }
-  if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
+  if (
+    restoreSelection &&
+    selection &&
+    $isRootNode(parent) &&
+    parent.isEmpty()
+  ) {
     parent.selectEnd();
   }
 }
@@ -343,7 +348,7 @@ export class LexicalNode {
   /**
    * Returns true if there is a path between this node and the RootNode, false otherwise.
    * This is a way of determining if the node is "attached" EditorState. Unattached nodes
-   * won't be reconciled and will ultimatelt be cleaned up by the Lexical GC.
+   * won't be reconciled and will ultimately be cleaned up by the Lexical GC.
    */
   isAttached(): boolean {
     let nodeKey: string | null = this.__key;
@@ -817,7 +822,7 @@ export class LexicalNode {
    *
    * This method must return exactly one HTMLElement. Nested elements are not supported.
    *
-   * Do not attempt to update the Lexical EditorState during this phase of the update lifecyle.
+   * Do not attempt to update the Lexical EditorState during this phase of the update lifecycle.
    *
    * @param _config - allows access to things like the EditorTheme (to apply classes) during reconciliation.
    * @param _editor - allows access to the editor for context during reconciliation.

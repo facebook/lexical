@@ -257,12 +257,15 @@ export {
   isDOMNode,
   isDOMTextNode,
   isDOMUnmanaged,
+  isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
   isLexicalEditor,
+  isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
   setNodeIndentFromDOM,
@@ -297,3 +300,15 @@ export type {
   TextModeType,
 } from './nodes/LexicalTextNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+
+// Update Tags
+export {
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
+  PASTE_TAG,
+  SKIP_COLLAB_TAG,
+  SKIP_DOM_SELECTION_TAG,
+  SKIP_SCROLL_INTO_VIEW_TAG,
+} from './LexicalUpdateTags';

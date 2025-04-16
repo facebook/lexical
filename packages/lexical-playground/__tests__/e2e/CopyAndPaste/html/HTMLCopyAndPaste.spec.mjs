@@ -39,7 +39,7 @@ test.describe('HTML CopyAndPaste', () => {
     await expect(paragraphs).toHaveCount(4);
 
     // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
-    // extra newlines, which makes this test less acurate
+    // extra newlines, which makes this test less accurate
     await expect(paragraphs.nth(0)).toHaveText('Hello', {useInnerText: true});
     await expect(paragraphs.nth(1)).toHaveText('World', {useInnerText: true});
     await expect(paragraphs.nth(2)).toHaveText('Hello   World   !', {

@@ -17,7 +17,6 @@ import {
 } from '@lexical/table';
 import {EditorThemeClasses, Klass, LexicalEditor, LexicalNode} from 'lexical';
 import {createContext, useContext, useEffect, useMemo, useState} from 'react';
-import invariant from 'shared/invariant';
 
 import Button from '../ui/Button';
 import {DialogActions} from '../ui/Dialog';
@@ -147,8 +146,7 @@ export function TablePlugin({
   const cellContext = useContext(CellContext);
   useEffect(() => {
     if (!editor.hasNodes([TableNode, TableRowNode, TableCellNode])) {
-      invariant(
-        false,
+      throw new Error(
         'TablePlugin: TableNode, TableRowNode, or TableCellNode is not registered on editor',
       );
     }

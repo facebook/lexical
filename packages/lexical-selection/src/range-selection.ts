@@ -21,6 +21,7 @@ import {
   $caretFromPoint,
   $createRangeSelection,
   $extendCaretToRange,
+  $getEditor,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
@@ -417,6 +418,31 @@ export function $wrapNodesImpl(
 }
 
 /**
+ * Tests if the selection's parent element has vertical writing mode.
+ * @param selection - The selection whose parent to test.
+ * @returns true if the selection's parent has vertical writing mode (writing-mode: vertical-rl), false otherwise.
+ */
+export function $isEditorVerticalOrientation(
+  selection: RangeSelection,
+): boolean {
+  const anchorNode = selection.anchor.getNode();
+  const parent = $isRootNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParentOrThrow();
+  const editor = $getEditor();
+  const domElement = editor.getElementByKey(parent.getKey());
+  if (domElement === null) {
+    return false;
+  }
+  const view = domElement.ownerDocument.defaultView;
+  if (view === null) {
+    return false;
+  }
+  const computedStyle = view.getComputedStyle(domElement);
+  return computedStyle.writingMode === 'vertical-rl';
+}
+
+/**
  * Determines if the default character selection should be overridden. Used with DecoratorNodes
  * @param selection - The selection whose default character selection may need to be overridden.
  * @param isBackward - Is the selection backwards (the focus comes before the anchor)?
@@ -426,9 +452,14 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
+  const isVertical = $isEditorVerticalOrientation(selection);
+
+  // In vertical writing mode, we adjust the direction for correct caret movement
+  const adjustedIsBackward = isVertical ? !isBackward : isBackward;
+
   const focusCaret = $caretFromPoint(
     selection.focus,
-    isBackward ? 'previous' : 'next',
+    adjustedIsBackward ? 'previous' : 'next',
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
@@ -488,10 +519,30 @@ export function $moveCharacter(
   isBackward: boolean,
 ): void {
   const isRTL = $isParentElementRTL(selection);
+  const isVertical = $isEditorVerticalOrientation(selection);
+
+  // In vertical-rl writing mode, arrow key directions need to be flipped
+  // to match the visual flow of text (top to bottom, right to left)
+  let adjustedIsBackward;
+
+  if (isVertical) {
+    // In vertical-rl mode, we need to completely invert the direction
+    // Left arrow (backward) should move down (forward)
+    // Right arrow (forward) should move up (backward)
+    adjustedIsBackward = !isBackward;
+  } else if (isRTL) {
+    // In horizontal RTL mode, use the standard RTL behavior
+    adjustedIsBackward = !isBackward;
+  } else {
+    // Standard LTR horizontal text
+    adjustedIsBackward = isBackward;
+  }
+
+  // Apply the direction adjustment to move the caret
   $moveCaretSelection(
     selection,
     isHoldingShift,
-    isBackward ? !isRTL : isRTL,
+    adjustedIsBackward,
     'character',
   );
 }

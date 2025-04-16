@@ -13,17 +13,18 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
   $computeTableMapSkipCellCheck,
-  $deleteTableColumn__EXPERIMENTAL,
-  $deleteTableRow__EXPERIMENTAL,
+  $deleteTableColumnAtSelection,
+  $deleteTableRowAtSelection,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
-  $insertTableColumn__EXPERIMENTAL,
-  $insertTableRow__EXPERIMENTAL,
+  $insertTableColumnAtSelection,
+  $insertTableRowAtSelection,
   $isTableCellNode,
   $isTableSelection,
+  $mergeCells,
   $unmergeCell,
   getTableElement,
   getTableObserverFromTableElement,
@@ -34,10 +35,8 @@ import {
 } from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $createParagraphNode,
   $getSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -49,7 +48,6 @@ import {
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-import invariant from 'shared/invariant';
 
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
@@ -77,17 +75,6 @@ function $canUnmerge(): boolean {
   }
   const [cell] = $getNodeTriplet(selection.anchor);
   return cell.__colSpan > 1 || cell.__rowSpan > 1;
-}
-
-function $cellContainsEmptyParagraph(cell: TableCellNode): boolean {
-  if (cell.getChildrenSize() !== 1) {
-    return false;
-  }
-  const firstChild = cell.getFirstChildOrThrow();
-  if (!$isParagraphNode(firstChild) || !firstChild.isEmpty()) {
-    return false;
-  }
-  return true;
 }
 
 function $selectLastDescendant(node: ElementNode): void {
@@ -243,10 +230,11 @@ function TableActionMenu({
           editor.getElementByKey(tableNode.getKey()),
         );
 
-        invariant(
-          tableElement !== null,
-          'TableActionMenu: Expected to find tableElement in DOM',
-        );
+        if (tableElement === null) {
+          throw new Error(
+            'TableActionMenu: Expected to find tableElement in DOM',
+          );
+        }
 
         const tableObserver = getTableObserverFromTableElement(tableElement);
         if (tableObserver !== null) {
@@ -263,105 +251,15 @@ function TableActionMenu({
   const mergeTableCellsAtSelection = () => {
     editor.update(() => {
       const selection = $getSelection();
-      if ($isTableSelection(selection)) {
-        // Get all selected cells and compute the total area
-        const nodes = selection.getNodes();
-        const tableCells = nodes.filter($isTableCellNode);
+      if (!$isTableSelection(selection)) {
+        return;
+      }
 
-        if (tableCells.length === 0) {
-          return;
-        }
+      const nodes = selection.getNodes();
+      const tableCells = nodes.filter($isTableCellNode);
+      const targetCell = $mergeCells(tableCells);
 
-        // Find the table node
-        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCells[0]);
-        const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
-
-        // Find the boundaries of the selection including merged cells
-        let minRow = Infinity;
-        let maxRow = -Infinity;
-        let minCol = Infinity;
-        let maxCol = -Infinity;
-
-        // First pass: find the actual boundaries considering merged cells
-        const processedCells = new Set();
-        for (const row of gridMap) {
-          for (const mapCell of row) {
-            if (!mapCell || !mapCell.cell) {
-              continue;
-            }
-
-            const cellKey = mapCell.cell.getKey();
-            if (processedCells.has(cellKey)) {
-              continue;
-            }
-
-            if (tableCells.some((cell) => cell.is(mapCell.cell))) {
-              processedCells.add(cellKey);
-              // Get the actual position of this cell in the grid
-              const cellStartRow = mapCell.startRow;
-              const cellStartCol = mapCell.startColumn;
-              const cellRowSpan = mapCell.cell.__rowSpan || 1;
-              const cellColSpan = mapCell.cell.__colSpan || 1;
-
-              // Update boundaries considering the cell's actual position and span
-              minRow = Math.min(minRow, cellStartRow);
-              maxRow = Math.max(maxRow, cellStartRow + cellRowSpan - 1);
-              minCol = Math.min(minCol, cellStartCol);
-              maxCol = Math.max(maxCol, cellStartCol + cellColSpan - 1);
-            }
-          }
-        }
-
-        // Validate boundaries
-        if (minRow === Infinity || minCol === Infinity) {
-          return;
-        }
-
-        // The total span of the merged cell
-        const totalRowSpan = maxRow - minRow + 1;
-        const totalColSpan = maxCol - minCol + 1;
-
-        // Use the top-left cell as the target cell
-        const targetCellMap = gridMap[minRow][minCol];
-        if (!targetCellMap?.cell) {
-          return;
-        }
-        const targetCell = targetCellMap.cell;
-
-        // Set the spans for the target cell
-        targetCell.setColSpan(totalColSpan);
-        targetCell.setRowSpan(totalRowSpan);
-
-        // Move content from other cells to the target cell
-        const seenCells = new Set([targetCell.getKey()]);
-
-        // Second pass: merge content and remove other cells
-        for (let row = minRow; row <= maxRow; row++) {
-          for (let col = minCol; col <= maxCol; col++) {
-            const mapCell = gridMap[row][col];
-            if (!mapCell?.cell) {
-              continue;
-            }
-
-            const currentCell = mapCell.cell;
-            const key = currentCell.getKey();
-
-            if (!seenCells.has(key)) {
-              seenCells.add(key);
-              const isEmpty = $cellContainsEmptyParagraph(currentCell);
-              if (!isEmpty) {
-                targetCell.append(...currentCell.getChildren());
-              }
-              currentCell.remove();
-            }
-          }
-        }
-
-        // Ensure target cell has content
-        if (targetCell.getChildrenSize() === 0) {
-          targetCell.append($createParagraphNode());
-        }
-
+      if (targetCell) {
         $selectLastDescendant(targetCell);
         onClose();
       }
@@ -378,7 +276,7 @@ function TableActionMenu({
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
         for (let i = 0; i < selectionCounts.rows; i++) {
-          $insertTableRow__EXPERIMENTAL(shouldInsertAfter);
+          $insertTableRowAtSelection(shouldInsertAfter);
         }
         onClose();
       });
@@ -390,7 +288,7 @@ function TableActionMenu({
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
         for (let i = 0; i < selectionCounts.columns; i++) {
-          $insertTableColumn__EXPERIMENTAL(shouldInsertAfter);
+          $insertTableColumnAtSelection(shouldInsertAfter);
         }
         onClose();
       });
@@ -400,7 +298,7 @@ function TableActionMenu({
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update(() => {
-      $deleteTableRow__EXPERIMENTAL();
+      $deleteTableRowAtSelection();
       onClose();
     });
   }, [editor, onClose]);
@@ -417,7 +315,7 @@ function TableActionMenu({
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
-      $deleteTableColumn__EXPERIMENTAL();
+      $deleteTableColumnAtSelection();
       onClose();
     });
   }, [editor, onClose]);
@@ -799,6 +697,35 @@ function TableCellActionMenuContainer({
 
   const [colorPickerModal, showColorPickerModal] = useModal();
 
+  const checkTableCellOverflow = useCallback(
+    (tableCellParentNodeDOM: HTMLElement): boolean => {
+      const scrollableContainer = tableCellParentNodeDOM.closest(
+        '.PlaygroundEditorTheme__tableScrollableWrapper',
+      );
+      if (scrollableContainer) {
+        const containerRect = (
+          scrollableContainer as HTMLElement
+        ).getBoundingClientRect();
+        const cellRect = tableCellParentNodeDOM.getBoundingClientRect();
+
+        // Calculate where the action button would be positioned (5px from right edge of cell)
+        // Also account for the button width and table cell padding (8px)
+        const actionButtonRight = cellRect.right - 5;
+        const actionButtonLeft = actionButtonRight - 28; // 20px width + 8px padding
+
+        // Only hide if the action button would overflow the container
+        if (
+          actionButtonRight > containerRect.right ||
+          actionButtonLeft < containerRect.left
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [],
+  );
+
   const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
@@ -845,6 +772,10 @@ function TableCellActionMenuContainer({
         return disable();
       }
 
+      if (checkTableCellOverflow(tableCellParentNodeDOM)) {
+        return disable();
+      }
+
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(
         tableCellNodeFromSelection,
       );
@@ -853,10 +784,11 @@ function TableCellActionMenuContainer({
         editor.getElementByKey(tableNode.getKey()),
       );
 
-      invariant(
-        tableElement !== null,
-        'TableActionMenu: Expected to find tableElement in DOM',
-      );
+      if (tableElement === null) {
+        throw new Error(
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
+      }
 
       tableObserver = getTableObserverFromTableElement(tableElement);
       setTableMenuCellNode(tableCellNodeFromSelection);
@@ -864,21 +796,29 @@ function TableCellActionMenuContainer({
       const anchorNode = $getTableCellNodeFromLexicalNode(
         selection.anchor.getNode(),
       );
-      invariant(
-        $isTableCellNode(anchorNode),
-        'TableSelection anchorNode must be a TableCellNode',
-      );
+      if (!$isTableCellNode(anchorNode)) {
+        throw new Error('TableSelection anchorNode must be a TableCellNode');
+      }
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorNode);
       const tableElement = getTableElement(
         tableNode,
         editor.getElementByKey(tableNode.getKey()),
       );
-      invariant(
-        tableElement !== null,
-        'TableActionMenu: Expected to find tableElement in DOM',
-      );
+      if (tableElement === null) {
+        throw new Error(
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
+      }
       tableObserver = getTableObserverFromTableElement(tableElement);
       tableCellParentNodeDOM = editor.getElementByKey(anchorNode.getKey());
+
+      if (tableCellParentNodeDOM === null) {
+        return disable();
+      }
+
+      if (checkTableCellOverflow(tableCellParentNodeDOM)) {
+        return disable();
+      }
     } else if (!activeElement) {
       return disable();
     }
@@ -901,7 +841,7 @@ function TableCellActionMenuContainer({
       const left = tableCellRect.right - anchorRect.left;
       menu.style.transform = `translate(${left}px, ${top}px)`;
     }
-  }, [editor, anchorElem]);
+  }, [editor, anchorElem, checkTableCellOverflow]);
 
   useEffect(() => {
     // We call the $moveMenu callback every time the selection changes,

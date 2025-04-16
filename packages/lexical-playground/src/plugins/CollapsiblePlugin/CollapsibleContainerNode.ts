@@ -6,6 +6,7 @@
  *
  */
 
+import {IS_CHROME} from '@lexical/utils';
 import {
   $getSiblingCaret,
   $isElementNode,
@@ -23,8 +24,6 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import {IS_CHROME} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
@@ -113,10 +112,9 @@ export class CollapsibleContainerNode extends ElementNode {
       // details is not well supported in Chrome #5582
       if (IS_CHROME) {
         const contentDom = dom.children[1];
-        invariant(
-          isHTMLElement(contentDom),
-          'Expected contentDom to be an HTMLElement',
-        );
+        if (!isHTMLElement(contentDom)) {
+          throw new Error('Expected contentDom to be an HTMLElement');
+        }
         if (currentOpen) {
           dom.setAttribute('open', '');
           contentDom.hidden = false;

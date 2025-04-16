@@ -28,6 +28,7 @@ import {
   $isTabNode,
   $isTextNode,
   $setSelection,
+  HISTORY_MERGE_TAG,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
@@ -109,7 +110,7 @@ describe('LexicalCodeNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.import { moveSelectionPointToSibling } from '../../../../lexical/src/LexicalSelection';
+        // to accommodate these changes.import { moveSelectionPointToSibling } from '../../../../lexical/src/LexicalSelection';
 
         expect(node.exportJSON()).toStrictEqual({
           children: [],
@@ -869,7 +870,7 @@ describe('LexicalCodeNode tests', () => {
             );
             root.append(codeBlock);
           },
-          {tag: 'history-merge'},
+          {tag: HISTORY_MERGE_TAG},
         );
         // before transform
         expect(testEnv.innerHTML).toBe(

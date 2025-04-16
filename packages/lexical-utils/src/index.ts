@@ -646,7 +646,7 @@ export type ObjectKlass<T> = new (...args: any[]) => T;
 /**
  * @param object = The instance of the type
  * @param objectClass = The class of the type
- * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframs)
+ * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframes)
  */
 export function objectKlassEquals<T>(
   object: unknown,

@@ -6,16 +6,15 @@
  *
  */
 
+import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 import * as Y from 'yjs';
-
-import {CollaborationPlugin} from '../../LexicalCollaborationPlugin';
-import {LexicalComposer} from '../../LexicalComposer';
-import {ContentEditable} from '../../LexicalContentEditable';
-import {LexicalErrorBoundary} from '../../LexicalErrorBoundary';
-import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
 describe(`LexicalCollaborationPlugin`, () => {
   let container: HTMLDivElement;

@@ -59,7 +59,7 @@ export function $generateNodesFromDOM(
       }
     }
   }
-  $unwrapArtificalNodes(allArtificialNodes);
+  $unwrapArtificialNodes(allArtificialNodes);
 
   return lexicalNodes;
 }
@@ -355,7 +355,7 @@ function wrapContinuousInlines(
   return out;
 }
 
-function $unwrapArtificalNodes(
+function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   for (const node of allArtificialNodes) {

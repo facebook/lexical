@@ -96,7 +96,6 @@ export function importTextTransformers(
         textMatchTransformers,
       );
     }
-    return;
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
       textNode,
@@ -130,9 +129,14 @@ export function importTextTransformers(
         textMatchTransformers,
       );
     }
-    return;
-  } else {
-    // Done!
-    return;
   }
+
+  // Handle escape characters
+  const textContent = textNode.getTextContent();
+  const escapedText = textContent
+    .replace(/\\([*_`~])/g, '$1')
+    .replace(/&#(\d+);/g, (_, codePoint) => {
+      return String.fromCodePoint(codePoint);
+    });
+  textNode.setTextContent(escapedText);
 }

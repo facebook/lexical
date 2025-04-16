@@ -306,6 +306,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     resolution,
     closeTypeahead,
     openTypeahead,
+    ignoreEntityBoundary,
   ]);
 
   useEffect(

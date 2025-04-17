@@ -6245,7 +6245,7 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 

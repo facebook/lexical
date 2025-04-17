@@ -926,11 +926,20 @@ export function isUnderline(event: KeyboardEventModifiers): boolean {
 }
 
 export function isParagraph(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {});
+  return isExactShortcutMatch(event, 'Enter', {
+    altKey: 'any',
+    ctrlKey: 'any',
+    metaKey: 'any',
+  });
 }
 
 export function isLineBreak(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {shiftKey: true});
+  return isExactShortcutMatch(event, 'Enter', {
+    altKey: 'any',
+    ctrlKey: 'any',
+    metaKey: 'any',
+    shiftKey: true,
+  });
 }
 
 // Inserts a new line after the selection
@@ -1043,10 +1052,6 @@ export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
     return metaKey;
   }
   return ctrlKey;
-}
-
-export function isReturn(event: KeyboardEventModifiers): boolean {
-  return event.key === 'Enter';
 }
 
 export function isBackspace(event: KeyboardEventModifiers): boolean {

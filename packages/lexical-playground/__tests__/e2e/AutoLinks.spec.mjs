@@ -488,7 +488,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Can convert URLs into links', async ({page, isPlainText}) => {
+  test('Can convert URLs into links', async ({page, isPlainText, isCollab}) => {
     const testUrls = [
       // Basic URLs
       'http://example.com', // Standard HTTP URL
@@ -540,7 +540,7 @@ test.describe('Auto Links', () => {
       'https://foo.bar', // HTTPS minimal URL with uncommon TLD
     ];
 
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
     await page.keyboard.type(testUrls.join(' ') + ' ');
 

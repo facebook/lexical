@@ -585,11 +585,13 @@ test.describe.parallel('Auto Links', () => {
         await focusEditor(page);
         await page.keyboard.type(`${testUrl} ltr`);
         const url = testUrl;
+        // prevent linter from rewriting this to use double quotes
+        const href = `href='mailto:${url}'`;
         await assertHTML(
           page,
           html`
             <p dir="ltr">
-              <a dir="ltr" href="mailto:${url}">
+              <a dir="ltr" ${href}>
                 <span data-lexical-text="true">${url}</span>
               </a>
               <span data-lexical-text="true">ltr</span>

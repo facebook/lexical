@@ -192,7 +192,7 @@ export type DOMExportOutputMap = Map<
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
-  ) => HTMLElement | Text | null | undefined;
+  ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
 };
 

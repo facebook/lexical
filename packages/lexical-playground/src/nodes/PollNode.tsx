@@ -8,7 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {makeStateWrapper} from '@lexical/utils';
+import {createUID, makeStateWrapper} from '@lexical/utils';
 import {
   createState,
   DecoratorNode,
@@ -30,13 +30,6 @@ export type Option = Readonly<{
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
-
-function createUID(): string {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z]+/g, '')
-    .substring(0, 5);
-}
 
 export function createPollOption(text = ''): Option {
   return {

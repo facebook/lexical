@@ -49,7 +49,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertTableDialog} from '../TablePlugin';
 
-class ComponentPickerOption extends MenuOption {
+export class ComponentPickerOption extends MenuOption {
   // What shows up in the editor
   title: string;
   // Icon for display
@@ -146,7 +146,7 @@ function getDynamicOptions(editor: LexicalEditor, queryString: string) {
 
 type ShowModal = ReturnType<typeof useModal>[1];
 
-function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
+export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
   return [
     new ComponentPickerOption('Paragraph', {
       icon: <i className="icon paragraph" />,

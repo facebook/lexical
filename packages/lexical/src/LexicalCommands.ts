@@ -125,7 +125,8 @@ export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_ARROW_DOWN_COMMAND');
 /**
  * Dispatched when the enter key is pressed, may also be called with a null
- * payload when the intent is to insert a newline.
+ * payload when the intent is to insert a newline. The shift modifier key
+ * must be down, any other modifier keys may also be down.
  */
 export const KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent | null> =
   createCommand('KEY_ENTER_COMMAND');

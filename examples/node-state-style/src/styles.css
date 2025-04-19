@@ -435,18 +435,12 @@ i.strikethrough {
   background-image: url(icons/type-strikethrough.svg);
 }
 
-i.left-align {
-  background-image: url(icons/text-left.svg);
+i.text-shadow::before {
+  content: '✨';
+  filter: contrast(0);
 }
 
-i.center-align {
-  background-image: url(icons/text-center.svg);
-}
-
-i.right-align {
-  background-image: url(icons/text-right.svg);
-}
-
-i.justify-align {
-  background-image: url(icons/justify.svg);
+i.text-shadow.active::before {
+  filter: contrast(1);
+  text-shadow: 1px solid black;
 }

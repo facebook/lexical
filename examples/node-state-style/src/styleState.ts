@@ -13,8 +13,11 @@ import {mergeRegister} from '@lexical/utils';
 import InlineStyleParser from 'inline-style-parser';
 import {
   $getNodeByKey,
+  $getPreviousSelection,
+  $getSelection,
   $getState,
   $isTextNode,
+  $setSelection,
   $setState,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
@@ -64,7 +67,7 @@ export type StyleTuple = Exclude<
   undefined
 >;
 
-const NO_STYLE: StyleObject = Object.freeze({});
+export const NO_STYLE: StyleObject = Object.freeze({});
 
 function parse(v: unknown): StyleObject {
   return typeof v === 'string' ? getStyleObjectFromRawCSS(v) : NO_STYLE;
@@ -199,17 +202,37 @@ export function styleObjectToArray(styleObject: StyleObject): StyleTuple[] {
   return entries;
 }
 
-export const PATCH_TEXT_STYLE_COMMAND = createCommand<StyleObject>(
-  'PATCH_TEXT_STYLE_COMMAND',
-);
+export const PATCH_TEXT_STYLE_COMMAND = createCommand<
+  StyleObject | ((prevStyles: StyleObject) => StyleObject)
+>('PATCH_TEXT_STYLE_COMMAND');
 
-export function $patchSelectedTextStyle(styleObject: StyleObject): false {
-  $forEachSelectedTextNode((node) =>
-    $setStyleObject(node, (prevStyles) =>
-      mergeStyleObjects(prevStyles, styleObject),
-    ),
-  );
-  return false;
+export function $selectionHasStyle(): boolean {
+  let hasStyle = false;
+  $forEachSelectedTextNode((node) => {
+    hasStyle = hasStyle || !isEqual(NO_STYLE, $getStyleObject(node));
+  });
+  return hasStyle;
+}
+
+export function $patchSelectedTextStyle(
+  styleObjectOrCallback:
+    | StyleObject
+    | ((prevStyles: StyleObject) => StyleObject),
+): boolean {
+  if (!$getSelection()) {
+    const prevSelection = $getPreviousSelection();
+    if (!prevSelection) {
+      return false;
+    }
+    $setSelection(prevSelection.clone());
+  }
+  const styleCallback =
+    typeof styleObjectOrCallback === 'function'
+      ? styleObjectOrCallback
+      : (prevStyles: StyleObject) =>
+          mergeStyleObjects(prevStyles, styleObjectOrCallback);
+  $forEachSelectedTextNode((node) => $setStyleObject(node, styleCallback));
+  return true;
 }
 
 const PREV_STYLE_STATE = Symbol.for('styleState');

@@ -20,7 +20,11 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-import {PATCH_TEXT_STYLE_COMMAND} from '../styleState';
+import {
+  $selectionHasStyle,
+  NO_STYLE,
+  PATCH_TEXT_STYLE_COMMAND,
+} from '../styleState';
 
 function Divider() {
   return <div className="divider" />;
@@ -35,9 +39,11 @@ export default function ToolbarPlugin() {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
+  const [isStyled, setIsStyled] = useState(false);
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
+    setIsStyled($selectionHasStyle());
     if ($isRangeSelection(selection)) {
       // Update text format
       setIsBold(selection.hasFormat('bold'));
@@ -137,13 +143,19 @@ export default function ToolbarPlugin() {
       <Divider />
       <button
         onClick={() => {
-          editor.dispatchCommand(PATCH_TEXT_STYLE_COMMAND, {
-            'text-shadow': '1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue',
-          });
+          editor.dispatchCommand(
+            PATCH_TEXT_STYLE_COMMAND,
+            isStyled
+              ? () => NO_STYLE
+              : {
+                  'text-shadow':
+                    '1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue',
+                },
+          );
         }}
         className="toolbar-item spaced"
-        aria-label="Toggle Text Shadow">
-        <i className="format left-align" />
+        aria-label="Toggle Text Style">
+        <i className={'text-shadow ' + (isStyled ? 'active' : '')} />
       </button>
     </div>
   );

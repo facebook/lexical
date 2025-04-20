@@ -14,7 +14,7 @@ Lexical provides several ways to clone nodes, each serving a different purpose:
 
 ### What is `clone`?
 
-The `clone` method is a static method required by all Lexical nodes that creates a copy of a node. However, it's important to understand that this is an **internal API** used by Lexical's state management system.
+The `clone` method is a static method required by all Lexical nodes that creates the next version of a node. However, it's important to understand that this is an **internal API** used by Lexical's state management system.
 
 ```typescript
 class MyCustomNode extends ElementNode {

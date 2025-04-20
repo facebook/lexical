@@ -139,6 +139,8 @@ Keys are used internally by Lexical to:
 
    // ✅ Correct implementation
    class MyCustomNode extends ElementNode {
+     __someData: string;
+
      constructor(someData: string, key?: NodeKey) {
        super(key);
        this.__someData = someData;
@@ -146,6 +148,11 @@ Keys are used internally by Lexical to:
      
      static clone(node: MyCustomNode): MyCustomNode {
        return new MyCustomNode(node.__someData, node.__key);
+     }
+
+     afterCloneFrom(prevNode: this): void {
+       super.afterCloneFrom(prevNode);
+       this.__someData = prevNode.__someData;
      }
    }
    ```

@@ -36,8 +36,10 @@ class MyCustomNode extends ElementNode {
    ```typescript
    // Example of a node method implementation
    class MyCustomNode extends ElementNode {
-     setSomeData(data: string): void {
-       this.getWritable().__data = data;
+     setData(data: string): this {
+       const self = this.getWritable();
+       self.__data = data;
+       return self;
      }
    }
 
@@ -82,8 +84,10 @@ const copy = $copyNode(existingNode);
 ```typescript
 // ✅ Correct: Implementation of a node method
 class MyCustomNode extends ElementNode {
-  setData(data: string): void {
-    this.getWritable().__data = data;
+  setData(data: string): this {
+    const self = this.getWritable();
+    self.__data = data;
+    return self;
   }
 }
 
@@ -133,8 +137,10 @@ function duplicateNodeWrong(node: MyCustomNode) {
 2. **State Management**
    ```typescript
    class MyCustomNode extends ElementNode {
-     setData(data: string): void {
-       this.getWritable().__data = data; // Properly tracked by editor
+     setData(data: string): this {
+       const self = this.getWritable();
+       self.__data = data; // Properly tracked by editor
+       return self;
      }
    }
    ```

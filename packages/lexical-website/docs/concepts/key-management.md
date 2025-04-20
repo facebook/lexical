@@ -157,22 +157,29 @@ Keys are used internally by Lexical to:
    }
    ```
 
-4. **Key Reuse in replace Function**
+4. **Node Replacement**
    ```typescript
-   // ❌ Never do this - reusing key for different node type
+   // ❌ Never implement replace() directly in nodes
    class MyCustomNode extends ElementNode {
      replace(replaceWith: LexicalNode) {
-       return new DifferentNodeType(data, this.__key); // Wrong: reusing key for different node type
+       return new DifferentNodeType(data, this.__key); // Wrong approach
      }
    }
 
-   // ✅ Correct: Let Lexical handle the key
-   class MyCustomNode extends ElementNode {
-     replace(replaceWith: LexicalNode) {
-       return new DifferentNodeType(data); // Correct: Lexical will assign a new key
-     }
-   }
+   // ✅ Correct: Use node replacement configuration
+   const editorConfig = {
+     nodes: [
+       CustomNodeType,
+       {
+         replace: OriginalNodeType,
+         with: (node: OriginalNodeType) => new CustomNodeType(),
+         withKlass: CustomNodeType
+       }
+     ]
+   };
    ```
+
+   For proper node replacement, see the [Node Replacement guide](node-replacement.md).
 
 ## Best Practices
 

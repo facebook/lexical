@@ -26,7 +26,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe('Auto Links', () => {
+test.describe.parallel('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Can convert url-like text into links', async ({page, isPlainText}) => {
@@ -488,8 +488,8 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Can convert URLs into links', async ({page, isPlainText}) => {
-    const testUrls = [
+  test.describe('Can convert URL into an autolink', () => {
+    [
       // Basic URLs
       'http://example.com', // Standard HTTP URL
       'https://example.com', // Standard HTTPS URL
@@ -538,41 +538,34 @@ test.describe('Auto Links', () => {
       // Edge Cases
       'http://foo.bar', // Minimal URL with uncommon TLD
       'https://foo.bar', // HTTPS minimal URL with uncommon TLD
-    ];
+    ].forEach((testUrl) =>
+      test(testUrl, async ({page, isPlainText}) => {
+        test.skip(isPlainText);
+        await focusEditor(page);
+        await page.keyboard.type(`${testUrl} ltr`);
 
-    test.skip(isPlainText);
-    await focusEditor(page);
-    await page.keyboard.type(testUrls.join(' ') + ' ');
+        const rawUrl = testUrl.replaceAll(/&/g, '&amp;');
+        const url = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
 
-    let expectedHTML = '';
-    for (let url of testUrls) {
-      url = url.replaceAll(/&/g, '&amp;');
-      const rawUrl = url;
-
-      if (!url.startsWith('http')) {
-        url = `https://${url}`;
-      }
-
-      expectedHTML += `
-          <a href="${url}" dir="ltr">
-            <span data-lexical-text="true">${rawUrl}</span>
-          </a>
-          <span data-lexical-text="true"></span>
-      `;
-    }
-
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">${expectedHTML}</p>
-      `,
-      undefined,
-      {ignoreClasses: true},
+        await assertHTML(
+          page,
+          html`
+            <p dir="ltr">
+              <a dir="ltr" href="${url}">
+                <span data-lexical-text="true">${rawUrl}</span>
+              </a>
+              <span data-lexical-text="true">ltr</span>
+            </p>
+          `,
+          undefined,
+          {ignoreClasses: true},
+        );
+      }),
     );
   });
 
-  test('Can convert URLs into email links', async ({page, isPlainText}) => {
-    const testUrls = [
+  test.describe('Can convert URL into an email autolink', () => {
+    [
       // Email usecases
       'email@domain.com',
       'firstname.lastname@domain.com',
@@ -586,29 +579,28 @@ test.describe('Auto Links', () => {
       'email@domain.name',
       'email@domain.co.uk',
       'firstname-lastname@domain.com',
-    ];
-
-    test.skip(isPlainText);
-    await focusEditor(page);
-    await page.keyboard.type(testUrls.join(' ') + ' ');
-
-    let expectedHTML = '';
-    for (const url of testUrls) {
-      expectedHTML += `
-          <a href='mailto:${url}' dir="ltr">
-            <span data-lexical-text="true">${url}</span>
-          </a>
-          <span data-lexical-text="true"></span>
-      `;
-    }
-
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">${expectedHTML}</p>
-      `,
-      undefined,
-      {ignoreClasses: true},
+    ].forEach((testUrl) =>
+      test(testUrl, async ({page, isPlainText}) => {
+        test.skip(isPlainText);
+        await focusEditor(page);
+        await page.keyboard.type(`${testUrl} ltr`);
+        const url = testUrl;
+        // prevent linter from rewriting this to use double quotes
+        const href = `href='mailto:${url}'`;
+        await assertHTML(
+          page,
+          html`
+            <p dir="ltr">
+              <a dir="ltr" ${href}>
+                <span data-lexical-text="true">${url}</span>
+              </a>
+              <span data-lexical-text="true">ltr</span>
+            </p>
+          `,
+          undefined,
+          {ignoreClasses: true},
+        );
+      }),
     );
   });
 

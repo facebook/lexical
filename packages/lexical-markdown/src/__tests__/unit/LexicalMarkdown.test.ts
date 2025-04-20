@@ -581,6 +581,10 @@ describe('Markdown', () => {
       md: '**`Bold Code`**',
     },
     {
+      html: '<p><span style="white-space: pre-wrap;">This is a backslash: \\</span></p>',
+      md: 'This is a backslash: \\\\',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">This is an asterisk: *</span></p>',
       md: 'This is an asterisk: \\*',
     },

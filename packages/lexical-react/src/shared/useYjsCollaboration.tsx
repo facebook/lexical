@@ -16,7 +16,6 @@ import {
   createUndoManager,
   initLocalState,
   setLocalStateFocus,
-  syncCursorPositions,
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
   TOGGLE_CONNECT_COMMAND,
@@ -54,10 +53,10 @@ export function useYjsCollaboration(
   shouldBootstrap: boolean,
   binding: Binding,
   setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
+  syncCursorPositionsFn: SyncCursorPositionsFn,
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
-  syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 

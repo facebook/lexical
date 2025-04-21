@@ -112,6 +112,7 @@ export function setLocalStateFocus(
   awareness.setLocalState(localState);
 }
 export {
+  type CursorFilter,
   getAnchorAndFocusCollabNodesForUserState,
   syncCursorPositions,
   type SyncCursorPositionsFn,

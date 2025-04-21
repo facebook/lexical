@@ -68,8 +68,10 @@ The EditorState maintains a `Map<NodeKey, LexicalNode>` that tracks all nodes. N
   __prev: null | NodeKey,
   __next: null | NodeKey,
   __parent: null | NodeKey,
+  // __first, __last and __size are only for ElementNode to track its children
   __first: null | NodeKey,
-  __last: null | NodeKey
+  __last: null | NodeKey,
+  __size: number
 }
 ```
 

@@ -50,7 +50,7 @@ class MyCustomNode extends ElementNode {
 
 ```typescript
 // ❌ Never do this
-function duplicateNode(node: MyCustomNode) {
+function $duplicateNode(node: MyCustomNode) {
   return MyCustomNode.clone(node); // Don't call clone directly
 }
 ```
@@ -107,7 +107,7 @@ function $updateNodeData(node: MyCustomNode, newData: string): MyCustomNode {
 }
 
 // ❌ Incorrect: Don't clone manually
-function updateNodeDataWrong(node: MyCustomNode, newData: string) {
+function $updateNodeDataWrong(node: MyCustomNode, newData: string): MyCustomNode {
   const clone = MyCustomNode.clone(node);
   clone.setData(newData);
   return clone;
@@ -118,12 +118,12 @@ function updateNodeDataWrong(node: MyCustomNode, newData: string) {
 
 ```typescript
 // ✅ Correct: Copying a node
-function duplicateNode(node: MyCustomNode) {
+function $duplicateNode(node: MyCustomNode): MyCustomNode {
   return $copyNode(node);
 }
 
 // ❌ Incorrect: Don't use clone
-function duplicateNodeWrong(node: MyCustomNode) {
+function $duplicateNodeWrong(node: MyCustomNode): MyCustomNode {
   return node.constructor.clone(node);
 }
 ```

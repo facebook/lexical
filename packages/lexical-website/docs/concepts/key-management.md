@@ -161,12 +161,17 @@ Keys are used internally by Lexical to:
 
 4. **Node Replacement**
    ```typescript
-   // ❌ Never implement replace() directly in nodes
-   class MyCustomNode extends ElementNode {
-     replace(replaceWith: LexicalNode) {
-       return new DifferentNodeType(data, this.__key); // Wrong approach
-     }
-   }
+   // ❌ Never re-use the key when changing the node class
+   const editorConfig = {
+     nodes: [
+       CustomNodeType,
+       {
+         replace: OriginalNodeType,
+         with: (node: OriginalNodeType) => new CustomNodeType(node.__key),
+         withKlass: CustomNodeType
+       }
+     ]
+   };
 
    // ✅ Correct: Use node replacement configuration
    const editorConfig = {

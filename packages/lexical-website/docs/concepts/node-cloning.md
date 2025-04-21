@@ -102,8 +102,8 @@ node.setData("new value");
 
 ```typescript
 // ✅ Correct: Modifying a node
-function updateNodeData(node: MyCustomNode, newData: string) {
-  node.getWritable().setData(newData);
+function $updateNodeData(node: MyCustomNode, newData: string): MyCustomNode {
+  return node.setData(newData);
 }
 
 // ❌ Incorrect: Don't clone manually
@@ -152,8 +152,7 @@ test('node modification', async () => {
   await editor.update(() => {
     const node = new MyCustomNode("test");
     
-    // ✅ Correct: Use getWritable for modifications
-    node.getWritable().setData("new data");
+    node.setData("new data");
     
     // ✅ Correct: Use $copyNode for duplication
     const copy = $copyNode(node);

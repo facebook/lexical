@@ -17,6 +17,7 @@ import {
   $createTableSelection,
   $getElementForTableNode,
   $insertTableColumnAtSelection,
+  $isScrollableTablesActive,
   $isTableCellNode,
   $isTableNode,
   TableNode,
@@ -41,6 +42,8 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
+import {useState} from 'react';
+import {act} from 'shared/react-test-utils';
 
 export class ClipboardDataMock {
   getData: jest.Mock<string, [string]>;
@@ -1816,5 +1819,100 @@ describe('LexicalTableNode tests', () => {
         <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
       );
     });
+  });
+
+  describe(`hasHorizontalScroll false -> true`, () => {
+    // function expectTableHtmlToBeEqual(actual: string, expected: string): void {
+    //   return expectHtmlToBeEqual(
+    //     actual,
+    //     hasHorizontalScroll ? wrapTableHtml(expected) : expected,
+    //   );
+    // }
+    let hasHorizontalScroll = false;
+    let setHasHorizontalScroll: (
+      _hasHorizontalScroll: boolean,
+    ) => void = () => {};
+    function TablePluginWrapper() {
+      [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
+      return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
+    }
+    initializeUnitTest(
+      (testEnv) => {
+        beforeEach(async () => {
+          const {editor} = testEnv;
+          await editor.update(() => {
+            const root = $getRoot();
+            root.clear().append($createTableNodeWithDimensions(2, 2, true));
+          });
+        });
+        test('table is re-rendered when scroll changes', async () => {
+          await Promise.resolve().then();
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+            setHasHorizontalScroll(true);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <div class="table-scrollable-wrapper">
+                <table class="test-table-class">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            `,
+          );
+        });
+      },
+      {theme: editorConfig.theme},
+      <TablePluginWrapper />,
+    );
   });
 });

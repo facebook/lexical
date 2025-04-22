@@ -337,11 +337,15 @@ export class TableNode extends ElementNode {
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const tableElement = this.getDOMSlot(dom).element;
+    const slot = this.getDOMSlot(dom);
+    const tableElement = slot.element;
+    if ((dom === tableElement) === $isScrollableTablesActive()) {
+      return true;
+    }
     if (isHTMLDivElement(dom)) {
       this.updateTableWrapper(prevNode, dom, tableElement, config);
     }
-    this.updateTableElement(prevNode, this.getDOMSlot(dom).element, config);
+    this.updateTableElement(prevNode, tableElement, config);
     return false;
   }
 

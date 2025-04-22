@@ -410,20 +410,26 @@ function getCollabNodeAndOffset(
   return [null, 0];
 }
 
-export type CursorFilter = (clientID: number, awareness: UserState) => boolean;
-
 export type SyncCursorPositionsFn = (
   binding: Binding,
   provider: Provider,
-  cursorFilter?: CursorFilter,
+  options?: SyncCursorPositionsOptions,
 ) => void;
+
+export type SyncCursorPositionsOptions = {
+  getAwarenessStates?: (
+    binding: Binding,
+    provider: Provider,
+  ) => Map<number, UserState>;
+};
 
 export function syncCursorPositions(
   binding: Binding,
   provider: Provider,
-  cursorFilter?: CursorFilter,
+  options?: SyncCursorPositionsOptions,
 ): void {
-  const awarenessStates = Array.from(provider.awareness.getStates());
+  const {getAwarenessStates = provider.awareness.getStates} = options ?? {};
+  const awarenessStates = Array.from(getAwarenessStates(binding, provider));
   const localClientID = binding.clientID;
   const cursors = binding.cursors;
   const editor = binding.editor;
@@ -433,9 +439,8 @@ export function syncCursorPositions(
   for (let i = 0; i < awarenessStates.length; i++) {
     const awarenessState = awarenessStates[i];
     const [clientID, awareness] = awarenessState;
-    const filtered = cursorFilter ? cursorFilter(clientID, awareness) : true;
 
-    if (clientID !== localClientID && filtered) {
+    if (clientID !== localClientID) {
       visitedClientIDs.add(clientID);
       const {name, color, focusing} = awareness;
       let selection = null;

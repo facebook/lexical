@@ -17,14 +17,12 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   Binding,
   createBinding,
-  type CursorFilter,
   ExcludedProperties,
   Provider,
-  syncCursorPositions,
   SyncCursorPositionsFn,
 } from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
@@ -49,7 +47,7 @@ type Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
-  cursorFilter?: CursorFilter;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
 };
 
 export function CollaborationPlugin({
@@ -62,7 +60,7 @@ export function CollaborationPlugin({
   initialEditorState,
   excludedProperties,
   awarenessData,
-  cursorFilter,
+  syncCursorPositionsFn,
 }: Props): JSX.Element {
   const isBindingInitialized = useRef(false);
   const isProviderInitialized = useRef(false);
@@ -150,7 +148,7 @@ export function CollaborationPlugin({
       setDoc={setDoc}
       shouldBootstrap={shouldBootstrap}
       yjsDocMap={yjsDocMap}
-      cursorFilter={cursorFilter}
+      syncCursorPositionsFn={syncCursorPositionsFn}
     />
   );
 }
@@ -169,7 +167,7 @@ function YjsCollaborationCursors({
   collabContext,
   binding,
   setDoc,
-  cursorFilter,
+  syncCursorPositionsFn,
 }: {
   editor: LexicalEditor;
   id: string;
@@ -184,15 +182,8 @@ function YjsCollaborationCursors({
   initialEditorState?: InitialEditorStateType | undefined;
   awarenessData?: object;
   collabContext: CollaborationContextType;
-  cursorFilter?: CursorFilter;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
 }) {
-  const syncCursorPositionsFn: SyncCursorPositionsFn = useCallback(
-    (_binding, _provider) => {
-      syncCursorPositions(_binding, _provider, cursorFilter);
-    },
-    [cursorFilter],
-  );
-
   const cursors = useYjsCollaboration(
     editor,
     id,
@@ -203,10 +194,10 @@ function YjsCollaborationCursors({
     shouldBootstrap,
     binding,
     setDoc,
-    syncCursorPositionsFn,
     cursorsContainerRef,
     initialEditorState,
     awarenessData,
+    syncCursorPositionsFn,
   );
 
   collabContext.clientID = binding.clientID;

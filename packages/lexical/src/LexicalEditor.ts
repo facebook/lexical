@@ -31,9 +31,11 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
+import {HISTORY_MERGE_TAG} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
+  $setSelection,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -592,6 +594,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
+    editorConfig,
   );
 
   if (initialEditorState !== undefined) {
@@ -665,6 +668,8 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /** @internal */
+  _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
   constructor(
@@ -675,7 +680,9 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
+    createEditorArgs?: CreateEditorArgs,
   ) {
+    this._createEditorArgs = createEditorArgs;
     this._parentEditor = parentEditor;
     // The root element associated with this editor
     this._rootElement = null;
@@ -1120,7 +1127,7 @@ export class LexicalEditor {
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
 
         $commitPendingUpdates(this);
 
@@ -1152,7 +1159,7 @@ export class LexicalEditor {
         // using a commit we preserve the readOnly invariant
         // for editor.getEditorState().
         this._window = null;
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
         $commitPendingUpdates(this);
       }
 
@@ -1302,7 +1309,9 @@ export class LexicalEditor {
 
         if (selection !== null) {
           // Marking the selection dirty will force the selection back to it
-          selection.dirty = true;
+          if (!selection.dirty) {
+            $setSelection(selection.clone());
+          }
         } else if (root.getChildrenSize() !== 0) {
           if (options.defaultSelection === 'rootStart') {
             root.selectStart();
@@ -1319,7 +1328,7 @@ export class LexicalEditor {
         });
       });
       // In the case where onUpdate doesn't fire (due to the focus update not
-      // occuring).
+      // occurring).
       if (this._pendingEditorState === null) {
         rootElement.removeAttribute('autocapitalize');
       }

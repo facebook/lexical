@@ -27,16 +27,6 @@ export default defineConfig(({mode}) => ({
         main: new URL('./index.html', import.meta.url).pathname,
         split: new URL('./split/index.html', import.meta.url).pathname,
       },
-      onwarn(warning, warn) {
-        if (
-          warning.code === 'EVAL' &&
-          warning.id &&
-          /[\\/]node_modules[\\/]@excalidraw\/excalidraw[\\/]/.test(warning.id)
-        ) {
-          return;
-        }
-        warn(warning);
-      },
     },
     ...(mode === 'production' && {
       minify: 'terser',
@@ -47,6 +37,12 @@ export default defineConfig(({mode}) => ({
         keep_classnames: true,
       },
     }),
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2022',
+      treeShaking: true,
+    },
   },
   plugins: [
     viteMonorepoResolutionPlugin(),

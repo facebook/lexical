@@ -43,7 +43,7 @@ export default function EquationComponent({
   const isEditable = useLexicalEditable();
   const [equationValue, setEquationValue] = useState(equation);
   const [showEquationEditor, setShowEquationEditor] = useState<boolean>(false);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
 
   const onHide = useCallback(
     (restoreSelection?: boolean) => {

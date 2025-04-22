@@ -132,7 +132,7 @@ describe('LexicalTextNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.
+        // to accommodate these changes.
 
         expect(node.exportJSON()).toStrictEqual({
           detail: 0,
@@ -865,6 +865,57 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+  });
+
+  describe('exportDOM()', () => {
+    test.each([
+      [
+        'lowercase format',
+        IS_LOWERCASE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.style.textTransform).toBe('lowercase');
+        },
+      ],
+      [
+        'uppercase format',
+        IS_UPPERCASE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.style.textTransform).toBe('uppercase');
+        },
+      ],
+      [
+        'capitalize format',
+        IS_CAPITALIZE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.style.textTransform).toBe('capitalize');
+        },
+      ],
+      [
+        'combined bold and lowercase format',
+        IS_BOLD | IS_LOWERCASE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.tagName.toLowerCase()).toBe('b');
+          // We need to check the child element for the style
+          const childElement = element.firstChild as HTMLElement;
+          expect(childElement.style.textTransform).toBe('lowercase');
+        },
+      ],
+    ])('%s', async (_type, format, contents, elementCheck) => {
+      await update(() => {
+        const textNode = $createTextNode(contents);
+        textNode.setFormat(format);
+        const {element} = textNode.exportDOM(editor);
+
+        expect(element).not.toBeNull();
+        if (element !== null) {
+          elementCheck(element as HTMLElement);
+        }
+      });
+    });
   });
 
   test('mergeWithSibling', async () => {

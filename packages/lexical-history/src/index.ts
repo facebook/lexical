@@ -18,6 +18,9 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
@@ -244,7 +247,7 @@ function createMergeActionGetter(
 
     // If applying changes from history stack there's no need
     // to run history logic again, as history entries already calculated
-    if (tags.has('historic')) {
+    if (tags.has(HISTORIC_TAG)) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
       return DISCARD_HISTORY_CANDIDATE;
@@ -261,9 +264,9 @@ function createMergeActionGetter(
     const mergeAction = (() => {
       const isSameEditor =
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
-      const shouldPushHistory = tags.has('history-push');
+      const shouldPushHistory = tags.has(HISTORY_PUSH_TAG);
       const shouldMergeHistory =
-        !shouldPushHistory && isSameEditor && tags.has('history-merge');
+        !shouldPushHistory && isSameEditor && tags.has(HISTORY_MERGE_TAG);
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
@@ -337,7 +340,7 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
 
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-        tag: 'historic',
+        tag: HISTORIC_TAG,
       });
     }
   }
@@ -365,7 +368,7 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
 
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-        tag: 'historic',
+        tag: HISTORIC_TAG,
       });
     }
   }

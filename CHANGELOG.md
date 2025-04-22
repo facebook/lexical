@@ -1,3 +1,52 @@
+## v0.30.0 (2025-04-07)
+
+- lexical Feature Add text-transform styles to exported HTML (#7438) Kiran Dash
+- Breaking Change Chore Improve spelling consistency across codebase (#7437) Kiran Dash
+- lexical-playground Bug Fix Immediate broken image display on load failure (#7431) Kiran Dash
+- lexical-list Feature Enforce strict list indentation (#7420) SeungHwan-Lee
+- lexical-playground Bug clear formatting should also clear any indentoutdent if applied (#7417) Harshkumar Metkel
+- lexical-table Refactor Rename and deprecate some table utils (#7415) Daniel Teo
+- lexical-table Feature Improve logic for pasting table into table (#7408) Daniel Teo
+- lexical-rich-text Bug Fix Prevent indentation from becoming negative (#7411) Daniel Teo
+- lexical Bug Fix Fix forward line deletion when using controlK (#7412) Daniel Teo
+- lexical-playground Bug Fix Floating toolbar position for end-aligned text (#7405) Kiran Dash
+- lexical Chore Change getTextNodeOffset invariant to warn in prod (error in DEV) (#7397) Bob Ippolito
+- lexical-react Feature Add option to disable first item auto-selection in menus (#7404) Kiran Dash
+- lexical-devtools-core Bug Fix Update debug view to show KEYESCAPECOMMAND immediately (#7403) Kiran Dash
+- Bug Fix Clone a node and use  setSelection instead of assigning dirty to true directly.  (#7401) Yuncheng Lu
+- RFClexical-markdown Replace whitespace with code point when the string has leading and trailing whitespaces (#7400) Yuncheng Lu
+- lexical-yjs Bug Fix Fix scroll position getting changed when someone else makes a change in collab (#7398) Aman Harwara
+- lexical-markdown Bug Fix Prevent Markdown shortcuts from applying to code-formatted text (#7395) Daniel Teo
+- lexical-rich-text Bug Fix Fix right and up arrow key navigation with decorator nodes (#7393) Kiran Dash
+- lexical-yjs Bug Fix dont sync ElementNode dir property (#7330) James Fitzsimmons
+- lexical-linklexical-playground Feature Add support for image links via NodeSelection (#7366) Kiran Dash
+- Breaking Changelexical-markdown Bug Fix Preserve paragraph separation after block elements (#7386) Kiran Dash
+- lexical-playground Bug Fix Use natural dimensions for inherited image size (#7388) Kiran Dash
+- lexical-playground Feature clear blockelement formatting along with textNode (#7384) Harshkumar Metkel
+- update codeowners (#7389) Sherry
+- Update dependencies vite,babelruntime,prismjs,babelhelpers (#7381) Yuncheng Lu
+- Breaking Changelexical Bug Fix Ensure updateEditorSync is always synchronous and use it when triggering listeners (#7378) Bob Ippolito
+- lexical-list Bug Fix empty list item type change (#7380) Maksim Horbachevsky
+- lexical-playground Chore Remove shared imports from playground (#7368) Bob Ippolito
+- tests Update next version (#7374) Yuncheng Lu
+- v0.29.0 (#7375) Yuncheng Lu
+- v0.29.0 Lexical GitHub Actions Bot
+
+## v0.29.0 (2025-03-24)
+
+- Breaking Changelexical-tablelexical-playground Bug Fix Set tableFrozenColumn and tableFrozenRow classes only on the scrollable table wrapper (#7372) Bob Ippolito
+- lexical Bug Fix Ignore input event from inside decorators (#7354) Bob Ippolito
+- Breaking Changelexical-react Refactor LexicalNestedComposer add skipEditableListener prop and deprecate initialNodes prop and implicit namespace setting (#7357) Bob Ippolito
+- lexical-playground Bug Fix Fix equation rendering in Safari (#7362) Kiran Dash
+- Update react.md, fix typo (#7365) Bohdan Ptyts
+- lexical-table Bug Fix Add fallback selection to InsertTableCommand (#7316) Patrick Moody
+- Breaking Changelexical-markdown Feature Support escaping markdown characters (#7353) Alessio Gravili
+- lexical-playground Bug Fix Table action menu visibility with cell overflow (#7334) Kiran Dash
+- Breaking Changelexical Bug Fix Only select RootNode on removal of last child if there was an existing selection (#7351) Bob Ippolito
+- lexical-playground Chore Improve accessibility of DraggableBlockPlugin add block button (#7352) Bob Ippolito
+- v0.28.0 (#7348) Bob Ippolito
+- v0.28.0 Lexical GitHub Actions Bot
+
 ## v0.28.0 (2025-03-18)
 
 - lexical-website Docs Fix broken links to React Rich Collab Example (#7347) Bob Ippolito

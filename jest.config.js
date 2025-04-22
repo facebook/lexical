@@ -25,6 +25,8 @@ const moduleNameMapper = {
     ),
   ),
   '^shared/invariant$': '<rootDir>/packages/shared/src/__mocks__/invariant.ts',
+  '^shared/warnOnlyOnce$':
+    '<rootDir>/packages/shared/src/__mocks__/warnOnlyOnce.ts',
 };
 
 module.exports = {

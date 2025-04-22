@@ -6,6 +6,7 @@
  *
  */
 
+import {useLexicalIsTextContentEmpty} from '@lexical/react/useLexicalIsTextContentEmpty';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -18,8 +19,6 @@ import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-
-import {useLexicalIsTextContentEmpty} from '../../useLexicalIsTextContentEmpty';
 
 describe('useLexicalIsTextContentEmpty', () => {
   let container: HTMLDivElement | null = null;

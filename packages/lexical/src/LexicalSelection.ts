@@ -45,8 +45,10 @@ import {
   $updateRangeSelectionFromCaretRange,
   CaretRange,
   ChildCaret,
+  COLLABORATION_TAG,
   NodeCaret,
   PointCaret,
+  SKIP_SCROLL_INTO_VIEW_TAG,
   TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -488,7 +490,7 @@ export class RangeSelection implements BaseSelection {
 
   /**
    * Used to check if the provided selections is equal to this one by value,
-   * inluding anchor, focus, format, and style properties.
+   * including anchor, focus, format, and style properties.
    * @param selection - the Selection to compare this one to.
    * @returns true if the Selections are equal, false otherwise.
    */
@@ -2955,7 +2957,7 @@ export function updateDOMSelection(
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
   if (
-    (tags.has('collaboration') && activeElement !== rootElement) ||
+    (tags.has(COLLABORATION_TAG) && activeElement !== rootElement) ||
     (activeElement !== null &&
       isSelectionCapturedInDecoratorInput(activeElement))
   ) {
@@ -3064,7 +3066,7 @@ export function updateDOMSelection(
     nextFocusOffset,
   );
   if (
-    !tags.has('skip-scroll-into-view') &&
+    !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
     rootElement === document.activeElement

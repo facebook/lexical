@@ -30,7 +30,9 @@ import {
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
+  HISTORY_MERGE_TAG,
   REDO_COMMAND,
+  SKIP_COLLAB_TAG,
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -133,7 +135,7 @@ export function useYjsCollaboration(
     provider.on('status', onStatus);
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
-    // This updates the local editor state when we recieve updates from other clients
+    // This updates the local editor state when we receive updates from other clients
     root.getSharedType().observeDeep(onYjsTreeChanges);
     const removeListener = editor.registerUpdateListener(
       ({
@@ -144,7 +146,7 @@ export function useYjsCollaboration(
         normalizedNodes,
         tags,
       }) => {
-        if (tags.has('skip-collab') === false) {
+        if (tags.has(SKIP_COLLAB_TAG) === false) {
           syncLexicalUpdateToYjs(
             binding,
             provider,
@@ -346,11 +348,15 @@ function initializeEditor(
             case 'string': {
               const parsedEditorState =
                 editor.parseEditorState(initialEditorState);
-              editor.setEditorState(parsedEditorState, {tag: 'history-merge'});
+              editor.setEditorState(parsedEditorState, {
+                tag: HISTORY_MERGE_TAG,
+              });
               break;
             }
             case 'object': {
-              editor.setEditorState(initialEditorState, {tag: 'history-merge'});
+              editor.setEditorState(initialEditorState, {
+                tag: HISTORY_MERGE_TAG,
+              });
               break;
             }
             case 'function': {
@@ -361,7 +367,7 @@ function initializeEditor(
                     initialEditorState(editor);
                   }
                 },
-                {tag: 'history-merge'},
+                {tag: HISTORY_MERGE_TAG},
               );
               break;
             }
@@ -382,7 +388,7 @@ function initializeEditor(
       }
     },
     {
-      tag: 'history-merge',
+      tag: HISTORY_MERGE_TAG,
     },
   );
 }
@@ -396,7 +402,7 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: Binding) {
       root.select();
     },
     {
-      tag: 'skip-collab',
+      tag: SKIP_COLLAB_TAG,
     },
   );
 

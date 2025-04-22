@@ -1,5 +1,3 @@
-
-
 # Selection
 
 ## Types of selection
@@ -127,12 +125,12 @@ selection is reconciled to the DOM selection during reconciliation,
 and the browser's focus follows its DOM selection.
 
 If you want to make updates or dispatch commands to the editor without
-changing the selection, can use the `'skip-dom-selection'` update tag
+changing the selection, can use the `SKIP_DOM_SELECTION_TAG` update tag
 (added in v0.22.0):
 
 ```js
 // Call this from an editor.update or command listener
-$addUpdateTag('skip-dom-selection');
+$addUpdateTag(SKIP_DOM_SELECTION_TAG);
 ```
 
 If you want to add this tag during processing of a `dispatchCommand`,
@@ -144,7 +142,7 @@ you can wrap it in an `editor.update`:
 //       confusing semantics (dispatchCommand will re-use the
 //       current update without nesting)
 editor.update(() => {
-  $addUpdateTag('skip-dom-selection');
+  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
   editor.dispatchCommand(/* … */);
 });
 ```

@@ -145,6 +145,18 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type CreateEditorArgs = {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
+  onError?: ErrorHandler;
+  parentEditor?: LexicalEditor;
+  editable?: boolean;
+  theme?: EditorThemeClasses;
+  html?: HTMLConfig;
+};
+
 declare export class LexicalEditor {
   _parentEditor: null | LexicalEditor;
   _rootElement: null | HTMLElement;
@@ -166,6 +178,7 @@ declare export class LexicalEditor {
   _pendingDecorators: null | {
     [NodeKey]: mixed,
   };
+  _createEditorArgs?: CreateEditorArgs;
   _config: EditorConfig;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;

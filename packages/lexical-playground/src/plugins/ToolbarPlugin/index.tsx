@@ -29,6 +29,7 @@ import {
   $findMatchingParent,
   $getNearestNodeOfType,
   $isEditorIsNestedEditor,
+  IS_APPLE,
   mergeRegister,
 } from '@lexical/utils';
 import {
@@ -44,6 +45,7 @@ import {
   ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   LexicalEditor,
   NodeKey,
@@ -54,7 +56,6 @@ import {
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
-import {IS_APPLE} from 'shared/environment';
 
 import {
   blockTypeToBlockName,
@@ -680,7 +681,7 @@ export default function ToolbarPlugin({
             $patchStyleText(selection, styles);
           }
         },
-        skipHistoryStack ? {tag: 'historic'} : {},
+        skipHistoryStack ? {tag: HISTORIC_TAG} : {},
       );
     },
     [activeEditor],

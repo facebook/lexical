@@ -45,7 +45,7 @@
   "43": "$mergeGridNodesStrategy: Expected selection to be inside of a Grid.",
   "44": "$getListItemValue: list node is not parent of list item node",
   "45": "Expected node %s to have a first child.",
-  "46": "append: attemtping to append self",
+  "46": "append: attempting to append self",
   "47": "decorate: base method not extended",
   "48": "updateDOM: prevInnerDOM is null or undefined",
   "49": "updateDOM: innerDOM is null or undefined",
@@ -196,7 +196,7 @@
   "194": "Children of root nodes must be elements or decorators",
   "195": "Unable to find an active editor state. State helpers or node methods can only be used synchronously during the callback of editor.update(), editor.read(), or editorState.read().%s",
   "196": "Unable to find an active editor. This method can only be used synchronously during the callback of editor.update() or editor.read().%s",
-  "197": "$cloneWithProperties: %s.clone(node) (with type '%s') overrided afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
+  "197": "$cloneWithProperties: %s.clone(node) (with type '%s') overrode afterCloneFrom but did not call super.afterCloneFrom(prevNode)",
   "198": "Attempted to remove event handlers from a node that does not belong to this build of Lexical",
   "199": "Indent value must be non-negative.",
   "200": "$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the \"nodes\" array in the editor config.",
@@ -282,5 +282,6 @@
   "280": "$patchStyle must only be called with a TextNode, ElementNode, or collapsed RangeSelection",
   "281": "$splitTextPointCaret: splitText must return at least one TextNode",
   "282": "rootNode.splice: Only element or decorator nodes can be inserted to the root node",
-  "283": "$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split"
+  "283": "$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split",
+  "284": "$getTextNodeOffset: invalid offset %s for size %s at key %s"
 }

@@ -249,7 +249,7 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
-  test(`Can indent/outdent mutliple list nodes in a list with multiple levels of indentation`, async ({
+  test(`Can indent/outdent multiple list nodes in a list with multiple levels of indentation`, async ({
     page,
   }) => {
     await focusEditor(page);
@@ -1009,7 +1009,7 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
-  test(`Can create mutliple bullet lists and then toggle off the list.`, async ({
+  test(`Can create multiple bullet lists and then toggle off the list.`, async ({
     page,
   }) => {
     await focusEditor(page);

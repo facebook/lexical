@@ -24,6 +24,8 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -254,6 +256,9 @@ function $runTextFormatTransformers(
       }
 
       if ($isTextNode(sibling)) {
+        if (sibling.hasFormat('code')) {
+          continue;
+        }
         const siblingTextContent = sibling.getTextContent();
         openNode = sibling;
         openTagStartIndex = getOpenTagStartIndex(
@@ -469,7 +474,7 @@ export function registerMarkdownShortcuts(
   return editor.registerUpdateListener(
     ({tags, dirtyLeaves, editorState, prevEditorState}) => {
       // Ignore updates from collaboration and undo/redo (as changes already calculated)
-      if (tags.has('collaboration') || tags.has('historic')) {
+      if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
         return;
       }
 

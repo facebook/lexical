@@ -259,6 +259,62 @@ test.describe.parallel('Selection', () => {
     await assertHTML(page, lines(''));
   });
 
+  test('can delete text by line forwards with control+K', async ({
+    page,
+    isPlainText,
+  }) => {
+    const deleteLineForwardWithControlK = async () => {
+      await page.keyboard.down('Control');
+      await page.keyboard.press('k');
+      await page.keyboard.up('Control');
+    };
+
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Three');
+
+    const p = (text) =>
+      text
+        ? html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">${text}</span>
+            </p>
+          `
+        : html`
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          `;
+    const lines = (...args) => html`
+      ${args.map(p).join('')}
+    `;
+    await assertHTML(page, lines('One', 'Two', '', 'Three'));
+    // Move to the end of the line of 'Two'
+    await moveUp(page, 2);
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'Two', 'Three'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'TwoThree'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await moveToEditorBeginning(page);
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('', 'Two'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('Two'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines(''));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines(''));
+  });
+
   test('can delete line which ends with element backwards with CMD+delete', async ({
     page,
     isPlainText,
@@ -849,7 +905,7 @@ test.describe.parallel('Selection', () => {
     },
   );
 
-  test('Can adjust tripple click selection', async ({
+  test('Can adjust triple click selection', async ({
     page,
     isPlainText,
     isCollab,
@@ -884,7 +940,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can adjust tripple click selection with', async ({
+  test('Can adjust triple click selection with', async ({
     page,
     isPlainText,
     isCollab,

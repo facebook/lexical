@@ -148,3 +148,11 @@ editor.registerCommand(KEY_DOWN_COMMAND, (event: KeyboardEvent) => {
   return false;
 }, COMMAND_PRIORITY_LOW)
 ```
+
+:::tip
+
+If you do return `true` from any listener with an event payload, you likely
+also should call `event.preventDefault()` unless your command relies on the
+browser's native processing of that event.
+
+:::

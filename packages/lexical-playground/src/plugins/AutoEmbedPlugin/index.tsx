@@ -29,7 +29,7 @@ import {INSERT_TWEET_COMMAND} from '../TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from '../YouTubePlugin';
 
 interface PlaygroundEmbedConfig extends EmbedConfig {
-  // Human readable name of the embeded content e.g. Tweet or Google Map.
+  // Human readable name of the embedded content e.g. Tweet or Google Map.
   contentName: string;
 
   // Icon for display.

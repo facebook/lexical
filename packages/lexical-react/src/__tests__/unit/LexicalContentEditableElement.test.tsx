@@ -6,11 +6,10 @@
  *
  */
 
+import {ContentEditableElement} from '@lexical/react/LexicalContentEditable';
 import {createEditor, LexicalEditor} from 'lexical';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-
-import {ContentEditableElement} from '../../shared/LexicalContentEditableElement';
 
 describe('ContentEditableElement tests', () => {
   let container: HTMLDivElement | null = null;

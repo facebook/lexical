@@ -122,6 +122,7 @@ export function TreeView({
         return generateContent(editor, commandsLog, exportDOM, customPrintNode);
       }}
       ref={treeElementRef}
+      commandsLog={commandsLog}
     />
   );
 }

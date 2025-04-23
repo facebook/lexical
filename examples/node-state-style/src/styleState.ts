@@ -12,10 +12,12 @@ import {$forEachSelectedTextNode} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import InlineStyleParser from 'inline-style-parser';
 import {
+  $caretRangeFromSelection,
   $getNodeByKey,
   $getPreviousSelection,
   $getSelection,
   $getState,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
   $setState,
@@ -206,12 +208,26 @@ export const PATCH_TEXT_STYLE_COMMAND = createCommand<
   StyleObject | ((prevStyles: StyleObject) => StyleObject)
 >('PATCH_TEXT_STYLE_COMMAND');
 
+function $nodeHasStyle(node: LexicalNode): boolean {
+  return !isEqual(NO_STYLE, $getStyleObject(node));
+}
+
 export function $selectionHasStyle(): boolean {
-  let hasStyle = false;
-  $forEachSelectedTextNode((node) => {
-    hasStyle = hasStyle || !isEqual(NO_STYLE, $getStyleObject(node));
-  });
-  return hasStyle;
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    const caretRange = $caretRangeFromSelection(selection);
+    for (const slice of caretRange.getTextSlices()) {
+      if (slice && $nodeHasStyle(slice.caret.origin)) {
+        return true;
+      }
+    }
+    for (const caret of caretRange.iterNodeCarets('root')) {
+      if ($isTextNode(caret.origin) && $nodeHasStyle(caret.origin)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export function $patchSelectedTextStyle(

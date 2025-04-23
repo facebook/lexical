@@ -379,16 +379,18 @@ function LexicalTreeView() {
     },
   });
   const splitter = useSplitter({
-    defaultSize: [
-      {id: 'tree', size: 50},
-      {id: 'node', size: 50},
-    ],
+    defaultSize: [50, 50],
+    panels: [{id: 'tree'}, {id: 'node'}],
   });
 
   return (
     <nav
       aria-label="Lexical Nodes"
-      style={{borderTop: '1px solid black', fontFamily: 'monospace'}}>
+      style={{
+        borderTop: '1px solid black',
+        fontFamily: 'monospace',
+        margin: '0 10px',
+      }}>
       <NodeTreeViewContext.Provider value={treeView}>
         <Splitter.RootProvider value={splitter}>
           <Splitter.Panel id="tree">

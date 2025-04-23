@@ -412,27 +412,27 @@ pre::-webkit-scrollbar-thumb {
 }
 
 i.undo {
-  background-image: url(icons/arrow-counterclockwise.svg);
+  background-image: url(./icons/arrow-counterclockwise.svg);
 }
 
 i.redo {
-  background-image: url(icons/arrow-clockwise.svg);
+  background-image: url(./icons/arrow-clockwise.svg);
 }
 
 i.bold {
-  background-image: url(icons/type-bold.svg);
+  background-image: url(./icons/type-bold.svg);
 }
 
 i.italic {
-  background-image: url(icons/type-italic.svg);
+  background-image: url(./icons/type-italic.svg);
 }
 
 i.underline {
-  background-image: url(icons/type-underline.svg);
+  background-image: url(./icons/type-underline.svg);
 }
 
 i.strikethrough {
-  background-image: url(icons/type-strikethrough.svg);
+  background-image: url(./icons/type-strikethrough.svg);
 }
 
 i.text-shadow::before {

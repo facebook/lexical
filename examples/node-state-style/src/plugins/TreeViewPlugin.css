@@ -119,6 +119,7 @@
   /* justify-content: center; */
   border: 1px solid lightgray;
   overflow: auto;
+  padding: 10px;
 }
 
 [data-scope='splitter'][data-part='panel']:has(

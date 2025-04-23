@@ -423,12 +423,19 @@ export type SyncCursorPositionsOptions = {
   ) => Map<number, UserState>;
 };
 
+function getAwarenessStatesDefault(
+  _binding: Binding,
+  provider: Provider,
+): Map<number, UserState> {
+  return provider.awareness.getStates();
+}
+
 export function syncCursorPositions(
   binding: Binding,
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ): void {
-  const {getAwarenessStates = provider.awareness.getStates} = options ?? {};
+  const {getAwarenessStates = getAwarenessStatesDefault} = options ?? {};
   const awarenessStates = Array.from(getAwarenessStates(binding, provider));
   const localClientID = binding.clientID;
   const cursors = binding.cursors;

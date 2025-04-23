@@ -1822,12 +1822,6 @@ describe('LexicalTableNode tests', () => {
   });
 
   describe(`hasHorizontalScroll false -> true`, () => {
-    // function expectTableHtmlToBeEqual(actual: string, expected: string): void {
-    //   return expectHtmlToBeEqual(
-    //     actual,
-    //     hasHorizontalScroll ? wrapTableHtml(expected) : expected,
-    //   );
-    // }
     let hasHorizontalScroll = false;
     let setHasHorizontalScroll: (
       _hasHorizontalScroll: boolean,
@@ -1907,6 +1901,39 @@ describe('LexicalTableNode tests', () => {
                   </tr>
                 </table>
               </div>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+            setHasHorizontalScroll(false);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
             `,
           );
         });

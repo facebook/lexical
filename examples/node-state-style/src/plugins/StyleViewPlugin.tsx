@@ -349,7 +349,8 @@ function LexicalTextSelectionPane() {
 }
 
 function LexicalTreeView() {
-  const collection = useEditorCollection();
+  const collectionState = useEditorCollectionState();
+  const {collection, focusNodeKey} = collectionState;
   const [editor] = useLexicalComposerContext();
   const editorRef = useRef(editor);
   useEffect(() => {
@@ -357,6 +358,7 @@ function LexicalTreeView() {
   }, [editor]);
   const treeView = useTreeView({
     collection,
+    defaultExpandedValue: ['root'],
     onSelectionChange: (details) => {
       editorRef.current.update(() => {
         if (!details.focusedValue) {
@@ -378,6 +380,14 @@ function LexicalTreeView() {
       });
     },
   });
+  useEffect(() => {
+    if (
+      focusNodeKey !== null &&
+      !treeView.expandedValue.includes(focusNodeKey)
+    ) {
+      treeView.expand([focusNodeKey]);
+    }
+  }, [treeView, focusNodeKey]);
   const splitter = useSplitter({
     defaultSize: [50, 50],
     panels: [{id: 'tree'}, {id: 'node'}],
@@ -412,37 +422,51 @@ interface EditorCollectionState {
   editor: LexicalEditor;
   editorState: EditorState;
   collection: TreeCollection<NodeKey>;
+  focusNodeKey: null | NodeKey;
+}
+
+function nextFocusNodeKey(state: EditorCollectionState): null | NodeKey {
+  return state.editorState.read(() => {
+    const selection = $getSelection();
+    return selection && $isRangeSelection(selection)
+      ? selection.focus.getNode().getKey()
+      : null;
+  });
 }
 
 function initEditorCollection(
-  state: Omit<EditorCollectionState, 'collection'> &
-    Partial<Pick<EditorCollectionState, 'collection'>>,
+  state: Omit<EditorCollectionState, 'collection' | 'focusNodeKey'> &
+    Partial<Pick<EditorCollectionState, 'collection' | 'focusNodeKey'>>,
 ): EditorCollectionState {
-  state.collection = createTreeCollection<NodeKey>({
-    isNodeDisabled: () => false,
-    nodeToChildren: (nodeKey) =>
-      state.editorState.read(() => {
-        const node = $getNodeByKey(nodeKey);
-        return $isElementNode(node) ? node.getChildrenKeys() : [];
-      }),
-    nodeToString: (nodeKey) => nodeKey,
-    nodeToValue: (nodeKey) => nodeKey,
-    rootNode: 'root',
+  return Object.assign(state, {
+    collection: createTreeCollection<NodeKey>({
+      isNodeDisabled: () => false,
+      nodeToChildren: (nodeKey) =>
+        state.editorState.read(() => {
+          const node = $getNodeByKey(nodeKey);
+          return $isElementNode(node) ? node.getChildrenKeys() : [];
+        }),
+      nodeToString: (nodeKey) => nodeKey,
+      nodeToValue: (nodeKey) => nodeKey,
+      rootNode: 'root',
+    }),
+    focusNodeKey: null,
   });
-  return state as EditorCollectionState;
 }
 
 function editorCollectionReducer(
   state: EditorCollectionState,
   action: Partial<EditorCollectionState>,
 ) {
+  let nextState = {...state, ...action};
   if (action.editor && action.editor !== state.editor) {
-    return initEditorCollection({...state, ...action});
+    nextState = initEditorCollection(nextState);
   }
-  return Object.assign(state, action);
+  nextState.focusNodeKey = nextFocusNodeKey(nextState);
+  return nextState;
 }
 
-function useEditorCollection() {
+function useEditorCollectionState() {
   const [editor] = useLexicalComposerContext();
   const editorState = useEditorState();
   const [state, dispatch] = useReducer(
@@ -451,7 +475,7 @@ function useEditorCollection() {
     initEditorCollection,
   );
   useEffect(() => {
-    dispatch({editorState});
-  }, [editorState]);
-  return state.collection;
+    dispatch({editor, editorState});
+  }, [editor, editorState]);
+  return state;
 }

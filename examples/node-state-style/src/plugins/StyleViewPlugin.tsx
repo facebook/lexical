@@ -393,7 +393,6 @@ function LexicalTreeView() {
         <Splitter.RootProvider value={splitter}>
           <Splitter.Panel id="tree">
             <TreeView.RootProvider value={treeView}>
-              <TreeView.Label>Lexical Nodes</TreeView.Label>
               <TreeView.Tree>
                 <LexicalNodeTreeViewItem node="root" indexPath={[]} />
               </TreeView.Tree>

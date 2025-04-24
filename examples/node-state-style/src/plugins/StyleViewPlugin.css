@@ -1,6 +1,5 @@
 /* tree-view */
 [data-scope='tree-view'][data-part='tree'] {
-  margin-top: 20px;
   width: 240px;
 }
 
@@ -14,7 +13,6 @@
   align-items: center;
   gap: 8px;
   border-radius: 2px;
-  min-height: 32px;
 
   & svg {
     width: 16px;

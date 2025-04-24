@@ -6,6 +6,7 @@
  *
  */
 
+import {Tabs} from '@ark-ui/react/tabs';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {
   InitialConfigType,
@@ -28,8 +29,10 @@ import {
 import {useEffect} from 'react';
 
 import ExampleTheme from './ExampleTheme';
-import ToolbarPlugin from './plugins/ToolbarPlugin';
-import TreeViewPlugin from './plugins/TreeViewPlugin';
+import {HTMLViewPlugin} from './plugins/HTMLViewPlugin';
+import {JSONViewPlugin} from './plugins/JSONViewPlugin';
+import {StyleViewPlugin} from './plugins/StyleViewPlugin';
+import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 import {
   $exportNodeStyle,
   constructStyleImportMap,
@@ -85,7 +88,28 @@ export default function App() {
           <StyleStatePlugin />
         </div>
       </div>
-      <TreeViewPlugin />
+      <Tabs.Root
+        lazyMount={true}
+        unmountOnExit={true}
+        defaultValue="style"
+        style={{margin: '0 10px'}}>
+        <Tabs.List
+          style={{display: 'flex', justifyContent: 'center', margin: '10px 0'}}>
+          <Tabs.Trigger value="style">Style Tree</Tabs.Trigger>
+          <Tabs.Trigger value="html">HTML</Tabs.Trigger>
+          <Tabs.Trigger value="json">JSON</Tabs.Trigger>
+          <Tabs.Indicator />
+        </Tabs.List>
+        <Tabs.Content value="style">
+          <StyleViewPlugin />
+        </Tabs.Content>
+        <Tabs.Content value="html">
+          <HTMLViewPlugin />
+        </Tabs.Content>
+        <Tabs.Content value="json">
+          <JSONViewPlugin />
+        </Tabs.Content>
+      </Tabs.Root>
     </LexicalComposer>
   );
 }

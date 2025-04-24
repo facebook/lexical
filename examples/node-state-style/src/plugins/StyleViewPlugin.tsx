@@ -6,7 +6,7 @@
  *
  */
 
-import './TreeViewPlugin.css';
+import './StyleViewPlugin.css';
 
 import {Splitter, useSplitter} from '@ark-ui/react/splitter';
 import {
@@ -85,7 +85,7 @@ function useNodeTreeViewContext() {
   return ctx;
 }
 
-export default function TreeViewPlugin(): JSX.Element {
+export function StyleViewPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [editorState, setEditorState] = useState(() => editor.getEditorState());
   useEffect(
@@ -387,9 +387,7 @@ function LexicalTreeView() {
     <nav
       aria-label="Lexical Nodes"
       style={{
-        borderTop: '1px solid black',
         fontFamily: 'monospace',
-        margin: '0 10px',
       }}>
       <NodeTreeViewContext.Provider value={treeView}>
         <Splitter.RootProvider value={splitter}>

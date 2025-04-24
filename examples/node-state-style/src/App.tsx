@@ -29,8 +29,7 @@ import {
 import {useEffect} from 'react';
 
 import ExampleTheme from './ExampleTheme';
-import {HTMLViewPlugin} from './plugins/HTMLViewPlugin';
-import {JSONViewPlugin} from './plugins/JSONViewPlugin';
+import {ShikiViewPlugin} from './plugins/ShikiViewPlugin';
 import {StyleViewPlugin} from './plugins/StyleViewPlugin';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 import {
@@ -104,10 +103,10 @@ export default function App() {
           <StyleViewPlugin />
         </Tabs.Content>
         <Tabs.Content value="html">
-          <HTMLViewPlugin />
+          <ShikiViewPlugin lang="html" />
         </Tabs.Content>
         <Tabs.Content value="json">
-          <JSONViewPlugin />
+          <ShikiViewPlugin lang="json" />
         </Tabs.Content>
       </Tabs.Root>
     </LexicalComposer>

@@ -16,12 +16,15 @@
     "@lexical/react": "0.30.0",
     "@lexical/selection": "0.30.0",
     "@lexical/utils": "0.30.0",
+    "@shikijs/langs": "^3.3.0",
+    "@shikijs/themes": "^3.3.0",
     "inline-style-parser": "^0.2.4",
     "lexical": "0.30.0",
     "lucide-react": "^0.503.0",
     "prettier": "^3.5.3",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "shiki": "^3.3.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.2",

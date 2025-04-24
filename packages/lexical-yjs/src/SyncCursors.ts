@@ -413,13 +413,30 @@ function getCollabNodeAndOffset(
 export type SyncCursorPositionsFn = (
   binding: Binding,
   provider: Provider,
+  options?: SyncCursorPositionsOptions,
 ) => void;
+
+export type SyncCursorPositionsOptions = {
+  getAwarenessStates?: (
+    binding: Binding,
+    provider: Provider,
+  ) => Map<number, UserState>;
+};
+
+function getAwarenessStatesDefault(
+  _binding: Binding,
+  provider: Provider,
+): Map<number, UserState> {
+  return provider.awareness.getStates();
+}
 
 export function syncCursorPositions(
   binding: Binding,
   provider: Provider,
+  options?: SyncCursorPositionsOptions,
 ): void {
-  const awarenessStates = Array.from(provider.awareness.getStates());
+  const {getAwarenessStates = getAwarenessStatesDefault} = options ?? {};
+  const awarenessStates = Array.from(getAwarenessStates(binding, provider));
   const localClientID = binding.clientID;
   const cursors = binding.cursors;
   const editor = binding.editor;

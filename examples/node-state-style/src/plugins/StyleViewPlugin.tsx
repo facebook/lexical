@@ -20,7 +20,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $addUpdateTag,
   $getCaretRange,
-  $getChildCaretOrSelf,
+  $getChildCaret,
   $getNodeByKey,
   $getSelection,
   $getSiblingCaret,
@@ -38,7 +38,6 @@ import {
   NodeKey,
 } from 'lexical';
 import {
-  CheckSquareIcon,
   ChevronRightIcon,
   CodeXmlIcon,
   CornerDownLeftIcon,
@@ -102,15 +101,42 @@ export function StyleViewPlugin(): JSX.Element {
   );
 }
 
-function describeNode(node: LexicalNode): [string, React.ReactNode] {
+function NodeLabel({node}: {node: LexicalNode}) {
+  const [editor] = useLexicalComposerContext();
   const key = node.getKey();
-  const label = `(${key}) ${node.getType()}`;
-  let reactLabel: React.ReactNode = label;
+  const type = node.getType();
+  const reactLabel = (
+    <>
+      <button
+        title={`Select ${type} node`}
+        style={{cursor: 'pointer'}}
+        onClick={(event) => {
+          event.preventDefault();
+          editor.update(() => {
+            const caretRange = $isElementNode(node)
+              ? $getCaretRange(
+                  $getChildCaret(node, 'previous').getFlipped(),
+                  $getChildCaret(node, 'next'),
+                )
+              : $getCaretRange(
+                  $normalizeCaret(
+                    $getSiblingCaret(node, 'previous').getFlipped(),
+                  ),
+                  $normalizeCaret($getSiblingCaret(node, 'next')),
+                );
+            $setSelectionFromCaretRange(caretRange);
+          });
+        }}>
+        ({key})
+      </button>{' '}
+      {type}
+    </>
+  );
   if ($isTextNode(node)) {
     const text = node.__text;
-    reactLabel = (
+    return (
       <>
-        {label} "
+        {reactLabel} "
         <span
           title={text}
           style={{
@@ -124,7 +150,11 @@ function describeNode(node: LexicalNode): [string, React.ReactNode] {
       </>
     );
   }
-  return [label, reactLabel];
+  return reactLabel;
+}
+
+function describeNode(node: LexicalNode): [string, React.ReactNode] {
+  return [`(${node.getKey()}) ${node.getType()}`, <NodeLabel node={node} />];
 }
 
 function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {
@@ -186,9 +216,6 @@ function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {
     } else {
       content = (
         <TreeView.Item>
-          <TreeView.ItemIndicator>
-            <CheckSquareIcon />
-          </TreeView.ItemIndicator>
           <TreeView.ItemText>
             {icon} {label}
           </TreeView.ItemText>
@@ -359,26 +386,6 @@ function LexicalTreeView() {
   const treeView = useTreeView({
     collection,
     defaultExpandedValue: ['root'],
-    onSelectionChange: (details) => {
-      editorRef.current.update(() => {
-        if (!details.focusedValue) {
-          return;
-        }
-        const selection = $getSelection();
-        const focusNode = $getNodeByKey(details.focusedValue);
-        if (
-          focusNode &&
-          (!selection ||
-            ($isRangeSelection(selection) &&
-              selection.focus.key !== focusNode.getKey()))
-        ) {
-          const caret = $normalizeCaret(
-            $getChildCaretOrSelf($getSiblingCaret(focusNode, 'next')),
-          );
-          $setSelectionFromCaretRange($getCaretRange(caret, caret));
-        }
-      });
-    },
   });
   useEffect(() => {
     if (

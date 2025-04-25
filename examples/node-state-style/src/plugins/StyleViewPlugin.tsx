@@ -258,64 +258,58 @@ interface InitialSelectedNodeState extends SelectedNodeStateAction {
 function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
   const [editor] = useLexicalComposerContext();
   const [registeredNodes] = useState(
-    () => new Map<keyof StyleObject, [HTMLDivElement, AbortController]>(),
+    () => new Map<keyof StyleObject, [HTMLSpanElement, AbortController]>(),
   );
   const styles = getStyleObjectDirect(node);
+  const rows = styleObjectToArray(styles).map(([k, v]) => (
+    <div key={k} className="style-view-entry">
+      <span className="style-view-key">{k}: </span>
+      <span
+        className="style-view-value"
+        contentEditable="plaintext-only"
+        ref={(el) => {
+          const ref = registeredNodes.get(k);
+          if (el === null) {
+            if (ref) {
+              ref[1].abort();
+            }
+            registeredNodes.delete(k);
+            return;
+          }
+          if (document.activeElement !== el) {
+            el.textContent = v || '';
+          }
+          if (!ref) {
+            const abortController = new AbortController();
+            el.addEventListener(
+              'input',
+              () => {
+                editor.update(() => {
+                  $addUpdateTag('skip-dom-selection');
+                  $setStyleProperty(node, k, el.textContent || undefined);
+                });
+              },
+              {signal: abortController.signal},
+            );
+            registeredNodes.set(k, [el, abortController]);
+          }
+        }}
+      />
+    </div>
+  ));
   return (
     <div>
       <span>{describeNode(node)[1]}</span>
-      <table>
-        <thead>
-          <tr>
-            <th style={{textAlign: 'left'}}>style</th>
-            <th style={{textAlign: 'left'}}>value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {styleObjectToArray(styles).map(([k, v]) => (
-            <tr key={k}>
-              <td style={{textAlign: 'left'}}>{k}</td>
-              <td style={{textAlign: 'left'}}>
-                <div
-                  style={{padding: '4px'}}
-                  contentEditable="plaintext-only"
-                  ref={(el) => {
-                    const ref = registeredNodes.get(k);
-                    if (el === null) {
-                      if (ref) {
-                        ref[1].abort();
-                      }
-                      registeredNodes.delete(k);
-                      return;
-                    }
-                    if (document.activeElement !== el) {
-                      el.textContent = v || '';
-                    }
-                    if (!ref) {
-                      const abortController = new AbortController();
-                      el.addEventListener(
-                        'input',
-                        () => {
-                          editor.update(() => {
-                            $addUpdateTag('skip-dom-selection');
-                            $setStyleProperty(
-                              node,
-                              k,
-                              el.textContent || undefined,
-                            );
-                          });
-                        },
-                        {signal: abortController.signal},
-                      );
-                      registeredNodes.set(k, [el, abortController]);
-                    }
-                  }}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div>
+        <div>
+          <span className="style-view-style-heading">style</span> {'{'}
+        </div>
+        {rows}
+        <div className="style-view-actions">
+          <button>+</button>
+        </div>
+        <div>{'}'}</div>
+      </div>
     </div>
   );
 }

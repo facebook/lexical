@@ -129,3 +129,25 @@
 [data-scope='splitter'][data-part='resize-trigger'][data-orientation='vertical'] {
   min-height: 12px;
 }
+
+.style-view-entry {
+  padding-left: 4ch;
+  text-indent: -2ch;
+}
+
+.style-view-key {
+  color: #0288d1;
+}
+
+.style-view-style-heading {
+  color: #616161;
+}
+
+.style-view-value:focus-visible {
+  outline: 1px auto rgba(20, 20, 20, 0.2);
+  outline-offset: 4px;
+}
+
+.style-view-actions {
+  padding-left: 2ch;
+}

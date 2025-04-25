@@ -19,6 +19,7 @@ import {
   createBinding,
   ExcludedProperties,
   Provider,
+  SyncCursorPositionsFn,
 } from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -46,6 +47,7 @@ type Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
 };
 
 export function CollaborationPlugin({
@@ -58,6 +60,7 @@ export function CollaborationPlugin({
   initialEditorState,
   excludedProperties,
   awarenessData,
+  syncCursorPositionsFn,
 }: Props): JSX.Element {
   const isBindingInitialized = useRef(false);
   const isProviderInitialized = useRef(false);
@@ -145,6 +148,7 @@ export function CollaborationPlugin({
       setDoc={setDoc}
       shouldBootstrap={shouldBootstrap}
       yjsDocMap={yjsDocMap}
+      syncCursorPositionsFn={syncCursorPositionsFn}
     />
   );
 }
@@ -163,6 +167,7 @@ function YjsCollaborationCursors({
   collabContext,
   binding,
   setDoc,
+  syncCursorPositionsFn,
 }: {
   editor: LexicalEditor;
   id: string;
@@ -177,6 +182,7 @@ function YjsCollaborationCursors({
   initialEditorState?: InitialEditorStateType | undefined;
   awarenessData?: object;
   collabContext: CollaborationContextType;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
 }) {
   const cursors = useYjsCollaboration(
     editor,
@@ -191,6 +197,7 @@ function YjsCollaborationCursors({
     cursorsContainerRef,
     initialEditorState,
     awarenessData,
+    syncCursorPositionsFn,
   );
 
   collabContext.clientID = binding.clientID;

@@ -235,19 +235,28 @@ export function $patchSelectedTextStyle(
     | StyleObject
     | ((prevStyles: StyleObject) => StyleObject),
 ): boolean {
-  if (!$getSelection()) {
+  let selection = $getSelection();
+  if (!selection) {
     const prevSelection = $getPreviousSelection();
     if (!prevSelection) {
       return false;
     }
-    $setSelection(prevSelection.clone());
+    selection = prevSelection.clone();
+    $setSelection(selection);
   }
   const styleCallback =
     typeof styleObjectOrCallback === 'function'
       ? styleObjectOrCallback
       : (prevStyles: StyleObject) =>
           mergeStyleObjects(prevStyles, styleObjectOrCallback);
-  $forEachSelectedTextNode((node) => $setStyleObject(node, styleCallback));
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const node = selection.focus.getNode();
+    if ($isTextNode(node)) {
+      $setStyleObject(node, styleCallback);
+    }
+  } else {
+    $forEachSelectedTextNode((node) => $setStyleObject(node, styleCallback));
+  }
   return true;
 }
 

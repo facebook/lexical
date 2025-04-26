@@ -65,7 +65,7 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $getAncestor,
+  $findMatchingParent,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -1332,7 +1332,7 @@ export class RangeSelection implements BaseSelection {
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
     const firstNode = firstPoint.getNode();
-    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+    const firstBlock = $findMatchingParent(firstNode, INTERNAL_$isBlock); // #5311
 
     const last = nodes[nodes.length - 1]!;
 
@@ -1399,7 +1399,10 @@ export class RangeSelection implements BaseSelection {
       );
       insertRangeAfter(firstBlock, firstToInsert);
     }
-    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock);
+    const lastInsertedBlock = $findMatchingParent(
+      nodeToSelect,
+      INTERNAL_$isBlock,
+    ); // #5311
 
     if (
       insertedParagraph &&
@@ -1437,7 +1440,7 @@ export class RangeSelection implements BaseSelection {
       return paragraph;
     }
     const index = $removeTextAndSplitBlock(this);
-    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock);
+    const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock); // #5311
     invariant(
       $isElementNode(block),
       'Expected ancestor to be a block ElementNode',

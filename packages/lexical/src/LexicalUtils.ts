@@ -1698,22 +1698,45 @@ export function $splitNode(
   return [leftTree, rightTree];
 }
 
+/**
+ * Walk up the parent chain (including the starting node) until the first
+ * ancestor that satisfies `predicate` is found.
+ *
+ * The overloads let TypeScript narrow the return type *iff* the predicate
+ * itself is a type-guard – making this a drop-in, typed replacement for
+ * the now-deprecated `$getAncestor`.
+ */
+
+/* ── type-guard overload ──────────────────────────────────────────── */
+export function $findMatchingParent<NodeType extends LexicalNode>(
+  startingNode: LexicalNode,
+  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
+): NodeType | null;
+
+/* ── simple boolean predicate overload ────────────────────────────── */
 export function $findMatchingParent(
   startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
+  predicate: (ancestor: LexicalNode) => boolean,
+): LexicalNode | null;
+
+/* ── unified implementation ───────────────────────────────────────── */
+export function $findMatchingParent(
+  startingNode: LexicalNode,
+  predicate: (ancestor: LexicalNode) => boolean,
 ): LexicalNode | null {
-  let curr: ElementNode | LexicalNode | null = startingNode;
+  let node: LexicalNode | null = startingNode;
 
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
+  while (node !== null && !predicate(node)) {
+    node = node.getParent();
   }
 
-  return null;
+  // When the predicate is a type-guard TS will infer the narrower return type.
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  return predicate(node as LexicalNode) ? node : null;
 }
+
+/** @deprecated – use {@link $findMatchingParent} instead. Will be removed in v14. */
+export const $getAncestor = $findMatchingParent;
 
 /**
  * @param x - The element being tested
@@ -1809,17 +1832,6 @@ export function INTERNAL_$isBlock(
     firstChild.isInline();
 
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
-}
-
-export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-): NodeType | null {
-  let parent = node;
-  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
-    parent = parent.getParentOrThrow();
-  }
-  return predicate(parent) ? parent : null;
 }
 
 /**

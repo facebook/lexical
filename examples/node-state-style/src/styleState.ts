@@ -138,6 +138,19 @@ export function $setStyleObject<T extends LexicalNode>(
   return $setState(node, styleState, valueOrUpdater);
 }
 
+export function $removeStyleProperty<
+  T extends LexicalNode,
+  Prop extends keyof StyleObject,
+>(node: T, prop: Prop): T {
+  return $setStyleObject(node, (prevStyle) => {
+    if (prop in prevStyle) {
+      const {[prop]: _ignore, ...nextStyle} = prevStyle;
+      return nextStyle;
+    }
+    return prevStyle;
+  });
+}
+
 export function $setStyleProperty<
   T extends LexicalNode,
   Prop extends keyof StyleObject,

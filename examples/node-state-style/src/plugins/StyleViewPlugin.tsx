@@ -39,6 +39,7 @@ import {
 } from 'lexical';
 import {
   ChevronRightIcon,
+  CircleXIcon,
   CodeXmlIcon,
   CornerDownLeftIcon,
   FolderIcon,
@@ -58,6 +59,7 @@ import React, {
 } from 'react';
 
 import {
+  $removeStyleProperty,
   $setStyleProperty,
   getStyleObjectDirect,
   StyleObject,
@@ -108,8 +110,8 @@ function NodeLabel({node}: {node: LexicalNode}) {
   const reactLabel = (
     <>
       <button
+        className="style-view-node-button"
         title={`Select ${type} node`}
-        style={{cursor: 'pointer'}}
         onClick={(event) => {
           event.preventDefault();
           editor.update(() => {
@@ -136,17 +138,10 @@ function NodeLabel({node}: {node: LexicalNode}) {
     const text = node.__text;
     return (
       <>
-        {reactLabel} "
-        <span
-          title={text}
-          style={{
-            maxWidth: '75ch',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
+        {reactLabel}{' '}
+        <span className="style-view-node-text-contents" title={text}>
           {text}
         </span>
-        "
       </>
     );
   }
@@ -263,6 +258,17 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
   const styles = getStyleObjectDirect(node);
   const rows = styleObjectToArray(styles).map(([k, v]) => (
     <div key={k} className="style-view-entry">
+      <button
+        className="style-view-node-button style-view-node-button-delete"
+        title={`Remove ${k} style`}
+        onClick={(e) => {
+          e.preventDefault();
+          editor.update(() => {
+            $removeStyleProperty(node, k);
+          });
+        }}>
+        <CircleXIcon />
+      </button>
       <span className="style-view-key">{k}: </span>
       <span
         className="style-view-value"
@@ -395,11 +401,7 @@ function LexicalTreeView() {
   });
 
   return (
-    <nav
-      aria-label="Lexical Nodes"
-      style={{
-        fontFamily: 'monospace',
-      }}>
+    <nav className="style-view-text-pane" aria-label="Lexical Nodes">
       <NodeTreeViewContext.Provider value={treeView}>
         <Splitter.RootProvider value={splitter}>
           <Splitter.Panel id="tree">

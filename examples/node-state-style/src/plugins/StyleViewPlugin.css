@@ -130,7 +130,40 @@
   min-height: 12px;
 }
 
+.style-view-node-button-delete {
+  padding: 0;
+  display: inline-flex;
+  position: absolute;
+  top: 0.125em;
+  left: 0;
+  border: none;
+}
+.style-view-node-button-delete svg {
+  height: 1em;
+  width: 1em;
+}
+
+.style-view-node-button {
+  cursor: pointer;
+}
+
+.style-view-node-text-contents::before,
+.style-view-node-text-contents::after {
+  content: '"';
+}
+
+.style-view-node-text-contents {
+  max-width: 75ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.style-view-text-pane {
+  font-family: monospace;
+}
+
 .style-view-entry {
+  position: relative;
   padding-left: 4ch;
   text-indent: -2ch;
 }

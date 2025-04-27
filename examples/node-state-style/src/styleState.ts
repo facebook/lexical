@@ -97,7 +97,12 @@ function isEqual(a: StyleObject, b: StyleObject): boolean {
     return true;
   }
   for (const k in a) {
-    if (!isEqualValue(a[k as keyof StyleObject], b[k as keyof StyleObject])) {
+    if (
+      !(
+        k in b &&
+        isEqualValue(a[k as keyof StyleObject], b[k as keyof StyleObject])
+      )
+    ) {
       return false;
     }
   }
@@ -214,6 +219,7 @@ export function styleObjectToArray(styleObject: StyleObject): StyleTuple[] {
     const k = k_ as keyof StyleObject;
     entries.push([k, styleObject[k] ?? null] as StyleTuple);
   }
+  entries.sort(([a], [b]) => a.localeCompare(b));
   return entries;
 }
 

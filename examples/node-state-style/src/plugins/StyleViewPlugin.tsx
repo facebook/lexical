@@ -8,6 +8,12 @@
 
 import './StyleViewPlugin.css';
 
+import {
+  Combobox,
+  createListCollection,
+  useCombobox,
+} from '@ark-ui/react/combobox';
+import {Portal} from '@ark-ui/react/portal';
 import {Splitter, useSplitter} from '@ark-ui/react/splitter';
 import {
   createTreeCollection,
@@ -51,6 +57,7 @@ import React, {
   Fragment,
   type JSX,
   use,
+  useCallback,
   useEffect,
   useMemo,
   useReducer,
@@ -65,6 +72,8 @@ import {
   StyleObject,
   styleObjectToArray,
 } from '../styleState';
+
+const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
 
 const EditorStateContext = createContext<undefined | EditorState>(undefined);
 function useEditorState() {
@@ -256,6 +265,23 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
     () => new Map<keyof StyleObject, [HTMLSpanElement, AbortController]>(),
   );
   const styles = getStyleObjectDirect(node);
+  const focusPropertyRef = useRef('');
+  const handleAddProperty = useCallback(
+    (prop: keyof StyleObject) => {
+      const reg = registeredNodes.get(prop);
+      if (reg) {
+        reg[0].focus();
+      } else {
+        focusPropertyRef.current = prop;
+        editor.update(() => {
+          $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+          $setStyleProperty(node, prop, '');
+        });
+      }
+    },
+    [editor, node, registeredNodes],
+  );
+
   const rows = styleObjectToArray(styles).map(([k, v]) => (
     <div key={k} className="style-view-entry">
       <button
@@ -287,11 +313,21 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
           }
           if (!ref) {
             const abortController = new AbortController();
+            if (focusPropertyRef.current === k) {
+              el.focus();
+              focusPropertyRef.current = '';
+            }
+            el.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                el.blur();
+              }
+            });
             el.addEventListener(
               'input',
               () => {
                 editor.update(() => {
-                  $addUpdateTag('skip-dom-selection');
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
                   $setStyleProperty(node, k, el.textContent || undefined);
                 });
               },
@@ -312,7 +348,7 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
         </div>
         {rows}
         <div className="style-view-actions">
-          <button>+</button>
+          <CSSPropertyComboBox onAddProperty={handleAddProperty} />
         </div>
         <div>{'}'}</div>
       </div>
@@ -359,6 +395,102 @@ function textSelectionPaneReducer(
     return {...action, cached, panelNode, panelNodeKey, selectionNodeKey};
   });
 }
+
+function getSuggestedStyleKeys(): readonly (keyof StyleObject)[] {
+  const keys = new Set<keyof StyleObject>();
+  if (typeof document !== 'undefined') {
+    const {style} = document.body;
+    for (const k in style) {
+      if (typeof style[k] === 'string') {
+        const kebab = k
+          .replace(/[A-Z]/g, (s) => '-' + s.toLowerCase())
+          .replace(/^(webkit|moz|ms|o)-/, '-$1-')
+          .replace(/^css-/, '');
+        keys.add(kebab as keyof StyleObject);
+      }
+    }
+  }
+  return [...keys].sort();
+}
+
+function isNotVendorProperty(item: string): boolean {
+  return !item.startsWith('-');
+}
+
+function useSuggestedStylesCombobox(props: CSSPropertyComboBoxProps) {
+  const initialItems = useMemo(getSuggestedStyleKeys, []);
+  const [items, setItems] = useState(() =>
+    initialItems.filter(isNotVendorProperty).join('\n'),
+  );
+  const collection = useMemo(
+    () => createListCollection({items: items.split(/\n/g)}),
+    [items],
+  );
+  const handleInputValueChange = (
+    details: Combobox.InputValueChangeDetails,
+  ) => {
+    const search = details.inputValue.toLowerCase();
+    setItems(
+      initialItems
+        .filter(
+          search
+            ? (item) => item.toLowerCase().startsWith(search)
+            : isNotVendorProperty,
+        )
+        .join('\n'),
+    );
+  };
+  const handleOpenChange = (details: Combobox.OpenChangeDetails) => {
+    const value = combobox.inputValue;
+    if (details.open || !value) {
+      return;
+    }
+    combobox.setInputValue('');
+    props.onAddProperty(value as keyof StyleObject);
+  };
+
+  const combobox = useCombobox({
+    allowCustomValue: true,
+    collection: collection,
+    inputBehavior: 'autocomplete',
+    onInputValueChange: handleInputValueChange,
+    onOpenChange: handleOpenChange,
+    placeholder: 'Add CSS Property',
+  });
+  return combobox;
+}
+
+interface CSSPropertyComboBoxProps {
+  onAddProperty: (property: keyof StyleObject) => void;
+}
+
+const CSSPropertyComboBox = (props: CSSPropertyComboBoxProps) => {
+  const combobox = useSuggestedStylesCombobox(props);
+
+  return (
+    <>
+      <Combobox.RootProvider value={combobox} lazyMount={true}>
+        <Combobox.Control>
+          <Combobox.Input />
+        </Combobox.Control>
+        <Portal>
+          <Combobox.Positioner>
+            <Combobox.Content>
+              <Combobox.ItemGroup>
+                {combobox.collection.items.map((item) => (
+                  <Combobox.Item key={item} item={item}>
+                    <Combobox.ItemText>{item}</Combobox.ItemText>
+                    <Combobox.ItemIndicator>✓</Combobox.ItemIndicator>
+                  </Combobox.Item>
+                ))}
+              </Combobox.ItemGroup>
+            </Combobox.Content>
+          </Combobox.Positioner>
+        </Portal>
+      </Combobox.RootProvider>
+    </>
+  );
+};
 
 function LexicalTextSelectionPane() {
   const editorState = useEditorState();

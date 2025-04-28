@@ -13,3 +13,4 @@
 **/.docusaurus
 /playwright-report
 test-results
+**/styled-system/**

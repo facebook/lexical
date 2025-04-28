@@ -8,11 +8,7 @@
 
 import './StyleViewPlugin.css';
 
-import {
-  Combobox,
-  createListCollection,
-  useCombobox,
-} from '@ark-ui/react/combobox';
+import {useCombobox} from '@ark-ui/react/combobox';
 import {Portal} from '@ark-ui/react/portal';
 import {Splitter, useSplitter} from '@ark-ui/react/splitter';
 import {
@@ -23,6 +19,7 @@ import {
   UseTreeViewReturn,
 } from '@ark-ui/react/tree-view';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {type SelectionDetails} from '@zag-js/combobox';
 import {
   $addUpdateTag,
   $getCaretRange,
@@ -56,6 +53,7 @@ import React, {
   createContext,
   Fragment,
   type JSX,
+  KeyboardEventHandler,
   use,
   useCallback,
   useEffect,
@@ -64,6 +62,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+
+import {Combobox, createListCollection} from '~/components/ui/combobox';
 
 import {
   $removeStyleProperty,
@@ -281,64 +281,76 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
     },
     [editor, node, registeredNodes],
   );
+  const nodeRef = useRef(node);
+  useEffect(() => {
+    nodeRef.current = node;
+  }, [node]);
 
-  const rows = styleObjectToArray(styles).map(([k, v]) => (
-    <div key={k} className="style-view-entry">
-      <button
-        className="style-view-node-button style-view-node-button-delete"
-        title={`Remove ${k} style`}
-        onClick={(e) => {
-          e.preventDefault();
-          editor.update(() => {
-            $removeStyleProperty(node, k);
-          });
-        }}>
-        <CircleXIcon />
-      </button>
-      <span className="style-view-key">{k}: </span>
-      <span
-        className="style-view-value"
-        contentEditable="plaintext-only"
-        ref={(el) => {
-          const ref = registeredNodes.get(k);
-          if (el === null) {
-            if (ref) {
-              ref[1].abort();
-            }
-            registeredNodes.delete(k);
-            return;
-          }
-          if (document.activeElement !== el) {
-            el.textContent = v || '';
-          }
-          if (!ref) {
-            const abortController = new AbortController();
-            if (focusPropertyRef.current === k) {
-              el.focus();
-              focusPropertyRef.current = '';
-            }
-            el.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                el.blur();
+  const rows = useMemo(
+    () =>
+      styleObjectToArray(styles).map(([k, v]) => (
+        <div key={k} className="style-view-entry">
+          <button
+            className="style-view-node-button style-view-node-button-delete"
+            title={`Remove ${k} style`}
+            onClick={(e) => {
+              e.preventDefault();
+              editor.update(() => {
+                $removeStyleProperty(nodeRef.current, k);
+              });
+            }}>
+            <CircleXIcon />
+          </button>
+          <span className="style-view-key">{k}: </span>
+          <span
+            className="style-view-value"
+            contentEditable="plaintext-only"
+            ref={(el) => {
+              const ref = registeredNodes.get(k);
+              if (el === null) {
+                if (ref) {
+                  ref[1].abort();
+                }
+                registeredNodes.delete(k);
+                return;
               }
-            });
-            el.addEventListener(
-              'input',
-              () => {
-                editor.update(() => {
-                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
-                  $setStyleProperty(node, k, el.textContent || undefined);
+              if (document.activeElement !== el) {
+                el.textContent = v || '';
+              }
+              if (!ref) {
+                const abortController = new AbortController();
+                if (focusPropertyRef.current === k) {
+                  el.focus();
+                  focusPropertyRef.current = '';
+                }
+                el.addEventListener('keydown', (e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    el.blur();
+                  }
                 });
-              },
-              {signal: abortController.signal},
-            );
-            registeredNodes.set(k, [el, abortController]);
-          }
-        }}
-      />
-    </div>
-  ));
+                el.addEventListener(
+                  'blur',
+                  () => {
+                    editor.update(() => {
+                      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                      $setStyleProperty(
+                        nodeRef.current,
+                        k,
+                        el.textContent || undefined,
+                      );
+                    });
+                  },
+                  {signal: abortController.signal},
+                );
+                registeredNodes.set(k, [el, abortController]);
+              }
+            }}
+          />
+        </div>
+      )),
+    [editor, registeredNodes, styles],
+  );
   return (
     <div>
       <span>{describeNode(node)[1]}</span>
@@ -440,13 +452,9 @@ function useSuggestedStylesCombobox(props: CSSPropertyComboBoxProps) {
         .join('\n'),
     );
   };
-  const handleOpenChange = (details: Combobox.OpenChangeDetails) => {
-    const value = combobox.inputValue;
-    if (details.open || !value) {
-      return;
-    }
+  const handleSelect = (details: SelectionDetails) => {
+    props.onAddProperty(details.itemValue as keyof StyleObject);
     combobox.setInputValue('');
-    props.onAddProperty(value as keyof StyleObject);
   };
 
   const combobox = useCombobox({
@@ -454,7 +462,7 @@ function useSuggestedStylesCombobox(props: CSSPropertyComboBoxProps) {
     collection: collection,
     inputBehavior: 'autocomplete',
     onInputValueChange: handleInputValueChange,
-    onOpenChange: handleOpenChange,
+    onSelect: handleSelect,
     placeholder: 'Add CSS Property',
   });
   return combobox;
@@ -465,13 +473,36 @@ interface CSSPropertyComboBoxProps {
 }
 
 const CSSPropertyComboBox = (props: CSSPropertyComboBoxProps) => {
+  const {onAddProperty} = props;
   const combobox = useSuggestedStylesCombobox(props);
+  const handleKeydown = useCallback<KeyboardEventHandler<HTMLInputElement>>(
+    (event) => {
+      const {inputValue} = combobox;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (inputValue) {
+          onAddProperty(inputValue as keyof StyleObject);
+          combobox.setInputValue('');
+        }
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        if (inputValue) {
+          const [autocomplete] = combobox.collection.items;
+          if (autocomplete) {
+            onAddProperty(autocomplete as keyof StyleObject);
+            combobox.setInputValue('');
+          }
+        }
+      }
+    },
+    [combobox, onAddProperty],
+  );
 
   return (
     <>
       <Combobox.RootProvider value={combobox} lazyMount={true}>
         <Combobox.Control>
-          <Combobox.Input />
+          <Combobox.Input onKeyDown={handleKeydown} />
         </Combobox.Control>
         <Portal>
           <Combobox.Positioner>

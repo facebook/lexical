@@ -25,6 +25,7 @@ import {
   $getCaretRange,
   $getChildCaret,
   $getNodeByKey,
+  $getPreviousSelection,
   $getSelection,
   $getSiblingCaret,
   $isDecoratorNode,
@@ -34,6 +35,7 @@ import {
   $isRootNode,
   $isTextNode,
   $normalizeCaret,
+  $setSelection,
   $setSelectionFromCaretRange,
   type EditorState,
   LexicalEditor,
@@ -74,6 +76,17 @@ import {
 } from '../styleState';
 
 const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
+const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
+
+function $preserveSelection(): void {
+  const selection = $getSelection();
+  if (!selection) {
+    const prevSelection = $getPreviousSelection();
+    if (prevSelection) {
+      $setSelection(prevSelection.clone());
+    }
+  }
+}
 
 const EditorStateContext = createContext<undefined | EditorState>(undefined);
 function useEditorState() {
@@ -100,9 +113,9 @@ export function StyleViewPlugin(): JSX.Element {
   const [editorState, setEditorState] = useState(() => editor.getEditorState());
   useEffect(
     () =>
-      editor.registerUpdateListener(() =>
-        setEditorState(editor.getEditorState()),
-      ),
+      editor.registerUpdateListener(() => {
+        setEditorState(editor.getEditorState());
+      }),
     [editor],
   );
   return (
@@ -266,25 +279,66 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
   );
   const styles = getStyleObjectDirect(node);
   const focusPropertyRef = useRef('');
-  const handleAddProperty = useCallback(
-    (prop: keyof StyleObject) => {
+
+  const nodeRef = useRef(node);
+  useEffect(() => {
+    nodeRef.current = node;
+  }, [node]);
+  const {handleFlush, handleAddProperty, handleInput} = useMemo(() => {
+    const timers = new Map<keyof StyleObject, ReturnType<typeof setTimeout>>();
+    // eslint-disable-next-line no-shadow
+    const handleAddProperty = (prop: keyof StyleObject) => {
       const reg = registeredNodes.get(prop);
       if (reg) {
         reg[0].focus();
       } else {
         focusPropertyRef.current = prop;
-        editor.update(() => {
-          $addUpdateTag(SKIP_DOM_SELECTION_TAG);
-          $setStyleProperty(node, prop, '');
-        });
+        editor.update(
+          () => {
+            $setStyleProperty(nodeRef.current, prop, '');
+          },
+          {tag: [SKIP_DOM_SELECTION_TAG, SKIP_SCROLL_INTO_VIEW_TAG]},
+        );
       }
-    },
-    [editor, node, registeredNodes],
-  );
-  const nodeRef = useRef(node);
-  useEffect(() => {
-    nodeRef.current = node;
-  }, [node]);
+    };
+    // eslint-disable-next-line no-shadow
+    const handleFlush = (
+      prop: keyof StyleObject,
+      textContent: string | null,
+    ) => {
+      const timer = timers.get(prop);
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timers.delete(prop);
+      }
+      editor.update(
+        () => {
+          $preserveSelection();
+          $addUpdateTag('skip-dom-selection');
+          $addUpdateTag('skip-scroll-into-view');
+          //     // $preserveSelection();
+          $setStyleProperty(nodeRef.current, prop, textContent || undefined);
+        },
+        {tag: [SKIP_DOM_SELECTION_TAG, SKIP_SCROLL_INTO_VIEW_TAG]},
+      );
+    };
+    // eslint-disable-next-line no-shadow
+    const handleInput = (
+      prop: keyof StyleObject,
+      textContent: string | null,
+    ) => {
+      const timer = timers.get(prop);
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timers.delete(prop);
+      }
+      timers.set(
+        prop,
+        setTimeout(() => handleFlush(prop, textContent), 300),
+      );
+    };
+    return {handleAddProperty, handleFlush, handleInput};
+  }, [editor, registeredNodes]);
 
   const rows = useMemo(
     () =>
@@ -295,9 +349,12 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
             title={`Remove ${k} style`}
             onClick={(e) => {
               e.preventDefault();
-              editor.update(() => {
-                $removeStyleProperty(nodeRef.current, k);
-              });
+              editor.update(
+                () => {
+                  $removeStyleProperty(nodeRef.current, k);
+                },
+                {tag: [SKIP_DOM_SELECTION_TAG, SKIP_SCROLL_INTO_VIEW_TAG]},
+              );
             }}>
             <CircleXIcon />
           </button>
@@ -319,29 +376,30 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
               }
               if (!ref) {
                 const abortController = new AbortController();
+                const listenerOptions = {signal: abortController.signal};
                 if (focusPropertyRef.current === k) {
                   el.focus();
                   focusPropertyRef.current = '';
                 }
-                el.addEventListener('keydown', (e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    el.blur();
-                  }
-                });
+                el.addEventListener(
+                  'input',
+                  () => handleInput(k, el.textContent),
+                  listenerOptions,
+                );
+                el.addEventListener(
+                  'keydown',
+                  (e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      el.blur();
+                    }
+                  },
+                  listenerOptions,
+                );
                 el.addEventListener(
                   'blur',
-                  () => {
-                    editor.update(() => {
-                      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
-                      $setStyleProperty(
-                        nodeRef.current,
-                        k,
-                        el.textContent || undefined,
-                      );
-                    });
-                  },
-                  {signal: abortController.signal},
+                  () => handleFlush(k, el.textContent),
+                  listenerOptions,
                 );
                 registeredNodes.set(k, [el, abortController]);
               }
@@ -349,7 +407,7 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
           />
         </div>
       )),
-    [editor, registeredNodes, styles],
+    [editor, registeredNodes, styles, handleFlush, handleInput],
   );
   return (
     <div>
@@ -386,7 +444,8 @@ function textSelectionPaneReducer(
       panelNode: prevPanelNode = null,
       cached: prevCached = null,
     } = state;
-    let panelNodeKey = selectionNodeKey || action.panelNodeKey;
+    let panelNodeKey =
+      selectionNodeKey || action.panelNodeKey || state.panelNodeKey;
     if (selectionNodeKey) {
       panelNodeKey = selectionNodeKey;
     } else if (!panelNodeKey) {

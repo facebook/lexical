@@ -18,28 +18,45 @@ import {
   useTreeView,
   UseTreeViewReturn,
 } from '@ark-ui/react/tree-view';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {$getAdjacentCaret, mergeRegister} from '@lexical/utils';
 import {type SelectionDetails} from '@zag-js/combobox';
 import {
   $addUpdateTag,
+  $createLineBreakNode,
+  $createParagraphNode,
+  $createTabNode,
+  $createTextNode,
   $getCaretRange,
   $getChildCaret,
   $getNodeByKey,
   $getPreviousSelection,
+  $getRoot,
   $getSelection,
   $getSiblingCaret,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
+  $isTabNode,
   $isTextNode,
   $normalizeCaret,
   $setSelection,
   $setSelectionFromCaretRange,
+  BLUR_COMMAND,
+  COMMAND_PRIORITY_LOW,
   type EditorState,
+  ElementNode,
+  KEY_DOWN_COMMAND,
   LexicalEditor,
   LexicalNode,
+  NodeCaret,
   NodeKey,
 } from 'lexical';
 import {
@@ -272,10 +289,173 @@ interface InitialSelectedNodeState extends SelectedNodeStateAction {
   cached?: undefined;
 }
 
+interface StyleValueEditorProps {
+  ref?: React.Ref<LexicalEditor>;
+  prop: keyof StyleObject;
+  value: string;
+  onChange: (prop: keyof StyleObject, value: string) => void;
+}
+
+type ParsedChunk = '\n' | '\r\n' | '\t' | string;
+
+function parseRawText(text: string): ParsedChunk[] {
+  return text.split(/(\r?\n|\t)/);
+}
+
+function $patchNodes<T extends ElementNode>(
+  parent: T,
+  nodes: LexicalNode[],
+): T {
+  const childrenSize = parent.getChildrenSize();
+  if (
+    childrenSize === nodes.length &&
+    parent.getChildren().every((node, i) => node === nodes[i])
+  ) {
+    // no-op, do not mark as dirty
+    return parent;
+  }
+  return $getChildCaret(parent, 'next').splice(childrenSize, nodes).origin;
+}
+
+function $patchParsedText<T extends ElementNode>(
+  parent: T,
+  chunks: readonly ParsedChunk[],
+): T {
+  let caret: null | NodeCaret<'next'> = $getChildCaret(parent, 'next');
+  const nodes: LexicalNode[] = [];
+  for (const chunk of chunks) {
+    caret = $getAdjacentCaret(caret);
+    const node = caret ? caret.origin : null;
+    if (chunk === '\r\n' || chunk === '\n') {
+      nodes.push($isLineBreakNode(node) ? node : $createLineBreakNode());
+    } else if (chunk === '\t') {
+      nodes.push($isTabNode(node) ? node : $createTabNode());
+    } else if (chunk) {
+      nodes.push(
+        $isTextNode(node)
+          ? node.getTextContent() === chunk
+            ? node
+            : node.setTextContent(chunk)
+          : $createTextNode(chunk),
+      );
+    }
+  }
+  return $patchNodes(parent, nodes);
+}
+
+function $patchParsedTextAtRoot(chunks: readonly ParsedChunk[]): void {
+  const root = $getRoot();
+  const firstNode = root.getFirstChild();
+  const p = $isParagraphNode(firstNode) ? firstNode : $createParagraphNode();
+  $getChildCaret(root, 'next').splice(root.getChildrenSize(), [p]);
+  $patchParsedText(p, chunks);
+}
+
+function StyleValuePlugin(props: StyleValueEditorProps) {
+  const [editor] = useLexicalComposerContext();
+  const {prop, onChange, ref} = props;
+  const valueRef = useRef(props.value);
+  useEffect(() => {
+    const setRef =
+      typeof ref === 'function'
+        ? ref
+        : ref
+        ? (value: LexicalEditor | null) => {
+            ref.current = value;
+          }
+        : () => {};
+    setRef(editor);
+    return () => {
+      setRef(null);
+    };
+  }, [editor, ref]);
+  useEffect(() => {
+    valueRef.current = props.value;
+  }, [props.value]);
+  useEffect(() => {
+    let timer: undefined | ReturnType<typeof setTimeout>;
+    function clearTimer() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+    }
+    function handleInput() {
+      clearTimer();
+      setTimeout(handleFlush, 300);
+    }
+    function handleFlush() {
+      clearTimer();
+      const value = editor
+        .getEditorState()
+        .read(() => $getRoot().getTextContent());
+      if (valueRef.current !== value) {
+        onChange(prop, value);
+      }
+    }
+    return mergeRegister(
+      editor.registerUpdateListener((payload) => {
+        if (payload.editorState !== payload.prevEditorState) {
+          handleInput();
+        }
+      }),
+      editor.registerCommand(
+        BLUR_COMMAND,
+        () => {
+          handleFlush();
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_DOWN_COMMAND,
+        (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            editor.blur();
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+    );
+  }, [editor, prop, onChange]);
+  return (
+    <PlainTextPlugin
+      contentEditable={
+        <ContentEditable
+          className="style-view-value"
+          contentEditable="plaintext-only"
+        />
+      }
+      ErrorBoundary={LexicalErrorBoundary}
+    />
+  );
+}
+
+function StyleValueEditor(props: StyleValueEditorProps) {
+  return (
+    <LexicalComposer
+      initialConfig={{
+        editable: true,
+        editorState: () => {
+          $patchParsedTextAtRoot(parseRawText(props.value));
+        },
+        namespace: 'style-view-value',
+        onError: (err) => {
+          throw err;
+        },
+      }}>
+      <StyleValuePlugin {...props} />
+    </LexicalComposer>
+  );
+}
+
 function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
   const [editor] = useLexicalComposerContext();
   const [registeredNodes] = useState(
-    () => new Map<keyof StyleObject, [HTMLSpanElement, AbortController]>(),
+    () => new Map<keyof StyleObject, LexicalEditor>(),
   );
   const styles = getStyleObjectDirect(node);
   const focusPropertyRef = useRef('');
@@ -284,13 +464,12 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
   useEffect(() => {
     nodeRef.current = node;
   }, [node]);
-  const {handleFlush, handleAddProperty, handleInput} = useMemo(() => {
-    const timers = new Map<keyof StyleObject, ReturnType<typeof setTimeout>>();
+  const {handleChange, handleAddProperty} = useMemo(() => {
     // eslint-disable-next-line no-shadow
     const handleAddProperty = (prop: keyof StyleObject) => {
       const reg = registeredNodes.get(prop);
       if (reg) {
-        reg[0].focus();
+        reg.focus();
       } else {
         focusPropertyRef.current = prop;
         editor.update(
@@ -302,42 +481,21 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
       }
     };
     // eslint-disable-next-line no-shadow
-    const handleFlush = (
+    const handleChange = (
       prop: keyof StyleObject,
       textContent: string | null,
     ) => {
-      const timer = timers.get(prop);
-      if (timer !== undefined) {
-        clearTimeout(timer);
-        timers.delete(prop);
-      }
       editor.update(
         () => {
           $preserveSelection();
           $addUpdateTag('skip-dom-selection');
           $addUpdateTag('skip-scroll-into-view');
-          //     // $preserveSelection();
           $setStyleProperty(nodeRef.current, prop, textContent || undefined);
         },
         {tag: [SKIP_DOM_SELECTION_TAG, SKIP_SCROLL_INTO_VIEW_TAG]},
       );
     };
-    // eslint-disable-next-line no-shadow
-    const handleInput = (
-      prop: keyof StyleObject,
-      textContent: string | null,
-    ) => {
-      const timer = timers.get(prop);
-      if (timer !== undefined) {
-        clearTimeout(timer);
-        timers.delete(prop);
-      }
-      timers.set(
-        prop,
-        setTimeout(() => handleFlush(prop, textContent), 300),
-      );
-    };
-    return {handleAddProperty, handleFlush, handleInput};
+    return {handleAddProperty, handleChange};
   }, [editor, registeredNodes]);
 
   const rows = useMemo(
@@ -359,55 +517,25 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
             <CircleXIcon />
           </button>
           <span className="style-view-key">{k}: </span>
-          <span
-            className="style-view-value"
-            contentEditable="plaintext-only"
+          <StyleValueEditor
+            prop={k}
+            value={v || ''}
+            onChange={handleChange}
             ref={(el) => {
-              const ref = registeredNodes.get(k);
               if (el === null) {
-                if (ref) {
-                  ref[1].abort();
-                }
                 registeredNodes.delete(k);
                 return;
               }
-              if (document.activeElement !== el) {
-                el.textContent = v || '';
+              if (focusPropertyRef.current === k) {
+                el.focus();
+                focusPropertyRef.current = '';
               }
-              if (!ref) {
-                const abortController = new AbortController();
-                const listenerOptions = {signal: abortController.signal};
-                if (focusPropertyRef.current === k) {
-                  el.focus();
-                  focusPropertyRef.current = '';
-                }
-                el.addEventListener(
-                  'input',
-                  () => handleInput(k, el.textContent),
-                  listenerOptions,
-                );
-                el.addEventListener(
-                  'keydown',
-                  (e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      el.blur();
-                    }
-                  },
-                  listenerOptions,
-                );
-                el.addEventListener(
-                  'blur',
-                  () => handleFlush(k, el.textContent),
-                  listenerOptions,
-                );
-                registeredNodes.set(k, [el, abortController]);
-              }
+              registeredNodes.set(k, el);
             }}
           />
         </div>
       )),
-    [editor, registeredNodes, styles, handleFlush, handleInput],
+    [editor, registeredNodes, styles, handleChange],
   );
   return (
     <div>

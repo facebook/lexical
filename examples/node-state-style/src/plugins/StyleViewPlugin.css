@@ -176,6 +176,10 @@
   color: #616161;
 }
 
+.style-view-value,
+.style-view-value > p {
+  display: inline;
+}
 .style-view-value:focus-visible {
   outline: 1px auto rgba(20, 20, 20, 0.2);
   outline-offset: 4px;

@@ -610,10 +610,20 @@ export function $getElementForTableNode(
 export function $convertTableElement(
   domNode: HTMLElement,
 ): DOMConversionOutput {
-  const tableNode = $createTableNode();
+  const tableNode = $createTableNode(); // VADIM: no access to domNode here, and we want to set frozen things from domNode
   if (domNode.hasAttribute('data-lexical-row-striping')) {
     tableNode.setRowStriping(true);
   }
+  const frozenColumnCount = domNode.getAttribute('data-lexical-frozen-column');
+  if (frozenColumnCount) {
+    tableNode.setFrozenColumns(Number(frozenColumnCount));
+  }
+  const frozenRowCount = domNode.getAttribute('data-lexical-frozen-row');
+  if (frozenRowCount) {
+    tableNode.setFrozenRows(Number(frozenRowCount));
+  }
+  console.log('TableNode: frozenColumnCount', frozenColumnCount);
+  console.log('TableNode: frozenRowCount', frozenRowCount);
   const colGroup = domNode.querySelector(':scope > colgroup');
   if (colGroup) {
     let columns: number[] | undefined = [];

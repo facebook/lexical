@@ -37,6 +37,8 @@ import {
   TextNode,
 } from 'lexical';
 
+import {formatUrl} from './utils';
+
 export type Transformer =
   | ElementTransformer
   | MultilineElementTransformer
@@ -559,7 +561,8 @@ export const LINK: TextMatchTransformer = {
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl, linkTitle] = match;
-    const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
+    const formattedUrl = formatUrl(linkUrl);
+    const linkNode = $createLinkNode(formattedUrl, {title: linkTitle});
     const linkTextNode = $createTextNode(linkText);
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);

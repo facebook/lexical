@@ -460,3 +460,43 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
       MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
   );
 }
+
+// URL validation patterns
+export const EMAIL_REGEX =
+  /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
+
+export const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;
+
+/**
+ * Formats a URL string by adding appropriate protocol if missing
+ *
+ * @param url - URL to format
+ * @returns Formatted URL with appropriate protocol
+ */
+export function formatUrl(url: string): string {
+  // Check if URL already has a protocol
+  if (url.match(/^[a-z]+:/i)) {
+    // URL already has a protocol, leave it as is
+    return url;
+  }
+  // Check if it's a relative path
+  else if (url.startsWith('/')) {
+    // Relative path, leave it as is
+    return url;
+  }
+  // Check for email address
+  else if (EMAIL_REGEX.test(url)) {
+    return `mailto:${url}`;
+  }
+  // Check for phone number
+  else if (PHONE_NUMBER_REGEX.test(url)) {
+    return `tel:${url}`;
+  }
+  // For everything else that looks like a URL (starting with www. or containing dots)
+  else if (/^www\.|(\.[a-z]{2,})/i.test(url)) {
+    return `https://${url}`;
+  }
+
+  // If nothing matches, return the original URL
+  return url;
+}

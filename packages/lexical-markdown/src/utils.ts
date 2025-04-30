@@ -481,8 +481,13 @@ export function formatUrl(url: string): string {
     return url;
   }
 
-  // Check for email address
-  else if (url.includes('@')) {
+  // Check for email address - ensure it has exactly one '@' with non-empty username and domain portions
+  else if (
+    url.includes('@') &&
+    url.split('@').length === 2 &&
+    url.split('@')[0].length > 0 &&
+    url.split('@')[1].length > 0
+  ) {
     return `mailto:${url}`;
   }
 

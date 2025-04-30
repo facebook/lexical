@@ -1,3 +1,29 @@
+## v0.31.0 (2025-04-24)
+
+- lexical-reactlexical-table Bug Fix Re-render tables when the hasHorizontalScroll setting is changed (#7488) Bob Ippolito
+- lexical-website Documentation Update Add detailed guides for key and clone concepts (#7448) Kiran Dash
+- lexical-react Feature make check for entity boundary configurable in LexicalTypeaheadMenuPlugin (#7477) Andrey Tarasevich
+- lexical-playground Chore Refactor autolink tests for reliability (#7482) Bob Ippolito
+- lexical Chore Update KEYENTERCOMMAND API docs (#7481) Bob Ippolito
+- lexical Chore Revert Enter command to use inexact matching (#7479) Daniel Teo
+- lexical-playground Chore Disable flaky Can expand table to fit content when pasting table into table in collab (#7478) Bob Ippolito
+- lexical-markdown Bug Fix Add import support for backslash escape sequences (#7476) Bob Ippolito
+- lexicallexical-playground Chore Deprecate KEYMODIFIERCOMMAND and use KEYDOWNCOMMAND for playground shortcuts (#7472) Bob Ippolito
+- lexical Bug Fix exact modifier matching for built-in keyboard shortcuts (#7443) 10tacion
+- Chore Update sveltejs dependency (#7471) Garvit Bansal
+- lexical-yjslexical Refactor Simplify removeFromParent internal operations (#7453) Kiran Dash
+- lexical-playground Bug Fix Stabilize text format dropdown width in toolbar (#7462) Kiran Dash
+- lexical-playground Feature Add keyboard shortcut for comments (#7464) Kiran Dash
+- lexical Chore Update internalMarkNodeAsDirty TODO comment (#7457) Kiran Dash
+- lexical-playground fix clarify EquationComponent inputRef type (#7460) Navid Mafi
+- Chore migrate string literals to update tag constants (#7450) Kiran Dash
+- lexical-tablelexical-playground Bug Fix Handle backspace deletion of tables with merged cells (#7447) Kiran Dash
+- lexical-selection Bug Fix Correct caret movement in vertical-rl writing mode (#7439) Kiran Dash
+- lexicallexical-website Feature Document and export common update tags (#7441) Kiran Dash
+- lexicallexical-website Feature Improve createCommand developer experience (#7442) Kiran Dash
+- v0.30.0 (#7440) Bob Ippolito
+- v0.30.0 Lexical GitHub Actions Bot
+
 ## v0.30.0 (2025-04-07)
 
 - lexical Feature Add text-transform styles to exported HTML (#7438) Kiran Dash

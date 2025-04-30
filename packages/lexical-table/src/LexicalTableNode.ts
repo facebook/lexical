@@ -614,6 +614,12 @@ export function $convertTableElement(
   if (domNode.hasAttribute('data-lexical-row-striping')) {
     tableNode.setRowStriping(true);
   }
+  if (domNode.hasAttribute('data-lexical-frozen-column')) {
+    tableNode.setFrozenColumns(1);
+  }
+  if (domNode.hasAttribute('data-lexical-frozen-row')) {
+    tableNode.setFrozenRows(1);
+  }
   const colGroup = domNode.querySelector(':scope > colgroup');
   if (colGroup) {
     let columns: number[] | undefined = [];

@@ -22,8 +22,6 @@ import {
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
   REDO_COMMAND,
-  SKIP_DOM_SELECTION_TAG,
-  SKIP_SCROLL_INTO_VIEW_TAG,
   UNDO_COMMAND,
 } from 'lexical';
 
@@ -430,27 +428,16 @@ export function registerHistory(
     );
 
     if (mergeAction === HISTORY_PUSH) {
-      const mergeActionTags = [
-        SKIP_DOM_SELECTION_TAG,
-        SKIP_SCROLL_INTO_VIEW_TAG,
-      ].filter((tag) => tags.has(tag));
-      if (redoStack.length !== 0 || current !== null) {
-        editor.update(
-          () => {
-            if (redoStack.length !== 0) {
-              historyState.redoStack = [];
-              editor.dispatchCommand(CAN_REDO_COMMAND, false);
-            }
+      if (redoStack.length !== 0) {
+        historyState.redoStack = [];
+        editor.dispatchCommand(CAN_REDO_COMMAND, false);
+      }
 
-            if (current !== null) {
-              undoStack.push({
-                ...current,
-              });
-              editor.dispatchCommand(CAN_UNDO_COMMAND, true);
-            }
-          },
-          {tag: mergeActionTags},
-        );
+      if (current !== null) {
+        undoStack.push({
+          ...current,
+        });
+        editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
       return;

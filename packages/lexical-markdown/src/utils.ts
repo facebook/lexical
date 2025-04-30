@@ -461,10 +461,6 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-// URL validation patterns
-export const EMAIL_REGEX =
-  /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
-
 export const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;
 
 /**
@@ -475,19 +471,21 @@ export const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;
  */
 export function formatUrl(url: string): string {
   // Check if URL already has a protocol
-  if (url.match(/^[a-z]+:/i)) {
+  if (url.match(/^[a-z][a-z0-9+.-]*:/i)) {
     // URL already has a protocol, leave it as is
     return url;
   }
-  // Check if it's a relative path
-  else if (url.startsWith('/')) {
+  // Check if it's a relative path (starting with '/', '.', or '#')
+  else if (url.startsWith('/') || url.startsWith('.') || url.startsWith('#')) {
     // Relative path, leave it as is
     return url;
   }
+
   // Check for email address
-  else if (EMAIL_REGEX.test(url)) {
+  else if (url.includes('@')) {
     return `mailto:${url}`;
   }
+
   // Check for phone number
   else if (PHONE_NUMBER_REGEX.test(url)) {
     return `tel:${url}`;

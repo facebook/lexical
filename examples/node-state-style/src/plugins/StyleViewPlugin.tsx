@@ -488,8 +488,8 @@ function LexicalTextSelectionPaneContents({node}: {node: LexicalNode}) {
       editor.update(
         () => {
           $preserveSelection();
-          $addUpdateTag('skip-dom-selection');
-          $addUpdateTag('skip-scroll-into-view');
+          $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+          $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
           $setStyleProperty(nodeRef.current, prop, textContent || undefined);
         },
         {tag: [SKIP_DOM_SELECTION_TAG, SKIP_SCROLL_INTO_VIEW_TAG]},

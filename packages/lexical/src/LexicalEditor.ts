@@ -31,7 +31,7 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
-import {HISTORY_MERGE_TAG} from './LexicalUpdateTags';
+import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
@@ -88,7 +88,7 @@ export type TextNodeThemeClasses = {
 export type EditorUpdateOptions = {
   onUpdate?: () => void;
   skipTransforms?: true;
-  tag?: string | Array<string>;
+  tag?: UpdateTag | UpdateTag[];
   discrete?: true;
   /** @internal */
   event?: undefined | UIEvent | Event | null;
@@ -656,7 +656,7 @@ export class LexicalEditor {
   /** @internal */
   _normalizedNodes: Set<NodeKey>;
   /** @internal */
-  _updateTags: Set<string>;
+  _updateTags: Set<UpdateTag>;
   /** @internal */
   _observer: null | MutationObserver;
   /** @internal */
@@ -1322,7 +1322,7 @@ export class LexicalEditor {
             root.selectEnd();
           }
         }
-        $addUpdateTag('focus');
+        $addUpdateTag(FOCUS_TAG);
         $onUpdate(() => {
           rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {

@@ -1526,7 +1526,7 @@ describe('LexicalListItemNode tests', () => {
         const listItem2 = $createListItemNode();
 
         // Set marker style on listItem2
-        listItem2.__textStyle = 'font-size: 19px;';
+        listItem2.setTextStyle('font-size: 19px;');
 
         listNode.append(listItem1, listItem2);
         root.append(listNode);
@@ -1539,7 +1539,7 @@ describe('LexicalListItemNode tests', () => {
         expect($isListItemNode(parentListItem)).toBe(true);
 
         // Check if marker style was inherited
-        expect(parentListItem.__textStyle).toBe('font-size: 19px;');
+        expect(parentListItem.getTextStyle()).toBe('font-size: 19px;');
       });
     });
   });

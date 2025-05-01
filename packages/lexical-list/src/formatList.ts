@@ -398,10 +398,8 @@ export function $handleIndent(listItemNode: ListItemNode): void {
 
     if ($isListNode(parent)) {
       const newListItem = $createListItemNode()
-        .setTextFormat(parent.getTextFormat())
-        .setTextStyle(parent.getTextStyle());
-      // Copy the text style from the list item being indented to preserve marker styles
-      newListItem.setTextStyle(listItemNode.getTextStyle());
+        .setTextFormat(listItemNode.getTextFormat())
+        .setTextStyle(listItemNode.getTextStyle());
       const newList = $createListNode(parent.getListType())
         .setTextFormat(parent.getTextFormat())
         .setTextStyle(parent.getTextStyle());

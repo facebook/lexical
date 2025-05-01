@@ -10,7 +10,7 @@ import {resolve} from 'path';
 import {defineConfig} from 'vite';
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   build: {
     rollupOptions: {
       input: {
@@ -19,17 +19,5 @@ export default defineConfig(async () => ({
       },
     },
   },
-  plugins: [
-    react(),
-    // This is only used for development in the lexical repository
-    ...(process.env.LEXICAL_MONOREPO === '1'
-      ? [
-          (
-            await import(
-              '../../packages/shared/lexicalMonorepoPlugin' as string
-            )
-          ).default(),
-        ]
-      : []),
-  ],
-}));
+  plugins: [react()],
+});

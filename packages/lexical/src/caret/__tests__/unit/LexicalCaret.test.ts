@@ -31,6 +31,7 @@ import {
   $getSelection,
   $getSiblingCaret,
   $getTextPointCaret,
+  $isParagraphNode,
   $isSiblingCaret,
   $isTextNode,
   $isTextPointCaret,
@@ -41,6 +42,7 @@ import {
   $setPointFromCaret,
   $setSelection,
   $setSelectionFromCaretRange,
+  $splitAtPointCaretNext,
   ChildCaret,
   ElementNode,
   LexicalNode,
@@ -1944,6 +1946,68 @@ describe('LexicalSelectionHelpers', () => {
           '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
+    });
+  });
+});
+
+describe('$splitAtPointCaretNext', () => {
+  initializeUnitTest((testEnv) => {
+    test('Does not split a TextNode at the beginning', () => {
+      testEnv.editor.update(
+        () => {
+          const textNode = $createTextNode('test');
+          const paragraphNode = $createParagraphNode();
+          $getRoot().clear().append(paragraphNode.append(textNode));
+          const caret = $getTextPointCaret(textNode, 'next', 0);
+          const after = $splitAtPointCaretNext(caret);
+          expect(textNode.getTextContent()).toEqual('test');
+          expect(
+            $getChildCaret(paragraphNode, 'next').isSamePointCaret(after),
+          ).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+    test('Splits a TextNode in the middle', () => {
+      testEnv.editor.update(
+        () => {
+          const textNode = $createTextNode('test');
+          const paragraphNode = $createParagraphNode();
+          $getRoot().clear().append(paragraphNode.append(textNode));
+          const caret = $getTextPointCaret(textNode, 'next', 2);
+          const after = $splitAtPointCaretNext(caret);
+          expect(textNode.getTextContent()).toEqual('te');
+          const nextCaret = $getSiblingCaret(textNode, 'next');
+          expect(nextCaret.isSamePointCaret(after)).toBe(true);
+          const splitNode = nextCaret.getNodeAtCaret();
+          expect(
+            $isTextNode(splitNode) ? splitNode.getTextContent() : null,
+          ).toEqual('st');
+        },
+        {discrete: true},
+      );
+    });
+    test('Splits a ParagraphNode', () => {
+      testEnv.editor.update(
+        () => {
+          const beforeTextNode = $createTextNode('before');
+          const afterTextNode = $createTextNode('after');
+          const paragraphNode = $createParagraphNode();
+          $getRoot()
+            .clear()
+            .append(paragraphNode.append(beforeTextNode, afterTextNode));
+          const caret = $getSiblingCaret(beforeTextNode, 'next');
+          const after = $splitAtPointCaretNext(caret);
+          expect(paragraphNode.getAllTextNodes()).toEqual([beforeTextNode]);
+          const nextCaret = $getSiblingCaret(paragraphNode, 'next');
+          expect(nextCaret.isSamePointCaret(after)).toBe(true);
+          const splitNode = nextCaret.getNodeAtCaret();
+          expect(
+            $isParagraphNode(splitNode) ? splitNode.getAllTextNodes() : null,
+          ).toEqual([afterTextNode]);
+        },
+        {discrete: true},
+      );
     });
   });
 });

@@ -199,8 +199,8 @@ export interface StateValueConfig<V> {
    * that it is not required to copy or clone the given value, you can
    * pass it directly through if it matches the expected type.
    *
-   * When you encounder an invalid value, it's up to you to decide
-   * as to whether to ignore it and return the defaut value,
+   * When you encounter an invalid value, it's up to you to decide
+   * as to whether to ignore it and return the default value,
    * return some non-default error value, or throw an error.
    *
    * It is possible for V to include undefined, but if it does, then
@@ -676,7 +676,7 @@ export class NodeState<T extends LexicalNode> {
    * its parent or siblings change).
    *
    * @param node The node to associate with the state
-   * @returns The next writaable state
+   * @returns The next writable state
    */
   getWritable(node: T): NodeState<T> {
     if (this.node === node) {

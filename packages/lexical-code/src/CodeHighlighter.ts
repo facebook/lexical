@@ -269,7 +269,7 @@ function codeNodeTransform(
   }
 
   // Using nested update call to pass `skipTransforms` since we don't want
-  // each individual codehighlight node to be transformed again as it's already
+  // each individual CodeHighlightNode to be transformed again as it's already
   // in its final state
   editor.update(
     () => {
@@ -456,7 +456,7 @@ function getDiffRange(
 }
 
 function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
-  // Only checking for code higlight nodes, tabs and linebreaks. If it's regular text node
+  // Only checking for code highlight nodes, tabs and linebreaks. If it's regular text node
   // returning false so that it's transformed into code highlight node
   return (
     ($isCodeHighlightNode(nodeA) &&
@@ -650,7 +650,7 @@ function $handleShiftLines(
   }
   if (!event.altKey) {
     // Handle moving selection out of the code block, given there are no
-    // sibling thats can natively take the selection.
+    // siblings that can natively take the selection.
     if (selection.isCollapsed()) {
       const codeNode = anchorNode.getParentOrThrow();
       if (

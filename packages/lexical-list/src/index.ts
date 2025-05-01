@@ -14,7 +14,7 @@ import type {
 } from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -25,6 +25,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
 import {
   $handleListInsertParagraph,
   $insertList,
@@ -47,10 +48,12 @@ export {
   $isListItemNode,
   $isListNode,
   $removeList,
+  INSERT_CHECK_LIST_COMMAND,
   ListItemNode,
   ListNode,
   ListNodeTagType,
   ListType,
+  registerCheckList,
   SerializedListItemNode,
   SerializedListNode,
 };
@@ -59,9 +62,6 @@ export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_UNORDERED_LIST_COMMAND');
 export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_ORDERED_LIST_COMMAND',
-);
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_CHECK_LIST_COMMAND',
 );
 export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
@@ -143,6 +143,89 @@ export function registerList(editor: LexicalEditor): () => void {
     }),
   );
   return removeListener;
+}
+
+export function registerListStrictIndentTransform(
+  editor: LexicalEditor,
+): () => void {
+  const $formatListIndentStrict = (listItemNode: ListItemNode): void => {
+    const listNode = listItemNode.getParent();
+    if ($isListNode(listItemNode.getFirstChild()) || !$isListNode(listNode)) {
+      return;
+    }
+
+    const startingListItemNode = $findMatchingParent(
+      listItemNode,
+      (node) =>
+        $isListItemNode(node) &&
+        $isListNode(node.getParent()) &&
+        $isListItemNode(node.getPreviousSibling()),
+    );
+
+    if (startingListItemNode === null && listItemNode.getIndent() > 0) {
+      listItemNode.setIndent(0);
+    } else if ($isListItemNode(startingListItemNode)) {
+      const prevListItemNode = startingListItemNode.getPreviousSibling();
+
+      if ($isListItemNode(prevListItemNode)) {
+        const endListItemNode = $findChildrenEndListItemNode(prevListItemNode);
+        const endListNode = endListItemNode.getParent();
+
+        if ($isListNode(endListNode)) {
+          const prevDepth = $getListDepth(endListNode);
+          const depth = $getListDepth(listNode);
+
+          if (prevDepth + 1 < depth) {
+            listItemNode.setIndent(prevDepth);
+          }
+        }
+      }
+    }
+  };
+
+  const $processListWithStrictIndent = (listNode: ListNode): void => {
+    const queue: ListNode[] = [listNode];
+
+    while (queue.length > 0) {
+      const node = queue.shift();
+      if (!$isListNode(node)) {
+        continue;
+      }
+
+      for (const child of node.getChildren()) {
+        if ($isListItemNode(child)) {
+          $formatListIndentStrict(child);
+
+          const firstChild = child.getFirstChild();
+          if ($isListNode(firstChild)) {
+            queue.push(firstChild);
+          }
+        }
+      }
+    }
+  };
+
+  return editor.registerNodeTransform(ListNode, $processListWithStrictIndent);
+}
+
+function $findChildrenEndListItemNode(
+  listItemNode: ListItemNode,
+): ListItemNode {
+  let current = listItemNode;
+  let firstChild = current.getFirstChild();
+
+  while ($isListNode(firstChild)) {
+    const lastChild = firstChild.getLastChild();
+
+    if ($isListItemNode(lastChild)) {
+      current = lastChild;
+      firstChild = current.getFirstChild();
+    } else {
+      break;
+    }
+  }
+
+  return current;
 }
 
 /**

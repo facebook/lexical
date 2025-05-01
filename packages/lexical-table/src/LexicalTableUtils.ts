@@ -14,6 +14,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   LexicalNode,
 } from 'lexical';
@@ -165,6 +166,9 @@ export function $removeTableRowAtIndex(
   return tableNode;
 }
 
+/**
+ * @deprecated This function does not support merged cells. Use {@link $insertTableRowAtSelection} or {@link $insertTableRowAtNode} instead.
+ */
 export function $insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
@@ -250,7 +254,7 @@ const getHeaderState = (
  * taking into account any spans. If successful, returns the
  * inserted table row node.
  */
-export function $insertTableRow__EXPERIMENTAL(
+export function $insertTableRowAtSelection(
   insertAfter = true,
 ): TableRowNode | null {
   const selection = $getSelection();
@@ -262,21 +266,50 @@ export function $insertTableRow__EXPERIMENTAL(
   const focus = selection.focus.getNode();
   const [anchorCell] = $getNodeTriplet(anchor);
   const [focusCell, , grid] = $getNodeTriplet(focus);
-  const [gridMap, focusCellMap, anchorCellMap] = $computeTableMap(
+  const [, focusCellMap, anchorCellMap] = $computeTableMap(
     grid,
     focusCell,
     anchorCell,
   );
-  const columnCount = gridMap[0].length;
   const {startRow: anchorStartRow} = anchorCellMap;
   const {startRow: focusStartRow} = focusCellMap;
+  if (insertAfter) {
+    return $insertTableRowAtNode(
+      anchorStartRow + anchorCell.__rowSpan >
+        focusStartRow + focusCell.__rowSpan
+        ? anchorCell
+        : focusCell,
+      true,
+    );
+  } else {
+    return $insertTableRowAtNode(
+      focusStartRow < anchorStartRow ? focusCell : anchorCell,
+      false,
+    );
+  }
+}
+
+/**
+ * @deprecated renamed to {@link $insertTableRowAtSelection}
+ */
+export const $insertTableRow__EXPERIMENTAL = $insertTableRowAtSelection;
+
+/**
+ * Inserts a table row before or after the given cell node,
+ * taking into account any spans. If successful, returns the
+ * inserted table row node.
+ */
+export function $insertTableRowAtNode(
+  cellNode: TableCellNode,
+  insertAfter = true,
+): TableRowNode | null {
+  const [, , grid] = $getNodeTriplet(cellNode);
+  const [gridMap, cellMap] = $computeTableMap(grid, cellNode, cellNode);
+  const columnCount = gridMap[0].length;
+  const {startRow: cellStartRow} = cellMap;
   let insertedRow: TableRowNode | null = null;
   if (insertAfter) {
-    const insertAfterEndRow =
-      Math.max(
-        focusStartRow + focusCell.__rowSpan,
-        anchorStartRow + anchorCell.__rowSpan,
-      ) - 1;
+    const insertAfterEndRow = cellStartRow + cellNode.__rowSpan - 1;
     const insertAfterEndRowMap = gridMap[insertAfterEndRow];
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
@@ -305,7 +338,7 @@ export function $insertTableRow__EXPERIMENTAL(
     insertAfterEndRowNode.insertAfter(newRow);
     insertedRow = newRow;
   } else {
-    const insertBeforeStartRow = Math.min(focusStartRow, anchorStartRow);
+    const insertBeforeStartRow = cellStartRow;
     const insertBeforeStartRowMap = gridMap[insertBeforeStartRow];
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
@@ -337,6 +370,9 @@ export function $insertTableRow__EXPERIMENTAL(
   return insertedRow;
 }
 
+/**
+ * @deprecated This function does not support merged cells. Use {@link $insertTableColumnAtSelection} or {@link $insertTableColumnAtNode} instead.
+ */
 export function $insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -401,7 +437,7 @@ export function $insertTableColumn(
  * taking into account any spans. If successful, returns the
  * first inserted cell node.
  */
-export function $insertTableColumn__EXPERIMENTAL(
+export function $insertTableColumnAtSelection(
   insertAfter = true,
 ): TableCellNode | null {
   const selection = $getSelection();
@@ -413,17 +449,50 @@ export function $insertTableColumn__EXPERIMENTAL(
   const focus = selection.focus.getNode();
   const [anchorCell] = $getNodeTriplet(anchor);
   const [focusCell, , grid] = $getNodeTriplet(focus);
-  const [gridMap, focusCellMap, anchorCellMap] = $computeTableMap(
+  const [, focusCellMap, anchorCellMap] = $computeTableMap(
     grid,
     focusCell,
     anchorCell,
   );
+  const {startColumn: anchorStartColumn} = anchorCellMap;
+  const {startColumn: focusStartColumn} = focusCellMap;
+  if (insertAfter) {
+    return $insertTableColumnAtNode(
+      anchorStartColumn + anchorCell.__colSpan >
+        focusStartColumn + focusCell.__colSpan
+        ? anchorCell
+        : focusCell,
+      true,
+    );
+  } else {
+    return $insertTableColumnAtNode(
+      focusStartColumn < anchorStartColumn ? focusCell : anchorCell,
+      false,
+    );
+  }
+}
+
+/**
+ * @deprecated renamed to {@link $insertTableColumnAtSelection}
+ */
+export const $insertTableColumn__EXPERIMENTAL = $insertTableColumnAtSelection;
+
+/**
+ * Inserts a column before or after the given cell node,
+ * taking into account any spans. If successful, returns the
+ * first inserted cell node.
+ */
+export function $insertTableColumnAtNode(
+  cellNode: TableCellNode,
+  insertAfter = true,
+  shouldSetSelection = true,
+): TableCellNode | null {
+  const [, , grid] = $getNodeTriplet(cellNode);
+  const [gridMap, cellMap] = $computeTableMap(grid, cellNode, cellNode);
   const rowCount = gridMap.length;
-  const startColumn = insertAfter
-    ? Math.max(focusCellMap.startColumn, anchorCellMap.startColumn)
-    : Math.min(focusCellMap.startColumn, anchorCellMap.startColumn);
+  const {startColumn} = cellMap;
   const insertAfterColumn = insertAfter
-    ? startColumn + focusCell.__colSpan - 1
+    ? startColumn + cellNode.__colSpan - 1
     : startColumn - 1;
   const gridFirstChild = grid.getFirstChild();
   invariant(
@@ -498,7 +567,7 @@ export function $insertTableColumn__EXPERIMENTAL(
       currentCell.setColSpan(currentCell.__colSpan + 1);
     }
   }
-  if (firstInsertedCell !== null) {
+  if (firstInsertedCell !== null && shouldSetSelection) {
     $moveSelectionToCell(firstInsertedCell);
   }
   const colWidths = grid.getColWidths();
@@ -512,6 +581,9 @@ export function $insertTableColumn__EXPERIMENTAL(
   return firstInsertedCell;
 }
 
+/**
+ * @deprecated This function does not support merged cells. Use {@link $deleteTableColumnAtSelection} instead.
+ */
 export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -535,7 +607,7 @@ export function $deleteTableColumn(
   return tableNode;
 }
 
-export function $deleteTableRow__EXPERIMENTAL(): void {
+export function $deleteTableRowAtSelection(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -628,7 +700,12 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   }
 }
 
-export function $deleteTableColumn__EXPERIMENTAL(): void {
+/**
+ * @deprecated renamed to {@link $deleteTableRowAtSelection}
+ */
+export const $deleteTableRow__EXPERIMENTAL = $deleteTableRowAtSelection;
+
+export function $deleteTableColumnAtSelection(): void {
   const selection = $getSelection();
   invariant(
     $isRangeSelection(selection) || $isTableSelection(selection),
@@ -707,6 +784,11 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   }
 }
 
+/**
+ * @deprecated renamed to {@link $deleteTableColumnAtSelection}
+ */
+export const $deleteTableColumn__EXPERIMENTAL = $deleteTableColumnAtSelection;
+
 function $moveSelectionToCell(cell: TableCellNode): void {
   const firstDescendant = cell.getFirstDescendant();
   if (firstDescendant == null) {
@@ -725,6 +807,115 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   }
 }
 
+export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null {
+  if (cellNodes.length === 0) {
+    return null;
+  }
+
+  // Find the table node
+  const tableNode = $getTableNodeFromLexicalNodeOrThrow(cellNodes[0]);
+  const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+
+  // Find the boundaries of the selection including merged cells
+  let minRow = Infinity;
+  let maxRow = -Infinity;
+  let minCol = Infinity;
+  let maxCol = -Infinity;
+
+  // First pass: find the actual boundaries considering merged cells
+  const processedCells = new Set();
+  for (const row of gridMap) {
+    for (const mapCell of row) {
+      if (!mapCell || !mapCell.cell) {
+        continue;
+      }
+
+      const cellKey = mapCell.cell.getKey();
+      if (processedCells.has(cellKey)) {
+        continue;
+      }
+
+      if (cellNodes.some((cell) => cell.is(mapCell.cell))) {
+        processedCells.add(cellKey);
+        // Get the actual position of this cell in the grid
+        const cellStartRow = mapCell.startRow;
+        const cellStartCol = mapCell.startColumn;
+        const cellRowSpan = mapCell.cell.__rowSpan || 1;
+        const cellColSpan = mapCell.cell.__colSpan || 1;
+
+        // Update boundaries considering the cell's actual position and span
+        minRow = Math.min(minRow, cellStartRow);
+        maxRow = Math.max(maxRow, cellStartRow + cellRowSpan - 1);
+        minCol = Math.min(minCol, cellStartCol);
+        maxCol = Math.max(maxCol, cellStartCol + cellColSpan - 1);
+      }
+    }
+  }
+
+  // Validate boundaries
+  if (minRow === Infinity || minCol === Infinity) {
+    return null;
+  }
+
+  // The total span of the merged cell
+  const totalRowSpan = maxRow - minRow + 1;
+  const totalColSpan = maxCol - minCol + 1;
+
+  // Use the top-left cell as the target cell
+  const targetCellMap = gridMap[minRow][minCol];
+  if (!targetCellMap.cell) {
+    return null;
+  }
+  const targetCell = targetCellMap.cell;
+
+  // Set the spans for the target cell
+  targetCell.setColSpan(totalColSpan);
+  targetCell.setRowSpan(totalRowSpan);
+
+  // Move content from other cells to the target cell
+  const seenCells = new Set([targetCell.getKey()]);
+
+  // Second pass: merge content and remove other cells
+  for (let row = minRow; row <= maxRow; row++) {
+    for (let col = minCol; col <= maxCol; col++) {
+      const mapCell = gridMap[row][col];
+      if (!mapCell.cell) {
+        continue;
+      }
+
+      const currentCell = mapCell.cell;
+      const key = currentCell.getKey();
+
+      if (!seenCells.has(key)) {
+        seenCells.add(key);
+        const isEmpty = $cellContainsEmptyParagraph(currentCell);
+        if (!isEmpty) {
+          targetCell.append(...currentCell.getChildren());
+        }
+        currentCell.remove();
+      }
+    }
+  }
+
+  // Ensure target cell has content
+  if (targetCell.getChildrenSize() === 0) {
+    targetCell.append($createParagraphNode());
+  }
+
+  return targetCell;
+}
+
+function $cellContainsEmptyParagraph(cell: TableCellNode): boolean {
+  if (cell.getChildrenSize() !== 1) {
+    return false;
+  }
+  const firstChild = cell.getFirstChildOrThrow();
+  if (!$isParagraphNode(firstChild) || !firstChild.isEmpty()) {
+    return false;
+  }
+  return true;
+}
+
 export function $unmergeCell(): void {
   const selection = $getSelection();
   invariant(
@@ -732,7 +923,16 @@ export function $unmergeCell(): void {
     'Expected a RangeSelection or TableSelection',
   );
   const anchor = selection.anchor.getNode();
-  const [cell, row, grid] = $getNodeTriplet(anchor);
+  const cellNode = $findMatchingParent(anchor, $isTableCellNode);
+  invariant(
+    $isTableCellNode(cellNode),
+    'Expected to find a parent TableCellNode',
+  );
+  return $unmergeCellNode(cellNode);
+}
+
+export function $unmergeCellNode(cellNode: TableCellNode): void {
+  const [cell, row, grid] = $getNodeTriplet(cellNode);
   const colSpan = cell.__colSpan;
   const rowSpan = cell.__rowSpan;
   if (colSpan === 1 && rowSpan === 1) {

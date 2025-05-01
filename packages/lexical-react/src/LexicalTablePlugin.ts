@@ -10,11 +10,13 @@ import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
+  $isScrollableTablesActive,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
   registerTableSelectionObserver,
   setScrollableTablesActive,
   TableCellNode,
+  TableNode,
 } from '@lexical/table';
 import {useEffect} from 'react';
 
@@ -53,7 +55,13 @@ export function TablePlugin({
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    setScrollableTablesActive(editor, hasHorizontalScroll);
+    const hadHorizontalScroll = $isScrollableTablesActive(editor);
+    if (hadHorizontalScroll !== hasHorizontalScroll) {
+      setScrollableTablesActive(editor, hasHorizontalScroll);
+      // Registering the transform has the side-effect of marking all existing
+      // TableNodes as dirty. The handler is immediately unregistered.
+      editor.registerNodeTransform(TableNode, () => {})();
+    }
   }, [editor, hasHorizontalScroll]);
 
   useEffect(() => registerTablePlugin(editor), [editor]);

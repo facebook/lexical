@@ -32,9 +32,11 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
+import {HISTORY_MERGE_TAG} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
+  $setSelection,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -260,14 +262,60 @@ export interface MutationListenerOptions {
 
 const DEFAULT_SKIP_INITIALIZATION = false;
 
-export type UpdateListener = (arg0: {
+/**
+ * The payload passed to an UpdateListener
+ */
+export interface UpdateListenerPayload {
+  /**
+   * A Map of NodeKeys of ElementNodes to a boolean that is true
+   * if the node was intentionally mutated ('unintentional' mutations
+   * are triggered when an indirect descendant is marked dirty)
+   */
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  /**
+   * A Set of NodeKeys of all nodes that were marked dirty that
+   * do not inherit from ElementNode.
+   */
   dirtyLeaves: Set<NodeKey>;
+  /**
+   * The new EditorState after all updates have been processed,
+   * equivalent to `editor.getEditorState()`
+   */
   editorState: EditorState;
+  /**
+   * The Map of LexicalNode constructors to a `Map<NodeKey, NodeMutation>`,
+   * this is useful when you have a mutation listener type use cases that
+   * should apply to all or most nodes. Will be null if no DOM was mutated,
+   * such as when only the selection changed.
+   *
+   * Added in v0.28.0
+   */
+  mutatedNodes: null | MutatedNodes;
+  /**
+   * For advanced use cases only.
+   *
+   * Tracks the keys of TextNode descendants that have been merged
+   * with their siblings by normalization. Note that these keys may
+   * not exist in either editorState or prevEditorState and generally
+   * this is only used for conflict resolution edge cases in collab.
+   */
   normalizedNodes: Set<NodeKey>;
+  /**
+   * The previous EditorState that is being discarded
+   */
   prevEditorState: EditorState;
+  /**
+   * The set of tags added with update options or {@link $addUpdateTag},
+   * node that this includes all tags that were processed in this
+   * reconciliation which may have been added by separate updates.
+   */
   tags: Set<string>;
-}) => void;
+}
+
+/**
+ * A listener that gets called after the editor is updated
+ */
+export type UpdateListener = (payload: UpdateListenerPayload) => void;
 
 export type DecoratorListener<T = never> = (
   decorator: Record<NodeKey, T>,
@@ -333,30 +381,27 @@ type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
 >;
-type Listeners = {
-  decorator: Set<DecoratorListener>;
+
+export interface Listeners {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  decorator: Set<DecoratorListener<any>>;
   mutation: MutationListeners;
   editable: Set<EditableListener>;
   root: Set<RootListener>;
   textcontent: Set<TextContentListener>;
   update: Set<UpdateListener>;
+}
+
+export type SetListeners = {
+  [K in keyof Listeners as Listeners[K] extends Set<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (...args: any[]) => void
+  >
+    ? K
+    : never]: Listeners[K] extends Set<(...args: infer Args) => void>
+    ? Args
+    : never;
 };
-
-export type Listener =
-  | DecoratorListener
-  | EditableListener
-  | MutationListener
-  | RootListener
-  | TextContentListener
-  | UpdateListener;
-
-export type ListenerType =
-  | 'update'
-  | 'root'
-  | 'decorator'
-  | 'textcontent'
-  | 'mutation'
-  | 'editable';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -574,6 +619,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
+    editorConfig,
   );
 
   if (initialEditorState !== undefined) {
@@ -648,6 +694,8 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /** @internal */
+  _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
   constructor(
@@ -658,7 +706,9 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
+    createEditorArgs?: CreateEditorArgs,
   ) {
+    this._createEditorArgs = createEditorArgs;
     this._parentEditor = parentEditor;
     // The root element associated with this editor
     this._rootElement = null;
@@ -1103,7 +1153,7 @@ export class LexicalEditor {
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
 
         $commitPendingUpdates(this);
 
@@ -1135,7 +1185,7 @@ export class LexicalEditor {
         // using a commit we preserve the readOnly invariant
         // for editor.getEditorState().
         this._window = null;
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
         $commitPendingUpdates(this);
       }
 
@@ -1255,7 +1305,11 @@ export class LexicalEditor {
   }
 
   /**
-   * Focuses the editor
+   * Focuses the editor by marking the existing selection as dirty, or by
+   * creating a new selection at `defaultSelection` if one does not already
+   * exist. If you want to force a specific selection, you should call
+   * `root.selectStart()` or `root.selectEnd()` in an update.
+   *
    * @param callbackFn - A function to run after the editor is focused.
    * @param options - A bag of options
    */
@@ -1271,7 +1325,9 @@ export class LexicalEditor {
 
         if (selection !== null) {
           // Marking the selection dirty will force the selection back to it
-          selection.dirty = true;
+          if (!selection.dirty) {
+            $setSelection(selection.clone());
+          }
         } else if (root.getChildrenSize() !== 0) {
           if (options.defaultSelection === 'rootStart') {
             root.selectStart();
@@ -1288,7 +1344,7 @@ export class LexicalEditor {
         });
       });
       // In the case where onUpdate doesn't fire (due to the focus update not
-      // occuring).
+      // occurring).
       if (this._pendingEditorState === null) {
         rootElement.removeAttribute('autocapitalize');
       }

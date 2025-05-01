@@ -9,6 +9,7 @@
 import type {EditorState, NodeKey} from 'lexical';
 
 import {
+  $addUpdateTag,
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
@@ -16,6 +17,9 @@ import {
   $getWritableNodeState,
   $isRangeSelection,
   $isTextNode,
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
+  SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {
@@ -171,6 +175,12 @@ export function syncYjsChangesToLexical(
           $syncLocalCursorPosition(binding, provider);
         }
       }
+
+      if (!isFromUndoManger) {
+        // If it is an external change, we don't want the current scroll position to get changed
+        // since the user might've intentionally scrolled somewhere else in the document.
+        $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+      }
     },
     {
       onUpdate: () => {
@@ -185,7 +195,7 @@ export function syncYjsChangesToLexical(
         });
       },
       skipTransforms: true,
-      tag: isFromUndoManger ? 'historic' : 'collaboration',
+      tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
 }
@@ -262,7 +272,7 @@ export function syncLexicalUpdateToYjs(
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is
       // when we need to handle normalization merge conflicts.
-      if (tags.has('collaboration') || tags.has('historic')) {
+      if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
         if (normalizedNodes.size > 0) {
           $handleNormalizationMergeConflicts(binding, normalizedNodes);
         }

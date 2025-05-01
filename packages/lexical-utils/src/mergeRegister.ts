@@ -25,7 +25,7 @@ type Func = () => void;
  * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
  * function to be executed after either the useEffect runs again (due to one of its dependencies
  * updating) or the component it resides in unmounts.
- * Note the functions don't neccesarily need to be in an array as all arguments
+ * Note the functions don't necessarily need to be in an array as all arguments
  * are considered to be the func argument and spread from there.
  * The order of cleanup is the reverse of the argument order. Generally it is
  * expected that the first "acquire" will be "released" last (LIFO order),

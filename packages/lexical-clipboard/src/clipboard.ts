@@ -369,7 +369,7 @@ export function $generateJSONFromSelectedNodes<
 }
 
 /**
- * This method takes an array of objects conforming to the BaseSeralizedNode interface and returns
+ * This method takes an array of objects conforming to the BaseSerializedNode interface and returns
  * an Array containing instances of the corresponding LexicalNode classes registered on the editor.
  * Normally, you'd get an Array of BaseSerialized nodes from {@link $generateJSONFromSelectedNodes}
  *
@@ -449,9 +449,7 @@ export async function copyToClipboard(
             window.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
-          resolve(
-            $copyToClipboardEvent(editor, secondEvent as ClipboardEvent, data),
-          );
+          resolve($copyToClipboardEvent(editor, secondEvent, data));
         }
         // Block the entire copy flow while we wait for the next ClipboardEvent
         return true;

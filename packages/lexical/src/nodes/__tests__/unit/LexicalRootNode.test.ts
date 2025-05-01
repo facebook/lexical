@@ -73,7 +73,7 @@ describe('LexicalRootNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON method
-        // to accomodate these changes.
+        // to accommodate these changes.
         expect(node.exportJSON()).toStrictEqual({
           children: [],
           direction: null,
@@ -157,7 +157,7 @@ describe('LexicalRootNode tests', () => {
       });
     });
 
-    test('RootNode is selected when its only child removed', async () => {
+    test('RootNode is selected when its selected child is removed', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
@@ -184,6 +184,28 @@ describe('LexicalRootNode tests', () => {
 
         expect(selection.anchor.getNode()).toBe(root);
         expect(selection.focus.getNode()).toBe(root);
+      });
+    });
+
+    test('RootNode is not selected when all children are removed with no selection', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        expect($getSelection()).toBe(null);
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        expect($getSelection()).toBe(null);
+      });
+
+      await editor.update(() => {
+        expect($getSelection()).toBe(null);
+        $getRoot().clear();
+        expect($getSelection()).toBe(null);
+      });
+
+      await editor.update(() => {
+        expect($getSelection()).toBe(null);
       });
     });
 

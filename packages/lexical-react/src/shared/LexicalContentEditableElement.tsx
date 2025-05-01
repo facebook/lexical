@@ -15,7 +15,7 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {mergeRefs} from './mergeRefs';
 
-export type Props = {
+export type ContentEditableElementProps = {
   editor: LexicalEditor;
   ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
   ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
@@ -57,7 +57,7 @@ function ContentEditableElementImpl(
     tabIndex,
     'data-testid': testid,
     ...rest
-  }: Props,
+  }: ContentEditableElementProps,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
   const [isEditable, setEditable] = useState(editor.isEditable());

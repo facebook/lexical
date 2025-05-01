@@ -145,6 +145,18 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type CreateEditorArgs = {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
+  onError?: ErrorHandler;
+  parentEditor?: LexicalEditor;
+  editable?: boolean;
+  theme?: EditorThemeClasses;
+  html?: HTMLConfig;
+};
+
 declare export class LexicalEditor {
   _parentEditor: null | LexicalEditor;
   _rootElement: null | HTMLElement;
@@ -166,6 +178,7 @@ declare export class LexicalEditor {
   _pendingDecorators: null | {
     [NodeKey]: mixed,
   };
+  _createEditorArgs?: CreateEditorArgs;
   _config: EditorConfig;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
@@ -198,6 +211,7 @@ declare export class LexicalEditor {
     listener: Transform<T>,
   ): () => void;
   dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
+  hasNode(node: Class<LexicalNode>): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getKey(): string;
   getDecorators<X>(): {
@@ -808,7 +822,7 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
-  getDOMSlot(dom: HTMLElement): ElementDOMSlot;
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
@@ -817,14 +831,14 @@ declare export function $isElementNode(
 /**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot {
-  element: HTMLElement;
-  before: Node | null;
-  after: Node | null;
+declare export class ElementDOMSlot<+T: HTMLElement> {
+  +element: HTMLElement;
+  +before: Node | null;
+  +after: Node | null;
   constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
-  withBefore(before: Node | null | void): ElementDOMSlot;
-  withAfter(after: Node | null | void): ElementDOMSlot;
-  withElement(element: HTMLElement): ElementDOMSlot;
+  withBefore(before: Node | null | void): ElementDOMSlot<T>;
+  withAfter(after: Node | null | void): ElementDOMSlot<T>;
+  withElement<ElementType: HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   insertChild(dom: Node): this;
   removeChild(dom: Node): this;
   replaceChild(dom: Node, prevDom: Node): this;
@@ -1226,7 +1240,22 @@ declare export function $getCommonAncestor<
 declare export function $extendCaretToRange<D: CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D>;
-
+declare export function $getCollapsedCaretRange<D: CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D>;
 declare export function $isExtendableTextPointCaret<D: CaretDirection>(
   caret: PointCaret<D>
 ): implies caret is TextPointCaret<TextNode, D>;
+
+export interface SplitAtPointCaretNextOptions {
+  $copyElementNode?: (node: ElementNode) => ElementNode;
+  $splitTextPointCaretNext?: (
+    caret: TextPointCaret<TextNode, 'next'>,
+  ) => NodeCaret<'next'>;
+  rootMode?: RootMode;
+  $shouldSplit?: (node: ElementNode, edge: 'first' | 'last') => boolean;
+}
+declare export function $splitAtPointCaretNext(
+  pointCaret: PointCaret<'next'>,
+  options?: SplitAtPointCaretNextOptions,
+): null | NodeCaret<'next'>;

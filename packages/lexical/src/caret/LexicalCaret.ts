@@ -7,6 +7,7 @@
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
 
+import devInvariant from 'shared/devInvariant';
 import invariant from 'shared/invariant';
 
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
@@ -22,7 +23,8 @@ export type CaretDirection = 'next' | 'previous';
 /**
  * A type utility to flip next and previous
  */
-export type FlipDirection<D extends CaretDirection> = typeof FLIP_DIRECTION[D];
+export type FlipDirection<D extends CaretDirection> =
+  (typeof FLIP_DIRECTION)[D];
 /**
  * A sibling caret type points from a LexicalNode origin to its next or previous sibling,
  * and a child caret type points from an ElementNode origin to its first or last child.
@@ -110,7 +112,7 @@ export interface CaretRange<D extends CaretDirection = CaretDirection>
   /**
    * There are between zero and two non-null TextSliceCarets for a CaretRange.
    * Note that when anchor and focus share an origin node the second element
-   * will be null becaues the slice is entirely represented by the first element.
+   * will be null because the slice is entirely represented by the first element.
    *
    * `[slice, slice]`: anchor and focus are TextPointCaret with distinct origin nodes
    * `[slice, null]`: anchor is a TextPointCaret
@@ -188,8 +190,8 @@ export interface SiblingCaret<
    */
   getParentCaret: (mode?: RootMode) => null | SiblingCaret<ElementNode, D>;
   /**
-   * Retun true if other is a SiblingCaret or TextPointCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a SiblingCaret or TextPointCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSameNodeCaret: (
     other: null | undefined | PointCaret,
@@ -197,8 +199,8 @@ export interface SiblingCaret<
     ? TextPointCaret<T & TextNode, D>
     : never;
   /**
-   * Retun true if other is a SiblingCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a SiblingCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSamePointCaret: (
     other: null | undefined | PointCaret,
@@ -233,15 +235,15 @@ export interface ChildCaret<
   /** Return this, the ChildCaret is already a child caret of its origin */
   getChildCaret: () => this;
   /**
-   * Retun true if other is a ChildCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a ChildCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSameNodeCaret: (
     other: null | undefined | PointCaret,
   ) => other is ChildCaret<T, D>;
   /**
-   * Retun true if other is a ChildCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a ChildCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSamePointCaret: (
     other: null | undefined | PointCaret,
@@ -295,15 +297,15 @@ export interface TextPointCaret<
    */
   getParentCaret: (mode?: RootMode) => null | SiblingCaret<ElementNode, D>;
   /**
-   * Retun true if other is a TextPointCaret or SiblingCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a TextPointCaret or SiblingCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSameNodeCaret: (
     other: null | undefined | PointCaret,
   ) => other is TextPointCaret<T, D> | SiblingCaret<T, D>;
   /**
-   * Retun true if other is a ChildCaret with the same
-   * origin (by node key comparion) and direction.
+   * Return true if other is a ChildCaret with the same
+   * origin (by node key comparison) and direction.
    */
   isSamePointCaret: (
     other: null | undefined | PointCaret,
@@ -889,7 +891,7 @@ export function $getTextPointCaret(
 
 /**
  * Get a normalized offset into a TextNode given a numeric offset or a
- * direction for which end of the string to use. Throws if the offset
+ * direction for which end of the string to use. Throws in dev if the offset
  * is not in the bounds of the text content size.
  *
  * @param origin a TextNode
@@ -901,14 +903,19 @@ export function $getTextNodeOffset(
   offset: number | CaretDirection,
 ): number {
   const size = origin.getTextContentSize();
-  const numericOffset =
+  let numericOffset =
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
-  invariant(
-    numericOffset >= 0 && numericOffset <= size,
-    '$getTextNodeOffset: invalid offset %s for size %s',
-    String(offset),
-    String(size),
-  );
+  if (numericOffset < 0 || numericOffset > size) {
+    devInvariant(
+      false,
+      '$getTextNodeOffset: invalid offset %s for size %s at key %s',
+      String(offset),
+      String(size),
+      origin.getKey(),
+    );
+    // Clamp invalid offsets in prod
+    numericOffset = numericOffset < 0 ? 0 : size;
+  }
   return numericOffset;
 }
 
@@ -1119,6 +1126,15 @@ export function $extendCaretToRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D> {
   return $getCaretRange(anchor, $getSiblingCaret($getRoot(), anchor.direction));
+}
+
+/**
+ * Construct a collapsed CaretRange that starts and ends at anchor.
+ */
+export function $getCollapsedCaretRange<D extends CaretDirection>(
+  anchor: PointCaret<D>,
+): CaretRange<D> {
+  return $getCaretRange(anchor, anchor);
 }
 
 /**

@@ -11,17 +11,22 @@ import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isTextNode, SELECTION_CHANGE_COMMAND} from '.';
+import {
+  $isElementNode,
+  $isTextNode,
+  SELECTION_CHANGE_COMMAND,
+  SKIP_DOM_SELECTION_TAG,
+} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
   CommandPayloadType,
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
-  Listener,
   MutatedNodes,
   RegisteredNodes,
   resetEditor,
+  SetListeners,
   Transform,
 } from './LexicalEditor';
 import {
@@ -134,7 +139,7 @@ function collectBuildInformation(): string {
       } else if (editor) {
         let version = String(
           (
-            editor.constructor as typeof editor['constructor'] &
+            editor.constructor as (typeof editor)['constructor'] &
               Record<string, unknown>
           ).version || '<0.17.1',
         );
@@ -306,10 +311,18 @@ function $applyAllTransforms(
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
 
+    // The root is always considered intentionally dirty if any attached node
+    // is dirty and by deleting and re-inserting we will apply its transforms
+    // last (e.g. its transform can be used as a sort of "update finalizer")
+    const rootDirty = untransformedDirtyElements.delete('root');
+    if (rootDirty) {
+      untransformedDirtyElements.set('root', true);
+    }
     for (const currentUntransformedDirtyElement of untransformedDirtyElements) {
       const nodeKey = currentUntransformedDirtyElement[0];
       const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
-      if (nodeKey !== 'root' && !intentionallyMarkedAsDirty) {
+      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
+      if (!intentionallyMarkedAsDirty) {
         continue;
       }
 
@@ -321,8 +334,6 @@ function $applyAllTransforms(
       ) {
         $applyTransforms(editor, node, transformsCache);
       }
-
-      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
     }
 
     untransformedDirtyLeaves = editor._dirtyLeaves;
@@ -614,7 +625,7 @@ export function $commitPendingUpdates(
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty) &&
     rootElement !== null &&
-    !tags.has('skip-dom-selection')
+    !tags.has(SKIP_DOM_SELECTION_TAG)
   ) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
@@ -687,6 +698,7 @@ export function $commitPendingUpdates(
     dirtyElements,
     dirtyLeaves,
     editorState: pendingEditorState,
+    mutatedNodes,
     normalizedNodes,
     prevEditorState: recoveryEditorState || currentEditorState,
     tags,
@@ -731,19 +743,20 @@ function triggerMutationListeners(
   }
 }
 
-export function triggerListeners(
-  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'editable',
+export function triggerListeners<T extends keyof SetListeners>(
+  type: T,
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
-  ...payload: unknown[]
+  ...payload: SetListeners[T]
 ): void {
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
 
   try {
-    const listeners = Array.from<Listener>(editor._listeners[type]);
+    const listeners = Array.from(
+      editor._listeners[type] as Set<(...args: SetListeners[T]) => void>,
+    );
     for (let i = 0; i < listeners.length; i++) {
-      // @ts-ignore
       listeners[i].apply(null, payload);
     }
   } finally {
@@ -758,14 +771,6 @@ export function triggerCommandListeners<
   type: TCommand,
   payload: CommandPayloadType<TCommand>,
 ): boolean {
-  if (editor._updating === false || activeEditor !== editor) {
-    let returnVal = false;
-    editor.update(() => {
-      returnVal = triggerCommandListeners(editor, type, payload);
-    });
-    return returnVal;
-  }
-
   const editors = getEditorsToPropagate(editor);
 
   for (let i = 4; i >= 0; i--) {
@@ -781,10 +786,17 @@ export function triggerCommandListeners<
           const listeners = Array.from(listenersSet);
           const listenersLength = listeners.length;
 
-          for (let j = 0; j < listenersLength; j++) {
-            if (listeners[j](payload, editor) === true) {
-              return true;
+          let returnVal = false;
+          updateEditorSync(currentEditor, () => {
+            for (let j = 0; j < listenersLength; j++) {
+              if (listeners[j](payload, editor)) {
+                returnVal = true;
+                return;
+              }
             }
+          });
+          if (returnVal) {
+            return returnVal;
           }
         }
       }
@@ -1042,12 +1054,10 @@ export function updateEditorSync(
   updateFn: () => void,
   options?: EditorUpdateOptions,
 ): void {
-  if (!editor._updating) {
-    $beginUpdate(editor, updateFn, options);
-  } else if (activeEditor === editor) {
+  if (activeEditor === editor && options === undefined) {
     updateFn();
   } else {
-    editor._updates.push([updateFn, options]);
+    $beginUpdate(editor, updateFn, options);
   }
 }
 

@@ -471,7 +471,10 @@ test.describe('Hashtags', () => {
 
   test('Should not break while importing and exporting multiple matches', async ({
     page,
+    isPlainText,
   }) => {
+    test.skip(isPlainText);
+
     await focusEditor(page);
     await page.keyboard.type('```markdown #hello#invalid #a #b');
 

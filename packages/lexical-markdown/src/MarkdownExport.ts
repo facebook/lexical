@@ -203,10 +203,19 @@ function exportTextFormat(
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
-  // We instead want to trim the whitespace out, apply formatting, and then
-  // bring the whitespace back. So our returned string looks like this: "   **foo**   "
-  const frozenString = textContent.trim();
-  let output = frozenString;
+  // If the node has no format, we use the original text.
+  // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
+  // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
+  let output =
+    node.getFormat() === 0
+      ? textContent
+      : escapeLeadingAndTrailingWhitespaces(textContent);
+
+  if (!node.hasFormat('code')) {
+    // Escape any markdown characters in the text content
+    output = output.replace(/([*_`~\\])/g, '\\$1');
+  }
+
   // the opening tags to be added to the result
   let openingTags = '';
   // the closing tags to be added to the result
@@ -227,7 +236,7 @@ function exportTextFormat(
       // Multiple tags might be used for the same format (*, _)
       applied.add(format);
 
-      // append the tag to openningTags, if it's not applied to the previous nodes,
+      // append the tag to openingTags, if it's not applied to the previous nodes,
       // or the nodes before that (which would result in an unclosed tag)
       if (
         !hasFormat(prevNode, format) ||
@@ -281,7 +290,7 @@ function exportTextFormat(
 
   output = openingTags + output + closingTagsAfter;
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
-  return closingTagsBefore + textContent.replace(frozenString, () => output);
+  return closingTagsBefore + output;
 }
 
 // Get next or previous text sibling a text node, including cases
@@ -335,4 +344,10 @@ function hasFormat(
   format: TextFormatType,
 ): boolean {
   return $isTextNode(node) && node.hasFormat(format);
+}
+
+function escapeLeadingAndTrailingWhitespaces(textContent: string) {
+  return textContent.replace(/^\s+|\s+$/g, (match) => {
+    return [...match].map((char) => '&#' + char.codePointAt(0) + ';').join('');
+  });
 }

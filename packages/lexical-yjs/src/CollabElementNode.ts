@@ -17,6 +17,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  removeFromParent,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -29,7 +30,6 @@ import {
   $syncPropertiesFromYjs,
   createLexicalNodeFromCollabNode,
   getPositionFromElementAndOffset,
-  removeFromParent,
   spliceString,
   syncPropertiesFromLexical,
 } from './Utils';
@@ -679,7 +679,9 @@ export class CollabElementNode {
       children[i].destroy(binding);
     }
 
-    collabNodeMap.delete(this._key);
+    if (collabNodeMap.get(this._key) === this) {
+      collabNodeMap.delete(this._key);
+    }
   }
 }
 

@@ -1020,7 +1020,11 @@ test.describe.parallel('Markdown', () => {
             class="editor-equation"
             contenteditable="false"
             data-lexical-decorator="true">
-            <img alt="" src="#" />
+            <img
+              alt=""
+              height="0"
+              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+              width="0" />
             <span role="button" tabindex="-1">
               <span class="katex">
                 <span class="katex-html" aria-hidden="true">
@@ -1031,9 +1035,36 @@ test.describe.parallel('Markdown', () => {
                 </span>
               </span>
             </span>
-            <img alt="" src="#" />
+            <img
+              alt=""
+              height="0"
+              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+              width="0" />
           </span>
           <br />
+        </p>
+      `,
+    );
+  });
+
+  test('does not use code-formatted text in text format transformers (#7349)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('`void*` or `int*`');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <code spellcheck="false" data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textCode">void*</span>
+          </code>
+          <span data-lexical-text="true">or</span>
+          <code spellcheck="false" data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textCode">int*</span>
+          </code>
         </p>
       `,
     );

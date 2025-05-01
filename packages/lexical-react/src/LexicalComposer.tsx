@@ -20,6 +20,7 @@ import {
   createEditor,
   EditorState,
   EditorThemeClasses,
+  HISTORY_MERGE_TAG,
   HTMLConfig,
   Klass,
   LexicalEditor,
@@ -31,7 +32,7 @@ import * as React from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
+const HISTORY_MERGE_OPTIONS = {tag: HISTORY_MERGE_TAG};
 
 export type InitialEditorStateType =
   | null

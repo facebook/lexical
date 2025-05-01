@@ -6,6 +6,7 @@
  *
  */
 
+import {IS_CHROME} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
@@ -18,8 +19,6 @@ import {
   RangeSelection,
   StaticNodeConfigRecord,
 } from 'lexical';
-import {IS_CHROME} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
@@ -56,10 +55,11 @@ export class CollapsibleTitleNode extends ElementNode {
       dom.addEventListener('click', () => {
         editor.update(() => {
           const collapsibleContainer = this.getLatest().getParentOrThrow();
-          invariant(
-            $isCollapsibleContainerNode(collapsibleContainer),
-            'Expected parent node to be a CollapsibleContainerNode',
-          );
+          if (!$isCollapsibleContainerNode(collapsibleContainer)) {
+            throw new Error(
+              'Expected parent node to be a CollapsibleContainerNode',
+            );
+          }
           collapsibleContainer.toggleOpen();
         });
       });

@@ -26,7 +26,6 @@ import {
   $isParagraphNode,
   ElementNode,
 } from 'lexical';
-import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 import {importTextTransformers} from './importTextTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
@@ -80,6 +79,7 @@ export function createMarkdownImport(
         byType.element,
         textFormatTransformersIndex,
         byType.textMatch,
+        shouldPreserveNewLines,
       );
     }
 
@@ -225,6 +225,7 @@ function $importBlocks(
   elementTransformers: Array<ElementTransformer>,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
+  shouldPreserveNewLines: boolean,
 ) {
   const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
@@ -254,9 +255,10 @@ function $importBlocks(
   if (elementNode.isAttached() && lineText.length > 0) {
     const previousNode = elementNode.getPreviousSibling();
     if (
-      $isParagraphNode(previousNode) ||
-      $isQuoteNode(previousNode) ||
-      $isListNode(previousNode)
+      !shouldPreserveNewLines && // Only append if we're not preserving newlines
+      ($isParagraphNode(previousNode) ||
+        $isQuoteNode(previousNode) ||
+        $isListNode(previousNode))
     ) {
       let targetNode: typeof previousNode | ListItemNode | null = previousNode;
 
@@ -285,7 +287,7 @@ function createTextFormatTransformersIndex(
 ): TextFormatTransformersIndex {
   const transformersByTag: Record<string, TextFormatTransformer> = {};
   const fullMatchRegExpByTag: Record<string, RegExp> = {};
-  const openTagsRegExp = [];
+  const openTagsRegExp: string[] = [];
   const escapeRegExp = `(?<![\\\\])`;
 
   for (const transformer of textTransformers) {
@@ -294,13 +296,15 @@ function createTextFormatTransformersIndex(
     const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
-    if (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT) {
-      fullMatchRegExpByTag[tag] = new RegExp(
-        `(${tagRegExp})(?![${tagRegExp}\\s])(.*?[^${tagRegExp}\\s])${tagRegExp}(?!${tagRegExp})`,
-      );
-    } else {
+    // Single-char tag (e.g. "*"),
+    if (tag.length === 1) {
       fullMatchRegExpByTag[tag] = new RegExp(
         `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+      );
+    } else {
+      // Multi‐char tags (e.g. "**")
+      fullMatchRegExpByTag[tag] = new RegExp(
+        `(?<!\\\\)(${tagRegExp})((\\\\${tagRegExp})?.*?[^\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?!\\\\)`,
       );
     }
   }
@@ -308,12 +312,10 @@ function createTextFormatTransformersIndex(
   return {
     // Reg exp to find open tag + content + close tag
     fullMatchRegExpByTag,
-    // Reg exp to find opening tags
+
+    // Regexp to locate *any* potential opening tag (longest first).
     openTagsRegExp: new RegExp(
-      (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
-        '(' +
-        openTagsRegExp.join('|') +
-        ')',
+      `${escapeRegExp}(${openTagsRegExp.join('|')})`,
       'g',
     ),
     transformersByTag,

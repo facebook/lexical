@@ -34,6 +34,7 @@ export {
   $getCaretRange,
   $getChildCaret,
   $getChildCaretOrSelf,
+  $getCollapsedCaretRange,
   $getCommonAncestor,
   $getCommonAncestorResultBranchOrder,
   $getSiblingCaret,
@@ -61,7 +62,9 @@ export {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelectionFromCaretRange,
+  $splitAtPointCaretNext,
   $updateRangeSelectionFromCaretRange,
+  type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';
 export type {PasteCommandType} from './LexicalCommands';
 export {
@@ -149,6 +152,7 @@ export type {
   Spread,
   Transform,
   UpdateListener,
+  UpdateListenerPayload,
 } from './LexicalEditor';
 export {
   COMMAND_PRIORITY_CRITICAL,
@@ -264,12 +268,15 @@ export {
   isDOMNode,
   isDOMTextNode,
   isDOMUnmanaged,
+  isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
   isLexicalEditor,
+  isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
   setNodeIndentFromDOM,
@@ -304,3 +311,15 @@ export type {
   TextModeType,
 } from './nodes/LexicalTextNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+
+// Update Tags
+export {
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
+  PASTE_TAG,
+  SKIP_COLLAB_TAG,
+  SKIP_DOM_SELECTION_TAG,
+  SKIP_SCROLL_INTO_VIEW_TAG,
+} from './LexicalUpdateTags';

@@ -15,11 +15,18 @@ const path = require('node:path');
 
 const {PackageMetadata} = require('../../../scripts/shared/PackageMetadata.js');
 
-const packageMetadataCache = new Map();
+/**
+ * @param {string} fn
+ * @returns {string}
+ */
+function removeExtension(fn) {
+  return fn.replace(/\.m?(ts|js)x?$/, '');
+}
 
 /** @type {import('eslint').Rule.RuleModule} */
 module.exports = {
   create(context) {
+    /** @type {PackageMetadata | null} */
     let packageMetadata = null;
 
     return {
@@ -41,42 +48,72 @@ module.exports = {
           return;
         }
 
-        // Self-import
-        if (importPath === packageMetadata.packageJson.name) {
+        const packagesMatch = /^packages\/([^/]+)\//.exec(importPath);
+        if (packagesMatch) {
+          const invalidPackage = getNearestPackageJsonMetadata(
+            packagesMatch[1],
+          );
+          if (invalidPackage && !invalidPackage.isPrivate()) {
+            const data = {
+              moduleName: `'${importPath}'`,
+              suggestedModuleName: `'${invalidPackage.getNpmName()}'`,
+            };
+            /** @type {import('eslint').Rule.ReportFixer} */
+            const fix = (fixer) =>
+              fixer.replaceText(node.source, data.suggestedModuleName);
+            context.report({
+              data,
+              fix,
+              messageId: 'packagesImport',
+              node,
+              suggest: [{data, fix, messageId: 'packagesImportSuggestion'}],
+            });
+          } else {
+            context.report({
+              data: {moduleName: `'${importPath}'`},
+              messageId: 'packagesImport',
+              node,
+            });
+          }
+          return;
+        }
+
+        const packageName = packageMetadata.getNpmName();
+        const reportSelfImport = () => {
+          const data = {
+            moduleName: `'${importPath}'`,
+            suggestedModuleName: `'.${importPath.substring(
+              packageName.length,
+            )}'`,
+          };
+          /** @type {import('eslint').Rule.ReportFixer} */
+          const fix = (fixer) =>
+            fixer.replaceText(node.source, data.suggestedModuleName);
           context.report({
-            message: `Package "${packageMetadata.packageJson.name}" should not import from itself. Use relative instead.`,
+            data,
+            fix,
+            messageId: 'moduleSelfImport',
             node,
+            suggest: [{data, fix, messageId: 'moduleSelfImportSuggestion'}],
           });
+        };
+        if (importPath === packageName) {
+          // Self-import
+          reportSelfImport();
+        } else if (importPath.startsWith(`${packageName}/`)) {
           // Import from subpath export => only invalid if subpath export resolves to current file
-        } else if (importPath.startsWith(packageMetadata.packageJson.name)) {
           // Check if this file is referenced in the package.json exports entry for the import path
           const exports = packageMetadata.getNormalizedNpmModuleExportEntries();
           const exportEntry = exports.find(([name]) => importPath === name);
           if (exportEntry) {
             const resolvedExport = exportEntry[1].import.default;
-
             // Resolved path of file that is trying to be imported, without extensions
-            const resolvedExportPath = path.join(
-              path.dirname(packageMetadata.packageJsonPath),
+            const resolvedExportPath = packageMetadata.resolve(
               'src',
-              resolvedExport,
+              removeExtension(resolvedExport),
             );
-
-            const baseResolvedExportPath = resolvedExportPath.substring(
-              0,
-              resolvedExportPath.lastIndexOf('.'),
-            );
-
-            const baseCurFilePath = context.filename.substring(
-              0,
-              context.filename.lastIndexOf('.'),
-            );
-
-            if (baseCurFilePath === baseResolvedExportPath) {
-              context.report({
-                message: `Package "${resolvedExport}" should not import from itself. Use relative instead.`,
-                node,
-              });
+            if (removeExtension(context.filename) === resolvedExportPath) {
+              reportSelfImport();
             }
           }
         }
@@ -91,29 +128,51 @@ module.exports = {
         'Disallow a package from importing from itself, except type-only imports',
       recommended: true,
     },
+    fixable: 'code',
+    hasSuggestions: true,
+    messages: {
+      moduleSelfImport: `Exported module {{ moduleName }} should not import from itself. Use a relative import instead.`,
+      moduleSelfImportSuggestion: `Rename import of {{ moduleName }} to {{ suggestedModuleName }}`,
+      packagesImport: `Invalid import from {{ moduleName }} outside of the tests, use a public or relative export.`,
+      packagesImportSuggestion: `Rename import of {{ moduleName }} to {{ suggestedModuleName }}`,
+    },
     schema: [],
   },
 };
 
 /**
+ * @type {Map<string, PackageMetadata>}
+ */
+const packageMetadataCache = new Map();
+
+/**
  * @param {string} startDir
+ * @returns {PackageMetadata | null}
  */
 function getNearestPackageJsonMetadata(startDir) {
-  let currentDir = startDir;
-  while (currentDir !== path.dirname(currentDir)) {
-    // Root directory check
-    const pkgPath = path.join(currentDir, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-      if (packageMetadataCache.has(pkgPath)) {
-        return packageMetadataCache.get(pkgPath);
+  /** @type {Set<string>} */
+  const dirs = new Set();
+  /** @type {PackageMetadata | null} */
+  let packageMetadata = null;
+  for (
+    let currentDir = startDir;
+    !dirs.has(currentDir) && currentDir.length > 0;
+    currentDir = path.dirname(currentDir)
+  ) {
+    packageMetadata = packageMetadataCache.get(currentDir);
+    if (!packageMetadata) {
+      dirs.add(currentDir);
+      const pkgPath = path.join(currentDir, 'package.json');
+      if (fs.existsSync(pkgPath)) {
+        packageMetadata = new PackageMetadata(pkgPath);
       }
-
-      const packageMetadata = new PackageMetadata(pkgPath);
-      packageMetadataCache.set(pkgPath, packageMetadata);
-
-      return packageMetadata;
     }
-    currentDir = path.dirname(currentDir);
+    if (packageMetadata) {
+      for (const dir of dirs) {
+        packageMetadataCache.set(dir, packageMetadata);
+      }
+      break;
+    }
   }
-  return null;
+  return packageMetadata;
 }

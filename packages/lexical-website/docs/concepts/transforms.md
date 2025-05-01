@@ -44,6 +44,37 @@ editor.registerUpdateListener(() => {
 
 :::
 
+### Dirty Nodes
+
+*Dirty Leaves* (any LexicalNode that is not an ElementNode) and *Dirty Elements*
+are tracked separately to support the transform heuristic.
+
+Internally, there are two states for dirty nodes:
+* Intentionally Dirty nodes (leaves or elements) had `node.getWritable()` or
+  `node.markDirty()` (an alias) called on them. Maintaining the
+  tree-of-doubly-linked-lists structure of a lexical document requires that
+  this Intentionally Dirty state will propagate to immediate siblings and in
+  some cases the parent node.
+* Unintentionally Dirty Element nodes are an ancestor of a
+  dirty node that were not explicitly marked as Intentionally Dirty
+  Only elements can be Unintentionally Dirty, because
+  leaves by definition can not have children.
+
+The reconciler works by starting at the RootNode (which is the ancestor
+of any attached node, and thus always dirty whenever any attached node
+is dirty). Intentionally Dirty nodes have their createDOM and/or updateDOM
+called. Dirty Elements reconcile all of their children. Thus, reconciliation
+stops at the highest node in a subtree that has no dirty nodes (unless it
+is running with a flag to do a full reconciliation which considers all
+nodes as Intentionally Dirty).
+
+:::info
+
+The transform heuristic depends on these internal implementation details to
+find a fixed point where no more transforms are required.
+
+:::
+
 ### Transform heuristic
 
 1. We transform leaves first. If transforms generate additional dirty nodes we repeat `step 1`. The reasoning behind this is that marking a leaf as dirty marks all its parent elements as dirty too.
@@ -57,7 +88,7 @@ Node will be marked as dirty on any (or most) modifications done to it, it's chi
 
 Preconditions are fundamental for transforms to prevent them from running multiple times and ultimately causing an infinite loop.
 
-Transforms are designed to run when nodes have been modified (aka marking nodes dirty). For the most part, transforms only need to run once after the update but the sequential nature of transforms makes it possible to have order bias. Hence, transforms are run over and over until this particular type of Node is no longer marked as dirty by any of the transforms.
+Transforms are designed to run when nodes have been modified (aka Interntionally Dirty). For the most part, transforms only need to run once after the update but the sequential nature of transforms makes it possible to have order bias. Hence, transforms are run over and over until this particular type of Node is no longer marked as intentionally dirty by any of the transforms.
 
 Hence, we have to make sure that the transforms do not mark the node dirty unnecessarily.
 
@@ -94,6 +125,17 @@ editor.addListener('update', ({editorState}) => {
   // text === 're-modified'
 });
 ```
+
+:::info
+
+The transform heuristic considers `RootNode` to be Intentionally Dirty whenever
+any node is dirty, and it ensures that this transform is applied last after all
+other transforms. In this way, you can consider it a "pre-update" listener,
+which occurs before any DOM reconciliation has happened. As with any other
+transform, it may get called multiple times in a given update (especially if
+your RootNode transform makes any node dirty).
+
+:::
 
 ## Transforms on parent nodes
 

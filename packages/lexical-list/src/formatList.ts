@@ -121,31 +121,34 @@ export function $insertList(listType: ListType): void {
         continue;
       }
 
-      if ($isLeafNode(node)) {
-        let parent = node.getParent();
-        while (parent != null) {
-          const parentKey = parent.getKey();
+      let parent = $isLeafNode(node)
+        ? node.getParent()
+        : $isListItemNode(node) && node.isEmpty()
+        ? node
+        : null;
 
-          if ($isListNode(parent)) {
-            if (!handled.has(parentKey)) {
-              const newListNode = $createListNode(listType);
-              append(newListNode, parent.getChildren());
-              parent.replace(newListNode);
-              handled.add(parentKey);
-            }
+      while (parent != null) {
+        const parentKey = parent.getKey();
 
-            break;
-          } else {
-            const nextParent = parent.getParent();
-
-            if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
-              handled.add(parentKey);
-              $createListOrMerge(parent, listType);
-              break;
-            }
-
-            parent = nextParent;
+        if ($isListNode(parent)) {
+          if (!handled.has(parentKey)) {
+            const newListNode = $createListNode(listType);
+            append(newListNode, parent.getChildren());
+            parent.replace(newListNode);
+            handled.add(parentKey);
           }
+
+          break;
+        } else {
+          const nextParent = parent.getParent();
+
+          if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
+            handled.add(parentKey);
+            $createListOrMerge(parent, listType);
+            break;
+          }
+
+          parent = nextParent;
         }
       }
     }
@@ -485,7 +488,7 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
  * (which should be the parent node) and insert the ParagraphNode as a sibling to the ListNode. If the ListNode is
  * nested in a ListItemNode instead, it will add the ParagraphNode after the grandparent ListItemNode.
  * Throws an invariant if the selection is not a child of a ListNode.
- * @returns true if a ParagraphNode was inserted succesfully, false if there is no selection
+ * @returns true if a ParagraphNode was inserted successfully, false if there is no selection
  * or the selection does not contain a ListItemNode or the node already holds text.
  */
 export function $handleListInsertParagraph(): boolean {

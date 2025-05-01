@@ -198,31 +198,26 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  append(...nodesToAppend: LexicalNode[]): this {
-    for (let i = 0; i < nodesToAppend.length; i++) {
-      const currentNode = nodesToAppend[i];
-
-      if ($isListItemNode(currentNode)) {
-        super.append(currentNode);
-      } else {
-        const listItemNode = $createListItemNode();
-
-        if ($isListNode(currentNode)) {
-          listItemNode.append(currentNode);
-        } else if ($isElementNode(currentNode)) {
-          if (currentNode.isInline()) {
-            listItemNode.append(currentNode);
-          } else {
-            const textNode = $createTextNode(currentNode.getTextContent());
-            listItemNode.append(textNode);
-          }
-        } else {
-          listItemNode.append(currentNode);
+  splice(
+    start: number,
+    deleteCount: number,
+    nodesToInsert: LexicalNode[],
+  ): this {
+    let listItemNodesToInsert = nodesToInsert;
+    for (let i = 0; i < nodesToInsert.length; i++) {
+      const node = nodesToInsert[i];
+      if (!$isListItemNode(node)) {
+        if (listItemNodesToInsert === nodesToInsert) {
+          listItemNodesToInsert = [...nodesToInsert];
         }
-        super.append(listItemNode);
+        listItemNodesToInsert[i] = $createListItemNode().append(
+          $isElementNode(node) && !($isListNode(node) || node.isInline())
+            ? $createTextNode(node.getTextContent())
+            : node,
+        );
       }
     }
-    return this;
+    return super.splice(start, deleteCount, listItemNodesToInsert);
   }
 
   extractWithChild(child: LexicalNode): boolean {

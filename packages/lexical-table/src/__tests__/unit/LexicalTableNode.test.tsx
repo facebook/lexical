@@ -16,7 +16,8 @@ import {
   $createTableRowNode,
   $createTableSelection,
   $getElementForTableNode,
-  $insertTableColumn__EXPERIMENTAL,
+  $insertTableColumnAtSelection,
+  $isScrollableTablesActive,
   $isTableCellNode,
   $isTableNode,
   TableNode,
@@ -41,6 +42,8 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
+import {useState} from 'react';
+import {act} from 'shared/react-test-utils';
 
 export class ClipboardDataMock {
   getData: jest.Mock<string, [string]>;
@@ -1158,47 +1161,52 @@ describe('LexicalTableNode tests', () => {
             });
           });
 
-          test('Toggle frozen first column ON/OFF', async () => {
-            const {editor} = testEnv;
+          if (hasHorizontalScroll) {
+            test('Toggle frozen first column ON/OFF', async () => {
+              const {editor} = testEnv;
 
-            await editor.update(() => {
-              const root = $getRoot();
-              const table = $createTableNodeWithDimensions(4, 4, true);
-              root.append(table);
-            });
-            await editor.update(() => {
-              const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setFrozenColumns(1);
-              }
-            });
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = $createTableNodeWithDimensions(4, 4, true);
+                root.append(table);
+              });
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                if (table) {
+                  table.setFrozenColumns(1);
+                }
+              });
 
-            await editor.update(() => {
-              const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
-                html`
-                  <table
-                    class="${editorConfig.theme.table} ${editorConfig.theme
-                      .tableFrozenColumn}"
-                    data-lexical-frozen-column="true">
-                    <colgroup>
-                      <col />
-                      <col />
-                      <col />
-                      <col />
-                    </colgroup>
-                  </table>
-                `,
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                expectHtmlToBeEqual(
+                  table!.createDOM(editorConfig).outerHTML,
+                  html`
+                    <div
+                      class="${editorConfig.theme
+                        .tableScrollableWrapper} ${editorConfig.theme
+                        .tableFrozenColumn}">
+                      <table
+                        class="${editorConfig.theme.table}"
+                        data-lexical-frozen-column="true">
+                        <colgroup>
+                          <col />
+                          <col />
+                          <col />
+                          <col />
+                        </colgroup>
+                      </table>
+                    </div>
+                  `,
+                );
+              });
+
+              const stringifiedEditorState = JSON.stringify(
+                editor.getEditorState(),
               );
-            });
-
-            const stringifiedEditorState = JSON.stringify(
-              editor.getEditorState(),
-            );
-            const expectedStringifiedEditorState = `{
+              const expectedStringifiedEditorState = `{
               "root": {
                 "children": [
                   {
@@ -1634,36 +1642,39 @@ describe('LexicalTableNode tests', () => {
               }
             }`;
 
-            expect(JSON.parse(stringifiedEditorState)).toEqual(
-              JSON.parse(expectedStringifiedEditorState),
-            );
-
-            await editor.update(() => {
-              const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setFrozenColumns(0);
-              }
-            });
-
-            await editor.update(() => {
-              const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
-                html`
-                  <table class="${editorConfig.theme.table}">
-                    <colgroup>
-                      <col />
-                      <col />
-                      <col />
-                      <col />
-                    </colgroup>
-                  </table>
-                `,
+              expect(JSON.parse(stringifiedEditorState)).toEqual(
+                JSON.parse(expectedStringifiedEditorState),
               );
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                if (table) {
+                  table.setFrozenColumns(0);
+                }
+              });
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                expectHtmlToBeEqual(
+                  table!.createDOM(editorConfig).outerHTML,
+                  html`
+                    <div class="${editorConfig.theme.tableScrollableWrapper}">
+                      <table class="${editorConfig.theme.table}">
+                        <colgroup>
+                          <col />
+                          <col />
+                          <col />
+                          <col />
+                        </colgroup>
+                      </table>
+                    </div>
+                  `,
+                );
+              });
             });
-          });
+          }
 
           test('Change Table-level alignment', async () => {
             const {editor} = testEnv;
@@ -1780,7 +1791,7 @@ describe('LexicalTableNode tests', () => {
                 table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
               );
               $setSelection(selection);
-              $insertTableColumn__EXPERIMENTAL();
+              $insertTableColumnAtSelection();
               table!.setColWidths([50, 50, 100]);
             });
 
@@ -1808,5 +1819,127 @@ describe('LexicalTableNode tests', () => {
         <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
       );
     });
+  });
+
+  describe(`hasHorizontalScroll false -> true`, () => {
+    let hasHorizontalScroll = false;
+    let setHasHorizontalScroll: (
+      _hasHorizontalScroll: boolean,
+    ) => void = () => {};
+    function TablePluginWrapper() {
+      [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
+      return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
+    }
+    initializeUnitTest(
+      (testEnv) => {
+        beforeEach(async () => {
+          const {editor} = testEnv;
+          await editor.update(() => {
+            const root = $getRoot();
+            root.clear().append($createTableNodeWithDimensions(2, 2, true));
+          });
+        });
+        test('table is re-rendered when scroll changes', async () => {
+          await Promise.resolve().then();
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+            setHasHorizontalScroll(true);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <div class="table-scrollable-wrapper">
+                <table class="test-table-class">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+            setHasHorizontalScroll(false);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+        });
+      },
+      {theme: editorConfig.theme},
+      <TablePluginWrapper />,
+    );
   });
 });

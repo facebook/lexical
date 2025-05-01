@@ -61,8 +61,12 @@ test.describe('HTML Image CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste + undo multiple image', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Copy + paste + undo multiple image', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
 

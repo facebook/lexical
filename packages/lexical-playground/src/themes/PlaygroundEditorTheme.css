@@ -221,7 +221,7 @@
   margin-top: 25px;
   margin-bottom: 30px;
 }
-.PlaygroundEditorTheme__tableFrozenRow {
+.PlaygroundEditorTheme__tableScrollableWrapper.PlaygroundEditorTheme__tableFrozenRow {
   /* position:sticky needs overflow:clip or visible
      https://github.com/w3c/csswg-drafts/issues/865#issuecomment-350585274 */
   overflow-x: clip;
@@ -449,6 +449,12 @@
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
+}
+.PlaygroundEditorTheme__listItem::marker {
+  color: var(--listitem-marker-color);
+  background-color: var(--listitem-marker-background-color);
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
 }
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {

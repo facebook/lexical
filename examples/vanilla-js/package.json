@@ -1,20 +1,20 @@
 {
   "name": "@lexical/vanilla-js-example",
   "private": true,
-  "version": "0.27.0",
+  "version": "0.31.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "monorepo:dev": "cross-env LEXICAL_MONOREPO=1 npm run dev --",
+    "monorepo:dev": "vite -c vite.config.monorepo.ts",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/dragon": "0.27.0",
-    "@lexical/history": "0.27.0",
-    "@lexical/rich-text": "0.27.0",
-    "@lexical/utils": "0.27.0",
-    "lexical": "0.27.0"
+    "@lexical/dragon": "0.31.0",
+    "@lexical/history": "0.31.0",
+    "@lexical/rich-text": "0.31.0",
+    "@lexical/utils": "0.31.0",
+    "lexical": "0.31.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

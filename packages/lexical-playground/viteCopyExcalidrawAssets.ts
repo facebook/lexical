@@ -10,34 +10,11 @@ import type {Plugin} from 'vite';
 import {createRequire} from 'node:module';
 import * as path from 'node:path';
 import {normalizePath} from 'vite';
-import {Target, viteStaticCopy} from 'vite-plugin-static-copy';
+import {viteStaticCopy} from 'vite-plugin-static-copy';
 
 const require = createRequire(import.meta.url);
 
 export default function viteCopyExcalidrawAssets(): Plugin[] {
-  const targets: Target[] = [
-    'excalidraw-assets',
-    'excalidraw-assets-dev',
-  ].flatMap((assetDir) => {
-    const srcDir = path.join(
-      require.resolve('@excalidraw/excalidraw'),
-      '..',
-      'dist',
-      assetDir,
-    );
-    return [
-      {
-        dest: `${assetDir}/`,
-        src: [path.join(srcDir, '*.js'), path.join(srcDir, '*.woff2')].map(
-          normalizePath,
-        ),
-      },
-      {
-        dest: `${assetDir}/locales/`,
-        src: [path.join(srcDir, 'locales', '*.js')].map(normalizePath),
-      },
-    ];
-  });
   return [
     {
       config() {
@@ -50,7 +27,14 @@ export default function viteCopyExcalidrawAssets(): Plugin[] {
       name: 'viteCopyExcalidrawAssets',
     },
     ...viteStaticCopy({
-      targets,
+      targets: [
+        {
+          dest: `./`,
+          src: normalizePath(
+            path.join(require.resolve('@excalidraw/excalidraw'), '..', 'fonts'),
+          ),
+        },
+      ],
     }),
   ];
 }

@@ -183,8 +183,10 @@ test.describe.parallel('Nested List', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Normal text');
 
-    const expectedColor = 'rgb(208, 2, 27)';
-
+    // This color is normalized by the browser
+    const expectedTextStyle = 'color: rgb(208, 2, 27);';
+    // This isn't (yet) parsed as a color, so it isn't normalized
+    const expectedMarkerStyle = '--listitem-marker-color: #d0021b;';
     await assertHTML(
       page,
       html`
@@ -192,28 +194,28 @@ test.describe.parallel('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
-            style="color: ${expectedColor};"
+            style="${expectedMarkerStyle}"
             value="1">
             <strong
               class="PlaygroundEditorTheme__textBold"
-              style="color: ${expectedColor};"
+              style="${expectedTextStyle}"
               data-lexical-text="true">
               Item one
             </strong>
           </li>
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            style="color: ${expectedColor};"
+            style="${expectedMarkerStyle}"
             value="2">
             <ul class="PlaygroundEditorTheme__ul">
               <li
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                style="color: ${expectedColor};"
+                style="${expectedMarkerStyle}"
                 value="1">
                 <strong
                   class="PlaygroundEditorTheme__textBold"
-                  style="color: ${expectedColor};"
+                  style="${expectedTextStyle}"
                   data-lexical-text="true">
                   Nested item two
                 </strong>
@@ -223,11 +225,11 @@ test.describe.parallel('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
-            style="color: ${expectedColor};"
+            style="${expectedMarkerStyle}"
             value="2">
             <strong
               class="PlaygroundEditorTheme__textBold"
-              style="color: ${expectedColor};"
+              style="${expectedTextStyle}"
               data-lexical-text="true">
               Item three
             </strong>
@@ -238,7 +240,7 @@ test.describe.parallel('Nested List', () => {
           dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            style="color: ${expectedColor};"
+            style="${expectedTextStyle}"
             data-lexical-text="true">
             Normal text
           </strong>
@@ -247,7 +249,7 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
-  test(`Can indent/outdent mutliple list nodes in a list with multiple levels of indentation`, async ({
+  test(`Can indent/outdent multiple list nodes in a list with multiple levels of indentation`, async ({
     page,
   }) => {
     await focusEditor(page);
@@ -1007,7 +1009,7 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
-  test(`Can create mutliple bullet lists and then toggle off the list.`, async ({
+  test(`Can create multiple bullet lists and then toggle off the list.`, async ({
     page,
   }) => {
     await focusEditor(page);

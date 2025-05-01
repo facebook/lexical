@@ -8,7 +8,11 @@
 
 import './StyleViewPlugin.css';
 
-import {useCombobox} from '@ark-ui/react/combobox';
+import {
+  Combobox,
+  createListCollection,
+  useCombobox,
+} from '@ark-ui/react/combobox';
 import {Portal} from '@ark-ui/react/portal';
 import {Splitter, useSplitter} from '@ark-ui/react/splitter';
 import {
@@ -81,8 +85,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
-import {Combobox, createListCollection} from '~/components/ui/combobox';
 
 import {
   $removeStyleProperty,
@@ -651,6 +653,10 @@ function useSuggestedStylesCombobox(props: CSSPropertyComboBoxProps) {
     onInputValueChange: handleInputValueChange,
     onSelect: handleSelect,
     placeholder: 'Add CSS Property',
+    positioning: {
+      placement: 'bottom-start',
+      sameWidth: false,
+    },
   });
   return combobox;
 }

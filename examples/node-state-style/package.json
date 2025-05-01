@@ -7,7 +7,6 @@
     "dev": "vite",
     "monorepo:dev": "vite -c vite.config.monorepo.ts",
     "build": "tsc && vite build",
-    "panda:codegen": "panda codegen",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,8 +27,6 @@
     "shiki": "^3.3.0"
   },
   "devDependencies": {
-    "@pandacss/dev": "^0.53.6",
-    "@park-ui/panda-preset": "^0.43.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",

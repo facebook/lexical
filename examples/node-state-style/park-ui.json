@@ -1,5 +1,0 @@
-{
-  "$schema": "https://park-ui.com/registry/latest/schema.json",
-  "jsFramework": "react",
-  "outputPath": "./src/components/ui"
-}

@@ -188,3 +188,18 @@
 .style-view-actions {
   padding-left: 2ch;
 }
+
+[data-scope='combobox'][data-part='item-group'] {
+  padding: 2px;
+}
+[data-scope='combobox'][data-part='content'] {
+  border: 1px solid #000;
+  background-color: #fff;
+}
+[data-scope='combobox'][data-part='item'] {
+  cursor: pointer;
+  padding: 0 0.5rem;
+}
+[data-scope='combobox'][data-part='item'][data-highlighted] {
+  background-color: rgba(0, 0, 0, 0.2);
+}

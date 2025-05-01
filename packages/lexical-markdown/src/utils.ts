@@ -476,18 +476,13 @@ export function formatUrl(url: string): string {
     return url;
   }
   // Check if it's a relative path (starting with '/', '.', or '#')
-  else if (url.startsWith('/') || url.startsWith('.') || url.startsWith('#')) {
+  else if (url.match(/^[/#.]/)) {
     // Relative path, leave it as is
     return url;
   }
 
-  // Check for email address - ensure it has exactly one '@' with non-empty username and domain portions
-  else if (
-    url.includes('@') &&
-    url.split('@').length === 2 &&
-    url.split('@')[0].length > 0 &&
-    url.split('@')[1].length > 0
-  ) {
+  // Check for email address
+  else if (url.includes('@')) {
     return `mailto:${url}`;
   }
 
@@ -495,11 +490,7 @@ export function formatUrl(url: string): string {
   else if (PHONE_NUMBER_REGEX.test(url)) {
     return `tel:${url}`;
   }
-  // For everything else that looks like a URL (starting with www. or containing dots)
-  else if (/^www\.|(\.[a-z]{2,})/i.test(url)) {
-    return `https://${url}`;
-  }
 
-  // If nothing matches, return the original URL
-  return url;
+  // For everything else, return with https:// prefix
+  return `https://${url}`;
 }

@@ -27,6 +27,7 @@ import {
   MultilineElementTransformer,
   normalizeMarkdown,
 } from '../../MarkdownTransformers';
+import {formatUrl} from '../../utils';
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
   dependencies: [LinkNode],
@@ -886,5 +887,41 @@ E3
 | c | d |
 `;
     expect(normalizeMarkdown(markdown, false)).toBe(markdown);
+  });
+});
+
+describe('formatUrl', () => {
+  it('should not modify URLs with protocols', () => {
+    expect(formatUrl('https://example.com')).toBe('https://example.com');
+    expect(formatUrl('http://example.com')).toBe('http://example.com');
+    expect(formatUrl('mailto:user@example.com')).toBe(
+      'mailto:user@example.com',
+    );
+    expect(formatUrl('tel:+1234567890')).toBe('tel:+1234567890');
+  });
+
+  it('should not modify relative paths', () => {
+    expect(formatUrl('/path/to/resource')).toBe('/path/to/resource');
+    expect(formatUrl('/index.html')).toBe('/index.html');
+  });
+
+  it('should add mailto: to email addresses', () => {
+    expect(formatUrl('user@example.com')).toBe('mailto:user@example.com');
+    expect(formatUrl('name.lastname@domain.co.uk')).toBe(
+      'mailto:name.lastname@domain.co.uk',
+    );
+  });
+
+  it('should add tel: to phone numbers', () => {
+    expect(formatUrl('+1234567890')).toBe('tel:+1234567890');
+    expect(formatUrl('123-456-7890')).toBe('tel:123-456-7890');
+  });
+
+  it('should add https:// to URLs without protocols', () => {
+    expect(formatUrl('www.example.com')).toBe('https://www.example.com');
+    expect(formatUrl('example.com')).toBe('https://example.com');
+    expect(formatUrl('subdomain.example.com/path')).toBe(
+      'https://subdomain.example.com/path',
+    );
   });
 });

@@ -6,10 +6,14 @@
  *
  */
 
-import type {JSX, MutableRefObject} from 'react';
+import type {JSX} from 'react';
 
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {
+  ContextMenu,
+  ContextMenuOption,
+} from '@lexical/react/LexicalContextMenuPlugin';
 import {
   $getSelection,
   $isDecoratorNode,
@@ -22,58 +26,25 @@ import {
 } from 'lexical';
 import {useMemo} from 'react';
 
-import {ContextMenu} from './FloatingContextMenuPlugin';
-
-export class MenuOption {
-  key: string;
-  ref?: MutableRefObject<HTMLElement | null>;
-
-  constructor(key: string) {
-    this.key = key;
-    this.ref = {current: null};
-    this.setRefElement = this.setRefElement.bind(this);
-  }
-
-  setRefElement(element: HTMLElement | null) {
-    this.ref = {current: element};
-  }
-}
-
-export class ContextMenuOption extends MenuOption {
-  title: string;
-  disabled: boolean;
-  onSelect: () => void;
-
-  constructor(
-    title: string,
-    options: {
-      disabled?: boolean;
-      onSelect: () => void;
-    },
-  ) {
-    super(title);
-    this.title = title;
-    this.disabled = options.disabled ?? false;
-    this.onSelect = options.onSelect.bind(this);
-  }
-}
-
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const defaultOptions = useMemo(() => {
     return [
       new ContextMenuOption(`Cut`, {
+        disabled: false,
         onSelect: () => {
           editor.dispatchCommand(CUT_COMMAND, null);
         },
       }),
       new ContextMenuOption(`Copy`, {
+        disabled: false,
         onSelect: () => {
           editor.dispatchCommand(COPY_COMMAND, null);
         },
       }),
       new ContextMenuOption(`Paste`, {
+        disabled: false,
         onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
             const data = new DataTransfer();
@@ -104,6 +75,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
       }),
       new ContextMenuOption(`Paste as Plain Text`, {
+        disabled: false,
         onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
             const permission = await navigator.permissions.query({
@@ -128,6 +100,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
       }),
       new ContextMenuOption(`Delete Node`, {
+        disabled: false,
         onSelect: () => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
@@ -155,6 +128,7 @@ export default function ContextMenuPlugin(): JSX.Element {
       link: {
         options: [
           new ContextMenuOption(`Remove Link`, {
+            disabled: false,
             onSelect: () => {
               editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
             },

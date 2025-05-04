@@ -6,11 +6,10 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {JSX, MutableRefObject} from 'react';
 
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {MenuOption} from '@lexical/react/LexicalContextMenuPlugin';
 import {
   $getSelection,
   $isDecoratorNode,
@@ -24,6 +23,21 @@ import {
 import {useMemo} from 'react';
 
 import {ContextMenu} from './FloatingContextMenuPlugin';
+
+export class MenuOption {
+  key: string;
+  ref?: MutableRefObject<HTMLElement | null>;
+
+  constructor(key: string) {
+    this.key = key;
+    this.ref = {current: null};
+    this.setRefElement = this.setRefElement.bind(this);
+  }
+
+  setRefElement(element: HTMLElement | null) {
+    this.ref = {current: element};
+  }
+}
 
 export class ContextMenuOption extends MenuOption {
   title: string;

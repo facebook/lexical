@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import './FloatingContextMenuPlugin.css';
 
 import {
   autoUpdate,
@@ -46,7 +45,7 @@ export const MenuItem = forwardRef<
   return (
     <button
       {...props}
-      className="MenuItem"
+      className="PlaygroundEditorTheme__contextMenuItem"
       ref={ref}
       role="menuitem"
       disabled={disabled}>
@@ -205,7 +204,7 @@ export const ContextMenu = forwardRef<
         <FloatingOverlay lockScroll={true}>
           <FloatingFocusManager context={context} initialFocus={refs.floating}>
             <div
-              className="ContextMenu"
+              className={'PlaygroundEditorTheme__contextMenu'}
               ref={refs.setFloating}
               style={floatingStyles}
               {...getFloatingProps()}>

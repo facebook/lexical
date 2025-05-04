@@ -1,64 +1,19 @@
-# Node Customization
+# Node Replacement
 
-Originally the only way to customize nodes was using the node replacement API. Recently we have introduced a second way with the `state` property which has some advantages described below.
+Node Replacement allow you to replace all instances of a given node in your editor with instances of a subclass.
 
-## Node State (Experimental)
-
-See the [Node State](https://lexical.dev/docs/concepts/node-state) documentation for a more detailed overview of Node State.
-
-The advantages of using state over the replacement API are:
-1. Easier (less boilerplate)
-2. Composable (multiple plugins extending the same node causes failures)
-3. Allows metadata: useful for adding things to the RootNode.
-
-```ts
-// IMPLEMENTATION
-const colorState = createState('color', {
-  parse: (value: unknown) => (typeof value === 'string' ? value : undefined),
-});
-
-// USAGE
-const textNode = $createTextNode();
-$setState(textNode, colorState, 'blue');
-const textColor = $getState(textNode, colorState) // -> "blue"
-```
-
-Inside state, you can use any serializable json value. For advanced use cases
-with values that are not primitive values like string, number, boolean, null
-you may want or need to implement more than just the parse method in the
-value configuration.
-
-While this is still experimental, the API is subject to change and the
-documentation will primarily be API documentation.
-
-### Important
-
-We recommend that you use prefixes with low collision probability when defining
-state that will be applied to node classes that you don't fully control. It is
-a runtime error in dev mode when two distinct separate StateConfig with the
-same key are used on the same node.
-
-For example, if you are making a plugin called `awesome-lexical`, you could do:
-
-```ts
-const color = createState('awesome-lexical-color', /** your parse fn */)
-const bgColor = createState('awesome-lexical-bg-color', /** your parse fn */)
-
-// Or you can add all your state inside an object:
-type AwesomeLexical = {
-  color?: string;
-  bgColor?: string;
-  padding?: number
-}
-const awesomeLexical = createState('awesome-lexical', /** your parse fn which returns AwesomeLexical type */)
-```
-
-## Node Replacement
+## Use Case
 
 :::note
 
 In earlier versions of this documentation, "Node Replacement" was called "Node Overrides".
 We've changed the name to match the terms used in the implementation.
+
+:::
+
+:::tip
+
+If your use case only requires adding ad-hoc data to existing nodes, you may be able to use the [NodeState](/docs/concepts/node-state) API instead of subclassing and node replacement.
 
 :::
 
@@ -90,7 +45,9 @@ In the snippet above,
 
 Once this is done, Lexical will replace all ParagraphNode instances with CustomParagraphNode instances. One important use case for this feature is overriding the serialization behavior of core nodes. Check out the full example below.
 
-### Node Replacement Example
+## Node Replacement Example
+
+This example demonstrates using Node Replacement to replace all `ParagraphNode` with a `CustomParagraphNode` that overrides `createDOM`.
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/node-replacement?file=src/main.tsx)
 

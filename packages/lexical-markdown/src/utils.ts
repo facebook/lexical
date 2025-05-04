@@ -460,3 +460,37 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
       MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
   );
 }
+
+export const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;
+
+/**
+ * Formats a URL string by adding appropriate protocol if missing
+ *
+ * @param url - URL to format
+ * @returns Formatted URL with appropriate protocol
+ */
+export function formatUrl(url: string): string {
+  // Check if URL already has a protocol
+  if (url.match(/^[a-z][a-z0-9+.-]*:/i)) {
+    // URL already has a protocol, leave it as is
+    return url;
+  }
+  // Check if it's a relative path (starting with '/', '.', or '#')
+  else if (url.match(/^[/#.]/)) {
+    // Relative path, leave it as is
+    return url;
+  }
+
+  // Check for email address
+  else if (url.includes('@')) {
+    return `mailto:${url}`;
+  }
+
+  // Check for phone number
+  else if (PHONE_NUMBER_REGEX.test(url)) {
+    return `tel:${url}`;
+  }
+
+  // For everything else, return with https:// prefix
+  return `https://${url}`;
+}

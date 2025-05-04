@@ -7,7 +7,6 @@
  */
 
 import type {
-  MenuRenderFn,
   MenuResolution,
   MenuTextMatch,
   TriggerFn,
@@ -21,9 +20,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
-  createCommand,
   getDOMSelection,
-  LexicalCommand,
   LexicalEditor,
   RangeSelection,
   TextNode,
@@ -141,11 +138,6 @@ export function getScrollParent(
 
 export {useDynamicPositioning} from './shared/LexicalMenu';
 
-export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number;
-  option: MenuOption;
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
-
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
   {minLength = 1, maxLength = 75}: {minLength?: number; maxLength?: number},
@@ -192,7 +184,6 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
-  menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
@@ -209,7 +200,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   onSelectOption,
   onOpen,
   onClose,
-  menuRenderFn,
   triggerFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
@@ -328,7 +318,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
-      menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
@@ -337,4 +326,4 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   );
 }
 
-export {MenuOption, MenuRenderFn, MenuResolution, MenuTextMatch, TriggerFn};
+export {MenuOption, MenuResolution, MenuTextMatch, TriggerFn};

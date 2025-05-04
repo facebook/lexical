@@ -22,6 +22,8 @@ import {
   useRole,
   useTypeahead,
 } from '@floating-ui/react';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$getNearestNodeFromDOMNode, LexicalNode} from 'lexical';
 import {
   Children,
   cloneElement,
@@ -31,6 +33,8 @@ import {
   useRef,
   useState,
 } from 'react';
+
+import {ContextMenuOption} from '.';
 
 export const MenuItem = forwardRef<
   HTMLButtonElement,
@@ -54,12 +58,20 @@ export const MenuItem = forwardRef<
 interface Props {
   label?: string;
   nested?: boolean;
+  defaultOptions?: ContextMenuOption[];
+  conditionalOptions?: {
+    [key: string]: {
+      options: ContextMenuOption[];
+      showOn: (node: LexicalNode) => boolean;
+    };
+  };
 }
 
-export const Menu = forwardRef<
+export const ContextMenu = forwardRef<
   HTMLButtonElement,
   Props & React.HTMLProps<HTMLButtonElement>
->(({children}, forwardedRef) => {
+>(({defaultOptions, conditionalOptions, children}, forwardedRef) => {
+  const [editor] = useLexicalComposerContext();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -107,6 +119,8 @@ export const Menu = forwardRef<
     typeahead,
   ]);
 
+  const [renderItems, setRenderItems] = useState<JSX.Element[]>([]);
+
   useEffect(() => {
     let timeout: number;
 
@@ -126,6 +140,39 @@ export const Menu = forwardRef<
             y: e.clientY,
           };
         },
+      });
+
+      editor.read(() => {
+        let conditionalItems: JSX.Element[] = [];
+        const node = $getNearestNodeFromDOMNode(e.target as Element);
+        if (node) {
+          for (const k in conditionalOptions) {
+            if (conditionalOptions[k].showOn(node)) {
+              const menuItems = conditionalOptions[k].options.map((option) => {
+                return (
+                  <MenuItem
+                    key={option.title}
+                    label={option.title}
+                    disabled={option.disabled}
+                    onClick={() => option.onSelect()}
+                  />
+                );
+              });
+              conditionalItems = [...menuItems, ...conditionalItems];
+            }
+          }
+        }
+        const defaultItems: JSX.Element[] = defaultOptions!.map((option) => {
+          return (
+            <MenuItem
+              key={option.title}
+              label={option.title}
+              disabled={option.disabled}
+              onClick={() => option.onSelect()}
+            />
+          );
+        });
+        setRenderItems([...conditionalItems, ...defaultItems]);
       });
 
       setIsOpen(true);
@@ -163,7 +210,7 @@ export const Menu = forwardRef<
               style={floatingStyles}
               {...getFloatingProps()}>
               {Children.map(
-                children,
+                renderItems,
                 (child, index) =>
                   isValidElement(child) &&
                   cloneElement(

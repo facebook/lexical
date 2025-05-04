@@ -8,14 +8,10 @@
 
 import type {JSX} from 'react';
 
-// import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {MenuOption} from '@lexical/react/LexicalContextMenuPlugin';
 import {
-  // LexicalContextMenuPlugin,
-  MenuOption,
-} from '@lexical/react/LexicalContextMenuPlugin';
-import {
-  // $getNearestNodeFromDOMNode,
   $getSelection,
   $isDecoratorNode,
   $isNodeSelection,
@@ -25,22 +21,25 @@ import {
   type LexicalNode,
   PASTE_COMMAND,
 } from 'lexical';
-import {useCallback, useMemo, useState} from 'react';
-import * as React from 'react';
+import {useMemo} from 'react';
 
-import {Menu, MenuItem} from './FloatingContextMenuPlugin';
+import {ContextMenu} from './FloatingContextMenuPlugin';
 
 export class ContextMenuOption extends MenuOption {
   title: string;
-  onSelect: (targetNode: LexicalNode | null) => void;
+  disabled: boolean;
+  onSelect: () => void;
+
   constructor(
     title: string,
     options: {
-      onSelect: (targetNode: LexicalNode | null) => void;
+      disabled?: boolean;
+      onSelect: () => void;
     },
   ) {
     super(title);
     this.title = title;
+    this.disabled = options.disabled ?? false;
     this.onSelect = options.onSelect.bind(this);
   }
 }
@@ -50,14 +49,14 @@ export default function ContextMenuPlugin(): JSX.Element {
 
   const defaultOptions = useMemo(() => {
     return [
-      new ContextMenuOption(`Copy`, {
-        onSelect: () => {
-          editor.dispatchCommand(COPY_COMMAND, null);
-        },
-      }),
       new ContextMenuOption(`Cut`, {
         onSelect: () => {
           editor.dispatchCommand(CUT_COMMAND, null);
+        },
+      }),
+      new ContextMenuOption(`Copy`, {
+        onSelect: () => {
+          editor.dispatchCommand(COPY_COMMAND, null);
         },
       }),
       new ContextMenuOption(`Paste`, {
@@ -137,48 +136,25 @@ export default function ContextMenuPlugin(): JSX.Element {
     ];
   }, [editor]);
 
-  const [options, setOptions] = useState(defaultOptions);
-  setOptions(defaultOptions); // IVO: delete this
-  const onSelectOption = useCallback(
-    (selectedOption: ContextMenuOption) => {
-      editor.update(() => {
-        selectedOption.onSelect();
-      });
-    },
-    [editor],
-  );
-
-  // const onWillOpen = (event: MouseEvent) => {
-  //   let newOptions = defaultOptions;
-  //   editor.read(() => {
-  //     const node = $getNearestNodeFromDOMNode(event.target as Element);
-  //     if (node) {
-  //       const parent = node.getParent();
-  //       if ($isLinkNode(parent)) {
-  //         newOptions = [
-  //           new ContextMenuOption(`Remove Link`, {
-  //             onSelect: () => {
-  //               editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
-  //             },
-  //           }),
-  //           ...defaultOptions,
-  //         ];
-  //       }
-  //     }
-  //   });
-  //   setOptions(newOptions);
-  // };
+  const conditionalOptions = useMemo(() => {
+    return {
+      link: {
+        options: [
+          new ContextMenuOption(`Remove Link`, {
+            onSelect: () => {
+              editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+            },
+          }),
+        ],
+        showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
+      },
+    };
+  }, [editor]);
 
   return (
-    <Menu>
-      {options.map((option) => (
-        <MenuItem
-          key={option.title}
-          label={option.title}
-          disabled={false}
-          onClick={() => onSelectOption(option)}
-        />
-      ))}
-    </Menu>
+    <ContextMenu
+      defaultOptions={defaultOptions}
+      conditionalOptions={conditionalOptions}
+    />
   );
 }

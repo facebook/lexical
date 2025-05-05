@@ -15,7 +15,6 @@ import {
   ContextMenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
 import {
-  $getNearestNodeFromDOMNode,
   $getSelection,
   $isDecoratorNode,
   $isNodeSelection,
@@ -144,56 +143,23 @@ export default function ContextMenuPlugin(): JSX.Element {
   }, [editor]);
 
   const conditionalOptions = useMemo(() => {
-    return {
-      link: {
-        options: [
-          new ContextMenuOption(`Remove Link`, {
-            disabled: false,
-            onSelect: () => {
-              editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
-            },
-          }),
-        ],
+    return [
+      new ContextMenuOption(`Remove Link`, {
+        disabled: false,
+        onSelect: () => {
+          editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+        },
         showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
-      },
-    };
+      }),
+    ];
   }, [editor]);
 
-  const evalConditionalOptions = (e: MouseEvent) => {
-    let conditionalItems: JSX.Element[] = [];
-    editor.read(() => {
-      const node = $getNearestNodeFromDOMNode(e.target as Element);
-      if (node) {
-        for (const k in conditionalOptions) {
-          if (conditionalOptions[k].showOn(node)) {
-            const menuItems = conditionalOptions[k].options.map((option) => {
-              return (
-                <ContextMenuItem
-                  key={option.title}
-                  label={option.title}
-                  disabled={option.disabled}
-                  onClick={() => option.onSelect()}
-                />
-              );
-            });
-            conditionalItems = [...menuItems, ...conditionalItems];
-          }
-        }
-      }
-    });
-    return [...conditionalItems];
-  };
-
   return (
-    <ContextMenu evalConditionalOptions={evalConditionalOptions}>
-      {defaultOptions.map((option) => (
-        <ContextMenuItem
-          key={option.title}
-          label={option.title}
-          disabled={option.disabled}
-          onClick={() => option.onSelect()}
-        />
-      ))}
-    </ContextMenu>
+    <ContextMenu
+      ContextMenuItem={ContextMenuItem}
+      className="PlaygroundEditorTheme__contextMenu"
+      defaultOptions={defaultOptions}
+      conditionalOptions={conditionalOptions}
+    />
   );
 }

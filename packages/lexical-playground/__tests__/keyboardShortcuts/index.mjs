@@ -297,9 +297,15 @@ export async function toggleUppercase(page) {
 
 export async function toggleCapitalize(page) {
   await keyDownCtrlOrMeta(page);
+  if (IS_MAC) {
+    await page.keyboard.down('Alt');
+  }
   await page.keyboard.down('Shift');
   await page.keyboard.press('3');
   await keyUpCtrlOrMeta(page);
+  if (IS_MAC) {
+    await page.keyboard.up('Alt');
+  }
   await page.keyboard.up('Shift');
 }
 

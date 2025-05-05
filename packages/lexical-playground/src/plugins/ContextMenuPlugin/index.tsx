@@ -15,6 +15,7 @@ import {
   ContextMenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
 import {
+  $getNearestNodeFromDOMNode,
   $getSelection,
   $isDecoratorNode,
   $isNodeSelection,
@@ -24,7 +25,26 @@ import {
   type LexicalNode,
   PASTE_COMMAND,
 } from 'lexical';
-import {useMemo} from 'react';
+import {forwardRef, useMemo} from 'react';
+
+const ContextMenuItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    label: string;
+    disabled?: boolean;
+  }
+>(({label, disabled, ...props}, ref) => {
+  return (
+    <button
+      {...props}
+      className="PlaygroundEditorTheme__contextMenuItem"
+      ref={ref}
+      role="menuitem"
+      disabled={disabled}>
+      {label}
+    </button>
+  );
+});
 
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -139,10 +159,41 @@ export default function ContextMenuPlugin(): JSX.Element {
     };
   }, [editor]);
 
+  const evalConditionalOptions = (e: MouseEvent) => {
+    let conditionalItems: JSX.Element[] = [];
+    editor.read(() => {
+      const node = $getNearestNodeFromDOMNode(e.target as Element);
+      if (node) {
+        for (const k in conditionalOptions) {
+          if (conditionalOptions[k].showOn(node)) {
+            const menuItems = conditionalOptions[k].options.map((option) => {
+              return (
+                <ContextMenuItem
+                  key={option.title}
+                  label={option.title}
+                  disabled={option.disabled}
+                  onClick={() => option.onSelect()}
+                />
+              );
+            });
+            conditionalItems = [...menuItems, ...conditionalItems];
+          }
+        }
+      }
+    });
+    return [...conditionalItems];
+  };
+
   return (
-    <ContextMenu
-      defaultOptions={defaultOptions}
-      conditionalOptions={conditionalOptions}
-    />
+    <ContextMenu evalConditionalOptions={evalConditionalOptions}>
+      {defaultOptions.map((option) => (
+        <ContextMenuItem
+          key={option.title}
+          label={option.title}
+          disabled={option.disabled}
+          onClick={() => option.onSelect()}
+        />
+      ))}
+    </ContextMenu>
   );
 }

@@ -22,7 +22,6 @@ import {
   useTypeahead,
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode, LexicalNode} from 'lexical';
 import {
   Children,
   cloneElement,
@@ -68,41 +67,16 @@ class ContextMenuOption extends MenuOption {
   }
 }
 
-export const MenuItem = forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    label: string;
-    disabled?: boolean;
-  }
->(({label, disabled, ...props}, ref) => {
-  return (
-    <button
-      {...props}
-      className="PlaygroundEditorTheme__contextMenuItem"
-      ref={ref}
-      role="menuitem"
-      disabled={disabled}>
-      {label}
-    </button>
-  );
-});
-
 interface Props {
   label?: string;
   nested?: boolean;
-  defaultOptions?: ContextMenuOption[];
-  conditionalOptions?: {
-    [key: string]: {
-      options: ContextMenuOption[];
-      showOn: (node: LexicalNode) => boolean;
-    };
-  };
+  evalConditionalOptions?: object;
 }
 
 const ContextMenu = forwardRef<
   HTMLButtonElement,
   Props & React.HTMLProps<HTMLButtonElement>
->(({defaultOptions, conditionalOptions, children}, forwardedRef) => {
+>(({evalConditionalOptions, children}, forwardedRef) => {
   const [editor] = useLexicalComposerContext();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -151,7 +125,7 @@ const ContextMenu = forwardRef<
     typeahead,
   ]);
 
-  const [renderItems, setRenderItems] = useState<JSX.Element[]>([]);
+  // const [conditionalItems, setConditionalItems] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
     let timeout: number;
@@ -174,38 +148,9 @@ const ContextMenu = forwardRef<
         },
       });
 
-      editor.read(() => {
-        let conditionalItems: JSX.Element[] = [];
-        const node = $getNearestNodeFromDOMNode(e.target as Element);
-        if (node) {
-          for (const k in conditionalOptions) {
-            if (conditionalOptions[k].showOn(node)) {
-              const menuItems = conditionalOptions[k].options.map((option) => {
-                return (
-                  <MenuItem
-                    key={option.title}
-                    label={option.title}
-                    disabled={option.disabled}
-                    onClick={() => option.onSelect()}
-                  />
-                );
-              });
-              conditionalItems = [...menuItems, ...conditionalItems];
-            }
-          }
-        }
-        const defaultItems: JSX.Element[] = defaultOptions!.map((option) => {
-          return (
-            <MenuItem
-              key={option.title}
-              label={option.title}
-              disabled={option.disabled}
-              onClick={() => option.onSelect()}
-            />
-          );
-        });
-        setRenderItems([...conditionalItems, ...defaultItems]);
-      });
+      const conditionalOptions = evalConditionalOptions(e);
+      children!.unshift(...conditionalOptions);
+      // setConditionalItems(conditionalOptions);
 
       setIsOpen(true);
       clearTimeout(timeout);
@@ -229,7 +174,7 @@ const ContextMenu = forwardRef<
       document.removeEventListener('mouseup', onMouseUp);
       clearTimeout(timeout);
     };
-  }, [refs, defaultOptions, conditionalOptions, editor]);
+  }, [refs, evalConditionalOptions, editor]);
 
   return (
     <FloatingPortal>
@@ -242,7 +187,7 @@ const ContextMenu = forwardRef<
               style={floatingStyles}
               {...getFloatingProps()}>
               {Children.map(
-                renderItems,
+                children,
                 (child, index) =>
                   isValidElement(child) &&
                   cloneElement(

@@ -52,37 +52,73 @@ class MenuOption {
 class ContextMenuOption extends MenuOption {
   title: string;
   disabled: boolean;
-  onSelect: () => void;
-  showOn?: (node: LexicalNode) => boolean;
+  $onSelect: () => void;
+  $showOn?: (node: LexicalNode) => boolean;
 
   constructor(
     title: string,
     options: {
       disabled?: boolean;
-      onSelect: () => void;
-      showOn?: (node: LexicalNode) => boolean;
+      $onSelect: () => void;
+      $showOn?: (node: LexicalNode) => boolean;
     },
   ) {
     super(title);
     this.title = title;
     this.disabled = options.disabled ?? false;
-    this.onSelect = options.onSelect.bind(this);
-    if (options.showOn) {
-      this.showOn = options.showOn.bind(this);
+    this.$onSelect = options.$onSelect;
+    if (options.$showOn) {
+      this.$showOn = options.$showOn;
     }
   }
 }
 
+class ContextMenuSeparator extends MenuOption {
+  $showOn?: (node: LexicalNode) => boolean;
+
+  constructor(options?: {$showOn?: (node: LexicalNode) => boolean}) {
+    super('separator');
+    if (options && options.$showOn) {
+      this.$showOn = options.$showOn;
+    }
+  }
+}
+
+const ContextMenuSeparatorItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    disabled?: boolean;
+  }
+>(({className, disabled, ...props}, ref) => {
+  return <hr className={className} />;
+});
+
+const ContextMenuItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    label: string;
+    disabled?: boolean;
+  }
+>(({className, label, disabled, ...props}, ref) => {
+  return (
+    <button
+      {...props}
+      className={className}
+      ref={ref}
+      role="menuitem"
+      disabled={disabled}>
+      {label}
+    </button>
+  );
+});
+
 interface Props {
   label?: string;
   nested?: boolean;
-  ContextMenuItem: React.ComponentType<{
-    label: string;
-    disabled: boolean;
-    onClick: () => void;
-  }>;
-  defaultOptions: ContextMenuOption[];
-  conditionalOptions?: ContextMenuOption[];
+  itemClassName?: string;
+  separatorClassName?: string;
+  defaultOptions: (ContextMenuOption | ContextMenuSeparator)[];
+  conditionalOptions?: (ContextMenuOption | ContextMenuSeparator)[];
 }
 
 const ContextMenu = forwardRef<
@@ -90,7 +126,13 @@ const ContextMenu = forwardRef<
   Props & React.HTMLProps<HTMLButtonElement>
 >(
   (
-    {defaultOptions, conditionalOptions, className, ContextMenuItem},
+    {
+      defaultOptions,
+      conditionalOptions,
+      className,
+      itemClassName,
+      separatorClassName,
+    },
     forwardedRef,
   ) => {
     const [editor] = useLexicalComposerContext();
@@ -160,28 +202,46 @@ const ContextMenu = forwardRef<
           },
         });
 
-        let visibleConditionalItems: ContextMenuOption[] = [];
+        let visibleConditionalItems: (
+          | ContextMenuOption
+          | ContextMenuSeparator
+        )[] = [];
         if (conditionalOptions) {
           editor.read(() => {
             const node = $getNearestNodeFromDOMNode(e.target as Element);
             if (node) {
               visibleConditionalItems = conditionalOptions!.filter(
-                (option) => option.showOn && option.showOn(node),
+                (option) => option.$showOn && option.$showOn(node),
               );
             }
           });
         }
 
         const items = [...visibleConditionalItems, ...defaultOptions].map(
-          (option) => {
-            return (
-              <ContextMenuItem
-                key={option.title}
-                label={option.title}
-                disabled={option.disabled}
-                onClick={() => option.onSelect()}
-              />
-            );
+          (option, index) => {
+            if (option instanceof ContextMenuSeparator) {
+              return (
+                <ContextMenuSeparatorItem
+                  className={separatorClassName}
+                  key={option.key + '-' + index}
+                />
+              );
+            }
+            if (option instanceof ContextMenuOption) {
+              return (
+                <ContextMenuItem
+                  className={itemClassName}
+                  key={option.title}
+                  label={option.title}
+                  disabled={option.disabled}
+                  onClick={() => {
+                    editor.update(() => {
+                      option.$onSelect();
+                    });
+                  }}
+                />
+              );
+            }
           },
         );
 
@@ -237,16 +297,12 @@ const ContextMenu = forwardRef<
                       child,
                       getItemProps({
                         onClick() {
-                          editor.update(() => {
-                            child.props.onClick();
-                            setIsOpen(false);
-                          });
+                          child.props.onClick();
+                          setIsOpen(false);
                         },
                         onMouseUp() {
-                          editor.update(() => {
-                            child.props.onClick();
-                            setIsOpen(false);
-                          });
+                          child.props.onClick();
+                          setIsOpen(false);
                         },
                         ref(node: HTMLButtonElement) {
                           listItemsRef.current[index] = node;
@@ -264,4 +320,4 @@ const ContextMenu = forwardRef<
   },
 );
 
-export {ContextMenu, ContextMenuOption};
+export {ContextMenu, ContextMenuOption, ContextMenuSeparator};

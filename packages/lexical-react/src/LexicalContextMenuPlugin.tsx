@@ -112,13 +112,15 @@ const ContextMenuItem = forwardRef<
   );
 });
 
+type ContextMenuType = ContextMenuOption | ContextMenuSeparator;
+
 interface Props {
   label?: string;
   nested?: boolean;
   itemClassName?: string;
   separatorClassName?: string;
-  defaultOptions: (ContextMenuOption | ContextMenuSeparator)[];
-  conditionalOptions?: (ContextMenuOption | ContextMenuSeparator)[];
+  defaultOptions: ContextMenuType[];
+  conditionalOptions?: ContextMenuType[];
 }
 
 const ContextMenu = forwardRef<
@@ -179,7 +181,9 @@ const ContextMenu = forwardRef<
       typeahead,
     ]);
 
-    const [renderItems, setRenderItems] = useState<JSX.Element[]>([]);
+    const [renderItems, setRenderItems] = useState<(JSX.Element | undefined)[]>(
+      [],
+    );
 
     useEffect(() => {
       let timeout: number;
@@ -202,10 +206,7 @@ const ContextMenu = forwardRef<
           },
         });
 
-        let visibleConditionalItems: (
-          | ContextMenuOption
-          | ContextMenuSeparator
-        )[] = [];
+        let visibleConditionalItems: ContextMenuType[] = [];
         if (conditionalOptions) {
           editor.read(() => {
             const node = $getNearestNodeFromDOMNode(e.target as Element);
@@ -226,19 +227,14 @@ const ContextMenu = forwardRef<
                   key={option.key + '-' + index}
                 />
               );
-            }
-            if (option instanceof ContextMenuOption) {
+            } else {
               return (
                 <ContextMenuItem
                   className={itemClassName}
                   key={option.title}
                   label={option.title}
                   disabled={option.disabled}
-                  onClick={() => {
-                    editor.update(() => {
-                      option.$onSelect();
-                    });
-                  }}
+                  onClick={() => editor.update(() => option.$onSelect())}
                 />
               );
             }
@@ -247,7 +243,9 @@ const ContextMenu = forwardRef<
 
         listContentRef.current = [
           ...(Children.map([items], (child) =>
-            isValidElement(child) ? child.props.label : null,
+            isValidElement(child)
+              ? (child as React.ReactElement).props.label
+              : null,
           ) as Array<string | null>),
         ];
 
@@ -275,7 +273,14 @@ const ContextMenu = forwardRef<
         document.removeEventListener('mouseup', onMouseUp);
         clearTimeout(timeout);
       };
-    }, [conditionalOptions, defaultOptions, ContextMenuItem, refs, editor]);
+    }, [
+      conditionalOptions,
+      defaultOptions,
+      itemClassName,
+      separatorClassName,
+      refs,
+      editor,
+    ]);
 
     return (
       <FloatingPortal>
@@ -297,11 +302,11 @@ const ContextMenu = forwardRef<
                       child,
                       getItemProps({
                         onClick() {
-                          child.props.onClick();
+                          (child as React.ReactElement).props.onClick();
                           setIsOpen(false);
                         },
                         onMouseUp() {
-                          child.props.onClick();
+                          (child as React.ReactElement).props.onClick();
                           setIsOpen(false);
                         },
                         ref(node: HTMLButtonElement) {

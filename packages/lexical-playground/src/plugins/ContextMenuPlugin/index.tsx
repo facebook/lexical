@@ -13,6 +13,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   ContextMenu,
   ContextMenuOption,
+  ContextMenuSeparator,
 } from '@lexical/react/LexicalContextMenuPlugin';
 import {
   $getSelection,
@@ -24,26 +25,7 @@ import {
   type LexicalNode,
   PASTE_COMMAND,
 } from 'lexical';
-import {forwardRef, useMemo} from 'react';
-
-const ContextMenuItem = forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    label: string;
-    disabled?: boolean;
-  }
->(({label, disabled, ...props}, ref) => {
-  return (
-    <button
-      {...props}
-      className="PlaygroundEditorTheme__contextMenuItem"
-      ref={ref}
-      role="menuitem"
-      disabled={disabled}>
-      {label}
-    </button>
-  );
-});
+import {useMemo} from 'react';
 
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -51,20 +33,19 @@ export default function ContextMenuPlugin(): JSX.Element {
   const defaultOptions = useMemo(() => {
     return [
       new ContextMenuOption(`Cut`, {
-        disabled: false,
-        onSelect: () => {
+        $onSelect: () => {
           editor.dispatchCommand(CUT_COMMAND, null);
         },
+        disabled: false,
       }),
       new ContextMenuOption(`Copy`, {
-        disabled: false,
-        onSelect: () => {
+        $onSelect: () => {
           editor.dispatchCommand(COPY_COMMAND, null);
         },
+        disabled: false,
       }),
       new ContextMenuOption(`Paste`, {
-        disabled: false,
-        onSelect: () => {
+        $onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
             const data = new DataTransfer();
 
@@ -92,10 +73,10 @@ export default function ContextMenuPlugin(): JSX.Element {
             editor.dispatchCommand(PASTE_COMMAND, event);
           });
         },
+        disabled: false,
       }),
       new ContextMenuOption(`Paste as Plain Text`, {
-        disabled: false,
-        onSelect: () => {
+        $onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
             const permission = await navigator.permissions.query({
               // @ts-expect-error These types are incorrect.
@@ -117,10 +98,11 @@ export default function ContextMenuPlugin(): JSX.Element {
             editor.dispatchCommand(PASTE_COMMAND, event);
           });
         },
-      }),
-      new ContextMenuOption(`Delete Node`, {
         disabled: false,
-        onSelect: () => {
+      }),
+      new ContextMenuSeparator(),
+      new ContextMenuOption(`Delete Node`, {
+        $onSelect: () => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const currentNode = selection.anchor.getNode();
@@ -138,6 +120,7 @@ export default function ContextMenuPlugin(): JSX.Element {
             });
           }
         },
+        disabled: false,
       }),
     ];
   }, [editor]);
@@ -145,19 +128,23 @@ export default function ContextMenuPlugin(): JSX.Element {
   const conditionalOptions = useMemo(() => {
     return [
       new ContextMenuOption(`Remove Link`, {
-        disabled: false,
-        onSelect: () => {
+        $onSelect: () => {
           editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
         },
-        showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
+        $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
+        disabled: false,
+      }),
+      new ContextMenuSeparator({
+        $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
       }),
     ];
   }, [editor]);
 
   return (
     <ContextMenu
-      ContextMenuItem={ContextMenuItem}
       className="PlaygroundEditorTheme__contextMenu"
+      itemClassName="PlaygroundEditorTheme__contextMenuItem"
+      separatorClassName="PlaygroundEditorTheme__contextMenuSeparator"
       defaultOptions={defaultOptions}
       conditionalOptions={conditionalOptions}
     />

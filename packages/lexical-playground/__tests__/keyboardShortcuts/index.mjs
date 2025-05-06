@@ -280,32 +280,26 @@ export async function toggleInsertCodeBlock(page) {
 }
 
 export async function toggleLowercase(page) {
-  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Control');
   await page.keyboard.down('Shift');
   await page.keyboard.press('1');
-  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Control');
   await page.keyboard.up('Shift');
 }
 
 export async function toggleUppercase(page) {
-  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Control');
   await page.keyboard.down('Shift');
   await page.keyboard.press('2');
-  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Control');
   await page.keyboard.up('Shift');
 }
 
 export async function toggleCapitalize(page) {
-  await keyDownCtrlOrMeta(page);
-  if (IS_MAC) {
-    await page.keyboard.down('Alt');
-  }
+  await page.keyboard.down('Control');
   await page.keyboard.down('Shift');
   await page.keyboard.press('3');
-  await keyUpCtrlOrMeta(page);
-  if (IS_MAC) {
-    await page.keyboard.up('Alt');
-  }
+  await page.keyboard.up('Control');
   await page.keyboard.up('Shift');
 }
 

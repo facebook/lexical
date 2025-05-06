@@ -116,7 +116,7 @@ export function isLowercase(event: KeyboardEvent): boolean {
   const {code} = event;
   return (
     (code === 'Numpad1' || code === 'Digit1') &&
-    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
+    isModifierMatch(event, {ctrlKey: true, shiftKey: true})
   );
 }
 
@@ -124,7 +124,7 @@ export function isUppercase(event: KeyboardEvent): boolean {
   const {code} = event;
   return (
     (code === 'Numpad2' || code === 'Digit2') &&
-    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
+    isModifierMatch(event, {ctrlKey: true, shiftKey: true})
   );
 }
 
@@ -132,11 +132,7 @@ export function isCapitalize(event: KeyboardEvent): boolean {
   const {code} = event;
   return (
     (code === 'Numpad3' || code === 'Digit3') &&
-    isModifierMatch(event, {
-      ...CONTROL_OR_META,
-      shiftKey: true,
-      altKey: IS_APPLE,
-    })
+    isModifierMatch(event, {ctrlKey: true, shiftKey: true})
   );
 }
 

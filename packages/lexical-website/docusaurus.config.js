@@ -231,6 +231,7 @@ const config = {
   },
 
   markdown: {
+    mermaid: true,
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
         'https://stackblitz.com/github/facebook/lexical/tree/main/',
@@ -285,7 +286,6 @@ const config = {
       },
     ],
   ].filter((plugin) => plugin != null),
-
   presets: [
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
@@ -451,6 +451,8 @@ const config = {
         theme: lightCodeTheme,
       },
     }),
+
+  themes: ['@docusaurus/theme-mermaid'],
 
   title: TITLE,
   url: 'https://lexical.dev',

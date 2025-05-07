@@ -53,6 +53,7 @@ import {
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
+  UpdateTag,
 } from '.';
 import {
   COMPOSITION_SUFFIX,
@@ -1336,12 +1337,12 @@ export function scrollIntoViewIfNeeded(
   }
 }
 
-export function $hasUpdateTag(tag: string): boolean {
+export function $hasUpdateTag(tag: UpdateTag): boolean {
   const editor = getActiveEditor();
   return editor._updateTags.has(tag);
 }
 
-export function $addUpdateTag(tag: string): void {
+export function $addUpdateTag(tag: UpdateTag): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   editor._updateTags.add(tag);

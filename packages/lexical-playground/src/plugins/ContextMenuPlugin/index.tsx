@@ -30,8 +30,18 @@ import {useMemo} from 'react';
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const defaultOptions = useMemo(() => {
+  const items = useMemo(() => {
     return [
+      new ContextMenuOption(`Remove Link`, {
+        $onSelect: () => {
+          editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+        },
+        $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
+        disabled: false,
+      }),
+      new ContextMenuSeparator({
+        $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
+      }),
       new ContextMenuOption(`Cut`, {
         $onSelect: () => {
           editor.dispatchCommand(CUT_COMMAND, null);
@@ -49,8 +59,8 @@ export default function ContextMenuPlugin(): JSX.Element {
           navigator.clipboard.read().then(async function (...args) {
             const data = new DataTransfer();
 
-            const items = await navigator.clipboard.read();
-            const item = items[0];
+            const readClipboardItems = await navigator.clipboard.read();
+            const item = readClipboardItems[0];
 
             const permission = await navigator.permissions.query({
               // @ts-expect-error These types are incorrect.
@@ -89,8 +99,8 @@ export default function ContextMenuPlugin(): JSX.Element {
             }
 
             const data = new DataTransfer();
-            const items = await navigator.clipboard.readText();
-            data.setData('text/plain', items);
+            const clipboardText = await navigator.clipboard.readText();
+            data.setData('text/plain', clipboardText);
 
             const event = new ClipboardEvent('paste', {
               clipboardData: data,
@@ -125,28 +135,12 @@ export default function ContextMenuPlugin(): JSX.Element {
     ];
   }, [editor]);
 
-  const conditionalOptions = useMemo(() => {
-    return [
-      new ContextMenuOption(`Remove Link`, {
-        $onSelect: () => {
-          editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
-        },
-        $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
-        disabled: false,
-      }),
-      new ContextMenuSeparator({
-        $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
-      }),
-    ];
-  }, [editor]);
-
   return (
     <ContextMenu
       className="PlaygroundEditorTheme__contextMenu"
       itemClassName="PlaygroundEditorTheme__contextMenuItem"
       separatorClassName="PlaygroundEditorTheme__contextMenuSeparator"
-      defaultOptions={defaultOptions}
-      conditionalOptions={conditionalOptions}
+      items={items}
     />
   );
 }

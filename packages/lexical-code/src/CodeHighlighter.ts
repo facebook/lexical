@@ -45,11 +45,11 @@ import invariant from 'shared/invariant';
 import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
   $isCodeHighlightNode,
   CodeHighlightNode,
   DEFAULT_CODE_LANGUAGE,
-  getFirstCodeNodeOfLine,
-  getLastCodeNodeOfLine,
 } from './CodeHighlightNode';
 import {$isCodeNode, CodeNode} from './CodeNode';
 
@@ -75,7 +75,7 @@ export const PrismTokenizer: Tokenizer = {
   },
 };
 
-export function getStartOfCodeInLine(
+export function $getStartOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
   offset: number,
 ): null | {
@@ -188,10 +188,10 @@ function findNextNonBlankInLine(
   }
 }
 
-export function getEndOfCodeInLine(
+export function $getEndOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
 ): CodeHighlightNode | TabNode {
-  const lastNode = getLastCodeNodeOfLine(anchor);
+  const lastNode = $getLastCodeNodeOfLine(anchor);
   invariant(
     !$isLineBreakNode(lastNode),
     'Unexpected lineBreakNode in getEndOfCodeInLine',
@@ -269,7 +269,7 @@ function codeNodeTransform(
   }
 
   // Using nested update call to pass `skipTransforms` since we don't want
-  // each individual codehighlight node to be transformed again as it's already
+  // each individual CodeHighlightNode to be transformed again as it's already
   // in its final state
   editor.update(
     () => {
@@ -456,7 +456,7 @@ function getDiffRange(
 }
 
 function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
-  // Only checking for code higlight nodes, tabs and linebreaks. If it's regular text node
+  // Only checking for code highlight nodes, tabs and linebreaks. If it's regular text node
   // returning false so that it's transformed into code highlight node
   return (
     ($isCodeHighlightNode(nodeA) &&
@@ -535,8 +535,8 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
   if ($isCodeNode(firstNode)) {
     return indentOrOutdent;
   }
-  const firstOfLine = getFirstCodeNodeOfLine(firstNode);
-  const lastOfLine = getLastCodeNodeOfLine(firstNode);
+  const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
+  const lastOfLine = $getLastCodeNodeOfLine(firstNode);
   const anchor = selection.anchor;
   const focus = selection.focus;
   let selectionFirst;
@@ -578,7 +578,7 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
           line[0];
         // First and last lines might not be complete
         if (i === 0) {
-          firstOfLine = getFirstCodeNodeOfLine(firstOfLine);
+          firstOfLine = $getFirstCodeNodeOfLine(firstOfLine);
         }
         if (firstOfLine !== null) {
           if (type === INDENT_CONTENT_COMMAND) {
@@ -608,11 +608,7 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
     }
     return true;
   }
-  const firstOfLine = getFirstCodeNodeOfLine(firstNode);
-  invariant(
-    firstOfLine !== null,
-    'Expected getFirstCodeNodeOfLine to return a valid Code Node',
-  );
+  const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
   if (type === INDENT_CONTENT_COMMAND) {
     if ($isLineBreakNode(firstOfLine)) {
       firstOfLine.insertAfter($createTabNode());
@@ -654,7 +650,7 @@ function $handleShiftLines(
   }
   if (!event.altKey) {
     // Handle moving selection out of the code block, given there are no
-    // sibling thats can natively take the selection.
+    // siblings that can natively take the selection.
     if (selection.isCollapsed()) {
       const codeNode = anchorNode.getParentOrThrow();
       if (
@@ -687,11 +683,11 @@ function $handleShiftLines(
   let start;
   let end;
   if (anchorNode.isBefore(focusNode)) {
-    start = getFirstCodeNodeOfLine(anchorNode);
-    end = getLastCodeNodeOfLine(focusNode);
+    start = $getFirstCodeNodeOfLine(anchorNode);
+    end = $getLastCodeNodeOfLine(focusNode);
   } else {
-    start = getFirstCodeNodeOfLine(focusNode);
-    end = getLastCodeNodeOfLine(anchorNode);
+    start = $getFirstCodeNodeOfLine(focusNode);
+    end = $getLastCodeNodeOfLine(anchorNode);
   }
   if (start == null || end == null) {
     return false;
@@ -733,8 +729,8 @@ function $handleShiftLines(
     $isTabNode(sibling) ||
     $isLineBreakNode(sibling)
       ? arrowIsUp
-        ? getFirstCodeNodeOfLine(sibling)
-        : getLastCodeNodeOfLine(sibling)
+        ? $getFirstCodeNodeOfLine(sibling)
+        : $getLastCodeNodeOfLine(sibling)
       : null;
   let insertionPoint =
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
@@ -781,7 +777,7 @@ function $handleMoveTo(
   }
 
   if (isMoveToStart) {
-    const start = getStartOfCodeInLine(focusNode, focus.offset);
+    const start = $getStartOfCodeInLine(focusNode, focus.offset);
     if (start !== null) {
       const {node, offset} = start;
       if ($isLineBreakNode(node)) {
@@ -793,7 +789,7 @@ function $handleMoveTo(
       focusNode.getParentOrThrow().selectStart();
     }
   } else {
-    const node = getEndOfCodeInLine(focusNode);
+    const node = $getEndOfCodeInLine(focusNode);
     node.select();
   }
 
@@ -880,22 +876,64 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (payload): boolean => $handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      (event) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        const anchorNode = anchor.getNode();
+        if (!$isSelectionInCode(selection)) {
+          return false;
+        }
+        // If at the start of a code block, prevent selection from moving out
+        if (
+          selection.isCollapsed() &&
+          anchor.offset === 0 &&
+          anchorNode.getPreviousSibling() === null &&
+          $isCodeNode(anchorNode.getParentOrThrow())
+        ) {
+          event.preventDefault();
+          return true;
+        }
+        return $handleShiftLines(KEY_ARROW_UP_COMMAND, event);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (payload): boolean => $handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
-      COMMAND_PRIORITY_LOW,
-    ),
-    editor.registerCommand(
-      MOVE_TO_END,
-      (payload): boolean => $handleMoveTo(MOVE_TO_END, payload),
+      (event) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        const anchorNode = anchor.getNode();
+        if (!$isSelectionInCode(selection)) {
+          return false;
+        }
+        // If at the end of a code block, prevent selection from moving out
+        if (
+          selection.isCollapsed() &&
+          anchor.offset === anchorNode.getTextContentSize() &&
+          anchorNode.getNextSibling() === null &&
+          $isCodeNode(anchorNode.getParentOrThrow())
+        ) {
+          event.preventDefault();
+          return true;
+        }
+        return $handleShiftLines(KEY_ARROW_DOWN_COMMAND, event);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (payload): boolean => $handleMoveTo(MOVE_TO_START, payload),
+      (event) => $handleMoveTo(MOVE_TO_START, event as KeyboardEvent),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      MOVE_TO_END,
+      (event) => $handleMoveTo(MOVE_TO_END, event as KeyboardEvent),
       COMMAND_PRIORITY_LOW,
     ),
   );

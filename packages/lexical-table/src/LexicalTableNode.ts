@@ -41,19 +41,26 @@ import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
+  isHTMLTableElement,
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
+
+function isHTMLDivElement(element: unknown): element is HTMLDivElement {
+  return isHTMLElement(element) && element.nodeName === 'DIV';
+}
 
 export type SerializedTableNode = Spread<
   {
     colWidths?: readonly number[];
     rowStriping?: boolean;
+    frozenColumnCount?: number;
+    frozenRowCount?: number;
   },
   SerializedElementNode
 >;
 
 function updateColgroup(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   colCount: number,
   colWidths?: number[] | readonly number[],
@@ -75,7 +82,7 @@ function updateColgroup(
 }
 
 function setRowStriping(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   rowStriping: boolean,
 ): void {
@@ -88,8 +95,38 @@ function setRowStriping(
   }
 }
 
+function setFrozenColumns(
+  dom: HTMLDivElement,
+  tableElement: HTMLTableElement,
+  config: EditorConfig,
+  frozenColumnCount: number,
+): void {
+  if (frozenColumnCount > 0) {
+    addClassNamesToElement(dom, config.theme.tableFrozenColumn);
+    tableElement.setAttribute('data-lexical-frozen-column', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableFrozenColumn);
+    tableElement.removeAttribute('data-lexical-frozen-column');
+  }
+}
+
+function setFrozenRows(
+  dom: HTMLDivElement,
+  tableElement: HTMLTableElement,
+  config: EditorConfig,
+  frozenRowCount: number,
+): void {
+  if (frozenRowCount > 0) {
+    addClassNamesToElement(dom, config.theme.tableFrozenRow);
+    tableElement.setAttribute('data-lexical-frozen-row', 'true');
+  } else {
+    removeClassNamesFromElement(dom, config.theme.tableFrozenRow);
+    tableElement.removeAttribute('data-lexical-frozen-row');
+  }
+}
+
 function alignTableElement(
-  dom: HTMLElement,
+  dom: HTMLTableElement,
   config: EditorConfig,
   formatType: ElementFormatType,
 ): void {
@@ -120,7 +157,7 @@ export function $isScrollableTablesActive(
 export function setScrollableTablesActive(
   editor: LexicalEditor,
   active: boolean,
-) {
+): void {
   if (active) {
     if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
       console.warn(
@@ -137,6 +174,8 @@ export function setScrollableTablesActive(
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean;
+  __frozenColumnCount: number;
+  __frozenRowCount: number;
   __colWidths?: readonly number[];
 
   static getType(): string {
@@ -164,6 +203,8 @@ export class TableNode extends ElementNode {
     super.afterCloneFrom(prevNode);
     this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
+    this.__frozenColumnCount = prevNode.__frozenColumnCount;
+    this.__frozenRowCount = prevNode.__frozenRowCount;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -183,18 +224,26 @@ export class TableNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setRowStriping(serializedNode.rowStriping || false)
+      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
+      .setFrozenRows(serializedNode.frozenRowCount || 0)
       .setColWidths(serializedNode.colWidths);
   }
 
   constructor(key?: NodeKey) {
     super(key);
     this.__rowStriping = false;
+    this.__frozenColumnCount = 0;
+    this.__frozenRowCount = 0;
   }
 
   exportJSON(): SerializedTableNode {
     return {
       ...super.exportJSON(),
       colWidths: this.getColWidths(),
+      frozenColumnCount: this.__frozenColumnCount
+        ? this.__frozenColumnCount
+        : undefined,
+      frozenRowCount: this.__frozenRowCount ? this.__frozenRowCount : undefined,
       rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
     };
   }
@@ -207,36 +256,30 @@ export class TableNode extends ElementNode {
     return destination === 'html';
   }
 
-  getDOMSlot(element: HTMLElement): ElementDOMSlot {
-    const tableElement =
-      (element.nodeName !== 'TABLE' && element.querySelector('table')) ||
-      element;
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLTableElement> {
+    const tableElement = !isHTMLTableElement(element)
+      ? element.querySelector('table')
+      : element;
     invariant(
-      tableElement.nodeName === 'TABLE',
+      isHTMLTableElement(tableElement),
       'TableNode.getDOMSlot: createDOM() did not return a table',
     );
     return super
-      .getDOMSlot(tableElement)
+      .getDOMSlot(element)
+      .withElement(tableElement)
       .withAfter(tableElement.querySelector('colgroup'));
   }
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
+    if (this.__style) {
+      tableElement.style.cssText = this.__style;
+    }
     const colGroup = document.createElement('colgroup');
     tableElement.appendChild(colGroup);
-    updateColgroup(
-      tableElement,
-      config,
-      this.getColumnCount(),
-      this.getColWidths(),
-    );
     setDOMUnmanaged(colGroup);
-
     addClassNamesToElement(tableElement, config.theme.table);
-    alignTableElement(tableElement, config, this.getFormatType());
-    if (this.__rowStriping) {
-      setRowStriping(tableElement, config, true);
-    }
+    this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {
       const wrapperElement = document.createElement('div');
       const classes = config.theme.tableScrollableWrapper;
@@ -246,22 +289,63 @@ export class TableNode extends ElementNode {
         wrapperElement.style.cssText = 'overflow-x: auto;';
       }
       wrapperElement.appendChild(tableElement);
+      this.updateTableWrapper(null, wrapperElement, tableElement, config);
       return wrapperElement;
     }
-
     return tableElement;
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (prevNode.__rowStriping !== this.__rowStriping) {
-      setRowStriping(dom, config, this.__rowStriping);
+  updateTableWrapper(
+    prevNode: this | null,
+    tableWrapper: HTMLDivElement,
+    tableElement: HTMLTableElement,
+    config: EditorConfig,
+  ): void {
+    if (
+      this.__frozenColumnCount !== (prevNode ? prevNode.__frozenColumnCount : 0)
+    ) {
+      setFrozenColumns(
+        tableWrapper,
+        tableElement,
+        config,
+        this.__frozenColumnCount,
+      );
     }
-    updateColgroup(dom, config, this.getColumnCount(), this.getColWidths());
-    alignTableElement(
-      this.getDOMSlot(dom).element,
+    if (this.__frozenRowCount !== (prevNode ? prevNode.__frozenRowCount : 0)) {
+      setFrozenRows(tableWrapper, tableElement, config, this.__frozenRowCount);
+    }
+  }
+
+  updateTableElement(
+    prevNode: this | null,
+    tableElement: HTMLTableElement,
+    config: EditorConfig,
+  ): void {
+    if (this.__style !== (prevNode ? prevNode.__style : '')) {
+      tableElement.style.cssText = this.__style;
+    }
+    if (this.__rowStriping !== (prevNode ? prevNode.__rowStriping : false)) {
+      setRowStriping(tableElement, config, this.__rowStriping);
+    }
+    updateColgroup(
+      tableElement,
       config,
-      this.getFormatType(),
+      this.getColumnCount(),
+      this.getColWidths(),
     );
+    alignTableElement(tableElement, config, this.getFormatType());
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    const slot = this.getDOMSlot(dom);
+    const tableElement = slot.element;
+    if ((dom === tableElement) === $isScrollableTablesActive()) {
+      return true;
+    }
+    if (isHTMLDivElement(dom)) {
+      this.updateTableWrapper(prevNode, dom, tableElement, config);
+    }
+    this.updateTableElement(prevNode, tableElement, config);
     return false;
   }
 
@@ -272,20 +356,14 @@ export class TableNode extends ElementNode {
       after: (tableElement) => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
-          if (this.__format) {
-            alignTableElement(
-              tableElement as HTMLElement,
-              editor._config,
-              this.getFormatType(),
-            );
-          }
         }
-        if (isHTMLElement(tableElement) && tableElement.nodeName !== 'TABLE') {
+        if (!isHTMLTableElement(tableElement) && isHTMLElement(tableElement)) {
           tableElement = tableElement.querySelector('table');
         }
-        if (!isHTMLElement(tableElement)) {
+        if (!isHTMLTableElement(tableElement)) {
           return null;
         }
+        alignTableElement(tableElement, editor._config, this.getFormatType());
 
         // Scan the table map to build a map of table cell key to the columns it needs
         const [tableMap] = $computeTableMapSkipCellCheck(this, null, null);
@@ -347,7 +425,7 @@ export class TableNode extends ElementNode {
         return tableElement;
       },
       element:
-        isHTMLElement(element) && element.nodeName !== 'TABLE'
+        !isHTMLTableElement(element) && isHTMLElement(element)
           ? element.querySelector('table')
           : element,
     };
@@ -472,6 +550,26 @@ export class TableNode extends ElementNode {
     return self;
   }
 
+  setFrozenColumns(columnCount: number): this {
+    const self = this.getWritable();
+    self.__frozenColumnCount = columnCount;
+    return self;
+  }
+
+  getFrozenColumns(): number {
+    return this.getLatest().__frozenColumnCount;
+  }
+
+  setFrozenRows(rowCount: number): this {
+    const self = this.getWritable();
+    self.__frozenRowCount = rowCount;
+    return self;
+  }
+
+  getFrozenRows(): number {
+    return this.getLatest().__frozenRowCount;
+  }
+
   canSelectBefore(): true {
     return true;
   }
@@ -515,6 +613,12 @@ export function $convertTableElement(
   const tableNode = $createTableNode();
   if (domNode.hasAttribute('data-lexical-row-striping')) {
     tableNode.setRowStriping(true);
+  }
+  if (domNode.hasAttribute('data-lexical-frozen-column')) {
+    tableNode.setFrozenColumns(1);
+  }
+  if (domNode.hasAttribute('data-lexical-frozen-row')) {
+    tableNode.setFrozenRows(1);
   }
   const colGroup = domNode.querySelector(':scope > colgroup');
   if (colGroup) {

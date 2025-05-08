@@ -30,13 +30,14 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
-  $isTextNode,
   ElementNode,
   Klass,
   LexicalNode,
   TextFormatType,
   TextNode,
 } from 'lexical';
+
+import {formatUrl} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -172,8 +173,11 @@ export type TextMatchTransformer = Readonly<{
   regExp: RegExp;
   /**
    * Determines how the matched markdown text should be transformed into a node during the markdown import process
+   *
+   * @returns nothing, or a TextNode that may be a child of the new node that is created.
+   * If a TextNode is returned, text format matching will be applied to it (e.g. bold, italic, etc.)
    */
-  replace?: (node: TextNode, match: RegExpMatchArray) => void;
+  replace?: (node: TextNode, match: RegExpMatchArray) => void | TextNode;
   /**
    * For import operations, this function can be used to determine the end index of the match, after `importRegExp` has matched.
    * Without this function, the end index will be determined by the length of the match from `importRegExp`. Manually determining the end index can be useful if
@@ -542,17 +546,14 @@ export const LINK: TextMatchTransformer = {
       return null;
     }
     const title = node.getTitle();
+
+    const textContent = exportChildren(node);
+
     const linkContent = title
-      ? `[${node.getTextContent()}](${node.getURL()} "${title}")`
-      : `[${node.getTextContent()}](${node.getURL()})`;
-    const firstChild = node.getFirstChild();
-    // Add text styles only if link has single text node inside. If it's more
-    // then one we ignore it as markdown does not support nested styles for links
-    if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
-      return exportFormat(firstChild, linkContent);
-    } else {
-      return linkContent;
-    }
+      ? `[${textContent}](${node.getURL()} "${title}")`
+      : `[${textContent}](${node.getURL()})`;
+
+    return linkContent;
   },
   importRegExp:
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
@@ -560,11 +561,14 @@ export const LINK: TextMatchTransformer = {
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl, linkTitle] = match;
-    const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
+    const formattedUrl = formatUrl(linkUrl);
+    const linkNode = $createLinkNode(formattedUrl, {title: linkTitle});
     const linkTextNode = $createTextNode(linkText);
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);
     textNode.replace(linkNode);
+
+    return linkTextNode;
   },
   trigger: ')',
   type: 'text-match',

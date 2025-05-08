@@ -338,7 +338,6 @@ function reconcileTextFormat(element: ElementNode): void {
     !activeEditorStateReadOnly
   ) {
     element.setTextFormat(subTreeTextFormat);
-    element.setTextStyle(subTreeTextStyle);
   }
 }
 
@@ -618,7 +617,7 @@ function $reconcileNode(
     return dom;
   }
   // If the node key doesn't point to the same instance in both maps,
-  // it means it were cloned. If they're also dirty, we mark them as mutated.
+  // it was cloned. If it's also dirty, we mark it as mutated.
   if (prevNode !== nextNode && isDirty) {
     setMutatedNode(
       mutatedNodes,

@@ -7,23 +7,45 @@
  */
 
 import {
+  $caretFromPoint,
   $cloneWithProperties,
   $createParagraphNode,
+  $getAdjacentChildCaret,
+  $getCaretInDirection,
+  $getChildCaret,
+  $getChildCaretOrSelf,
+  $getCollapsedCaretRange,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
+  $getState,
+  $isChildCaret,
   $isElementNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
-  $isTextNode,
+  $isSiblingCaret,
+  $isTextPointCaret,
+  $normalizeCaret,
+  $rewindSiblingCaret,
   $setSelection,
-  $splitNode,
-  EditorState,
+  $setSelectionFromCaretRange,
+  $setState,
+  $splitAtPointCaretNext,
+  type CaretDirection,
+  type EditorState,
   ElementNode,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  makeStepwiseIterator,
+  type NodeCaret,
+  type NodeKey,
+  PointCaret,
+  RootMode,
+  type SiblingCaret,
+  SplitAtPointCaretNextOptions,
+  StateConfig,
+  ValueOrUpdater,
 } from 'lexical';
 // This underscore postfixing is used as a hotfix so we do not
 // export shared types from this module #5918
@@ -163,10 +185,10 @@ export function mediaFileReader(
   });
 }
 
-export type DFSNode = Readonly<{
-  depth: number;
-  node: LexicalNode;
-}>;
+export interface DFSNode {
+  readonly depth: number;
+  readonly node: LexicalNode;
+}
 
 /**
  * "Depth-First Search" starts at the root/top node of a tree and goes as far as it can down a branch end
@@ -185,21 +207,33 @@ export function $dfs(
   return Array.from($dfsIterator(startNode, endNode));
 }
 
-type DFSIterator = {
-  next: () => IteratorResult<DFSNode, void>;
-  [Symbol.iterator]: () => DFSIterator;
-};
-
-const iteratorDone: Readonly<{done: true; value: void}> = {
-  done: true,
-  value: undefined,
-};
-const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
-  value: T,
-) => ({done: false, value});
+/**
+ * Get the adjacent caret in the same direction
+ *
+ * @param caret A caret or null
+ * @returns `caret.getAdjacentCaret()` or `null`
+ */
+export function $getAdjacentCaret<D extends CaretDirection>(
+  caret: null | NodeCaret<D>,
+): null | SiblingCaret<LexicalNode, D> {
+  return caret ? caret.getAdjacentCaret() : null;
+}
 
 /**
- * $dfs iterator. Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfs(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode> {
+  return Array.from($reverseDfsIterator(startNode, endNode));
+}
+
+/**
+ * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
  * @param startNode - The node to start the search, if omitted, it will start at the root node.
  * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
@@ -207,49 +241,56 @@ const iteratorNotDone: <T>(value: T) => Readonly<{done: false; value: T}> = <T>(
 export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): DFSIterator {
-  const start = (startNode || $getRoot()).getLatest();
+): IterableIterator<DFSNode> {
+  return $dfsCaretIterator('next', startNode, endNode);
+}
+
+function $getEndCaret<D extends CaretDirection>(
+  startNode: LexicalNode,
+  direction: D,
+): null | NodeCaret<D> {
+  const rval = $getAdjacentSiblingOrParentSiblingCaret(
+    $getSiblingCaret(startNode, direction),
+  );
+  return rval && rval[0];
+}
+
+function $dfsCaretIterator<D extends CaretDirection>(
+  direction: D,
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  const root = $getRoot();
+  const start = startNode || root;
+  const startCaret = $isElementNode(start)
+    ? $getChildCaret(start, direction)
+    : $getSiblingCaret(start, direction);
   const startDepth = $getDepth(start);
-  const end = endNode;
-  let node: null | LexicalNode = start;
+  const endCaret = endNode
+    ? $getAdjacentChildCaret(
+        $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
+      )
+    : $getEndCaret(start, direction);
   let depth = startDepth;
-  let isFirstNext = true;
-
-  const iterator: DFSIterator = {
-    next(): IteratorResult<DFSNode, void> {
-      if (node === null) {
-        return iteratorDone;
+  return makeStepwiseIterator({
+    hasNext: (state): state is NodeCaret<'next'> => state !== null,
+    initial: startCaret,
+    map: (state) => ({depth, node: state.origin}),
+    step: (state: NodeCaret<'next'>) => {
+      if (state.isSameNodeCaret(endCaret)) {
+        return null;
       }
-      if (isFirstNext) {
-        isFirstNext = false;
-        return iteratorNotDone({depth, node});
-      }
-      if (node === end) {
-        return iteratorDone;
-      }
-
-      if ($isElementNode(node) && node.getChildrenSize() > 0) {
-        node = node.getFirstChild();
+      if ($isChildCaret(state)) {
         depth++;
-      } else {
-        let depthDiff;
-        [node, depthDiff] = $getNextSiblingOrParentSibling(node) || [null, 0];
-        depth += depthDiff;
-        if (end == null && depth <= startDepth) {
-          node = null;
-        }
       }
-
-      if (node === null) {
-        return iteratorDone;
+      const rval = $getAdjacentSiblingOrParentSiblingCaret(state);
+      if (!rval || rval[0].isSameNodeCaret(endCaret)) {
+        return null;
       }
-      return iteratorNotDone({depth, node});
+      depth += rval[1];
+      return rval[0];
     },
-    [Symbol.iterator](): DFSIterator {
-      return iterator;
-    },
-  };
-  return iterator;
+  });
 }
 
 /**
@@ -263,42 +304,27 @@ export function $dfsIterator(
 export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number] {
-  let node_: null | LexicalNode = node;
-  // Find immediate sibling or nearest parent sibling
-  let sibling = null;
-  let depthDiff = 0;
-
-  while (sibling === null && node_ !== null) {
-    sibling = node_.getNextSibling();
-
-    if (sibling === null) {
-      node_ = node_.getParent();
-      depthDiff--;
-    } else {
-      node_ = sibling;
-    }
-  }
-
-  if (node_ === null) {
-    return null;
-  }
-  return [node_, depthDiff];
+  const rval = $getAdjacentSiblingOrParentSiblingCaret(
+    $getSiblingCaret(node, 'next'),
+  );
+  return rval && [rval[0].origin, rval[1]];
 }
 
-export function $getDepth(node: LexicalNode): number {
-  let innerNode: LexicalNode | null = node;
-  let depth = 0;
-
-  while ((innerNode = innerNode.getParent()) !== null) {
+export function $getDepth(node: null | LexicalNode): number {
+  let depth = -1;
+  for (
+    let innerNode = node;
+    innerNode !== null;
+    innerNode = innerNode.getParent()
+  ) {
     depth++;
   }
-
   return depth;
 }
 
 /**
  * Performs a right-to-left preorder tree traversal.
- * From the starting node it goes to the rightmost child, than backtracks to paret and finds new rightmost path.
+ * From the starting node it goes to the rightmost child, than backtracks to parent and finds new rightmost path.
  * It will return the next node in traversal sequence after the startingNode.
  * The traversal is similar to $dfs functions above, but the nodes are visited right-to-left, not left-to-right.
  * @param startingNode - The node to start the search.
@@ -307,24 +333,24 @@ export function $getDepth(node: LexicalNode): number {
 export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null {
-  let node: LexicalNode | null = startingNode;
+  const startCaret = $getChildCaretOrSelf(
+    $getSiblingCaret(startingNode, 'previous'),
+  );
+  const next = $getAdjacentSiblingOrParentSiblingCaret(startCaret, 'root');
+  return next && next[0].origin;
+}
 
-  if ($isElementNode(node) && node.getChildrenSize() > 0) {
-    node = node.getLastChild();
-  } else {
-    let sibling = null;
-
-    while (sibling === null && node !== null) {
-      sibling = node.getPreviousSibling();
-
-      if (sibling === null) {
-        node = node.getParent();
-      } else {
-        node = sibling;
-      }
-    }
-  }
-  return node;
+/**
+ * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
+ * @param startNode - The node to start the search, if omitted, it will start at the root node.
+ * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  return $dfsCaretIterator('previous', startNode, endNode);
 }
 
 /**
@@ -529,57 +555,73 @@ export function $restoreEditorState(
  * If the selected insertion area is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
  * the node will be appended there, otherwise, it will be inserted before the insertion area.
  * If there is no selection where the node is to be inserted, it will be appended after any current nodes
- * within the tree, as a child of the root node. A paragraph node will then be added after the inserted node and selected.
+ * within the tree, as a child of the root node. A paragraph will then be added after the inserted node and selected.
  * @param node - The node to be inserted
  * @returns The node after its insertion
  */
 export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   const selection = $getSelection() || $getPreviousSelection();
-
+  let initialCaret: undefined | PointCaret<'next'>;
   if ($isRangeSelection(selection)) {
-    const {focus} = selection;
-    const focusNode = focus.getNode();
-    const focusOffset = focus.offset;
-
-    if ($isRootOrShadowRoot(focusNode)) {
-      const focusChild = focusNode.getChildAtIndex(focusOffset);
-      if (focusChild == null) {
-        focusNode.append(node);
-      } else {
-        focusChild.insertBefore(node);
-      }
-      node.selectNext();
-    } else {
-      let splitNode: ElementNode;
-      let splitOffset: number;
-      if ($isTextNode(focusNode)) {
-        splitNode = focusNode.getParentOrThrow();
-        splitOffset = focusNode.getIndexWithinParent();
-        if (focusOffset > 0) {
-          splitOffset += 1;
-          focusNode.splitText(focusOffset);
-        }
-      } else {
-        splitNode = focusNode;
-        splitOffset = focusOffset;
-      }
-      const [, rightTree] = $splitNode(splitNode, splitOffset);
-      rightTree.insertBefore(node);
-      rightTree.selectStart();
-    }
+    initialCaret = $caretFromPoint(selection.focus, 'next');
   } else {
     if (selection != null) {
       const nodes = selection.getNodes();
-      nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
-    } else {
-      const root = $getRoot();
-      root.append(node);
+      const lastNode = nodes[nodes.length - 1];
+      if (lastNode) {
+        initialCaret = $getSiblingCaret(lastNode, 'next');
+      }
     }
-    const paragraphNode = $createParagraphNode();
-    node.insertAfter(paragraphNode);
-    paragraphNode.select();
+    initialCaret =
+      initialCaret ||
+      $getChildCaret($getRoot(), 'previous')
+        .getFlipped()
+        .insert($createParagraphNode());
   }
+  const insertCaret = $insertNodeToNearestRootAtCaret(node, initialCaret);
+  const adjacent = $getAdjacentChildCaret(insertCaret);
+  const selectionCaret = $isChildCaret(adjacent)
+    ? $normalizeCaret(adjacent)
+    : insertCaret;
+  $setSelectionFromCaretRange($getCollapsedCaretRange(selectionCaret));
   return node.getLatest();
+}
+
+/**
+ * If the insertion caret is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
+ * the node will be inserted there, otherwise the parent nodes will be split according to the
+ * given options.
+ * @param node - The node to be inserted
+ * @param caret - The location to insert or split from
+ * @returns The node after its insertion
+ */
+export function $insertNodeToNearestRootAtCaret<
+  T extends LexicalNode,
+  D extends CaretDirection,
+>(
+  node: T,
+  caret: PointCaret<D>,
+  options?: SplitAtPointCaretNextOptions,
+): NodeCaret<D> {
+  let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
+  for (
+    let nextCaret: null | PointCaret<'next'> = insertCaret;
+    nextCaret;
+    nextCaret = $splitAtPointCaretNext(nextCaret, options)
+  ) {
+    insertCaret = nextCaret;
+  }
+  invariant(
+    !$isTextPointCaret(insertCaret),
+    '$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split',
+  );
+  insertCaret.insert(
+    node.isInline() ? $createParagraphNode().append(node) : node,
+  );
+  return $getCaretInDirection(
+    $getSiblingCaret(node.getLatest(), 'next'),
+    caret.direction,
+  );
 }
 
 /**
@@ -599,17 +641,17 @@ export function $wrapNodeInElement(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ObjectKlass<T> = new (...args: any[]) => T;
+export type ObjectKlass<T> = new (...args: any[]) => T;
 
 /**
  * @param object = The instance of the type
  * @param objectClass = The class of the type
- * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframs)
+ * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframes)
  */
 export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
-): boolean {
+): object is T {
   return object !== null
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;
@@ -641,12 +683,7 @@ export function $filter<T>(
  * @param node Node that needs to be appended
  */
 export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
-  const firstChild = parent.getFirstChild();
-  if (firstChild !== null) {
-    firstChild.insertBefore(node);
-  } else {
-    parent.append(node);
-  }
+  $getChildCaret(parent, 'next').insert(node);
 }
 
 let NEEDS_MANUAL_ZOOM = IS_FIREFOX || !CAN_USE_DOM ? false : undefined;
@@ -728,7 +765,7 @@ function $unwrapAndFilterDescendantsImpl(
       $unwrapAndFilterDescendantsImpl(
         node,
         $predicate,
-        $onSuccess ? $onSuccess : (child) => node.insertAfter(child),
+        $onSuccess || ((child) => node.insertAfter(child)),
       );
     }
     node.remove();
@@ -762,7 +799,7 @@ export function $descendantsMatching(
   $predicate: (node: LexicalNode) => boolean,
 ): LexicalNode[] {
   const result: LexicalNode[] = [];
-  const stack = [...children].reverse();
+  const stack = Array.from(children).reverse();
   for (let child = stack.pop(); child !== undefined; child = stack.pop()) {
     if ($predicate(child)) {
       result.push(child);
@@ -784,10 +821,7 @@ export function $descendantsMatching(
  * @returns An iterator of the node's children
  */
 export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
-  return {
-    [Symbol.iterator]: () =>
-      $childIterator(node.getFirstChild(), (child) => child.getNextSibling()),
-  };
+  return $childIterator($getChildCaret(node, 'next'));
 }
 
 /**
@@ -799,28 +833,20 @@ export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode> {
  * @returns An iterator of the node's children
  */
 export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
-  return {
-    [Symbol.iterator]: () =>
-      $childIterator(node.getLastChild(), (child) =>
-        child.getPreviousSibling(),
-      ),
-  };
+  return $childIterator($getChildCaret(node, 'previous'));
 }
 
-function $childIterator(
-  initialNode: LexicalNode | null,
-  nextNode: (node: LexicalNode) => LexicalNode | null,
-): Iterator<LexicalNode> {
-  let state = initialNode;
+function $childIterator<D extends CaretDirection>(
+  startCaret: NodeCaret<D>,
+): IterableIterator<LexicalNode> {
   const seen = __DEV__ ? new Set<NodeKey>() : null;
-  return {
-    next() {
-      if (state === null) {
-        return iteratorDone;
-      }
-      const rval = iteratorNotDone(state);
+  return makeStepwiseIterator({
+    hasNext: $isSiblingCaret,
+    initial: startCaret.getAdjacentCaret(),
+    map: (caret) => {
+      const origin = caret.origin.getLatest();
       if (__DEV__ && seen !== null) {
-        const key = state.getKey();
+        const key = origin.getKey();
         invariant(
           !seen.has(key),
           '$childIterator: Cycle detected, node with key %s has already been traversed',
@@ -828,20 +854,132 @@ function $childIterator(
         );
         seen.add(key);
       }
-      state = nextNode(state);
-      return rval;
+      return origin;
     },
-  };
+    step: (caret: SiblingCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
+  });
 }
 
 /**
- * Insert all children before this node, and then remove it.
+ * Replace this node with its children
  *
  * @param node The ElementNode to unwrap and remove
  */
 export function $unwrapNode(node: ElementNode): void {
-  for (const child of $firstToLastIterator(node)) {
-    node.insertBefore(child);
+  $rewindSiblingCaret($getSiblingCaret(node, 'next')).splice(
+    1,
+    node.getChildren(),
+  );
+}
+
+/**
+ * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
+ * R -> P -> T1, T2
+ *   -> P2
+ * returns T2 for node T1, P2 for node T2, and null for node P2.
+ * @param node LexicalNode.
+ * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
+export function $getAdjacentSiblingOrParentSiblingCaret<
+  D extends CaretDirection,
+>(
+  startCaret: NodeCaret<D>,
+  rootMode: RootMode = 'root',
+): null | [NodeCaret<D>, number] {
+  let depthDiff = 0;
+  let caret = startCaret;
+  let nextCaret = $getAdjacentChildCaret(caret);
+  while (nextCaret === null) {
+    depthDiff--;
+    nextCaret = caret.getParentCaret(rootMode);
+    if (!nextCaret) {
+      return null;
+    }
+    caret = nextCaret;
+    nextCaret = $getAdjacentChildCaret(caret);
   }
-  node.remove();
+  return nextCaret && [nextCaret, depthDiff];
+}
+
+/**
+ * A wrapper that creates bound functions and methods for the
+ * StateConfig to save some boilerplate when defining methods
+ * or exporting only the accessors from your modules rather
+ * than exposing the StateConfig directly.
+ */
+export interface StateConfigWrapper<K extends string, V> {
+  /** A reference to the stateConfig */
+  readonly stateConfig: StateConfig<K, V>;
+  /** `(node) => $getState(node, stateConfig)` */
+  readonly $get: <T extends LexicalNode>(node: T) => V;
+  /** `(node, valueOrUpdater) => $setState(node, stateConfig, valueOrUpdater)` */
+  readonly $set: <T extends LexicalNode>(
+    node: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+  /** `[$get, $set]` */
+  readonly accessors: readonly [$get: this['$get'], $set: this['$set']];
+  /**
+   * `() => function () { return $get(this) }`
+   *
+   * Should be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   myGetter = myWrapper.makeGetterMethod<this>();
+   * }
+   * ```
+   */
+  makeGetterMethod<T extends LexicalNode>(): (this: T) => V;
+  /**
+   * `() => function (valueOrUpdater) { return $set(this, valueOrUpdater) }`
+   *
+   * Must be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   mySetter = myWrapper.makeSetterMethod<this>();
+   * }
+   * ```
+   */
+  makeSetterMethod<T extends LexicalNode>(): (
+    this: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+}
+
+/**
+ * EXPERIMENTAL
+ *
+ * A convenience interface for working with {@link $getState} and
+ * {@link $setState}.
+ *
+ * @param stateConfig The stateConfig to wrap with convenience functionality
+ * @returns a StateWrapper
+ */
+export function makeStateWrapper<K extends string, V>(
+  stateConfig: StateConfig<K, V>,
+): StateConfigWrapper<K, V> {
+  const $get: StateConfigWrapper<K, V>['$get'] = (node) =>
+    $getState(node, stateConfig);
+  const $set: StateConfigWrapper<K, V>['$set'] = (node, valueOrUpdater) =>
+    $setState(node, stateConfig, valueOrUpdater);
+  return {
+    $get,
+    $set,
+    accessors: [$get, $set],
+    makeGetterMethod: () =>
+      function $getter() {
+        return $get(this);
+      },
+    makeSetterMethod: () =>
+      function $setter(valueOrUpdater) {
+        return $set(this, valueOrUpdater);
+      },
+    stateConfig,
+  };
 }

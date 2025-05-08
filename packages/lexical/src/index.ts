@@ -6,72 +6,67 @@
  *
  */
 
+export type {
+  BaseCaret,
+  CaretDirection,
+  CaretRange,
+  CaretType,
+  ChildCaret,
+  CommonAncestorResult,
+  CommonAncestorResultAncestor,
+  CommonAncestorResultBranch,
+  CommonAncestorResultDescendant,
+  CommonAncestorResultSame,
+  FlipDirection,
+  NodeCaret,
+  PointCaret,
+  RootMode,
+  SiblingCaret,
+  StepwiseIteratorConfig,
+  TextPointCaret,
+  TextPointCaretSlice,
+  TextPointCaretSliceTuple,
+} from './caret/LexicalCaret';
+export {
+  $comparePointCaretNext,
+  $extendCaretToRange,
+  $getAdjacentChildCaret,
+  $getCaretRange,
+  $getChildCaret,
+  $getChildCaretOrSelf,
+  $getCollapsedCaretRange,
+  $getCommonAncestor,
+  $getCommonAncestorResultBranchOrder,
+  $getSiblingCaret,
+  $getTextNodeOffset,
+  $getTextPointCaret,
+  $getTextPointCaretSlice,
+  $isChildCaret,
+  $isNodeCaret,
+  $isSiblingCaret,
+  $isTextPointCaret,
+  $isTextPointCaretSlice,
+  flipDirection,
+  makeStepwiseIterator,
+} from './caret/LexicalCaret';
+export {
+  $caretFromPoint,
+  $caretRangeFromSelection,
+  $getAdjacentSiblingOrParentSiblingCaret,
+  $getCaretInDirection,
+  $getCaretRangeInDirection,
+  $getChildCaretAtIndex,
+  $isExtendableTextPointCaret,
+  $normalizeCaret,
+  $removeTextFromCaretRange,
+  $rewindSiblingCaret,
+  $setPointFromCaret,
+  $setSelectionFromCaretRange,
+  $splitAtPointCaretNext,
+  $updateRangeSelectionFromCaretRange,
+  type SplitAtPointCaretNextOptions,
+} from './caret/LexicalCaretUtils';
 export type {PasteCommandType} from './LexicalCommands';
-export type {
-  CommandListener,
-  CommandListenerPriority,
-  CommandPayloadType,
-  CreateEditorArgs,
-  EditableListener,
-  EditorConfig,
-  EditorSetOptions,
-  EditorThemeClasses,
-  EditorThemeClassName,
-  EditorUpdateOptions,
-  HTMLConfig,
-  Klass,
-  KlassConstructor,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNodeReplacement,
-  MutationListener,
-  NodeMutation,
-  SerializedEditor,
-  Spread,
-  Transform,
-  UpdateListener,
-} from './LexicalEditor';
-export type {
-  EditorState,
-  EditorStateReadOptions,
-  SerializedEditorState,
-} from './LexicalEditorState';
-export type {
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  DOMExportOutputMap,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  NodeMap,
-  SerializedLexicalNode,
-} from './LexicalNode';
-export type {
-  BaseSelection,
-  ElementPointType as ElementPoint,
-  NodeSelection,
-  Point,
-  PointType,
-  RangeSelection,
-  TextPointType as TextPoint,
-} from './LexicalSelection';
-export type {
-  ElementDOMSlot,
-  ElementFormatType,
-  SerializedElementNode,
-} from './nodes/LexicalElementNode';
-export type {SerializedRootNode} from './nodes/LexicalRootNode';
-export type {
-  SerializedTextNode,
-  TextFormatType,
-  TextModeType,
-} from './nodes/LexicalTextNode';
-
-// TODO Move this somewhere else and/or recheck if we still need this
 export {
   BLUR_COMMAND,
   CAN_REDO_COMMAND,
@@ -130,8 +125,35 @@ export {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+export type {
+  CommandListener,
+  CommandListenerPriority,
+  CommandPayloadType,
+  CreateEditorArgs,
+  EditableListener,
+  EditorConfig,
+  EditorSetOptions,
+  EditorThemeClasses,
+  EditorThemeClassName,
+  EditorUpdateOptions,
+  HTMLConfig,
+  Klass,
+  KlassConstructor,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNodeReplacement,
+  MutationListener,
+  NodeMutation,
+  RootListener,
+  SerializedEditor,
+  Spread,
+  Transform,
+  UpdateListener,
+  UpdateListenerPayload,
+} from './LexicalEditor';
 export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -140,8 +162,49 @@ export {
   COMMAND_PRIORITY_NORMAL,
   createEditor,
 } from './LexicalEditor';
+export type {
+  EditorState,
+  EditorStateReadOptions,
+  SerializedEditorState,
+} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
+export type {
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  DOMExportOutputMap,
+  LexicalNode,
+  LexicalUpdateJSON,
+  NodeKey,
+  NodeMap,
+  SerializedLexicalNode,
+} from './LexicalNode';
+export {
+  $getState,
+  $getStateChange,
+  $getWritableNodeState,
+  $setState,
+  type AnyStateConfig,
+  createState,
+  type StateConfig,
+  type StateConfigKey,
+  type StateConfigValue,
+  type StateValueConfig,
+  type ValueOrUpdater,
+} from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
+export type {
+  BaseSelection,
+  ElementPointType as ElementPoint,
+  NodeSelection,
+  Point,
+  PointType,
+  RangeSelection,
+  TextPointType as TextPoint,
+} from './LexicalSelection';
 export {
   $createNodeSelection,
   $createPoint,
@@ -194,18 +257,26 @@ export {
   isDOMNode,
   isDOMTextNode,
   isDOMUnmanaged,
+  isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
   isLexicalEditor,
+  isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
   setNodeIndentFromDOM,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
+export type {
+  ElementDOMSlot,
+  ElementFormatType,
+  SerializedElementNode,
+} from './nodes/LexicalElementNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
@@ -219,7 +290,26 @@ export {
   $isParagraphNode,
   ParagraphNode,
 } from './nodes/LexicalParagraphNode';
+export type {SerializedRootNode} from './nodes/LexicalRootNode';
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export type {SerializedTabNode} from './nodes/LexicalTabNode';
 export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
+export type {
+  SerializedTextNode,
+  TextFormatType,
+  TextModeType,
+} from './nodes/LexicalTextNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+
+// Update Tags
+export {
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
+  PASTE_TAG,
+  SKIP_COLLAB_TAG,
+  SKIP_DOM_SELECTION_TAG,
+  SKIP_SCROLL_INTO_VIEW_TAG,
+  type UpdateTag,
+} from './LexicalUpdateTags';

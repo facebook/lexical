@@ -20,11 +20,13 @@ import {
   IS_SAFARI,
 } from 'shared/environment';
 import invariant from 'shared/invariant';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
   $isRootNode,
@@ -79,6 +81,7 @@ import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
   $findMatchingParent,
   $flushMutations,
+  $getAdjacentNode,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
@@ -87,7 +90,7 @@ import {
   $updateSelectedTextFromDOM,
   $updateTextNodeFromDOMContent,
   dispatchCommand,
-  doesContainGrapheme,
+  doesContainSurrogatePair,
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMSelectionFromTarget,
@@ -178,6 +181,7 @@ let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let isSafariEndingComposition = false;
 let safariEndCompositionEventData = '';
+let postDeleteSelectionToRestore: RangeSelection | null = null;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
   '',
@@ -222,7 +226,9 @@ function $shouldPreventDefaultAndInsertText(
         // a dangling `input` event caused by execCommand('insertText').
         lastBeforeInputInsertTextTimeStamp < timeStamp + 50)) ||
       (anchorNode.isDirty() && textLength < 2) ||
-      doesContainGrapheme(text)) &&
+      // TODO consider if there are other scenarios when multiple code units
+      //      should be addressed here
+      doesContainSurrogatePair(text)) &&
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.
@@ -287,7 +293,8 @@ function onSelectionChange(
     // sibling instead.
     if (
       shouldSkipSelectionChange(anchorDOM, anchorOffset) &&
-      shouldSkipSelectionChange(focusDOM, focusOffset)
+      shouldSkipSelectionChange(focusDOM, focusOffset) &&
+      !postDeleteSelectionToRestore
     ) {
       return;
     }
@@ -304,7 +311,30 @@ function onSelectionChange(
       return;
     }
 
-    const selection = $getSelection();
+    let selection = $getSelection();
+
+    // Restore selection in the event of incorrect rightward shift after deletion
+    if (
+      postDeleteSelectionToRestore &&
+      $isRangeSelection(selection) &&
+      selection.isCollapsed()
+    ) {
+      const curAnchor = selection.anchor;
+      const prevAnchor = postDeleteSelectionToRestore.anchor;
+      if (
+        // Rightward shift in same node
+        (curAnchor.key === prevAnchor.key &&
+          curAnchor.offset === prevAnchor.offset + 1) ||
+        // Or rightward shift into sibling node
+        (curAnchor.offset === 1 &&
+          prevAnchor.getNode().is(curAnchor.getNode().getPreviousSibling()))
+      ) {
+        // Restore selection
+        selection = postDeleteSelectionToRestore.clone();
+        $setSelection(selection);
+      }
+    }
+    postDeleteSelectionToRestore = null;
 
     // Update the selection format
     if ($isRangeSelection(selection)) {
@@ -339,31 +369,27 @@ function onSelectionChange(
           anchor.offset === lastOffset &&
           anchor.key === lastKey
         ) {
-          selection.format = lastFormat;
-          selection.style = lastStyle;
+          $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
         } else {
           if (anchor.type === 'text') {
             invariant(
               $isTextNode(anchorNode),
               'Point.getNode() must return TextNode when type is text',
             );
-            selection.format = anchorNode.getFormat();
-            selection.style = anchorNode.getStyle();
+            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             invariant(
               $isElementNode(anchorNode),
               'Point.getNode() must return ElementNode when type is element',
             );
             const lastNode = anchor.getNode();
-            selection.style = '';
             if (
               // This previously applied to all ParagraphNode
               lastNode.isEmpty()
             ) {
-              selection.format = lastNode.getTextFormat();
-              selection.style = lastNode.getTextStyle();
+              $updateSelectionFormatStyleFromElementNode(selection, lastNode);
             } else {
-              selection.format = 0;
+              $updateSelectionFormatStyle(selection, 0, '');
             }
           }
         }
@@ -411,6 +437,36 @@ function onSelectionChange(
 
     dispatchCommand(editor, SELECTION_CHANGE_COMMAND, undefined);
   });
+}
+
+function $updateSelectionFormatStyle(
+  selection: RangeSelection,
+  format: number,
+  style: string,
+) {
+  if (selection.format !== format || selection.style !== style) {
+    selection.format = format;
+    selection.style = style;
+    selection.dirty = true;
+  }
+}
+
+function $updateSelectionFormatStyleFromTextNode(
+  selection: RangeSelection,
+  node: TextNode,
+) {
+  const format = node.getFormat();
+  const style = node.getStyle();
+  $updateSelectionFormatStyle(selection, format, style);
+}
+
+function $updateSelectionFormatStyleFromElementNode(
+  selection: RangeSelection,
+  node: ElementNode,
+) {
+  const format = node.getTextFormat();
+  const style = node.getTextStyle();
+  $updateSelectionFormatStyle(selection, format, style);
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -582,12 +638,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           if ($isRangeSelection(selection)) {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
-            selection.format = anchorNode.getFormat();
             invariant(
               $isTextNode(anchorNode),
               'Anchor node must be a TextNode',
             );
-            selection.style = anchorNode.getStyle();
+            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
           }
         } else {
           $setCompositionKey(null);
@@ -604,13 +659,32 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           const hasSelectedAllTextInNode =
             selection.anchor.offset === 0 &&
             selection.focus.offset === selectedNodeText.length;
-          const shouldLetBrowserHandleDelete =
+          let shouldLetBrowserHandleDelete =
             IS_ANDROID_CHROME &&
             isSelectionAnchorSameAsFocus &&
             !hasSelectedAllTextInNode &&
             selectedNodeCanInsertTextAfter;
+          // Check if selection is collapsed and if the previous node is a decorator node
+          // If so, the browser will not be able to handle the deletion
+          if (shouldLetBrowserHandleDelete && selection.isCollapsed()) {
+            shouldLetBrowserHandleDelete = !$isDecoratorNode(
+              $getAdjacentNode(selection.anchor, true),
+            );
+          }
           if (!shouldLetBrowserHandleDelete) {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+            // When deleting across paragraphs, Chrome on Android incorrectly shifts the selection rightwards
+            // We save the correct selection to restore later during handling of selectionchange event
+            const selectionAfterDelete = $getSelection();
+            if (
+              IS_ANDROID_CHROME &&
+              $isRangeSelection(selectionAfterDelete) &&
+              selectionAfterDelete.isCollapsed()
+            ) {
+              postDeleteSelectionToRestore = selectionAfterDelete;
+              // Cleanup in case selectionchange does not fire
+              setTimeout(() => (postDeleteSelectionToRestore = null));
+            }
           }
         }
         return;
@@ -822,6 +896,13 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditorSync(
     editor,
     () => {
+      if (
+        isHTMLElement(event.target) &&
+        $isSelectionCapturedInDecorator(event.target)
+      ) {
+        return;
+      }
+
       const selection = $getSelection();
       const data = event.data;
       const targetRange = getTargetRange(event);
@@ -1030,16 +1111,14 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
-  const {key, shiftKey, ctrlKey, metaKey, altKey} = event;
-
   if (dispatchCommand(editor, KEY_DOWN_COMMAND, event)) {
     return;
   }
 
-  if (key == null) {
+  if (event.key == null) {
     return;
   }
-  if (isSafariEndingComposition && isBackspace(lastKeyCode)) {
+  if (isSafariEndingComposition && isBackspace(event)) {
     updateEditorSync(editor, () => {
       $onCompositionEndImpl(editor, safariEndCompositionEventData);
     });
@@ -1048,97 +1127,96 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
-  if (isMoveForward(key, ctrlKey, altKey, metaKey)) {
+  if (isMoveForward(event)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
-  } else if (isMoveToEnd(key, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveToEnd(event)) {
     dispatchCommand(editor, MOVE_TO_END, event);
-  } else if (isMoveBackward(key, ctrlKey, altKey, metaKey)) {
+  } else if (isMoveBackward(event)) {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
-  } else if (isMoveToStart(key, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveToStart(event)) {
     dispatchCommand(editor, MOVE_TO_START, event);
-  } else if (isMoveUp(key, ctrlKey, metaKey)) {
+  } else if (isMoveUp(event)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
-  } else if (isMoveDown(key, ctrlKey, metaKey)) {
+  } else if (isMoveDown(event)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
-  } else if (isLineBreak(key, shiftKey)) {
+  } else if (isLineBreak(event)) {
     isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isSpace(key)) {
+  } else if (isSpace(event)) {
     dispatchCommand(editor, KEY_SPACE_COMMAND, event);
-  } else if (isOpenLineBreak(key, ctrlKey)) {
+  } else if (isOpenLineBreak(event)) {
     event.preventDefault();
     isInsertLineBreak = true;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
-  } else if (isParagraph(key, shiftKey)) {
+  } else if (isParagraph(event)) {
     isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isDeleteBackward(key, altKey, metaKey, ctrlKey)) {
-    if (isBackspace(key)) {
+  } else if (isDeleteBackward(event)) {
+    if (isBackspace(event)) {
       dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
     }
-  } else if (isEscape(key)) {
+  } else if (isEscape(event)) {
     dispatchCommand(editor, KEY_ESCAPE_COMMAND, event);
-  } else if (isDeleteForward(key, ctrlKey, shiftKey, altKey, metaKey)) {
-    if (isDelete(key)) {
+  } else if (isDeleteForward(event)) {
+    if (isDelete(event)) {
       dispatchCommand(editor, KEY_DELETE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
     }
-  } else if (isDeleteWordBackward(key, altKey, ctrlKey)) {
+  } else if (isDeleteWordBackward(event)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, true);
-  } else if (isDeleteWordForward(key, altKey, ctrlKey)) {
+  } else if (isDeleteWordForward(event)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, false);
-  } else if (isDeleteLineBackward(key, metaKey)) {
+  } else if (isDeleteLineBackward(event)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, true);
-  } else if (isDeleteLineForward(key, metaKey)) {
+  } else if (isDeleteLineForward(event)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
-  } else if (isBold(key, altKey, metaKey, ctrlKey)) {
+  } else if (isBold(event)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
-  } else if (isUnderline(key, altKey, metaKey, ctrlKey)) {
+  } else if (isUnderline(event)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
-  } else if (isItalic(key, altKey, metaKey, ctrlKey)) {
+  } else if (isItalic(event)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
-  } else if (isTab(key, altKey, ctrlKey, metaKey)) {
+  } else if (isTab(event)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
-  } else if (isUndo(key, shiftKey, metaKey, ctrlKey)) {
+  } else if (isUndo(event)) {
     event.preventDefault();
     dispatchCommand(editor, UNDO_COMMAND, undefined);
-  } else if (isRedo(key, shiftKey, metaKey, ctrlKey)) {
+  } else if (isRedo(event)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
     if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
       // Only RangeSelection can use the native cut/copy/select all
-      if (isCopy(key, shiftKey, metaKey, ctrlKey)) {
+      if (isCopy(event)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);
-      } else if (isCut(key, shiftKey, metaKey, ctrlKey)) {
+      } else if (isCut(event)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
-      } else if (isSelectAll(key, metaKey, ctrlKey)) {
+      } else if (isSelectAll(event)) {
         event.preventDefault();
         dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
-      // FF does it well (no need to override behavior)
-    } else if (!IS_FIREFOX && isSelectAll(key, metaKey, ctrlKey)) {
+    } else if (!IS_FIREFOX && isSelectAll(event)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }
   }
 
-  if (isModifier(ctrlKey, shiftKey, altKey, metaKey)) {
+  if (isModifier(event)) {
     dispatchCommand(editor, KEY_MODIFIER_COMMAND, event);
   }
 }
@@ -1339,13 +1417,18 @@ export function addRootElementEvents(
   }
 }
 
+const rootElementNotRegisteredWarning = warnOnlyOnce(
+  'Root element not registered',
+);
+
 export function removeRootElementEvents(rootElement: HTMLElement): void {
   const doc = rootElement.ownerDocument;
   const documentRootElementsCount = rootElementsRegistered.get(doc);
-  invariant(
-    documentRootElementsCount !== undefined,
-    'Root element not registered',
-  );
+  if (documentRootElementsCount === undefined) {
+    // This can happen if setRootElement() failed
+    rootElementNotRegisteredWarning();
+    return;
+  }
 
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.

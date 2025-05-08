@@ -9,11 +9,14 @@
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getChildCaret,
   $getSelection,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $normalizeCaret,
+  $setPointFromCaret,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -118,31 +121,34 @@ export function $insertList(listType: ListType): void {
         continue;
       }
 
-      if ($isLeafNode(node)) {
-        let parent = node.getParent();
-        while (parent != null) {
-          const parentKey = parent.getKey();
+      let parent = $isLeafNode(node)
+        ? node.getParent()
+        : $isListItemNode(node) && node.isEmpty()
+        ? node
+        : null;
 
-          if ($isListNode(parent)) {
-            if (!handled.has(parentKey)) {
-              const newListNode = $createListNode(listType);
-              append(newListNode, parent.getChildren());
-              parent.replace(newListNode);
-              handled.add(parentKey);
-            }
+      while (parent != null) {
+        const parentKey = parent.getKey();
 
-            break;
-          } else {
-            const nextParent = parent.getParent();
-
-            if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
-              handled.add(parentKey);
-              $createListOrMerge(parent, listType);
-              break;
-            }
-
-            parent = nextParent;
+        if ($isListNode(parent)) {
+          if (!handled.has(parentKey)) {
+            const newListNode = $createListNode(listType);
+            append(newListNode, parent.getChildren());
+            parent.replace(newListNode);
+            handled.add(parentKey);
           }
+
+          break;
+        } else {
+          const nextParent = parent.getParent();
+
+          if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
+            handled.add(parentKey);
+            $createListOrMerge(parent, listType);
+            break;
+          }
+
+          parent = nextParent;
         }
       }
     }
@@ -259,7 +265,9 @@ export function $removeList(): void {
       const listItems = $getAllListItems(listNode);
 
       for (const listItemNode of listItems) {
-        const paragraph = $createParagraphNode();
+        const paragraph = $createParagraphNode()
+          .setTextStyle(selection.style)
+          .setTextFormat(selection.format);
 
         append(paragraph, listItemNode.getChildren());
 
@@ -273,10 +281,16 @@ export function $removeList(): void {
         // When the corresponding listItemNode is deleted and replaced by the newly generated paragraph
         // we should manually set the selection's focus and anchor to the newly generated paragraph.
         if (listItemNode.__key === selection.anchor.key) {
-          selection.anchor.set(paragraph.getKey(), 0, 'element');
+          $setPointFromCaret(
+            selection.anchor,
+            $normalizeCaret($getChildCaret(paragraph, 'next')),
+          );
         }
         if (listItemNode.__key === selection.focus.key) {
-          selection.focus.set(paragraph.getKey(), 0, 'element');
+          $setPointFromCaret(
+            selection.focus,
+            $normalizeCaret($getChildCaret(paragraph, 'next')),
+          );
         }
 
         listItemNode.remove();
@@ -383,8 +397,12 @@ export function $handleIndent(listItemNode: ListItemNode): void {
     // otherwise, we need to create a new nested ListNode
 
     if ($isListNode(parent)) {
-      const newListItem = $createListItemNode();
-      const newList = $createListNode(parent.getListType());
+      const newListItem = $createListItemNode()
+        .setTextFormat(listItemNode.getTextFormat())
+        .setTextStyle(listItemNode.getTextStyle());
+      const newList = $createListNode(parent.getListType())
+        .setTextFormat(parent.getTextFormat())
+        .setTextStyle(parent.getTextStyle());
       newListItem.append(newList);
       newList.append(listItemNode);
 
@@ -470,7 +488,7 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
  * (which should be the parent node) and insert the ParagraphNode as a sibling to the ListNode. If the ListNode is
  * nested in a ListItemNode instead, it will add the ParagraphNode after the grandparent ListItemNode.
  * Throws an invariant if the selection is not a child of a ListNode.
- * @returns true if a ParagraphNode was inserted succesfully, false if there is no selection
+ * @returns true if a ParagraphNode was inserted successfully, false if there is no selection
  * or the selection does not contain a ListItemNode or the node already holds text.
  */
 export function $handleListInsertParagraph(): boolean {
@@ -499,8 +517,6 @@ export function $handleListInsertParagraph(): boolean {
 
   if ($isRootOrShadowRoot(grandparent)) {
     replacementNode = $createParagraphNode();
-    replacementNode.setTextStyle(selection.style);
-    replacementNode.setTextFormat(selection.format);
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {
     replacementNode = $createListItemNode();
@@ -508,7 +524,10 @@ export function $handleListInsertParagraph(): boolean {
   } else {
     return false;
   }
-  replacementNode.select();
+  replacementNode
+    .setTextStyle(selection.style)
+    .setTextFormat(selection.format)
+    .select();
 
   const nextSiblings = anchor.getNextSiblings();
 

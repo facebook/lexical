@@ -10,11 +10,17 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
+  $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,
+  $createTableRowNode,
   $createTableSelection,
-  $insertTableColumn__EXPERIMENTAL,
+  $getElementForTableNode,
+  $insertTableColumnAtSelection,
+  $isScrollableTablesActive,
   $isTableCellNode,
+  $isTableNode,
+  TableNode,
 } from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
@@ -36,8 +42,8 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-
-import {$getElementForTableNode, TableNode} from '../../LexicalTableNode';
+import {useState} from 'react';
+import {act} from 'shared/react-test-utils';
 
 export class ClipboardDataMock {
   getData: jest.Mock<string, [string]>;
@@ -77,6 +83,8 @@ const editorConfig = Object.freeze({
       center: 'test-table-alignment-center',
       right: 'test-table-alignment-right',
     },
+    tableFrozenColumn: 'test-table-frozen-column-class',
+    tableFrozenRow: 'test-table-frozen-row-class',
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },
@@ -141,6 +149,115 @@ describe('LexicalTableNode tests', () => {
                 `,
               );
             });
+          });
+
+          test('TableNode.createDOM() and updateDOM() style', () => {
+            const {editor} = testEnv;
+            const $createSmallTable = () =>
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append($createParagraphNode()),
+                ),
+              );
+
+            editor.update(
+              () => {
+                $getRoot().clear().append(
+                  // no style
+                  $createSmallTable(),
+                  // with style
+                  $createSmallTable().setStyle('background-color: blue;'),
+                );
+                $setSelection(null);
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="background-color: blue">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
+            editor.update(
+              () => {
+                $getRoot()
+                  .getChildren()
+                  .map((node, i) => {
+                    if ($isTableNode(node)) {
+                      node.setStyle(`--table-index: ${i};`);
+                    }
+                  });
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 0">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 1">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
           });
 
           test('TableNode.exportDOM() with range selection', async () => {
@@ -659,34 +776,34 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 171px" />
                   </colgroup>
                   <tr style="height: 21px;">
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <strong data-lexical-text="true">Surface</strong>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p style="text-align: right;">
                         <span data-lexical-text="true">77349</span>
                       </p>
                     </td>
                   </tr>
                   <tr style="height: 21px;">
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">Lexical</span>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">sdvd</span>
                         <strong data-lexical-text="true">sdfvsfs</strong>
@@ -1044,6 +1161,521 @@ describe('LexicalTableNode tests', () => {
             });
           });
 
+          if (hasHorizontalScroll) {
+            test('Toggle frozen first column ON/OFF', async () => {
+              const {editor} = testEnv;
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = $createTableNodeWithDimensions(4, 4, true);
+                root.append(table);
+              });
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                if (table) {
+                  table.setFrozenColumns(1);
+                }
+              });
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                expectHtmlToBeEqual(
+                  table!.createDOM(editorConfig).outerHTML,
+                  html`
+                    <div
+                      class="${editorConfig.theme
+                        .tableScrollableWrapper} ${editorConfig.theme
+                        .tableFrozenColumn}">
+                      <table
+                        class="${editorConfig.theme.table}"
+                        data-lexical-frozen-column="true">
+                        <colgroup>
+                          <col />
+                          <col />
+                          <col />
+                          <col />
+                        </colgroup>
+                      </table>
+                    </div>
+                  `,
+                );
+              });
+
+              const stringifiedEditorState = JSON.stringify(
+                editor.getEditorState(),
+              );
+              const expectedStringifiedEditorState = `{
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "textFormat": 0,
+                    "textStyle": "",
+                    "type": "paragraph",
+                    "version": 1
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 3,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "frozenColumnCount": 1,
+                    "indent": 0,
+                    "type": "table",
+                    "version": 1
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "root",
+                "version": 1
+              }
+            }`;
+
+              expect(JSON.parse(stringifiedEditorState)).toEqual(
+                JSON.parse(expectedStringifiedEditorState),
+              );
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                if (table) {
+                  table.setFrozenColumns(0);
+                }
+              });
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                expectHtmlToBeEqual(
+                  table!.createDOM(editorConfig).outerHTML,
+                  html`
+                    <div class="${editorConfig.theme.tableScrollableWrapper}">
+                      <table class="${editorConfig.theme.table}">
+                        <colgroup>
+                          <col />
+                          <col />
+                          <col />
+                          <col />
+                        </colgroup>
+                      </table>
+                    </div>
+                  `,
+                );
+              });
+            });
+          }
+
           test('Change Table-level alignment', async () => {
             const {editor} = testEnv;
 
@@ -1159,7 +1791,7 @@ describe('LexicalTableNode tests', () => {
                 table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
               );
               $setSelection(selection);
-              $insertTableColumn__EXPERIMENTAL();
+              $insertTableColumnAtSelection();
               table!.setColWidths([50, 50, 100]);
             });
 
@@ -1187,5 +1819,127 @@ describe('LexicalTableNode tests', () => {
         <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
       );
     });
+  });
+
+  describe(`hasHorizontalScroll false -> true`, () => {
+    let hasHorizontalScroll = false;
+    let setHasHorizontalScroll: (
+      _hasHorizontalScroll: boolean,
+    ) => void = () => {};
+    function TablePluginWrapper() {
+      [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
+      return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
+    }
+    initializeUnitTest(
+      (testEnv) => {
+        beforeEach(async () => {
+          const {editor} = testEnv;
+          await editor.update(() => {
+            const root = $getRoot();
+            root.clear().append($createTableNodeWithDimensions(2, 2, true));
+          });
+        });
+        test('table is re-rendered when scroll changes', async () => {
+          await Promise.resolve().then();
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+            setHasHorizontalScroll(true);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <div class="table-scrollable-wrapper">
+                <table class="test-table-class">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+            setHasHorizontalScroll(false);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+        });
+      },
+      {theme: editorConfig.theme},
+      <TablePluginWrapper />,
+    );
   });
 });

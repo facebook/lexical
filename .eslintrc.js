@@ -88,7 +88,10 @@ module.exports = {
         ],
         '@typescript-eslint/ban-ts-comment': OFF,
         '@typescript-eslint/no-this-alias': OFF,
-        '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
+        '@typescript-eslint/no-unused-vars': [
+          ERROR,
+          {args: 'none', argsIgnorePattern: '^_', varsIgnorePattern: '^_'},
+        ],
         'header/header': [2, 'scripts/www/headerTemplate.js'],
       },
     },
@@ -109,6 +112,12 @@ module.exports = {
       ],
       rules: {
         'lexical/no-optional-chaining': OFF,
+      },
+    },
+    {
+      files: ['packages/**/__tests__/**'],
+      rules: {
+        'lexical/no-imports-from-self': OFF,
       },
     },
     {
@@ -166,7 +175,6 @@ module.exports = {
   // and then enable some React specific ones.
   rules: {
     'accessor-pairs': OFF,
-
     'consistent-return': OFF,
     curly: [ERROR, 'all'],
     'dot-location': [ERROR, 'property'],
@@ -197,6 +205,8 @@ module.exports = {
 
     'keyword-spacing': [ERROR, {after: true, before: true}],
 
+    'lexical/no-imports-from-self': ERROR,
+
     // Enforced by Prettier
     // TODO: Prettier doesn't handle long strings or long comments. Not a big
     // deal. But I turned it off because loading the plugin causes some obscure
@@ -225,8 +235,6 @@ module.exports = {
     'no-shadow': ERROR,
 
     'no-unused-expressions': ERROR,
-
-    'no-unused-vars': [ERROR, {args: 'none'}],
 
     'no-use-before-define': OFF,
 

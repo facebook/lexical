@@ -27,17 +27,13 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $getSelection,
-  $isNodeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DecoratorNode,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect} from 'react';
+import {useEffect} from 'react';
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 
@@ -48,22 +44,6 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
-
-  const $onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        event.preventDefault();
-        deleteSelection.getNodes().forEach((node) => {
-          if ($isHorizontalRuleNode(node)) {
-            node.remove();
-          }
-        });
-      }
-      return false;
-    },
-    [isSelected],
-  );
 
   useEffect(() => {
     return mergeRegister(
@@ -84,22 +64,12 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
 
   useEffect(() => {
     const hrElem = editor.getElementByKey(nodeKey);
-    const isSelectedClassName = 'selected';
+    const isSelectedClassName = editor._config.theme.hrSelected ?? 'selected';
 
     if (hrElem !== null) {
       if (isSelected) {

@@ -9,12 +9,15 @@
 import {
   deleteBackward,
   deleteForward,
+  deleteLineBackward,
+  deleteLineForward,
   moveDown,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
   moveToLineBeginning,
+  moveToLineEnd,
   moveToPrevWord,
   moveUp,
   pressShiftEnter,
@@ -41,11 +44,11 @@ import {
   IS_LINUX,
   IS_MAC,
   IS_WINDOWS,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
   pasteFromClipboard,
   pressToggleBold,
   pressToggleItalic,
+  prettifyHTML,
+  SAMPLE_IMAGE_URL,
   selectFromFormatDropdown,
   sleep,
   test,
@@ -165,7 +168,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('can delete text by line with CMD+delete', async ({
+  test('can delete text by line backwards with CMD+delete', async ({
     page,
     isPlainText,
   }) => {
@@ -178,55 +181,141 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Three');
 
-    const deleteLine = async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('Backspace');
-      await keyUpCtrlOrMeta(page);
-    };
-
-    const lines = [
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">One</span>
-        </p>
-      `,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Two</span>
-        </p>
-      `,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Three</span>
-        </p>
-      `,
-    ];
-    const empty = html`
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+    const p = (text) =>
+      text
+        ? html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">${text}</span>
+            </p>
+          `
+        : html`
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          `;
+    const lines = (...args) => html`
+      ${args.map(p).join('')}
     `;
 
-    await deleteLine();
-    await assertHTML(page, [lines[0], lines[1], lines[2], empty].join(''));
+    await deleteLineBackward(page);
+    await assertHTML(page, lines('One', 'Two', '', ''));
     await page.keyboard.press('Backspace');
-    await deleteLine();
-    await assertHTML(page, [lines[0], lines[1]].join(''));
-    await deleteLine();
-    await assertHTML(page, [lines[0], empty].join(''));
+    await deleteLineBackward(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await deleteLineBackward(page);
+    await assertHTML(page, lines('One', ''));
     await page.keyboard.press('Backspace');
-    await deleteLine();
-    await assertHTML(page, empty);
+    await deleteLineBackward(page);
+    await assertHTML(page, lines(''));
   });
 
-  test('can delete line which ends with element with CMD+delete', async ({
+  test('can delete text by line forwards with opt+CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Three');
+
+    const p = (text) =>
+      text
+        ? html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">${text}</span>
+            </p>
+          `
+        : html`
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          `;
+    const lines = (...args) => html`
+      ${args.map(p).join('')}
+    `;
+    await assertHTML(page, lines('One', 'Two', '', 'Three'));
+    // Move to the end of the line of 'Two'
+    await moveUp(page, 2);
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'Two', 'Three'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'TwoThree'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await moveToEditorBeginning(page);
+    await deleteLineForward(page);
+    await assertHTML(page, lines('', 'Two'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines('Two'));
+    await deleteLineForward(page);
+    await assertHTML(page, lines(''));
+    await deleteLineForward(page);
+    await assertHTML(page, lines(''));
+  });
+
+  test('can delete text by line forwards with control+K', async ({
+    page,
+    isPlainText,
+  }) => {
+    const deleteLineForwardWithControlK = async () => {
+      await page.keyboard.down('Control');
+      await page.keyboard.press('k');
+      await page.keyboard.up('Control');
+    };
+
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Three');
+
+    const p = (text) =>
+      text
+        ? html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">${text}</span>
+            </p>
+          `
+        : html`
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          `;
+    const lines = (...args) => html`
+      ${args.map(p).join('')}
+    `;
+    await assertHTML(page, lines('One', 'Two', '', 'Three'));
+    // Move to the end of the line of 'Two'
+    await moveUp(page, 2);
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'Two', 'Three'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'TwoThree'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('One', 'Two'));
+    await moveToEditorBeginning(page);
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('', 'Two'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines('Two'));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines(''));
+    await deleteLineForwardWithControlK(page);
+    await assertHTML(page, lines(''));
+  });
+
+  test('can delete line which ends with element backwards with CMD+delete', async ({
     page,
     isPlainText,
   }) => {
@@ -240,19 +329,12 @@ test.describe.parallel('Selection', () => {
       'text/html': `
           <span class="editor-image" data-lexical-decorator="true" contenteditable="false">
             <div draggable="false">
-              <img src="/assets/yellow-flower-vav9Hsve.jpg" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
+              <img src="${SAMPLE_IMAGE_URL}" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
             </div>
           </span>
         `,
     });
-
-    const deleteLine = async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('Backspace');
-      await keyUpCtrlOrMeta(page);
-    };
-
-    await deleteLine();
+    await deleteLineBackward(page);
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
@@ -265,8 +347,182 @@ test.describe.parallel('Selection', () => {
       `,
     );
     await page.keyboard.press('Backspace');
-    await deleteLine();
+    await deleteLineBackward(page);
     await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('can delete line which starts with element forwards with opt+CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    const modifyImageHTML = async (originalHtml) =>
+      await prettifyHTML(
+        originalHtml
+          .replace(
+            /<button\s+class="image-edit-button">\s*Edit\s*<\/button>/gi,
+            '',
+          )
+          .replace(/(src=")https?:\/\/[^/]+/gi, '$1'),
+      );
+    const assertImageHTML = async (page_, expectedHtml) => {
+      await assertHTML(
+        page_,
+        expectedHtml,
+        expectedHtml,
+        {ignoreInlineStyles: true},
+        modifyImageHTML,
+      );
+    };
+    const pasteImageHtml = html`
+      <img
+        alt="Yellow flower in tilt shift lens"
+        draggable="false"
+        src="${SAMPLE_IMAGE_URL}"
+        style="height: inherit; max-width: 500px; width: inherit;" />
+    `;
+    const imageHtml = html`
+      <span
+        class="inline-editor-image"
+        contenteditable="false"
+        data-lexical-decorator="true">
+        <span draggable="false">${pasteImageHtml}</span>
+      </span>
+    `;
+
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await pasteFromClipboard(page, {
+      'text/html': pasteImageHtml,
+    });
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          ${imageHtml}
+          <br />
+        </p>
+      `,
+    );
+
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          ${imageHtml}
+          <span data-lexical-text="true">Two</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    // This puts the caret before the decorator in an awkward way, see comments below
+    await moveToEditorBeginning(page);
+    await moveToLineEnd(page);
+    await moveRight(page, 1);
+    // TODO: move arrow down doesn't work for this because it skips over the inline decorator
+    // if (arrow_down_works_with_decorators) {
+    //   await moveToEditorBeginning(page);
+    //   await moveDown(page, 1);
+    // }
+    // TODO: move to line beginning stops after the inline decorator
+    // if (line_beginning_works_with_decorators) {
+    //   await moveUp(page, 1);
+    //   await moveToLineBeginning(page);
+    // }
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    // We're now at the end of the document so delete forward is a no-op
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await moveToEditorBeginning(page);
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await deleteLineForward(page);
+    await assertImageHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await deleteLineForward(page);
+    await assertImageHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -282,12 +538,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('ArrowUp');
 
-    const deleteLine = async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('Backspace');
-      await keyUpCtrlOrMeta(page);
-    };
-    await deleteLine();
+    await deleteLineBackward(page);
     await assertHTML(
       page,
       html`
@@ -380,7 +631,11 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can delete forward a Collapsible', async ({page, isPlainText}) => {
+  test(`Can't delete forward a Collapsible`, async ({
+    page,
+    browserName,
+    isPlainText,
+  }) => {
     test.skip(isPlainText);
     if (!IS_MAC) {
       // Do Windows/Linux have equivalent shortcuts?
@@ -389,10 +644,12 @@ test.describe.parallel('Selection', () => {
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertCollapsible(page);
+    await page.keyboard.type('title');
     await moveToEditorBeginning(page);
     await moveRight(page, 3);
     await deleteForward(page);
 
+    const collapsibleTag = browserName === 'chromium' ? 'div' : 'details';
     await assertHTML(
       page,
       html`
@@ -401,15 +658,73 @@ test.describe.parallel('Selection', () => {
           dir="ltr">
           <span data-lexical-text="true">abc</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <${collapsibleTag} class="Collapsible__container" open="">
+          <summary class="Collapsible__title">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">title</span>
+            </p>
+          </summary>
+          <div class="Collapsible__content">
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          </div>
+        </${collapsibleTag}>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });
 
-  // TODO I don't think this test is correct but at least this test will prevent it from regressing
-  // even further
-  test('Can delete forward a Table', async ({page, isPlainText}) => {
+  test(`Can't delete backward a Collapsible`, async ({
+    page,
+    browserName,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
+    await focusEditor(page);
+    await page.keyboard.type('abc');
+    await insertCollapsible(page);
+    await page.keyboard.type('title');
+    await moveRight(page, 2);
+    await page.keyboard.type('after');
+    await moveLeft(page, 'after'.length);
+    await deleteBackward(page);
+
+    const collapsibleTag = browserName === 'chromium' ? 'div' : 'details';
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+        </p>
+        <${collapsibleTag} class="Collapsible__container" open="">
+          <summary class="Collapsible__title">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">title</span>
+            </p>
+          </summary>
+          <div class="Collapsible__content">
+            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          </div>
+        </${collapsibleTag}>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">after</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can't delete forward a Table`, async ({page, isPlainText}) => {
     test.skip(isPlainText);
     if (!IS_MAC) {
       // Do Windows/Linux have equivalent shortcuts?
@@ -447,6 +762,53 @@ test.describe.parallel('Selection', () => {
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test(`Can't delete backward a Table`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
+    await focusEditor(page);
+    await page.keyboard.type('abc');
+    await insertTable(page, 1, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.type('after');
+    await moveLeft(page, 'after'.length);
+    await deleteBackward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+        </p>
+        <table class="PlaygroundEditorTheme__table">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">after</span>
+        </p>
       `,
     );
   });
@@ -543,7 +905,7 @@ test.describe.parallel('Selection', () => {
     },
   );
 
-  test('Can adjust tripple click selection', async ({
+  test('Can adjust triple click selection', async ({
     page,
     isPlainText,
     isCollab,
@@ -578,7 +940,7 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Can adjust tripple click selection with', async ({
+  test('Can adjust triple click selection with', async ({
     page,
     isPlainText,
     isCollab,
@@ -692,7 +1054,7 @@ test.describe.parallel('Selection', () => {
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
         <h1
@@ -756,60 +1118,32 @@ test.describe.parallel('Selection', () => {
     const tripleClickDelay = 50;
     await lastCellText.click({clickCount: 3, delay: tripleClickDelay});
 
-    if (browserName === 'firefox') {
-      // Firefox correctly selects the last cell + full text content, unlike Chromium which selects the first cell
-      const expectedSelection = createHumanReadableSelection(
-        'the full text of the last cell in the table',
-        {
-          anchorOffset: {desc: 'beginning of cell', value: 0},
-          anchorPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'second cell', value: 1},
-            {desc: 'first paragraph', value: 0},
-            {desc: 'first span', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-          focusOffset: {desc: 'full text length', value: cellText.length},
-          focusPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'second cell', value: 1},
-            {desc: 'first paragraph', value: 0},
-            {desc: 'first span', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-        },
-      );
-      await assertSelection(page, expectedSelection);
-    } else {
-      // Only the first cell should be selected, and not the entire document
-      // Ideally the last cell should be selected since that was what was triple-clicked,
-      // but due to the complex selection logic involved, this was the best that could be done.
-      // The goal ultimately was to prevent dangerous whole document selection.
-      // Getting the last cell precisely selected can be done at a later point.
-      const expectedSelection = createHumanReadableSelection(
-        'cursor at beginning of the first cell in table',
-        {
-          anchorOffset: {desc: 'beginning of cell', value: 0},
-          anchorPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'first cell', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-          focusOffset: {desc: 'beginning of text', value: 0},
-          focusPath: [
-            {desc: 'index of table in root', value: 1},
-            {desc: 'first table row', value: 1},
-            {desc: 'first cell', value: 0},
-            {desc: 'beginning of text', value: 0},
-          ],
-        },
-      );
+    // Expect consistent behavior - select the clicked cell's content
+    const expectedSelection = createHumanReadableSelection(
+      'the full text of the last cell in the table',
+      {
+        anchorOffset: {desc: 'beginning of cell', value: 0},
+        anchorPath: [
+          {desc: 'index of table in root', value: 1},
+          {desc: 'first table row', value: 1},
+          {desc: 'second cell', value: 1},
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+        focusOffset: {desc: 'full text length', value: cellText.length},
+        focusPath: [
+          {desc: 'index of table in root', value: 1},
+          {desc: 'first table row', value: 1},
+          {desc: 'second cell', value: 1},
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+      },
+    );
 
-      await assertSelection(page, expectedSelection);
-    }
+    await assertSelection(page, expectedSelection);
   });
 
   /**
@@ -1177,9 +1511,11 @@ test.describe.parallel('Selection', () => {
     test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
+    // delete the paragraph before the table
     await moveToEditorBeginning(page);
     await deleteBackward(page);
     await moveToEditorEnd(page);
+    // delete the paragraph after the table
     await deleteBackward(page);
     await moveDown(page, 1);
     await assertSelection(page, {

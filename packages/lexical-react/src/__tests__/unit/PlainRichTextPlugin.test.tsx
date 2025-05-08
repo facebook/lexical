@@ -6,13 +6,16 @@
  *
  */
 
-import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContent} from '@lexical/text';
@@ -28,22 +31,15 @@ import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
-import {LexicalComposer} from '../../LexicalComposer';
-import {ContentEditable} from '../../LexicalContentEditable';
-import {PlainTextPlugin} from '../../LexicalPlainTextPlugin';
-import {RichTextPlugin} from '../../LexicalRichTextPlugin';
-
 const RICH_TEXT_NODES = [
   HeadingNode,
   ListNode,
   ListItemNode,
   QuoteNode,
-  CodeNode,
   TableNode,
   TableCellNode,
   TableRowNode,
   HashtagNode,
-  CodeHighlightNode,
   AutoLinkNode,
   LinkNode,
   OverflowNode,

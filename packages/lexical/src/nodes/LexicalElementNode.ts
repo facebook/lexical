@@ -83,13 +83,13 @@ export interface ElementNode {
 /**
  * A utility class for managing the DOM children of an ElementNode
  */
-export class ElementDOMSlot {
-  element: HTMLElement;
-  before: Node | null;
-  after: Node | null;
+export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
+  readonly element: T;
+  readonly before: Node | null;
+  readonly after: Node | null;
   constructor(
     /** The element returned by createDOM */
-    element: HTMLElement,
+    element: T,
     /** All managed children will be inserted before this node, if defined */
     before?: Node | undefined | null,
     /** All managed children will be inserted after this node, if defined */
@@ -102,19 +102,24 @@ export class ElementDOMSlot {
   /**
    * Return a new ElementDOMSlot where all managed children will be inserted before this node
    */
-  withBefore(before: Node | undefined | null): ElementDOMSlot {
+  withBefore(before: Node | undefined | null): ElementDOMSlot<T> {
     return new ElementDOMSlot(this.element, before, this.after);
   }
   /**
    * Return a new ElementDOMSlot where all managed children will be inserted after this node
    */
-  withAfter(after: Node | undefined | null): ElementDOMSlot {
+  withAfter(after: Node | undefined | null): ElementDOMSlot<T> {
     return new ElementDOMSlot(this.element, this.before, after);
   }
   /**
    * Return a new ElementDOMSlot with an updated root element
    */
-  withElement(element: HTMLElement): ElementDOMSlot {
+  withElement<ElementType extends HTMLElement>(
+    element: ElementType,
+  ): ElementDOMSlot<ElementType> {
+    if (this.element === (element as HTMLElement)) {
+      return this as unknown as ElementDOMSlot<ElementType>;
+    }
     return new ElementDOMSlot(element, this.before, this.after);
   }
   /**
@@ -289,7 +294,7 @@ function indexPath(root: HTMLElement, child: Node): number[] {
     for (
       let sibling = node.previousSibling;
       sibling !== null;
-      sibling = node.previousSibling
+      sibling = sibling.previousSibling
     ) {
       i++;
     }
@@ -815,7 +820,7 @@ export class ElementNode extends LexicalNode {
    * or accessory nodes before or after the children. The root of the node returned
    * by createDOM must still be exactly one HTMLElement.
    */
-  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
     return new ElementDOMSlot(element);
   }
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -831,6 +836,10 @@ export class ElementNode extends LexicalNode {
         // We recommend keeping multiples of 40px to maintain consistency with list-items
         // (see https://github.com/facebook/lexical/pull/4025)
         element.style.paddingInlineStart = `${indent * 40}px`;
+      }
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
       }
     }
 
@@ -880,9 +889,15 @@ export class ElementNode extends LexicalNode {
     return true;
   }
   /*
-   * This method controls the behavior of a the node during backwards
+   * This method controls the behavior of the node during backwards
    * deletion (i.e., backspace) when selection is at the beginning of
-   * the node (offset 0)
+   * the node (offset 0). You may use this to have the node replace
+   * itself, change its state, or do nothing. When you do make such
+   * a change, you should return true.
+   *
+   * When true is returned, the collapse phase will stop.
+   * When false is returned, and isInline() is true, and getPreviousSibling() is null,
+   * then this function will be called on its parent.
    */
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
@@ -911,7 +926,7 @@ export class ElementNode extends LexicalNode {
     return false;
   }
   // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
-  // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
+  // end of the hierarchy, most implementations should treat it as there's nothing (upwards)
   // beyond this point. For example, node.getTopLevelElement(), when performed inside a TableCellNode
   // will return the immediate first child underneath TableCellNode instead of RootNode.
   isShadowRoot(): boolean {

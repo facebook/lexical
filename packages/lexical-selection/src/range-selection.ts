@@ -18,13 +18,17 @@ import type {
 
 import {TableSelection} from '@lexical/table';
 import {
-  $getAdjacentNode,
+  $caretFromPoint,
+  $createRangeSelection,
+  $extendCaretToRange,
+  $getEditor,
   $getPreviousSelection,
-  $getRoot,
   $getSelection,
   $hasAncestor,
+  $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
+  $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
@@ -37,60 +41,84 @@ import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
+export function $copyBlockFormatIndent(
+  srcNode: ElementNode,
+  destNode: ElementNode,
+): void {
+  const format = srcNode.getFormatType();
+  const indent = srcNode.getIndent();
+  if (format !== destNode.getFormatType()) {
+    destNode.setFormat(format);
+  }
+  if (indent !== destNode.getIndent()) {
+    destNode.setIndent(indent);
+  }
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
- * @param createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $createElement - The function that creates the node. eg. $createParagraphNode.
+ * @param $afterCreateElement - The function that updates the new node based on the previous one ($copyBlockFormatIndent by default)
  */
-export function $setBlocksType(
+export function $setBlocksType<T extends ElementNode>(
   selection: BaseSelection | null,
-  createElement: () => ElementNode,
+  $createElement: () => T,
+  $afterCreateElement: (
+    prevNodeSrc: ElementNode,
+    newNodeDest: T,
+  ) => void = $copyBlockFormatIndent,
 ): void {
   if (selection === null) {
     return;
   }
+  // Selections tend to not include their containing blocks so we effectively
+  // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
-  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
-  const isCollapsedSelection =
-    selection.is($getSelection()) && selection.isCollapsed();
-
-  if (anchor !== null && anchor.key === 'root') {
-    const element = createElement();
-    const root = $getRoot();
-    const firstChild = root.getFirstChild();
-
-    if (firstChild) {
-      firstChild.replace(element, true);
-    } else {
-      root.append(element);
+  const blockMap = new Map<NodeKey, ElementNode>();
+  let newSelection: RangeSelection | null = null;
+  if (anchorAndFocus) {
+    const [anchor, focus] = anchorAndFocus;
+    newSelection = $createRangeSelection();
+    newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
+    newSelection.focus.set(focus.key, focus.offset, focus.type);
+    const anchorBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
+    const focusBlock = $getAncestor(focus.getNode(), INTERNAL_$isBlock);
+    if ($isElementNode(anchorBlock)) {
+      blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if (isCollapsedSelection) {
-      element.select();
+    if ($isElementNode(focusBlock)) {
+      blockMap.set(focusBlock.getKey(), focusBlock);
     }
-    return;
   }
-
-  const nodes = selection
-    .getNodes()
-    .filter(INTERNAL_$isBlock)
-    .filter($isElementNode);
-  const firstSelectedBlock = anchor
-    ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock)
-    : null;
-  if (
-    $isElementNode(firstSelectedBlock) &&
-    !nodes.find((node) => node.is(firstSelectedBlock))
-  ) {
-    nodes.push(firstSelectedBlock);
-  }
-  for (const node of nodes) {
-    const targetElement = createElement();
-    targetElement.setFormat(node.getFormatType());
-    targetElement.setIndent(node.getIndent());
-    node.replace(targetElement, true);
-    if (node.is(firstSelectedBlock) && isCollapsedSelection) {
-      targetElement.select();
+  for (const node of selection.getNodes()) {
+    if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
+      blockMap.set(node.getKey(), node);
     }
+  }
+  for (const [key, prevNode] of blockMap) {
+    const element = $createElement();
+    $afterCreateElement(prevNode, element);
+    prevNode.replace(element, true);
+    if (newSelection) {
+      if (key === newSelection.anchor.key) {
+        newSelection.anchor.set(
+          element.getKey(),
+          newSelection.anchor.offset,
+          newSelection.anchor.type,
+        );
+      }
+      if (key === newSelection.focus.key) {
+        newSelection.focus.set(
+          element.getKey(),
+          newSelection.focus.offset,
+          newSelection.focus.type,
+        );
+      }
+    }
+  }
+  if (newSelection && selection.is($getSelection())) {
+    $setSelection(newSelection);
   }
 }
 
@@ -390,6 +418,31 @@ export function $wrapNodesImpl(
 }
 
 /**
+ * Tests if the selection's parent element has vertical writing mode.
+ * @param selection - The selection whose parent to test.
+ * @returns true if the selection's parent has vertical writing mode (writing-mode: vertical-rl), false otherwise.
+ */
+export function $isEditorVerticalOrientation(
+  selection: RangeSelection,
+): boolean {
+  const anchorNode = selection.anchor.getNode();
+  const parent = $isRootNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParentOrThrow();
+  const editor = $getEditor();
+  const domElement = editor.getElementByKey(parent.getKey());
+  if (domElement === null) {
+    return false;
+  }
+  const view = domElement.ownerDocument.defaultView;
+  if (view === null) {
+    return false;
+  }
+  const computedStyle = view.getComputedStyle(domElement);
+  return computedStyle.writingMode === 'vertical-rl';
+}
+
+/**
  * Determines if the default character selection should be overridden. Used with DecoratorNodes
  * @param selection - The selection whose default character selection may need to be overridden.
  * @param isBackward - Is the selection backwards (the focus comes before the anchor)?
@@ -399,14 +452,29 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
-  const possibleNode = $getAdjacentNode(selection.focus, isBackward);
+  const isVertical = $isEditorVerticalOrientation(selection);
 
-  return (
-    ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) ||
-    ($isElementNode(possibleNode) &&
-      !possibleNode.isInline() &&
-      !possibleNode.canBeEmpty())
+  // In vertical writing mode, we adjust the direction for correct caret movement
+  const adjustedIsBackward = isVertical ? !isBackward : isBackward;
+
+  const focusCaret = $caretFromPoint(
+    selection.focus,
+    adjustedIsBackward ? 'previous' : 'next',
   );
+  if ($isExtendableTextPointCaret(focusCaret)) {
+    return false;
+  }
+  for (const nextCaret of $extendCaretToRange(focusCaret)) {
+    if ($isChildCaret(nextCaret)) {
+      return !nextCaret.origin.isInline();
+    } else if ($isElementNode(nextCaret.origin)) {
+      continue;
+    } else if ($isDecoratorNode(nextCaret.origin)) {
+      return true;
+    }
+    break;
+  }
+  return false;
 }
 
 /**
@@ -451,10 +519,30 @@ export function $moveCharacter(
   isBackward: boolean,
 ): void {
   const isRTL = $isParentElementRTL(selection);
+  const isVertical = $isEditorVerticalOrientation(selection);
+
+  // In vertical-rl writing mode, arrow key directions need to be flipped
+  // to match the visual flow of text (top to bottom, right to left)
+  let adjustedIsBackward;
+
+  if (isVertical) {
+    // In vertical-rl mode, we need to completely invert the direction
+    // Left arrow (backward) should move down (forward)
+    // Right arrow (forward) should move up (backward)
+    adjustedIsBackward = !isBackward;
+  } else if (isRTL) {
+    // In horizontal RTL mode, use the standard RTL behavior
+    adjustedIsBackward = !isBackward;
+  } else {
+    // Standard LTR horizontal text
+    adjustedIsBackward = isBackward;
+  }
+
+  // Apply the direction adjustment to move the caret
   $moveCaretSelection(
     selection,
     isHoldingShift,
-    isBackward ? !isRTL : isRTL,
+    adjustedIsBackward,
     'character',
   );
 }

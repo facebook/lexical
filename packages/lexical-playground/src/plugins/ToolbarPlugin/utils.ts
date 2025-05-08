@@ -158,9 +158,7 @@ export const updateFontSize = (
 export const formatParagraph = (editor: LexicalEditor) => {
   editor.update(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      $setBlocksType(selection, () => $createParagraphNode());
-    }
+    $setBlocksType(selection, () => $createParagraphNode());
   });
 };
 
@@ -217,18 +215,18 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
       let selection = $getSelection();
-
-      if (selection !== null) {
-        if (selection.isCollapsed()) {
-          $setBlocksType(selection, () => $createCodeNode());
-        } else {
-          const textContent = selection.getTextContent();
-          const codeNode = $createCodeNode();
-          selection.insertNodes([codeNode]);
-          selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            selection.insertRawText(textContent);
-          }
+      if (!selection) {
+        return;
+      }
+      if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+        $setBlocksType(selection, () => $createCodeNode());
+      } else {
+        const textContent = selection.getTextContent();
+        const codeNode = $createCodeNode();
+        selection.insertNodes([codeNode]);
+        selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertRawText(textContent);
         }
       }
     });
@@ -278,7 +276,14 @@ export const clearFormatting = (editor: LexicalEditor) => {
           }
           if (textNode.__format !== 0) {
             textNode.setFormat(0);
-            $getNearestBlockElementAncestorOrThrow(textNode).setFormat('');
+          }
+          const nearestBlockElement =
+            $getNearestBlockElementAncestorOrThrow(textNode);
+          if (nearestBlockElement.__format !== 0) {
+            nearestBlockElement.setFormat('');
+          }
+          if (nearestBlockElement.__indent !== 0) {
+            nearestBlockElement.setIndent(0);
           }
           node = textNode;
         } else if ($isHeadingNode(node) || $isQuoteNode(node)) {

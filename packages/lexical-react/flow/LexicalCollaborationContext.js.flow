@@ -17,5 +17,5 @@ type CollaborationContextType = {
   yjsDocMap: Map<string, Doc>,
 };
 
-declare export var CollaborationContext: React$Context<CollaborationContextType>;
+declare export var CollaborationContext: React.Context<CollaborationContextType>;
 declare export function useCollaborationContext(): CollaborationContextType;

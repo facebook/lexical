@@ -9,15 +9,29 @@
 import type {EditorState, NodeKey} from 'lexical';
 
 import {
+  $addUpdateTag,
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getWritableNodeState,
   $isRangeSelection,
   $isTextNode,
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
+  SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
+import {
+  Map as YMap,
+  Text as YText,
+  XmlElement,
+  XmlText,
+  YEvent,
+  YMapEvent,
+  YTextEvent,
+  YXmlEvent,
+} from 'yjs';
 
 import {Binding, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -33,16 +47,49 @@ import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
+  getNodeTypeFromSharedType,
   syncWithTransaction,
 } from './Utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function $syncStateEvent(binding: Binding, event: YMapEvent<any>): boolean {
+  const {target} = event;
+  if (
+    !(
+      target._item &&
+      target._item.parentSub === '__state' &&
+      getNodeTypeFromSharedType(target) === undefined &&
+      (target.parent instanceof XmlText ||
+        target.parent instanceof XmlElement ||
+        target.parent instanceof YMap)
+    )
+  ) {
+    // TODO there might be a case to handle in here when a YMap
+    // is used as a value  of __state? It would probably be desirable
+    // to mark the node as dirty when that happens.
+    return false;
+  }
+  const collabNode = $getOrInitCollabNodeFromSharedType(binding, target.parent);
+  const node = collabNode.getNode();
+  if (node) {
+    const state = $getWritableNodeState(node.getWritable());
+    for (const k of event.keysChanged) {
+      state.updateFromUnknown(k, target.get(k));
+    }
+  }
+  return true;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function $syncEvent(binding: Binding, event: any): void {
+  if (event instanceof YMapEvent && $syncStateEvent(binding, event)) {
+    return;
+  }
   const {target} = event;
   const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
-    // @ts-expect-error We need to access the private property of the class
+    // @ts-expect-error We need to access the private childListChanged property of the class
     const {keysChanged, childListChanged, delta} = event;
 
     // Update
@@ -128,6 +175,12 @@ export function syncYjsChangesToLexical(
           $syncLocalCursorPosition(binding, provider);
         }
       }
+
+      if (!isFromUndoManger) {
+        // If it is an external change, we don't want the current scroll position to get changed
+        // since the user might've intentionally scrolled somewhere else in the document.
+        $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+      }
     },
     {
       onUpdate: () => {
@@ -142,7 +195,7 @@ export function syncYjsChangesToLexical(
         });
       },
       skipTransforms: true,
-      tag: isFromUndoManger ? 'historic' : 'collaboration',
+      tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
 }
@@ -154,7 +207,8 @@ function $handleNormalizationMergeConflicts(
   // We handle the merge operations here
   const normalizedNodesKeys = Array.from(normalizedNodes);
   const collabNodeMap = binding.collabNodeMap;
-  const mergedNodes = [];
+  const mergedNodes: [CollabTextNode, string][] = [];
+  const removedNodes: CollabTextNode[] = [];
 
   for (let i = 0; i < normalizedNodesKeys.length; i++) {
     const nodeKey = normalizedNodesKeys[i];
@@ -175,22 +229,25 @@ function $handleNormalizationMergeConflicts(
 
         const parent = collabNode._parent;
         collabNode._normalized = true;
-
         parent._xmlText.delete(offset, 1);
 
-        collabNodeMap.delete(nodeKey);
-        const parentChildren = parent._children;
-        const index = parentChildren.indexOf(collabNode);
-        parentChildren.splice(index, 1);
+        removedNodes.push(collabNode);
       }
     }
   }
 
+  for (let i = 0; i < removedNodes.length; i++) {
+    const collabNode = removedNodes[i];
+    const nodeKey = collabNode.getKey();
+    collabNodeMap.delete(nodeKey);
+    const parentChildren = collabNode._parent._children;
+    const index = parentChildren.indexOf(collabNode);
+    parentChildren.splice(index, 1);
+  }
+
   for (let i = 0; i < mergedNodes.length; i++) {
     const [collabNode, text] = mergedNodes[i];
-    if (collabNode instanceof CollabTextNode && typeof text === 'string') {
-      collabNode._text = text;
-    }
+    collabNode._text = text;
   }
 }
 
@@ -215,7 +272,7 @@ export function syncLexicalUpdateToYjs(
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is
       // when we need to handle normalization merge conflicts.
-      if (tags.has('collaboration') || tags.has('historic')) {
+      if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
         if (normalizedNodes.size > 0) {
           $handleNormalizationMergeConflicts(binding, normalizedNodes);
         }

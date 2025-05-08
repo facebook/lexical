@@ -6,6 +6,13 @@
  *
  */
 
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
@@ -13,14 +20,6 @@ import {Container} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 import * as Y from 'yjs';
-
-import {useCollaborationContext} from '../../LexicalCollaborationContext';
-import {CollaborationPlugin} from '../../LexicalCollaborationPlugin';
-import {LexicalComposer} from '../../LexicalComposer';
-import {useLexicalComposerContext} from '../../LexicalComposerContext';
-import {ContentEditable} from '../../LexicalContentEditable';
-import {LexicalErrorBoundary} from '../../LexicalErrorBoundary';
-import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
 function Editor({
   doc,
@@ -234,6 +233,10 @@ export class Client implements Provider {
 
   getHTML() {
     return (this.getContainer().firstChild as HTMLElement).innerHTML;
+  }
+
+  getDoc() {
+    return this._doc;
   }
 
   getDocJSON() {

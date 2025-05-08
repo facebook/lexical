@@ -7,6 +7,7 @@
  */
 
 import {
+  $findMatchingParent,
   $insertFirst,
   $insertNodeToNearestRoot,
   $unwrapAndFilterDescendants,
@@ -14,10 +15,19 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
+  $getPreviousSelection,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
   $isTextNode,
+  CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  ElementNode,
+  isDOMNode,
   LexicalEditor,
   NodeKey,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -34,6 +44,7 @@ import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
+  $findTableNode,
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -50,6 +61,16 @@ function $insertTableCommandListener({
   columns,
   includeHeaders,
 }: InsertTableCommandPayload): boolean {
+  const selection = $getSelection() || $getPreviousSelection();
+  if (!selection || !$isRangeSelection(selection)) {
+    return false;
+  }
+
+  // Prevent nested tables by checking if we're already inside a table
+  if ($findTableNode(selection.anchor.getNode())) {
+    return false;
+  }
+
   const tableNode = $createTableNodeWithDimensions(
     Number(rows),
     Number(columns),
@@ -120,6 +141,29 @@ function $tableTransform(node: TableNode) {
       rowNode.append(newCell);
     }
   }
+}
+
+function $tableClickCommand(event: MouseEvent): boolean {
+  if (event.detail < 3 || !isDOMNode(event.target)) {
+    return false;
+  }
+  const startNode = $getNearestNodeFromDOMNode(event.target);
+  if (startNode === null) {
+    return false;
+  }
+  const blockNode = $findMatchingParent(
+    startNode,
+    (node): node is ElementNode => $isElementNode(node) && !node.isInline(),
+  );
+  if (blockNode === null) {
+    return false;
+  }
+  const rootNode = blockNode.getParent();
+  if (!$isTableCellNode(rootNode)) {
+    return false;
+  }
+  blockNode.select(0);
+  return true;
 }
 
 /**
@@ -262,10 +306,28 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
   if (!editor.hasNodes([TableNode])) {
     invariant(false, 'TablePlugin: TableNode is not registered on editor');
   }
+
   return mergeRegister(
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
       $insertTableCommandListener,
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+      ({nodes, selection}) => {
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const isInsideTableCell =
+          $findTableNode(selection.anchor.getNode()) !== null;
+        return isInsideTableCell && nodes.some($isTableNode);
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      CLICK_COMMAND,
+      $tableClickCommand,
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerNodeTransform(TableNode, $tableTransform),

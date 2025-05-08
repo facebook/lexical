@@ -3155,11 +3155,11 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getSelection();
+      const selection = $getSelection()!;
 
-      $patchStyleText(selection!, {'font-size': '11px'});
+      $patchStyleText(selection, {'font-size': '11px'});
 
-      const [newAnchor, newFocus] = selection!.getStartEndPoints()!;
+      const [newAnchor, newFocus] = selection.getStartEndPoints()!;
 
       const newAnchorNode: LexicalNode = newAnchor.getNode();
       expect(newAnchorNode.getTextContent()).toBe('sec');

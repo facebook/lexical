@@ -21,7 +21,11 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-import type {BaseSelection, RangeSelection} from '../LexicalSelection';
+import type {
+  BaseSelection,
+  RangeSelection,
+  TextPointType,
+} from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
 import {IS_FIREFOX} from 'shared/environment';
@@ -369,7 +373,7 @@ export class TextNode extends LexicalNode {
 
   /**
    * Returns whether or not the node is in "token" mode. TextNodes in token mode can be navigated through character-by-character
-   * with a RangeSelection, but are deleted as a single entity (not invdividually by character).
+   * with a RangeSelection, but are deleted as a single entity (not individually by character).
    *
    * @returns true if the node is in token mode, false otherwise.
    */
@@ -388,7 +392,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * Returns whether or not the node is in "segemented" mode. TextNodes in segemented mode can be navigated through character-by-character
+   * Returns whether or not the node is in "segmented" mode. TextNodes in segmented mode can be navigated through character-by-character
    * with a RangeSelection, but are deleted in space-delimited "segments".
    *
    * @returns true if the node is in segmented mode, false otherwise.
@@ -466,6 +470,13 @@ export class TextNode extends LexicalNode {
    * @returns true if the text node supports font styling, false otherwise.
    */
   canHaveFormat(): boolean {
+    return true;
+  }
+
+  /**
+   * @returns true if the text node is inline, false otherwise.
+   */
+  isInline(): true {
     return true;
   }
 
@@ -579,6 +590,10 @@ export class TextNode extends LexicalNode {
         conversion: convertTextFormatElement,
         priority: 0,
       }),
+      mark: () => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
       s: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -630,6 +645,16 @@ export class TextNode extends LexicalNode {
       'Expected TextNode createDOM to always return a HTMLElement',
     );
     element.style.whiteSpace = 'pre-wrap';
+
+    // Add text-transform styles for capitalization formats
+    if (this.hasFormat('lowercase')) {
+      element.style.textTransform = 'lowercase';
+    } else if (this.hasFormat('uppercase')) {
+      element.style.textTransform = 'uppercase';
+    } else if (this.hasFormat('capitalize')) {
+      element.style.textTransform = 'capitalize';
+    }
+
     // This is the only way to properly add support for most clients,
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.
@@ -894,7 +919,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when a user event would cause text to be inserted before them in the editor. If true, Lexical will attempt
    * to insert text into this node. If false, it will insert the text in a new sibling node.
    *
@@ -905,7 +930,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when a user event would cause text to be inserted after them in the editor. If true, Lexical will attempt
    * to insert text into this node. If false, it will insert the text in a new sibling node.
    *
@@ -927,26 +952,29 @@ export class TextNode extends LexicalNode {
     errorOnReadOnly();
     const self = this.getLatest();
     const textContent = self.getTextContent();
+    if (textContent === '') {
+      return [];
+    }
     const key = self.__key;
     const compositionKey = $getCompositionKey();
-    const offsetsSet = new Set(splitOffsets);
-    const parts = [];
     const textLength = textContent.length;
-    let string = '';
-    for (let i = 0; i < textLength; i++) {
-      if (string !== '' && offsetsSet.has(i)) {
-        parts.push(string);
-        string = '';
+    splitOffsets.sort((a, b) => a - b);
+    splitOffsets.push(textLength);
+    const parts = [];
+    const splitOffsetsLength = splitOffsets.length;
+    for (
+      let start = 0, offsetIndex = 0;
+      start < textLength && offsetIndex <= splitOffsetsLength;
+      offsetIndex++
+    ) {
+      const end = splitOffsets[offsetIndex];
+      if (end > start) {
+        parts.push(textContent.slice(start, end));
+        start = end;
       }
-      string += textContent[i];
-    }
-    if (string !== '') {
-      parts.push(string);
     }
     const partsLength = parts.length;
-    if (partsLength === 0) {
-      return [];
-    } else if (parts[0] === textContent) {
+    if (partsLength === 1) {
       return [self];
     }
     const firstPart = parts[0];
@@ -956,6 +984,22 @@ export class TextNode extends LexicalNode {
     const style = self.getStyle();
     const detail = self.__detail;
     let hasReplacedSelf = false;
+
+    // Prepare to handle selection
+    let startTextPoint: TextPointType | null = null;
+    let endTextPoint: TextPointType | null = null;
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      const [startPoint, endPoint] = selection.isBackward()
+        ? [selection.focus, selection.anchor]
+        : [selection.anchor, selection.focus];
+      if (startPoint.type === 'text' && startPoint.key === key) {
+        startTextPoint = startPoint;
+      }
+      if (endPoint.type === 'text' && endPoint.key === key) {
+        endTextPoint = endPoint;
+      }
+    }
 
     if (self.isSegmented()) {
       // Create a new TextNode
@@ -970,9 +1014,6 @@ export class TextNode extends LexicalNode {
       writableNode.__text = firstPart;
     }
 
-    // Handle selection
-    const selection = $getSelection();
-
     // Then handle all other parts
     const splitNodes: TextNode[] = [writableNode];
     let textSize = firstPart.length;
@@ -980,43 +1021,63 @@ export class TextNode extends LexicalNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = $createTextNode(part).getWritable();
+      const sibling = $createTextNode(part);
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
-
-      if ($isRangeSelection(selection)) {
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-
-        if (
-          anchor.key === key &&
-          anchor.type === 'text' &&
-          anchor.offset > textSize &&
-          anchor.offset <= nextTextSize
-        ) {
-          anchor.key = siblingKey;
-          anchor.offset -= textSize;
-          selection.dirty = true;
-        }
-        if (
-          focus.key === key &&
-          focus.type === 'text' &&
-          focus.offset > textSize &&
-          focus.offset <= nextTextSize
-        ) {
-          focus.key = siblingKey;
-          focus.offset -= textSize;
-          selection.dirty = true;
-        }
-      }
       if (compositionKey === key) {
         $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
       splitNodes.push(sibling);
+    }
+
+    // Move the selection to the best location in the split string.
+    // The end point is always left-biased, and the start point is
+    // generally left biased unless the end point would land on a
+    // later node in the split in which case it will prefer the start
+    // of that node so they will tend to be on the same node.
+    const originalStartOffset = startTextPoint ? startTextPoint.offset : null;
+    const originalEndOffset = endTextPoint ? endTextPoint.offset : null;
+    let startOffset = 0;
+    for (const node of splitNodes) {
+      if (!(startTextPoint || endTextPoint)) {
+        break;
+      }
+      const endOffset = startOffset + node.getTextContentSize();
+      if (
+        startTextPoint !== null &&
+        originalStartOffset !== null &&
+        originalStartOffset <= endOffset &&
+        originalStartOffset >= startOffset
+      ) {
+        // Set the start point to the first valid node
+        startTextPoint.set(
+          node.getKey(),
+          originalStartOffset - startOffset,
+          'text',
+        );
+        if (originalStartOffset < endOffset) {
+          // The start isn't on a border so we can stop checking
+          startTextPoint = null;
+        }
+      }
+      if (
+        endTextPoint !== null &&
+        originalEndOffset !== null &&
+        originalEndOffset <= endOffset &&
+        originalEndOffset >= startOffset
+      ) {
+        endTextPoint.set(
+          node.getKey(),
+          originalEndOffset - startOffset,
+          'text',
+        );
+        break;
+      }
+      startOffset = endOffset;
     }
 
     // Insert the nodes into the parent's children
@@ -1100,7 +1161,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when used with the registerLexicalTextEntity function. If you're using registerLexicalTextEntity, the
    * node class that you create and replace matched text with should return true from this method.
    *
@@ -1200,7 +1261,7 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
     return {node: null};
   }
   if (textContent[0] === ' ') {
-    // Traverse backward while in the same line. If content contains new line or tab -> pontential
+    // Traverse backward while in the same line. If content contains new line or tab -> potential
     // delete, other elements can borrow from this one. Deletion depends on whether it's also the
     // last space (see next condition: textContent[textContent.length - 1] === ' '))
     let previousText: null | Text = domNode_;
@@ -1289,6 +1350,7 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   code: 'code',
   em: 'italic',
   i: 'italic',
+  mark: 'highlight',
   s: 'strikethrough',
   strong: 'bold',
   sub: 'subscript',

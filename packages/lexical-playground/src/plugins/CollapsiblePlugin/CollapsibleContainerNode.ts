@@ -6,7 +6,11 @@
  *
  */
 
+import {IS_CHROME} from '@lexical/utils';
 import {
+  $getSiblingCaret,
+  $isElementNode,
+  $rewindSiblingCaret,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -16,11 +20,10 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  RangeSelection,
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import {IS_CHROME} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
@@ -57,6 +60,30 @@ export class CollapsibleContainerNode extends ElementNode {
     return new CollapsibleContainerNode(node.__open, node.__key);
   }
 
+  isShadowRoot(): boolean {
+    return true;
+  }
+
+  collapseAtStart(selection: RangeSelection): boolean {
+    // Unwrap the CollapsibleContainerNode by replacing it with the children
+    // of its children (CollapsibleTitleNode, CollapsibleContentNode)
+    const nodesToInsert: LexicalNode[] = [];
+    for (const child of this.getChildren()) {
+      if ($isElementNode(child)) {
+        nodesToInsert.push(...child.getChildren());
+      }
+    }
+    const caret = $rewindSiblingCaret($getSiblingCaret(this, 'previous'));
+    caret.splice(1, nodesToInsert);
+    // Merge the first child of the CollapsibleTitleNode with the
+    // previous sibling of the CollapsibleContainerNode
+    const [firstChild] = nodesToInsert;
+    if (firstChild) {
+      firstChild.selectStart().deleteCharacter(true);
+    }
+    return true;
+  }
+
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     // details is not well supported in Chrome #5582
     let dom: HTMLElement;
@@ -85,10 +112,9 @@ export class CollapsibleContainerNode extends ElementNode {
       // details is not well supported in Chrome #5582
       if (IS_CHROME) {
         const contentDom = dom.children[1];
-        invariant(
-          isHTMLElement(contentDom),
-          'Expected contentDom to be an HTMLElement',
-        );
+        if (!isHTMLElement(contentDom)) {
+          throw new Error('Expected contentDom to be an HTMLElement');
+        }
         if (currentOpen) {
           dom.setAttribute('open', '');
           contentDom.hidden = false;

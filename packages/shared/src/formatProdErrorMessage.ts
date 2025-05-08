@@ -6,23 +6,23 @@
  *
  */
 
-'use strict';
-
 // Do not require this module directly! Use normal `invariant` calls with
 // template literal strings. The messages will be replaced with error codes
 // during build.
 
-function formatProdErrorMessage(code) {
+export default function formatProdErrorMessage(
+  code: string,
+  ...args: string[]
+): never {
+  const url = new URL('https://lexical.dev/docs/error');
   const params = new URLSearchParams();
   params.append('code', code);
-  for (let i = 1; i < arguments.length; i++) {
-    params.append('v', arguments[i]);
+  for (const arg of args) {
+    params.append('v', arg);
   }
+  url.search = params.toString();
+
   throw Error(
-    `Minified Lexical error #${code}; visit https://lexical.dev/docs/error?${params} for the full message or ` +
-      'use the non-minified dev environment for full errors and additional ' +
-      'helpful warnings.',
+    `Minified Lexical error #${code}; visit ${url.toString()} for the full message or use the non-minified dev environment for full errors and additional helpful warnings.`,
   );
 }
-
-module.exports = formatProdErrorMessage;

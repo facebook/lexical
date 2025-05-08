@@ -48,6 +48,7 @@ export type {
 } from './LexicalTableSelection';
 export {
   $createTableSelection,
+  $createTableSelectionFrom,
   $isTableSelection,
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
@@ -65,7 +66,9 @@ export {
   $createTableNodeWithDimensions,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,
+  $deleteTableColumnAtSelection,
   $deleteTableRow__EXPERIMENTAL,
+  $deleteTableRowAtSelection,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
   $getTableCellNodeRect,
@@ -75,8 +78,11 @@ export {
   $getTableRowNodeFromTableCellNodeOrThrow,
   $insertTableColumn,
   $insertTableColumn__EXPERIMENTAL,
+  $insertTableColumnAtSelection,
   $insertTableRow,
   $insertTableRow__EXPERIMENTAL,
+  $insertTableRowAtSelection,
+  $mergeCells,
   $removeTableRowAtIndex,
   $unmergeCell,
 } from './LexicalTableUtils';

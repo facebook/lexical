@@ -12,7 +12,7 @@ is extended internally to create Lexical's five base nodes:
 - `TextNode`
 - `DecoratorNode`
 
-Of these nodes, three of them are exposed from the `lexical` package, making them ideal to be extended:
+Of these base nodes, three of them can be extended to create new types of nodes:
 
 - `ElementNode`
 - `TextNode`
@@ -21,13 +21,15 @@ Of these nodes, three of them are exposed from the `lexical` package, making the
 ### [`RootNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalRootNode.ts)
 
 There is only ever a single `RootNode` in an `EditorState` and it is always at the top and it represents the
-`contenteditable` itself. This means that the `RootNode` does not have a parent or siblings.
+`contenteditable` itself. This means that the `RootNode` does not have a parent or siblings. It can not be
+subclassed or replaced.
 
 - To get the text content of the entire editor, you should use `rootNode.getTextContent()`.
 - To avoid selection issues, Lexical forbids insertion of text nodes directly into a `RootNode`.
+
 #### Semantics and Use Cases
 
-The `RootNode` has specific characteristics and restrictions to maintain editor integrity:
+Unlike other `ElementNode` subclasses, the `RootNode` has specific characteristics and restrictions to maintain editor integrity:
 
 1. **Non-extensibility**  
    The `RootNode` cannot be subclassed or replaced with a custom implementation. It is designed as a fixed part of the editor architecture.
@@ -36,10 +38,10 @@ The `RootNode` has specific characteristics and restrictions to maintain editor 
    The `RootNode` does not participate in mutation listeners. Instead, use a root-level or update listener to observe changes at the document level.
 
 3. **Compatibility with Node Transforms**  
-   While the `RootNode` is not "part of the document" in the traditional sense, it can still appear to be in some cases, such as during serialization or when applying node transforms.
+   While the `RootNode` is not "part of the document" in the traditional sense, it can still appear to be in some cases, such as during serialization or when applying node transforms. A node transform on the `RootNode` will be called at the end of *every* node transform cycle. This is useful in cases where you need something like an update listener that occurs before the editor state is reconciled.
 
 4. **Document-Level Metadata**  
-   If you are attempting to use the `RootNode` for document-level metadata (e.g., undo/redo support), consider alternative designs. Currently, Lexical does not provide direct facilities for this use case, but solutions like creating a shadow root under the `RootNode` might work.
+   If you are attempting to use the `RootNode` for document-level metadata (e.g., undo/redo support), use the [NodeState](/docs/concepts/node-state) API.
 
 By design, the `RootNode` serves as a container for the editor's content rather than an active part of the document's logical structure. This approach simplifies operations like serialization and keeps the focus on content nodes.
 
@@ -50,14 +52,14 @@ You should never have `'\n'` in your text nodes, instead you should use the `Lin
 
 ### [`ElementNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalElementNode.ts)
 
-Used as parent for other nodes, can be block level (`ParagraphNode`, `HeadingNode`) and inline (`LinkNode`).
+Used as parent for other nodes, can be block level (`ParagraphNode`, `HeadingNode`) or inline (`LinkNode`).
 Has various methods which define its behaviour that can be overridden during extension (`isInline`, `canBeEmpty`, `canInsertTextBefore` and more)
 
 ### [`TextNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalTextNode.ts)
 
 Leaf type of node that contains text. It also includes few text-specific properties:
 
-- `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `subscript` and `superscript`
+- `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `highlight`, `subscript` and `superscript`
 - `mode`
   - `token` - acts as immutable node, can't change its content and is deleted all at once
   - `segmented` - its content deleted by segments (one word at a time), it is editable although node becomes non-segmented once its content is updated
@@ -69,6 +71,12 @@ Wrapper node to insert arbitrary view (component) inside the editor. Decorator n
 can output components from React, vanilla js or other frameworks.
 
 ## Node Properties
+
+:::tip
+
+If you're using Lexical v0.26.0 or later, you should consider using the [NodeState](/docs/concepts/node-state) API instead of defining properties directly on your subclasses. NodeState features automatic support for `afterCloneFrom`, `exportJSON`, and `updateFromJSON` requiring much less boilerplate and some additional benefits. You may find that you do not need a subclass at all in some situations, since your NodeState can be applied ad-hoc to any node.
+
+:::
 
 Lexical nodes can have properties. It's important that these properties are JSON serializable too, so you should never
 be assigning a property to a node that is a function, Symbol, Map, Set, or any other object that has a different prototype
@@ -84,23 +92,27 @@ If you are adding a property that you expect to be modifiable or accessible, the
 and `set*()` methods on your node for this property. Inside these methods, you'll need to invoke some very important methods
 that ensure consistency with Lexical's internal immutable system. These methods are `getWritable()` and `getLatest()`.
 
+We recommend that your constructor should always support a zero-argument instantiation in order to better support collab and
+to reduce the amount of boilerplate required. You can always define your `$create*` functions with required arguments.
+
 ```js
 import type {NodeKey} from 'lexical';
 
 class MyCustomNode extends SomeOtherNode {
   __foo: string;
 
-  constructor(foo: string, key?: NodeKey) {
+  constructor(foo: string = '', key?: NodeKey) {
     super(key);
     this.__foo = foo;
   }
 
-  setFoo(foo: string) {
+  setFoo(foo: string): this {
     // getWritable() creates a clone of the node
     // if needed, to ensure we don't try and mutate
     // a stale version of this node.
     const self = this.getWritable();
     self.__foo = foo;
+    return self;
   }
 
   getFoo(): string {
@@ -112,7 +124,7 @@ class MyCustomNode extends SomeOtherNode {
 }
 ```
 
-Lastly, all nodes should have both a `static getType()` method and a `static clone()` method.
+Lastly, all nodes should have `static getType()`, `static clone()`, and `static importJSON()` methods.
 Lexical uses the type to be able to reconstruct a node back with its associated class prototype
 during deserialization (important for copy + paste!). Lexical uses cloning to ensure consistency
 between creation of new `EditorState` snapshots.
@@ -120,6 +132,10 @@ between creation of new `EditorState` snapshots.
 Expanding on the example above with these methods:
 
 ```js
+interface SerializedCustomNode extends SerializedLexicalNode {
+  foo?: string;
+}
+
 class MyCustomNode extends SomeOtherNode {
   __foo: string;
 
@@ -133,17 +149,42 @@ class MyCustomNode extends SomeOtherNode {
     return new MyCustomNode(node.__foo, node.__key);
   }
 
-  constructor(foo: string, key?: NodeKey) {
+  static importJSON(
+    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>
+  ): MyCustomNode {
+    return new MyCustomNode().updateFromJSON(serializedNode);
+  }
+
+  constructor(foo: string = '', key?: NodeKey) {
     super(key);
     this.__foo = foo;
   }
 
-  setFoo(foo: string) {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>
+  ): this {
+    const self = super.updateFromJSON(serializedNode);
+    return typeof serializedNode.foo === 'string'
+      ? self.setFoo(serializedNode.foo)
+      : self;
+  }
+
+  exportJSON(): SerializedMyCustomNode {
+    const serializedNode: SerializedMyCustomNode = super.exportJSON();
+    const foo = this.getFoo();
+    if (foo !== '') {
+      serializedNode.foo = foo;
+    }
+    return serializedNode;
+  }
+
+  setFoo(foo: string): this {
     // getWritable() creates a clone of the node
     // if needed, to ensure we don't try and mutate
     // a stale version of this node.
     const self = this.getWritable();
     self.__foo = foo;
+    return self;
   }
 
   getFoo(): string {
@@ -197,10 +238,12 @@ that are of your custom node. Here's how you might do this for the above example
 
 ```js
 export function $createCustomParagraphNode(): CustomParagraph {
-  return new CustomParagraph();
+  return $applyNodeReplacement(new CustomParagraph());
 }
 
-export function $isCustomParagraphNode(node: LexicalNode | null | undefined): node is CustomParagraph  {
+export function $isCustomParagraphNode(
+  node: LexicalNode | null | undefined
+): node is CustomParagraph  {
   return node instanceof CustomParagraph;
 }
 ```
@@ -244,10 +287,12 @@ export class ColoredNode extends TextNode {
 }
 
 export function $createColoredNode(text: string, color: string): ColoredNode {
-  return new ColoredNode(text, color);
+  return $applyNodeReplacement(new ColoredNode(text, color));
 }
 
-export function $isColoredNode(node: LexicalNode | null | undefined): node is ColoredNode {
+export function $isColoredNode(
+  node: LexicalNode | null | undefined
+): node is ColoredNode {
   return node instanceof ColoredNode;
 }
 ```
@@ -285,7 +330,7 @@ export class VideoNode extends DecoratorNode<ReactNode> {
 }
 
 export function $createVideoNode(id: string): VideoNode {
-  return new VideoNode(id);
+  return $applyNodeReplacement(new VideoNode(id));
 }
 
 export function $isVideoNode(

@@ -15,6 +15,7 @@ import {
 import {
   assertHTML,
   assertSelection,
+  click,
   copyToClipboard,
   focusEditor,
   html,
@@ -25,6 +26,11 @@ import {
   waitForSelector,
   withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
+
+async function toggleBulletList(page) {
+  await click(page, '.block-controls');
+  await click(page, '.dropdown .icon.bullet-list');
+}
 
 test.describe('HorizontalRule', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
@@ -209,7 +215,7 @@ test.describe('HorizontalRule', () => {
     });
   });
 
-  test('Will add a horizontal rule and split a TextNode across 2 paragraphs if the carat is in the middle of the TextNode, moving selection to the start of the new ParagraphNode.', async ({
+  test('Will add a horizontal rule and split a TextNode across 2 paragraphs if the caret is in the middle of the TextNode, moving selection to the start of the new ParagraphNode.', async ({
     page,
     isPlainText,
   }) => {
@@ -274,6 +280,142 @@ test.describe('HorizontalRule', () => {
       anchorPath: [2, 0, 0],
       focusOffset: 0,
       focusPath: [2, 0, 0],
+    });
+  });
+
+  test('Will add a horizontal rule and split a TextNode across 2 ListItemNode if the caret is in the middle of the TextNode, moving selection to the start of the new ParagraphNode', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await toggleBulletList(page);
+
+    await page.keyboard.type('Test');
+
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0, 0],
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Test</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await moveLeft(page, 2);
+
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [0, 0, 0, 0],
+      focusOffset: 2,
+      focusPath: [0, 0, 0, 0],
+    });
+
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+
+    await waitForSelector(page, 'hr');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Te</span>
+          </li>
+        </ul>
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">st</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2, 0, 0, 0],
+      focusOffset: 0,
+      focusPath: [2, 0, 0, 0],
+    });
+  });
+
+  test('Will add a horizontal rule and split a TextNode across 2 ListItemNode if the caret is in an empty ListItemNode, moving selection to the start of the new ListItemNode (#6849)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await toggleBulletList(page);
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0],
+      focusOffset: 0,
+      focusPath: [0, 0],
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br />
+          </li>
+        </ul>
+      `,
+    );
+
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+
+    await waitForSelector(page, 'hr');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br />
+          </li>
+        </ul>
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br />
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2, 0],
+      focusOffset: 0,
+      focusPath: [2, 0],
     });
   });
 
@@ -367,7 +509,7 @@ test.describe('HorizontalRule', () => {
     });
   });
 
-  test('Can delete remove paragraph after a horizontal rule without deleting a horizontal rule', async ({
+  test('Can delete empty paragraph after a horizontal rule without deleting the horizontal rule', async ({
     page,
     browserName,
     isPlainText,
@@ -409,7 +551,7 @@ test.describe('HorizontalRule', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
       `,
@@ -438,7 +580,7 @@ test.describe('HorizontalRule', () => {
       page,
       html`
         <hr
-          class="PlaygroundEditorTheme__hr selected"
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"
           data-lexical-decorator="true" />
       `,

@@ -91,11 +91,6 @@ export class ParagraphNode extends ElementNode {
 
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
-
-      const direction = this.getDirection();
-      if (direction) {
-        element.dir = direction;
-      }
     }
 
     return {
@@ -128,7 +123,7 @@ export class ParagraphNode extends ElementNode {
     const direction = this.getDirection();
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
-    newElement.setStyle(this.getTextStyle());
+    newElement.setStyle(this.getStyle());
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

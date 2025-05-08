@@ -23,6 +23,7 @@ import type {
   Spread,
 } from 'lexical';
 
+import {getStyleObjectFromCSS} from '@lexical/selection';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -50,6 +51,26 @@ export type SerializedListItemNode = Spread<
   },
   SerializedElementNode
 >;
+
+function applyMarkerStyles(
+  dom: HTMLElement,
+  node: ListItemNode,
+  prevNode: ListItemNode | null,
+): void {
+  const styles: Record<string, string> = getStyleObjectFromCSS(
+    node.__textStyle,
+  );
+  for (const k in styles) {
+    dom.style.setProperty(`--listitem-marker-${k}`, styles[k]);
+  }
+  if (prevNode) {
+    for (const k in getStyleObjectFromCSS(prevNode.__textStyle)) {
+      if (!(k in styles)) {
+        dom.style.removeProperty(`--listitem-marker-${k}`);
+      }
+    }
+  }
+}
 
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
@@ -80,6 +101,11 @@ export class ListItemNode extends ElementNode {
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
+    const nextStyle = this.__style;
+    if (nextStyle) {
+      element.style.cssText = nextStyle;
+    }
+    applyMarkerStyles(element, this, null);
     return element;
   }
 
@@ -95,7 +121,16 @@ export class ListItemNode extends ElementNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-
+    const prevStyle = prevNode.__style;
+    const nextStyle = this.__style;
+    if (prevStyle !== nextStyle) {
+      if (nextStyle === '') {
+        dom.removeAttribute('style');
+      } else {
+        dom.style.cssText = nextStyle;
+      }
+    }
+    applyMarkerStyles(dom, this, prevNode);
     return false;
   }
 
@@ -139,6 +174,10 @@ export class ListItemNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
     element.style.textAlign = this.getFormatType();
+    const direction = this.getDirection();
+    if (direction) {
+      element.dir = direction;
+    }
     return {
       element,
     };
@@ -349,7 +388,7 @@ export class ListItemNode extends ElementNode {
   getIndent(): number {
     // If we don't have a parent, we are likely serializing
     const parent = this.getParent();
-    if (parent === null) {
+    if (parent === null || !this.isAttached()) {
       return this.getLatest().__indent;
     }
     // ListItemNode should always have a ListNode for a parent.

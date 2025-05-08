@@ -135,7 +135,7 @@ async function build(
       if (
         typeof modulePkgName === 'string' &&
         !(
-          modulePkgName in pkg.packageJson.dependencies ||
+          modulePkgName in (pkg.packageJson.dependencies || {}) ||
           modulePkgName === pkg.getNpmName()
         )
       ) {
@@ -216,15 +216,6 @@ async function build(
           ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
-      {
-        resolveId(importee, importer) {
-          if (importee === 'formatProdErrorMessage') {
-            return path.resolve(
-              './scripts/error-codes/formatProdErrorMessage.js',
-            );
-          }
-        },
-      },
       commonjs(),
       json(),
       replace(
@@ -294,6 +285,7 @@ function getComment() {
     0,
     ' *',
     ' * @fullSyntaxTransform',
+    ' * @es6-async_DO_NOT_USE',
     ' * @generated',
     ' * @noflow',
     ' * @nolint',

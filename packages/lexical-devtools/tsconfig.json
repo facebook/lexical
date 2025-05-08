@@ -126,9 +126,6 @@
       "@lexical/react/LexicalTabIndentationPlugin": [
         "../lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],
-      "@lexical/react/LexicalTableOfContents": [
-        "../lexical-react/src/LexicalTableOfContents.tsx"
-      ],
       "@lexical/react/LexicalTableOfContentsPlugin": [
         "../lexical-react/src/LexicalTableOfContentsPlugin.tsx"
       ],
@@ -164,7 +161,17 @@
       "@lexical/yjs": ["../lexical-yjs/src/index.ts"],
       "shared/canUseDOM": ["../shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["../shared/src/caretFromPoint.ts"],
+      "shared/devInvariant": ["../shared/src/devInvariant.ts"],
       "shared/environment": ["../shared/src/environment.ts"],
+      "shared/formatDevErrorMessage": [
+        "../shared/src/formatDevErrorMessage.ts"
+      ],
+      "shared/formatProdErrorMessage": [
+        "../shared/src/formatProdErrorMessage.ts"
+      ],
+      "shared/formatProdWarningMessage": [
+        "../shared/src/formatProdWarningMessage.ts"
+      ],
       "shared/invariant": ["../shared/src/invariant.ts"],
       "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],
       "shared/react-test-utils": ["../shared/src/react-test-utils.ts"],

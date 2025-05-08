@@ -24,10 +24,13 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  COLLABORATION_TAG,
+  HISTORIC_TAG,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {TRANSFORMERS} from '.';
+import {canContainTransformableMarkdown} from './importTextTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(
@@ -253,6 +256,9 @@ function $runTextFormatTransformers(
       }
 
       if ($isTextNode(sibling)) {
+        if (sibling.hasFormat('code')) {
+          continue;
+        }
         const siblingTextContent = sibling.getTextContent();
         openNode = sibling;
         openTagStartIndex = getOpenTagStartIndex(
@@ -468,7 +474,7 @@ export function registerMarkdownShortcuts(
   return editor.registerUpdateListener(
     ({tags, dirtyLeaves, editorState, prevEditorState}) => {
       // Ignore updates from collaboration and undo/redo (as changes already calculated)
-      if (tags.has('collaboration') || tags.has('historic')) {
+      if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
         return;
       }
 
@@ -505,8 +511,7 @@ export function registerMarkdownShortcuts(
       }
 
       editor.update(() => {
-        // Markdown is not available inside code
-        if (anchorNode.hasFormat('code')) {
+        if (!canContainTransformableMarkdown(anchorNode)) {
           return;
         }
 

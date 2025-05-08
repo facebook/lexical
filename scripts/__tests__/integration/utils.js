@@ -89,9 +89,7 @@ async function buildExample({packageJson, exampleDir}) {
   );
   await withCwd(exampleDir, async () => {
     await exec(
-      `npm install --no-save --no-package-lock ${installDeps
-        .map((fn) => `'${fn}'`)
-        .join(' ')}`,
+      `npm install --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
     );
     await exec('npm run build');
     if (hasPlaywright) {

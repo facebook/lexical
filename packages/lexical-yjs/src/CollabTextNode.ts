@@ -20,7 +20,7 @@ import {
 import invariant from 'shared/invariant';
 import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
-import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
+import {$syncPropertiesFromYjs, syncPropertiesFromLexical} from './Utils';
 
 function $diffTextContentAndApplyDelta(
   collabNode: CollabTextNode,
@@ -150,7 +150,7 @@ export class CollabTextNode {
       'syncPropertiesAndTextFromYjs: could not find decorator node',
     );
 
-    syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
+    $syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
 
     const collabText = this._text;
 
@@ -162,7 +162,9 @@ export class CollabTextNode {
 
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
-    collabNodeMap.delete(this._key);
+    if (collabNodeMap.get(this._key) === this) {
+      collabNodeMap.delete(this._key);
+    }
   }
 }
 

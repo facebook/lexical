@@ -512,6 +512,11 @@ test.describe('Collaboration', () => {
       .frameLocator('iframe[name="right"]')
       .locator('[data-lexical-editor="true"]')
       .focus();
+    // TODO this is a workaround for Firefox so that the
+    // selection picks up the text format
+    if (browserName === 'firefox') {
+      await page.keyboard.press('ArrowLeft', {delay: 50});
+    }
     await page.keyboard.press('ArrowDown', {delay: 50});
     await page.keyboard.type(' text');
 
@@ -661,6 +666,77 @@ test.describe('Collaboration', () => {
             <span data-lexical-text="true">website</span>
           </a>
           <span data-lexical-text="true">now! Check it out.</span>
+        </p>
+      `,
+    );
+  });
+
+  test('$handleNormalizationMergeConflicts handles nodes that have been reparented', async ({
+    page,
+    isCollab,
+  }) => {
+    test.skip(!isCollab);
+
+    // Add paragraph, type ABC into second paragraph, bold the B, backspace text into the first paragraph to reparent the text nodes
+    await focusEditor(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('ABC');
+    await page.keyboard.press('ArrowLeft');
+    await selectCharacters(page, 'left', 'B'.length);
+    await toggleBold(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+
+    // Right collaborator deletes A, left deletes B.
+    await sleep(1050);
+    await page.keyboard.press('Delete');
+    await sleep(50);
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('Delete');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator undoes their deletion of A.
+    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+
+    // Check that normalization worked properly.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">AC</span>
         </p>
       `,
     );

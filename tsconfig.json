@@ -135,9 +135,6 @@
       "@lexical/react/LexicalTabIndentationPlugin": [
         "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],
-      "@lexical/react/LexicalTableOfContents": [
-        "./packages/lexical-react/src/LexicalTableOfContents.tsx"
-      ],
       "@lexical/react/LexicalTableOfContentsPlugin": [
         "./packages/lexical-react/src/LexicalTableOfContentsPlugin.tsx"
       ],
@@ -173,7 +170,17 @@
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
       "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
+      "shared/devInvariant": ["./packages/shared/src/devInvariant.ts"],
       "shared/environment": ["./packages/shared/src/environment.ts"],
+      "shared/formatDevErrorMessage": [
+        "./packages/shared/src/formatDevErrorMessage.ts"
+      ],
+      "shared/formatProdErrorMessage": [
+        "./packages/shared/src/formatProdErrorMessage.ts"
+      ],
+      "shared/formatProdWarningMessage": [
+        "./packages/shared/src/formatProdWarningMessage.ts"
+      ],
       "shared/invariant": ["./packages/shared/src/invariant.ts"],
       "shared/normalizeClassNames": [
         "./packages/shared/src/normalizeClassNames.ts"
@@ -222,6 +229,7 @@
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",
+    "**/build/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

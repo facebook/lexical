@@ -49,7 +49,3 @@ export function useLexicalSubscription<T>(
 
   return value;
 }
-
-/** @deprecated use the named export {@link useLexicalSubscription} */
-// eslint-disable-next-line no-restricted-exports
-export default useLexicalSubscription;

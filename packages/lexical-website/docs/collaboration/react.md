@@ -85,7 +85,7 @@ function Editor() {
         id="lexical/react-rich-collab"
         providerFactory={providerFactory}
         // Optional initial editor state in case collaborative Y.Doc won't
-        // have any existing data on server. Then it'll user this value to populate editor.
+        // have any existing data on server. Then it'll use this value to populate editor.
         // It accepts same type of values as LexicalComposer editorState
         // prop (json string, state object, or a function)
         initialEditorState={$initialEditorState}
@@ -106,10 +106,10 @@ Source code: [examples/react-rich-collab](https://github.com/facebook/lexical/tr
 
 [Lexical Playground](https://playground.lexical.dev/) features set of the collaboration enabled plugins that integrate with primary document via `useCollaborationContext()` hook. Notable mentions:
 
-- [`CommentPlugin`](https://github.com/facebook/lexical/tree/v0.14.5/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
-- [`ImageComponent`](https://github.com/facebook/lexical/blob/v0.14.5/packages/lexical-playground/src/nodes/ImageComponent.tsx#L390) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin`.
-- [`PollOptionComponent`](https://github.com/facebook/lexical/blob/v0.14.5/packages/lexical-playground/src/nodes/PollComponent.tsx#L78) - showcases poll implementation using `clientID` from Yjs context.
-- [`StickyPlugin`](https://github.com/facebook/lexical/tree/v0.14.5/packages/lexical-playground/src/plugins/StickyPlugin) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
+- [`CommentPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
+- [`ImageComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin`.
+- [`PollOptionComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `clientID` from Yjs context.
+- [`StickyPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/StickyPlugin) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
 
 :::note
 

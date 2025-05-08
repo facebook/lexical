@@ -15,6 +15,7 @@ import type {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  ParagraphNode,
   SerializedElementNode,
   Spread,
 } from 'lexical';
@@ -23,7 +24,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
-  $isElementNode,
+  $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
   ElementNode,
@@ -40,7 +41,7 @@ export const TableCellHeaderStates = {
 };
 
 export type TableCellHeaderState =
-  typeof TableCellHeaderStates[keyof typeof TableCellHeaderStates];
+  (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
 
 export type SerializedTableCellNode = Spread<
   {
@@ -49,6 +50,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
+    verticalAlign?: string;
   },
   SerializedElementNode
 >;
@@ -65,6 +67,8 @@ export class TableCellNode extends ElementNode {
   __width?: number | undefined;
   /** @internal */
   __backgroundColor: null | string;
+  /** @internal */
+  __verticalAlign?: undefined | string;
 
   static getType(): string {
     return 'tablecell';
@@ -83,6 +87,7 @@ export class TableCellNode extends ElementNode {
     super.afterCloneFrom(node);
     this.__rowSpan = node.__rowSpan;
     this.__backgroundColor = node.__backgroundColor;
+    this.__verticalAlign = node.__verticalAlign;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -111,7 +116,8 @@ export class TableCellNode extends ElementNode {
       .setColSpan(serializedNode.colSpan || 1)
       .setRowSpan(serializedNode.rowSpan || 1)
       .setWidth(serializedNode.width || undefined)
-      .setBackgroundColor(serializedNode.backgroundColor || null);
+      .setBackgroundColor(serializedNode.backgroundColor || null)
+      .setVerticalAlign(serializedNode.verticalAlign || undefined);
   }
 
   constructor(
@@ -126,6 +132,7 @@ export class TableCellNode extends ElementNode {
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
+    this.__verticalAlign = undefined;
   }
 
   createDOM(config: EditorConfig): HTMLTableCellElement {
@@ -142,6 +149,9 @@ export class TableCellNode extends ElementNode {
     }
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
+    }
+    if (isValidVerticalAlign(this.__verticalAlign)) {
+      element.style.verticalAlign = this.__verticalAlign;
     }
 
     addClassNamesToElement(
@@ -171,7 +181,7 @@ export class TableCellNode extends ElementNode {
       }
       element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
-      element.style.verticalAlign = 'top';
+      element.style.verticalAlign = this.getVerticalAlign() || 'top';
       element.style.textAlign = 'start';
       if (this.__backgroundColor === null && this.hasHeader()) {
         element.style.backgroundColor = '#f2f3f5';
@@ -184,6 +194,9 @@ export class TableCellNode extends ElementNode {
   exportJSON(): SerializedTableCellNode {
     return {
       ...super.exportJSON(),
+      ...(isValidVerticalAlign(this.__verticalAlign) && {
+        verticalAlign: this.__verticalAlign,
+      }),
       backgroundColor: this.getBackgroundColor(),
       colSpan: this.__colSpan,
       headerState: this.__headerState,
@@ -249,6 +262,16 @@ export class TableCellNode extends ElementNode {
     return self;
   }
 
+  getVerticalAlign(): undefined | string {
+    return this.getLatest().__verticalAlign;
+  }
+
+  setVerticalAlign(newVerticalAlign: null | undefined | string): this {
+    const self = this.getWritable();
+    self.__verticalAlign = newVerticalAlign || undefined;
+    return self;
+  }
+
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
@@ -275,7 +298,8 @@ export class TableCellNode extends ElementNode {
       prevNode.__width !== this.__width ||
       prevNode.__colSpan !== this.__colSpan ||
       prevNode.__rowSpan !== this.__rowSpan ||
-      prevNode.__backgroundColor !== this.__backgroundColor
+      prevNode.__backgroundColor !== this.__backgroundColor ||
+      prevNode.__verticalAlign !== this.__verticalAlign
     );
   }
 
@@ -294,6 +318,12 @@ export class TableCellNode extends ElementNode {
   canIndent(): false {
     return false;
   }
+}
+
+function isValidVerticalAlign(
+  verticalAlign?: null | string,
+): verticalAlign is 'middle' | 'bottom' {
+  return verticalAlign === 'middle' || verticalAlign === 'bottom';
 }
 
 export function $convertTableCellNodeElement(
@@ -321,6 +351,10 @@ export function $convertTableCellNodeElement(
   if (backgroundColor !== '') {
     tableCellNode.__backgroundColor = backgroundColor;
   }
+  const verticalAlign = domNode_.style.verticalAlign;
+  if (isValidVerticalAlign(verticalAlign)) {
+    tableCellNode.__verticalAlign = verticalAlign;
+  }
 
   const style = domNode_.style;
   const textDecoration = ((style && style.textDecoration) || '').split(' ');
@@ -331,39 +365,61 @@ export function $convertTableCellNodeElement(
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
   return {
     after: (childLexicalNodes) => {
-      if (childLexicalNodes.length === 0) {
-        childLexicalNodes.push($createParagraphNode());
-      }
-      return childLexicalNodes;
-    },
-    forChild: (lexicalNode, parentLexicalNode) => {
-      if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
-        const paragraphNode = $createParagraphNode();
+      const result: LexicalNode[] = [];
+      let paragraphNode: ParagraphNode | null = null;
+
+      const removeSingleLineBreakNode = () => {
+        if (paragraphNode) {
+          const firstChild = paragraphNode.getFirstChild();
+          if (
+            $isLineBreakNode(firstChild) &&
+            paragraphNode.getChildrenSize() === 1
+          ) {
+            firstChild.remove();
+          }
+        }
+      };
+
+      for (const child of childLexicalNodes) {
         if (
-          $isLineBreakNode(lexicalNode) &&
-          lexicalNode.getTextContent() === '\n'
+          $isInlineElementOrDecoratorNode(child) ||
+          $isTextNode(child) ||
+          $isLineBreakNode(child)
         ) {
-          return null;
+          if ($isTextNode(child)) {
+            if (hasBoldFontWeight) {
+              child.toggleFormat('bold');
+            }
+            if (hasLinethroughTextDecoration) {
+              child.toggleFormat('strikethrough');
+            }
+            if (hasItalicFontStyle) {
+              child.toggleFormat('italic');
+            }
+            if (hasUnderlineTextDecoration) {
+              child.toggleFormat('underline');
+            }
+          }
+
+          if (paragraphNode) {
+            paragraphNode.append(child);
+          } else {
+            paragraphNode = $createParagraphNode().append(child);
+            result.push(paragraphNode);
+          }
+        } else {
+          result.push(child);
+          removeSingleLineBreakNode();
+          paragraphNode = null;
         }
-        if ($isTextNode(lexicalNode)) {
-          if (hasBoldFontWeight) {
-            lexicalNode.toggleFormat('bold');
-          }
-          if (hasLinethroughTextDecoration) {
-            lexicalNode.toggleFormat('strikethrough');
-          }
-          if (hasItalicFontStyle) {
-            lexicalNode.toggleFormat('italic');
-          }
-          if (hasUnderlineTextDecoration) {
-            lexicalNode.toggleFormat('underline');
-          }
-        }
-        paragraphNode.append(lexicalNode);
-        return paragraphNode;
       }
 
-      return lexicalNode;
+      removeSingleLineBreakNode();
+
+      if (result.length === 0) {
+        result.push($createParagraphNode());
+      }
+      return result;
     },
     node: tableCellNode,
   };

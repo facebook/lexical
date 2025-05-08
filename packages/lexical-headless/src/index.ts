@@ -33,7 +33,7 @@ export function createHeadlessEditor(
     'blur',
   ] as const;
 
-  unsupportedMethods.forEach((method: typeof unsupportedMethods[number]) => {
+  unsupportedMethods.forEach((method: (typeof unsupportedMethods)[number]) => {
     editor[method] = () => {
       throw new Error(`${method} is not supported in headless mode`);
     };

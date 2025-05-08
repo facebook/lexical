@@ -7,21 +7,29 @@
  */
 
 /* eslint-disable no-constant-condition */
-import type {EditorConfig, LexicalEditor} from './LexicalEditor';
+import type {
+  EditorConfig,
+  Klass,
+  KlassConstructor,
+  LexicalEditor,
+} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
-import type {Klass, KlassConstructor} from 'lexical';
 
 import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $getCommonAncestor,
+  $getCommonAncestorResultBranchOrder,
   $isDecoratorNode,
   $isElementNode,
   $isRootNode,
   $isTextNode,
   type DecoratorNode,
   ElementNode,
+  NODE_STATE_KEY,
 } from '.';
+import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -59,6 +67,7 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
 
 /**
@@ -139,7 +148,12 @@ export function $removeNode(
   ) {
     $removeNode(parent, restoreSelection);
   }
-  if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
+  if (
+    restoreSelection &&
+    selection &&
+    $isRootNode(parent) &&
+    parent.isEmpty()
+  ) {
     parent.selectEnd();
   }
 }
@@ -178,7 +192,7 @@ export type DOMExportOutputMap = Map<
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
-  ) => HTMLElement | Text | null | undefined;
+  ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
 };
 
@@ -198,6 +212,8 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /** @internal */
+  __state?: NodeState<this>;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -282,10 +298,11 @@ export class LexicalNode {
    * ```
    *
    */
-  afterCloneFrom(prevNode: this) {
+  afterCloneFrom(prevNode: this): void {
     this.__parent = prevNode.__parent;
     this.__next = prevNode.__next;
     this.__prev = prevNode.__prev;
+    this.__state = prevNode.__state;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -296,6 +313,12 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
+    Object.defineProperty(this, '__state', {
+      configurable: true,
+      enumerable: false,
+      value: undefined,
+      writable: true,
+    });
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -325,7 +348,7 @@ export class LexicalNode {
   /**
    * Returns true if there is a path between this node and the RootNode, false otherwise.
    * This is a way of determining if the node is "attached" EditorState. Unattached nodes
-   * won't be reconciled and will ultimatelt be cleaned up by the Lexical GC.
+   * won't be reconciled and will ultimately be cleaned up by the Lexical GC.
    */
   isAttached(): boolean {
     let nodeKey: string | null = this.__key;
@@ -381,11 +404,10 @@ export class LexicalNode {
         const firstPoint = targetSelection.isBackward()
           ? targetSelection.focus
           : targetSelection.anchor;
-        const firstElement = firstPoint.getNode() as ElementNode;
         if (
-          firstPoint.offset === firstElement.getChildrenSize() &&
-          firstElement.is(parentNode) &&
-          firstElement.getLastChildOrThrow().is(this)
+          parentNode.is(firstPoint.getNode()) &&
+          firstPoint.offset === parentNode.getChildrenSize() &&
+          this.is(parentNode.getLastChild())
         ) {
           return false;
         }
@@ -572,6 +594,8 @@ export class LexicalNode {
   }
 
   /**
+   * @deprecated use {@link $getCommonAncestor}
+   *
    * Returns the closest common ancestor of this node and the provided one or null
    * if one cannot be found.
    *
@@ -580,27 +604,12 @@ export class LexicalNode {
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const a = this.getParents();
-    const b = node.getParents();
-    if ($isElementNode(this)) {
-      a.unshift(this);
-    }
-    if ($isElementNode(node)) {
-      b.unshift(node);
-    }
-    const aLength = a.length;
-    const bLength = b.length;
-    if (aLength === 0 || bLength === 0 || a[aLength - 1] !== b[bLength - 1]) {
-      return null;
-    }
-    const bSet = new Set(b);
-    for (let i = 0; i < aLength; i++) {
-      const ancestor = a[i] as T;
-      if (bSet.has(ancestor)) {
-        return ancestor;
-      }
-    }
-    return null;
+    const a = $isElementNode(this) ? this : this.getParent();
+    const b = $isElementNode(node) ? node : node.getParent();
+    const result = a && b ? $getCommonAncestor(a, b) : null;
+    return result
+      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
+      : null;
   }
 
   /**
@@ -617,62 +626,42 @@ export class LexicalNode {
   }
 
   /**
-   * Returns true if this node logical precedes the target node in the editor state.
+   * Returns true if this node logically precedes the target node in the
+   * editor state, false otherwise (including if there is no common ancestor).
+   *
+   * Note that this notion of isBefore is based on post-order; a descendant
+   * node is always before its ancestors. See also
+   * {@link $getCommonAncestor} and {@link $comparePointCaretNext} for
+   * more flexible ways to determine the relative positions of nodes.
    *
    * @param targetNode - the node we're testing to see if it's after this one.
    */
   isBefore(targetNode: LexicalNode): boolean {
-    if (this === targetNode) {
+    const compare = $getCommonAncestor(this, targetNode);
+    if (compare === null) {
       return false;
     }
-    if (targetNode.isParentOf(this)) {
+    if (compare.type === 'descendant') {
       return true;
     }
-    if (this.isParentOf(targetNode)) {
-      return false;
+    if (compare.type === 'branch') {
+      return $getCommonAncestorResultBranchOrder(compare) === -1;
     }
-    const commonAncestor = this.getCommonAncestor(targetNode);
-    let indexA = 0;
-    let indexB = 0;
-    let node: this | ElementNode | LexicalNode = this;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexA = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    node = targetNode;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexB = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    return indexA < indexB;
+    invariant(
+      compare.type === 'same' || compare.type === 'ancestor',
+      'LexicalNode.isBefore: exhaustiveness check',
+    );
+    return false;
   }
 
   /**
-   * Returns true if this node is the parent of the target node, false otherwise.
+   * Returns true if this node is an ancestor of and distinct from the target node, false otherwise.
    *
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const key = this.__key;
-    if (key === targetNode.__key) {
-      return false;
-    }
-    let node: ElementNode | LexicalNode | null = targetNode;
-    while (node !== null) {
-      if (node.__key === key) {
-        return true;
-      }
-      node = node.getParent();
-    }
-    return false;
+    const result = $getCommonAncestor(this, targetNode);
+    return result !== null && result.type === 'ancestor';
   }
 
   // TO-DO: this function can be simplified a lot
@@ -833,7 +822,7 @@ export class LexicalNode {
    *
    * This method must return exactly one HTMLElement. Nested elements are not supported.
    *
-   * Do not attempt to update the Lexical EditorState during this phase of the update lifecyle.
+   * Do not attempt to update the Lexical EditorState during this phase of the update lifecycle.
    *
    * @param _config - allows access to things like the EditorTheme (to apply classes) during reconciliation.
    * @param _editor - allows access to the editor for context during reconciliation.
@@ -882,9 +871,12 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
+    // eslint-disable-next-line dot-notation
+    const state = this.__state ? this.__state.toJSON() : undefined;
     return {
       type: this.__type,
       version: 1,
+      ...state,
     };
   }
 
@@ -934,7 +926,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return this;
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
   }
 
   /**

@@ -21,7 +21,6 @@ import type {JSX} from 'react';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 type Dimension = number | 'inherit';
 
@@ -180,14 +179,12 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <ExcalidrawComponent
-          nodeKey={this.getKey()}
-          data={this.__data}
-          width={this.__width}
-          height={this.__height}
-        />
-      </Suspense>
+      <ExcalidrawComponent
+        nodeKey={this.getKey()}
+        data={this.__data}
+        width={this.__width}
+        height={this.__height}
+      />
     );
   }
 }

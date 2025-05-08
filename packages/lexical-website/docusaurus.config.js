@@ -231,6 +231,7 @@ const config = {
   },
 
   markdown: {
+    mermaid: true,
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
         'https://stackblitz.com/github/facebook/lexical/tree/main/',
@@ -273,8 +274,18 @@ const config = {
         name: 'docusaurus-tailwindcss',
       };
     },
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        redirects: [
+          {
+            from: '/2024-recap',
+            to: 'https://github.com/facebook/lexical/discussions/7220',
+          },
+        ],
+      },
+    ],
   ].filter((plugin) => plugin != null),
-
   presets: [
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
@@ -440,6 +451,8 @@ const config = {
         theme: lightCodeTheme,
       },
     }),
+
+  themes: ['@docusaurus/theme-mermaid'],
 
   title: TITLE,
   url: 'https://lexical.dev',

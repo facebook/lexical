@@ -22,13 +22,16 @@ import type {
 import type {JSX} from 'react';
 
 import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
+import {
   $applyNodeReplacement,
   createEditor,
   DecoratorNode,
   isHTMLElement,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 const InlineImageComponent = React.lazy(() => import('./InlineImageComponent'));
 
@@ -72,6 +75,10 @@ export type SerializedInlineImageNode = Spread<
   },
   SerializedLexicalNode
 >;
+
+function getPositionClass(position: Position | undefined): string | undefined {
+  return typeof position === 'string' ? `position-${position}` : undefined;
+}
 
 export class InlineImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
@@ -235,9 +242,13 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
 
   createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement('span');
-    const className = `${config.theme.inlineImage} position-${this.__position}`;
-    if (className !== undefined) {
-      span.className = className;
+    for (const cls of [
+      config.theme.inlineImage,
+      getPositionClass(this.__position),
+    ]) {
+      if (cls) {
+        addClassNamesToElement(span, cls);
+      }
     }
     return span;
   }
@@ -245,28 +256,24 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): false {
     const position = this.__position;
     if (position !== prevNode.__position) {
-      const className = `${config.theme.inlineImage} position-${position}`;
-      if (className !== undefined) {
-        dom.className = className;
-      }
+      removeClassNamesFromElement(dom, getPositionClass(prevNode.__position));
+      addClassNamesToElement(dom, getPositionClass(position));
     }
     return false;
   }
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <InlineImageComponent
-          src={this.__src}
-          altText={this.__altText}
-          width={this.__width}
-          height={this.__height}
-          nodeKey={this.getKey()}
-          showCaption={this.__showCaption}
-          caption={this.__caption}
-          position={this.__position}
-        />
-      </Suspense>
+      <InlineImageComponent
+        src={this.__src}
+        altText={this.__altText}
+        width={this.__width}
+        height={this.__height}
+        nodeKey={this.getKey()}
+        showCaption={this.__showCaption}
+        caption={this.__caption}
+        position={this.__position}
+      />
     );
   }
 }

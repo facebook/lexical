@@ -26,9 +26,9 @@ import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnD
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
+import {CAN_USE_DOM} from '@lexical/utils';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
@@ -100,6 +100,7 @@ export default function Editor(): JSX.Element {
       tableHorizontalScroll,
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
+      listStrictIndent,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -199,7 +200,7 @@ export default function Editor(): JSX.Element {
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
-            <ListPlugin />
+            <ListPlugin hasStrictIndent={listStrictIndent} />
             <CheckListPlugin />
             <TablePlugin
               hasCellMerge={tableCellMerge}
@@ -223,10 +224,8 @@ export default function Editor(): JSX.Element {
             <CollapsiblePlugin />
             <PageBreakPlugin />
             <LayoutPlugin />
-            {floatingAnchorElem && !isSmallWidthViewport && (
+            {floatingAnchorElem && (
               <>
-                <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
-                <CodeActionMenuPlugin anchorElem={floatingAnchorElem} />
                 <FloatingLinkEditorPlugin
                   anchorElem={floatingAnchorElem}
                   isLinkEditMode={isLinkEditMode}
@@ -236,6 +235,12 @@ export default function Editor(): JSX.Element {
                   anchorElem={floatingAnchorElem}
                   cellMerge={true}
                 />
+              </>
+            )}
+            {floatingAnchorElem && !isSmallWidthViewport && (
+              <>
+                <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
+                <CodeActionMenuPlugin anchorElem={floatingAnchorElem} />
                 <TableHoverActionsPlugin anchorElem={floatingAnchorElem} />
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}

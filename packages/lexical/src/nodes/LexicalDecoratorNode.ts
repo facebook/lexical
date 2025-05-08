@@ -8,8 +8,8 @@
 
 import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
 import type {ElementNode} from './LexicalElementNode';
+import type {EditorConfig} from 'lexical';
 
-import {EditorConfig} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../LexicalNode';

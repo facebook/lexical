@@ -876,6 +876,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
             anchor.offset === 0 &&
             !$isRootNode(anchorNode)
           ) {
+            const prevNode = anchorNode.getPreviousSibling();
+            if (prevNode && prevNode.__type === 'link') {
+              return false;
+            }
             const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
             if (element.getIndent() > 0) {
               event.preventDefault();

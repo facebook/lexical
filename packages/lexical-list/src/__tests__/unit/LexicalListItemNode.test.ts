@@ -25,6 +25,7 @@ import {
   ListItemNode,
   ListNode,
 } from '../..';
+import {$handleIndent} from '../../formatList';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -1512,6 +1513,33 @@ describe('LexicalListItemNode tests', () => {
             </div>
           `,
         );
+      });
+    });
+
+    test('ListItemNode marker style inheritance on indent', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const listNode = $createListNode('bullet');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+
+        // Set marker style on listItem2
+        listItem2.setTextStyle('font-size: 19px;');
+
+        listNode.append(listItem1, listItem2);
+        root.append(listNode);
+
+        // Indent listItem2
+        $handleIndent(listItem2);
+
+        // Get the parent list item after indent
+        const parentListItem = listItem2.getParentOrThrow().getParentOrThrow();
+        expect($isListItemNode(parentListItem)).toBe(true);
+
+        // Check if marker style was inherited
+        expect(parentListItem.getTextStyle()).toBe('font-size: 19px;');
       });
     });
   });

@@ -32,7 +32,7 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
-import {HISTORY_MERGE_TAG} from './LexicalUpdateTags';
+import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
@@ -103,7 +103,7 @@ export type EditorUpdateOptions = {
    * A tag to identify this update, in an update listener, for instance.
    * See also {@link $addUpdateTag}.
    */
-  tag?: string | Array<string>;
+  tag?: UpdateTag | UpdateTag[];
   /**
    * If true, prevents this update from being batched, forcing it to
    * run synchronously.
@@ -286,7 +286,10 @@ export interface UpdateListenerPayload {
    * The Map of LexicalNode constructors to a `Map<NodeKey, NodeMutation>`,
    * this is useful when you have a mutation listener type use cases that
    * should apply to all or most nodes. Will be null if no DOM was mutated,
-   * such as when only the selection changed.
+   * such as when only the selection changed. Note that this will be empty
+   * unless at least one MutationListener is explicitly registered
+   * (any MutationListener is sufficient to compute the mutatedNodes Map
+   * for all nodes).
    *
    * Added in v0.28.0
    */
@@ -679,7 +682,7 @@ export class LexicalEditor {
   /** @internal */
   _normalizedNodes: Set<NodeKey>;
   /** @internal */
-  _updateTags: Set<string>;
+  _updateTags: Set<UpdateTag>;
   /** @internal */
   _observer: null | MutationObserver;
   /** @internal */
@@ -1335,7 +1338,7 @@ export class LexicalEditor {
             root.selectEnd();
           }
         }
-        $addUpdateTag('focus');
+        $addUpdateTag(FOCUS_TAG);
         $onUpdate(() => {
           rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {

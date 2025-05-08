@@ -35,6 +35,7 @@ import {
   insertSampleImage,
   pasteFromClipboard,
   repeat,
+  SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromColorPicker,
   selectFromFormatDropdown,
@@ -198,7 +199,7 @@ test.describe.parallel('Nested List', () => {
                     <img
                       alt="Yellow flower in tilt shift lens"
                       draggable="false"
-                      src="/src/images/yellow-flower.jpg"
+                      src="${SAMPLE_IMAGE_URL}"
                       style="height: inherit; max-width: 500px; width: inherit" />
                   </div>
                 </span>

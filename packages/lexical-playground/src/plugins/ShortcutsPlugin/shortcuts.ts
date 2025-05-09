@@ -29,9 +29,9 @@ export const SHORTCUTS = Object.freeze({
   DECREASE_FONT_SIZE: IS_APPLE ? '⌘+Shift+,' : 'Ctrl+Shift+,',
   INSERT_CODE_BLOCK: IS_APPLE ? '⌘+Shift+C' : 'Ctrl+Shift+C',
   STRIKETHROUGH: IS_APPLE ? '⌘+Shift+S' : 'Ctrl+Shift+S',
-  LOWERCASE: IS_APPLE ? '⌘+Shift+1' : 'Ctrl+Shift+1',
-  UPPERCASE: IS_APPLE ? '⌘+Shift+2' : 'Ctrl+Shift+2',
-  CAPITALIZE: IS_APPLE ? '⌘+Shift+3' : 'Ctrl+Shift+3',
+  LOWERCASE: IS_APPLE ? '⌃+Shift+1' : 'Ctrl+Shift+1',
+  UPPERCASE: IS_APPLE ? '⌃+Shift+2' : 'Ctrl+Shift+2',
+  CAPITALIZE: IS_APPLE ? '⌃+Shift+3' : 'Ctrl+Shift+3',
   CENTER_ALIGN: IS_APPLE ? '⌘+Shift+E' : 'Ctrl+Shift+E',
   JUSTIFY_ALIGN: IS_APPLE ? '⌘+Shift+J' : 'Ctrl+Shift+J',
   LEFT_ALIGN: IS_APPLE ? '⌘+Shift+L' : 'Ctrl+Shift+L',
@@ -116,7 +116,7 @@ export function isLowercase(event: KeyboardEvent): boolean {
   const {code} = event;
   return (
     (code === 'Numpad1' || code === 'Digit1') &&
-    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
+    isModifierMatch(event, {ctrlKey: true, shiftKey: true})
   );
 }
 
@@ -124,7 +124,7 @@ export function isUppercase(event: KeyboardEvent): boolean {
   const {code} = event;
   return (
     (code === 'Numpad2' || code === 'Digit2') &&
-    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
+    isModifierMatch(event, {ctrlKey: true, shiftKey: true})
   );
 }
 
@@ -132,7 +132,7 @@ export function isCapitalize(event: KeyboardEvent): boolean {
   const {code} = event;
   return (
     (code === 'Numpad3' || code === 'Digit3') &&
-    isModifierMatch(event, {...CONTROL_OR_META, shiftKey: true})
+    isModifierMatch(event, {ctrlKey: true, shiftKey: true})
   );
 }
 

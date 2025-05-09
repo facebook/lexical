@@ -6,7 +6,12 @@
  *
  */
 
-import type {JSX} from 'react';
+/** @jsxRuntime classic */
+/** @jsx jsx */
+/** @jsxFrag React.Fragment */
+import {jsx} from 'theme-ui';
+import type {JSX, Dispatch, KeyboardEvent} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import {
   $isCodeNode,
@@ -53,9 +58,9 @@ import {
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
+  $addUpdateTag,
+  SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useState} from 'react';
-import * as React from 'react';
 
 import {
   blockTypeToBlockName,
@@ -469,6 +474,24 @@ function ElementFormatDropdown({
   );
 }
 
+const handleToolbarButtonKeyDown = (
+  e: KeyboardEvent<HTMLButtonElement>,
+  callback: () => void,
+) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    e.stopPropagation();
+    callback();
+  }
+};
+
+const handleToolbarButtonClick = (callback: () => void) => {
+  activeEditor.update(() => {
+    $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+    callback();
+  });
+};
+
 export default function ToolbarPlugin({
   editor,
   activeEditor,
@@ -808,7 +831,20 @@ export default function ToolbarPlugin({
           <button
             disabled={!isEditable}
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+              activeEditor.update(() => {
+                $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+              });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+                });
+              }
             }}
             className={
               'toolbar-item spaced ' + (toolbarState.isBold ? 'active' : '')
@@ -821,45 +857,107 @@ export default function ToolbarPlugin({
           <button
             disabled={!isEditable}
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+              activeEditor.update(() => {
+                $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+              });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+                });
+              }
             }}
             className={
               'toolbar-item spaced ' + (toolbarState.isItalic ? 'active' : '')
             }
             title={`Italic (${SHORTCUTS.ITALIC})`}
             type="button"
-            aria-label={`Format text as italics. Shortcut: ${SHORTCUTS.ITALIC}`}>
+            aria-label={`Format text as italic. Shortcut: ${SHORTCUTS.ITALIC}`}>
             <i className="format italic" />
           </button>
           <button
             disabled={!isEditable}
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+              activeEditor.update(() => {
+                $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+              });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+                });
+              }
             }}
             className={
-              'toolbar-item spaced ' +
-              (toolbarState.isUnderline ? 'active' : '')
+              'toolbar-item spaced ' + (toolbarState.isUnderline ? 'active' : '')
             }
             title={`Underline (${SHORTCUTS.UNDERLINE})`}
             type="button"
-            aria-label={`Format text to underlined. Shortcut: ${SHORTCUTS.UNDERLINE}`}>
+            aria-label={`Format text with an underline. Shortcut: ${SHORTCUTS.UNDERLINE}`}>
             <i className="format underline" />
           </button>
-          {canViewerSeeInsertCodeButton && (
-            <button
-              disabled={!isEditable}
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
-              }}
-              className={
-                'toolbar-item spaced ' + (toolbarState.isCode ? 'active' : '')
+          <button
+            disabled={!isEditable}
+            onClick={() => {
+              activeEditor.update(() => {
+                $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+              });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+                });
               }
-              title={`Insert code block (${SHORTCUTS.INSERT_CODE_BLOCK})`}
-              type="button"
-              aria-label="Insert code block">
-              <i className="format code" />
-            </button>
-          )}
+            }}
+            className={
+              'toolbar-item spaced ' + (toolbarState.isStrikethrough ? 'active' : '')
+            }
+            title={`Strikethrough (${SHORTCUTS.STRIKETHROUGH})`}
+            type="button"
+            aria-label={`Format text with a strikethrough. Shortcut: ${SHORTCUTS.STRIKETHROUGH}`}>
+            <i className="format strikethrough" />
+          </button>
+          <button
+            disabled={!isEditable}
+            onClick={() => {
+              activeEditor.update(() => {
+                $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+              });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+                });
+              }
+            }}
+            className={
+              'toolbar-item spaced ' + (toolbarState.isCode ? 'active' : '')
+            }
+            title={`Insert code block (${SHORTCUTS.CODE})`}
+            type="button"
+            aria-label={`Insert code block. Shortcut: ${SHORTCUTS.CODE}`}>
+            <i className="format code" />
+          </button>
           <button
             disabled={!isEditable}
             onClick={insertLink}
@@ -897,7 +995,10 @@ export default function ToolbarPlugin({
             buttonIconClassName="icon dropdown-more">
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
+                });
               }}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isLowercase)
@@ -912,7 +1013,10 @@ export default function ToolbarPlugin({
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
+                });
               }}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isUppercase)
@@ -927,7 +1031,10 @@ export default function ToolbarPlugin({
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
+                });
               }}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
@@ -942,25 +1049,10 @@ export default function ToolbarPlugin({
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(
-                  FORMAT_TEXT_COMMAND,
-                  'strikethrough',
-                );
-              }}
-              className={
-                'item wide ' + dropDownActiveClass(toolbarState.isStrikethrough)
-              }
-              title="Strikethrough"
-              aria-label="Format text with a strikethrough">
-              <div className="icon-text-container">
-                <i className="icon strikethrough" />
-                <span className="text">Strikethrough</span>
-              </div>
-              <span className="shortcut">{SHORTCUTS.STRIKETHROUGH}</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+                });
               }}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSubscript)
@@ -975,10 +1067,10 @@ export default function ToolbarPlugin({
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(
-                  FORMAT_TEXT_COMMAND,
-                  'superscript',
-                );
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
+                });
               }}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSuperscript)
@@ -993,7 +1085,10 @@ export default function ToolbarPlugin({
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'highlight');
+                activeEditor.update(() => {
+                  $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                  activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'highlight');
+                });
               }}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isHighlight)

@@ -35,7 +35,7 @@ import {startTransition} from 'shared/reactPatches';
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 
 export const PUNCTUATION =
-  '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
+  '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]\\\\/!%\'"~=<>:;';
 
 function getTextUpToAnchor(selection: RangeSelection): string | null {
   const anchor = selection.anchor;

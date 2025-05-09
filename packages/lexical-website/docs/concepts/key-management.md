@@ -49,13 +49,38 @@ node.__key = 'custom-key';
 
 ## How Lexical Uses Keys
 
+### Diagram
+
+The dotted outlines show nodes that are re-used in a zero-copy fashion from one EditorState to the next
+
 ```mermaid
-graph TD
-    A[EditorState] --> B[Node Map]
-    B -->|key1| C[Node 1]
-    B -->|key2| D[Node 2]
-    E[Update] -->|same key| F[New Version]
-    G[Create] -->|new key| H[New Node]
+graph TB
+  subgraph s0["Initial State"]
+    direction TB
+    m0["NodeMap (v0)"]
+    m0 -->|Key A| n0a["A (v0)"]
+    m0 -->|Key B| n0b["B (v0)"]
+  end
+  subgraph s1["Create Node C"]
+    direction TB
+    style n1a stroke-dasharray: 5 5
+    style n1b stroke-dasharray: 5 5
+    m1["NodeMap (v1)"]
+    m1 -->|Key A| n1a["A (v0)"]
+    m1 -->|Key B| n1b["B (v0)"]
+    m1 -->|Key C| n1c["C (v0)"]
+  end
+  subgraph s2["Update Node A"]
+    direction TB
+    style n2a stroke-dasharray: 5 0
+    style n2b stroke-dasharray: 5 5
+    style n2c stroke-dasharray: 5 5
+    m2["NodeMap (v1)"]
+    m2 -->|Key A| n2a["A (v1)"]
+    m2 -->|Key B| n2b["B (v0)"]
+    m2 -->|Key C| n2c["C (v0)"]
+  end
+  s0 -.-> s1 -.-> s2
 ```
 
 ### Node Map Structure

@@ -32,8 +32,10 @@ import {
   focusEditor,
   html,
   initialize,
+  insertSampleImage,
   pasteFromClipboard,
   repeat,
+  SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromColorPicker,
   selectFromFormatDropdown,
@@ -161,6 +163,74 @@ test.describe.parallel('Nested List', () => {
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul></li></ul>',
+    );
+  });
+
+  test('Should outdent if indented when the backspace key is pressed only at the front', async ({
+    page,
+  }) => {
+    // repro for #7514
+    await focusEditor(page);
+    await toggleBulletList(page);
+
+    await insertSampleImage(page);
+    await page.keyboard.type('x');
+    await moveLeft(page, 1);
+
+    await clickIndentButton(page, 1);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="1">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span
+                  class="editor-image"
+                  contenteditable="false"
+                  data-lexical-decorator="true">
+                  <div draggable="false">
+                    <img
+                      alt="Yellow flower in tilt shift lens"
+                      draggable="false"
+                      src="${SAMPLE_IMAGE_URL}"
+                      style="height: inherit; max-width: 500px; width: inherit" />
+                  </div>
+                </span>
+                <span data-lexical-text="true">x</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="1">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">x</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
     );
   });
 

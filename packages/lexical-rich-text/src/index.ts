@@ -549,6 +549,27 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
   return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
 }
 
+function $isSelectionCollapsedAtFrontOfIndentedBlock(
+  selection: RangeSelection,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const {anchor} = selection;
+  if (anchor.offset !== 0) {
+    return false;
+  }
+  const anchorNode = anchor.getNode();
+  if ($isRootNode(anchorNode)) {
+    return false;
+  }
+  const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
+  return (
+    element.getIndent() > 0 &&
+    (element.is(anchorNode) || anchorNode.is(element.getFirstDescendant()))
+  );
+}
+
 /**
  * Resets the capitalization of the selection to default.
  * Called when the user presses space, tab, or enter key.
@@ -868,21 +889,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
-          const {anchor} = selection;
-          const anchorNode = anchor.getNode();
-
-          if (
-            selection.isCollapsed() &&
-            anchor.offset === 0 &&
-            !$isRootNode(anchorNode)
-          ) {
-            const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
-            if (element.getIndent() > 0) {
-              event.preventDefault();
-              return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
-            }
+          if ($isSelectionCollapsedAtFrontOfIndentedBlock(selection)) {
+            event.preventDefault();
+            return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
-
           // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
           // more details - https://github.com/facebook/lexical/issues/5841
           if (IS_IOS && navigator.language === 'ko-KR') {

@@ -51,3 +51,24 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
  * This is useful when you want to make updates without changing the selection or focus
  */
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
+
+/**
+ * The update was triggered by editor.focus()
+ */
+export const FOCUS_TAG = 'focus';
+
+/**
+ * The set of known update tags to help with TypeScript suggestions.
+ */
+export type UpdateTag =
+  | typeof COLLABORATION_TAG
+  | typeof FOCUS_TAG
+  | typeof HISTORIC_TAG
+  | typeof HISTORY_MERGE_TAG
+  | typeof HISTORY_PUSH_TAG
+  | typeof PASTE_TAG
+  | typeof SKIP_COLLAB_TAG
+  | typeof SKIP_DOM_SELECTION_TAG
+  | typeof SKIP_SCROLL_INTO_VIEW_TAG
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {});

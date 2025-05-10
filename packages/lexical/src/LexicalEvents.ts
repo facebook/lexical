@@ -357,8 +357,8 @@ function onSelectionChange(
         const currentTimeStamp = windowEvent
           ? windowEvent.timeStamp
           : performance.now();
-        const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
-          collapsedSelectionFormat;
+        let [lastFormat, lastStyle, , ,] = collapsedSelectionFormat;
+        const [, , lastOffset, lastKey, timeStamp] = collapsedSelectionFormat;
 
         const root = $getRoot();
         const isRootTextContentEmpty =
@@ -369,6 +369,11 @@ function onSelectionChange(
           anchor.offset === lastOffset &&
           anchor.key === lastKey
         ) {
+          const lastNode = selection.getNodes().pop();
+          if ($isTextNode(lastNode)) {
+            lastFormat = lastNode.getFormat();
+            lastStyle = lastNode.getStyle();
+          }
           $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
         } else {
           if (anchor.type === 'text') {

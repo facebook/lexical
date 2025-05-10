@@ -228,19 +228,19 @@ pre::-webkit-scrollbar-thumb {
 }
 
 #options-button::after {
-  background-image: url(images/icons/gear.svg);
+  background-image: url(images/icons/gear.svg) !important;
 }
 
 #test-recorder-button::after {
-  background-image: url(images/icons/journal-code.svg);
+  background-image: url(images/icons/journal-code.svg) !important;
 }
 
 #paste-log-button::after {
-  background-image: url(images/icons/clipboard.svg);
+  background-image: url(images/icons/clipboard.svg) !important;
 }
 
 #docs-button::after {
-  background-image: url(images/icons/file-earmark-text.svg);
+  background-image: url(images/icons/file-earmark-text.svg) !important;
 }
 
 #test-recorder-button-snapshot {
@@ -248,15 +248,15 @@ pre::-webkit-scrollbar-thumb {
 }
 
 #test-recorder-button-snapshot::after {
-  background-image: url(images/icons/camera.svg);
+  background-image: url(images/icons/camera.svg) !important;
 }
 
 #test-recorder-button-copy::after {
-  background-image: url(images/icons/clipboard.svg);
+  background-image: url(images/icons/clipboard.svg) !important;
 }
 
 #test-recorder-button-download::after {
-  background-image: url(images/icons/download.svg);
+  background-image: url(images/icons/download.svg) !important;
 }
 
 .typeahead-popover {
@@ -355,6 +355,37 @@ pre::-webkit-scrollbar-thumb {
   width: 200px;
 }
 
+.floating-component-picker-menu {
+  min-width: 160px;
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  height: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  position: absolute;
+  top: -16px;
+  right: 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.floating-component-picker-menu li {
+  padding: 4px 8px;
+  font-size: 12px;
+  display: flex;
+}
+
+.floating-component-picker-menu li:hover {
+  background-color: #eee;
+  cursor: pointer;
+}
+
+.floating-component-picker-menu li .icon {
+  margin-right: 4px;
+}
+
 .mentions-menu {
   width: 250px;
 }
@@ -368,97 +399,97 @@ pre::-webkit-scrollbar-thumb {
 }
 
 i.palette {
-  background-image: url(images/icons/palette.svg);
+  background-image: url(images/icons/palette.svg) !important;
 }
 
 i.bucket {
-  background-image: url(images/icons/paint-bucket.svg);
+  background-image: url(images/icons/paint-bucket.svg) !important;
 }
 
 i.bold {
-  background-image: url(images/icons/type-bold.svg);
+  background-image: url(images/icons/type-bold.svg) !important;
 }
 
 i.italic {
-  background-image: url(images/icons/type-italic.svg);
+  background-image: url(images/icons/type-italic.svg) !important;
 }
 
 i.clear {
-  background-image: url(images/icons/trash.svg);
+  background-image: url(images/icons/trash.svg) !important;
 }
 
 i.code {
-  background-image: url(images/icons/code.svg);
+  background-image: url(images/icons/code.svg) !important;
 }
 
 i.underline {
-  background-image: url(images/icons/type-underline.svg);
+  background-image: url(images/icons/type-underline.svg) !important;
 }
 
 i.uppercase {
-  background-image: url(images/icons/type-uppercase.svg);
+  background-image: url(images/icons/type-uppercase.svg) !important;
 }
 
 i.lowercase {
-  background-image: url(images/icons/type-lowercase.svg);
+  background-image: url(images/icons/type-lowercase.svg) !important;
 }
 
 i.capitalize {
-  background-image: url(images/icons/type-capitalize.svg);
+  background-image: url(images/icons/type-capitalize.svg) !important;
 }
 
 i.strikethrough {
-  background-image: url(images/icons/type-strikethrough.svg);
+  background-image: url(images/icons/type-strikethrough.svg) !important;
 }
 
 i.subscript {
-  background-image: url(images/icons/type-subscript.svg);
+  background-image: url(images/icons/type-subscript.svg) !important;
 }
 
 i.superscript {
-  background-image: url(images/icons/type-superscript.svg);
+  background-image: url(images/icons/type-superscript.svg) !important;
 }
 
 i.highlight {
-  background-image: url(images/icons/highlighter.svg);
+  background-image: url(images/icons/highlighter.svg) !important;
 }
 
 i.link {
-  background-image: url(images/icons/link.svg);
+  background-image: url(images/icons/link.svg) !important;
 }
 
 i.horizontal-rule {
-  background-image: url(images/icons/horizontal-rule.svg);
+  background-image: url(images/icons/horizontal-rule.svg) !important;
 }
 
 .icon.plus {
-  background-image: url(images/icons/plus.svg);
+  background-image: url(images/icons/plus.svg) !important;
 }
 
 .icon.caret-right {
-  background-image: url(images/icons/caret-right-fill.svg);
+  background-image: url(images/icons/caret-right-fill.svg) !important;
 }
 
 .icon.dropdown-more {
-  background-image: url(images/icons/dropdown-more.svg);
+  background-image: url(images/icons/dropdown-more.svg) !important;
 }
 
 .icon.font-color {
-  background-image: url(images/icons/font-color.svg);
+  background-image: url(images/icons/font-color.svg) !important;
 }
 
 .icon.font-family {
-  background-image: url(images/icons/font-family.svg);
+  background-image: url(images/icons/font-family.svg) !important;
 }
 
 .icon.bg-color {
-  background-image: url(images/icons/bg-color.svg);
+  background-image: url(images/icons/bg-color.svg) !important;
 }
 
 .icon.table {
   background-color: #6c757d;
-  mask-image: url(images/icons/table.svg);
-  -webkit-mask-image: url(images/icons/table.svg);
+  mask-image: url(images/icons/table.svg) !important;
+  -webkit-mask-image: url(images/icons/table.svg) !important;
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-size: contain;
@@ -466,147 +497,147 @@ i.horizontal-rule {
 }
 
 i.image {
-  background-image: url(images/icons/file-image.svg);
+  background-image: url(images/icons/file-image.svg) !important;
 }
 
 i.table {
-  background-image: url(images/icons/table.svg);
+  background-image: url(images/icons/table.svg) !important;
 }
 
 i.close {
-  background-image: url(images/icons/close.svg);
+  background-image: url(images/icons/close.svg) !important;
 }
 
 i.figma {
-  background-image: url(images/icons/figma.svg);
+  background-image: url(images/icons/figma.svg) !important;
 }
 
 i.poll {
-  background-image: url(images/icons/card-checklist.svg);
+  background-image: url(images/icons/card-checklist.svg) !important;
 }
 
 i.columns {
-  background-image: url(images/icons/3-columns.svg);
+  background-image: url(images/icons/3-columns.svg) !important;
 }
 
 i.x {
-  background-image: url(images/icons/x.svg);
+  background-image: url(images/icons/x.svg) !important;
 }
 
 i.youtube {
-  background-image: url(images/icons/youtube.svg);
+  background-image: url(images/icons/youtube.svg) !important;
 }
 
 .icon.left-align,
 i.left-align {
-  background-image: url(images/icons/text-left.svg);
+  background-image: url(images/icons/text-left.svg) !important;
 }
 
 .icon.center-align,
 i.center-align {
-  background-image: url(images/icons/text-center.svg);
+  background-image: url(images/icons/text-center.svg) !important;
 }
 
 .icon.right-align,
 i.right-align {
-  background-image: url(images/icons/text-right.svg);
+  background-image: url(images/icons/text-right.svg) !important;
 }
 
 .icon.justify-align,
 i.justify-align {
-  background-image: url(images/icons/justify.svg);
+  background-image: url(images/icons/justify.svg) !important;
 }
 
 .icon.vertical-top,
 i.left-align {
-  background-image: url(images/icons/vertical-top.svg);
+  background-image: url(images/icons/vertical-top.svg) !important;
 }
 
 .icon.vertical-middle,
 i.center-align {
-  background-image: url(images/icons/vertical-middle.svg);
+  background-image: url(images/icons/vertical-middle.svg) !important;
 }
 
 .icon.vertical-bottom,
 i.right-align {
-  background-image: url(images/icons/vertical-bottom.svg);
+  background-image: url(images/icons/vertical-bottom.svg) !important;
 }
 
 i.indent {
-  background-image: url(images/icons/indent.svg);
+  background-image: url(images/icons/indent.svg) !important;
 }
 
 i.markdown {
-  background-image: url(images/icons/markdown.svg);
+  background-image: url(images/icons/markdown.svg) !important;
 }
 
 i.outdent {
-  background-image: url(images/icons/outdent.svg);
+  background-image: url(images/icons/outdent.svg) !important;
 }
 
 i.undo {
-  background-image: url(images/icons/arrow-counterclockwise.svg);
+  background-image: url(images/icons/arrow-counterclockwise.svg) !important;
 }
 
 i.redo {
-  background-image: url(images/icons/arrow-clockwise.svg);
+  background-image: url(images/icons/arrow-clockwise.svg) !important;
 }
 
 i.sticky {
-  background-image: url(images/icons/sticky.svg);
+  background-image: url(images/icons/sticky.svg) !important;
 }
 
 i.mic {
-  background-image: url(images/icons/mic.svg);
+  background-image: url(images/icons/mic.svg) !important;
 }
 
 i.import {
-  background-image: url(images/icons/upload.svg);
+  background-image: url(images/icons/upload.svg) !important;
 }
 
 i.export {
-  background-image: url(images/icons/download.svg);
+  background-image: url(images/icons/download.svg) !important;
 }
 
 i.share {
-  background-image: url(images/icons/send.svg);
+  background-image: url(images/icons/send.svg) !important;
 }
 
 i.diagram-2 {
-  background-image: url(images/icons/diagram-2.svg);
+  background-image: url(images/icons/diagram-2.svg) !important;
 }
 
 i.user {
-  background-image: url(images/icons/user.svg);
+  background-image: url(images/icons/user.svg) !important;
 }
 
 i.equation {
-  background-image: url(images/icons/plus-slash-minus.svg);
+  background-image: url(images/icons/plus-slash-minus.svg) !important;
 }
 
 i.gif {
-  background-image: url(images/icons/filetype-gif.svg);
+  background-image: url(images/icons/filetype-gif.svg) !important;
 }
 
 i.copy {
-  background-image: url(images/icons/copy.svg);
+  background-image: url(images/icons/copy.svg) !important;
 }
 
 i.success {
-  background-image: url(images/icons/success.svg);
+  background-image: url(images/icons/success.svg) !important;
 }
 
 i.prettier {
-  background-image: url(images/icons/prettier.svg);
+  background-image: url(images/icons/prettier.svg) !important;
 }
 
 i.prettier-error {
-  background-image: url(images/icons/prettier-error.svg);
+  background-image: url(images/icons/prettier-error.svg) !important;
 }
 
 i.page-break,
 .icon.page-break {
-  background-image: url(images/icons/scissors.svg);
+  background-image: url(images/icons/scissors.svg) !important;
 }
 
 .link-editor .button.active,
@@ -651,7 +682,7 @@ i.page-break,
 }
 
 .link-editor div.link-edit {
-  background-image: url(images/icons/pencil-fill.svg);
+  background-image: url(images/icons/pencil-fill.svg) !important;
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -665,7 +696,7 @@ i.page-break,
 }
 
 .link-editor div.link-trash {
-  background-image: url(images/icons/trash.svg);
+  background-image: url(images/icons/trash.svg) !important;
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -679,7 +710,7 @@ i.page-break,
 }
 
 .link-editor div.link-cancel {
-  background-image: url(images/icons/close.svg);
+  background-image: url(images/icons/close.svg) !important;
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -694,7 +725,7 @@ i.page-break,
 }
 
 .link-editor div.link-confirm {
-  background-image: url(images/icons/success-alt.svg);
+  background-image: url(images/icons/success-alt.svg) !important;
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -865,54 +896,54 @@ i.page-break,
 }
 
 .icon.paragraph {
-  background-image: url(images/icons/text-paragraph.svg);
+  background-image: url(images/icons/text-paragraph.svg) !important;
 }
 
 .icon.h1 {
-  background-image: url(images/icons/type-h1.svg);
+  background-image: url(images/icons/type-h1.svg) !important;
 }
 
 .icon.h2 {
-  background-image: url(images/icons/type-h2.svg);
+  background-image: url(images/icons/type-h2.svg) !important;
 }
 
 .icon.h3 {
-  background-image: url(images/icons/type-h3.svg);
+  background-image: url(images/icons/type-h3.svg) !important;
 }
 
 .icon.h4 {
-  background-image: url(images/icons/type-h4.svg);
+  background-image: url(images/icons/type-h4.svg) !important;
 }
 
 .icon.h5 {
-  background-image: url(images/icons/type-h5.svg);
+  background-image: url(images/icons/type-h5.svg) !important;
 }
 
 .icon.h6 {
-  background-image: url(images/icons/type-h6.svg);
+  background-image: url(images/icons/type-h6.svg) !important;
 }
 
 .icon.bullet-list,
 .icon.bullet {
-  background-image: url(images/icons/list-ul.svg);
+  background-image: url(images/icons/list-ul.svg) !important;
 }
 
 .icon.check-list,
 .icon.check {
-  background-image: url(images/icons/square-check.svg);
+  background-image: url(images/icons/square-check.svg) !important;
 }
 
 .icon.numbered-list,
 .icon.number {
-  background-image: url(images/icons/list-ol.svg);
+  background-image: url(images/icons/list-ol.svg) !important;
 }
 
 .icon.quote {
-  background-image: url(images/icons/chat-square-quote.svg);
+  background-image: url(images/icons/chat-square-quote.svg) !important;
 }
 
 .icon.code {
-  background-image: url(images/icons/code.svg);
+  background-image: url(images/icons/code.svg) !important;
 }
 
 .switches {
@@ -1070,7 +1101,7 @@ i.page-break,
 .editor-shell .editor-image .image-edit-button {
   border: 1px solid rgba(0, 0, 0, 0.3);
   border-radius: 5px;
-  background-image: url(/src/images/icons/pencil-fill.svg);
+  background-image: url(/src/images/icons/pencil-fill.svg) !important;
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -1285,51 +1316,51 @@ i.page-break,
 }
 
 .actions i.indent {
-  background-image: url(images/icons/indent.svg);
+  background-image: url(images/icons/indent.svg) !important;
 }
 
 .actions i.outdent {
-  background-image: url(images/icons/outdent.svg);
+  background-image: url(images/icons/outdent.svg) !important;
 }
 
 .actions i.lock {
-  background-image: url(images/icons/lock-fill.svg);
+  background-image: url(images/icons/lock-fill.svg) !important;
 }
 
 .actions i.image {
-  background-image: url(images/icons/file-image.svg);
+  background-image: url(images/icons/file-image.svg) !important;
 }
 
 .actions i.table {
-  background-image: url(images/icons/table.svg);
+  background-image: url(images/icons/table.svg) !important;
 }
 
 .actions i.unlock {
-  background-image: url(images/icons/lock.svg);
+  background-image: url(images/icons/lock.svg) !important;
 }
 
 .actions i.left-align {
-  background-image: url(images/icons/text-left.svg);
+  background-image: url(images/icons/text-left.svg) !important;
 }
 
 .actions i.center-align {
-  background-image: url(images/icons/text-center.svg);
+  background-image: url(images/icons/text-center.svg) !important;
 }
 
 .actions i.right-align {
-  background-image: url(images/icons/text-right.svg);
+  background-image: url(images/icons/text-right.svg) !important;
 }
 
 .actions i.justify-align {
-  background-image: url(images/icons/justify.svg);
+  background-image: url(images/icons/justify.svg) !important;
 }
 
 .actions i.disconnect {
-  background-image: url(images/icons/plug.svg);
+  background-image: url(images/icons/plug.svg) !important;
 }
 
 .actions i.connect {
-  background-image: url(images/icons/plug-fill.svg);
+  background-image: url(images/icons/plug-fill.svg) !important;
 }
 
 .table-cell-action-button-container {
@@ -1368,7 +1399,7 @@ i.chevron-down {
   display: inline-block;
   height: 8px;
   width: 8px;
-  background-image: url(images/icons/chevron-down.svg);
+  background-image: url(images/icons/chevron-down.svg) !important;
 }
 
 .action-button {

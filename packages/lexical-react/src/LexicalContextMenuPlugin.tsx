@@ -5,168 +5,316 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
-import type {JSX} from 'react';
 
+import {
+  autoUpdate,
+  flip,
+  FloatingFocusManager,
+  FloatingOverlay,
+  FloatingPortal,
+  offset,
+  shift,
+  useDismiss,
+  useFloating,
+  useInteractions,
+  useListNavigation,
+  useRole,
+  useTypeahead,
+} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {calculateZoomLevel} from '@lexical/utils';
-import {
-  COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
-  isDOMNode,
-  LexicalNode,
-} from 'lexical';
-import {
-  MutableRefObject,
-  ReactPortal,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
-import * as React from 'react';
+import {$getNearestNodeFromDOMNode, LexicalNode} from 'lexical';
+import {forwardRef, MutableRefObject, useEffect, useRef, useState} from 'react';
 
-import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
+class MenuOption {
+  key: string;
+  ref?: MutableRefObject<HTMLElement | null>;
 
-export type ContextMenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
-  itemProps: {
-    selectedIndex: number | null;
-    selectOptionAndCleanUp: (option: TOption) => void;
-    setHighlightedIndex: (index: number) => void;
-    options: Array<TOption>;
-  },
-  menuProps: {
-    setMenuRef: (element: HTMLElement | null) => void;
-  },
-) => ReactPortal | JSX.Element | null;
+  constructor(key: string) {
+    this.key = key;
+    this.ref = {current: null};
+    this.setRefElement = this.setRefElement.bind(this);
+  }
 
-export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
-  onSelectOption: (
-    option: TOption,
-    textNodeContainingQuery: LexicalNode | null,
-    closeMenu: () => void,
-    matchingString: string,
-  ) => void;
-  options: Array<TOption>;
-  onClose?: () => void;
-  onWillOpen?: (event: MouseEvent) => void;
-  onOpen?: (resolution: MenuResolution) => void;
-  menuRenderFn: ContextMenuRenderFn<TOption>;
-  anchorClassName?: string;
-  commandPriority?: CommandListenerPriority;
-  parent?: HTMLElement;
-};
-
-const PRE_PORTAL_DIV_SIZE = 1;
-
-export function LexicalContextMenuPlugin<TOption extends MenuOption>({
-  options,
-  onWillOpen,
-  onClose,
-  onOpen,
-  onSelectOption,
-  menuRenderFn: contextMenuRenderFn,
-  anchorClassName,
-  commandPriority = COMMAND_PRIORITY_LOW,
-  parent,
-}: LexicalContextMenuPluginProps<TOption>): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
-  const [resolution, setResolution] = useState<MenuResolution | null>(null);
-  const menuRef = React.useRef<HTMLElement | null>(null);
-
-  const anchorElementRef = useMenuAnchorRef(
-    resolution,
-    setResolution,
-    anchorClassName,
-    parent,
-  );
-
-  const closeNodeMenu = useCallback(() => {
-    setResolution(null);
-    if (onClose != null && resolution !== null) {
-      onClose();
-    }
-  }, [onClose, resolution]);
-
-  const openNodeMenu = useCallback(
-    (res: MenuResolution) => {
-      setResolution(res);
-      if (onOpen != null && resolution === null) {
-        onOpen(res);
-      }
-    },
-    [onOpen, resolution],
-  );
-
-  const handleContextMenu = useCallback(
-    (event: MouseEvent) => {
-      event.preventDefault();
-      if (onWillOpen != null) {
-        onWillOpen(event);
-      }
-      const zoom = calculateZoomLevel(event.target as Element);
-      openNodeMenu({
-        getRect: () =>
-          new DOMRect(
-            event.clientX / zoom,
-            event.clientY / zoom,
-            PRE_PORTAL_DIV_SIZE,
-            PRE_PORTAL_DIV_SIZE,
-          ),
-      });
-    },
-    [openNodeMenu, onWillOpen],
-  );
-
-  const handleClick = useCallback(
-    (event: MouseEvent) => {
-      if (
-        resolution !== null &&
-        menuRef.current != null &&
-        event.target != null &&
-        isDOMNode(event.target) &&
-        !menuRef.current.contains(event.target)
-      ) {
-        closeNodeMenu();
-      }
-    },
-    [closeNodeMenu, resolution],
-  );
-
-  useEffect(() => {
-    const editorElement = editor.getRootElement();
-    if (editorElement) {
-      editorElement.addEventListener('contextmenu', handleContextMenu);
-      return () =>
-        editorElement.removeEventListener('contextmenu', handleContextMenu);
-    }
-  }, [editor, handleContextMenu]);
-
-  useEffect(() => {
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, [editor, handleClick]);
-
-  return anchorElementRef.current === null ||
-    resolution === null ||
-    editor === null ? null : (
-    <LexicalMenu
-      close={closeNodeMenu}
-      resolution={resolution}
-      editor={editor}
-      anchorElementRef={anchorElementRef}
-      options={options}
-      menuRenderFn={(anchorRef, itemProps) =>
-        contextMenuRenderFn(anchorRef, itemProps, {
-          setMenuRef: (ref) => {
-            menuRef.current = ref;
-          },
-        })
-      }
-      onSelectOption={onSelectOption}
-      commandPriority={commandPriority}
-    />
-  );
+  setRefElement(element: HTMLElement | null) {
+    this.ref = {current: element};
+  }
 }
 
-export {MenuOption, MenuRenderFn, MenuResolution};
+class ContextMenuOption extends MenuOption {
+  type: string;
+  title: string;
+  disabled: boolean;
+  $onSelect: () => void;
+  $showOn?: (node: LexicalNode) => boolean;
+
+  constructor(
+    title: string,
+    options: {
+      disabled?: boolean;
+      $onSelect: () => void;
+      $showOn?: (node: LexicalNode) => boolean;
+    },
+  ) {
+    super(title);
+    this.type = 'item';
+    this.title = title;
+    this.disabled = options.disabled ?? false;
+    this.$onSelect = options.$onSelect;
+    if (options.$showOn) {
+      this.$showOn = options.$showOn;
+    }
+  }
+}
+
+class ContextMenuSeparator extends MenuOption {
+  type: string;
+  $showOn?: (node: LexicalNode) => boolean;
+
+  constructor(options?: {$showOn?: (node: LexicalNode) => boolean}) {
+    super('_separator');
+    this.type = 'separator';
+    if (options && options.$showOn) {
+      this.$showOn = options.$showOn;
+    }
+  }
+}
+
+const ContextMenuSeparatorItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    disabled?: boolean;
+  }
+>(({className, disabled, ...props}, ref) => {
+  return <hr className={className} />;
+});
+
+const ContextMenuItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    label?: string;
+    disabled?: boolean;
+  }
+>(({className, label, disabled, ...props}, ref) => {
+  return (
+    <button
+      {...props}
+      className={className}
+      ref={ref}
+      role="menuitem"
+      disabled={disabled}>
+      {label}
+    </button>
+  );
+});
+
+type ContextMenuType = ContextMenuOption | ContextMenuSeparator;
+
+interface MenuSeparatorType {
+  className: string;
+  key: string;
+  type: string;
+}
+
+interface MenuItemType extends MenuSeparatorType {
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+  title: string;
+}
+
+type MenuType = MenuItemType | MenuSeparatorType;
+
+interface Props {
+  label?: string;
+  nested?: boolean;
+  itemClassName?: string;
+  separatorClassName?: string;
+  items: ContextMenuType[];
+}
+
+const ContextMenu = forwardRef<
+  HTMLButtonElement,
+  Props & React.HTMLProps<HTMLButtonElement>
+>(({items, className, itemClassName, separatorClassName}, forwardedRef) => {
+  const [editor] = useLexicalComposerContext();
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
+  const listContentRef = useRef<Array<string | null>>([]);
+  const allowMouseUpCloseRef = useRef(false);
+
+  const {refs, floatingStyles, context} = useFloating({
+    middleware: [
+      offset({alignmentAxis: 4, mainAxis: 5}),
+      flip({
+        fallbackPlacements: ['left-start'],
+      }),
+      shift({padding: 10}),
+    ],
+    onOpenChange: setIsOpen,
+    open: isOpen,
+    placement: 'right-start',
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+  });
+
+  const role = useRole(context, {role: 'menu'});
+  const dismiss = useDismiss(context);
+  const listNavigation = useListNavigation(context, {
+    activeIndex,
+    listRef: listItemsRef,
+    onNavigate: setActiveIndex,
+  });
+  const typeahead = useTypeahead(context, {
+    activeIndex,
+    enabled: isOpen,
+    listRef: listContentRef,
+    onMatch: setActiveIndex,
+  });
+
+  const {getFloatingProps, getItemProps} = useInteractions([
+    role,
+    dismiss,
+    listNavigation,
+    typeahead,
+  ]);
+
+  const [renderItems, setRenderItems] = useState<MenuType[]>([]);
+
+  useEffect(() => {
+    let timeout: number;
+
+    function onContextMenu(e: MouseEvent) {
+      e.preventDefault();
+
+      refs.setPositionReference({
+        getBoundingClientRect() {
+          return {
+            bottom: e.clientY,
+            height: 0,
+            left: e.clientX,
+            right: e.clientX,
+            top: e.clientY,
+            width: 0,
+            x: e.clientX,
+            y: e.clientY,
+          };
+        },
+      });
+
+      let visibleItems: ContextMenuType[] = [];
+      if (items) {
+        editor.read(() => {
+          const node = $getNearestNodeFromDOMNode(e.target as Element);
+          if (node) {
+            visibleItems = items!.filter((option) =>
+              option.$showOn ? option.$showOn(node) : true,
+            );
+          }
+        });
+      }
+
+      const renderableItems = visibleItems.map((option, index) => {
+        if (option.type === 'separator') {
+          return {
+            className: separatorClassName,
+            key: option.key + '-' + index,
+            type: option.type,
+          };
+        } else {
+          return {
+            className: itemClassName,
+            disabled: (option as ContextMenuOption).disabled,
+            key: option.key,
+            label: (option as ContextMenuOption).title,
+            onClick: () =>
+              editor.update(() => (option as ContextMenuOption).$onSelect()),
+            title: (option as ContextMenuOption).title,
+            type: option.type,
+          };
+        }
+      }) as MenuType[];
+
+      listContentRef.current = renderableItems.map((item) => item.key);
+
+      setRenderItems(renderableItems);
+
+      setIsOpen(true);
+      clearTimeout(timeout);
+
+      allowMouseUpCloseRef.current = false;
+      timeout = window.setTimeout(() => {
+        allowMouseUpCloseRef.current = true;
+      }, 300);
+    }
+
+    function onMouseUp() {
+      if (allowMouseUpCloseRef.current) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('contextmenu', onContextMenu);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('contextmenu', onContextMenu);
+      document.removeEventListener('mouseup', onMouseUp);
+      clearTimeout(timeout);
+    };
+  }, [items, itemClassName, separatorClassName, refs, editor]);
+
+  return (
+    <FloatingPortal>
+      {isOpen && (
+        <FloatingOverlay lockScroll={true}>
+          <FloatingFocusManager context={context} initialFocus={refs.floating}>
+            <div
+              className={className}
+              ref={refs.setFloating}
+              style={floatingStyles}
+              {...getFloatingProps()}>
+              {renderItems.map((item, index) => {
+                if (item.type === 'item') {
+                  return (
+                    <ContextMenuItem
+                      {...getItemProps({
+                        ...item,
+                        onClick() {
+                          (item as MenuItemType).onClick();
+                          setIsOpen(false);
+                        },
+                        onMouseUp() {
+                          (item as MenuItemType).onClick();
+                          setIsOpen(false);
+                        },
+                        ref(node: HTMLButtonElement) {
+                          listItemsRef.current[index] = node;
+                        },
+                        tabIndex: activeIndex === index ? 0 : -1,
+                      })}
+                    />
+                  );
+                } else if (item.type === 'separator') {
+                  return (
+                    <ContextMenuSeparatorItem
+                      {...getItemProps({
+                        ...item,
+                        ref(node: HTMLButtonElement) {
+                          listItemsRef.current[index] = node;
+                        },
+                        tabIndex: activeIndex === index ? 0 : -1,
+                      })}
+                    />
+                  );
+                }
+              })}
+            </div>
+          </FloatingFocusManager>
+        </FloatingOverlay>
+      )}
+    </FloatingPortal>
+  );
+});
+
+export {ContextMenu, ContextMenuOption, ContextMenuSeparator};

@@ -8,7 +8,6 @@
 import type {Alias} from 'vite';
 
 import babel from '@rollup/plugin-babel';
-import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import * as path from 'path';
@@ -111,6 +110,12 @@ export default defineConfig({
     );
 
     return {
+      define: {
+        __DEV__: !isProd,
+        'process.env.LEXICAL_VERSION': JSON.stringify(
+          `${version}+${isProd ? 'prod' : 'dev'}.devtools`,
+        ),
+      },
       plugins: [
         babel({
           babelHelpers: 'bundled',
@@ -128,16 +133,6 @@ export default defineConfig({
             ],
           ],
           presets: [['@babel/preset-react', {runtime: 'automatic'}]],
-        }),
-        replace({
-          delimiters: ['', ''],
-          preventAssignment: true,
-          values: {
-            __DEV__: isProd ? 'false' : 'true',
-            'process.env.LEXICAL_VERSION': JSON.stringify(
-              `${version}+${isProd ? 'prod' : 'dev'}.devtools`,
-            ),
-          },
         }),
         react(),
       ],

@@ -148,11 +148,15 @@ export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
 
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
-  {minLength = 1, maxLength = 75}: {minLength?: number; maxLength?: number},
+  {
+    minLength = 1,
+    maxLength = 75,
+    punctuation = PUNCTUATION,
+  }: {minLength?: number; maxLength?: number; punctuation?: string},
 ): TriggerFn {
   return useCallback(
     (text: string) => {
-      const validChars = '[^' + trigger + PUNCTUATION + '\\s]';
+      const validChars = '[^' + trigger + punctuation + '\\s]';
       const TypeaheadTriggerRegex = new RegExp(
         '(^|\\s|\\()(' +
           '[' +
@@ -179,7 +183,7 @@ export function useBasicTypeaheadTriggerMatch(
       }
       return null;
     },
-    [maxLength, minLength, trigger],
+    [maxLength, minLength, trigger, punctuation],
   );
 }
 

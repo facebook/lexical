@@ -14,7 +14,7 @@ import {
   ContextMenu,
   ContextMenuOption,
   ContextMenuSeparator,
-} from '@lexical/react/LexicalContextMenuPlugin';
+} from '@lexical/react/LexicalNodeContextMenuPlugin';
 import {
   $getSelection,
   $isDecoratorNode,

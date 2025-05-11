@@ -7,6 +7,6 @@
  * @flow strict
  */
 
-/**
+/** @deprecated use LexicalNodeContextMenuPlugin instead */
  * LexicalContextMenuPlugin
  */

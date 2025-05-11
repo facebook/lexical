@@ -1,3 +1,16 @@
+## v0.31.1 (2025-05-11)
+
+- lexical-reactlexical-playground Bug Fix Make typeahead punctuation configurable allow underscores and dashes in emoji queries  (#7520) Kiran Dash
+- lexical-playground Bug Fix capitalize shortcut not working in macos fix (#7508) Harshkumar Metkel
+- lexical-rich-text Bug Fix Backspace should only dedent at first descendant of indented block (#7516) Bob Ippolito
+- lexicallexical-website Documentation Start on NodeState docs and examples (#7294) Bob Ippolito
+- lexical-playground Bug Fix LexicalTypeaheadMenuPlugin Positioning When Scrolled (#7506) AashishRichhariya
+- lexical-list Bug Fix Inherit marker styles when indenting list items (#7504) Kiran Dash
+- lexical-markdown Bug Fix Link Transformer URL Protocol Handling (#7499) AashishRichhariya
+- lexical-table Bug Fix Add missing DOM import for TableNode frozen rows and columns (#7498) Vadim Isakov
+- Monthly Release v0.31.0 (#7502) Yuncheng Lu
+- v0.31.0 Lexical GitHub Actions Bot
+
 ## v0.31.0 (2025-04-24)
 
 - lexical-reactlexical-table Bug Fix Re-render tables when the hasHorizontalScroll setting is changed (#7488) Bob Ippolito

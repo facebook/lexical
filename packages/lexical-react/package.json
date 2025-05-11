@@ -819,6 +819,36 @@
         "default": "./LexicalNestedComposer.js"
       }
     },
+    "./LexicalNodeContextMenuPlugin": {
+      "import": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.mjs",
+        "production": "./LexicalNodeContextMenuPlugin.prod.mjs",
+        "node": "./LexicalNodeContextMenuPlugin.node.mjs",
+        "default": "./LexicalNodeContextMenuPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.js",
+        "production": "./LexicalNodeContextMenuPlugin.prod.js",
+        "default": "./LexicalNodeContextMenuPlugin.js"
+      }
+    },
+    "./LexicalNodeContextMenuPlugin.js": {
+      "import": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.mjs",
+        "production": "./LexicalNodeContextMenuPlugin.prod.mjs",
+        "node": "./LexicalNodeContextMenuPlugin.node.mjs",
+        "default": "./LexicalNodeContextMenuPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.js",
+        "production": "./LexicalNodeContextMenuPlugin.prod.js",
+        "default": "./LexicalNodeContextMenuPlugin.js"
+      }
+    },
     "./LexicalNodeEventPlugin": {
       "import": {
         "types": "./LexicalNodeEventPlugin.d.ts",

@@ -64,6 +64,7 @@ module.name_mapper='^@lexical/react/LexicalLinkPlugin$' -> '<PROJECT_ROOT>/packa
 module.name_mapper='^@lexical/react/LexicalListPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalListPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalMarkdownShortcutPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMarkdownShortcutPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalNestedComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNestedComposer.js.flow'
+module.name_mapper='^@lexical/react/LexicalNodeContextMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeContextMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalNodeEventPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeEventPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalNodeMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'

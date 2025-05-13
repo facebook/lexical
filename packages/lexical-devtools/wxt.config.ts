@@ -121,7 +121,7 @@ export default defineConfig({
           babelHelpers: 'bundled',
           babelrc: false,
           configFile: false,
-          exclude: '/**/node_modules/**',
+          exclude: '**/node_modules/**',
           extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
           plugins: [
             '@babel/plugin-transform-flow-strip-types',

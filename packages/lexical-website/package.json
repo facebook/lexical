@@ -23,7 +23,7 @@
     "@mdx-js/react": "^3.0.1",
     "@radix-ui/react-tabs": "^1.0.4",
     "@vercel/analytics": "^1.0.1",
-    "docusaurus-plugin-internaldocs-fb": "1.19.0",
+    "docusaurus-plugin-internaldocs-fb": "1.19.2",
     "docusaurus-plugin-typedoc": "^0.22.0",
     "fs-extra": "^10.0.0",
     "mermaid": "^11.6.0",

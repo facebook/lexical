@@ -159,7 +159,9 @@ export class QuoteNode extends ElementNode {
       }
 
       const formatType = this.getFormatType();
-      element.style.textAlign = formatType;
+      if (formatType) {
+        element.style.textAlign = formatType;
+      }
 
       const direction = this.getDirection();
       if (direction) {
@@ -320,7 +322,9 @@ export class HeadingNode extends ElementNode {
       }
 
       const formatType = this.getFormatType();
-      element.style.textAlign = formatType;
+      if (formatType) {
+        element.style.textAlign = formatType;
+      }
 
       const direction = this.getDirection();
       if (direction) {

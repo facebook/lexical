@@ -547,7 +547,7 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 export const LINK: TextMatchTransformer = {
   dependencies: [LinkNode],
   export: (node, exportChildren, exportFormat) => {
-    if (!$isLinkNode(node) || !$isAutoLinkNode(node)) {
+    if (!$isLinkNode(node) || $isAutoLinkNode(node)) {
       return null;
     }
     const title = node.getTitle();

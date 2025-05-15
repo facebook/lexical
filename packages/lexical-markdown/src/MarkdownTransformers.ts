@@ -10,7 +10,12 @@ import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isAutoLinkNode,
+  $isLinkNode,
+  LinkNode,
+} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -542,7 +547,7 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 export const LINK: TextMatchTransformer = {
   dependencies: [LinkNode],
   export: (node, exportChildren, exportFormat) => {
-    if (!$isLinkNode(node)) {
+    if (!$isLinkNode(node) || !$isAutoLinkNode(node)) {
       return null;
     }
     const title = node.getTitle();

@@ -1,0 +1,68 @@
+.basic.tree {
+  list-style: none;
+  margin: 0;
+  padding: 20px;
+}
+.basic .tree-node,
+.basic .tree-node-group {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.basic .tree-branch-wrapper,
+.basic .tree-node__leaf {
+  outline: none;
+}
+
+.basic .tree-node--focused {
+  outline-color: #6a51b2;
+  outline-style: auto;
+  outline-width: 2px;
+  display: block;
+}
+
+.basic .tree-node__branch {
+  display: block;
+}
+
+.basic .tree-node {
+  cursor: pointer;
+}
+.basic .tree-node .arrow--open {
+  transform: rotate(90deg);
+}
+
+.basic .tree-node .arrow {
+  display: inline-block;
+  padding-top: 4px;
+}
+
+.collapsible-tree-view-container {
+  display: flex;
+  flex-direction: row;
+  max-height: 100%;
+  padding: 0;
+  font-size: 12px;
+  position: relative;
+  border-radius: 10px;
+}
+
+.collapsible-tree-view-container .collapsible-tree-view {
+  color: var(--chakra-colors-blue-600);
+  display: block;
+  max-height: calc(100vh - 200px);
+  overflow: scroll;
+}
+
+.collapsible-tree-view-container .collapsible-tree-view-details {
+  display: block;
+  overflow-y: scroll;
+  border-left: 1px solid var(--chakra-colors-chakra-border-color);
+}
+
+.collapsible-tree-view-container .collapsible-tree-view-details .detail-prop {
+  display: inline;
+  font-style: italic;
+  text-transform: capitalize;
+}

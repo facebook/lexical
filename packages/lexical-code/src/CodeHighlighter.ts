@@ -813,23 +813,32 @@ export function registerCodeHighlighting(
     tokenizer = PrismTokenizer;
   }
 
-  return mergeRegister(
-    editor.registerMutationListener(
-      CodeNode,
-      (mutations) => {
-        editor.update(() => {
-          for (const [key, type] of mutations) {
-            if (type !== 'destroyed') {
-              const node = $getNodeByKey(key);
-              if (node !== null) {
-                updateCodeGutter(node as CodeNode, editor);
+  const registrations = [];
+
+  // Only register the mutation listener if not in headless mode
+  if (editor._headless !== true) {
+    registrations.push(
+      editor.registerMutationListener(
+        CodeNode,
+        (mutations) => {
+          editor.update(() => {
+            for (const [key, type] of mutations) {
+              if (type !== 'destroyed') {
+                const node = $getNodeByKey(key);
+                if (node !== null) {
+                  updateCodeGutter(node as CodeNode, editor);
+                }
               }
             }
-          }
-        });
-      },
-      {skipInitialization: false},
-    ),
+          });
+        },
+        {skipInitialization: false},
+      ),
+    );
+  }
+
+  // Add the rest of the registrations
+  registrations.push(
     editor.registerNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
@@ -937,4 +946,6 @@ export function registerCodeHighlighting(
       COMMAND_PRIORITY_LOW,
     ),
   );
+
+  return mergeRegister(...registrations);
 }

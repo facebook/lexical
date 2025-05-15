@@ -173,11 +173,17 @@ export class ListItemNode extends ElementNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
-    element.style.textAlign = this.getFormatType();
+
+    const formatType = this.getFormatType();
+    if (formatType) {
+      element.style.textAlign = formatType;
+    }
+
     const direction = this.getDirection();
     if (direction) {
       element.dir = direction;
     }
+
     return {
       element,
     };

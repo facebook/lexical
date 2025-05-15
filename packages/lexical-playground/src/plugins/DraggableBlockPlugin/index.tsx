@@ -11,8 +11,8 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
-import {$createParagraphNode, $getNearestNodeFromDOMNode} from 'lexical';
 import {useRef, useState} from 'react';
+import FloatingComponentPickerMenu from './floatingComponentPickerMenu';
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 
@@ -31,26 +31,18 @@ export default function DraggableBlockPlugin({
   const [draggableElement, setDraggableElement] = useState<HTMLElement | null>(
     null,
   );
+  const [insertInPreviousBlock, setInsertInPreviousBlock] = useState(false);
+  const [showFloatingMenu, setShowFloatingMenu] = useState(false);
 
   function insertBlock(e: React.MouseEvent) {
-    if (!draggableElement || !editor) {
-      return;
-    }
+    setShowFloatingMenu(true);
+    setInsertInPreviousBlock(e.altKey || e.ctrlKey);
+  }
 
-    editor.update(() => {
-      const node = $getNearestNodeFromDOMNode(draggableElement);
-      if (!node) {
-        return;
-      }
-
-      const pNode = $createParagraphNode();
-      if (e.altKey || e.ctrlKey) {
-        node.insertBefore(pNode);
-      } else {
-        node.insertAfter(pNode);
-      }
-      pNode.select();
-    });
+  function onElementChanged(element: HTMLElement | null) {
+    setDraggableElement(element);
+    // setInsertInPreviousBlock(false);
+    setShowFloatingMenu(false);
   }
 
   return (
@@ -66,13 +58,20 @@ export default function DraggableBlockPlugin({
             onClick={insertBlock}
           />
           <div className="icon" />
+          {showFloatingMenu && (
+            <FloatingComponentPickerMenu
+              draggableElement={draggableElement}
+              closeMenu={() => setShowFloatingMenu(false)}
+              insertInPreviousBlock={insertInPreviousBlock}
+            />
+          )}
         </div>
       }
       targetLineComponent={
         <div ref={targetLineRef} className="draggable-block-target-line" />
       }
       isOnMenu={isOnMenu}
-      onElementChanged={setDraggableElement}
+      onElementChanged={onElementChanged}
     />
   );
 }

@@ -161,7 +161,6 @@ export function $insertDataTransferForRichText(
         'text/html',
       );
       const nodes = $generateNodesFromDOM(editor, dom);
-
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {
       // Fail silently.

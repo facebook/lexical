@@ -610,11 +610,32 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
   }
   const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
   if (type === INDENT_CONTENT_COMMAND) {
+    const tabNode = $createTabNode();
     if ($isLineBreakNode(firstOfLine)) {
-      firstOfLine.insertAfter($createTabNode());
+      firstOfLine.insertAfter(tabNode);
     } else {
-      firstOfLine.insertBefore($createTabNode());
+      firstOfLine.insertBefore(tabNode);
     }
+    // The added tabNode should be included in the current selection.
+    // Otherwise, the selection will not cover the full line and a new
+    // Tab Keypress would remove the selection via INSERT_TAB_COMMAND
+    const backward = selection.isBackward();
+    const focusKey = backward ? 'anchor' : 'focus';
+    let [anchorNode, anchorOffset]: [TextNode, number] = [tabNode, 0];
+    let [focusNode, focusOffset]: [TextNode, number] = [
+      selection[focusKey].getNode() as TextNode,
+      selection[focusKey].offset,
+    ];
+    if (backward) {
+      [anchorNode, focusNode] = [focusNode, anchorNode];
+      [anchorOffset, focusOffset] = [focusOffset, anchorOffset];
+    }
+    selection.setTextNodeRange(
+      anchorNode,
+      anchorOffset,
+      focusNode,
+      focusOffset,
+    );
   } else if ($isTabNode(firstOfLine)) {
     firstOfLine.remove();
   }

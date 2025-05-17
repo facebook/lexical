@@ -161,13 +161,6 @@ export function $insertDataTransferForRichText(
         'text/html',
       );
       const nodes = $generateNodesFromDOM(editor, dom);
-      const lastNode = nodes[nodes.length - 1];
-
-      if ($isTextNode(lastNode) && $isRangeSelection(selection)) {
-        selection.format = lastNode.getFormat();
-        selection.style = lastNode.getStyle();
-        selection.dirty = true;
-      }
 
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {

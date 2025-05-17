@@ -1361,6 +1361,13 @@ export class RangeSelection implements BaseSelection {
       );
       const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
+
+      if ($isTextNode(last) && $isRangeSelection(selection)) {
+        this.format = last.getFormat();
+        this.style = last.getStyle();
+        this.dirty = true;
+      }
+
       last.selectEnd();
       return;
     }
@@ -1419,6 +1426,7 @@ export class RangeSelection implements BaseSelection {
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
+
     if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }

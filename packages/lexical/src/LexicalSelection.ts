@@ -1359,6 +1359,7 @@ export class RangeSelection implements BaseSelection {
         firstNode.constructor.name,
         firstNode.getType(),
       );
+      const selection = $getSelection();
       const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
 

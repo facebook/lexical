@@ -8,7 +8,7 @@
     "lexical",
     "editor"
   ],
-  "version": "0.31.1",
+  "version": "0.31.2-nightly.20250519.0",
   "license": "MIT",
   "repository": {
     "type": "git",

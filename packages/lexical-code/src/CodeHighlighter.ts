@@ -619,23 +619,8 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
     // The added tabNode should be included in the current selection.
     // Otherwise, the selection will not cover the full line and a new
     // Tab Keypress would remove the selection via INSERT_TAB_COMMAND
-    const backward = selection.isBackward();
-    const focusKey = backward ? 'anchor' : 'focus';
-    let [anchorNode, anchorOffset]: [TextNode, number] = [tabNode, 0];
-    let [focusNode, focusOffset]: [TextNode, number] = [
-      selection[focusKey].getNode() as TextNode,
-      selection[focusKey].offset,
-    ];
-    if (backward) {
-      [anchorNode, focusNode] = [focusNode, anchorNode];
-      [anchorOffset, focusOffset] = [focusOffset, anchorOffset];
-    }
-    selection.setTextNodeRange(
-      anchorNode,
-      anchorOffset,
-      focusNode,
-      focusOffset,
-    );
+    const anchorKey = selection.isBackward() ? 'focus' : 'anchor';
+    selection[anchorKey].set(tabNode.getKey(), 0, 'text');
   } else if ($isTabNode(firstOfLine)) {
     firstOfLine.remove();
   }

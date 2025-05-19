@@ -65,7 +65,7 @@ export function isFormatParagraph(event: KeyboardEvent): boolean {
 export function isFormatHeading(event: KeyboardEvent): boolean {
   const {code} = event;
 
-  // Apple pencil keyboard events doesnt have a code property
+  // Apple pencil keyboard events don't have a code property
   if (!code) {
     return false;
   }

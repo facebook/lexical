@@ -28,7 +28,7 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
-import {SerializedElementNode} from '../../LexicalElementNode';
+import {indexPath, SerializedElementNode} from '../../LexicalElementNode';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;
@@ -719,5 +719,38 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(`<main><section><br></section></main>`);
+  });
+});
+
+describe('indexPath', () => {
+  test('no path', () => {
+    const root = document.createElement('div');
+    expect(indexPath(root, root)).toEqual([]);
+  });
+  test('only child', () => {
+    const root = document.createElement('div');
+    const child = document.createElement('div');
+    root.appendChild(child);
+    expect(indexPath(root, child)).toEqual([0]);
+  });
+  test('nested child', () => {
+    const root = document.createElement('div');
+    const parent = document.createElement('div');
+    const child = document.createElement('div');
+    root.appendChild(parent);
+    parent.appendChild(child);
+    expect(indexPath(root, child)).toEqual([0, 0]);
+  });
+  test('nested child with siblings', () => {
+    const root = document.createElement('div');
+    const parent = document.createElement('div');
+    const child = document.createElement('div');
+    root.appendChild(document.createElement('span'));
+    root.appendChild(parent);
+    root.appendChild(document.createElement('span'));
+    parent.appendChild(document.createElement('span'));
+    parent.appendChild(child);
+    parent.appendChild(document.createElement('span'));
+    expect(indexPath(root, child)).toEqual([1, 1]);
   });
 });

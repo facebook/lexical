@@ -286,7 +286,7 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
   }
 }
 
-function indexPath(root: HTMLElement, child: Node): number[] {
+export function indexPath(root: HTMLElement, child: Node): number[] {
   const path: number[] = [];
   let node: Node | null = child;
   for (; node !== root && node !== null; node = node.parentNode) {

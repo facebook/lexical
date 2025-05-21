@@ -1,3 +1,13 @@
+## v0.31.2 (2025-05-20)
+
+- lexical-markdown Bug fix Do not export auto-link nodes (#7539) Baptiste Jamin
+- lexical Bug Fix  Prevent from adding element.style.textAlign when formatType is unset (#7536) Baptiste Jamin
+- lexical-code Bug Fix Allow Code Highlighter to be working in headless mode (#7538) Baptiste Jamin
+- lexical-website Chore Update docusaurus-plugin-internaldocs-fb and reorg serialization docs (#7533) Bob Ippolito
+- lexical-playground Bug Fix Use babel MatchPatterns that work correctly on windows (#7534) Bob Ippolito
+- v0.31.1 (#7525) Bob Ippolito
+- v0.31.1 Lexical GitHub Actions Bot
+
 ## v0.31.1 (2025-05-11)
 
 - lexical-reactlexical-playground Bug Fix Make typeahead punctuation configurable allow underscores and dashes in emoji queries  (#7520) Kiran Dash

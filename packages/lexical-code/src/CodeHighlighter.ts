@@ -489,6 +489,7 @@ function $isSelectionInCode(selection: null | BaseSelection): boolean {
     : focusNode.getParent();
 
   return (
+    maybeAnchorCodeNode !== null &&
     maybeAnchorCodeNode.is(maybeFocusCodeNode) &&
     $isCodeNode(maybeAnchorCodeNode)
   );

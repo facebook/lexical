@@ -19,6 +19,7 @@ import type {
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
+  $createPoint,
   $createTabNode,
   $createTextNode,
   $getNodeByKey,
@@ -468,28 +469,46 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   );
 }
 
+/**
+ * Returns a boolean.
+ * Check that the selection span is within a single CodeNode.
+ * This is used to guard against executing handlers that can only be
+ * applied in a single CodeNode context
+ */
 function $isSelectionInCode(selection: null | BaseSelection): boolean {
   if (!$isRangeSelection(selection)) {
     return false;
   }
   const anchorNode = selection.anchor.getNode();
+  const maybeAnchorCodeNode = $isCodeNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParent();
   const focusNode = selection.focus.getNode();
-  if (anchorNode.is(focusNode) && $isCodeNode(anchorNode)) {
-    return true;
-  }
-  const anchorParent = anchorNode.getParent();
-  return $isCodeNode(anchorParent) && anchorParent.is(focusNode.getParent());
+  const maybeFocusCodeNode = $isCodeNode(focusNode)
+    ? focusNode
+    : focusNode.getParent();
+
+  return (
+    maybeAnchorCodeNode.is(maybeFocusCodeNode) &&
+    $isCodeNode(maybeAnchorCodeNode)
+  );
 }
 
+/**
+ * Returns an Array of code lines
+ * Take the sequence of LineBreakNode | TabNode | CodeHighlightNode forming
+ * the selection and split it by LineBreakNode
+ * Empty lines are discarded
+ */
 function $getCodeLines(
   selection: RangeSelection,
 ): Array<Array<CodeHighlightNode | TabNode>> {
   const nodes = selection.getNodes();
-  const lines: Array<Array<CodeHighlightNode | TabNode>> = [[]];
+  const lines: Array<Array<CodeHighlightNode | TabNode>> = [];
   if (nodes.length === 1 && $isCodeNode(nodes[0])) {
     return lines;
   }
-  let lastLine: Array<CodeHighlightNode | TabNode> = lines[0];
+  let lastLine: Array<CodeHighlightNode | TabNode> = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     invariant(
@@ -497,14 +516,18 @@ function $getCodeLines(
       'Expected selection to be inside CodeBlock and consisting of CodeHighlightNode, TabNode and LineBreakNode',
     );
     if ($isLineBreakNode(node)) {
-      if (i !== 0 && lastLine.length > 0) {
-        lastLine = [];
+      if (lastLine.length > 0) {
         lines.push(lastLine);
+        lastLine = [];
       }
     } else {
       lastLine.push(node);
     }
   }
+  if (lastLine.length > 0) {
+    lines.push(lastLine);
+  }
+
   return lines;
 }
 
@@ -517,26 +540,18 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
     ? INDENT_CONTENT_COMMAND
     : OUTDENT_CONTENT_COMMAND;
   const tabOrOutdent = !shiftKey ? INSERT_TAB_COMMAND : OUTDENT_CONTENT_COMMAND;
-  // 1. If multiple lines selected: indent/outdent
+
+  // 1. If 0 or multiple non-empty lines are selected: indent/outdent
   const codeLines = $getCodeLines(selection);
-  if (codeLines.length > 1) {
+  if (codeLines.length !== 1) {
     return indentOrOutdent;
   }
-  // 2. If entire line selected: indent/outdent
-  const selectionNodes = selection.getNodes();
-  const firstNode = selectionNodes[0];
-  invariant(
-    $isCodeNode(firstNode) ||
-      $isCodeHighlightNode(firstNode) ||
-      $isTabNode(firstNode) ||
-      $isLineBreakNode(firstNode),
-    'Expected selection firstNode to be CodeHighlightNode or TabNode',
-  );
-  if ($isCodeNode(firstNode)) {
-    return indentOrOutdent;
-  }
-  const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
-  const lastOfLine = $getLastCodeNodeOfLine(firstNode);
+
+  // 2. If extended boundary of codeLine is within selection: indent/outdent
+  const codeLine: Array<CodeHighlightNode | TabNode> = codeLines[0];
+  const codeLineLength = codeLine.length;
+
+  // Take into account the direction of the selection
   const anchor = selection.anchor;
   const focus = selection.focus;
   let selectionFirst;
@@ -548,16 +563,23 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
     selectionFirst = anchor;
     selectionLast = focus;
   }
+
+  // extend boundary points of selected codeLine nodes
+  const firstPoint = $createPoint(codeLine[0].getKey(), 0, 'text');
+  const lastPoint = $createPoint(
+    codeLine[codeLineLength - 1].getKey(),
+    codeLine[codeLineLength - 1].getTextContentSize(),
+    'text',
+  );
+
+  // check they are within the selection
   if (
-    firstOfLine !== null &&
-    lastOfLine !== null &&
-    selectionFirst.key === firstOfLine.getKey() &&
-    selectionFirst.offset === 0 &&
-    selectionLast.key === lastOfLine.getKey() &&
-    selectionLast.offset === lastOfLine.getTextContentSize()
+    (selectionFirst.is(firstPoint) || selectionFirst.isBefore(firstPoint)) &&
+    (lastPoint.is(selectionLast) || lastPoint.isBefore(selectionLast))
   ) {
     return indentOrOutdent;
   }
+
   // 3. Else: tab/outdent
   return tabOrOutdent;
 }
@@ -567,62 +589,34 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
   if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
     return false;
   }
+
   const codeLines = $getCodeLines(selection);
   const codeLinesLength = codeLines.length;
-  // Multiple lines selection
-  if (codeLines.length > 1) {
-    for (let i = 0; i < codeLinesLength; i++) {
-      const line = codeLines[i];
-      if (line.length > 0) {
-        let firstOfLine: null | CodeHighlightNode | TabNode | LineBreakNode =
-          line[0];
-        // First and last lines might not be complete
-        if (i === 0) {
-          firstOfLine = $getFirstCodeNodeOfLine(firstOfLine);
-        }
-        if (firstOfLine !== null) {
-          if (type === INDENT_CONTENT_COMMAND) {
-            firstOfLine.insertBefore($createTabNode());
-          } else if ($isTabNode(firstOfLine)) {
-            firstOfLine.remove();
-          }
+
+  // CodeNode is empty or empty lines in selection
+  if (codeLinesLength === 0) {
+    selection.insertNodes([$createTabNode()]);
+    return true;
+  }
+
+  // Indent Non Empty Lines
+  for (let i = 0; i < codeLinesLength; i++) {
+    const line = codeLines[i];
+    if (line.length > 0) {
+      let firstOfLine: null | CodeHighlightNode | TabNode | LineBreakNode =
+        line[0];
+      // First and last lines might not be complete
+      if (i === 0) {
+        firstOfLine = $getFirstCodeNodeOfLine(firstOfLine);
+      }
+      if (firstOfLine !== null) {
+        if (type === INDENT_CONTENT_COMMAND) {
+          firstOfLine.insertBefore($createTabNode());
+        } else if ($isTabNode(firstOfLine)) {
+          firstOfLine.remove();
         }
       }
     }
-    return true;
-  }
-  // Just one line
-  const selectionNodes = selection.getNodes();
-  const firstNode = selectionNodes[0];
-  invariant(
-    $isCodeNode(firstNode) ||
-      $isCodeHighlightNode(firstNode) ||
-      $isTabNode(firstNode) ||
-      $isLineBreakNode(firstNode),
-    'Expected selection firstNode to be CodeHighlightNode or CodeTabNode',
-  );
-  if ($isCodeNode(firstNode)) {
-    // CodeNode is empty
-    if (type === INDENT_CONTENT_COMMAND) {
-      selection.insertNodes([$createTabNode()]);
-    }
-    return true;
-  }
-  const firstOfLine = $getFirstCodeNodeOfLine(firstNode);
-  if (type === INDENT_CONTENT_COMMAND) {
-    const tabNode = $createTabNode();
-    if ($isLineBreakNode(firstOfLine)) {
-      firstOfLine.insertAfter(tabNode);
-    } else {
-      firstOfLine.insertBefore(tabNode);
-    }
-    // The added tabNode should be included in the current selection.
-    // Otherwise, the selection will not cover the full line and a new
-    // Tab Keypress would remove the selection via INSERT_TAB_COMMAND
-    const anchorKey = selection.isBackward() ? 'focus' : 'anchor';
-    selection[anchorKey].set(tabNode.getKey(), 0, 'text');
-  } else if ($isTabNode(firstOfLine)) {
-    firstOfLine.remove();
   }
   return true;
 }

@@ -29,6 +29,7 @@ import {
   $isTextNode,
   $setSelection,
   HISTORY_MERGE_TAG,
+  INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
@@ -398,6 +399,32 @@ describe('LexicalCodeNode tests', () => {
       expect(testEnv.innerHTML)
         .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
 2"><span data-lexical-text="true">hello</span><br><span data-lexical-text="true">\t</span></code>`);
+    });
+
+    test('can indent when selection has a CodeNode element (with indent)', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerTabIndentation(editor);
+      registerCodeHighlighting(editor);
+      await editor.update(() => {
+        const root = $getRoot();
+        const code = $createCodeNode();
+        root.append(code);
+        code.selectStart();
+        $getSelection()!.insertRawText('\nhello');
+      });
+      await editor.update(() => {
+        const firstCode = $getRoot().getFirstChild()!;
+        const lastCodeText = $getRoot().getLastDescendant()!;
+        const selection = $createRangeSelection();
+        selection.anchor.set(firstCode.getKey(), 0, 'element');
+        selection.focus.set(lastCodeText.getKey(), 3, 'text');
+        $setSelection(selection);
+      });
+      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      expect(testEnv.innerHTML)
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+2"><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span></code>`);
     });
 
     test('can outdent at arbitrary points in the line (with tabs)', async () => {

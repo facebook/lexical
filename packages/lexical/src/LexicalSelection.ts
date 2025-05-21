@@ -2385,16 +2385,21 @@ function resolveSelectionPointOnBoundary(
     } else if (
       (isCollapsed || !isBackward) &&
       prevSibling === null &&
-      $isElementNode(parent) &&
-      parent.isInline()
+      $isElementNode(parent)
     ) {
-      const parentSibling = parent.getPreviousSibling();
-      if ($isTextNode(parentSibling)) {
-        point.set(
-          parentSibling.__key,
-          parentSibling.getTextContent().length,
-          'text',
-        );
+      // Check if parent is a link node
+      if (parent.isInline() && parent.getType() === 'link') {
+        // For link nodes, we want to keep the selection inside
+        point.set(node.__key, 0, 'text');
+      } else if (parent.isInline()) {
+        const parentSibling = parent.getPreviousSibling();
+        if ($isTextNode(parentSibling)) {
+          point.set(
+            parentSibling.__key,
+            parentSibling.getTextContent().length,
+            'text',
+          );
+        }
       }
     }
   } else if (offset === node.getTextContent().length) {
@@ -2406,13 +2411,17 @@ function resolveSelectionPointOnBoundary(
     } else if (
       (isCollapsed || isBackward) &&
       nextSibling === null &&
-      $isElementNode(parent) &&
-      parent.isInline() &&
-      !parent.canInsertTextAfter()
+      $isElementNode(parent)
     ) {
-      const parentSibling = parent.getNextSibling();
-      if ($isTextNode(parentSibling)) {
-        point.set(parentSibling.__key, 0, 'text');
+      // Check if parent is a link node
+      if (parent.isInline() && parent.getType() === 'link') {
+        // For link nodes, we want to keep the selection inside
+        point.set(node.__key, offset, 'text');
+      } else if (parent.isInline() && !parent.canInsertTextAfter()) {
+        const parentSibling = parent.getNextSibling();
+        if ($isTextNode(parentSibling)) {
+          point.set(parentSibling.__key, 0, 'text');
+        }
       }
     }
   }

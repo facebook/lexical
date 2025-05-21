@@ -102,8 +102,14 @@ export class ListItemNode extends ElementNode {
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
     const nextStyle = this.__style;
+
+    // Merge font-size from textStyle into <li> style if present
+    const textStyleObj = getStyleObjectFromCSS(this.__textStyle);
+    if (textStyleObj['font-size']) {
+      element.style.fontSize = textStyleObj['font-size'];
+    }
     if (nextStyle) {
-      element.style.cssText = nextStyle;
+      element.style.cssText += nextStyle;
     }
     applyMarkerStyles(element, this, null);
     return element;
@@ -123,11 +129,19 @@ export class ListItemNode extends ElementNode {
     $setListItemThemeClassNames(dom, config.theme, this);
     const prevStyle = prevNode.__style;
     const nextStyle = this.__style;
+
+    // Merge font-size from textStyle into <li> style if present
+    const textStyleObj = getStyleObjectFromCSS(this.__textStyle);
+    if (textStyleObj['font-size']) {
+      dom.style.fontSize = textStyleObj['font-size'];
+    } else {
+      dom.style.removeProperty('font-size');
+    }
     if (prevStyle !== nextStyle) {
       if (nextStyle === '') {
         dom.removeAttribute('style');
       } else {
-        dom.style.cssText = nextStyle;
+        dom.style.cssText += nextStyle;
       }
     }
     applyMarkerStyles(dom, this, prevNode);

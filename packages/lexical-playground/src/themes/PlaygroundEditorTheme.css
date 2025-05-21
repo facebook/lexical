@@ -458,6 +458,7 @@
 }
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {
+  font-size: inherit;
   position: relative;
   margin-left: 0.5em;
   margin-right: 0.5em;
@@ -465,26 +466,29 @@
   padding-right: 1.5em;
   list-style-type: none;
   outline: none;
+  display: flex;
+  align-items: center;
+  min-height: 1.5em;
 }
-.PlaygroundEditorTheme__listItemChecked {
-  text-decoration: line-through;
+.PlaygroundEditorTheme__listItemChecked > *,
+.PlaygroundEditorTheme__listItemUnchecked > * {
+  margin-left: 0.5em;
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
   content: '';
-  width: 1em;
-  height: 1em;
-  top: 0.125em;
+  width: 1.5em;
+  height: 1.5em;
+  top: 50%;
   left: 0;
   cursor: pointer;
   display: block;
   background-size: cover;
   position: absolute;
+  transform: translateY(-50%);
 }
-.PlaygroundEditorTheme__listItemUnchecked[dir='rtl']:before,
-.PlaygroundEditorTheme__listItemChecked[dir='rtl']:before {
-  left: auto;
-  right: 0;
+.PlaygroundEditorTheme__listItemChecked {
+  text-decoration: line-through;
 }
 .PlaygroundEditorTheme__listItemUnchecked:focus:before,
 .PlaygroundEditorTheme__listItemChecked:focus:before {
@@ -508,12 +512,12 @@
   border-style: solid;
   position: absolute;
   display: block;
-  top: 0.375em;
-  width: 0.1875em;
-  left: 0.4375em;
-  height: 0.375em;
-  transform: rotate(45deg);
-  border-width: 0 2px 2px 0;
+  top: 45%;
+  width: 0.5em;
+  left: 0.5em;
+  height: 0.9em;
+  transform: translateY(-50%) rotate(45deg);
+  border-width: 0 0.2em 0.2em 0;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;

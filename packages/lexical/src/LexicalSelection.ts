@@ -2385,22 +2385,21 @@ function resolveSelectionPointOnBoundary(
     } else if (
       (isCollapsed || !isBackward) &&
       prevSibling === null &&
-      $isElementNode(parent)
+      $isElementNode(parent) &&
+      parent.isInline()
     ) {
-      if (parent.isInline()) {
-        // For inline elements with a single text node child,
-        // keep selection inside rather than normalizing to siblings
-        if (parent.getChildrenSize() === 1) {
-          point.set(node.__key, 0, 'text');
-        } else {
-          const parentSibling = parent.getPreviousSibling();
-          if ($isTextNode(parentSibling)) {
-            point.set(
-              parentSibling.__key,
-              parentSibling.getTextContent().length,
-              'text',
-            );
-          }
+      // For inline elements with a single text node child,
+      // keep selection inside rather than normalizing to siblings
+      if (parent.getChildrenSize() === 1) {
+        point.set(node.__key, 0, 'text');
+      } else {
+        const parentSibling = parent.getPreviousSibling();
+        if ($isTextNode(parentSibling)) {
+          point.set(
+            parentSibling.__key,
+            parentSibling.getTextContent().length,
+            'text',
+          );
         }
       }
     }
@@ -2413,18 +2412,17 @@ function resolveSelectionPointOnBoundary(
     } else if (
       (isCollapsed || isBackward) &&
       nextSibling === null &&
-      $isElementNode(parent)
+      $isElementNode(parent) &&
+      parent.isInline()
     ) {
-      if (parent.isInline()) {
-        // For inline elements with a single text node child,
-        // keep selection inside rather than normalizing to siblings
-        if (parent.getChildrenSize() === 1) {
-          point.set(node.__key, offset, 'text');
-        } else if (!parent.canInsertTextAfter()) {
-          const parentSibling = parent.getNextSibling();
-          if ($isTextNode(parentSibling)) {
-            point.set(parentSibling.__key, 0, 'text');
-          }
+      // For inline elements with a single text node child,
+      // keep selection inside rather than normalizing to siblings
+      if (parent.getChildrenSize() === 1) {
+        point.set(node.__key, offset, 'text');
+      } else if (!parent.canInsertTextAfter()) {
+        const parentSibling = parent.getNextSibling();
+        if ($isTextNode(parentSibling)) {
+          point.set(parentSibling.__key, 0, 'text');
         }
       }
     }

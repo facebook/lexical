@@ -306,7 +306,7 @@ export async function toggleCapitalize(page) {
 export async function toggleStrikethrough(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.down('Shift');
-  await page.keyboard.press('s');
+  await page.keyboard.press('x');
   await keyUpCtrlOrMeta(page);
   await page.keyboard.up('Shift');
 }
@@ -429,36 +429,36 @@ export async function applyHeading(page, level) {
   await page.keyboard.up('Alt');
 }
 
-export async function toggleBulletList(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.down('Alt');
-  await page.keyboard.press('4');
-  await keyUpCtrlOrMeta(page);
-  await page.keyboard.up('Alt');
-}
-
 export async function toggleNumberedList(page) {
   await keyDownCtrlOrMeta(page);
-  await page.keyboard.down('Alt');
-  await page.keyboard.press('5');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('7');
   await keyUpCtrlOrMeta(page);
-  await page.keyboard.up('Alt');
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleBulletList(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('8');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
 }
 
 export async function toggleChecklist(page) {
   await keyDownCtrlOrMeta(page);
-  await page.keyboard.down('Alt');
-  await page.keyboard.press('6');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('9');
   await keyUpCtrlOrMeta(page);
-  await page.keyboard.up('Alt');
+  await page.keyboard.up('Shift');
 }
 
 export async function applyQuoteBlock(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.down('Alt');
+  await page.keyboard.down('Control');
+  await page.keyboard.down('Shift');
   await page.keyboard.press('q');
-  await keyUpCtrlOrMeta(page);
-  await page.keyboard.up('Alt');
+  await page.keyboard.up('Control');
+  await page.keyboard.up('Shift');
 }
 
 export async function applyCodeBlock(page) {

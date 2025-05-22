@@ -182,10 +182,14 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
 
   const rect = target.getBoundingClientRect();
   const pageX = event.pageX / calculateZoomLevel(target);
+  const beforeStyles = window.getComputedStyle(target, '::before');
+
+  const beforeWidth = beforeStyles.width;
+  const beforeWidthInPixels = parseFloat(beforeWidth);
   if (
     target.dir === 'rtl'
-      ? pageX < rect.right && pageX > rect.right - 20
-      : pageX > rect.left && pageX < rect.left + 20
+      ? pageX < rect.right && pageX > rect.right - beforeWidthInPixels
+      : pageX > rect.left && pageX < rect.left + beforeWidthInPixels
   ) {
     callback();
   }

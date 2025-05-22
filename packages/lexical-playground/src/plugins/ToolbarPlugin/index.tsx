@@ -55,7 +55,6 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
-import * as React from 'react';
 
 import {
   blockTypeToBlockName,
@@ -241,15 +240,6 @@ function BlockFormatDropDown({
         <span className="shortcut">{SHORTCUTS.HEADING3}</span>
       </DropDownItem>
       <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
-        onClick={() => formatBulletList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon bullet-list" />
-          <span className="text">Bullet List</span>
-        </div>
-        <span className="shortcut">{SHORTCUTS.BULLET_LIST}</span>
-      </DropDownItem>
-      <DropDownItem
         className={'item wide ' + dropDownActiveClass(blockType === 'number')}
         onClick={() => formatNumberedList(editor, blockType)}>
         <div className="icon-text-container">
@@ -257,6 +247,15 @@ function BlockFormatDropDown({
           <span className="text">Numbered List</span>
         </div>
         <span className="shortcut">{SHORTCUTS.NUMBERED_LIST}</span>
+      </DropDownItem>
+      <DropDownItem
+        className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
+        onClick={() => formatBulletList(editor, blockType)}>
+        <div className="icon-text-container">
+          <i className="icon bullet-list" />
+          <span className="text">Bullet List</span>
+        </div>
+        <span className="shortcut">{SHORTCUTS.BULLET_LIST}</span>
       </DropDownItem>
       <DropDownItem
         className={'item wide ' + dropDownActiveClass(blockType === 'check')}

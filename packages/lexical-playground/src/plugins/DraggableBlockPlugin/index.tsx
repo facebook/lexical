@@ -11,10 +11,19 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
-import {$createParagraphNode, $getNearestNodeFromDOMNode} from 'lexical';
-import {useRef, useState} from 'react';
+import {
+  $createParagraphNode,
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
+  LexicalNode,
+} from 'lexical';
+import {useCallback, useRef, useState} from 'react';
+
+import {$isLayoutContainerNode} from '../../nodes/LayoutContainerNode';
+import {$isLayoutItemNode} from '../../nodes/LayoutItemNode';
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
+const MAX_DRAGGABLEPLUGIN_DEPTH = 1;
 
 function isOnMenu(element: HTMLElement): boolean {
   return !!element.closest(`.${DRAGGABLE_BLOCK_MENU_CLASSNAME}`);
@@ -31,27 +40,72 @@ export default function DraggableBlockPlugin({
   const [draggableElement, setDraggableElement] = useState<HTMLElement | null>(
     null,
   );
+  const [draggableElementDepth, setDraggableElementDepth] = useState<number>(0);
 
-  function insertBlock(e: React.MouseEvent) {
-    if (!draggableElement || !editor) {
-      return;
-    }
+  function handleDraggableElementChanged(
+    element: HTMLElement | null,
+    nodeKey: string,
+    depth: number,
+  ) {
+    setDraggableElementDepth(depth);
+    setDraggableElement((prev) => {
+      if (prev) {
+        prev.classList.remove('draggable-block-highlight');
+      }
 
-    editor.update(() => {
-      const node = $getNearestNodeFromDOMNode(draggableElement);
-      if (!node) {
+      if (element) {
+        element.classList.add('draggable-block-highlight');
+      }
+
+      return element;
+    });
+  }
+
+  const insertBlock = useCallback(
+    (e: React.MouseEvent) => {
+      if (!draggableElement || !editor) {
         return;
       }
 
-      const pNode = $createParagraphNode();
-      if (e.altKey || e.ctrlKey) {
-        node.insertBefore(pNode);
-      } else {
-        node.insertAfter(pNode);
+      editor.update(() => {
+        const node = $getNearestNodeFromDOMNode(draggableElement);
+        if (!node) {
+          return;
+        }
+
+        const pNode = $createParagraphNode();
+        if (e.altKey || e.ctrlKey) {
+          node.insertBefore(pNode);
+        } else {
+          node.insertAfter(pNode);
+        }
+        pNode.select();
+      });
+    },
+    [draggableElement, editor],
+  );
+
+  const $getInnerNodes = useCallback(
+    (node: LexicalNode, depth: number): string[][] => {
+      if (depth >= MAX_DRAGGABLEPLUGIN_DEPTH) {
+        return [];
       }
-      pNode.select();
-    });
-  }
+
+      if (!$isLayoutContainerNode(node)) {
+        return [];
+      }
+
+      return node.getChildrenKeys().map((childKey) => {
+        const childNode = $getNodeByKey(childKey);
+        if ($isLayoutItemNode(childNode)) {
+          return childNode.getChildrenKeys();
+        }
+
+        return [];
+      });
+    },
+    [],
+  );
 
   return (
     <DraggableBlockPlugin_EXPERIMENTAL
@@ -59,20 +113,27 @@ export default function DraggableBlockPlugin({
       menuRef={menuRef}
       targetLineRef={targetLineRef}
       menuComponent={
-        <div ref={menuRef} className="icon draggable-block-menu">
+        <div
+          ref={menuRef}
+          className={`icon draggable-block-menu ${
+            draggableElement
+              ? `draggable-block-depth-${draggableElementDepth}`
+              : ''
+          }`}>
           <button
-            title="Click to add below"
+            title="Click to add below&#10;Cmd/Alt+Click to add above"
             className="icon icon-plus"
             onClick={insertBlock}
           />
-          <div className="icon" />
+          {draggableElementDepth === 0 && <div className="icon" />}
         </div>
       }
       targetLineComponent={
         <div ref={targetLineRef} className="draggable-block-target-line" />
       }
       isOnMenu={isOnMenu}
-      onElementChanged={setDraggableElement}
+      onElementChanged={handleDraggableElementChanged}
+      $getInnerNodes={$getInnerNodes}
     />
   );
 }

@@ -70,11 +70,11 @@ function runElementTransformers(
     ) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
-      leadingNode.remove();
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
       if (replace(parentNode, siblings, match, false) !== false) {
+        leadingNode.remove();
         return true;
       }
     }
@@ -127,12 +127,12 @@ function runMultilineElementTransformers(
     ) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
-      leadingNode.remove();
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
 
       if (replace(parentNode, siblings, match, null, null, false) !== false) {
+        leadingNode.remove();
         return true;
       }
     }

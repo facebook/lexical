@@ -472,13 +472,13 @@
 }
 .PlaygroundEditorTheme__listItemChecked > *,
 .PlaygroundEditorTheme__listItemUnchecked > * {
-  margin-left: 0.5em;
+  margin-left: 0.01em;
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
   content: '';
-  width: 1.5em;
-  height: 1.5em;
+  width: 0.9em;
+  height: 0.9em;
   top: 50%;
   left: 0;
   cursor: pointer;
@@ -513,11 +513,11 @@
   position: absolute;
   display: block;
   top: 45%;
-  width: 0.5em;
-  left: 0.5em;
-  height: 0.9em;
+  width: 0.2em;
+  left: 0.35em;
+  height: 0.4em;
   transform: translateY(-50%) rotate(45deg);
-  border-width: 0 0.2em 0.2em 0;
+  border-width: 0 0.1em 0.1em 0;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;

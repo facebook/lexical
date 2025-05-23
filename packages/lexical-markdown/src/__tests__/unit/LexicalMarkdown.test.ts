@@ -223,7 +223,7 @@ const CODE_TAG_COUNTER_EXAMPLE: MultilineElementTransformer = {
   type: 'multiline-element',
 };
 
-export const CENCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
+export const CANCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
   dependencies: [HeadingNode],
   export: () => {
     return null;
@@ -768,7 +768,7 @@ describe('Markdown', () => {
       ],
     });
 
-    registerMarkdownShortcuts(editor, [CENCELED_HEADING_REPLACE_EXAMPLE]);
+    registerMarkdownShortcuts(editor, [CANCELED_HEADING_REPLACE_EXAMPLE]);
 
     editor.update(
       () => {

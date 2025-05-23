@@ -476,7 +476,7 @@
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
-  content: '';
+  content: '\200B';
   width: 0.9em;
   height: 0.9em;
   top: 50%;

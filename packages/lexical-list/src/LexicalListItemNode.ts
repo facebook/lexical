@@ -111,10 +111,7 @@ export class ListItemNode extends ElementNode {
     if (nextStyle) {
       element.style.cssText += nextStyle;
     }
-    // Always add a <span> as the first child for caret and margin
-    const span = document.createElement('span');
-    span.appendChild(document.createTextNode('\u200B'));
-    element.appendChild(span);
+
     applyMarkerStyles(element, this, null);
     return element;
   }

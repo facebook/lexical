@@ -16,7 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {TableSelection} from '@lexical/table';
+import { TableSelection } from '@lexical/table';
 import {
   $caretFromPoint,
   $createRangeSelection,
@@ -39,7 +39,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {getStyleObjectFromCSS} from './utils';
+import { getStyleObjectFromCSS } from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
@@ -94,6 +94,11 @@ export function $setBlocksType<T extends ElementNode>(
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
       blockMap.set(node.getKey(), node);
+    } else {
+      const ancestorBlock = $getAncestor(node, INTERNAL_$isBlock);
+      if ($isElementNode(ancestorBlock)) {
+        blockMap.set(ancestorBlock.getKey(), ancestorBlock);
+      }
     }
   }
   for (const [key, prevNode] of blockMap) {

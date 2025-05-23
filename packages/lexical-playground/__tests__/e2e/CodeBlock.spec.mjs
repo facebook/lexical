@@ -488,6 +488,94 @@ test.describe('CodeBlock', () => {
     );
   });
 
+  test('Can indent text via tab when selecting the line with Shift+Down', async ({
+    page,
+    isRichText,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('``` alert(1);');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('alert(2);');
+    await moveToStart(page);
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await page.keyboard.press('Tab');
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="123"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            1
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+          <br />
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            2
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+        </code>
+      `,
+    );
+  });
+
   test('Can (un)indent multiple lines at once', async ({
     page,
     isRichText,

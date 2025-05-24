@@ -12,18 +12,28 @@ import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {$createTextNode, $getRoot, $insertNodes} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $insertNodes,
+  $isRangeSelection,
+} from 'lexical';
 
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   LINK,
+  registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
   TRANSFORMERS,
 } from '../..';
 import {
   CODE,
+  ElementTransformer,
+  HEADING,
   MultilineElementTransformer,
   normalizeMarkdown,
 } from '../../MarkdownTransformers';
@@ -211,6 +221,18 @@ const CODE_TAG_COUNTER_EXAMPLE: MultilineElementTransformer = {
   regExpStart: CODE.regExpStart,
   replace: CODE.replace,
   type: 'multiline-element',
+};
+
+export const CANCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
+  dependencies: [HeadingNode],
+  export: () => {
+    return null;
+  },
+  regExp: /^(#{1,6})\s/,
+  replace: () => {
+    return false;
+  },
+  type: 'element',
 };
 
 describe('Markdown', () => {
@@ -734,6 +756,99 @@ describe('Markdown', () => {
       ).toBe(mdAfterExport ?? md);
     });
   }
+  it('should not remove leading node and transform if replace returns false', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    registerMarkdownShortcuts(editor, [CANCELED_HEADING_REPLACE_EXAMPLE]);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectEnd();
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText('#');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<p><span style="white-space: pre-wrap;"># </span></p>',
+    );
+  });
+
+  it('should remove leading node and execute transform if replace does not return false', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    registerMarkdownShortcuts(editor, [HEADING]);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectEnd();
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText('#');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<h1><br></h1>',
+    );
+  });
 });
 
 describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {

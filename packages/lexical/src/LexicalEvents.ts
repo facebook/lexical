@@ -514,8 +514,8 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
             }
           }
         }
-      } else if (event.pointerType === 'touch') {
-        // This is used to update the selection on touch devices when the user clicks on text after a
+      } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+        // This is used to update the selection on touch devices (including Apple Pencil) when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
         const domAnchorNode = domSelection.anchorNode;
         // If the user is attempting to click selection back onto text, then
@@ -542,7 +542,12 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // TODO implement text drag & drop
   const target = event.target;
   const pointerType = event.pointerType;
-  if (isDOMNode(target) && pointerType !== 'touch' && event.button === 0) {
+  if (
+    isDOMNode(target) &&
+    pointerType !== 'touch' &&
+    pointerType !== 'pen' &&
+    event.button === 0
+  ) {
     updateEditorSync(editor, () => {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.

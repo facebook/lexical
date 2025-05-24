@@ -21,6 +21,7 @@ import type {
   RangeSelection,
   SerializedElementNode,
   Spread,
+  StaticNodeConfigRecord,
 } from 'lexical';
 
 import {getStyleObjectFromCSS} from '@lexical/selection';
@@ -79,6 +80,26 @@ export class ListItemNode extends ElementNode {
   /** @internal */
   __checked?: boolean;
 
+  /** @internal */
+  $config(): StaticNodeConfigRecord<
+    'listitem',
+    {$transform: (node: ListItemNode) => void}
+  > {
+    return this.config('listitem', {
+      $transform: (node: ListItemNode): void => {
+        if (node.__checked == null) {
+          return;
+        }
+        const parent = node.getParent();
+        if ($isListNode(parent)) {
+          if (parent.getListType() !== 'check' && node.getChecked() != null) {
+            node.setChecked(undefined);
+          }
+        }
+      },
+    });
+  }
+
   static getType(): string {
     return 'listitem';
   }
@@ -132,21 +153,6 @@ export class ListItemNode extends ElementNode {
     }
     applyMarkerStyles(dom, this, prevNode);
     return false;
-  }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListItemNode(node), 'node is not a ListItemNode');
-      if (node.__checked == null) {
-        return;
-      }
-      const parent = node.getParent();
-      if ($isListNode(parent)) {
-        if (parent.getListType() !== 'check' && node.getChecked() != null) {
-          node.setChecked(undefined);
-        }
-      }
-    };
   }
 
   static importDOM(): DOMConversionMap | null {

@@ -11,11 +11,11 @@ import {
   $getSelection,
   $isRangeSelection,
   $setSelection,
+  COMMAND_PRIORITY_LOW,
   FOCUS_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 
-const COMMAND_PRIORITY_LOW = 1;
 const TAB_TO_FOCUS_INTERVAL = 100;
 
 let lastTabKeyDownTimestamp = 0;

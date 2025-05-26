@@ -11,8 +11,8 @@ import {
   $getSelection,
   $isRangeSelection,
   $setSelection,
-  FOCUS_COMMAND,
   COMMAND_PRIORITY_LOW,
+  FOCUS_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 

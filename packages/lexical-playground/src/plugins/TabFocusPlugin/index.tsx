@@ -12,10 +12,10 @@ import {
   $isRangeSelection,
   $setSelection,
   FOCUS_COMMAND,
+  COMMAND_PRIORITY_LOW,
 } from 'lexical';
 import {useEffect} from 'react';
 
-const COMMAND_PRIORITY_LOW = 1;
 const TAB_TO_FOCUS_INTERVAL = 100;
 
 let lastTabKeyDownTimestamp = 0;

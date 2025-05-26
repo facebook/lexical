@@ -8,6 +8,6 @@
  */
 
 /** 
- * @deprecated use LexicalNodeContextMenuPlugin instead */
+ * @deprecated use LexicalNodeContextMenuPlugin instead
  * LexicalContextMenuPlugin
  */

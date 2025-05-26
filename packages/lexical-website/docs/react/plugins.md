@@ -131,7 +131,7 @@ Plugin that allows tab indentation in combination with `@lexical/rich-text`.
 
 ### `LexicalAutoLinkPlugin`
 
-Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automaticaly convert it into a link node
+Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automatically convert it into a link node
 
 ```jsx
 const URL_MATCHER =

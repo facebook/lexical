@@ -132,7 +132,7 @@ to use
 where the distance metric is signed.
 
 In SDF terms, the subset of the space is `[offset, ∞)`. Any coordinate less
-than the `offset` boundary is a negative distance; otherise the distance is
+than the `offset` boundary is a negative distance; otherwise the distance is
 non-negative.
 
 :::
@@ -401,7 +401,7 @@ refactored to use NodeCaret internally.
 Once this happens, it's possible that the internal structure of PointType
 and/or RangeSelection may change to accommodate NodeCaret, as it is more
 resilient to document changes (only changes that directly affect the
-orgin node will "break" the point). A simple version of this would be to
+origin node will "break" the point). A simple version of this would be to
 create a caret any time that the point changes, and use that caret
 as a fallback if the selection would otherwise be lost.
 
@@ -498,5 +498,5 @@ it is not uncommon to use
 where the distance metric is signed.
 
 In SDF terms, the subset of the space is `[offset, ∞)`. Any coordinate less
-than the `offset` boundary is a negative distance; otherise the distance is
+than the `offset` boundary is a negative distance; otherwise the distance is
 non-negative.

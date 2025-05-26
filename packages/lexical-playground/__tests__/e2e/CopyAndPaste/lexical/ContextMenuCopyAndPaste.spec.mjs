@@ -35,11 +35,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await doubleClick(page, 'div[contenteditable="false"] span');
     await withExclusiveClipboardAccess(async () => {
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await click(
-        page,
-        'div[class="PlaygroundEditorTheme__contextMenu"] [role="menuitem"] :text("Copy")',
-      );
-
+      await page.getByRole('menuitem', {name: 'Copy'}).click();
       await click(page, '.unlock');
       await focusEditor(page);
 

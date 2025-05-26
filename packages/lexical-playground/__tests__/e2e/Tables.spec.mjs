@@ -5542,10 +5542,7 @@ test.describe.parallel('Tables', () => {
         await click(page, 'div[contenteditable] th p', {
           button: 'right',
         });
-        await click(
-          page,
-          'div[class="typeahead-popover"] [role="option"] :text("Cut")',
-        );
+        await page.getByRole('menuitem', {name: 'Cut'}).click();
       });
 
       await assertHTML(

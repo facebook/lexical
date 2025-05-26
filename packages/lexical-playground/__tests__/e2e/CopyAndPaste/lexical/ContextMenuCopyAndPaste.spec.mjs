@@ -37,7 +37,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
       await click(
         page,
-        'div[class="PlaygroundEditorTheme__contextMenuItem"] [role="menuitem"] :text("Copy")',
+        'div[class="PlaygroundEditorTheme__contextMenu"] [role="menuitem"] :text("Copy")',
       );
 
       await click(page, '.unlock');

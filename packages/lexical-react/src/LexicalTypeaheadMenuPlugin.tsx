@@ -7,7 +7,6 @@
  */
 
 import type {
-  MenuRenderFn,
   MenuResolution,
   MenuTextMatch,
   TriggerFn,
@@ -196,7 +195,6 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
-  menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
@@ -213,7 +211,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   onSelectOption,
   onOpen,
   onClose,
-  menuRenderFn,
   triggerFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
@@ -332,7 +329,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
-      menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
@@ -341,4 +337,4 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   );
 }
 
-export {MenuOption, MenuRenderFn, MenuResolution, MenuTextMatch, TriggerFn};
+export {MenuOption, MenuResolution, MenuTextMatch, TriggerFn};

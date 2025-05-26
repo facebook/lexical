@@ -8,6 +8,18 @@
 
 import type {JSX} from 'react';
 
+import {
+  flip,
+  FloatingFocusManager,
+  FloatingList,
+  FloatingPortal,
+  shift,
+  useDismiss,
+  useFloating,
+  useInteractions,
+  useListNavigation,
+  useRole,
+} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -26,11 +38,10 @@ import {
   TextNode,
 } from 'lexical';
 import {
+  forwardRef,
   MutableRefObject,
-  ReactPortal,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -48,9 +59,6 @@ export type MenuResolution = {
   getRect: () => DOMRect;
 };
 
-export const PUNCTUATION =
-  '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
-
 export class MenuOption {
   key: string;
   ref?: MutableRefObject<HTMLElement | null>;
@@ -65,17 +73,6 @@ export class MenuOption {
     this.ref = {current: element};
   }
 }
-
-export type MenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
-  itemProps: {
-    selectedIndex: number | null;
-    selectOptionAndCleanUp: (option: TOption) => void;
-    setHighlightedIndex: (index: number) => void;
-    options: Array<TOption>;
-  },
-  matchingString: string | null,
-) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   const typeaheadContainerNode = document.getElementById('typeahead-menu');
@@ -257,13 +254,67 @@ export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   option: MenuOption;
 }> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
+// function MenuItem({
+//   index,
+//   isSelected,
+//   onClick,
+//   onMouseEnter,
+//   option,
+// }: {
+//   index: number;
+//   isSelected: boolean;
+//   onClick: () => void;
+//   onMouseEnter: () => void;
+//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//   option: any; // ComponentPickerOption
+// }) {
+//   let className = 'item';
+//   if (isSelected) {
+//     className += ' selected';
+//   }
+//   return (
+//     <li
+//       key={option.key}
+//       tabIndex={-1}
+//       className={className}
+//       ref={option.setRefElement}
+//       role="option"
+//       aria-selected={isSelected}
+//       id={'typeahead-item-' + index}
+//       onMouseEnter={onMouseEnter}
+//       onClick={onClick}>
+//       {option.icon}
+//       {/* maybe support emoji and .name */}
+//       <span className="text">{option.title}</span>
+//     </li>
+//   );
+// }
+
+const MenuItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    label?: string;
+    disabled?: boolean;
+  }
+>(({className, label, disabled, ...props}, ref) => {
+  return (
+    <button
+      {...props}
+      className={className}
+      ref={ref}
+      role="menuitem"
+      disabled={disabled}>
+      {label}
+    </button>
+  );
+});
+
 export function LexicalMenu<TOption extends MenuOption>({
   close,
   editor,
   anchorElementRef,
   resolution,
   options,
-  menuRenderFn,
   onSelectOption,
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
@@ -275,7 +326,6 @@ export function LexicalMenu<TOption extends MenuOption>({
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
-  menuRenderFn: MenuRenderFn<TOption>;
   onSelectOption: (
     option: TOption,
     textNodeContainingQuery: TextNode | null,
@@ -475,21 +525,80 @@ export function LexicalMenu<TOption extends MenuOption>({
     commandPriority,
   ]);
 
-  const listItemProps = useMemo(
-    () => ({
-      options,
-      selectOptionAndCleanUp,
-      selectedIndex,
-      setHighlightedIndex,
-    }),
-    [selectOptionAndCleanUp, selectedIndex, options],
-  );
+  const [isOpen, setIsOpen] = useState(Boolean(anchorElementRef.current));
 
-  return menuRenderFn(
-    anchorElementRef,
-    listItemProps,
-    resolution.match ? resolution.match.matchingString : '',
-  );
+  const {refs, floatingStyles, context} = useFloating({
+    elements: {
+      reference: anchorElementRef.current,
+    },
+    middleware: [
+      flip({
+        fallbackPlacements: ['top-start'],
+      }),
+      shift({
+        padding: 10,
+      }),
+    ],
+    onOpenChange(nextOpen, event, reason) {
+      setIsOpen(nextOpen);
+
+      if (event && reason === 'outside-press') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        close();
+      }
+    },
+    open: isOpen,
+    placement: 'bottom-start',
+    strategy: 'fixed',
+  });
+
+  const elementsRef = useRef<Array<HTMLElement | null>>([]);
+  const labelsRef = useRef<Array<string | null>>([]);
+
+  const role = useRole(context, {role: 'menu'});
+  const dismiss = useDismiss(context);
+  const listNavigation = useListNavigation(context, {
+    activeIndex: selectedIndex,
+    listRef: elementsRef,
+    onNavigate: setHighlightedIndex,
+  });
+
+  const {getFloatingProps} = useInteractions([role, dismiss, listNavigation]);
+
+  return isOpen ? (
+    <FloatingPortal>
+      <FloatingFocusManager context={context} initialFocus={-1}>
+        <div
+          className="PlaygroundEditorTheme__contextMenu"
+          ref={refs.setFloating}
+          style={floatingStyles}
+          aria-setsize={6}
+          {...getFloatingProps()}>
+          <FloatingList elementsRef={elementsRef} labelsRef={labelsRef}>
+            {options.map((option, index: number) => (
+              <MenuItem
+                index={index}
+                isSelected={selectedIndex === index}
+                className="PlaygroundEditorTheme__contextMenuItem"
+                onClick={() => {
+                  setHighlightedIndex(index);
+                  selectOptionAndCleanUp(option);
+                }}
+                onMouseEnter={() => {
+                  setHighlightedIndex(index);
+                }}
+                key={option.key}
+                option={option}
+                // @ts-ignore
+                label={option.title}
+              />
+            ))}
+          </FloatingList>
+        </div>
+      </FloatingFocusManager>
+    </FloatingPortal>
+  ) : null;
 }
 
 function setContainerDivAttributes(

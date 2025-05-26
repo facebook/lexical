@@ -16,7 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
-import { TableSelection } from '@lexical/table';
+import {TableSelection} from '@lexical/table';
 import {
   $caretFromPoint,
   $createRangeSelection,
@@ -39,7 +39,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import { getStyleObjectFromCSS } from './utils';
+import {getStyleObjectFromCSS} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,

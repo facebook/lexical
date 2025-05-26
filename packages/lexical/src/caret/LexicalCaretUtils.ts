@@ -369,7 +369,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
 }
 
 /**
- * Determine if the two caret orgins are in distinct blocks that
+ * Determine if the two caret origins are in distinct blocks that
  * should be merged.
  *
  * The returned block pair will be the closest blocks to their

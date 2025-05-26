@@ -95,7 +95,7 @@ const question = $getValue(pollNode, questionState);
 See also
 [$getStateChange](https://lexical.dev/docs/api/modules/lexical#getstatechange)
 if you need an efficient way to determine if the state has changed on two
-versions of the same node (typcially used in updateDOM, but may be useful in
+versions of the same node (typically used in updateDOM, but may be useful in
 an update listener or mutation listener).
 
 ### $setState

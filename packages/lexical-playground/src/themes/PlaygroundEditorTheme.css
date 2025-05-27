@@ -255,7 +255,6 @@
   z-index: 2;
   left: 0;
 }
-
 .PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
   background-color: #f2f3f5;
   position: sticky;

@@ -94,7 +94,7 @@ export function $setBlocksType<T extends ElementNode>(
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
       blockMap.set(node.getKey(), node);
-    } else {
+    } else if (anchorAndFocus === null) {
       const ancestorBlock = $getAncestor(node, INTERNAL_$isBlock);
       if ($isElementNode(ancestorBlock)) {
         blockMap.set(ancestorBlock.getKey(), ancestorBlock);

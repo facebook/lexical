@@ -470,8 +470,7 @@
   padding-right: 1.5em;
   list-style-type: none;
   outline: none;
-  display: flex;
-  align-items: center;
+  display: block;
   min-height: 1.5em;
 }
 .PlaygroundEditorTheme__listItemChecked > *,

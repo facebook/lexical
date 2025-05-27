@@ -113,10 +113,6 @@ export class ListItemNode extends ElementNode {
     }
 
     applyMarkerStyles(element, this, null);
-    // Inject a single space text node for empty checklist items for better caret alignment
-    if (this.getChildrenSize() === 0) {
-      element.appendChild(document.createTextNode(' '));
-    }
 
     return element;
   }

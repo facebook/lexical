@@ -249,18 +249,13 @@
   width: 100%;
   border-bottom: 1px solid #bbb;
 }
-.PlaygroundEditorTheme__tableFrozenColumn tr:nth-child(odd) > td:first-child {
+.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
   background-color: #ffffff;
   position: sticky;
   z-index: 2;
   left: 0;
 }
-.PlaygroundEditorTheme__tableFrozenColumn tr:nth-child(even) > td:first-child {
-  background-color: #f2f5fb;
-  position: sticky;
-  z-index: 2;
-  left: 0;
-}
+
 .PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
   background-color: #f2f3f5;
   position: sticky;
@@ -276,7 +271,11 @@
   height: 100%;
   border-right: 1px solid #bbb;
 }
-.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even),
+.PlaygroundEditorTheme__tableFrozenColumn
+  .PlaygroundEditorTheme__table.PlaygroundEditorTheme__tableRowStriping
+  tr:nth-child(even)
+  > td:first-child {
   background-color: #f2f5fb;
 }
 .PlaygroundEditorTheme__tableSelection *::selection {

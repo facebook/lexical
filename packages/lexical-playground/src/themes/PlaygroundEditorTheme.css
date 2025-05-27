@@ -249,8 +249,14 @@
   width: 100%;
   border-bottom: 1px solid #bbb;
 }
-.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
+.PlaygroundEditorTheme__tableFrozenColumn tr:nth-child(odd) > td:first-child {
   background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr:nth-child(even) > td:first-child {
+  background-color: #f2f5fb;
   position: sticky;
   z-index: 2;
   left: 0;

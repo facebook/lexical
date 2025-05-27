@@ -6,7 +6,8 @@
  *
  */
 
-import type {LexicalCommand} from 'lexical';
+import type {CodeHighlightNode, CodeNode} from '@lexical/code';
+import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 
 import {
   $createCodeNode,
@@ -81,7 +82,7 @@ describe('LexicalCodeNode tests', () => {
         test(`testing ${scenario[2]}: ${scenario[0]} => ${scenario[1]} `, async () => {
           const {editor} = testEnv;
 
-          const getDispatchArgs = (type) => {
+          const getDispatchArgs = (type: string) => {
             switch (type) {
               case 'indent':
                 return [INDENT_CONTENT_COMMAND, undefined]; // : [LexicalCommand<void>, void];
@@ -93,13 +94,13 @@ describe('LexicalCodeNode tests', () => {
             }
           };
 
-          const getRawTextWithSelection = (input) => {
+          const getRawTextWithSelection = (input: string) => {
             return input
               .replace(/^>/, '')
               .replaceAll('>', '\n')
               .replaceAll('-', '\t');
           };
-          const getRawText = (input) => {
+          const getRawText = (input: string) => {
             return getRawTextWithSelection(input).replaceAll('|', '');
           };
 
@@ -108,7 +109,7 @@ describe('LexicalCodeNode tests', () => {
           registerCodeHighlighting(editor);
 
           // fill editor with scenario input text
-          let codeNode;
+          let codeNode: CodeNode;
           await editor.update(() => {
             const root = $getRoot();
             codeNode = $createCodeNode();
@@ -135,7 +136,8 @@ describe('LexicalCodeNode tests', () => {
                 selLast -= 1;
               }
 
-              let matching = $isCodeNode(codeNode) && codeNode.getFirstChild();
+              let matching: null | LineBreakNode | TabNode | CodeHighlightNode =
+                codeNode.getFirstChild();
               let parentIndex = 0;
               let offset = 0;
               while (
@@ -146,7 +148,9 @@ describe('LexicalCodeNode tests', () => {
                 matching = matching.getNextSibling();
                 parentIndex++;
               }
-              if (!$isLineBreakNode(matching)) {
+              if (matching === null) {
+                selection.anchor.set(codeNode.getKey(), 0, 'element');
+              } else if (!$isLineBreakNode(matching)) {
                 selection.anchor.set(
                   matching.getKey(),
                   selFirst - offset,
@@ -163,7 +167,9 @@ describe('LexicalCodeNode tests', () => {
                 matching = matching.getNextSibling();
                 parentIndex++;
               }
-              if (!$isLineBreakNode(matching)) {
+              if (matching === null) {
+                selection.focus.set(codeNode.getKey(), 0, 'element');
+              } else if (!$isLineBreakNode(matching)) {
                 selection.focus.set(
                   matching.getKey(),
                   selLast - offset,
@@ -203,7 +209,7 @@ describe('LexicalCodeNode tests', () => {
                   .replaceAll('\n', '>'),
             ).toBe(output);
             expect(
-              $getSelection()
+              $getSelection()!
                 .getTextContent()
                 .replaceAll('\t', '-')
                 .replaceAll('\n', '>'),

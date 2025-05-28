@@ -119,7 +119,7 @@ export class ListItemNode extends ElementNode {
       if (nextStyle === '') {
         dom.removeAttribute('style');
       } else {
-        dom.style.cssText += nextStyle;
+        dom.style.cssText = nextStyle;
       }
     }
     applyMarkerStyles(dom, this, prevNode);

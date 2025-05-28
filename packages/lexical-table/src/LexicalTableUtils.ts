@@ -663,7 +663,6 @@ export function $deleteTableRowAtSelection(): void {
         // Handle overflow only once
         row === focusEndRow
       ) {
-        //row span is still 3???
         cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
         invariant(nextRowNode !== null, 'Expected nextRowNode not to be null');
         let insertAfterCell: null | TableCellNode = null;

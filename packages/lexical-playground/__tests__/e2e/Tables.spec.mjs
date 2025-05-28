@@ -29,6 +29,7 @@ import {
   dragMouse,
   expect,
   focusEditor,
+  getPageOrFrame,
   html,
   initialize,
   insertCollapsible,
@@ -5542,7 +5543,11 @@ test.describe.parallel('Tables', () => {
         await click(page, 'div[contenteditable] th p', {
           button: 'right',
         });
-        await page.getByRole('menuitem', {name: 'Cut'}).click();
+        await getPageOrFrame(page)
+          .getByRole('menuitem', {
+            name: 'Cut',
+          })
+          .click();
       });
 
       await assertHTML(

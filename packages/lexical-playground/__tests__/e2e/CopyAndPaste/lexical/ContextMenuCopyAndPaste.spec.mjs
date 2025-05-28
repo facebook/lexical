@@ -12,6 +12,7 @@ import {
   click,
   doubleClick,
   focusEditor,
+  getPageOrFrame,
   html,
   initialize,
   pasteFromClipboard,
@@ -35,7 +36,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await doubleClick(page, 'div[contenteditable="false"] span');
     await withExclusiveClipboardAccess(async () => {
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await page.getByRole('menuitem', {name: 'Copy'}).click();
+      await getPageOrFrame(page).getByRole('menuitem', {name: 'Copy'}).click();
       await click(page, '.unlock');
       await focusEditor(page);
 
@@ -78,7 +79,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
 
       await doubleClick(page, 'div[contenteditable="false"] span');
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await page.getByRole('menuitem', {name: 'Copy'}).click();
+      await getPageOrFrame(page).getByRole('menuitem', {name: 'Copy'}).click();
 
       await click(page, '.unlock');
       await focusEditor(page);

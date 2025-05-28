@@ -55,7 +55,9 @@ test.describe('Share', () => {
       }
       expect(page.url()).not.toMatch(/#doc=/);
       await click(page, '.action-button.share');
-      await page.getByRole('alert').getByText('URL copied to clipboard');
+      await getPageOrFrame(page)
+        .getByRole('alert')
+        .getByText('URL copied to clipboard');
       const fooUrl = page.url();
       expect(fooUrl).toMatch(/#doc=/);
       if (browserName !== 'webkit') {

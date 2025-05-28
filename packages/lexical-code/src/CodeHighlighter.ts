@@ -22,13 +22,18 @@ import {
   $createPoint,
   $createTabNode,
   $createTextNode,
+  $getCaretRange,
   $getNodeByKey,
   $getSelection,
+  $getSiblingCaret,
+  $getTextPointCaret,
   $insertNodes,
   $isLineBreakNode,
   $isRangeSelection,
   $isTabNode,
   $isTextNode,
+  $normalizeCaret,
+  $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
@@ -648,9 +653,12 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
     const tabNode = $createTabNode();
     const lineBreakNode = $createLineBreakNode();
     selection.insertNodes([tabNode, lineBreakNode]);
-    const parent = tabNode.getParentOrThrow();
-    const index = tabNode.getIndexWithinParent();
-    parent.select(index, index + 2);
+    $setSelectionFromCaretRange(
+      $getCaretRange(
+        $getTextPointCaret(tabNode, 'next', 0),
+        $normalizeCaret($getSiblingCaret(lineBreakNode, 'next')),
+      ),
+    );
     return true;
   }
 

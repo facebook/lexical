@@ -659,8 +659,11 @@ export function $deleteTableRowAtSelection(): void {
       // Rows overflowing bottom have to be trimmed and moved to the next row
       if (
         cellStartRow >= anchorStartRow &&
-        cellStartRow + cell.__rowSpan - 1 > focusEndRow
+        cellStartRow + cell.__rowSpan - 1 > focusEndRow &&
+        // Handle overflow only once
+        row === focusEndRow
       ) {
+        //row span is still 3???
         cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
         invariant(nextRowNode !== null, 'Expected nextRowNode not to be null');
         let insertAfterCell: null | TableCellNode = null;

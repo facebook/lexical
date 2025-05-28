@@ -37,6 +37,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   CAN_REDO_COMMAND,
@@ -48,6 +49,7 @@ import {
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   LexicalEditor,
+  LexicalNode,
   NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
@@ -468,6 +470,21 @@ function ElementFormatDropdown({
   );
 }
 
+function $findTopLevelElement(node: LexicalNode) {
+  let topLevelElement =
+    node.getKey() === 'root'
+      ? node
+      : $findMatchingParent(node, (e) => {
+          const parent = e.getParent();
+          return parent !== null && $isRootOrShadowRoot(parent);
+        });
+
+  if (topLevelElement === null) {
+    topLevelElement = node.getTopLevelElementOrThrow();
+  }
+  return topLevelElement;
+}
+
 export default function ToolbarPlugin({
   editor,
   activeEditor,
@@ -486,6 +503,37 @@ export default function ToolbarPlugin({
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
 
+  const $handleHeadingNode = useCallback(
+    (selectedElement: LexicalNode) => {
+      const type = $isHeadingNode(selectedElement)
+        ? selectedElement.getTag()
+        : selectedElement.getType();
+
+      if (type in blockTypeToBlockName) {
+        updateToolbarState(
+          'blockType',
+          type as keyof typeof blockTypeToBlockName,
+        );
+      }
+    },
+    [updateToolbarState],
+  );
+
+  const $handleCodeNode = useCallback(
+    (element: LexicalNode) => {
+      if ($isCodeNode(element)) {
+        const language =
+          element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
+        updateToolbarState(
+          'codeLanguage',
+          language ? CODE_LANGUAGE_MAP[language] || language : '',
+        );
+        return;
+      }
+    },
+    [updateToolbarState],
+  );
+
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -502,18 +550,7 @@ export default function ToolbarPlugin({
       }
 
       const anchorNode = selection.anchor.getNode();
-      let element =
-        anchorNode.getKey() === 'root'
-          ? anchorNode
-          : $findMatchingParent(anchorNode, (e) => {
-              const parent = e.getParent();
-              return parent !== null && $isRootOrShadowRoot(parent);
-            });
-
-      if (element === null) {
-        element = anchorNode.getTopLevelElementOrThrow();
-      }
-
+      const element = $findTopLevelElement(anchorNode);
       const elementKey = element.getKey();
       const elementDOM = activeEditor.getElementByKey(elementKey);
 
@@ -545,26 +582,11 @@ export default function ToolbarPlugin({
 
           updateToolbarState('blockType', type);
         } else {
-          const type = $isHeadingNode(element)
-            ? element.getTag()
-            : element.getType();
-          if (type in blockTypeToBlockName) {
-            updateToolbarState(
-              'blockType',
-              type as keyof typeof blockTypeToBlockName,
-            );
-          }
-          if ($isCodeNode(element)) {
-            const language =
-              element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
-            updateToolbarState(
-              'codeLanguage',
-              language ? CODE_LANGUAGE_MAP[language] || language : '',
-            );
-            return;
-          }
+          $handleHeadingNode(element);
+          $handleCodeNode(element);
         }
       }
+
       // Handle buttons
       updateToolbarState(
         'fontColor',
@@ -622,7 +644,30 @@ export default function ToolbarPlugin({
       updateToolbarState('isUppercase', selection.hasFormat('uppercase'));
       updateToolbarState('isCapitalize', selection.hasFormat('capitalize'));
     }
-  }, [activeEditor, editor, updateToolbarState]);
+    if ($isNodeSelection(selection)) {
+      const nodes = selection.getNodes();
+      for (const selectedNode of nodes) {
+        const parentList = $getNearestNodeOfType<ListNode>(
+          selectedNode,
+          ListNode,
+        );
+        if (parentList) {
+          const type = parentList.getListType();
+          updateToolbarState('blockType', type);
+        } else {
+          const selectedElement = $findTopLevelElement(selectedNode);
+          $handleHeadingNode(selectedElement);
+          $handleCodeNode(selectedElement);
+        }
+      }
+    }
+  }, [
+    activeEditor,
+    editor,
+    updateToolbarState,
+    $handleHeadingNode,
+    $handleCodeNode,
+  ]);
 
   useEffect(() => {
     return editor.registerCommand(

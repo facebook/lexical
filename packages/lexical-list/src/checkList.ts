@@ -182,36 +182,17 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
 
   const rect = target.getBoundingClientRect();
   const pageX = event.pageX / calculateZoomLevel(target);
-  let iconRect = rect;
-  if (window.getComputedStyle) {
-    const style = window.getComputedStyle(target, '::before');
-    const width = parseFloat(style.width);
-    const height = parseFloat(style.height);
-    if (!isNaN(width) && !isNaN(height)) {
-      iconRect = {
-        bottom: rect.top + height,
-        height,
-        left: rect.left,
-        right: rect.left + width,
-        toJSON: () => ({
-          bottom: rect.top + height,
-          height,
-          left: rect.left,
-          right: rect.left + width,
-          top: rect.top,
-          width,
-        }),
-        top: rect.top,
-        width,
-        x: rect.left,
-        y: rect.top,
-      };
-    }
-  }
+
+  // Use getComputedStyle if available, otherwise fallback to 0px width
+  const beforeStyles = window.getComputedStyle
+    ? window.getComputedStyle(target, '::before')
+    : ({width: '0px'} as CSSStyleDeclaration);
+  const beforeWidthInPixels = parseFloat(beforeStyles.width);
+
   if (
     target.dir === 'rtl'
-      ? pageX < iconRect.right && pageX > iconRect.left
-      : pageX > iconRect.left && pageX < iconRect.right
+      ? pageX < rect.right && pageX > rect.right - beforeWidthInPixels
+      : pageX > rect.left && pageX < rect.left + beforeWidthInPixels
   ) {
     callback();
   }

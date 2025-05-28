@@ -115,16 +115,6 @@ export class ListItemNode extends ElementNode {
     const prevStyle = prevNode ? prevNode.__style : '';
     const nextStyle = this.__style;
 
-    // Set custom property for font-size from textStyle if present
-    const textStyleObj = getStyleObjectFromCSS(this.__textStyle);
-    if (textStyleObj['font-size']) {
-      dom.style.setProperty(
-        '--listitem-marker-font-size',
-        textStyleObj['font-size'],
-      );
-    } else {
-      dom.style.removeProperty('--listitem-marker-font-size');
-    }
     if (prevStyle !== nextStyle) {
       if (nextStyle === '') {
         dom.removeAttribute('style');

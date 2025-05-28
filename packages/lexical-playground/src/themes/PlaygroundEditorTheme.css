@@ -453,6 +453,9 @@
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
+  background-color: var(--listitem-marker-background-color);
 }
 .PlaygroundEditorTheme__listItem::marker {
   color: var(--listitem-marker-color);
@@ -462,7 +465,6 @@
 }
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {
-  font-size: inherit;
   position: relative;
   margin-left: 0.5em;
   margin-right: 0.5em;

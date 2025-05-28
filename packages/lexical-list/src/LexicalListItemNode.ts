@@ -95,49 +95,35 @@ export class ListItemNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
-    const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(element, this, null, parent);
-    }
-    element.value = this.__value;
-    $setListItemThemeClassNames(element, config.theme, this);
-    const nextStyle = this.__style;
-
-    // Merge font-size from textStyle into <li> style if present
-    const textStyleObj = getStyleObjectFromCSS(this.__textStyle);
-    if (textStyleObj['font-size']) {
-      element.style.fontSize = textStyleObj['font-size'];
-    }
-    if (nextStyle) {
-      element.style.cssText += nextStyle;
-    }
-
-    applyMarkerStyles(element, this, null);
+    this.updateListItemDOM(null, element, config);
 
     return element;
   }
 
-  updateDOM(
-    prevNode: ListItemNode,
-    dom: HTMLElement,
+  updateListItemDOM(
+    prevNode: ListItemNode | null,
+    dom: HTMLLIElement,
     config: EditorConfig,
-  ): boolean {
+  ) {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
       updateListItemChecked(dom, this, prevNode, parent);
     }
-    // @ts-expect-error - this is always HTMLListItemElement
+
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-    const prevStyle = prevNode.__style;
+    const prevStyle = prevNode ? prevNode.__style : '';
     const nextStyle = this.__style;
 
-    // Merge font-size from textStyle into <li> style if present
+    // Set custom property for font-size from textStyle if present
     const textStyleObj = getStyleObjectFromCSS(this.__textStyle);
     if (textStyleObj['font-size']) {
-      dom.style.fontSize = textStyleObj['font-size'];
+      dom.style.setProperty(
+        '--listitem-marker-font-size',
+        textStyleObj['font-size'],
+      );
     } else {
-      dom.style.removeProperty('font-size');
+      dom.style.removeProperty('--listitem-marker-font-size');
     }
     if (prevStyle !== nextStyle) {
       if (nextStyle === '') {
@@ -147,6 +133,16 @@ export class ListItemNode extends ElementNode {
       }
     }
     applyMarkerStyles(dom, this, prevNode);
+  }
+
+  updateDOM(
+    prevNode: ListItemNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    // @ts-expect-error - this is always HTMLListItemElement
+    const element: HTMLLIElement = dom;
+    this.updateListItemDOM(prevNode, element, config);
     return false;
   }
 

@@ -652,8 +652,17 @@ export function $deleteTableRowAtSelection(): void {
         cellStartRow < anchorStartRow ||
         cellStartRow + cell.__rowSpan - 1 > focusEndRow
       ) {
-        const overflow = focusEndRow - anchorStartRow + 1;
-        cell.setRowSpan(cell.__rowSpan - overflow);
+        const intersectionStart = Math.max(cellStartRow, anchorStartRow);
+        const intersectionEnd = Math.min(
+          cell.__rowSpan + cellStartRow - 1,
+          focusEndRow,
+        );
+
+        const overflowRowsCount =
+          intersectionStart <= intersectionEnd
+            ? intersectionEnd - intersectionStart + 1
+            : 0;
+        cell.setRowSpan(cell.__rowSpan - overflowRowsCount);
       }
       // Rows overflowing bottom have to be moved to the next row
       if (

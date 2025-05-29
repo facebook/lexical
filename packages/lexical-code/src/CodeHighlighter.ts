@@ -23,6 +23,7 @@ import {
   $createTabNode,
   $createTextNode,
   $getCaretRange,
+  $getCaretRangeInDirection,
   $getNodeByKey,
   $getSelection,
   $getSiblingCaret,
@@ -652,13 +653,18 @@ function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
   ) {
     const tabNode = $createTabNode();
     const lineBreakNode = $createLineBreakNode();
+    const direction = selection.isBackward() ? 'previous' : 'next';
     selection.insertNodes([tabNode, lineBreakNode]);
     $setSelectionFromCaretRange(
-      $getCaretRange(
-        $getTextPointCaret(tabNode, 'next', 0),
-        $normalizeCaret($getSiblingCaret(lineBreakNode, 'next')),
+      $getCaretRangeInDirection(
+        $getCaretRange(
+          $getTextPointCaret(tabNode, 'next', 0),
+          $normalizeCaret($getSiblingCaret(lineBreakNode, 'next')),
+        ),
+        direction,
       ),
     );
+
     return true;
   }
 

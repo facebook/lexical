@@ -2232,7 +2232,7 @@ Introduces a "clipboard viewer" functionality in the local dev environment. When
 - feat: new way to delete comments and threads (#2570) Adithya Vardhan
 - Lexical Typeaheads (#2534) Tyler Bainbridge
 - Add $insertBlockNode (#2633) Gerard Rovira
-- Add seperate flag for if script had loaded (#2628) John Flockton
+- Add separate flag for if script had loaded (#2628) John Flockton
 - Fix Chrome types in Lexical DevTools (#2627) John Flockton
 - Capture the expected payload type in commands (#2537) Patrik Åkerstrand
 - fix unit test warning (#2618) Acy Watson

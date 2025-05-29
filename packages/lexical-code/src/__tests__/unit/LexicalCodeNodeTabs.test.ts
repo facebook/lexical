@@ -229,12 +229,12 @@ describe('LexicalCodeNode tests', () => {
                   .replaceAll('\t', '-')
                   .replaceAll('\n', '>'),
               ).toBe(selectedOutput);
-              const selection = $getSelection();
+              const isBackward = $getSelection()!.isBackward();
               if (direction === 'forwards') {
-                expect(selection.isBackward()).toBe(false);
+                expect(isBackward).toBe(false);
               } else {
                 if (scenario[1].split('|').length === 3) {
-                  expect(selection.isBackward()).toBe(true);
+                  expect(isBackward).toBe(true);
                 }
               }
             });

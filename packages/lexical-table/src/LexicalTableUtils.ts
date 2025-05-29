@@ -632,7 +632,6 @@ export function $deleteTableRowAtSelection(): void {
     return;
   }
   const columnCount = gridMap[0].length;
-  const selectedRowCount = anchorCell.__rowSpan;
   const nextRow = gridMap[focusEndRow + 1];
   const nextRowNode: null | TableRowNode = grid.getChildAtIndex(
     focusEndRow + 1,
@@ -648,22 +647,21 @@ export function $deleteTableRowAtSelection(): void {
         // Don't repeat work for the same Cell
         continue;
       }
-      // Rows overflowing top have to be trimmed
-      if (row === anchorStartRow && cellStartRow < anchorStartRow) {
-        const overflowTop = anchorStartRow - cellStartRow;
-        cell.setRowSpan(
-          cell.__rowSpan -
-            Math.min(selectedRowCount, cell.__rowSpan - overflowTop),
-        );
+      // Rows overflowing top or bottom have to be trimmed
+      if (
+        cellStartRow < anchorStartRow ||
+        cellStartRow + cell.__rowSpan - 1 > focusEndRow
+      ) {
+        const overflow = focusEndRow - anchorStartRow + 1;
+        cell.setRowSpan(cell.__rowSpan - overflow);
       }
-      // Rows overflowing bottom have to be trimmed and moved to the next row
+      // Rows overflowing bottom have to be moved to the next row
       if (
         cellStartRow >= anchorStartRow &&
         cellStartRow + cell.__rowSpan - 1 > focusEndRow &&
         // Handle overflow only once
         row === focusEndRow
       ) {
-        cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
         invariant(nextRowNode !== null, 'Expected nextRowNode not to be null');
         let insertAfterCell: null | TableCellNode = null;
         for (let columnIndex = 0; columnIndex < column; columnIndex++) {

@@ -189,7 +189,7 @@ export function useBasicTypeaheadTriggerMatch(
       }
       return null;
     },
-    [maxLength, minLength, trigger, punctuation],
+    [allowWhitespace, trigger, punctuation, maxLength, minLength],
   );
 }
 

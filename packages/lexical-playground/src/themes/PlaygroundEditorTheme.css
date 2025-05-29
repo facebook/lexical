@@ -453,6 +453,9 @@
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
+  background-color: var(--listitem-marker-background-color);
 }
 .PlaygroundEditorTheme__listItem::marker {
   color: var(--listitem-marker-color);
@@ -463,32 +466,34 @@
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {
   position: relative;
-  margin-left: 8px;
-  margin-right: 8px;
-  padding-left: 24px;
-  padding-right: 24px;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
   list-style-type: none;
   outline: none;
+  display: block;
+  min-height: 1.5em;
 }
-.PlaygroundEditorTheme__listItemChecked {
-  text-decoration: line-through;
+.PlaygroundEditorTheme__listItemChecked > *,
+.PlaygroundEditorTheme__listItemUnchecked > * {
+  margin-left: 0.01em;
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  top: 2px;
+  content: '\200B';
+  width: 0.9em;
+  height: 0.9em;
+  top: 50%;
   left: 0;
   cursor: pointer;
   display: block;
   background-size: cover;
   position: absolute;
+  transform: translateY(-50%);
 }
-.PlaygroundEditorTheme__listItemUnchecked[dir='rtl']:before,
-.PlaygroundEditorTheme__listItemChecked[dir='rtl']:before {
-  left: auto;
-  right: 0;
+.PlaygroundEditorTheme__listItemChecked {
+  text-decoration: line-through;
 }
 .PlaygroundEditorTheme__listItemUnchecked:focus:before,
 .PlaygroundEditorTheme__listItemChecked:focus:before {
@@ -512,13 +517,12 @@
   border-style: solid;
   position: absolute;
   display: block;
-  top: 6px;
-  width: 3px;
-  left: 7px;
-  right: 7px;
-  height: 6px;
-  transform: rotate(45deg);
-  border-width: 0 2px 2px 0;
+  top: 45%;
+  width: 0.2em;
+  left: 0.35em;
+  height: 0.4em;
+  transform: translateY(-50%) rotate(45deg);
+  border-width: 0 0.1em 0.1em 0;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;

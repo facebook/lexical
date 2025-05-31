@@ -225,12 +225,14 @@ const NodeContextMenuPlugin = forwardRef<
         } else {
           return {
             className: itemClassName,
-            disabled: (option as ContextMenuOption).disabled,
+            disabled: (option as NodeContextMenuOption).disabled,
             key: option.key,
-            label: (option as ContextMenuOption).title,
+            label: (option as NodeContextMenuOption).title,
             onClick: () =>
-              editor.update(() => (option as ContextMenuOption).$onSelect()),
-            title: (option as ContextMenuOption).title,
+              editor.update(() =>
+                (option as NodeContextMenuOption).$onSelect(),
+              ),
+            title: (option as NodeContextMenuOption).title,
             type: option.type,
           };
         }

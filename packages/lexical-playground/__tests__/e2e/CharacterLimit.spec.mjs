@@ -126,6 +126,44 @@ function testSuite(charset) {
     );
   });
 
+  test('displays overflow on token nodes', async ({page, isCollab}) => {
+    // The smile emoji (S) is length 2, so for 1234S56:
+    // - 1234 is non-overflow text
+    // - S takes characters 5 and 6, since it's a token and can't be split we count the whole
+    //   node as overflowed
+    // - 56 is overflowed
+    test.skip(isCollab);
+    await page.focus('div[contenteditable="true"]');
+
+    await page.keyboard.type('1234:)56');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">1234</span>
+          <span
+            class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">56</span>
+          </span>
+        </p>
+      `,
+    );
+
+    await pressBackspace(page, 3);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">1234</span>
+        </p>
+      `,
+    );
+  });
+
   test('can type new lines inside overflow', async ({
     page,
     isRichText,

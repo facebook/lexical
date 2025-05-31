@@ -79,6 +79,53 @@ function testSuite(charset) {
     });
   });
 
+  test('handles auto link nodes', async ({page, isCollab}) => {
+    test.skip(isCollab);
+    await page.focus('div[contenteditable="true"]');
+
+    await page.keyboard.type('1234:)56 www.example.com');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">1234</span>
+          <span
+            class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">56</span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://www.example.com">
+              <span data-lexical-text="true">www.example.com</span>
+            </a>
+          </span>
+        </p>
+      `,
+    );
+
+    await pressBackspace(page, 3);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">1234</span>
+          <span
+            class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">56 www.example.</span>
+          </span>
+        </p>
+      `,
+    );
+  });
+
   test('displays overflow on token nodes', async ({page, isCollab}) => {
     // The smile emoji (S) is length 2, so for 1234S56:
     // - 1234 is non-overflow text

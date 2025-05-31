@@ -173,6 +173,9 @@ function $wrapOverflowedNodes(offset: number): void {
 
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
+    const hasOverflowParent = !!node
+      .getParents()
+      .find((p) => p instanceof OverflowNode);
 
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
@@ -215,7 +218,7 @@ function $wrapOverflowedNodes(offset: number): void {
           $unwrapNode(node);
         }
       }
-    } else if ($isLeafNode(node)) {
+    } else if ($isLeafNode(node) && !hasOverflowParent) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
 

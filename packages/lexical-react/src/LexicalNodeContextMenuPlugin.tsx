@@ -107,7 +107,7 @@ const ContextMenuItem = forwardRef<
   );
 });
 
-type ContextMenuType = ContextMenuOption | ContextMenuSeparator;
+type ContextMenuType = NodeContextMenuOption | NodeContextMenuSeparator;
 
 interface MenuSeparatorType {
   className: string;
@@ -132,7 +132,7 @@ interface Props {
   items: ContextMenuType[];
 }
 
-const NodeContextMenu = forwardRef<
+const NodeContextMenuPlugin = forwardRef<
   HTMLButtonElement,
   Props & React.HTMLProps<HTMLButtonElement>
 >(({items, className, itemClassName, separatorClassName}, forwardedRef) => {
@@ -317,4 +317,4 @@ const NodeContextMenu = forwardRef<
   );
 });
 
-export {NodeContextMenu, NodeContextMenuOption, NodeContextMenuSeparator};
+export {NodeContextMenuOption, NodeContextMenuPlugin, NodeContextMenuSeparator};

@@ -11,8 +11,8 @@ import type {JSX} from 'react';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  NodeContextMenu,
   NodeContextMenuOption,
+  NodeContextMenuPlugin,
   NodeContextMenuSeparator,
 } from '@lexical/react/LexicalNodeContextMenuPlugin';
 import {
@@ -136,7 +136,7 @@ export default function ContextMenuPlugin(): JSX.Element {
   }, [editor]);
 
   return (
-    <NodeContextMenu
+    <NodeContextMenuPlugin
       className="PlaygroundEditorTheme__contextMenu"
       itemClassName="PlaygroundEditorTheme__contextMenuItem"
       separatorClassName="PlaygroundEditorTheme__contextMenuSeparator"

@@ -11,9 +11,9 @@ import type {JSX} from 'react';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  ContextMenu,
-  ContextMenuOption,
-  ContextMenuSeparator,
+  NodeContextMenu,
+  NodeContextMenuOption,
+  NodeContextMenuSeparator,
 } from '@lexical/react/LexicalNodeContextMenuPlugin';
 import {
   $getSelection,
@@ -32,29 +32,29 @@ export default function ContextMenuPlugin(): JSX.Element {
 
   const items = useMemo(() => {
     return [
-      new ContextMenuOption(`Remove Link`, {
+      new NodeContextMenuOption(`Remove Link`, {
         $onSelect: () => {
           editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
         },
         $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
         disabled: false,
       }),
-      new ContextMenuSeparator({
+      new NodeContextMenuSeparator({
         $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
       }),
-      new ContextMenuOption(`Cut`, {
+      new NodeContextMenuOption(`Cut`, {
         $onSelect: () => {
           editor.dispatchCommand(CUT_COMMAND, null);
         },
         disabled: false,
       }),
-      new ContextMenuOption(`Copy`, {
+      new NodeContextMenuOption(`Copy`, {
         $onSelect: () => {
           editor.dispatchCommand(COPY_COMMAND, null);
         },
         disabled: false,
       }),
-      new ContextMenuOption(`Paste`, {
+      new NodeContextMenuOption(`Paste`, {
         $onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
             const data = new DataTransfer();
@@ -85,7 +85,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
         disabled: false,
       }),
-      new ContextMenuOption(`Paste as Plain Text`, {
+      new NodeContextMenuOption(`Paste as Plain Text`, {
         $onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
             const permission = await navigator.permissions.query({
@@ -110,8 +110,8 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
         disabled: false,
       }),
-      new ContextMenuSeparator(),
-      new ContextMenuOption(`Delete Node`, {
+      new NodeContextMenuSeparator(),
+      new NodeContextMenuOption(`Delete Node`, {
         $onSelect: () => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
@@ -136,7 +136,7 @@ export default function ContextMenuPlugin(): JSX.Element {
   }, [editor]);
 
   return (
-    <ContextMenu
+    <NodeContextMenu
       className="PlaygroundEditorTheme__contextMenu"
       itemClassName="PlaygroundEditorTheme__contextMenuItem"
       separatorClassName="PlaygroundEditorTheme__contextMenuSeparator"

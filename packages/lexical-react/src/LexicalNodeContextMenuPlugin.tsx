@@ -40,7 +40,7 @@ class MenuOption {
   }
 }
 
-class ContextMenuOption extends MenuOption {
+class NodeContextMenuOption extends MenuOption {
   type: string;
   title: string;
   disabled: boolean;
@@ -66,7 +66,7 @@ class ContextMenuOption extends MenuOption {
   }
 }
 
-class ContextMenuSeparator extends MenuOption {
+class NodeContextMenuSeparator extends MenuOption {
   type: string;
   $showOn?: (node: LexicalNode) => boolean;
 
@@ -132,7 +132,7 @@ interface Props {
   items: ContextMenuType[];
 }
 
-const ContextMenu = forwardRef<
+const NodeContextMenu = forwardRef<
   HTMLButtonElement,
   Props & React.HTMLProps<HTMLButtonElement>
 >(({items, className, itemClassName, separatorClassName}, forwardedRef) => {
@@ -317,4 +317,4 @@ const ContextMenu = forwardRef<
   );
 });
 
-export {ContextMenu, ContextMenuOption, ContextMenuSeparator};
+export {NodeContextMenu, NodeContextMenuOption, NodeContextMenuSeparator};

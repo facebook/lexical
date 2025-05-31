@@ -614,3 +614,48 @@
   background-color: yellow;
   font-weight: bold;
 }
+
+.PlaygroundEditorTheme__contextMenu {
+  outline: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+.PlaygroundEditorTheme__contextMenu button:first-child {
+  border-radius: 8px 8px 0px 0px;
+}
+.PlaygroundEditorTheme__contextMenu button:last-child {
+  border-radius: 0px 0px 8px 8px;
+}
+.PlaygroundEditorTheme__contextMenuItem {
+  width: 100%;
+  display: block;
+}
+.PlaygroundEditorTheme__contextMenuItem {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  background-color: #fff;
+  color: #050505;
+  border: 0;
+  border-radius: 0px;
+  font-size: 15px;
+  text-align: left;
+  line-height: 20px;
+  padding: 8px;
+  outline: 0;
+  cursor: pointer;
+}
+.PlaygroundEditorTheme__contextMenuItem.open {
+  background: #ddd;
+}
+.PlaygroundEditorTheme__contextMenuItem:focus,
+.PlaygroundEditorTheme__contextMenuItem:not([disabled]):active {
+  background: #eee;
+}
+.PlaygroundEditorTheme__contextMenuItem:disabled {
+  background: #fff;
+  color: #aaa;
+  cursor: not-allowed;
+}

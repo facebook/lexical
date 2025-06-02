@@ -599,7 +599,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,

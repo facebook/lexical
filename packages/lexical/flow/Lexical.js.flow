@@ -185,7 +185,7 @@ declare export class LexicalEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _normalizedNodes: Set<NodeKey>;
-  _updateTags: Set<string>;
+  _updateTags: Set<UpdateTag>;
   _observer: null | MutationObserver;
   _key: string;
   _editable: boolean;
@@ -900,8 +900,8 @@ declare export function $isParagraphNode(
  * LexicalUtils
  */
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
-declare export function $hasUpdateTag(tag: string): boolean;
-declare export function $addUpdateTag(tag: string): void;
+declare export function $hasUpdateTag(tag: UpdateTag): boolean;
+declare export function $addUpdateTag(tag: UpdateTag): void;
 declare export function $onUpdate(updateFn: () => void): void;
 declare export function getNearestEditorFromDOMNode(
   node: Node | null,
@@ -1259,3 +1259,25 @@ declare export function $splitAtPointCaretNext(
   pointCaret: PointCaret<'next'>,
   options?: SplitAtPointCaretNextOptions,
 ): null | NodeCaret<'next'>;
+
+/**
+ * LexicalUpdateTags
+ */
+declare export var COLLABORATION_TAG: 'collaboration';
+declare export var HISTORIC_TAG: 'historic';
+declare export var HISTORY_MERGE_TAG: 'history-merge';
+declare export var HISTORY_PUSH_TAG: 'history-push';
+declare export var PASTE_TAG: 'paste';
+declare export var SKIP_COLLAB_TAG: 'skip-collab';
+declare export var SKIP_DOM_SELECTION_TAG: 'skip-dom-selection';
+declare export var SKIP_SCROLL_INTO_VIEW_TAG: 'skip-scroll-into-view';
+export type UpdateTag =
+  typeof COLLABORATION_TAG
+  | typeof HISTORIC_TAG
+  | typeof HISTORY_MERGE_TAG
+  | typeof HISTORY_PUSH_TAG
+  | typeof PASTE_TAG
+  | typeof SKIP_COLLAB_TAG
+  | typeof SKIP_DOM_SELECTION_TAG
+  | typeof SKIP_SCROLL_INTO_VIEW_TAG
+  | string;

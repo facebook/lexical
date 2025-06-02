@@ -14,7 +14,12 @@ import {
   OverflowNode,
 } from '@lexical/overflow';
 import {$rootTextContent} from '@lexical/text';
-import {$dfs, $unwrapNode, mergeRegister} from '@lexical/utils';
+import {
+  $dfs,
+  $findMatchingParent,
+  $unwrapNode,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -174,6 +179,9 @@ function $wrapOverflowedNodes(offset: number): void {
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
 
+    const needsOverflowParent =
+      $isLeafNode(node) && !$findMatchingParent(node, $isOverflowNode);
+
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
       const nextLength = accumulatedLength + node.getTextContentSize();
@@ -215,7 +223,7 @@ function $wrapOverflowedNodes(offset: number): void {
           $unwrapNode(node);
         }
       }
-    } else if ($isLeafNode(node)) {
+    } else if (needsOverflowParent) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
 

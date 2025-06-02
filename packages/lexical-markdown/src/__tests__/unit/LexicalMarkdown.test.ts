@@ -756,6 +756,52 @@ describe('Markdown', () => {
       ).toBe(mdAfterExport ?? md);
     });
   }
+
+  for (const {
+    md,
+    skipImport,
+    shouldPreserveNewLines,
+    shouldMergeAdjacentLines,
+    customTransformers,
+  } of IMPORT_AND_EXPORT) {
+    if (skipImport) {
+      continue;
+    }
+
+    it(`should not select when importing "${md.replace(/\n/g, '\\n')}"`, () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            md,
+            [
+              ...(customTransformers || []),
+              ...TRANSFORMERS,
+              HIGHLIGHT_TEXT_MATCH_IMPORT,
+            ],
+            undefined,
+            shouldPreserveNewLines,
+            shouldMergeAdjacentLines,
+          ),
+        {
+          discrete: true,
+        },
+      );
+
+      expect(editor.getEditorState().read(() => $getSelection())).toBe(null);
+    });
+  }
+
   it('should not remove leading node and transform if replace returns false', () => {
     const editor = createHeadlessEditor({
       nodes: [

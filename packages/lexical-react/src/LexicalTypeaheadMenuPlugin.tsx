@@ -29,7 +29,6 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
-import * as React from 'react';
 import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
@@ -152,11 +151,18 @@ export function useBasicTypeaheadTriggerMatch(
     minLength = 1,
     maxLength = 75,
     punctuation = PUNCTUATION,
-  }: {minLength?: number; maxLength?: number; punctuation?: string},
+    allowWhitespace = false,
+  }: {
+    minLength?: number;
+    maxLength?: number;
+    punctuation?: string;
+    allowWhitespace?: boolean;
+  },
 ): TriggerFn {
   return useCallback(
     (text: string) => {
-      const validChars = '[^' + trigger + punctuation + '\\s]';
+      const validCharsSuffix = allowWhitespace ? '' : '\\s';
+      const validChars = '[^' + trigger + punctuation + validCharsSuffix + ']';
       const TypeaheadTriggerRegex = new RegExp(
         '(^|\\s|\\()(' +
           '[' +
@@ -183,7 +189,7 @@ export function useBasicTypeaheadTriggerMatch(
       }
       return null;
     },
-    [maxLength, minLength, trigger, punctuation],
+    [allowWhitespace, trigger, punctuation, maxLength, minLength],
   );
 }
 

@@ -104,18 +104,32 @@ export class LinkNode extends ElementNode {
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
     const element = document.createElement('a');
-    element.href = this.sanitizeUrl(this.__url);
-    if (this.__target !== null) {
-      element.target = this.__target;
-    }
-    if (this.__rel !== null) {
-      element.rel = this.__rel;
-    }
-    if (this.__title !== null) {
-      element.title = this.__title;
-    }
+    this.updateLinkDOM(null, element, config);
     addClassNamesToElement(element, config.theme.link);
     return element;
+  }
+
+  updateLinkDOM(
+    prevNode: this | null,
+    anchor: LinkHTMLElementType,
+    config: EditorConfig,
+  ) {
+    if (isHTMLAnchorElement(anchor)) {
+      if (!prevNode || prevNode.__url !== this.__url) {
+        anchor.href = this.sanitizeUrl(this.__url);
+      }
+      for (const attr of ['target', 'rel', 'title'] as const) {
+        const key = `__${attr}` as const;
+        const value = this[key];
+        if (!prevNode || prevNode[key] !== value) {
+          if (value) {
+            anchor[attr] = value;
+          } else {
+            anchor.removeAttribute(attr);
+          }
+        }
+      }
+    }
   }
 
   updateDOM(
@@ -123,39 +137,7 @@ export class LinkNode extends ElementNode {
     anchor: LinkHTMLElementType,
     config: EditorConfig,
   ): boolean {
-    if (isHTMLAnchorElement(anchor)) {
-      const url = this.__url;
-      const target = this.__target;
-      const rel = this.__rel;
-      const title = this.__title;
-      if (url !== prevNode.__url) {
-        anchor.href = url;
-      }
-
-      if (target !== prevNode.__target) {
-        if (target) {
-          anchor.target = target;
-        } else {
-          anchor.removeAttribute('target');
-        }
-      }
-
-      if (rel !== prevNode.__rel) {
-        if (rel) {
-          anchor.rel = rel;
-        } else {
-          anchor.removeAttribute('rel');
-        }
-      }
-
-      if (title !== prevNode.__title) {
-        if (title) {
-          anchor.title = title;
-        } else {
-          anchor.removeAttribute('title');
-        }
-      }
-    }
+    this.updateLinkDOM(prevNode, anchor, config);
     return false;
   }
 
@@ -182,8 +164,9 @@ export class LinkNode extends ElementNode {
   }
 
   sanitizeUrl(url: string): string {
+    url = formatUrl(url);
     try {
-      const parsedUrl = new URL(url);
+      const parsedUrl = new URL(formatUrl(url));
       // eslint-disable-next-line no-script-url
       if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
         return 'about:blank';
@@ -727,4 +710,38 @@ function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
     parent = parent.getParentOrThrow();
   }
   return predicate(parent) ? parent : null;
+}
+
+const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;
+
+/**
+ * Formats a URL string by adding appropriate protocol if missing
+ *
+ * @param url - URL to format
+ * @returns Formatted URL with appropriate protocol
+ */
+export function formatUrl(url: string): string {
+  // Check if URL already has a protocol
+  if (url.match(/^[a-z][a-z0-9+.-]*:/i)) {
+    // URL already has a protocol, leave it as is
+    return url;
+  }
+  // Check if it's a relative path (starting with '/', '.', or '#')
+  else if (url.match(/^[/#.]/)) {
+    // Relative path, leave it as is
+    return url;
+  }
+
+  // Check for email address
+  else if (url.includes('@')) {
+    return `mailto:${url}`;
+  }
+
+  // Check for phone number
+  else if (PHONE_NUMBER_REGEX.test(url)) {
+    return `tel:${url}`;
+  }
+
+  // For everything else, return with https:// prefix
+  return `https://${url}`;
 }

@@ -12,6 +12,7 @@ import {
   $isRangeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
+  COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   REDO_COMMAND,
@@ -19,8 +20,6 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
-
-const LowPriority = 1;
 
 function Divider() {
   return <div className="divider" />;
@@ -60,7 +59,7 @@ export default function ToolbarPlugin() {
           $updateToolbar();
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
@@ -68,7 +67,7 @@ export default function ToolbarPlugin() {
           setCanUndo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         CAN_REDO_COMMAND,
@@ -76,7 +75,7 @@ export default function ToolbarPlugin() {
           setCanRedo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [editor, $updateToolbar]);

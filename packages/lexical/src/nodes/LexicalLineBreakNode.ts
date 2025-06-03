@@ -6,10 +6,11 @@
  *
  */
 
-import type {KlassConstructor} from '../LexicalEditor';
+import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
@@ -48,6 +49,18 @@ export class LineBreakNode extends LexicalNode {
 
   updateDOM(): false {
     return false;
+  }
+
+  override exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (this.getNextSibling() !== null) {
+      return {element};
+    }
+    const documentFragment = document.createDocumentFragment();
+    const extraLineBreakElement = this.createDOM();
+    documentFragment.appendChild(element as HTMLElement);
+    documentFragment.appendChild(extraLineBreakElement);
+    return {element: documentFragment};
   }
 
   isInline(): true {

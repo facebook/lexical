@@ -52,14 +52,13 @@ export class LineBreakNode extends LexicalNode {
   }
 
   override exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const {element} = super.exportDOM(editor);
+    const linebreak = this.createDOM();
     if (this.getNextSibling() !== null) {
-      return {element};
+      return {element: linebreak};
     }
     const documentFragment = document.createDocumentFragment();
     const extraLineBreakElement = this.createDOM();
-    documentFragment.appendChild(element as HTMLElement);
-    documentFragment.appendChild(extraLineBreakElement);
+    documentFragment.append(linebreak, extraLineBreakElement);
     return {element: documentFragment};
   }
 

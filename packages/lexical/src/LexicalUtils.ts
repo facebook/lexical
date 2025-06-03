@@ -48,6 +48,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
+  $isTabNode,
   $isTextNode,
   DecoratorNode,
   ElementNode,
@@ -194,8 +195,18 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
+/**
+ * Return true if the TextNode is a TabNode or is in token mode.
+ */
+export function $isTokenOrTab(node: TextNode): boolean {
+  return $isTabNode(node) || node.isToken();
+}
+
+/**
+ * Return true if the TextNode is a TabNode, or is in token or segmented mode.
+ */
 export function $isTokenOrSegmented(node: TextNode): boolean {
-  return node.isToken() || node.isSegmented();
+  return $isTokenOrTab(node) || node.isSegmented();
 }
 
 /**
@@ -816,7 +827,7 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
   }
   const offset = selection.anchor.offset;
   const parent = node.getParentOrThrow();
-  const isToken = node.isToken();
+  const isToken = $isTokenOrTab(node);
   if (offset === 0) {
     return (
       !node.canInsertTextBefore() ||

@@ -49,8 +49,7 @@ export function $sliceSelectedTextNodeContent(
   const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&
-    !textNode.isSegmented() &&
-    !textNode.isToken() &&
+    !$isTokenOrSegmented(textNode) &&
     anchorAndFocus !== null
   ) {
     const [anchor, focus] = anchorAndFocus;

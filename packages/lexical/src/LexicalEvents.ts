@@ -85,6 +85,7 @@ import {
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
+  $isTokenOrTab,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
@@ -577,8 +578,8 @@ function $canRemoveText(
     anchorNode !== focusNode ||
     $isElementNode(anchorNode) ||
     $isElementNode(focusNode) ||
-    !anchorNode.isToken() ||
-    !focusNode.isToken()
+    !$isTokenOrTab(anchorNode) ||
+    !$isTokenOrTab(focusNode)
   );
 }
 

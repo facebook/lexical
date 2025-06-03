@@ -114,6 +114,9 @@
       "@lexical/react/LexicalNestedComposer": [
         "./packages/lexical-react/src/LexicalNestedComposer.tsx"
       ],
+      "@lexical/react/LexicalNodeContextMenuPlugin": [
+        "./packages/lexical-react/src/LexicalNodeContextMenuPlugin.tsx"
+      ],
       "@lexical/react/LexicalNodeEventPlugin": [
         "./packages/lexical-react/src/LexicalNodeEventPlugin.ts"
       ],

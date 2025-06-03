@@ -290,7 +290,7 @@ export type AnyStateConfig = StateConfig<any, any>;
 /**
  * Create a StateConfig for the given string key and StateValueConfig.
  *
- * The key must be locally unique. In dev you wil get a key collision error
+ * The key must be locally unique. In dev you will get a key collision error
  * when you use two separate StateConfig on the same node with the same key.
  *
  * The returned StateConfig value should be used with {@link $getState} and

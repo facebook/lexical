@@ -29,7 +29,6 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
-import * as React from 'react';
 import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
@@ -148,11 +147,22 @@ export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
 
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
-  {minLength = 1, maxLength = 75}: {minLength?: number; maxLength?: number},
+  {
+    minLength = 1,
+    maxLength = 75,
+    punctuation = PUNCTUATION,
+    allowWhitespace = false,
+  }: {
+    minLength?: number;
+    maxLength?: number;
+    punctuation?: string;
+    allowWhitespace?: boolean;
+  },
 ): TriggerFn {
   return useCallback(
     (text: string) => {
-      const validChars = '[^' + trigger + PUNCTUATION + '\\s]';
+      const validCharsSuffix = allowWhitespace ? '' : '\\s';
+      const validChars = '[^' + trigger + punctuation + validCharsSuffix + ']';
       const TypeaheadTriggerRegex = new RegExp(
         '(^|\\s|\\()(' +
           '[' +
@@ -179,7 +189,7 @@ export function useBasicTypeaheadTriggerMatch(
       }
       return null;
     },
-    [maxLength, minLength, trigger],
+    [allowWhitespace, trigger, punctuation, maxLength, minLength],
   );
 }
 

@@ -116,34 +116,26 @@ export class ListItemNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
-    const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(element, this, null, parent);
-    }
-    element.value = this.__value;
-    $setListItemThemeClassNames(element, config.theme, this);
-    const nextStyle = this.__style;
-    if (nextStyle) {
-      element.style.cssText = nextStyle;
-    }
-    applyMarkerStyles(element, this, null);
+    this.updateListItemDOM(null, element, config);
+
     return element;
   }
 
-  updateDOM(
-    prevNode: ListItemNode,
-    dom: HTMLElement,
+  updateListItemDOM(
+    prevNode: ListItemNode | null,
+    dom: HTMLLIElement,
     config: EditorConfig,
-  ): boolean {
+  ) {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
       updateListItemChecked(dom, this, prevNode, parent);
     }
-    // @ts-expect-error - this is always HTMLListItemElement
+
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
-    const prevStyle = prevNode.__style;
+    const prevStyle = prevNode ? prevNode.__style : '';
     const nextStyle = this.__style;
+
     if (prevStyle !== nextStyle) {
       if (nextStyle === '') {
         dom.removeAttribute('style');
@@ -152,6 +144,16 @@ export class ListItemNode extends ElementNode {
       }
     }
     applyMarkerStyles(dom, this, prevNode);
+  }
+
+  updateDOM(
+    prevNode: ListItemNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    // @ts-expect-error - this is always HTMLListItemElement
+    const element: HTMLLIElement = dom;
+    this.updateListItemDOM(prevNode, element, config);
     return false;
   }
 
@@ -179,11 +181,17 @@ export class ListItemNode extends ElementNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
-    element.style.textAlign = this.getFormatType();
+
+    const formatType = this.getFormatType();
+    if (formatType) {
+      element.style.textAlign = formatType;
+    }
+
     const direction = this.getDirection();
     if (direction) {
       element.dir = direction;
     }
+
     return {
       element,
     };

@@ -66,7 +66,6 @@ export {
   $updateRangeSelectionFromCaretRange,
   type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';
-export type {PasteCommandType} from './LexicalCommands';
 export {
   BLUR_COMMAND,
   CAN_REDO_COMMAND,
@@ -108,6 +107,7 @@ export {
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
+  type PasteCommandType,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,

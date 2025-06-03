@@ -334,6 +334,7 @@ export async function assertTableHTML(
 
 /**
  * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Page | import('@playwright/test').Frame}
  */
 export function getPageOrFrame(page) {
   return IS_COLLAB ? page.frame('left') : page;

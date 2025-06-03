@@ -10,7 +10,12 @@ import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isAutoLinkNode,
+  $isLinkNode,
+  LinkNode,
+} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -36,8 +41,6 @@ import {
   TextFormatType,
   TextNode,
 } from 'lexical';
-
-import {formatUrl} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -210,11 +213,13 @@ const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
-  return (parentNode, children, match) => {
+  return (parentNode, children, match, isImport) => {
     const node = createNode(match);
     node.append(...children);
     parentNode.replace(node);
-    node.select(0, 0);
+    if (!isImport) {
+      node.select(0, 0);
+    }
   };
 };
 
@@ -240,7 +245,7 @@ function getIndent(whitespaces: string): number {
 }
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
-  return (parentNode, children, match) => {
+  return (parentNode, children, match, isImport) => {
     const previousNode = parentNode.getPreviousSibling();
     const nextNode = parentNode.getNextSibling();
     const listItem = $createListItemNode(
@@ -270,7 +275,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       parentNode.replace(list);
     }
     listItem.append(...children);
-    listItem.select(0, 0);
+    if (!isImport) {
+      listItem.select(0, 0);
+    }
     const indent = getIndent(match[1]);
     if (indent) {
       listItem.setIndent(indent);
@@ -351,7 +358,6 @@ export const QUOTE: ElementTransformer = {
           $createLineBreakNode(),
           ...children,
         ]);
-        previousNode.select(0, 0);
         parentNode.remove();
         return;
       }
@@ -360,7 +366,9 @@ export const QUOTE: ElementTransformer = {
     const node = $createQuoteNode();
     node.append(...children);
     parentNode.replace(node);
-    node.select(0, 0);
+    if (!isImport) {
+      node.select(0, 0);
+    }
   },
   type: 'element',
 };
@@ -542,7 +550,7 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 export const LINK: TextMatchTransformer = {
   dependencies: [LinkNode],
   export: (node, exportChildren, exportFormat) => {
-    if (!$isLinkNode(node)) {
+    if (!$isLinkNode(node) || $isAutoLinkNode(node)) {
       return null;
     }
     const title = node.getTitle();
@@ -561,8 +569,7 @@ export const LINK: TextMatchTransformer = {
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl, linkTitle] = match;
-    const formattedUrl = formatUrl(linkUrl);
-    const linkNode = $createLinkNode(formattedUrl, {title: linkTitle});
+    const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const linkTextNode = $createTextNode(linkText);
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);

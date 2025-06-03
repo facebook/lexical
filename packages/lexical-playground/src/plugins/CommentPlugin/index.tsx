@@ -48,6 +48,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   COLLABORATION_TAG,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_NORMAL,
   createCommand,
   getDOMSelection,
   KEY_ESCAPE_COMMAND,
@@ -141,7 +142,7 @@ function EscapeHandlerPlugin({
       (event: KeyboardEvent) => {
         return onEscape(event);
       },
-      2,
+      COMMAND_PRIORITY_NORMAL,
     );
   }, [editor, onEscape]);
 

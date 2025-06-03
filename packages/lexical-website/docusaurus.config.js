@@ -226,8 +226,11 @@ const config = {
   favicon: 'img/favicon.ico',
 
   future: {
-    // See https://docusaurus.io/blog/releases/3.6
+    // See https://docusaurus.io/blog/releases/3.8
     experimental_faster: true,
+    v4: {
+      removeLegacyPostBuildHeadAttribute: true, // required
+    },
   },
 
   markdown: {

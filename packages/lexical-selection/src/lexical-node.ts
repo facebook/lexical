@@ -80,8 +80,9 @@ export function $sliceSelectedTextNodeContent(
         endOffset = offset;
       }
 
-      textNode.__text = textNode.__text.slice(startOffset, endOffset);
-      return textNode;
+      return textNode.setTextContent(
+        textNode.__text.slice(startOffset, endOffset),
+      );
     }
   }
   return textNode;

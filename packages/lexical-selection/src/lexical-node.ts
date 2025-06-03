@@ -80,9 +80,10 @@ export function $sliceSelectedTextNodeContent(
         endOffset = offset;
       }
 
-      return textNode.setTextContent(
-        textNode.__text.slice(startOffset, endOffset),
-      );
+      // NOTE: This mutates __text directly because the primary use case is to
+      // modify a $cloneWithProperties node that should never be added
+      // to the EditorState so we must not call getWritable via setTextContent
+      textNode.__text = textNode.__text.slice(startOffset, endOffset);
     }
   }
   return textNode;

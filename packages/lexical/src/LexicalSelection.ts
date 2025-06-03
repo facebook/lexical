@@ -74,6 +74,7 @@ import {
   $hasAncestor,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
+  $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
   getDOMSelection,
@@ -841,8 +842,7 @@ export class RangeSelection implements BaseSelection {
     if (
       this.isCollapsed() &&
       startOffset === firstNodeTextLength &&
-      (firstNode.isSegmented() ||
-        firstNode.isToken() ||
+      ($isTokenOrSegmented(firstNode) ||
         !firstNode.canInsertTextAfter() ||
         (!firstNodeParent.canInsertTextAfter() &&
           firstNode.getNextSibling() === null))
@@ -871,8 +871,7 @@ export class RangeSelection implements BaseSelection {
     } else if (
       this.isCollapsed() &&
       startOffset === 0 &&
-      (firstNode.isSegmented() ||
-        firstNode.isToken() ||
+      ($isTokenOrSegmented(firstNode) ||
         !firstNode.canInsertTextBefore() ||
         (!firstNodeParent.canInsertTextBefore() &&
           firstNode.getPreviousSibling() === null))
@@ -920,7 +919,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     if (selectedNodesLength === 1) {
-      if (firstNode.isToken()) {
+      if ($isTokenOrTab(firstNode)) {
         const textNode = $createTextNode(text);
         textNode.select();
         firstNode.replace(textNode);
@@ -1016,7 +1015,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         if (
           $isTextNode(lastNode) &&
-          !lastNode.isToken() &&
+          !$isTokenOrTab(lastNode) &&
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
@@ -1109,7 +1108,7 @@ export class RangeSelection implements BaseSelection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if (!firstNode.isToken()) {
+      if (!$isTokenOrTab(firstNode)) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,

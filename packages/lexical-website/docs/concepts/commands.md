@@ -23,7 +23,7 @@ editor.registerCommand(
     console.log(payload); // Hello World!
     return false;
   },
-  LowPriority,
+  COMMAND_PRIORITY_LOW,
 );
 ```
 

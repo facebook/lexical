@@ -1010,8 +1010,7 @@ export class TextNode extends LexicalNode {
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = self.getWritable();
-      writableNode.__text = firstPart;
+      writableNode = self.setTextContent(firstPart);
     }
 
     // Then handle all other parts

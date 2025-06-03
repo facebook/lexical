@@ -155,8 +155,7 @@ export class CollabTextNode {
     const collabText = this._text;
 
     if (lexicalNode.__text !== collabText) {
-      const writable = lexicalNode.getWritable();
-      writable.__text = collabText;
+      lexicalNode.setTextContent(collabText);
     }
   }
 

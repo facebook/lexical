@@ -1,3 +1,11 @@
+## v0.32.1 (2025-06-05)
+
+- tests Chore Update table test to use locator API instead of page.evaluate (#7603) Bob Ippolito
+- scripts update next version in lexical-esm-nextjs (#7604) Yuncheng Lu
+- lexicallexical-selection Bug Fix Treat all TabNode as if they are in token mode (#7602) Bob Ippolito
+- Monthly Release v0.32.0 (#7599) Yuncheng Lu
+- v0.32.0 Lexical GitHub Actions Bot
+
 ## v0.32.0 (2025-06-02)
 
 - lexical-playgroundlexical-rich-textlexical-websitetestsexamples Chore source command priority from package (#7596) Eliott Vincent

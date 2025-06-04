@@ -284,5 +284,6 @@
   "282": "rootNode.splice: Only element or decorator nodes can be inserted to the root node",
   "283": "$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split",
   "284": "$getTextNodeOffset: invalid offset %s for size %s at key %s",
-  "285": "$getCodeLines only extracts non-empty lines"
+  "285": "$getCodeLines only extracts non-empty lines",
+  "286": "TabNode does not support spliceText"
 }

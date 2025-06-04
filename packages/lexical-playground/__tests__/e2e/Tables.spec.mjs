@@ -6791,13 +6791,8 @@ test.describe.parallel('Tables', () => {
     await click(page, 'th >> nth=1');
 
     // Check that the action menu button is visible when no overflow
-    const menuVisible = await page.evaluate(() => {
-      const button = document.querySelector('.table-cell-action-button');
-      // If button exists, menu is visible
-      return !!button;
-    });
-
-    expect(menuVisible).toBe(true);
+    // If button exists, menu is visible
+    await expect(page.locator('.table-cell-action-button')).toBeVisible();
 
     // Make the column very wide to ensure overflow
     await page.mouse.move(
@@ -6814,13 +6809,8 @@ test.describe.parallel('Tables', () => {
     // Click the cell
     await click(page, 'th >> nth=0');
 
-    const menuHidden = await page.evaluate(() => {
-      const button = document.querySelector('.table-cell-action-button');
-      // If button doesn't exist, menu is hidden
-      return !button;
-    });
-
-    expect(menuHidden).toBe(true);
+    // If button doesn't exist, menu is hidden
+    await expect(page.locator('.table-cell-action-button')).toBeHidden();
   });
 
   test(`Can expand table to fit content when pasting table into table`, async ({

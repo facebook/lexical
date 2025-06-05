@@ -95,6 +95,7 @@ import {
   formatParagraph,
   formatQuote,
 } from './utils';
+import Zoom from './zoom';
 
 const rootTypeToRootName = {
   root: 'Root',
@@ -365,7 +366,7 @@ function ElementFormatDropdown({
   return (
     <DropDown
       disabled={disabled}
-      buttonLabel={formatOption.name}
+      buttonLabel=""
       buttonIconClassName={`icon ${
         isRTL ? formatOption.iconRTL : formatOption.icon
       }`}
@@ -1061,6 +1062,13 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CLEAR_FORMATTING}</span>
             </DropDownItem>
           </DropDown>
+          <Divider />
+          <ElementFormatDropdown
+            disabled={!isEditable}
+            value={toolbarState.elementFormat}
+            editor={activeEditor}
+            isRTL={toolbarState.isRTL}
+          />
           {canViewerSeeInsertDropdown && (
             <>
               <Divider />
@@ -1232,13 +1240,9 @@ export default function ToolbarPlugin({
           )}
         </>
       )}
+
       <Divider />
-      <ElementFormatDropdown
-        disabled={!isEditable}
-        value={toolbarState.elementFormat}
-        editor={activeEditor}
-        isRTL={toolbarState.isRTL}
-      />
+      <Zoom editor={editor} disabled={!isEditable} />
 
       {modal}
     </div>

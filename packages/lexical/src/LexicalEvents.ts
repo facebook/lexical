@@ -85,6 +85,7 @@ import {
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
+  $isTokenOrTab,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
@@ -577,8 +578,8 @@ function $canRemoveText(
     anchorNode !== focusNode ||
     $isElementNode(anchorNode) ||
     $isElementNode(focusNode) ||
-    !anchorNode.isToken() ||
-    !focusNode.isToken()
+    !$isTokenOrTab(anchorNode) ||
+    !$isTokenOrTab(focusNode)
   );
 }
 
@@ -1215,7 +1216,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
         event.preventDefault();
         dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
-    } else if (!IS_FIREFOX && isSelectAll(event)) {
+    } else if (isSelectAll(event)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }

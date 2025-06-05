@@ -248,6 +248,7 @@ export {
   $isLeafNode,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
+  $isTokenOrTab,
   $nodesOfType,
   $onUpdate,
   $selectAll,

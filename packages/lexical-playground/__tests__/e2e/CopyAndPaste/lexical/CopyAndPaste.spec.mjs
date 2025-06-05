@@ -103,7 +103,7 @@ test.describe('CopyAndPaste', () => {
           </p>
         `,
       );
-      if (browserName === 'firefox') {
+      if (browserName === 'firefox' && IS_LINUX) {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [],
@@ -132,7 +132,7 @@ test.describe('CopyAndPaste', () => {
           </p>
         `,
       );
-      if (browserName === 'firefox') {
+      if (browserName === 'firefox' && IS_LINUX) {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [],
@@ -433,7 +433,7 @@ test.describe('CopyAndPaste', () => {
     await selectAll(page);
 
     if (isRichText) {
-      if (browserName === 'firefox') {
+      if (browserName === 'firefox' && IS_LINUX) {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [],
@@ -449,7 +449,7 @@ test.describe('CopyAndPaste', () => {
         });
       }
     } else {
-      if (browserName === 'firefox') {
+      if (browserName === 'firefox' && IS_LINUX) {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [],
@@ -731,7 +731,7 @@ test.describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        if (browserName === 'firefox') {
+        if (browserName === 'firefox' && IS_LINUX) {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -739,7 +739,7 @@ test.describe('CopyAndPaste', () => {
             focusPath: [],
           });
         } else {
-          if (browserName === 'firefox') {
+          if (browserName === 'firefox' && IS_LINUX) {
             await assertSelection(page, {
               anchorOffset: 0,
               anchorPath: [0, 0, 0],
@@ -756,7 +756,7 @@ test.describe('CopyAndPaste', () => {
           }
         }
       } else {
-        if (browserName === 'firefox') {
+        if (browserName === 'firefox' && IS_LINUX) {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],

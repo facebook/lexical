@@ -1,3 +1,37 @@
+## v0.32.1 (2025-06-05)
+
+- tests Chore Update table test to use locator API instead of page.evaluate (#7603) Bob Ippolito
+- scripts update next version in lexical-esm-nextjs (#7604) Yuncheng Lu
+- lexicallexical-selection Bug Fix Treat all TabNode as if they are in token mode (#7602) Bob Ippolito
+- Monthly Release v0.32.0 (#7599) Yuncheng Lu
+- v0.32.0 Lexical GitHub Actions Bot
+
+## v0.32.0 (2025-06-02)
+
+- lexical-playgroundlexical-rich-textlexical-websitetestsexamples Chore source command priority from package (#7596) Eliott Vincent
+- Lexical Type Add flow export type for LexicalUpdateTags  (#7593) Rabbit
+- lexical-code Feature Improve TabIndentOutdent to match VSCode (#7573) jeromew
+- lexical-reactlexical-playground Feature allow whitespaces in search keyword in useBasicTypeaheadTriggerMatch  (#7584) Harshkumar Metkel
+- lexical-react Bug Fix page freezes when typing a link in an overflow area (#7589) Kamil Pitua
+- lexical-playground Refactor simplify ExcalidrawModal (#7590) Georgii Dolzhykov
+- lexical-reactlexical-playground FloatingUI Context Menu (#7509) Ivaylo Pavlov
+- lexical-link Feature Move URL formatting from #7499 to LinkNode sanitizeUrl (#7585) Bob Ippolito
+- lexical-table Bug Fix error when deleting multiple rows with merged row cells (#7582) Kamil Pitua
+- lexical-playgroundlexical-list Bug Fix Made checklist icon fully scalable, clickable, and properly spaced at large font sizes (#7558) Shubham Saini
+- lexical-selectionlexical-playground Bug Fix unbulleting an image doesnt work #5698 (#7568) Kamil Pitua
+- Update Fix docusaurus build by adding removeLegacyPostBuildHeadAttribute flag (#7574) Yuncheng Lu
+- lexical-playground Bug Fix Preserve row striping in frozen table columns (#7572) Kiran Dash
+- lexical-playground Chore source command priority from package (#7567) Eliott Vincent
+- lexical-website Chore fix documentation typos (#7569) Noritaka Kobayashi
+- lexical-markdown Bug fix Prevent transform from removing nodes if the replace function returns false (#7564) Rodrigo
+- lexicallexical-playground Bug Fix Support Apple Pencil (#7545) Rickert Mulder
+- lexical-list Bug Fix Removed the hardcoded checkbox width in checklist onclick helper (#7559) Jash Vithlani
+- lexical-code Bug Fix 2 Tabs on single line selection should indent (#7544) jeromew
+- lexical-playground Bug Fix Change list, strikethrough and quoteblock shortcuts to match Google Docs for Windows compatibility (#7556) Harshkumar Metkel
+- Revert lexical-markdown Bug Fix Link Transformer URL Protocol Han (#7560) Gerard Rovira
+- v0.31.2 (#7550) Bob Ippolito
+- v0.31.2 Lexical GitHub Actions Bot
+
 ## v0.31.2 (2025-05-20)
 
 - lexical-markdown Bug fix Do not export auto-link nodes (#7539) Baptiste Jamin

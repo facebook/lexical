@@ -62,7 +62,21 @@ export class TabNode extends TextNode {
       text === '\t' || text === '',
       'TabNode does not support setTextContent',
     );
-    return super.setTextContent(text);
+    return super.setTextContent('\t');
+  }
+
+  spliceText(
+    offset: number,
+    delCount: number,
+    newText: string,
+    moveSelection?: boolean,
+  ): TextNode {
+    invariant(
+      (newText === '' && delCount === 0) ||
+        (newText === '\t' && delCount === 1),
+      'TabNode does not support spliceText',
+    );
+    return this;
   }
 
   setDetail(detail: TextDetailType | number): this {

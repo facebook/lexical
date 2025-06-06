@@ -492,7 +492,8 @@ function useAutoLink(
             return false;
           }
           const nodes = selection.extract();
-          nodes.forEach((node) => {
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
             const parent = node.getParent();
 
             if ($isAutoLinkNode(parent)) {
@@ -501,7 +502,7 @@ function useAutoLink(
               parent.markDirty();
               return true;
             }
-          });
+          }
           return false;
         },
         COMMAND_PRIORITY_LOW,

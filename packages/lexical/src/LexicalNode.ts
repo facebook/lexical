@@ -299,10 +299,14 @@ export class LexicalNode {
    *
    */
   afterCloneFrom(prevNode: this): void {
-    this.__parent = prevNode.__parent;
-    this.__next = prevNode.__next;
-    this.__prev = prevNode.__prev;
-    this.__state = prevNode.__state;
+    if (this.__key === prevNode.__key) {
+      this.__parent = prevNode.__parent;
+      this.__next = prevNode.__next;
+      this.__prev = prevNode.__prev;
+      this.__state = prevNode.__state;
+    } else if (prevNode.__state) {
+      this.__state = prevNode.__state.getWritable(this);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

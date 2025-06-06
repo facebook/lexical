@@ -10,14 +10,13 @@ import {IS_CHROME} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
-  DOMConversionMap,
+  buildImportMap,
   DOMConversionOutput,
   EditorConfig,
   ElementNode,
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  StaticNodeConfigRecord,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
@@ -35,16 +34,19 @@ export function $convertSummaryElement(
 /** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
   /** @internal */
-  $config(): StaticNodeConfigRecord<
-    'collapsible-title',
-    {$transform: (node: CollapsibleTitleNode) => void}
-  > {
+  $config() {
     return this.config('collapsible-title', {
       $transform(node: CollapsibleTitleNode) {
         if (node.isEmpty()) {
           node.remove();
         }
       },
+      importDOM: buildImportMap({
+        summary: () => ({
+          conversion: $convertSummaryElement,
+          priority: 1,
+        }),
+      }),
     });
   }
 
@@ -69,17 +71,6 @@ export class CollapsibleTitleNode extends ElementNode {
 
   updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      summary: (domNode: HTMLElement) => {
-        return {
-          conversion: $convertSummaryElement,
-          priority: 1,
-        };
-      },
-    };
   }
 
   insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {

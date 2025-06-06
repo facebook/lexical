@@ -106,9 +106,18 @@ export interface StaticNodeConfigValue<
   readonly type?: Type;
   /**
    * An alternative to the internal static transform() method
-   * that provides better DX
+   * that provides better type inference.
    */
   readonly $transform?: (node: T) => void;
+  /**
+   * An alternative to the static importJSON() method
+   * that provides better type inference.
+   */
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  /**
+   * An alternative to the static importDOM() method
+   */
+  readonly importDOM?: DOMConversionMap;
   /**
    * EXPERIMENTAL
    *
@@ -306,6 +315,29 @@ export function $removeNode(
   }
 }
 
+export type DOMConversionProp<T extends HTMLElement> = (
+  node: T,
+) => DOMConversion<T> | null;
+
+export type DOMConversionPropByTagName<K extends string> = DOMConversionProp<
+  K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K] : HTMLElement
+>;
+
+export type DOMConversionTagNameMap<K extends string> = {
+  [NodeName in K]?: DOMConversionPropByTagName<NodeName>;
+};
+
+/**
+ * An identity function that will infer the type of DOM nodes
+ * based on tag names to make it easier to construct a
+ * DOMConversionMap.
+ */
+export function buildImportMap<K extends string>(importMap: {
+  [NodeName in K]: DOMConversionPropByTagName<NodeName>;
+}): DOMConversionMap {
+  return importMap as unknown as DOMConversionMap;
+}
+
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   conversion: DOMConversionFn<T>;
   priority?: 0 | 1 | 2 | 3 | 4;
@@ -322,7 +354,7 @@ export type DOMChildConversion = (
 
 export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
   NodeName,
-  (node: T) => DOMConversion<T> | null
+  DOMConversionProp<T>
 >;
 type NodeName = string;
 
@@ -481,10 +513,14 @@ export class LexicalNode {
    *
    */
   afterCloneFrom(prevNode: this): void {
-    this.__parent = prevNode.__parent;
-    this.__next = prevNode.__next;
-    this.__prev = prevNode.__prev;
-    this.__state = prevNode.__state;
+    if (this.__key === prevNode.__key) {
+      this.__parent = prevNode.__parent;
+      this.__next = prevNode.__next;
+      this.__prev = prevNode.__prev;
+      this.__state = prevNode.__state;
+    } else if (prevNode.__state) {
+      this.__state = prevNode.__state.getWritable(this);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

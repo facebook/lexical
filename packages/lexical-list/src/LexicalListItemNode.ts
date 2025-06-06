@@ -9,7 +9,6 @@
 import type {ListNode, ListType} from './';
 import type {
   BaseSelection,
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
@@ -21,7 +20,6 @@ import type {
   RangeSelection,
   SerializedElementNode,
   Spread,
-  StaticNodeConfigRecord,
 } from 'lexical';
 
 import {getStyleObjectFromCSS} from '@lexical/selection';
@@ -35,6 +33,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  buildImportMap,
   ElementNode,
   LexicalEditor,
 } from 'lexical';
@@ -81,10 +80,7 @@ export class ListItemNode extends ElementNode {
   __checked?: boolean;
 
   /** @internal */
-  $config(): StaticNodeConfigRecord<
-    'listitem',
-    {$transform: (node: ListItemNode) => void}
-  > {
+  $config() {
     return this.config('listitem', {
       $transform: (node: ListItemNode): void => {
         if (node.__checked == null) {
@@ -97,21 +93,29 @@ export class ListItemNode extends ElementNode {
           }
         }
       },
+      importDOM: buildImportMap({
+        li: () => ({
+          conversion: $convertListItemElement,
+          priority: 0,
+        }),
+      }),
     });
   }
 
-  static getType(): string {
-    return 'listitem';
-  }
-
-  static clone(node: ListItemNode): ListItemNode {
-    return new ListItemNode(node.__value, node.__checked, node.__key);
-  }
-
-  constructor(value?: number, checked?: boolean, key?: NodeKey) {
+  constructor(
+    value: number = 1,
+    checked: undefined | boolean = undefined,
+    key?: NodeKey,
+  ) {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__value = prevNode.__value;
+    this.__checked = prevNode.__checked;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -155,19 +159,6 @@ export class ListItemNode extends ElementNode {
     const element: HTMLLIElement = dom;
     this.updateListItemDOM(prevNode, element, config);
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      li: () => ({
-        conversion: $convertListItemElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    return $createListItemNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(

@@ -1498,6 +1498,7 @@ export function $isRootOrShadowRoot(
 export function $copyNode<T extends LexicalNode>(node: T): T {
   const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
+  copy.afterCloneFrom(node);
   return copy;
 }
 
@@ -2063,8 +2064,15 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
           String(klass.length),
         );
       }
-      klass.importJSON = (serializedNode) =>
-        new klass().updateFromJSON(serializedNode);
+      klass.importJSON =
+        (ownNodeConfig && ownNodeConfig.$importJSON) ||
+        ((serializedNode) => new klass().updateFromJSON(serializedNode));
+    }
+    if (!hasOwn(klass, 'importDOM') && ownNodeConfig) {
+      const {importDOM} = ownNodeConfig;
+      if (importDOM) {
+        klass.importDOM = () => importDOM;
+      }
     }
   }
   return {ownNodeConfig, ownNodeType};

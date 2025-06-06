@@ -188,6 +188,7 @@ export type {
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
 } from './LexicalNode';
+export {buildImportMap} from './LexicalNode';
 export {
   $getState,
   $getStateChange,

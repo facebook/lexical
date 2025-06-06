@@ -11,7 +11,6 @@ import type {
   LexicalNode,
   RangeSelection,
   SerializedElementNode,
-  StaticNodeConfigRecord,
 } from 'lexical';
 
 import {$applyNodeReplacement, ElementNode} from 'lexical';
@@ -21,10 +20,7 @@ export type SerializedOverflowNode = SerializedElementNode;
 /** @noInheritDoc */
 export class OverflowNode extends ElementNode {
   /** @internal */
-  $config(): StaticNodeConfigRecord<
-    'overflow',
-    {$transform: (node: OverflowNode) => void}
-  > {
+  $config() {
     return this.config('overflow', {
       $transform(node: OverflowNode) {
         if (node.isEmpty()) {

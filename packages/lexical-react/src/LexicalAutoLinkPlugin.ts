@@ -492,17 +492,15 @@ function useAutoLink(
             return false;
           }
           const nodes = selection.extract();
-          for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
+          nodes.forEach((node) => {
             const parent = node.getParent();
 
             if ($isAutoLinkNode(parent)) {
               // invert the value
               parent.setIsUnlinked(!parent.getIsUnlinked());
               parent.markDirty();
-              return true;
             }
-          }
+          });
           return false;
         },
         COMMAND_PRIORITY_LOW,

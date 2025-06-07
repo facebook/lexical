@@ -1452,7 +1452,11 @@ export function $isRootOrShadowRoot(
 }
 
 /**
- * Returns a shallow clone of node with a new key
+ * Returns a shallow clone of node with a new key. All properties of the node
+ * will be copied to the new node (by `clone` and then `afterCloneFrom`),
+ * except those related to parent/sibling/child
+ * relationships in the `EditorState`. This means that the copy must be
+ * separately added to the document, and it will not have any children.
  *
  * @param node - The node to be copied.
  * @returns The copy of the node.
@@ -1460,6 +1464,7 @@ export function $isRootOrShadowRoot(
 export function $copyNode<T extends LexicalNode>(node: T): T {
   const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
+  copy.afterCloneFrom(node);
   return copy;
 }
 

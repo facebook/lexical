@@ -8,22 +8,27 @@
 
 import {
   $applyNodeReplacement,
+  $copyNode,
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $getState,
   $isTokenOrSegmented,
   $nodesOfType,
+  $onUpdate,
+  $setState,
   createEditor,
+  createState,
   isSelectionWithinEditor,
   ParagraphNode,
   resetRandomKey,
+  SerializedParagraphNode,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
 
 import {
-  $onUpdate,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
@@ -627,6 +632,107 @@ describe('$applyNodeReplacement', () => {
       expect(textNodes).toHaveLength(1);
       expect(textNodes[0].constructor).toBe(ExtendedExtendedTextNode);
       expect(textNodes[0].getTextContent()).toBe('text');
+    });
+  });
+});
+describe('$copyNode', () => {
+  const STRING_STATE = createState('string-state', {
+    parse: (v) => (typeof v === 'string' ? v : ''),
+  });
+  class ExtendedParagraphNode extends ParagraphNode {
+    __string: string = 'default';
+    static getType() {
+      return 'extended-paragraph';
+    }
+    static clone(node: ExtendedParagraphNode): ExtendedParagraphNode {
+      return new ExtendedParagraphNode(node.getKey());
+    }
+    static importJSON(
+      serializedNode: SerializedParagraphNode,
+    ): ExtendedParagraphNode {
+      throw new Error('Not implemented');
+    }
+    afterCloneFrom(prevNode: this): void {
+      super.afterCloneFrom(prevNode);
+      this.__string = prevNode.__string;
+    }
+    setString(value: string): this {
+      const writable = this.getWritable();
+      writable.__string = value;
+      return writable;
+    }
+  }
+  function $createExtendedParagraphNode() {
+    return $applyNodeReplacement(new ExtendedParagraphNode());
+  }
+  function $isExtendedParagraphNode(node: unknown) {
+    return node instanceof ExtendedParagraphNode;
+  }
+  test('does not mark the original as dirty', () => {
+    const editor = createEditor({
+      nodes: [ExtendedParagraphNode, TextNode, ParagraphNode],
+      onError(err) {
+        throw err;
+      },
+    });
+    let initialParagraph: ExtendedParagraphNode;
+    editor.update(
+      () => {
+        initialParagraph = $createExtendedParagraphNode();
+        $getRoot()
+          .clear()
+          .append(initialParagraph.append($createTextNode('text')));
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        expect($getRoot().getFirstChild()).toBe(initialParagraph);
+        const copiedParagraph = $copyNode(initialParagraph);
+        expect($getRoot().getFirstChild()).toBe(initialParagraph);
+        expect(copiedParagraph).not.toBe(initialParagraph);
+        expect($isExtendedParagraphNode(copiedParagraph)).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+  test('returns a shallow copy', () => {
+    const editor = createEditor({
+      nodes: [ExtendedParagraphNode, TextNode, ParagraphNode],
+      onError(err) {
+        throw err;
+      },
+    });
+    let initialParagraph: ExtendedParagraphNode;
+    let copiedParagraph: ExtendedParagraphNode;
+    editor.update(
+      () => {
+        initialParagraph =
+          $createExtendedParagraphNode().setString('non-default');
+        $setState(initialParagraph, STRING_STATE, 'non-default');
+        const root = $getRoot().clear();
+        root.append(initialParagraph.append($createTextNode('text')));
+        copiedParagraph = $copyNode(initialParagraph);
+        root.append(copiedParagraph);
+        $setState(
+          initialParagraph.setString('not-aliased'),
+          STRING_STATE,
+          'not-aliased',
+        );
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getChildren()).toEqual([
+        initialParagraph,
+        copiedParagraph,
+      ]);
+      expect(initialParagraph.getTextContent()).toBe('text');
+      expect(copiedParagraph.getTextContent()).toBe('');
+      expect($getState(initialParagraph, STRING_STATE)).toBe('not-aliased');
+      expect($getState(copiedParagraph, STRING_STATE)).toBe('non-default');
+      expect(initialParagraph.__string).toBe('not-aliased');
+      expect(copiedParagraph.__string).toBe('non-default');
     });
   });
 });

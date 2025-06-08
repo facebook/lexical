@@ -93,6 +93,7 @@ export class ListItemNode extends ElementNode {
           }
         }
       },
+      extends: ElementNode,
       importDOM: buildImportMap({
         li: () => ({
           conversion: $convertListItemElement,

@@ -111,6 +111,7 @@ const optionsState = createState('options', {
 export class PollNode extends DecoratorNode<JSX.Element> {
   $config() {
     return this.config('poll', {
+      extends: DecoratorNode,
       importDOM: buildImportMap({
         span: (domNode) =>
           domNode.getAttribute('data-lexical-poll-question') !== null

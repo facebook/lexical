@@ -27,6 +27,7 @@ export class OverflowNode extends ElementNode {
           node.remove();
         }
       },
+      extends: ElementNode,
     });
   }
 

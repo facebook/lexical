@@ -66,7 +66,7 @@ export class ListNode extends ElementNode {
         mergeNextSiblingListIfSameType(node);
         updateChildrenListItemValue(node);
       },
-
+      extends: ElementNode,
       importDOM: buildImportMap({
         ol: () => ({
           conversion: $convertListNode,

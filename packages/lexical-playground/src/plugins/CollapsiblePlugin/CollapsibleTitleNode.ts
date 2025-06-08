@@ -41,6 +41,7 @@ export class CollapsibleTitleNode extends ElementNode {
           node.remove();
         }
       },
+      extends: ElementNode,
       importDOM: buildImportMap({
         summary: () => ({
           conversion: $convertSummaryElement,

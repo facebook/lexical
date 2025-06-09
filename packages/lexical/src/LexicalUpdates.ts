@@ -60,6 +60,7 @@ import {
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
+  setPendingNodeToClone,
   updateDOMBlockCursorElement,
 } from './LexicalUtils';
 
@@ -422,6 +423,7 @@ export function parseEditorState(
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
+  setPendingNodeToClone(null);
 
   try {
     const registeredNodes = editor._nodes;
@@ -925,6 +927,7 @@ function $beginUpdate(
   editor._updating = true;
   activeEditor = editor;
   const headless = editor._headless || editor.getRootElement() === null;
+  setPendingNodeToClone(null);
 
   try {
     if (editorStateWasCloned) {

@@ -414,6 +414,7 @@ describe('$applyNodeReplacement', () => {
         {
           replace: TextNode,
           with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          withKlass: ExtendedExtendedTextNode,
         },
       ],
       onError(err) {
@@ -460,6 +461,9 @@ describe('$applyNodeReplacement', () => {
     );
   });
   test('validates replace node type change', () => {
+    const mockWarning = jest
+      .spyOn(console, 'warn')
+      .mockImplementationOnce(() => {});
     const editor = createEditor({
       nodes: [
         {
@@ -471,6 +475,10 @@ describe('$applyNodeReplacement', () => {
         throw err;
       },
     });
+    expect(mockWarning).toHaveBeenCalledWith(
+      `Override for TextNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+    );
+    mockWarning.mockRestore();
     expect(() => {
       editor.update(
         () => {
@@ -491,6 +499,7 @@ describe('$applyNodeReplacement', () => {
           replace: TextNode,
           with: (node: TextNode) =>
             new ExtendedTextNode(node.__text, node.getKey()),
+          withKlass: ExtendedTextNode,
         },
       ],
       onError(err) {
@@ -544,6 +553,7 @@ describe('$applyNodeReplacement', () => {
           replace: ExtendedTextNode,
           with: (node) =>
             $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
+          withKlass: ExtendedExtendedTextNode,
         },
       ],
       onError(err) {

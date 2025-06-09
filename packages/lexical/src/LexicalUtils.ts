@@ -25,6 +25,7 @@ import type {
   LexicalPrivateDOM,
   NodeKey,
   NodeMap,
+  StaticNodeConfigValue,
 } from './LexicalNode';
 import type {
   BaseSelection,
@@ -64,6 +65,7 @@ import {
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
+  PROTOTYPE_CONFIG_METHOD,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
@@ -84,6 +86,16 @@ export const emptyFunction = () => {
   return;
 };
 
+let pendingNodeToClone: null | LexicalNode = null;
+export function setPendingNodeToClone(pendingNode: null | LexicalNode): void {
+  pendingNodeToClone = pendingNode;
+}
+export function getPendingNodeToClone(): null | LexicalNode {
+  const node = pendingNodeToClone;
+  pendingNodeToClone = null;
+  return node;
+}
+
 let keyCounter = 1;
 
 export function resetRandomKey(): void {
@@ -94,15 +106,28 @@ export function generateRandomKey(): string {
   return '' + keyCounter++;
 }
 
+/**
+ * @internal
+ */
 export function getRegisteredNodeOrThrow(
   editor: LexicalEditor,
   nodeType: string,
 ): RegisteredNode {
-  const registeredNode = editor._nodes.get(nodeType);
+  const registeredNode = getRegisteredNode(editor, nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'registeredNode: Type %s not found', nodeType);
   }
   return registeredNode;
+}
+
+/**
+ * @internal
+ */
+export function getRegisteredNode(
+  editor: LexicalEditor,
+  nodeType: string,
+): undefined | RegisteredNode {
+  return editor._nodes.get(nodeType);
 }
 
 export const isArray = Array.isArray;
@@ -276,9 +301,11 @@ export function $setNodeKey(
   node: LexicalNode,
   existingKey: NodeKey | null | undefined,
 ): void {
+  const pendingNode = getPendingNodeToClone();
+  existingKey = existingKey || (pendingNode && pendingNode.__key);
   if (existingKey != null) {
     if (__DEV__) {
-      errorOnNodeKeyConstructorMismatch(node, existingKey);
+      errorOnNodeKeyConstructorMismatch(node, existingKey, pendingNode);
     }
     node.__key = existingKey;
     return;
@@ -303,6 +330,7 @@ export function $setNodeKey(
 function errorOnNodeKeyConstructorMismatch(
   node: LexicalNode,
   existingKey: NodeKey,
+  pendingNode: null | LexicalNode,
 ) {
   const editorState = internalGetActiveEditorState();
   if (!editorState) {
@@ -310,6 +338,16 @@ function errorOnNodeKeyConstructorMismatch(
     return;
   }
   const existingNode = editorState._nodeMap.get(existingKey);
+  if (pendingNode) {
+    invariant(
+      existingKey === pendingNode.__key,
+      'Lexical node with constructor %s (type %s) has an incorrect clone implementation, got %s for nodeKey when expecting %s',
+      node.constructor.name,
+      node.getType(),
+      String(existingKey),
+      pendingNode.__key,
+    );
+  }
   if (existingNode && existingNode.constructor !== node.constructor) {
     // Lifted condition to if statement because the inverted logic is a bit confusing
     if (node.constructor.name !== existingNode.constructor.name) {
@@ -1470,8 +1508,8 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
 
 export function $applyNodeReplacement<N extends LexicalNode>(node: N): N {
   const editor = getActiveEditor();
-  const nodeType = node.constructor.getType();
-  const registeredNode = editor._nodes.get(nodeType);
+  const nodeType = node.getType();
+  const registeredNode = getRegisteredNode(editor, nodeType);
   invariant(
     registeredNode !== undefined,
     '$applyNodeReplacement node %s with type %s must be registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
@@ -1903,7 +1941,7 @@ function computeTypeToNodeMap(editorState: EditorState): TypeToNodeMap {
  * do not try and use this function to duplicate or copy an existing node.
  *
  * Does not mutate the EditorState.
- * @param node - The node to be cloned.
+ * @param latestNode - The node to be cloned.
  * @returns The clone of the node.
  */
 export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
@@ -1957,4 +1995,118 @@ export function setDOMUnmanaged(elementDom: HTMLElement): void {
 export function isDOMUnmanaged(elementDom: Node): boolean {
   const el: Node & LexicalPrivateDOM = elementDom;
   return el.__lexicalUnmanaged === true;
+}
+
+/**
+ * @internal
+ *
+ * Object.hasOwn ponyfill
+ */
+export function hasOwn(o: object, k: string): boolean {
+  return Object.prototype.hasOwnProperty.call(o, k);
+}
+
+/** @internal */
+function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
+  return (
+    klass === DecoratorNode ||
+    klass === ElementNode ||
+    klass === Object.getPrototypeOf(ElementNode)
+  );
+}
+
+/** @internal */
+export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
+  ownNodeType: undefined | string;
+  ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+} {
+  const nodeConfigRecord =
+    PROTOTYPE_CONFIG_METHOD in klass.prototype
+      ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
+      : undefined;
+  const isAbstract = isAbstractNodeClass(klass);
+  const nodeType =
+    !isAbstract && hasOwn(klass, 'getType') ? klass.getType() : undefined;
+  let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  let ownNodeType = nodeType;
+  if (nodeConfigRecord) {
+    if (nodeType) {
+      ownNodeConfig = nodeConfigRecord[nodeType];
+    } else {
+      for (const [k, v] of Object.entries(nodeConfigRecord)) {
+        ownNodeType = k;
+        ownNodeConfig = v;
+      }
+    }
+  }
+  if (!isAbstract && ownNodeType) {
+    if (!hasOwn(klass, 'getType')) {
+      klass.getType = () => ownNodeType;
+    }
+    if (!hasOwn(klass, 'clone')) {
+      if (__DEV__) {
+        invariant(
+          klass.length === 0,
+          '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
+          klass.name,
+          ownNodeType,
+          String(klass.length),
+        );
+      }
+      klass.clone = (prevNode: LexicalNode) => {
+        setPendingNodeToClone(prevNode);
+        return new klass();
+      };
+    }
+    if (!hasOwn(klass, 'importJSON')) {
+      if (__DEV__) {
+        invariant(
+          klass.length === 0,
+          '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
+          klass.name,
+          ownNodeType,
+          String(klass.length),
+        );
+      }
+      klass.importJSON =
+        (ownNodeConfig && ownNodeConfig.$importJSON) ||
+        ((serializedNode) => new klass().updateFromJSON(serializedNode));
+    }
+    if (!hasOwn(klass, 'importDOM') && ownNodeConfig) {
+      const {importDOM} = ownNodeConfig;
+      if (importDOM) {
+        klass.importDOM = () => importDOM;
+      }
+    }
+  }
+  return {ownNodeConfig, ownNodeType};
+}
+
+/**
+ * Create an node from its class.
+ *
+ * Note that this will directly construct the final `withKlass` node type,
+ * and will ignore the deprecated `with` functions. This allows `$create` to
+ * skip any intermediate steps where the replaced node would be created and
+ * then immediately discarded (once per configured replacement of that node).
+ *
+ * This does not support any arguments to the constructor.
+ * Setters can be used to initialize your node, and they can
+ * be chained. You can of course write your own mutliple-argument functions
+ * to wrap that.
+ *
+ * @example
+ * ```ts
+ * function $createTokenText(text: string): TextNode {
+ *   return $create(TextNode).setTextContent(text).setMode('token');
+ * }
+ * ```
+ */
+export function $create<T extends LexicalNode>(klass: Klass<T>): T {
+  const editor = $getEditor();
+  errorOnReadOnly();
+  const registeredNode = editor.resolveRegisteredNodeAfterReplacements(
+    editor.getRegisteredNode(klass),
+  );
+  return new registeredNode.klass() as T;
 }

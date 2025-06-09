@@ -1,3 +1,6 @@
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Nodes
 
 ## Base Nodes
@@ -373,17 +376,27 @@ automatically get full and correct implementations of the following methods:
 - `afterCloneFrom`
 - `exportJSON`
 
-### Extending `ElementNode`
+### Extending `ElementNode` with $config
 
 Below is an example of how you might extend `ElementNode`:
 
+<Tabs>
+<TabItem value="$config" label="Using $config">
+
 ```ts
-import {ElementNode, LexicalNode} from 'lexical';
+import {
+  $create,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+} from 'lexical';
 
 export class CustomParagraph extends ElementNode {
+  // highlight-start
   $config() {
     return this.config('custom-paragraph', {extends: ElementNode});
   }
+  // highlight-end
 
   createDOM(): HTMLElement {
     // Define the DOM element here
@@ -391,13 +404,66 @@ export class CustomParagraph extends ElementNode {
     return dom;
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+  updateDOM(
+    prevNode: this,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
     // Returning false tells Lexical that this node does not need its
     // DOM element replaced with a new one from createDOM.
     return false;
   }
 }
 ```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy static methods">
+
+```ts
+import {
+  $create,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  // highlight-next-line
+  type SerializedLexicalNode,
+} from 'lexical';
+
+export class CustomParagraph extends ElementNode {
+  // highlight-start
+  static getType(): string {
+    return 'custom-paragraph';
+  }
+
+  static clone(node: CustomParagraph): CustomParagraph {
+    return new CustomParagraph(node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedLexicalNode): CustomParagraph {
+    return new CustomParagraph().updateFromJSON(serializedNode);
+  }
+  // highlight-end
+
+  createDOM(): HTMLElement {
+    // Define the DOM element here
+    const dom = document.createElement('p');
+    return dom;
+  }
+
+  updateDOM(
+    prevNode: this,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    // Returning false tells Lexical that this node does not need its
+    // DOM element replacing with a new copy from createDOM.
+    return false;
+  }
+}
+```
+
+</TabItem>
+</Tabs>
 
 It's also good etiquette to provide some `$` prefixed utility functions for
 your custom `ElementNode` so that others can easily consume and validate nodes
@@ -415,20 +481,51 @@ export function $isCustomParagraphNode(
 }
 ```
 
-### Extending `TextNode`
+### Extending `TextNode` with $config
+
+<Tabs>
+<TabItem value="$config" label="Using $config">
 
 ```ts
-const colorState = createState('color', {parse: (value) => typeof value === 'string' ? value : 'black'});
+import {
+  // highlight-start
+  $create,
+  $getState,
+  $getStateChange,
+  $setState,
+  // highlight-end
+  type EditorConfig,
+  type LexicalNode,
+  TextNode,
+  // highlight-next-line
+  createState,
+} from 'lexical';
+
+const DEFAULT_COLOR = 'inherit';
+
+// highlight-start
+// This defines how the color property is parsed along with a default value
+const colorState = createState('color', {
+  parse: (value) => typeof value === 'string' ? value : DEFAULT_COLOR,
+});
+// highlight-end
+
 export class ColoredNode extends TextNode {
+  // highlight-start
   $config() {
     return this.config('colored', {
       extends: TextNode,
+      // This defines the serialization of the color NodeState as
+      // a flat property of the SerializedLexicalNode JSON instead of
+      // nesting it in the '$' property
       stateConfigs: [{flat: true, stateConfig: colorState}],
     });
   }
+  // highlight-end
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
+    // highlight-next-line
     element.style.color = $getState(this, colorState);
     return element;
   }
@@ -441,16 +538,126 @@ export class ColoredNode extends TextNode {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
+    // highlight-start
     const colorChange = $getStateChange(this, prevNode, colorState);
     if (colorChange !== null) {
       dom.style.color = colorChange[0];
     }
+    // highlight-end
+    return false;
+  }
+}
+
+// highlight-start
+export function $createColoredNode(text: string, color: string): ColoredNode {
+  // Since our constructor has 0 arguments, we set all of its properties
+  // after construction.
+  return $setState($create(ColoredNode).setText(text), colorState, color);
+}
+// highlight-end
+
+export function $isColoredNode(
+  node: LexicalNode | null | undefined
+): node is ColoredNode {
+  return node instanceof ColoredNode;
+}
+```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy static methods and properties">
+
+```ts
+import {
+  // highlight-next-line
+  $applyNodeReplacement,
+  type EditorConfig,
+  type LexicalNode,
+  // highlight-start
+  type SerializedTextNode,
+  type Spread,
+  // highlight-end
+  TextNode,
+} from 'lexical';
+
+const DEFAULT_COLOR = 'inherit';
+
+// highlight-start
+export type SerializedColoredNode = Spread<
+  {
+    color?: string;
+  },
+  SerializedTextNode
+>;
+// highlight-end
+
+export class ColoredNode extends TextNode {
+  // highlight-start
+  __color: string;
+
+  constructor(
+    text: string = '',
+    color: string = DEFAULT_COLOR,
+    key?: NodeKey,
+  ): void {
+    super(text, key);
+    this.__color = color;
+  }
+
+  static getType(): string {
+    return 'colored';
+  }
+
+  static clone(node: ColoredNode): ColoredNode {
+    return new ColoredNode(node.__text, node.__color, node.__key);
+  }
+
+  static importFromJSON(serializedNode: SerializedColoredNode) {
+    return new ColoredNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: SerializedColoredNode) {
+    const self = super.updateFromJSON(serializedNode);
+    self.__color = typeof serializedNode.color === 'string'
+      ? serializedNode.color
+      : DEFAULT_COLOR;
+    return self;
+  }
+
+  exportJSON(): SerializedColoredNode {
+    return {
+      ...super.exportJSON(),
+      color: this.__color === DEFAULT_COLOR ? undefined : this.__color,
+    };
+  }
+  // highlight-end
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = super.createDOM(config);
+    // highlight-next-line
+    element.style.color = this.__color;
+    return element;
+  }
+
+  updateDOM(
+    prevNode: this,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    if (super.updateDOM(prevNode, dom, config)) {
+      return true;
+    }
+    // highlight-start
+    if (prevNode.__color !== this.__color) {
+      dom.style.color = this.__color;
+    }
+    // highlight-end
     return false;
   }
 }
 
 export function $createColoredNode(text: string, color: string): ColoredNode {
-  return $setState($create(ColoredNode).setText(text), colorState, color);
+  // highlight-next-line
+  return $applyNodeReplacement(new ColoredNode(text, color));
 }
 
 export function $isColoredNode(
@@ -460,17 +667,44 @@ export function $isColoredNode(
 }
 ```
 
-### Extending `DecoratorNode`
+</TabItem>
+</Tabs>
+
+### Extending `DecoratorNode` using $config
+
+<Tabs>
+<TabItem value="$config" label="Using $config">
 
 ```ts
-const idState = createState('id', {parse: (value) => typeof value === 'string' ? value : ''});
+import {
+  // highlight-start
+  $create,
+  $getState,
+  $getStateChange,
+  $setState,
+  // highlight-end
+  DecoratorNode,
+  type EditorConfig,
+  type LexicalNode,
+  // highlight-next-line
+  createState,
+} from 'lexical';
+
+// highlight-start
+const idState = createState('id', {
+  parse: (value) => typeof value === 'string' ? value : '',
+});
+// highlight-end
+
 export class VideoNode extends DecoratorNode<ReactNode> {
+  // highlight-start
   $config() {
     return this.config('video', {
       extends: DecoratorNode,
       stateConfigs: [{flat: true, stateConfig: idState}],
     });
   }
+  // highlight-end
 
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -481,11 +715,13 @@ export class VideoNode extends DecoratorNode<ReactNode> {
   }
 
   decorate(): ReactNode {
+    // highlight-next-line
     return <VideoPlayer videoID={$getState(this, idState)} />;
   }
 }
 
 export function $createVideoNode(id: string): VideoNode {
+  // highlight-next-line
   return $setState($create(VideoNode), idState, id);
 }
 
@@ -495,6 +731,83 @@ export function $isVideoNode(
   return node instanceof VideoNode;
 }
 ```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy static methods and properties">
+
+```ts
+import {
+  DecoratorNode,
+  type EditorConfig,
+  type LexicalNode,
+  // highlight-start
+  type SerializedLexicalNode,
+  type Spread,
+  // highlight-end
+} from 'lexical';
+
+// highlight-start
+export type SerializedVideoNode = Spread<
+  {
+    id: string;
+  },
+  SerializedLexicalNode
+>;
+// highlight-end
+
+export class VideoNode extends DecoratorNode<ReactNode> {
+  // highlight-start
+  __id: string;
+
+  static getType(): string {
+    return 'video';
+  }
+
+  static clone(node: VideoNode): VideoNode {
+    return new VideoNode(node.__id, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedVideoNode): VideoNode {
+    return new VideoNode(serializedNode.id).updateFromJSON(serializedNode);
+  }
+
+  constructor(id: string, key?: NodeKey) {
+    super(key);
+    this.__id = id;
+  }
+
+  exportJSON(): SerializedVideoNode {
+    return {...super.exportJSON(), id: this.__id};
+  }
+  // highlight-end
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  decorate(): ReactNode {
+    return <VideoPlayer videoID={this.__id} />;
+  }
+}
+
+export function $createVideoNode(id: string): VideoNode {
+  // highlight-next-line
+  return $applyNodeReplacement(new VideoNode(id));
+}
+
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
+  return node instanceof VideoNode;
+}
+```
+
+</TabItem>
+</Tabs>
 
 Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,

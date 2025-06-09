@@ -1,5 +1,5 @@
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 # Nodes
 
@@ -41,7 +41,7 @@ Unlike other `ElementNode` subclasses, the `RootNode` has specific characteristi
    The `RootNode` does not participate in mutation listeners. Instead, use a root-level or update listener to observe changes at the document level.
 
 3. **Compatibility with Node Transforms**  
-   While the `RootNode` is not "part of the document" in the traditional sense, it can still appear to be in some cases, such as during serialization or when applying node transforms. A node transform on the `RootNode` will be called at the end of *every* node transform cycle. This is useful in cases where you need something like an update listener that occurs before the editor state is reconciled.
+   While the `RootNode` is not "part of the document" in the traditional sense, it can still appear to be in some cases, such as during serialization or when applying node transforms. A node transform on the `RootNode` will be called at the end of _every_ node transform cycle. This is useful in cases where you need something like an update listener that occurs before the editor state is reconciled.
 
 4. **Document-Level Metadata**  
    If you are attempting to use the `RootNode` for document-level metadata (e.g., undo/redo support), use the [NodeState](/docs/concepts/node-state) API.
@@ -153,7 +153,7 @@ class MyCustomNode extends SomeOtherNode {
   }
 
   static importJSON(
-    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>
+    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>,
   ): MyCustomNode {
     return new MyCustomNode().updateFromJSON(serializedNode);
   }
@@ -164,7 +164,7 @@ class MyCustomNode extends SomeOtherNode {
   }
 
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>
+    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>,
   ): this {
     const self = super.updateFromJSON(serializedNode);
     return typeof serializedNode.foo === 'string'
@@ -276,11 +276,7 @@ export class ColoredNode extends TextNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: this,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const isUpdated = super.updateDOM(prevNode, dom, config);
     if (prevNode.__color !== this.__color) {
       dom.style.color = this.__color;
@@ -294,7 +290,7 @@ export function $createColoredNode(text: string, color: string): ColoredNode {
 }
 
 export function $isColoredNode(
-  node: LexicalNode | null | undefined
+  node: LexicalNode | null | undefined,
 ): node is ColoredNode {
   return node instanceof ColoredNode;
 }
@@ -404,11 +400,7 @@ export class CustomParagraph extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: this,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     // Returning false tells Lexical that this node does not need its
     // DOM element replaced with a new one from createDOM.
     return false;
@@ -450,11 +442,7 @@ export class CustomParagraph extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: this,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     // Returning false tells Lexical that this node does not need its
     // DOM element replacing with a new copy from createDOM.
     return false;
@@ -506,7 +494,7 @@ const DEFAULT_COLOR = 'inherit';
 // highlight-start
 // This defines how the color property is parsed along with a default value
 const colorState = createState('color', {
-  parse: (value) => typeof value === 'string' ? value : DEFAULT_COLOR,
+  parse: (value) => (typeof value === 'string' ? value : DEFAULT_COLOR),
 });
 // highlight-end
 
@@ -530,11 +518,7 @@ export class ColoredNode extends TextNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: this,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
@@ -557,7 +541,7 @@ export function $createColoredNode(text: string, color: string): ColoredNode {
 // highlight-end
 
 export function $isColoredNode(
-  node: LexicalNode | null | undefined
+  node: LexicalNode | null | undefined,
 ): node is ColoredNode {
   return node instanceof ColoredNode;
 }
@@ -617,9 +601,10 @@ export class ColoredNode extends TextNode {
 
   updateFromJSON(serializedNode: SerializedColoredNode) {
     const self = super.updateFromJSON(serializedNode);
-    self.__color = typeof serializedNode.color === 'string'
-      ? serializedNode.color
-      : DEFAULT_COLOR;
+    self.__color =
+      typeof serializedNode.color === 'string'
+        ? serializedNode.color
+        : DEFAULT_COLOR;
     return self;
   }
 
@@ -638,11 +623,7 @@ export class ColoredNode extends TextNode {
     return element;
   }
 
-  updateDOM(
-    prevNode: this,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
@@ -661,7 +642,7 @@ export function $createColoredNode(text: string, color: string): ColoredNode {
 }
 
 export function $isColoredNode(
-  node: LexicalNode | null | undefined
+  node: LexicalNode | null | undefined,
 ): node is ColoredNode {
   return node instanceof ColoredNode;
 }
@@ -692,7 +673,7 @@ import {
 
 // highlight-start
 const idState = createState('id', {
-  parse: (value) => typeof value === 'string' ? value : '',
+  parse: (value) => (typeof value === 'string' ? value : ''),
 });
 // highlight-end
 

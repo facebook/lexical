@@ -51,9 +51,23 @@ export type SerializedCodeNode = Spread<
 const isLanguageSupportedByPrism = (
   language: string | null | undefined,
 ): boolean => {
+  const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
   try {
-    // eslint-disable-next-line no-prototype-builtins
-    return language ? Prism.languages.hasOwnProperty(language) : false;
+    if (!language) {
+      return false;
+    }
+    const langMatch = DIFF_LANGUAGE_REGEX.exec(language);
+    if (langMatch) {
+      return (
+        // eslint-disable-next-line no-prototype-builtins
+        Prism.languages.hasOwnProperty('diff') &&
+        // eslint-disable-next-line no-prototype-builtins
+        Prism.languages.hasOwnProperty(langMatch[1])
+      );
+    } else {
+      // eslint-disable-next-line no-prototype-builtins
+      return Prism.languages.hasOwnProperty(language);
+    }
   } catch {
     return false;
   }

@@ -2086,12 +2086,12 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
  * Create an node from its class.
  *
  * Note that this will directly construct the final `withKlass` node type,
- * and will ignore the deprecated `with` functions. This allows $create to skip
- * any intermediate steps where the replaced node would be created and then
- * immediately discarded (once per configured replacement of that node).
+ * and will ignore the deprecated `with` functions. This allows `$create` to
+ * skip any intermediate steps where the replaced node would be created and
+ * then immediately discarded (once per configured replacement of that node).
  *
  * This does not support any arguments to the constructor.
- * Setters which can be used to initialize your node, and they can
+ * Setters can be used to initialize your node, and they can
  * be chained. You can of course write your own mutliple-argument functions
  * to wrap that.
  *

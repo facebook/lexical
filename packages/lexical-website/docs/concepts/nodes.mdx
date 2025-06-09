@@ -372,6 +372,19 @@ automatically get full and correct implementations of the following methods:
 - `afterCloneFrom`
 - `exportJSON`
 
+### Best Practices
+
+- The constructor of any custom node must have zero required arguments.
+  This is required for `@lexical/yjs` support, `$create` support, and allows the
+  boilerplate static `clone` and `importJSON` methods to be eliminated.
+
+  - ✅ `constructor(text: string = '', key?: NodeKey)`
+  - ❌ `constructor(text: string, key?: NodeKey)`
+
+- Using only NodeState (and not direct property access) for storing
+  additional data on the node allows the boilerplate `afterCloneFrom`,
+  `exportJSON`, and `updateFromJSON` methods to be eliminated.
+
 ### Extending `ElementNode` with $config
 
 Below is an example of how you might extend `ElementNode`:

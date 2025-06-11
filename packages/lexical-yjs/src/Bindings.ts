@@ -12,7 +12,7 @@ import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
-import type {Doc} from 'yjs';
+import type {Doc, XmlElement} from 'yjs';
 
 import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
@@ -22,15 +22,8 @@ import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
 
 export type ClientID = number;
-export type Binding = {
+export type BaseBinding = {
   clientID: number;
-  collabNodeMap: Map<
-    NodeKey,
-    | CollabElementNode
-    | CollabTextNode
-    | CollabDecoratorNode
-    | CollabLineBreakNode
-  >;
   cursors: Map<ClientID, Cursor>;
   cursorsContainer: null | HTMLElement;
   doc: Doc;
@@ -38,10 +31,24 @@ export type Binding = {
   editor: LexicalEditor;
   id: string;
   nodeProperties: Map<string, Array<string>>;
-  root: CollabElementNode;
   excludedProperties: ExcludedProperties;
 };
 export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
+
+export type Binding = BaseBinding & {
+  collabNodeMap: Map<
+    NodeKey,
+    | CollabElementNode
+    | CollabTextNode
+    | CollabDecoratorNode
+    | CollabLineBreakNode
+  >;
+  root: CollabElementNode;
+};
+
+export type BindingV2 = BaseBinding & {
+  root: XmlElement;
+};
 
 export function createBinding(
   editor: LexicalEditor,

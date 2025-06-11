@@ -58,7 +58,13 @@ export type Delta = Array<Operation>;
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};
-export type {Binding, ClientID, ExcludedProperties} from './Bindings';
+export type {
+  BaseBinding,
+  Binding,
+  BindingV2,
+  ClientID,
+  ExcludedProperties,
+} from './Bindings';
 export {createBinding} from './Bindings';
 
 export function createUndoManager(

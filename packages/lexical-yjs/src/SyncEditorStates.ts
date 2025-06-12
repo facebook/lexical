@@ -6,7 +6,11 @@
  *
  */
 
-import type {EditorState, NodeKey} from 'lexical';
+import type {EditorState, LexicalNode, NodeKey} from 'lexical';
+import type {
+  AbstractType as YAbstractType,
+  Transaction as YTransaction,
+} from 'yjs';
 
 import {
   $addUpdateTag,
@@ -33,7 +37,7 @@ import {
   YXmlEvent,
 } from 'yjs';
 
-import {Binding, Provider} from '.';
+import {Binding, BindingV2, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -43,6 +47,7 @@ import {
   SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
+import {$createOrUpdateNodeFromYElement, updateYFragment} from './SyncV2';
 import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
@@ -301,6 +306,100 @@ export function syncLexicalUpdateToYjs(
       const selection = $getSelection();
       const prevSelection = prevEditorState._selection;
       syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
+    });
+  });
+}
+
+function $syncV2XmlElement(
+  binding: BindingV2,
+  transaction: YTransaction,
+): void {
+  const dirtyElements = new Set<NodeKey>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const collectDirty = (_value: any, type: YAbstractType<any>) => {
+    if (binding.mapping.has(type)) {
+      const node = binding.mapping.get(type)!;
+      if (!(node instanceof Array)) {
+        dirtyElements.add(node.getKey());
+      }
+    }
+  };
+  transaction.changed.forEach(collectDirty);
+  transaction.changedParentTypes.forEach(collectDirty);
+  const fragmentContent = binding.root
+    .toArray()
+    .map(
+      (t) =>
+        $createOrUpdateNodeFromYElement(
+          t as XmlElement,
+          binding,
+          dirtyElements,
+        ) as LexicalNode,
+    )
+    .filter((n) => n !== null);
+
+  // TODO(collab-v2): be more targeted with splicing, similar to CollabElementNode's syncChildrenFromLexical
+  $getRoot().splice(0, $getRoot().getChildrenSize(), fragmentContent);
+}
+
+export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
+  binding: BindingV2,
+  transaction: YTransaction,
+  isFromUndoManger: boolean,
+): void {
+  const editor = binding.editor;
+
+  editor.update(
+    () => {
+      $syncV2XmlElement(binding, transaction);
+
+      if (!isFromUndoManger) {
+        // If it is an external change, we don't want the current scroll position to get changed
+        // since the user might've intentionally scrolled somewhere else in the document.
+        $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+      }
+    },
+    {
+      onUpdate: () => {
+        // If there was a collision on the top level paragraph
+        // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
+        // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+        editor.update(() => {
+          if ($getRoot().getChildrenSize() === 0) {
+            $getRoot().append($createParagraphNode());
+          }
+        });
+      },
+      skipTransforms: true,
+      tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
+    },
+  );
+}
+
+export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
+  binding: BindingV2,
+  editorState: EditorState,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  normalizedNodes: Set<NodeKey>,
+  tags: Set<string>,
+): void {
+  syncWithTransaction(binding, () => {
+    editorState.read(() => {
+      // TODO(collab-v2): what sort of normalization handling do we need for clients that concurrently create YText?
+
+      if (dirtyElements.has('root')) {
+        updateYFragment(
+          binding.doc,
+          binding.root,
+          $getRoot(),
+          binding,
+          new Set(dirtyElements.keys()),
+        );
+      }
+
+      // const selection = $getSelection();
+      // const prevSelection = prevEditorState._selection;
+      // syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
     });
   });
 }

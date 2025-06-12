@@ -13,7 +13,10 @@ import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {ClickableLinkPlugin} from '@lexical/react/LexicalClickableLinkPlugin';
-import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {
+  CollaborationPlugin,
+  CollaborationPluginV2__EXPERIMENTAL,
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
@@ -85,6 +88,7 @@ export default function Editor(): JSX.Element {
   const {
     settings: {
       isCollab,
+      useCollabV2,
       isAutocomplete,
       isMaxLength,
       isCharLimit,
@@ -180,11 +184,18 @@ export default function Editor(): JSX.Element {
         {isRichText ? (
           <>
             {isCollab ? (
-              <CollaborationPlugin
-                id="main"
-                providerFactory={createWebsocketProvider}
-                shouldBootstrap={!skipCollaborationInit}
-              />
+              useCollabV2 ? (
+                <CollaborationPluginV2__EXPERIMENTAL
+                  id="main"
+                  providerFactory={createWebsocketProvider}
+                />
+              ) : (
+                <CollaborationPlugin
+                  id="main"
+                  providerFactory={createWebsocketProvider}
+                  shouldBootstrap={!skipCollaborationInit}
+                />
+              )
             ) : (
               <HistoryPlugin externalHistoryState={historyState} />
             )}

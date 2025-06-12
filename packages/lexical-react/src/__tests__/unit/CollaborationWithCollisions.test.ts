@@ -194,47 +194,52 @@ describe('CollaborationWithCollisions', () => {
     },
   ];
 
-  SIMPLE_TEXT_COLLISION_TESTS.forEach((testCase) => {
-    it(testCase.name, async () => {
-      const connection = createTestConnection();
-      const clients = createAndStartClients(
-        connection,
-        container!,
-        testCase.clients.length,
-      );
+  describe.each([[false], [true]])(
+    'useCollabV2: %s',
+    (useCollabV2: boolean) => {
+      SIMPLE_TEXT_COLLISION_TESTS.forEach((testCase) => {
+        it(testCase.name, async () => {
+          const connection = createTestConnection(useCollabV2);
+          const clients = createAndStartClients(
+            connection,
+            container!,
+            testCase.clients.length,
+          );
 
-      // Set initial content (into first editor only, the rest will be sync'd)
-      const clientA = clients[0];
+          // Set initial content (into first editor only, the rest will be sync'd)
+          const clientA = clients[0];
 
-      await waitForReact(() => {
-        clientA.update(() => {
-          $getRoot().clear();
-          testCase.init();
+          await waitForReact(() => {
+            clientA.update(() => {
+              $getRoot().clear();
+              testCase.init();
+            });
+          });
+
+          testClientsForEquality(clients);
+
+          // Disconnect clients and apply client-specific actions, reconnect them back and
+          // verify that they're sync'd and have the same content
+          disconnectClients(clients);
+
+          for (let i = 0; i < clients.length; i++) {
+            await waitForReact(() => {
+              clients[i].update(testCase.clients[i]);
+            });
+          }
+
+          await waitForReact(() => {
+            connectClients(clients);
+          });
+
+          if (testCase.expectedHTML) {
+            expect(clientA.getHTML()).toEqual(testCase.expectedHTML);
+          }
+
+          testClientsForEquality(clients);
+          stopClients(clients);
         });
       });
-
-      testClientsForEquality(clients);
-
-      // Disconnect clients and apply client-specific actions, reconnect them back and
-      // verify that they're sync'd and have the same content
-      disconnectClients(clients);
-
-      for (let i = 0; i < clients.length; i++) {
-        await waitForReact(() => {
-          clients[i].update(testCase.clients[i]);
-        });
-      }
-
-      await waitForReact(() => {
-        connectClients(clients);
-      });
-
-      if (testCase.expectedHTML) {
-        expect(clientA.getHTML()).toEqual(testCase.expectedHTML);
-      }
-
-      testClientsForEquality(clients);
-      stopClients(clients);
-    });
-  });
+    },
+  );
 });

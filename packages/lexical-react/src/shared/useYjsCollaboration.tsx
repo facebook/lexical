@@ -24,7 +24,9 @@ import {
   setLocalStateFocus,
   syncCursorPositions,
   syncLexicalUpdateToYjs,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
+  syncYjsChangesToLexicalV2__EXPERIMENTAL,
   TOGGLE_CONNECT_COMMAND,
 } from '@lexical/yjs';
 import {
@@ -162,8 +164,44 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   cursorsContainerRef?: CursorsContainerRef,
   awarenessData?: object,
 ) {
-  // TODO: configure observer/listener.
-  // TODO: sync cursor positions.
+  // TODO(collab-v2): sync cursor positions.
+
+  useEffect(() => {
+    const {root} = binding;
+
+    const onYjsTreeChanges: OnYjsTreeChanges = (_events, transaction) => {
+      const origin = transaction.origin;
+      if (origin !== binding) {
+        const isFromUndoManger = origin instanceof UndoManager;
+        syncYjsChangesToLexicalV2__EXPERIMENTAL(
+          binding,
+          transaction,
+          isFromUndoManger,
+        );
+      }
+    };
+
+    // This updates the local editor state when we receive updates from other clients
+    root.observeDeep(onYjsTreeChanges);
+    const removeListener = editor.registerUpdateListener(
+      ({editorState, dirtyElements, normalizedNodes, tags}) => {
+        if (tags.has(SKIP_COLLAB_TAG) === false) {
+          syncLexicalUpdateToYjsV2__EXPERIMENTAL(
+            binding,
+            editorState,
+            dirtyElements,
+            normalizedNodes,
+            tags,
+          );
+        }
+      },
+    );
+
+    return () => {
+      root.unobserveDeep(onYjsTreeChanges);
+      removeListener();
+    };
+  }, [binding, editor]);
 
   return useYjsCollaborationInternal(
     editor,
@@ -344,6 +382,18 @@ export function useYjsHistory(
 ): () => void {
   const undoManager = useMemo(
     () => createUndoManager(binding, binding.root.getSharedType()),
+    [binding],
+  );
+
+  return useYjsUndoManager(editor, undoManager);
+}
+
+export function useYjsHistoryV2(
+  editor: LexicalEditor,
+  binding: BindingV2,
+): () => void {
+  const undoManager = useMemo(
+    () => createUndoManager(binding, binding.root),
     [binding],
   );
 

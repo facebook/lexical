@@ -6,9 +6,15 @@
  *
  */
 
-import type {Binding} from './Bindings';
+import type {BaseBinding} from './Bindings';
 import type {LexicalCommand} from 'lexical';
-import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
+import type {
+  Doc,
+  RelativePosition,
+  UndoManager,
+  XmlElement,
+  XmlText,
+} from 'yjs';
 
 import {createCommand} from 'lexical';
 import {UndoManager as YjsUndoManager} from 'yjs';
@@ -65,11 +71,11 @@ export type {
   ClientID,
   ExcludedProperties,
 } from './Bindings';
-export {createBinding} from './Bindings';
+export {createBinding, createBindingV2__EXPERIMENTAL} from './Bindings';
 
 export function createUndoManager(
-  binding: Binding,
-  root: XmlText,
+  binding: BaseBinding,
+  root: XmlText | XmlElement,
 ): UndoManager {
   return new YjsUndoManager(root, {
     trackedOrigins: new Set([binding, null]),
@@ -124,5 +130,7 @@ export {
 } from './SyncCursors';
 export {
   syncLexicalUpdateToYjs,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
+  syncYjsChangesToLexicalV2__EXPERIMENTAL,
 } from './SyncEditorStates';

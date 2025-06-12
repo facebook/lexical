@@ -11,12 +11,12 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
-import type {LexicalEditor, NodeKey} from 'lexical';
-import type {Doc, XmlElement} from 'yjs';
+import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
+import type {AbstractType as YAbstractType} from 'yjs';
 
 import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
-import {XmlText} from 'yjs';
+import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
@@ -46,9 +46,41 @@ export type Binding = BaseBinding & {
   root: CollabElementNode;
 };
 
+export type LexicalMapping = Map<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  YAbstractType<any>,
+  // Either a node if type is YXmlElement or an Array of text nodes if YXmlText
+  LexicalNode | Array<TextNode>
+>;
+
 export type BindingV2 = BaseBinding & {
+  mapping: LexicalMapping;
   root: XmlElement;
 };
+
+function createBaseBinding(
+  editor: LexicalEditor,
+  id: string,
+  doc: Doc | null | undefined,
+  docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
+): BaseBinding {
+  invariant(
+    doc !== undefined && doc !== null,
+    'createBinding: doc is null or undefined',
+  );
+  return {
+    clientID: doc.clientID,
+    cursors: new Map(),
+    cursorsContainer: null,
+    doc,
+    docMap,
+    editor,
+    excludedProperties: excludedProperties || new Map(),
+    id,
+    nodeProperties: new Map(),
+  };
+}
 
 export function createBinding(
   editor: LexicalEditor,
@@ -70,16 +102,26 @@ export function createBinding(
   );
   root._key = 'root';
   return {
-    clientID: doc.clientID,
+    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
     collabNodeMap: new Map(),
-    cursors: new Map(),
-    cursorsContainer: null,
-    doc,
-    docMap,
-    editor,
-    excludedProperties: excludedProperties || new Map(),
-    id,
-    nodeProperties: new Map(),
     root,
+  };
+}
+
+export function createBindingV2__EXPERIMENTAL(
+  editor: LexicalEditor,
+  id: string,
+  doc: Doc | null | undefined,
+  docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
+): BindingV2 {
+  invariant(
+    doc !== undefined && doc !== null,
+    'createBinding: doc is null or undefined',
+  );
+  return {
+    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
+    mapping: new Map(),
+    root: doc.get('root-v2', XmlElement) as XmlElement,
   };
 }

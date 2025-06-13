@@ -11,6 +11,7 @@
   "version": "0.32.1",
   "dependencies": {
     "@floating-ui/react": "^0.27.8",
+    "@lexical/clipboard": "0.32.1",
     "@lexical/devtools-core": "0.32.1",
     "@lexical/dragon": "0.32.1",
     "@lexical/hashtag": "0.32.1",
@@ -1297,6 +1298,36 @@
         "development": "./useLexicalSubscription.dev.js",
         "production": "./useLexicalSubscription.prod.js",
         "default": "./useLexicalSubscription.js"
+      }
+    },
+    "./useLexicalTableObservers": {
+      "import": {
+        "types": "./useLexicalTableObservers.d.ts",
+        "development": "./useLexicalTableObservers.dev.mjs",
+        "production": "./useLexicalTableObservers.prod.mjs",
+        "node": "./useLexicalTableObservers.node.mjs",
+        "default": "./useLexicalTableObservers.mjs"
+      },
+      "require": {
+        "types": "./useLexicalTableObservers.d.ts",
+        "development": "./useLexicalTableObservers.dev.js",
+        "production": "./useLexicalTableObservers.prod.js",
+        "default": "./useLexicalTableObservers.js"
+      }
+    },
+    "./useLexicalTableObservers.js": {
+      "import": {
+        "types": "./useLexicalTableObservers.d.ts",
+        "development": "./useLexicalTableObservers.dev.mjs",
+        "production": "./useLexicalTableObservers.prod.mjs",
+        "node": "./useLexicalTableObservers.node.mjs",
+        "default": "./useLexicalTableObservers.mjs"
+      },
+      "require": {
+        "types": "./useLexicalTableObservers.d.ts",
+        "development": "./useLexicalTableObservers.dev.js",
+        "production": "./useLexicalTableObservers.prod.js",
+        "default": "./useLexicalTableObservers.js"
       }
     },
     "./useLexicalTextEntity": {

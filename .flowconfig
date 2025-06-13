@@ -80,6 +80,7 @@ module.name_mapper='^@lexical/react/useLexicalEditable$' -> '<PROJECT_ROOT>/pack
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'
 module.name_mapper='^@lexical/react/useLexicalNodeSelection$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
 module.name_mapper='^@lexical/react/useLexicalSubscription$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSubscription.js.flow'
+module.name_mapper='^@lexical/react/useLexicalTableObservers$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTableObservers.js.flow'
 module.name_mapper='^@lexical/react/useLexicalTextEntity$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTextEntity.js.flow'
 module.name_mapper='^@lexical/rich-text$' -> '<PROJECT_ROOT>/packages/lexical-rich-text/flow/LexicalRichText.js.flow'
 module.name_mapper='^@lexical/selection$' -> '<PROJECT_ROOT>/packages/lexical-selection/flow/LexicalSelection.js.flow'

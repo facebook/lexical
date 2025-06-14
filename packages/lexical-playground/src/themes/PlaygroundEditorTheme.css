@@ -668,6 +668,7 @@
 .PlaygroundEditorTheme__contextMenuItem.open {
   background: #ddd;
 }
+.PlaygroundEditorTheme__contextMenuItemFocused,
 .PlaygroundEditorTheme__contextMenuItem:focus,
 .PlaygroundEditorTheme__contextMenuItem:not([disabled]):active {
   background: #eee;

@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {
+  autoUpdate,
   flip,
   FloatingFocusManager,
   FloatingList,
@@ -545,6 +546,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     open: isOpen,
     placement: 'bottom-start',
     strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
   });
 
   const labelsRef = useRef<Array<string | null>>([]);

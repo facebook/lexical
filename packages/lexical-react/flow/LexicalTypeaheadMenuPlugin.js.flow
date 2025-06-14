@@ -36,11 +36,6 @@ declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   option: MenuOption,
 }>;
 
-declare export function getScrollParent(
-  element: HTMLElement,
-  includeHidden: boolean,
-): HTMLElement | HTMLBodyElement;
-
 declare export function useBasicTypeaheadTriggerMatch(
   trigger: string,
   options: {minLength?: number, maxLength?: number},

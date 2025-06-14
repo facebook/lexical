@@ -137,7 +137,7 @@ export function getScrollParent(
   return document.body;
 }
 
-export {useDynamicPositioning} from './shared/LexicalMenu';
+// export {useDynamicPositioning} from './shared/LexicalMenu';
 
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;

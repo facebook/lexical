@@ -534,6 +534,18 @@
 .PlaygroundEditorTheme__tokenComment {
   color: slategray;
 }
+.PlaygroundEditorTheme__tokenDeleted {
+  border-image: linear-gradient(to right, #ffcecb 50%, #ffebe9 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenInserted {
+  border-image: linear-gradient(to right, #aceebb 50%, #dafbe1 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenUnchanged {
+  border-image: linear-gradient(to right, #ddd 50%, #f0f2f5 50%) fill 0/0/0
+    100vw;
+}
 .PlaygroundEditorTheme__tokenPunctuation {
   color: #999;
 }

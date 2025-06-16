@@ -49,7 +49,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {Prism} from './CodeHighlighterPrism';
+import {Prism, tokenizeDiffHighlight} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
   $getFirstCodeNodeOfLine,
@@ -64,6 +64,7 @@ type TokenContent = string | Token | (string | Token)[];
 
 export interface Token {
   type: string;
+  alias: string | string[];
   content: TokenContent;
 }
 
@@ -286,12 +287,18 @@ function codeNodeTransform(
         if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
           return false;
         }
-
+        const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
+        const currentLanguage =
+          currentNode.getLanguage() || tokenizer.defaultLanguage;
+        const diffLanguageMatch = DIFF_LANGUAGE_REGEX.exec(currentLanguage);
         const code = currentNode.getTextContent();
-        const tokens = tokenizer.tokenize(
+        let tokens = tokenizer.tokenize(
           code,
-          currentNode.getLanguage() || tokenizer.defaultLanguage,
+          diffLanguageMatch ? 'diff' : currentLanguage,
         );
+        if (diffLanguageMatch) {
+          tokens = tokenizeDiffHighlight(tokens, diffLanguageMatch[1]);
+        }
         const highlightNodes = $getHighlightNodes(tokens);
         const diffRange = getDiffRange(
           currentNode.getChildren(),
@@ -337,11 +344,23 @@ function $getHighlightNodes(
         }
       }
     } else {
-      const {content} = token;
+      const {content, alias} = token;
       if (typeof content === 'string') {
-        nodes.push(...$getHighlightNodes([content], token.type));
+        nodes.push(
+          ...$getHighlightNodes(
+            [content],
+            token.type === 'prefix' && typeof alias === 'string'
+              ? alias
+              : token.type,
+          ),
+        );
       } else if (Array.isArray(content)) {
-        nodes.push(...$getHighlightNodes(content, token.type));
+        nodes.push(
+          ...$getHighlightNodes(
+            content,
+            token.type === 'unchanged' ? undefined : token.type,
+          ),
+        );
       }
     }
   }

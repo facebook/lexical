@@ -29,6 +29,7 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   ParagraphNode,
 } from 'lexical';
+import isEmptyNavigator from 'shared/isEmptyNavigator';
 
 import {createHeadlessEditor} from '../..';
 
@@ -62,7 +63,7 @@ describe('LexicalHeadlessEditor', () => {
   it('should be headless environment', async () => {
     expect(typeof window === 'undefined').toBe(true);
     expect(typeof document === 'undefined').toBe(true);
-    expect(typeof navigator === 'undefined').toBe(true);
+    expect(typeof navigator === 'undefined' || isEmptyNavigator()).toBe(true);
   });
 
   it('can update editor', async () => {

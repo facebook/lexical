@@ -181,7 +181,8 @@
       "shared/reactPatches": ["../shared/src/reactPatches.ts"],
       "shared/simpleDiffWithCursor": ["../shared/src/simpleDiffWithCursor.ts"],
       "shared/useLayoutEffect": ["../shared/src/useLayoutEffect.ts"],
-      "shared/warnOnlyOnce": ["../shared/src/warnOnlyOnce.ts"]
+      "shared/warnOnlyOnce": ["../shared/src/warnOnlyOnce.ts"],
+      "shared/isEmptyNavigator": ["../shared/src/isEmptyNavigator.ts"]
     }
   },
   "exclude": ["../.output", "../../libdefs/*.js"]

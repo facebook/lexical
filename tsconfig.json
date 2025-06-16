@@ -195,6 +195,7 @@
       ],
       "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
       "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
+      "shared/isEmptyNavigator": ["./packages/shared/src/isEmptyNavigator.ts"],
       "lexical/src": ["./packages/lexical/src"],
       "lexical/src/__tests__/utils": [
         "./packages/lexical/src/__tests__/utils/index.tsx"

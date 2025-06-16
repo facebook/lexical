@@ -186,7 +186,8 @@
         "./packages/shared/src/simpleDiffWithCursor.ts"
       ],
       "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
-      "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"]
+      "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
+      "shared/isEmptyNavigator": ["./packages/shared/src/isEmptyNavigator.ts"]
     }
   },
   "exclude": [

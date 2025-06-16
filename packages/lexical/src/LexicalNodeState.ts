@@ -330,7 +330,7 @@ export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
   version: 'latest' | 'direct' = 'latest',
-) {
+): V {
   const latestOrDirectNode = version === 'latest' ? node.getLatest() : node;
   const state = latestOrDirectNode.__state;
   if (state) {

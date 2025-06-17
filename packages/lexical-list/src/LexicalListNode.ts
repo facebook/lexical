@@ -15,7 +15,7 @@ import {
   $applyNodeReplacement,
   $createTextNode,
   $isElementNode,
-  DOMConversionMap,
+  buildImportMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
@@ -28,7 +28,6 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
@@ -60,14 +59,25 @@ export class ListNode extends ElementNode {
   /** @internal */
   __listType: ListType;
 
-  static getType(): string {
-    return 'list';
-  }
-
-  static clone(node: ListNode): ListNode {
-    const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
-
-    return new ListNode(listType, node.__start, node.__key);
+  /** @internal */
+  $config() {
+    return this.config('list', {
+      $transform: (node: ListNode): void => {
+        mergeNextSiblingListIfSameType(node);
+        updateChildrenListItemValue(node);
+      },
+      extends: ElementNode,
+      importDOM: buildImportMap({
+        ol: () => ({
+          conversion: $convertListNode,
+          priority: 0,
+        }),
+        ul: () => ({
+          conversion: $convertListNode,
+          priority: 0,
+        }),
+      }),
+    });
   }
 
   constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
@@ -78,8 +88,15 @@ export class ListNode extends ElementNode {
     this.__start = start;
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__listType = prevNode.__listType;
+    this.__tag = prevNode.__tag;
+    this.__start = prevNode.__start;
+  }
+
   getTag(): ListNodeTagType {
-    return this.__tag;
+    return this.getLatest().__tag;
   }
 
   setListType(type: ListType): this {
@@ -90,11 +107,11 @@ export class ListNode extends ElementNode {
   }
 
   getListType(): ListType {
-    return this.__listType;
+    return this.getLatest().__listType;
   }
 
   getStart(): number {
-    return this.__start;
+    return this.getLatest().__start;
   }
 
   setStart(start: number): this {
@@ -127,31 +144,6 @@ export class ListNode extends ElementNode {
     $setListThemeClassNames(dom, config.theme, this);
 
     return false;
-  }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListNode(node), 'node is not a ListNode');
-      mergeNextSiblingListIfSameType(node);
-      updateChildrenListItemValue(node);
-    };
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      ol: () => ({
-        conversion: $convertListNode,
-        priority: 0,
-      }),
-      ul: () => ({
-        conversion: $convertListNode,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListNode): ListNode {
-    return $createListNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedListNode>): this {
@@ -323,7 +315,9 @@ function isDomChecklist(domNode: HTMLElement) {
   return false;
 }
 
-function $convertListNode(domNode: HTMLElement): DOMConversionOutput {
+function $convertListNode(
+  domNode: HTMLOListElement | HTMLUListElement,
+): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
   if (nodeName === 'ol') {

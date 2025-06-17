@@ -36,7 +36,7 @@ export function MyLexicalPlugin(props) {
 }
 ```
 
-With access to the Editor, your plugin can extend Lexical via [Commands](https://lexical.dev/docs/concepts/commands), [Transforms](https://lexical.dev/docs/concepts/transforms), or other APIs. For example, the [TwitterPlugin](https://github.com/facebook/lexical/blob/0775ab929e65723433626fa8c25900941e7f232f/packages/lexical-playground/src/plugins/TwitterPlugin/index.ts#L18) embeds a tweet into the editor, fetching the data asynchronously from Twitter based on the provided Tweet ID:
+With access to the Editor, your plugin can extend Lexical via [Commands](../concepts/commands.md), [Transforms](../concepts/transforms.md), or other APIs. For example, the [TwitterPlugin](https://github.com/facebook/lexical/blob/0775ab929e65723433626fa8c25900941e7f232f/packages/lexical-playground/src/plugins/TwitterPlugin/index.ts#L18) embeds a tweet into the editor, fetching the data asynchronously from Twitter based on the provided Tweet ID:
 
 ```jsx
 export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();

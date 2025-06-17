@@ -17,6 +17,8 @@ import type {
   RootMode,
   SplitAtPointCaretNextOptions,
   PointCaret,
+  StateConfig,
+  ValueOrUpdater
 } from 'lexical';
 declare export function addClassNamesToElement(
   element: HTMLElement,
@@ -174,3 +176,49 @@ declare export function $getAdjacentSiblingOrParentSiblingCaret<
   startCaret: NodeCaret<D>,
   rootMode?: RootMode,
 ): null | [NodeCaret<D>, number];
+
+export type StateConfigWrapper<K: string, V> = {
+  +stateConfig: StateConfig<K, V>;
+  +$get: <T: LexicalNode>(node: T) => V;
+  +$set: <T: LexicalNode>(
+    node: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+  /** `[$get, $set]` */
+  +accessors: $ReadOnly<[$get: StateConfigWrapper<K, V>['$get'], $set: StateConfigWrapper<K, V>['$set']]>;
+  /**
+   * `() => function () { return $get(this) }`
+   *
+   * Should be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   myGetter = myWrapper.makeGetterMethod<this>();
+   * }
+   * ```
+   */
+  makeGetterMethod<T: LexicalNode>(): (this: T) => V;
+  /**
+   * `() => function (valueOrUpdater) { return $set(this, valueOrUpdater) }`
+   *
+   * Must be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   mySetter = myWrapper.makeSetterMethod<this>();
+   * }
+   * ```
+   */
+  makeSetterMethod<T: LexicalNode>(): (
+    this: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+};
+
+declare export function makeStateWrapper<K: string, V>(
+  stateConfig: StateConfig<K, V>,
+): StateConfigWrapper<K, V>;

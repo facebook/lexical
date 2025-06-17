@@ -30,7 +30,7 @@ Transforms are executed sequentially before changes are propagated to the DOM an
 
 :::caution Beware!
 
-While it is possible to achieve the same or very similar result through an [update listener](/docs/concepts/listeners#registerupdatelistener) followed by an update, this is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
+While it is possible to achieve the same or very similar result through an [update listener](listeners.md#registerupdatelistener) followed by an update, this is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
 
 Additionally, each cycle creates a brand new `EditorState` object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
 

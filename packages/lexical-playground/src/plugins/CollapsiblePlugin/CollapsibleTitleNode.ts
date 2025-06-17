@@ -10,20 +10,17 @@ import {IS_CHROME} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
-  DOMConversionMap,
+  buildImportMap,
   DOMConversionOutput,
   EditorConfig,
   ElementNode,
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  SerializedElementNode,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
-
-type SerializedCollapsibleTitleNode = SerializedElementNode;
 
 export function $convertSummaryElement(
   domNode: HTMLElement,
@@ -34,13 +31,24 @@ export function $convertSummaryElement(
   };
 }
 
+/** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
-  static getType(): string {
-    return 'collapsible-title';
-  }
-
-  static clone(node: CollapsibleTitleNode): CollapsibleTitleNode {
-    return new CollapsibleTitleNode(node.__key);
+  /** @internal */
+  $config() {
+    return this.config('collapsible-title', {
+      $transform(node: CollapsibleTitleNode) {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+      extends: ElementNode,
+      importDOM: buildImportMap({
+        summary: () => ({
+          conversion: $convertSummaryElement,
+          priority: 1,
+        }),
+      }),
+    });
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
@@ -64,34 +72,6 @@ export class CollapsibleTitleNode extends ElementNode {
 
   updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      summary: (domNode: HTMLElement) => {
-        return {
-          conversion: $convertSummaryElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
-  static importJSON(
-    serializedNode: SerializedCollapsibleTitleNode,
-  ): CollapsibleTitleNode {
-    return $createCollapsibleTitleNode().updateFromJSON(serializedNode);
-  }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      if (!$isCollapsibleTitleNode(node)) {
-        throw new Error('node is not a CollapsibleTitleNode');
-      }
-      if (node.isEmpty()) {
-        node.remove();
-      }
-    };
   }
 
   insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {

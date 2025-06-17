@@ -245,6 +245,7 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  createUID,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,

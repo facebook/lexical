@@ -19,7 +19,6 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_MAC,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -38,7 +37,7 @@ test.describe('Collaboration', () => {
     isCollab,
     browserName,
   }) => {
-    test.skip(!isCollab || IS_MAC);
+    test.skip(!isCollab);
 
     await focusEditor(page);
     await page.keyboard.type('hello');

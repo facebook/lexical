@@ -6,9 +6,14 @@
  *
  */
 
-import type {Binding} from './Bindings';
-import type {BaseSelection, NodeKey, NodeMap, Point} from 'lexical';
-import type {AbsolutePosition, RelativePosition} from 'yjs';
+import type {
+  BaseSelection,
+  LexicalNode,
+  NodeKey,
+  NodeMap,
+  Point,
+  TextNode,
+} from 'lexical';
 
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
@@ -21,16 +26,28 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {
+  AbsolutePosition,
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
   createRelativePositionFromTypeIndex,
+  RelativePosition,
+  XmlElement,
+  XmlText,
 } from 'yjs';
 
 import {Provider, UserState} from '.';
+import {
+  type BaseBinding,
+  type Binding,
+  type BindingV2,
+  isBindingV1,
+  isBindingV2,
+} from './Bindings';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
+import {LexicalMapping} from './LexicalMapping';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
@@ -99,9 +116,49 @@ function createRelativePosition(
   return createRelativePositionFromTypeIndex(sharedType, offset);
 }
 
+function createRelativePositionV2(
+  point: Point,
+  binding: BindingV2,
+): null | RelativePosition {
+  const {mapping} = binding;
+  const {offset} = point;
+  const node = point.getNode();
+  const yType = mapping.getSharedType(node);
+  if (yType === undefined) {
+    return null;
+  }
+  if (point.type === 'text') {
+    invariant($isTextNode(node), 'Text point must be a text node');
+    let prevSibling = node.getPreviousSibling();
+    let adjustedOffset = offset;
+    while ($isTextNode(prevSibling)) {
+      adjustedOffset += prevSibling.getTextContentSize();
+      prevSibling = prevSibling.getPreviousSibling();
+    }
+    return createRelativePositionFromTypeIndex(yType, adjustedOffset);
+  } else if (point.type === 'element') {
+    invariant($isElementNode(node), 'Element point must be an element node');
+    let i = 0;
+    let child = node.getFirstChild();
+    while (child !== null && i < offset) {
+      if ($isTextNode(child)) {
+        // Multiple text nodes are collapsed into a single YText.
+        let nextSiblind = child.getNextSibling();
+        while ($isTextNode(nextSiblind)) {
+          nextSiblind = nextSiblind.getNextSibling();
+        }
+      }
+      i++;
+      child = child.getNextSibling();
+    }
+    return createRelativePositionFromTypeIndex(yType, i);
+  }
+  return null;
+}
+
 function createAbsolutePosition(
   relativePosition: RelativePosition,
-  binding: Binding,
+  binding: BaseBinding,
 ): AbsolutePosition | null {
   return createAbsolutePositionFromRelativePosition(
     relativePosition,
@@ -132,7 +189,7 @@ function createCursor(name: string, color: string): Cursor {
   };
 }
 
-function destroySelection(binding: Binding, selection: CursorSelection) {
+function destroySelection(binding: BaseBinding, selection: CursorSelection) {
   const cursorsContainer = binding.cursorsContainer;
 
   if (cursorsContainer !== null) {
@@ -145,7 +202,7 @@ function destroySelection(binding: Binding, selection: CursorSelection) {
   }
 }
 
-function destroyCursor(binding: Binding, cursor: Cursor) {
+function destroyCursor(binding: BaseBinding, cursor: Cursor) {
   const selection = cursor.selection;
 
   if (selection !== null) {
@@ -184,7 +241,7 @@ function createCursorSelection(
 }
 
 function updateCursor(
-  binding: Binding,
+  binding: BaseBinding,
   cursor: Cursor,
   nextSelection: null | CursorSelection,
   nodeMap: NodeMap,
@@ -294,19 +351,20 @@ function updateCursor(
     selections.pop();
   }
 }
-
 type AnyCollabNode =
   | CollabDecoratorNode
   | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode;
 
+/**
+ * @deprecated Use `$getAnchorAndFocusForUserState` instead.
+ */
 export function getAnchorAndFocusCollabNodesForUserState(
   binding: Binding,
   userState: UserState,
 ) {
   const {anchorPos, focusPos} = userState;
-
   let anchorCollabNode: AnyCollabNode | null = null;
   let anchorOffset = 0;
   let focusCollabNode: AnyCollabNode | null = null;
@@ -336,8 +394,69 @@ export function getAnchorAndFocusCollabNodesForUserState(
   };
 }
 
+export function $getAnchorAndFocusForUserState(
+  binding: BaseBinding,
+  userState: UserState,
+): {
+  anchorKey: NodeKey | null;
+  anchorOffset: number;
+  focusKey: NodeKey | null;
+  focusOffset: number;
+} {
+  const {anchorPos, focusPos} = userState;
+  const anchorAbsPos = anchorPos
+    ? createAbsolutePosition(anchorPos, binding)
+    : null;
+  const focusAbsPos = focusPos
+    ? createAbsolutePosition(focusPos, binding)
+    : null;
+
+  if (anchorAbsPos === null || focusAbsPos === null) {
+    return {
+      anchorKey: null,
+      anchorOffset: 0,
+      focusKey: null,
+      focusOffset: 0,
+    };
+  }
+
+  if (isBindingV1(binding)) {
+    const [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+      anchorAbsPos.type,
+      anchorAbsPos.index,
+    );
+    const [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+      focusAbsPos.type,
+      focusAbsPos.index,
+    );
+    return {
+      anchorKey: anchorCollabNode !== null ? anchorCollabNode.getKey() : null,
+      anchorOffset,
+      focusKey: focusCollabNode !== null ? focusCollabNode.getKey() : null,
+      focusOffset,
+    };
+  } else if (isBindingV2(binding)) {
+    const [anchorKey, anchorOffset] = $getNodeAndOffsetV2(
+      binding.mapping,
+      anchorAbsPos,
+    );
+    const [focusKey, focusOffset] = $getNodeAndOffsetV2(
+      binding.mapping,
+      focusAbsPos,
+    );
+    return {
+      anchorKey,
+      anchorOffset,
+      focusKey,
+      focusOffset,
+    };
+  } else {
+    invariant(false, 'getAnchorAndFocusForUserState: unknown binding type');
+  }
+}
+
 export function $syncLocalCursorPosition(
-  binding: Binding,
+  binding: BaseBinding,
   provider: Provider,
 ): void {
   const awareness = provider.awareness;
@@ -347,13 +466,10 @@ export function $syncLocalCursorPosition(
     return;
   }
 
-  const {anchorCollabNode, anchorOffset, focusCollabNode, focusOffset} =
-    getAnchorAndFocusCollabNodesForUserState(binding, localState);
+  const {anchorKey, anchorOffset, focusKey, focusOffset} =
+    $getAnchorAndFocusForUserState(binding, localState);
 
-  if (anchorCollabNode !== null && focusCollabNode !== null) {
-    const anchorKey = anchorCollabNode.getKey();
-    const focusKey = focusCollabNode.getKey();
-
+  if (anchorKey !== null && focusKey !== null) {
     const selection = $getSelection();
 
     if (!$isRangeSelection(selection)) {
@@ -410,28 +526,63 @@ function getCollabNodeAndOffset(
   return [null, 0];
 }
 
+function $getNodeAndOffsetV2(
+  mapping: LexicalMapping,
+  absolutePosition: AbsolutePosition,
+): [null | NodeKey, number] {
+  const yType = absolutePosition.type as XmlElement | XmlText;
+  const offset = absolutePosition.index;
+  if (yType instanceof XmlElement) {
+    const node = mapping.get(yType) as LexicalNode;
+    if (node === undefined) {
+      return [null, 0];
+    }
+    const maxOffset = $isElementNode(node) ? node.getChildrenSize() : 0;
+    return [node.getKey(), Math.min(offset, maxOffset)];
+  } else {
+    const nodes = mapping.get(yType) as TextNode[];
+    if (nodes === undefined) {
+      return [null, 0];
+    }
+    let i = 0;
+    let adjustedOffset = offset;
+    while (
+      adjustedOffset > nodes[i].getTextContentSize() &&
+      i + 1 < nodes.length
+    ) {
+      adjustedOffset -= nodes[i].getTextContentSize();
+      i++;
+    }
+    const textNode = nodes[i];
+    return [
+      textNode.getKey(),
+      Math.min(adjustedOffset, textNode.getTextContentSize()),
+    ];
+  }
+}
+
 export type SyncCursorPositionsFn = (
-  binding: Binding,
+  binding: BaseBinding,
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ) => void;
 
 export type SyncCursorPositionsOptions = {
   getAwarenessStates?: (
-    binding: Binding,
+    binding: BaseBinding,
     provider: Provider,
   ) => Map<number, UserState>;
 };
 
 function getAwarenessStatesDefault(
-  _binding: Binding,
+  _binding: BaseBinding,
   provider: Provider,
 ): Map<number, UserState> {
   return provider.awareness.getStates();
 }
 
 export function syncCursorPositions(
-  binding: Binding,
+  binding: BaseBinding,
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ): void {
@@ -460,12 +611,11 @@ export function syncCursorPositions(
       }
 
       if (focusing) {
-        const {anchorCollabNode, anchorOffset, focusCollabNode, focusOffset} =
-          getAnchorAndFocusCollabNodesForUserState(binding, awareness);
+        const {anchorKey, anchorOffset, focusKey, focusOffset} = editor.read(
+          () => $getAnchorAndFocusForUserState(binding, awareness),
+        );
 
-        if (anchorCollabNode !== null && focusCollabNode !== null) {
-          const anchorKey = anchorCollabNode.getKey();
-          const focusKey = focusCollabNode.getKey();
+        if (anchorKey !== null && focusKey !== null) {
           selection = cursor.selection;
 
           if (selection === null) {
@@ -508,7 +658,7 @@ export function syncCursorPositions(
 }
 
 export function syncLexicalSelectionToYjs(
-  binding: Binding,
+  binding: BaseBinding,
   provider: Provider,
   prevSelection: null | BaseSelection,
   nextSelection: null | BaseSelection,
@@ -541,8 +691,15 @@ export function syncLexicalSelectionToYjs(
   }
 
   if ($isRangeSelection(nextSelection)) {
-    anchorPos = createRelativePosition(nextSelection.anchor, binding);
-    focusPos = createRelativePosition(nextSelection.focus, binding);
+    if (isBindingV1(binding)) {
+      anchorPos = createRelativePosition(nextSelection.anchor, binding);
+      focusPos = createRelativePosition(nextSelection.focus, binding);
+    } else if (isBindingV2(binding)) {
+      anchorPos = createRelativePositionV2(nextSelection.anchor, binding);
+      focusPos = createRelativePositionV2(nextSelection.focus, binding);
+    } else {
+      invariant(false, 'syncLexicalSelectionToYjs: unknown binding type');
+    }
   }
 
   if (

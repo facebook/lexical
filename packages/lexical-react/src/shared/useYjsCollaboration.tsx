@@ -164,10 +164,9 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   cursorsContainerRef?: CursorsContainerRef,
   awarenessData?: object,
 ) {
-  // TODO(collab-v2): sync cursor positions.
-
   useEffect(() => {
     const {root} = binding;
+    const {awareness} = provider;
 
     const onYjsTreeChanges: OnYjsTreeChanges = (_events, transaction) => {
       const origin = transaction.origin;
@@ -175,6 +174,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
         const isFromUndoManger = origin instanceof UndoManager;
         syncYjsChangesToLexicalV2__EXPERIMENTAL(
           binding,
+          provider,
           transaction,
           isFromUndoManger,
         );
@@ -184,10 +184,18 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     // This updates the local editor state when we receive updates from other clients
     root.observeDeep(onYjsTreeChanges);
     const removeListener = editor.registerUpdateListener(
-      ({editorState, dirtyElements, normalizedNodes, tags}) => {
+      ({
+        prevEditorState,
+        editorState,
+        dirtyElements,
+        normalizedNodes,
+        tags,
+      }) => {
         if (tags.has(SKIP_COLLAB_TAG) === false) {
           syncLexicalUpdateToYjsV2__EXPERIMENTAL(
             binding,
+            provider,
+            prevEditorState,
             editorState,
             dirtyElements,
             normalizedNodes,
@@ -197,11 +205,16 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
       },
     );
 
+    const onAwarenessUpdate = () => {
+      syncCursorPositions(binding, provider);
+    };
+    awareness.on('update', onAwarenessUpdate);
+
     return () => {
       root.unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
-  }, [binding, editor]);
+  }, [binding, provider, editor]);
 
   return useYjsCollaborationInternal(
     editor,

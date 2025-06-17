@@ -9,6 +9,7 @@
 import type {EditorState, LexicalNode, NodeKey} from 'lexical';
 import type {
   AbstractType as YAbstractType,
+  ContentType,
   Transaction as YTransaction,
 } from 'yjs';
 
@@ -27,6 +28,8 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {
+  Item,
+  iterateDeletedStructs,
   Map as YMap,
   Text as YText,
   XmlElement,
@@ -37,7 +40,7 @@ import {
   YXmlEvent,
 } from 'yjs';
 
-import {Binding, BindingV2, Provider} from '.';
+import {BaseBinding, Binding, BindingV2, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -155,31 +158,7 @@ export function syncYjsChangesToLexical(
         $syncEvent(binding, event);
       }
 
-      const selection = $getSelection();
-
-      if ($isRangeSelection(selection)) {
-        if (doesSelectionNeedRecovering(selection)) {
-          const prevSelection = currentEditorState._selection;
-
-          if ($isRangeSelection(prevSelection)) {
-            $syncLocalCursorPosition(binding, provider);
-            if (doesSelectionNeedRecovering(selection)) {
-              // If the selected node is deleted, move the selection to the previous or parent node.
-              const anchorNodeKey = selection.anchor.key;
-              $moveSelectionToPreviousNode(anchorNodeKey, currentEditorState);
-            }
-          }
-
-          syncLexicalSelectionToYjs(
-            binding,
-            provider,
-            prevSelection,
-            $getSelection(),
-          );
-        } else {
-          $syncLocalCursorPosition(binding, provider);
-        }
-      }
+      $syncCursorFromYjs(currentEditorState, binding, provider);
 
       if (!isFromUndoManger) {
         // If it is an external change, we don't want the current scroll position to get changed
@@ -189,10 +168,10 @@ export function syncYjsChangesToLexical(
     },
     {
       onUpdate: () => {
-        syncCursorPositionsFn(binding, provider);
         // If there was a collision on the top level paragraph
         // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
         // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+        syncCursorPositionsFn(binding, provider);
         editor.update(() => {
           if ($getRoot().getChildrenSize() === 0) {
             $getRoot().append($createParagraphNode());
@@ -203,6 +182,38 @@ export function syncYjsChangesToLexical(
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
+}
+
+function $syncCursorFromYjs(
+  editorState: EditorState,
+  binding: BaseBinding,
+  provider: Provider,
+) {
+  const selection = $getSelection();
+
+  if ($isRangeSelection(selection)) {
+    if (doesSelectionNeedRecovering(selection)) {
+      const prevSelection = editorState._selection;
+
+      if ($isRangeSelection(prevSelection)) {
+        $syncLocalCursorPosition(binding, provider);
+        if (doesSelectionNeedRecovering(selection)) {
+          // If the selected node is deleted, move the selection to the previous or parent node.
+          const anchorNodeKey = selection.anchor.key;
+          $moveSelectionToPreviousNode(anchorNodeKey, editorState);
+        }
+      }
+
+      syncLexicalSelectionToYjs(
+        binding,
+        provider,
+        prevSelection,
+        $getSelection(),
+      );
+    } else {
+      $syncLocalCursorPosition(binding, provider);
+    }
+  }
 }
 
 function $handleNormalizationMergeConflicts(
@@ -314,10 +325,21 @@ function $syncV2XmlElement(
   binding: BindingV2,
   transaction: YTransaction,
 ): void {
+  iterateDeletedStructs(transaction, transaction.deleteSet, (struct) => {
+    if (struct.constructor === Item) {
+      const content = struct.content as ContentType;
+      const type = content.type;
+      if (type) {
+        binding.mapping.delete(type as XmlElement | XmlText);
+      }
+    }
+  });
+
   const dirtyElements = new Set<NodeKey>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const collectDirty = (_value: any, type: YAbstractType<any>) => {
-    if (binding.mapping.has(type)) {
+  const collectDirty = (_value: unknown, type: YAbstractType<any>) => {
+    const knownType = type instanceof XmlElement || type instanceof XmlText;
+    if (knownType && binding.mapping.has(type)) {
       const node = binding.mapping.get(type)!;
       if (!(node instanceof Array)) {
         dirtyElements.add(node.getKey());
@@ -326,6 +348,7 @@ function $syncV2XmlElement(
   };
   transaction.changed.forEach(collectDirty);
   transaction.changedParentTypes.forEach(collectDirty);
+
   const fragmentContent = binding.root
     .toArray()
     .map(
@@ -344,14 +367,17 @@ function $syncV2XmlElement(
 
 export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   binding: BindingV2,
+  provider: Provider,
   transaction: YTransaction,
   isFromUndoManger: boolean,
 ): void {
   const editor = binding.editor;
+  const editorState = editor._editorState;
 
   editor.update(
     () => {
       $syncV2XmlElement(binding, transaction);
+      $syncCursorFromYjs(editorState, binding, provider);
 
       if (!isFromUndoManger) {
         // If it is an external change, we don't want the current scroll position to get changed
@@ -364,6 +390,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
         // If there was a collision on the top level paragraph
         // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
         // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+        syncCursorPositions(binding, provider);
         editor.update(() => {
           if ($getRoot().getChildrenSize() === 0) {
             $getRoot().append($createParagraphNode());
@@ -378,13 +405,15 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
 
 export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   binding: BindingV2,
-  editorState: EditorState,
+  provider: Provider,
+  prevEditorState: EditorState,
+  currEditorState: EditorState,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
   syncWithTransaction(binding, () => {
-    editorState.read(() => {
+    currEditorState.read(() => {
       // TODO(collab-v2): what sort of normalization handling do we need for clients that concurrently create YText?
 
       if (dirtyElements.has('root')) {
@@ -397,9 +426,9 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
         );
       }
 
-      // const selection = $getSelection();
-      // const prevSelection = prevEditorState._selection;
-      // syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
+      const selection = $getSelection();
+      const prevSelection = prevEditorState._selection;
+      syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
     });
   });
 }

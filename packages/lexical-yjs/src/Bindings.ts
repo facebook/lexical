@@ -11,8 +11,7 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
-import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
-import type {AbstractType as YAbstractType} from 'yjs';
+import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
@@ -20,6 +19,7 @@ import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
+import {LexicalMapping} from './LexicalMapping';
 
 export type ClientID = number;
 export type BaseBinding = {
@@ -45,13 +45,6 @@ export type Binding = BaseBinding & {
   >;
   root: CollabElementNode;
 };
-
-export type LexicalMapping = Map<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  YAbstractType<any>,
-  // Either a node if type is YXmlElement or an Array of text nodes if YXmlText
-  LexicalNode | Array<TextNode>
->;
 
 export type BindingV2 = BaseBinding & {
   mapping: LexicalMapping;
@@ -121,7 +114,15 @@ export function createBindingV2__EXPERIMENTAL(
   );
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
-    mapping: new Map(),
+    mapping: new LexicalMapping(),
     root: doc.get('root-v2', XmlElement) as XmlElement,
   };
+}
+
+export function isBindingV1(binding: BaseBinding): binding is Binding {
+  return Object.hasOwn(binding, 'collabNodeMap');
+}
+
+export function isBindingV2(binding: BaseBinding): binding is BindingV2 {
+  return Object.hasOwn(binding, 'mapping');
 }

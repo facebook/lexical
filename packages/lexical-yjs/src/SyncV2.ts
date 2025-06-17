@@ -416,7 +416,7 @@ const ytextTrans = (
   };
 };
 
-const updateYText = (ytext: Y.Text, ltexts: TextNode[], meta: BindingV2) => {
+const updateYText = (ytext: Y.XmlText, ltexts: TextNode[], meta: BindingV2) => {
   meta.mapping.set(ytext, ltexts);
   const {nAttrs, str} = ytextTrans(ytext);
   const content = ltexts.map((l) => ({

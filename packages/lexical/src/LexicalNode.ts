@@ -83,7 +83,6 @@ export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;
   __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
   __lexicalDirTextContent?: string | undefined | null;
-  __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
 }
 

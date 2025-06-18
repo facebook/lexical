@@ -29,9 +29,9 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   ParagraphNode,
 } from 'lexical';
-import isEmptyNavigator from 'shared/isEmptyNavigator';
 
 import {createHeadlessEditor} from '../..';
+import {isEmptyNavigator} from '../utils';
 
 describe('LexicalHeadlessEditor', () => {
   let editor: LexicalEditor;

@@ -6,7 +6,7 @@
  *
  */
 
-export default function isEmptyNavigator() {
+export function isEmptyNavigator() {
   return (
     typeof navigator === 'object' &&
     Object.prototype.toString.call(navigator) === '[object Object]' &&

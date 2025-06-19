@@ -42,6 +42,7 @@ import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
+import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
@@ -263,6 +264,12 @@ function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
             editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
         }),
     ),
+    new ComponentPickerOption('Date', {
+      icon: <i className="icon equation" />,
+      keywords: ['date', 'calendar', 'time'],
+      onSelect: () =>
+        editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime: new Date()}),
+    }),
     new ComponentPickerOption('Equation', {
       icon: <i className="icon equation" />,
       keywords: ['equation', 'latex', 'math'],

@@ -1,0 +1,268 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import type {Option, Options, PollNode} from './DateTimeNode';
+import type {JSX} from 'react';
+
+import { setHours, setMinutes } from "date-fns";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
+import './DateTimeNode.css';
+
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
+import {mergeRegister} from '@lexical/utils';
+import {
+  $getNodeByKey,
+  $getSelection,
+  $isNodeSelection,
+  BaseSelection,
+  CLICK_COMMAND,
+  COMMAND_PRIORITY_LOW,
+  NodeKey,
+} from 'lexical';
+import * as React from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
+
+import Button from '../../ui/Button';
+import joinClasses from '../../utils/joinClasses';
+import {$isPollNode, createPollOption} from './PollNode';
+
+function getTotalVotes(options: Options): number {
+  return options.reduce((totalVotes, next) => {
+    return totalVotes + next.votes.length;
+  }, 0);
+}
+
+function PollOptionComponent({
+  option,
+  index,
+  options,
+  totalVotes,
+  withPollNode,
+}: {
+  index: number;
+  option: Option;
+  options: Options;
+  totalVotes: number;
+  withPollNode: (
+    cb: (pollNode: PollNode) => void,
+    onSelect?: () => void,
+  ) => void;
+}): JSX.Element {
+  const {clientID} = useCollaborationContext();
+  const checkboxRef = useRef(null);
+  const votesArray = option.votes;
+  const checkedIndex = votesArray.indexOf(clientID);
+  const checked = checkedIndex !== -1;
+  const votes = votesArray.length;
+  const text = option.text;
+
+  return (
+    <div className="PollNode__optionContainer">
+      <div
+        className={joinClasses(
+          'PollNode__optionCheckboxWrapper',
+          checked && 'PollNode__optionCheckboxChecked',
+        )}>
+        <input
+          ref={checkboxRef}
+          className="PollNode__optionCheckbox"
+          type="checkbox"
+          onChange={(e) => {
+            withPollNode((node) => {
+              node.toggleVote(option, clientID);
+            });
+          }}
+          checked={checked}
+        />
+      </div>
+      <div className="PollNode__optionInputWrapper">
+        <div
+          className="PollNode__optionInputVotes"
+          style={{width: `${votes === 0 ? 0 : (votes / totalVotes) * 100}%`}}
+        />
+        <span className="PollNode__optionInputVotesCount">
+          {votes > 0 && (votes === 1 ? '1 vote' : `${votes} votes`)}
+        </span>
+        <input
+          className="PollNode__optionInput"
+          type="text"
+          value={text}
+          onChange={(e) => {
+            const target = e.target;
+            const value = target.value;
+            const selectionStart = target.selectionStart;
+            const selectionEnd = target.selectionEnd;
+            withPollNode(
+              (node) => {
+                node.setOptionText(option, value);
+              },
+              () => {
+                target.selectionStart = selectionStart;
+                target.selectionEnd = selectionEnd;
+              },
+            );
+          }}
+          placeholder={`Option ${index + 1}`}
+        />
+      </div>
+      <button
+        disabled={options.length < 3}
+        className={joinClasses(
+          'PollNode__optionDelete',
+          options.length < 3 && 'PollNode__optionDeleteDisabled',
+        )}
+        aria-label="Remove"
+        onClick={() => {
+          withPollNode((node) => {
+            node.deleteOption(option);
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+export default function DateTimeComponent({
+  dateTime,
+  nodeKey,
+}: {
+  dateTime: Date | undefined;
+  nodeKey: NodeKey;
+}): JSX.Element {
+  // const [editor] = useLexicalComposerContext();
+  // const totalVotes = useMemo(() => getTotalVotes(options), [options]);
+  // const [isSelected, setSelected, clearSelection] =
+    // useLexicalNodeSelection(nodeKey);
+  // const [selection, setSelection] = useState<BaseSelection | null>(null);
+  const ref = useRef(null);
+
+  // useEffect(() => {
+  //   return mergeRegister(
+  //     editor.registerUpdateListener(({editorState}) => {
+  //       setSelection(editorState.read(() => $getSelection()));
+  //     }),
+  //     editor.registerCommand<MouseEvent>(
+  //       CLICK_COMMAND,
+  //       (payload) => {
+  //         const event = payload;
+
+  //         if (event.target === ref.current) {
+  //           if (!event.shiftKey) {
+  //             clearSelection();
+  //           }
+  //           setSelected(!isSelected);
+  //           return true;
+  //         }
+
+  //         return false;
+  //       },
+  //       COMMAND_PRIORITY_LOW,
+  //     ),
+  //   );
+  // }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
+
+  // const withPollNode = (
+  //   cb: (node: PollNode) => void,
+  //   onUpdate?: () => void,
+  // ): void => {
+  //   editor.update(
+  //     () => {
+  //       const node = $getNodeByKey(nodeKey);
+  //       if ($isPollNode(node)) {
+  //         cb(node);
+  //       }
+  //     },
+  //     {onUpdate},
+  //   );
+  // };
+
+  // const addOption = () => {
+  //   withPollNode((node) => {
+  //     node.addOption(createPollOption());
+  //   });
+  // };
+
+  // const isFocused = $isNodeSelection(selection) && isSelected;
+
+  const [selected, setSelected] = useState();
+  const [includeTime, setIncludeTime] = useState(false);
+  const [timeValue, setTimeValue] = useState('00:00');
+
+  const handleCheckboxChange = (event) => {
+    if (event.target.checked) {
+      setIncludeTime(true);
+    } else {
+      setIncludeTime(false);
+      setTimeValue('00:00');
+    }
+  };
+
+  const handleTimeChange = (e) => {
+    const time = e.target.value;
+    if (!selected) {
+      setTimeValue(time);
+      return;
+    }
+    const [hours, minutes] = time.split(':').map((str: string) => parseInt(str, 10));
+    const newSelectedDate = setHours(setMinutes(selected, minutes), hours);
+    setSelected(newSelectedDate);
+    setTimeValue(time);
+  };
+
+  const handleDaySelect = (date) => {
+    if (!timeValue || !date) {
+      setSelected(date);
+      return;
+    }
+    const [hours, minutes] = timeValue
+      .split(':')
+      .map((str) => parseInt(str, 10));
+    const newDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      hours,
+      minutes
+    );
+    setSelected(newDate);
+  };
+
+  return (
+    <div className={`abc`} ref={ref} style={{ height: "500px", width: "400px", zIndex: 1000 }}>
+      <div>
+        <DayPicker
+          captionLayout="dropdown"
+          navLayout="after"
+          fixedWeeks={false}
+          showOutsideDays={false}
+          mode="single"
+          selected={selected}
+          required={true} // Ensure the date is required
+          timeZone="UTC"
+          onSelect={handleDaySelect}
+          footer={`Selected date: ${
+            selected ? selected.toLocaleString() : "none"
+          }`}
+        />
+        <form style={{ marginBlockEnd: "1em" }}>
+          <input type="checkbox" id="option1" name="option1" value="value1" checked={includeTime}
+            onChange={handleCheckboxChange}
+          />
+          <label for="option1">Add time</label>
+          {" "}
+          <label>
+            <input type="time" value={timeValue} onChange={handleTimeChange} disabled={!includeTime} />
+          </label>
+        </form>
+      </div>
+    </div>
+  );
+}

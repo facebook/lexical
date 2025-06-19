@@ -76,6 +76,7 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+import DateTimePlugin from './plugins/DateTimePlugin';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -177,6 +178,7 @@ export default function Editor(): JSX.Element {
         <KeywordsPlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
+        <DateTimePlugin />
         <CommentPlugin
           providerFactory={isCollab ? createWebsocketProvider : undefined}
         />

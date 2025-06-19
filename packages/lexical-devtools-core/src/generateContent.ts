@@ -35,7 +35,7 @@ import {LexicalCommandLog} from './useLexicalCommandsLog';
 export type CustomPrintNodeFn = (
   node: LexicalNode,
   obfuscateText?: boolean,
-) => string;
+) => string | undefined;
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =
   Object.freeze({

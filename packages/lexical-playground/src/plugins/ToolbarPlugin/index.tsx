@@ -658,6 +658,13 @@ export default function ToolbarPlugin({
           const selectedElement = $findTopLevelElement(selectedNode);
           $handleHeadingNode(selectedElement);
           $handleCodeNode(selectedElement);
+          // Update elementFormat for node selection (e.g., images)
+          if ($isElementNode(selectedElement)) {
+            updateToolbarState(
+              'elementFormat',
+              selectedElement.getFormatType(),
+            );
+          }
         }
       }
     }

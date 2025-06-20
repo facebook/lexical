@@ -153,9 +153,6 @@
       "@lexical/react/useLexicalSubscription": [
         "../lexical-react/src/useLexicalSubscription.tsx"
       ],
-      "@lexical/react/useLexicalTableObservers": [
-        "../lexical-react/src/useLexicalTableObservers.ts"
-      ],
       "@lexical/react/useLexicalTextEntity": [
         "../lexical-react/src/useLexicalTextEntity.ts"
       ],

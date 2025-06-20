@@ -99,8 +99,13 @@ function wrapTableHtml(expected: string): string {
 polyfillContentEditable();
 
 describe('LexicalTableNode tests', () => {
-  [false, true].forEach((hasHorizontalScroll) => {
-    describe(`hasHorizontalScroll={${hasHorizontalScroll}}`, () => {
+  [
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ].forEach(([hasHorizontalScroll, useOptimizedMode]) => {
+    describe(`hasHorizontalScroll={${hasHorizontalScroll}}, useOptimizedMode={${useOptimizedMode}}`, () => {
       function expectTableHtmlToBeEqual(
         actual: string,
         expected: string,
@@ -1816,7 +1821,10 @@ describe('LexicalTableNode tests', () => {
           });
         },
         {theme: editorConfig.theme},
-        <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
+        <TablePlugin
+          hasHorizontalScroll={hasHorizontalScroll}
+          useOptimizedMode={useOptimizedMode}
+        />,
       );
     });
   });

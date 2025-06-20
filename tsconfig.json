@@ -162,9 +162,6 @@
       "@lexical/react/useLexicalSubscription": [
         "./packages/lexical-react/src/useLexicalSubscription.tsx"
       ],
-      "@lexical/react/useLexicalTableObservers": [
-        "./packages/lexical-react/src/useLexicalTableObservers.ts"
-      ],
       "@lexical/react/useLexicalTextEntity": [
         "./packages/lexical-react/src/useLexicalTextEntity.ts"
       ],

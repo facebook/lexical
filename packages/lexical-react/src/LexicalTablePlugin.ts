@@ -11,15 +11,15 @@ import type {JSX} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
+  registerOptimizedTableSelectionObserver,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
+  registerTableSelectionObserver,
   setScrollableTablesActive,
   TableCellNode,
   TableNode,
 } from '@lexical/table';
-import {useEffect} from 'react';
-
-import {useLexicalTableObservers} from './useLexicalTableObservers';
+import {useEffect, useState} from 'react';
 
 export interface TablePluginProps {
   /**
@@ -39,6 +39,10 @@ export interface TablePluginProps {
    * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
    */
   hasHorizontalScroll?: boolean;
+  /**
+   * When `true` (default `false`), optimized mode will ...
+   */
+  useOptimizedMode?: boolean;
 }
 
 /**
@@ -52,10 +56,11 @@ export function TablePlugin({
   hasCellBackgroundColor = true,
   hasTabHandler = true,
   hasHorizontalScroll = false,
+  useOptimizedMode = false,
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
-  useLexicalTableObservers(editor, hasTabHandler);
+  const [observersRegistered, setObserversRegistered] = useState(false);
 
   useEffect(() => {
     const hadHorizontalScroll = $isScrollableTablesActive(editor);
@@ -68,6 +73,33 @@ export function TablePlugin({
   }, [editor, hasHorizontalScroll]);
 
   useEffect(() => registerTablePlugin(editor), [editor]);
+
+  useEffect(() => {
+    let unregisterObservers: (() => void) | undefined;
+
+    if (useOptimizedMode) {
+      editor.registerRootListener((root) => {
+        if (root && !observersRegistered) {
+          unregisterObservers = registerOptimizedTableSelectionObserver(
+            editor,
+            hasTabHandler,
+          );
+          setObserversRegistered(true);
+        }
+      });
+    } else {
+      unregisterObservers = registerTableSelectionObserver(
+        editor,
+        hasTabHandler,
+      );
+    }
+
+    return () => {
+      if (unregisterObservers) {
+        unregisterObservers();
+      }
+    };
+  }, [editor, hasTabHandler, observersRegistered, useOptimizedMode]);
 
   // Unmerge cells when the feature isn't enabled
   useEffect(() => {

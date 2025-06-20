@@ -1300,36 +1300,6 @@
         "default": "./useLexicalSubscription.js"
       }
     },
-    "./useLexicalTableObservers": {
-      "import": {
-        "types": "./useLexicalTableObservers.d.ts",
-        "development": "./useLexicalTableObservers.dev.mjs",
-        "production": "./useLexicalTableObservers.prod.mjs",
-        "node": "./useLexicalTableObservers.node.mjs",
-        "default": "./useLexicalTableObservers.mjs"
-      },
-      "require": {
-        "types": "./useLexicalTableObservers.d.ts",
-        "development": "./useLexicalTableObservers.dev.js",
-        "production": "./useLexicalTableObservers.prod.js",
-        "default": "./useLexicalTableObservers.js"
-      }
-    },
-    "./useLexicalTableObservers.js": {
-      "import": {
-        "types": "./useLexicalTableObservers.d.ts",
-        "development": "./useLexicalTableObservers.dev.mjs",
-        "production": "./useLexicalTableObservers.prod.mjs",
-        "node": "./useLexicalTableObservers.node.mjs",
-        "default": "./useLexicalTableObservers.mjs"
-      },
-      "require": {
-        "types": "./useLexicalTableObservers.d.ts",
-        "development": "./useLexicalTableObservers.dev.js",
-        "production": "./useLexicalTableObservers.prod.js",
-        "default": "./useLexicalTableObservers.js"
-      }
-    },
     "./useLexicalTextEntity": {
       "import": {
         "types": "./useLexicalTextEntity.d.ts",

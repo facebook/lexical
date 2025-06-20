@@ -40,7 +40,7 @@ export interface TablePluginProps {
    */
   hasHorizontalScroll?: boolean;
   /**
-   * When `true` (default `false`), optimized mode will ...
+   * When `true` (default `false`), will optimize the table selection observers and prevent redundant listeners to be declared.
    */
   useOptimizedMode?: boolean;
 }

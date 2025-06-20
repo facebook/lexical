@@ -54,7 +54,6 @@ export {
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
-  $addHighlightStyleToTable,
   $findCellNode,
   $findTableNode,
   getDOMCellFromTarget,

@@ -56,6 +56,7 @@ export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSe
 export {
   $findCellNode,
   $findTableNode,
+  applyTableHandlers,
   getDOMCellFromTarget,
   getTableElement,
   getTableObserverFromTableElement,

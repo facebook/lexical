@@ -804,11 +804,6 @@ export function registerOptimizedTableSelectionObserver(
       CUT_COMMAND,
       (event) => {
         const selection = $getSelection();
-        const {tableNode} = getActiveTableAndObserver();
-
-        if (!tableNode) {
-          return false;
-        }
 
         if (!($isTableSelection(selection) || $isRangeSelection(selection))) {
           return false;

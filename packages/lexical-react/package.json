@@ -11,6 +11,7 @@
   "version": "0.32.1",
   "dependencies": {
     "@floating-ui/react": "^0.27.8",
+    "@lexical/clipboard": "0.32.1",
     "@lexical/devtools-core": "0.32.1",
     "@lexical/dragon": "0.32.1",
     "@lexical/hashtag": "0.32.1",

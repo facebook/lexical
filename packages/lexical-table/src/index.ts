@@ -32,7 +32,6 @@ export {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 export {
   registerTableCellUnmergeTransform,
   registerTablePlugin,
-  registerTableSelectionObserver,
 } from './LexicalTablePluginHelpers';
 export type {SerializedTableRowNode} from './LexicalTableRowNode';
 export {
@@ -53,12 +52,29 @@ export {
 } from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
+  $addHighlightStyleToTable,
   $findCellNode,
+  $findParentTableCellNodeInTable,
   $findTableNode,
-  applyTableHandlers,
+  $getObserverCellFromCellNodeOrThrow,
+  $getTableEdgeCursorPosition,
+  $handleArrowKey,
+  $insertParagraphAtTableEdge,
+  $isFullTableSelection,
+  $isSelectionInTable,
+  $removeHighlightStyleToTable,
+  $selectAdjacentCell,
+  ARROW_KEY_COMMANDS_WITH_DIRECTION,
+  DELETE_KEY_COMMANDS,
+  DELETE_TEXT_COMMANDS,
   getDOMCellFromTarget,
+  getDOMCellInTableFromTarget,
+  getEditorWindow,
   getTableElement,
   getTableObserverFromTableElement,
+  isPointerDownOnEvent,
+  LEXICAL_ELEMENT_KEY,
+  stopEvent,
 } from './LexicalTableSelectionHelpers';
 export {
   $computeTableMap,

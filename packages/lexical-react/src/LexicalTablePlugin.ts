@@ -13,12 +13,13 @@ import {
   $isScrollableTablesActive,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
-  registerTableSelectionObserver,
   setScrollableTablesActive,
   TableCellNode,
   TableNode,
 } from '@lexical/table';
 import {useEffect} from 'react';
+
+import {useLexicalTableObservers} from './useLexicalTableObservers';
 
 export interface TablePluginProps {
   /**
@@ -54,6 +55,8 @@ export function TablePlugin({
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
+  useLexicalTableObservers(editor, hasTabHandler);
+
   useEffect(() => {
     const hadHorizontalScroll = $isScrollableTablesActive(editor);
     if (hadHorizontalScroll !== hasHorizontalScroll) {
@@ -65,11 +68,6 @@ export function TablePlugin({
   }, [editor, hasHorizontalScroll]);
 
   useEffect(() => registerTablePlugin(editor), [editor]);
-
-  useEffect(
-    () => registerTableSelectionObserver(editor, hasTabHandler),
-    [editor, hasTabHandler],
-  );
 
   // Unmerge cells when the feature isn't enabled
   useEffect(() => {

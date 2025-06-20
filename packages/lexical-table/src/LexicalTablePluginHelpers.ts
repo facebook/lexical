@@ -26,7 +26,6 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
-  NodeKey,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -41,14 +40,8 @@ import {
   InsertTableCommandPayload,
 } from './LexicalTableCommands';
 import {$isTableNode, TableNode} from './LexicalTableNode';
-import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
-import {
-  $findTableNode,
-  applyTableHandlers,
-  getTableElement,
-  HTMLTableElementWithWithTableSelectionState,
-} from './LexicalTableSelectionHelpers';
+import {$findTableNode} from './LexicalTableSelectionHelpers';
 import {
   $computeTableMap,
   $computeTableMapSkipCellCheck,
@@ -228,76 +221,10 @@ export function registerTableCellUnmergeTransform(
   });
 }
 
-export function registerTableSelectionObserver(
-  editor: LexicalEditor,
-  hasTabHandler: boolean = true,
-): () => void {
-  const tableSelections = new Map<
-    NodeKey,
-    [TableObserver, HTMLTableElementWithWithTableSelectionState]
-  >();
-
-  const initializeTableNode = (
-    tableNode: TableNode,
-    nodeKey: NodeKey,
-    dom: HTMLElement,
-  ) => {
-    const tableElement = getTableElement(tableNode, dom);
-    const tableSelection = applyTableHandlers(
-      tableNode,
-      tableElement,
-      editor,
-      hasTabHandler,
-    );
-    tableSelections.set(nodeKey, [tableSelection, tableElement]);
-  };
-
-  const unregisterMutationListener = editor.registerMutationListener(
-    TableNode,
-    (nodeMutations) => {
-      editor.getEditorState().read(
-        () => {
-          for (const [nodeKey, mutation] of nodeMutations) {
-            const tableSelection = tableSelections.get(nodeKey);
-            if (mutation === 'created' || mutation === 'updated') {
-              const {tableNode, tableElement} =
-                $getTableAndElementByKey(nodeKey);
-              if (tableSelection === undefined) {
-                initializeTableNode(tableNode, nodeKey, tableElement);
-              } else if (tableElement !== tableSelection[1]) {
-                // The update created a new DOM node, destroy the existing TableObserver
-                tableSelection[0].removeListeners();
-                tableSelections.delete(nodeKey);
-                initializeTableNode(tableNode, nodeKey, tableElement);
-              }
-            } else if (mutation === 'destroyed') {
-              if (tableSelection !== undefined) {
-                tableSelection[0].removeListeners();
-                tableSelections.delete(nodeKey);
-              }
-            }
-          }
-        },
-        {editor},
-      );
-    },
-    {skipInitialization: false},
-  );
-
-  return () => {
-    unregisterMutationListener();
-    // Hook might be called multiple times so cleaning up tables listeners as well,
-    // as it'll be reinitialized during recurring call
-    for (const [, [tableSelection]] of tableSelections) {
-      tableSelection.removeListeners();
-    }
-  };
-}
-
 /**
  * Register the INSERT_TABLE_COMMAND listener and the table integrity transforms. The
  * table selection observer should be registered separately after this with
- * {@link registerTableSelectionObserver}.
+ * {@link useLexicalTableObservers}.
  *
  * @param editor The editor
  * @returns An unregister callback

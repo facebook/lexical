@@ -111,9 +111,9 @@ import {
   TableCellRectBoundary,
 } from './LexicalTableUtils';
 
-const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
+export const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
-const isPointerDownOnEvent = (event: PointerEvent) => {
+export const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
 
@@ -161,18 +161,18 @@ export function $findParentTableCellNodeInTable(
   return null;
 }
 
-const ARROW_KEY_COMMANDS_WITH_DIRECTION = [
+export const ARROW_KEY_COMMANDS_WITH_DIRECTION = [
   [KEY_ARROW_DOWN_COMMAND, 'down'],
   [KEY_ARROW_UP_COMMAND, 'up'],
   [KEY_ARROW_LEFT_COMMAND, 'backward'],
   [KEY_ARROW_RIGHT_COMMAND, 'forward'],
 ] as const;
-const DELETE_TEXT_COMMANDS = [
+export const DELETE_TEXT_COMMANDS = [
   DELETE_WORD_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_CHARACTER_COMMAND,
 ] as const;
-const DELETE_KEY_COMMANDS = [
+export const DELETE_KEY_COMMANDS = [
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 ] as const;
@@ -1486,7 +1486,7 @@ export function $removeHighlightStyleToTable(
   });
 }
 
-function $selectAdjacentCell(
+export function $selectAdjacentCell(
   tableCellNode: TableCellNode,
   direction: 'next' | 'previous',
 ) {
@@ -1751,7 +1751,7 @@ function $adjustFocusInDirection(
   return true;
 }
 
-function $isSelectionInTable(
+export function $isSelectionInTable(
   selection: null | BaseSelection,
   tableNode: TableNode,
 ): boolean {
@@ -1768,7 +1768,7 @@ function $isSelectionInTable(
   return false;
 }
 
-function $isFullTableSelection(
+export function $isFullTableSelection(
   selection: null | BaseSelection,
   tableNode: TableNode,
 ): boolean {
@@ -1959,7 +1959,7 @@ function $findNextTableCell<D extends CaretDirection>(
   return null;
 }
 
-function $handleArrowKey(
+export function $handleArrowKey(
   editor: LexicalEditor,
   event: KeyboardEvent,
   direction: Direction,
@@ -2335,7 +2335,7 @@ function $handleArrowKey(
   return false;
 }
 
-function stopEvent(event: Event) {
+export function stopEvent(event: Event) {
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
@@ -2354,7 +2354,7 @@ function isTypeaheadMenuInView(editor: LexicalEditor) {
   );
 }
 
-function $insertParagraphAtTableEdge(
+export function $insertParagraphAtTableEdge(
   edgePosition: 'first' | 'last',
   tableNode: TableNode,
   children?: LexicalNode[],
@@ -2369,7 +2369,7 @@ function $insertParagraphAtTableEdge(
   paragraphNode.selectEnd();
 }
 
-function $getTableEdgeCursorPosition(
+export function $getTableEdgeCursorPosition(
   editor: LexicalEditor,
   selection: RangeSelection,
   tableNode: TableNode,

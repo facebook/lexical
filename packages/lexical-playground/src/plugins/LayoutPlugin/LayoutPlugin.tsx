@@ -26,6 +26,7 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  KEY_BACKSPACE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -97,6 +98,57 @@ export function LayoutPlugin(): null {
       return false;
     };
 
+    const $deleteEmptyLayoutOnBackspace = (): boolean => {
+      const selection = $getSelection();
+      if (
+        $isRangeSelection(selection) &&
+        selection.isCollapsed() &&
+        selection.anchor.offset === 0
+      ) {
+        const container = $findMatchingParent(
+          selection.anchor.getNode(),
+          $isLayoutContainerNode,
+        );
+        const currentLayoutItem = $findMatchingParent(
+          selection.anchor.getNode(),
+          $isLayoutItemNode,
+        );
+
+        if (
+          !$isLayoutContainerNode(container) ||
+          !$isLayoutItemNode(currentLayoutItem)
+        ) {
+          return false;
+        }
+
+        const firstLayoutItemKey = container.getFirstChild()?.__key;
+        if (firstLayoutItemKey !== currentLayoutItem?.__key) {
+          return false;
+        }
+
+        let canDeleteBlock = true;
+        const template = container.getTemplateColumns();
+        const itemsCount = getItemsCountFromTemplate(template);
+
+        for (let i = 0; i < itemsCount; i++) {
+          const layoutItem = container.getChildAtIndex<LexicalNode>(i);
+          if (
+            $isLayoutItemNode(layoutItem) &&
+            layoutItem.getTextContentSize() > 0
+          ) {
+            canDeleteBlock = false;
+            break;
+          }
+        }
+
+        if (canDeleteBlock) {
+          container.remove();
+        }
+        return true;
+      }
+      return false;
+    };
+
     const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
       if (node.isEmpty()) {
         node.append($createParagraphNode());
@@ -143,6 +195,11 @@ export function LayoutPlugin(): null {
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
         () => $onEscape(true),
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        () => $deleteEmptyLayoutOnBackspace(),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(

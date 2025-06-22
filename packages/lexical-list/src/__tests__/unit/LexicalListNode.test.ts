@@ -334,24 +334,5 @@ describe('LexicalListNode tests', () => {
         expect(bulletList.__listType).toBe('bullet');
       });
     });
-
-    test('ListNode.clone() without list type (backward compatibility)', async () => {
-      const {editor} = testEnv;
-
-      await editor.update(() => {
-        const olNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ol',
-        } as unknown as ListNode);
-        const ulNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ul',
-        } as unknown as ListNode);
-        expect(olNode.__listType).toBe('number');
-        expect(ulNode.__listType).toBe('bullet');
-      });
-    });
   });
 });

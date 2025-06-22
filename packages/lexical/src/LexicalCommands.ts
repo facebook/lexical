@@ -7,7 +7,7 @@
  */
 
 import type {LexicalCommand} from './LexicalEditor';
-import type {LexicalNode} from './LexicalNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 import type {ElementFormatType} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
@@ -203,6 +203,11 @@ export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
 export const CLEAR_HISTORY_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_HISTORY_COMMAND',
 );
+
+export const UPDATE_LIST_START_COMMAND: LexicalCommand<{
+  listNodeKey: NodeKey;
+  newStart: number;
+}> = createCommand('UPDATE_LIST_START_COMMAND');
 export const CAN_REDO_COMMAND: LexicalCommand<boolean> =
   createCommand('CAN_REDO_COMMAND');
 export const CAN_UNDO_COMMAND: LexicalCommand<boolean> =

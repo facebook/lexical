@@ -10,6 +10,7 @@ import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getChildCaret,
+  $getNodeByKey,
   $getSelection,
   $isElementNode,
   $isLeafNode,
@@ -18,6 +19,7 @@ import {
   $normalizeCaret,
   $setPointFromCaret,
   ElementNode,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   ParagraphNode,
@@ -547,4 +549,26 @@ export function $handleListInsertParagraph(): boolean {
   $removeHighestEmptyListParent(anchor);
 
   return true;
+}
+
+/**
+ * Handles the command to update the start number of an ordered list.
+ * It retrieves the ListNode by its key, sets the new start number,
+ * and updates the values of its child ListItemNodes.
+ * @param editor - The LexicalEditor instance.
+ * @param listNodeKey - The key of the ListNode to update.
+ * @param newStart - The new start number for the list.
+ */
+export function $handleUpdateListStart(
+  editor: LexicalEditor,
+  listNodeKey: NodeKey,
+  newStart: number,
+): void {
+  editor.update(() => {
+    const listNode = $getNodeByKey(listNodeKey);
+    if ($isListNode(listNode) && listNode.getListType() === 'number') {
+      listNode.setStart(newStart);
+      updateChildrenListItemValue(listNode);
+    }
+  });
 }

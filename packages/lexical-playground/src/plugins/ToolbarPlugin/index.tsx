@@ -55,6 +55,7 @@ import {
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
+  UPDATE_LIST_START_COMMAND,
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
 
@@ -581,10 +582,21 @@ export default function ToolbarPlugin({
             : element.getListType();
 
           updateToolbarState('blockType', type);
+          if (type === 'number') {
+            const start = parentList
+              ? parentList.getStart()
+              : element.getStart();
+            updateToolbarState('listStartNumber', start);
+          } else {
+            updateToolbarState('listStartNumber', null);
+          }
         } else {
+          updateToolbarState('listStartNumber', null);
           $handleHeadingNode(element);
           $handleCodeNode(element);
         }
+      } else {
+        updateToolbarState('listStartNumber', null);
       }
 
       // Handle buttons
@@ -819,6 +831,30 @@ export default function ToolbarPlugin({
               rootType={toolbarState.rootType}
               editor={activeEditor}
             />
+            {toolbarState.blockType === 'number' &&
+              toolbarState.listStartNumber !== null && (
+                <input
+                  type="number"
+                  value={toolbarState.listStartNumber}
+                  disabled={!isEditable}
+                  onChange={(e) => {
+                    const newStart = parseInt(e.target.value, 10);
+                    if (
+                      !isNaN(newStart) &&
+                      newStart >= 0 &&
+                      selectedElementKey
+                    ) {
+                      activeEditor.dispatchCommand(UPDATE_LIST_START_COMMAND, {
+                        listNodeKey: selectedElementKey,
+                        newStart,
+                      });
+                    }
+                  }}
+                  className="toolbar-item list-start-input"
+                  aria-label="List start number"
+                  style={{marginLeft: '5px', marginRight: '5px', width: '50px'}}
+                />
+              )}
             <Divider />
           </>
         )}

@@ -23,11 +23,13 @@ import {
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
   TextNode,
+  UPDATE_LIST_START_COMMAND,
 } from 'lexical';
 
 import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
 import {
   $handleListInsertParagraph,
+  $handleUpdateListStart,
   $insertList,
   $removeList,
 } from './formatList';
@@ -73,6 +75,15 @@ export function registerList(editor: LexicalEditor): () => void {
       INSERT_ORDERED_LIST_COMMAND,
       () => {
         $insertList('number');
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      UPDATE_LIST_START_COMMAND,
+      (payload) => {
+        const {listNodeKey, newStart} = payload;
+        $handleUpdateListStart(editor, listNodeKey, newStart);
         return true;
       },
       COMMAND_PRIORITY_LOW,

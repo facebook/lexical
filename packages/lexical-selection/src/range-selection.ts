@@ -147,7 +147,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 /**
- * @deprecated
+ * @deprecated In favor of $setBlockTypes
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
  * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.

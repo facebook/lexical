@@ -22,6 +22,16 @@ import {
   test,
 } from '../utils/index.mjs';
 
+function assertHTMLIgnoreInlineStyles(page, expectedHtml) {
+  // There's some sort of bug in webkit that sometimes omits the
+  // 'user-select: text' style so we just ignore all styles
+  // -         style="user-select: text; white-space: pre-wrap; word-break: break-word"
+  // +         style="white-space: pre-wrap; word-break: break-word"
+  return assertHTML(page, expectedHtml, expectedHtml, {
+    ignoreInlineStyles: true,
+  });
+}
+
 test.describe('Regression #7635', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, showNestedEditorTreeView: false}),
@@ -34,7 +44,7 @@ test.describe('Regression #7635', () => {
     await insertSampleImage(page);
 
     await click(page, '.editor-image img');
-    await assertHTML(
+    await assertHTMLIgnoreInlineStyles(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph">
@@ -47,8 +57,7 @@ test.describe('Regression #7635', () => {
                 class="focused draggable"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit;" />
+                src="${SAMPLE_IMAGE_URL}" />
             </div>
             <div>
               <button class="image-caption-button">Add Caption</button>
@@ -70,7 +79,7 @@ test.describe('Regression #7635', () => {
     await expect(page.locator('.ImageNode__contentEditable')).toBeVisible();
     const TEST_TEXT = 'some content';
     await page.keyboard.type(TEST_TEXT);
-    await assertHTML(
+    await assertHTMLIgnoreInlineStyles(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph">
@@ -82,8 +91,7 @@ test.describe('Regression #7635', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit;" />
+                src="${SAMPLE_IMAGE_URL}" />
             </div>
             <div class="image-caption-container">
               <div
@@ -91,7 +99,6 @@ test.describe('Regression #7635', () => {
                 contenteditable="true"
                 role="textbox"
                 spellcheck="true"
-                style="user-select: text; white-space: pre-wrap; word-break: break-word"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
                 <p
@@ -122,7 +129,7 @@ test.describe('Regression #7635', () => {
       },
       'div.ImageNode__contentEditable[contenteditable="true"]',
     );
-    await assertHTML(
+    await assertHTMLIgnoreInlineStyles(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph">
@@ -134,8 +141,7 @@ test.describe('Regression #7635', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit;" />
+                src="${SAMPLE_IMAGE_URL}" />
             </div>
             <div class="image-caption-container">
               <div
@@ -143,7 +149,6 @@ test.describe('Regression #7635', () => {
                 contenteditable="true"
                 role="textbox"
                 spellcheck="true"
-                style="user-select: text; white-space: pre-wrap; word-break: break-word"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
                 <p
@@ -171,7 +176,7 @@ test.describe('Regression #7635', () => {
 
     await page.keyboard.press('Enter');
     await page.keyboard.type('Below the image');
-    await assertHTML(
+    await assertHTMLIgnoreInlineStyles(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph">
@@ -183,8 +188,7 @@ test.describe('Regression #7635', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit;" />
+                src="${SAMPLE_IMAGE_URL}" />
             </div>
             <div class="image-caption-container">
               <div
@@ -192,7 +196,6 @@ test.describe('Regression #7635', () => {
                 contenteditable="true"
                 role="textbox"
                 spellcheck="true"
-                style="user-select: text; white-space: pre-wrap; word-break: break-word"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
                 <p

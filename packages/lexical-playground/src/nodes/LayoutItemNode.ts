@@ -15,12 +15,20 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
+import {$isParagraphNode, ElementNode} from 'lexical';
 
 export type SerializedLayoutItemNode = SerializedElementNode;
 
 function $convertLayoutItemElement(): DOMConversionOutput | null {
   return {node: $createLayoutItemNode()};
+}
+
+export function $isEmptyLayoutItemNode(node: LexicalNode): boolean {
+  if (!$isLayoutItemNode(node) || node.getChildrenSize() !== 1) {
+    return false;
+  }
+  const firstChild = node.getFirstChild();
+  return $isParagraphNode(firstChild) && firstChild.isEmpty();
 }
 
 export class LayoutItemNode extends ElementNode {
@@ -42,6 +50,18 @@ export class LayoutItemNode extends ElementNode {
   }
 
   updateDOM(): boolean {
+    return false;
+  }
+
+  collapseAtStart(): boolean {
+    const parent = this.getParentOrThrow();
+    if (
+      this.is(parent.getFirstChild()) &&
+      parent.getChildren().every($isEmptyLayoutItemNode)
+    ) {
+      parent.remove();
+      return true;
+    }
     return false;
   }
 

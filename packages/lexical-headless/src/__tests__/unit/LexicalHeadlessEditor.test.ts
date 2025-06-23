@@ -31,6 +31,7 @@ import {
 } from 'lexical';
 
 import {createHeadlessEditor} from '../..';
+import {isEmptyNavigator} from '../utils';
 
 describe('LexicalHeadlessEditor', () => {
   let editor: LexicalEditor;
@@ -62,7 +63,7 @@ describe('LexicalHeadlessEditor', () => {
   it('should be headless environment', async () => {
     expect(typeof window === 'undefined').toBe(true);
     expect(typeof document === 'undefined').toBe(true);
-    expect(typeof navigator === 'undefined').toBe(true);
+    expect(typeof navigator === 'undefined' || isEmptyNavigator()).toBe(true);
   });
 
   it('can update editor', async () => {

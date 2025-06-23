@@ -56,10 +56,6 @@ function getCurrentIndex(keysLength: number): number {
   return Math.floor(keysLength / 2);
 }
 
-function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
-  return editor.getEditorState().read(() => $getRoot().getChildrenKeys());
-}
-
 function getCollapsedMargins(elem: HTMLElement): {
   marginTop: number;
   marginBottom: number;
@@ -97,8 +93,12 @@ function getBlockElement(
   event: MouseEvent,
   useEdgeAsDefault = false,
 ): HTMLElement | null {
-  const anchorElementRect = anchorElem.getBoundingClientRect();
-  const topLevelNodeKeys = getTopLevelNodeKeys(editor);
+  const anchorBounds = Rectangle.fromDOM(anchorElem);
+  const point = new Point(event.x, event.y);
+
+  const topLevelNodeKeys = editor
+    .getEditorState()
+    .read(() => $getRoot().getChildrenKeys());
 
   let blockElem: HTMLElement | null = null;
 
@@ -109,25 +109,32 @@ function getBlockElement(
         editor.getElementByKey(topLevelNodeKeys[topLevelNodeKeys.length - 1]),
       ];
 
-      const [firstNodeRect, lastNodeRect] = [
-        firstNode != null ? firstNode.getBoundingClientRect() : undefined,
-        lastNode != null ? lastNode.getBoundingClientRect() : undefined,
-      ];
-
-      if (firstNodeRect && lastNodeRect) {
-        const firstNodeZoom = calculateZoomLevel(firstNode);
-        const lastNodeZoom = calculateZoomLevel(lastNode);
-        if (event.y / firstNodeZoom < firstNodeRect.top) {
+      if (firstNode && lastNode) {
+        const firstRect = firstNode.getBoundingClientRect();
+        const lastRect = lastNode.getBoundingClientRect();
+        if (event.y < firstRect.top) {
           blockElem = firstNode;
-        } else if (event.y / lastNodeZoom > lastNodeRect.bottom) {
+          return;
+        } else if (event.y > lastRect.bottom) {
           blockElem = lastNode;
-        }
-
-        if (blockElem) {
           return;
         }
       }
     }
+
+    const tryMatch = (targetElem: HTMLElement): boolean => {
+      const domRect = Rectangle.fromDOM(targetElem);
+      const {marginTop, marginBottom} = getCollapsedMargins(targetElem);
+      const expandedRect = domRect.generateNewRect({
+        bottom: domRect.bottom + marginBottom,
+        left: anchorBounds.left,
+        right: anchorBounds.right,
+        top: domRect.top - marginTop,
+      });
+
+      const {result} = expandedRect.contains(point);
+      return result;
+    };
 
     let index = getCurrentIndex(topLevelNodeKeys.length);
     let direction = Indeterminate;
@@ -135,38 +142,38 @@ function getBlockElement(
     while (index >= 0 && index < topLevelNodeKeys.length) {
       const key = topLevelNodeKeys[index];
       const elem = editor.getElementByKey(key);
-      if (elem === null) {
+      if (!elem) {
         break;
       }
-      const zoom = calculateZoomLevel(elem);
-      const point = new Point(event.x / zoom, event.y / zoom);
-      const domRect = Rectangle.fromDOM(elem);
-      const {marginTop, marginBottom} = getCollapsedMargins(elem);
-      const rect = domRect.generateNewRect({
-        bottom: domRect.bottom + marginBottom,
-        left: anchorElementRect.left,
-        right: anchorElementRect.right,
-        top: domRect.top - marginTop,
-      });
 
-      const {
-        result,
-        reason: {isOnTopSide, isOnBottomSide},
-      } = rect.contains(point);
+      let match: HTMLElement | null = null;
 
-      if (result) {
-        blockElem = elem;
+      if (tryMatch(elem)) {
+        match = elem;
+
+        if (elem.tagName === 'UL' || elem.tagName === 'OL') {
+          for (const li of Array.from(elem.children) as HTMLElement[]) {
+            if (tryMatch(li)) {
+              match = li;
+              break;
+            }
+          }
+        }
+      }
+
+      if (match) {
+        blockElem = match;
         prevIndex = index;
         break;
       }
 
       if (direction === Indeterminate) {
-        if (isOnTopSide) {
+        const domRect = elem.getBoundingClientRect();
+        if (event.y < domRect.top) {
           direction = Upward;
-        } else if (isOnBottomSide) {
+        } else if (event.y > domRect.bottom) {
           direction = Downward;
         } else {
-          // stop search block element
           direction = Infinity;
         }
       }

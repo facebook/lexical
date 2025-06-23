@@ -8,7 +8,7 @@
 
 import {expect} from '@playwright/test';
 
-import {moveRight} from '../keyboardShortcuts/index.mjs';
+import {moveToEditorEnd} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -163,7 +163,12 @@ test.describe('Regression #7635', () => {
         </p>
       `,
     );
-    await moveRight(page, 1);
+
+    // Focus the parent editor (Firefox doesn't let you do this with arrow keys)
+    await page.keyboard.press('Escape');
+    await focusEditor(page);
+    await moveToEditorEnd(page);
+
     await page.keyboard.press('Enter');
     await page.keyboard.type('Below the image');
     await assertHTML(

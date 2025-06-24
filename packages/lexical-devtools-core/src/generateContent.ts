@@ -407,7 +407,7 @@ function printStateProperties(node: LexicalNode) {
     if (stateType.isEqual(value, stateType.defaultValue)) {
       continue;
     }
-    const textValue = stateType.unparse(value);
+    const textValue = JSON.stringify(stateType.unparse(value));
     states.push(`[${stateType.key}: ${textValue}]`);
   }
   let str = states.join(',');

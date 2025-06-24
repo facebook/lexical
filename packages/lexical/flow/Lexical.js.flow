@@ -1351,7 +1351,7 @@ export type StateValueConfig<V> = {
 
 export type UnionToIntersection<T> = (
   // $FlowFixMe[unclear-type]
-  T extends any ? (x: T) => any : empty
+  T extends mixed ? (x: T) => mixed : empty
   // $FlowFixMe[unclear-type]
 ) extends (x: infer R) => any
   ? R

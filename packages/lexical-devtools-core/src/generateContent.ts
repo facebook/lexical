@@ -404,10 +404,14 @@ function printStateProperties(node: LexicalNode) {
   }
   const states = [];
   for (const [stateType, value] of node.__state.knownState.entries()) {
-    states.push(`[${stateType.key}: ${value}]`);
+    if (stateType.isEqual(value, stateType.defaultValue)) {
+      continue;
+    }
+    const textValue = stateType.unparse(value);
+    states.push(`[${stateType.key}: ${textValue}]`);
   }
   let str = states.join(',');
-  if (str != null) {
+  if (str !== '') {
     str = 'state: ' + str;
   }
   return str;

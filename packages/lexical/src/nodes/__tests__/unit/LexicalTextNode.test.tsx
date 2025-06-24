@@ -649,6 +649,12 @@ describe('LexicalTextNode tests', () => {
             .map((split) => $getState(split, state))
             .every((v) => v === 'foo'),
         ).toEqual(true);
+
+        // Check that the state value is not aliased to the original node.
+        $setState(splits[0], state, 'bar');
+        expect($getState(splits[0], state)).toEqual('bar');
+        expect($getState(splits[1], state)).toEqual('foo');
+        expect($getState(splits[2], state)).toEqual('foo');
       });
     });
 

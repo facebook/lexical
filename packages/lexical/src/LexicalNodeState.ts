@@ -986,3 +986,16 @@ function hasUnequalRecordEntry<T extends LexicalNode>(
   }
   return false;
 }
+
+/**
+ * @internal
+ *
+ * Clones the NodeState for a given node. Handles aliasing if the state references the from node.
+ */
+export function $cloneNodeState<T extends LexicalNode>(
+  from: T,
+  to: T,
+): undefined | NodeState<T> {
+  const state = from.__state;
+  return state && state.node === from ? state.getWritable(to) : state;
+}

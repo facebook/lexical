@@ -315,6 +315,7 @@ function printAllTextNodeProperties(node: TextNode) {
     printFormatProperties(node),
     printDetailProperties(node),
     printModeProperties(node),
+    printStateProperties(node),
   ]
     .filter(Boolean)
     .join(', ');
@@ -325,6 +326,7 @@ function printAllLinkNodeProperties(node: LinkNode) {
     printTargetProperties(node),
     printRelProperties(node),
     printTitleProperties(node),
+    printStateProperties(node),
   ]
     .filter(Boolean)
     .join(', ');
@@ -392,6 +394,25 @@ function printTitleProperties(node: LinkNode) {
   // TODO Fix nullish on LinkNode
   if (str != null) {
     str = 'title: ' + str;
+  }
+  return str;
+}
+
+function printStateProperties(node: LexicalNode) {
+  if (!node.__state) {
+    return false;
+  }
+  const states = [];
+  for (const [stateType, value] of node.__state.knownState.entries()) {
+    if (stateType.isEqual(value, stateType.defaultValue)) {
+      continue;
+    }
+    const textValue = JSON.stringify(stateType.unparse(value));
+    states.push(`[${stateType.key}: ${textValue}]`);
+  }
+  let str = states.join(',');
+  if (str !== '') {
+    str = 'state: ' + str;
   }
   return str;
 }

@@ -560,15 +560,12 @@ export function $handleListInsertParagraph(): boolean {
  * @param newStart - The new start number for the list.
  */
 export function $handleUpdateListStart(
-  editor: LexicalEditor,
   listNodeKey: NodeKey,
   newStart: number,
 ): void {
-  editor.update(() => {
-    const listNode = $getNodeByKey(listNodeKey);
-    if ($isListNode(listNode) && listNode.getListType() === 'number') {
-      listNode.setStart(newStart);
-      updateChildrenListItemValue(listNode);
-    }
-  });
+  const listNode = $getNodeByKey(listNodeKey);
+  if ($isListNode(listNode) && listNode.getListType() === 'number') {
+    listNode.setStart(newStart);
+    updateChildrenListItemValue(listNode);
+  }
 }

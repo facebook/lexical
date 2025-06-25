@@ -85,7 +85,10 @@ export function registerList(editor: LexicalEditor): () => void {
       (payload) => {
         const {listNodeKey, newStart} = payload;
         const listNode = $getNodeByKey(listNodeKey);
-        if ($isListNode(listNode) && listNode.getListType() === 'number') {
+        if (!$isListNode(listNode)) {
+          return false;
+        }
+        if (listNode.getListType() === 'number') {
           listNode.setStart(newStart);
           updateChildrenListItemValue(listNode);
         }

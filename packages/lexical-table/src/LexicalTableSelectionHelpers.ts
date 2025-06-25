@@ -750,7 +750,10 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      (selectionPayload) => {
+      (selectionPayload, dispatchEditor) => {
+        if (editor !== dispatchEditor) {
+          return false;
+        }
         const {nodes, selection} = selectionPayload;
         const anchorAndFocus = selection.getStartEndPoints();
         const isTableSelection = $isTableSelection(selection);

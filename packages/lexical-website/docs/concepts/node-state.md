@@ -18,10 +18,10 @@ which wasn't possible at all before!
 :::
 
 With a combination of NodeState and other APIs such as
-[Listeners](https://lexical.dev/docs/concepts/listeners) or
-[Transforms](https://lexical.dev/docs/concepts/transforms) you can
+[Listeners](listeners.md) or
+[Transforms](transforms.md) you can
 likely shape the editor to meet your needs without having to do much
-[Node Customization](https://lexical.dev/docs/concepts/node-replacement).
+[Node Customization](node-replacement.md).
 
 Even when you are subclassing nodes, using NodeState instead of additional
 properties to store the node's data can be [more efficient](#efficiency)
@@ -38,9 +38,9 @@ can and can not do out of the box today.
 
 ### createState
 
-[createState](https://lexical.dev/docs/api/modules/lexical#createstate)
+[createState](../api/modules/lexical.md#createstate)
 creates a
-[StateConfig](https://lexical.dev/docs/api/classes/lexical.StateConfig)
+[StateConfig](../api/classes/lexical.StateConfig.md)
 which defines the key and configuration for your NodeState value.
 
 The key must be locally unique, two distinct StateConfig must not have the
@@ -65,7 +65,7 @@ In this case, the question must be a string, and the default is an
 empty string.
 
 See the
-[createState](https://lexical.dev/docs/api/modules/lexical#createstate)
+[createState](../api/modules/lexical.md#createstate)
 API documentation for more details, there are other optional settings
 that you may want to define particularly if the value is not a primitive
 value such as boolean, string, number, null, or undefined.
@@ -84,7 +84,7 @@ etc. especially when working with non-primitive data types.
 
 ### $getState
 
-[$getState](https://lexical.dev/docs/api/modules/lexical#getstate) gets the
+[$getState](../api/modules/lexical.md#getstate) gets the
 NodeState value from the given node, or the default if that key was never
 set on the node.
 
@@ -93,14 +93,14 @@ const question = $getValue(pollNode, questionState);
 ```
 
 See also
-[$getStateChange](https://lexical.dev/docs/api/modules/lexical#getstatechange)
+[$getStateChange](../api/modules/lexical.md#getstatechange)
 if you need an efficient way to determine if the state has changed on two
 versions of the same node (typically used in updateDOM, but may be useful in
 an update listener or mutation listener).
 
 ### $setState
 
-[$setState](https://lexical.dev/docs/api/modules/lexical#setstate) sets the
+[$setState](../api/modules/lexical.md#setstate) sets the
 NodeState value on the given node.
 
 ```ts
@@ -123,7 +123,7 @@ the node and its NodeState *won't* be marked dirty.
 
 The NodeState for a node, if any values are set to non-default values, is
 serialized to a record under a single
-[NODE_STATE_KEY](https://lexical.dev/docs/api/modules/lexical#node_state_key)
+[NODE_STATE_KEY](../api/modules/lexical.md#node_state_key)
 which is equal to `'$'`. In the future, it is expected that nodes will be
 able to declare required state and lift those values to the top-level of
 their serialized nodes
@@ -143,7 +143,7 @@ their serialized nodes
 By default, it is assumed that your parsed values are JSON serializable,
 but for advanced use cases you may use values such as Date, Map, or Set
 that need to be transformed before JSON serialization. See the
-[StateValueConfig](https://lexical.dev/docs/api/interfaces/lexical.StateValueConfig)
+[StateValueConfig](../api/interfaces/lexical.StateValueConfig.md)
 API documentation.
 
 :::
@@ -189,12 +189,12 @@ Current:
   it a bit easier for situations where multiple configurations are used
   on the same data (e.g. older and newer versions of your editor,
   a different set of plugins based on context, etc.).
+- Pre-registration system for nodes to declare expected state
+  and serialize them as top-level properties (`flat`) with `$config`
+  (see [#7260](https://github.com/facebook/lexical/issues/7260)).
 
 Future:
 
-- Does not yet have a pre-registration system for nodes to declare
-  required state, the first release focuses only on ad-hoc usage
-  (see [#7260](https://github.com/facebook/lexical/issues/7260)).
 - Does not yet integrate directly with importDOM, createDOM or
   exportDOM (see [#7259](https://github.com/facebook/lexical/issues/7259))
 - Does not yet support direct integration with Yjs, e.g.

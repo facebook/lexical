@@ -93,16 +93,17 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
-type UpdateListener = ({
+export type UpdateListenerPayload = {
   tags: Set<string>,
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   normalizedNodes: Set<NodeKey>,
-}) => void;
+};
+export type UpdateListener = (payload: UpdateListenerPayload) => void;
 type DecoratorListener = (decorator: {
-  // $FlowFixMe: defined by user
+  // $FlowFixMe[unclear-type]: defined by user
   [NodeKey]: any,
 }) => void;
 type RootListener = (
@@ -1281,3 +1282,223 @@ export type UpdateTag =
   | typeof SKIP_DOM_SELECTION_TAG
   | typeof SKIP_SCROLL_INTO_VIEW_TAG
   | string;
+
+/**
+ * LexicalNodeState
+ */
+export const NODE_STATE_KEY = '$';
+export type ValueOrUpdater<V> = V | ((prevValue: V) => V);
+export type StateConfigValue<S: AnyStateConfig> = S extends StateConfig<
+  infer _K,
+  infer V
+>
+  ? V
+  : empty;
+export type StateConfigKey<S: AnyStateConfig> = S extends StateConfig<
+  infer K,
+  infer _V
+>
+  ? K
+  : empty;
+export interface NodeStateConfig<S: AnyStateConfig> {
+  stateConfig: S;
+  flat?: boolean;
+}
+
+export type RequiredNodeStateConfig =
+  | NodeStateConfig<AnyStateConfig>
+  | AnyStateConfig;
+
+export type StateConfigJSON<S> = S extends StateConfig<infer K, infer V>
+  ? {[Key in K]?: V}
+  : Record<empty, empty>;
+
+export type RequiredNodeStateConfigJSON<
+  Config: RequiredNodeStateConfig,
+  Flat: boolean,
+> = StateConfigJSON<
+  Config extends NodeStateConfig<infer S>
+    ? {flat: false, ...Config} extends {flat: Flat}
+      ? S
+      : empty
+    : false extends Flat
+    ? Config
+    : empty
+>;
+export type StateValueOrUpdater<Cfg: AnyStateConfig> = ValueOrUpdater<
+  StateConfigValue<Cfg>
+>;
+// $FlowFixMe[unclear-type]
+export type AnyStateConfig = StateConfig<any, any>;
+export type NodeStateJSON<T: LexicalNode> = Partial<{
+    [typeof NODE_STATE_KEY]: CollectStateJSON<GetNodeStateConfig<T>, false>;
+  }> & CollectStateJSON<GetNodeStateConfig<T>, true>;
+
+declare export class StateConfig<K: string, V> {
+  +key: K;
+  +parse: (value?: mixed) => V;
+  +unparse: (value: V) => mixed;
+  +isEqual: (a: V, b: V) => boolean;
+  +defaultValue: V;
+  constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
+}
+
+export type StateValueConfig<V> = {
+  parse: (jsonValue: mixed) => V;
+  unparse?: (parsed: V) => mixed;
+  isEqual?: (a: V, b: V) => boolean;
+}
+
+export type UnionToIntersection<T> = (
+  // $FlowFixMe[unclear-type]
+  T extends mixed ? (x: T) => mixed : empty
+  // $FlowFixMe[unclear-type]
+) extends (x: infer R) => any
+  ? R
+  : empty;
+
+export type CollectStateJSON<
+  Tuple: $ReadOnlyArray<RequiredNodeStateConfig>,
+  Flat: boolean,
+> = UnionToIntersection<
+  {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
+>;
+
+export const PROTOTYPE_CONFIG_METHOD = '$config';
+
+export interface StaticNodeConfigValue<
+  T: LexicalNode,
+  Type: string,
+> {
+  +type?: Type;
+  +$transform?: (node: T) => void;
+  +$importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  +importDOM?: DOMConversionMap;
+  +stateConfigs?: $ReadOnlyArray<RequiredNodeStateConfig>;
+  +extends?: Class<LexicalNode>;
+}
+
+/**
+ * This is the type of LexicalNode.$config() that can be
+ * overridden by subclasses.
+ */
+export type BaseStaticNodeConfig = {
+  +[K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+};
+
+/**
+ * Used to extract the node and type from a StaticNodeConfigRecord
+ */
+export type StaticNodeConfig<
+  T: LexicalNode,
+  Type: string,
+> = BaseStaticNodeConfig & {
+  +[K in Type]?: StaticNodeConfigValue<T, Type>;
+};
+
+// $FlowFixMe[unclear-type]
+export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
+
+export type StaticNodeConfigRecord<
+  Type: string,
+  Config: AnyStaticNodeConfigValue,
+> = BaseStaticNodeConfig & {
+  +[K in Type]?: Config;
+};
+
+type GetStaticNodeConfig<T: LexicalNode> = ReturnType<
+  T[typeof PROTOTYPE_CONFIG_METHOD]
+> extends infer Record
+  ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
+    ? Config & {+type: Type}
+    : empty
+  : empty;
+type GetStaticNodeConfigs<T: LexicalNode> =
+  GetStaticNodeConfig<T> extends infer OwnConfig
+    ? OwnConfig extends empty
+      ? []
+      : OwnConfig extends {extends: Class<infer Parent>}
+      ? GetStaticNodeConfig<Parent> extends infer ParentNodeConfig
+        ? ParentNodeConfig extends empty
+          ? [OwnConfig]
+          : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
+        : OwnConfig
+      : [OwnConfig]
+    : [];
+
+type CollectStateConfigs<Configs> = Configs extends [
+  infer OwnConfig,
+  ...infer ParentConfigs,
+]
+  ? OwnConfig extends {stateConfigs: infer StateConfigs}
+    ? StateConfigs extends $ReadOnlyArray<RequiredNodeStateConfig>
+      ? [...StateConfigs, ...CollectStateConfigs<ParentConfigs>]
+      : CollectStateConfigs<ParentConfigs>
+    : CollectStateConfigs<ParentConfigs>
+  : [];
+
+export type GetNodeStateConfig<T: LexicalNode> = CollectStateConfigs<
+  GetStaticNodeConfigs<T>
+>;
+
+declare export function $getState<K: string, V>(
+  node: LexicalNode,
+  stateConfig: StateConfig<K, V>,
+  version?: 'latest' | 'direct',
+): V;
+declare export function $getStateChange<T: LexicalNode, K: string, V>(
+  node: T,
+  prevNode: T,
+  stateConfig: StateConfig<K, V>,
+): null | [value: V, prevValue: V];
+declare export function $getWritableNodeState<T: LexicalNode>(
+  node: T,
+): NodeState<T>;
+type KnownStateMap = Map<AnyStateConfig, mixed>;
+type UnknownStateRecord = Record<string, mixed>;
+type SharedConfigMap = Map<string, AnyStateConfig>;
+export type SharedNodeState = {
+  sharedConfigMap: SharedConfigMap;
+  flatKeys: Set<string>;
+};
+declare export class NodeState<T: LexicalNode> {
+  +node: LexicalNode;
+  +knownState: KnownStateMap;
+  unknownState: void | UnknownStateRecord;
+  +sharedNodeState: SharedNodeState;
+  size: number;
+  constructor(
+    node: T,
+    sharedNodeState: SharedNodeState,
+    unknownState?: void | UnknownStateRecord,
+    knownState?: KnownStateMap,
+    size?: number | void,
+  ): this;
+  getValue<K: string, V>(stateConfig: StateConfig<K, V>): V;
+  getInternalState(): [
+    {+[k in string]: mixed} | void,
+    $ReadOnlyMap<AnyStateConfig, mixed>,
+  ];
+  toJSON(): NodeStateJSON<T>;
+  getWritable(node: T): NodeState<T>;
+  updateFromKnown<K: string, V>(
+    stateConfig: StateConfig<K, V>,
+    value: V,
+  ): void;
+  updateFromUnknown(k: string, v: mixed): void;
+    updateFromJSON(unknownState: void | UnknownStateRecord): void;
+}
+declare export function $setState<Node: LexicalNode, K: string, V>(
+  node: Node,
+  stateConfig: StateConfig<K, V>,
+  valueOrUpdater: ValueOrUpdater<V>,
+): Node;
+export type LexicalNodeConfig = Class<LexicalNode> | LexicalNodeReplacement;
+declare export function createSharedNodeState(
+  nodeConfig: LexicalNodeConfig,
+): SharedNodeState;
+declare export function createState<K: string, V>(
+  key: K,
+  valueConfig: StateValueConfig<V>,
+): StateConfig<K, V>;
+declare export function $create<T>(cls: Class<T>): T;

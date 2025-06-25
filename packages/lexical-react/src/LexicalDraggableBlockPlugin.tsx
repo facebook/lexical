@@ -203,7 +203,8 @@ function setMenuPosition(
   const top =
     targetRect.top +
     (targetCalculateHeight - floatingElemRect.height) / 2 -
-    anchorElementRect.top;
+    anchorElementRect.top +
+    anchorElem.scrollTop;
 
   const left = SPACE;
 
@@ -244,7 +245,8 @@ function setTargetLine(
     lineTop -= marginTop / 2;
   }
 
-  const top = lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT;
+  const top =
+    lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT + anchorElem.scrollTop;
   const left = TEXT_BOX_HORIZONTAL_PADDING - SPACE;
 
   targetLineElem.style.transform = `translate(${left}px, ${top}px)`;

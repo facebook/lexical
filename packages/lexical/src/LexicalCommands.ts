@@ -203,7 +203,6 @@ export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
 export const CLEAR_HISTORY_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_HISTORY_COMMAND',
 );
-
 export const CAN_REDO_COMMAND: LexicalCommand<boolean> =
   createCommand('CAN_REDO_COMMAND');
 export const CAN_UNDO_COMMAND: LexicalCommand<boolean> =

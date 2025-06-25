@@ -12,7 +12,7 @@ import type {
   ListType,
   SerializedListNode,
 } from './LexicalListNode';
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
@@ -24,7 +24,6 @@ import {
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
   TextNode,
-  UPDATE_LIST_START_COMMAND,
 } from 'lexical';
 
 import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
@@ -61,6 +60,10 @@ export {
   SerializedListNode,
 };
 
+export const UPDATE_LIST_START_COMMAND: LexicalCommand<{
+  listNodeKey: NodeKey;
+  newStart: number;
+}> = createCommand('UPDATE_LIST_START_COMMAND');
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_UNORDERED_LIST_COMMAND');
 export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(

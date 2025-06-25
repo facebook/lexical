@@ -16,6 +16,7 @@ import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
@@ -29,9 +30,9 @@ import {
 import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
 import {
   $handleListInsertParagraph,
-  $handleUpdateListStart,
   $insertList,
   $removeList,
+  updateChildrenListItemValue,
 } from './formatList';
 import {
   $createListItemNode,
@@ -83,7 +84,11 @@ export function registerList(editor: LexicalEditor): () => void {
       UPDATE_LIST_START_COMMAND,
       (payload) => {
         const {listNodeKey, newStart} = payload;
-        $handleUpdateListStart(editor, listNodeKey, newStart);
+        const listNode = $getNodeByKey(listNodeKey);
+        if ($isListNode(listNode) && listNode.getListType() === 'number') {
+          listNode.setStart(newStart);
+          updateChildrenListItemValue(listNode);
+        }
         return true;
       },
       COMMAND_PRIORITY_LOW,

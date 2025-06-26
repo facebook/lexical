@@ -244,7 +244,7 @@ export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
 
-export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
+export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
 
 export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
@@ -948,7 +948,10 @@ export class LexicalEditor {
       this.getRegisteredNode(klass),
     ).klass;
     const mutations = this._listeners.mutation;
-    mutations.set(listener, klassToMutate);
+    if (!mutations.has(listener)) {
+      mutations.set(listener, new Set());
+    }
+    mutations.get(listener)!.add(klassToMutate);
     const skipInitialization = options && options.skipInitialization;
     if (
       !(skipInitialization === undefined
@@ -959,7 +962,11 @@ export class LexicalEditor {
     }
 
     return () => {
-      mutations.delete(listener);
+      const klassSet = mutations.get(listener)!;
+      klassSet.delete(klassToMutate);
+      if (klassSet.size === 0) {
+        mutations.delete(listener);
+      }
     };
   }
 

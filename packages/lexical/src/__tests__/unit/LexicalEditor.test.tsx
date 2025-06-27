@@ -2684,6 +2684,35 @@ describe('LexicalEditor tests', () => {
     expect(mutationListener).toHaveBeenCalledTimes(1);
   });
 
+  it('allows using the same listener for multiple node types', async () => {
+    init();
+
+    const listener = jest.fn();
+    editor.registerMutationListener(TextNode, listener);
+    editor.registerMutationListener(ParagraphNode, listener);
+
+    let paragraphKey: string;
+    let textNodeKey: string;
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('Hello world');
+      paragraphKey = paragraph.getKey();
+      textNodeKey = textNode.getKey();
+      root.append(paragraph);
+      paragraph.append(textNode);
+    });
+
+    expect(listener.mock.calls.length).toBe(2);
+    const [textNodeMutation, paragraphMutation] = listener.mock.calls;
+
+    expect(textNodeMutation[0].size).toBe(1);
+    expect(textNodeMutation[0].get(textNodeKey!)).toBe('created');
+    expect(paragraphMutation[0].size).toBe(1);
+    expect(paragraphMutation[0].get(paragraphKey!)).toBe('created');
+  });
+
   it('calls mutation listener with initial state', async () => {
     // TODO add tests for node replacement
     const mutationListenerA = jest.fn();

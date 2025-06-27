@@ -48,7 +48,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto;
   border-radius: 2px;
-  max-width: 1100px;
+  max-width: 1140px;
   color: #000;
   position: relative;
   line-height: 1.7;
@@ -1491,6 +1491,7 @@ button.action-button:disabled {
 
 .toolbar {
   display: flex;
+  justify-content: center;
   margin-bottom: 1px;
   background: #fff;
   padding: 4px;

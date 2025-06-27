@@ -731,14 +731,16 @@ function triggerMutationListeners(
   const listenersLength = listeners.length;
 
   for (let i = 0; i < listenersLength; i++) {
-    const [listener, klass] = listeners[i];
-    const mutatedNodesByType = mutatedNodes.get(klass);
-    if (mutatedNodesByType !== undefined) {
-      listener(mutatedNodesByType, {
-        dirtyLeaves,
-        prevEditorState,
-        updateTags,
-      });
+    const [listener, klassSet] = listeners[i];
+    for (const klass of klassSet) {
+      const mutatedNodesByType = mutatedNodes.get(klass);
+      if (mutatedNodesByType !== undefined) {
+        listener(mutatedNodesByType, {
+          dirtyLeaves,
+          prevEditorState,
+          updateTags,
+        });
+      }
     }
   }
 }

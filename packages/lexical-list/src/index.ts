@@ -12,10 +12,11 @@ import type {
   ListType,
   SerializedListNode,
 } from './LexicalListNode';
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
@@ -30,6 +31,7 @@ import {
   $handleListInsertParagraph,
   $insertList,
   $removeList,
+  updateChildrenListItemValue,
 } from './formatList';
 import {
   $createListItemNode,
@@ -58,6 +60,10 @@ export {
   SerializedListNode,
 };
 
+export const UPDATE_LIST_START_COMMAND: LexicalCommand<{
+  listNodeKey: NodeKey;
+  newStart: number;
+}> = createCommand('UPDATE_LIST_START_COMMAND');
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_UNORDERED_LIST_COMMAND');
 export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(
@@ -73,6 +79,22 @@ export function registerList(editor: LexicalEditor): () => void {
       INSERT_ORDERED_LIST_COMMAND,
       () => {
         $insertList('number');
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      UPDATE_LIST_START_COMMAND,
+      (payload) => {
+        const {listNodeKey, newStart} = payload;
+        const listNode = $getNodeByKey(listNodeKey);
+        if (!$isListNode(listNode)) {
+          return false;
+        }
+        if (listNode.getListType() === 'number') {
+          listNode.setStart(newStart);
+          updateChildrenListItemValue(listNode);
+        }
         return true;
       },
       COMMAND_PRIORITY_LOW,

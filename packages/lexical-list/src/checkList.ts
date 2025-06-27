@@ -11,6 +11,7 @@ import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {
   $findMatchingParent,
+  calculateZoomLevel,
   isHTMLElement,
   mergeRegister,
 } from '@lexical/utils';
@@ -183,18 +184,19 @@ function handleCheckItemEvent(
   }
 
   const rect = target.getBoundingClientRect();
+  const zoom = calculateZoomLevel(target);
 
   // Handle different event types properly for mobile devices
   let clientX: number;
   if ('touches' in event && event.touches.length > 0) {
     // For touch events (touchstart, touchmove)
-    clientX = event.touches[0].clientX;
+    clientX = event.touches[0].clientX / zoom;
   } else if ('changedTouches' in event && event.changedTouches.length > 0) {
     // For touch events (touchend)
-    clientX = event.changedTouches[0].clientX;
+    clientX = event.changedTouches[0].clientX / zoom;
   } else {
     // For mouse and pointer events
-    clientX = (event as MouseEvent | PointerEvent).clientX;
+    clientX = (event as MouseEvent | PointerEvent).clientX / zoom;
   }
 
   // Use getComputedStyle if available, otherwise fallback to 0px width

@@ -15,7 +15,7 @@ import {
   getLanguageFriendlyName,
 } from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {$isListNode, ListNode, UPDATE_LIST_START_COMMAND} from '@lexical/list';
+import {$isListNode, ListNode} from '@lexical/list';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {$isHeadingNode} from '@lexical/rich-text';
@@ -581,21 +581,10 @@ export default function ToolbarPlugin({
             : element.getListType();
 
           updateToolbarState('blockType', type);
-          if (type === 'number') {
-            const start = parentList
-              ? parentList.getStart()
-              : element.getStart();
-            updateToolbarState('listStartNumber', start);
-          } else {
-            updateToolbarState('listStartNumber', null);
-          }
         } else {
-          updateToolbarState('listStartNumber', null);
           $handleHeadingNode(element);
           $handleCodeNode(element);
         }
-      } else {
-        updateToolbarState('listStartNumber', null);
       }
 
       // Handle buttons
@@ -830,30 +819,6 @@ export default function ToolbarPlugin({
               rootType={toolbarState.rootType}
               editor={activeEditor}
             />
-            {toolbarState.blockType === 'number' &&
-              toolbarState.listStartNumber !== null && (
-                <input
-                  type="number"
-                  value={toolbarState.listStartNumber}
-                  disabled={!isEditable}
-                  onChange={(e) => {
-                    const newStart = parseInt(e.target.value, 10);
-                    if (
-                      !isNaN(newStart) &&
-                      newStart >= 0 &&
-                      selectedElementKey
-                    ) {
-                      activeEditor.dispatchCommand(UPDATE_LIST_START_COMMAND, {
-                        listNodeKey: selectedElementKey,
-                        newStart,
-                      });
-                    }
-                  }}
-                  className="toolbar-item list-start-input"
-                  aria-label="List start number"
-                  style={{marginLeft: '5px', marginRight: '5px', width: '50px'}}
-                />
-              )}
             <Divider />
           </>
         )}

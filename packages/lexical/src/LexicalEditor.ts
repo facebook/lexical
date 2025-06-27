@@ -948,10 +948,12 @@ export class LexicalEditor {
       this.getRegisteredNode(klass),
     ).klass;
     const mutations = this._listeners.mutation;
-    if (!mutations.has(listener)) {
-      mutations.set(listener, new Set());
+    let klassSet = mutations.get(listener);
+    if (klassSet === undefined) {
+      klassSet = new Set();
+      mutations.set(listener, klassSet);
     }
-    mutations.get(listener)!.add(klassToMutate);
+    klassSet.add(klassToMutate);
     const skipInitialization = options && options.skipInitialization;
     if (
       !(skipInitialization === undefined
@@ -962,7 +964,6 @@ export class LexicalEditor {
     }
 
     return () => {
-      const klassSet = mutations.get(listener)!;
       klassSet.delete(klassToMutate);
       if (klassSet.size === 0) {
         mutations.delete(listener);

@@ -16,7 +16,9 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   Binding,
+  BindingV2,
   createBinding,
+  createBindingV2__EXPERIMENTAL,
   ExcludedProperties,
   Provider,
   SyncCursorPositionsFn,
@@ -28,17 +30,17 @@ import {InitialEditorStateType} from './LexicalComposer';
 import {
   CursorsContainerRef,
   useYjsCollaboration,
+  useYjsCollaborationV2__EXPERIMENTAL,
   useYjsFocusTracking,
   useYjsHistory,
+  useYjsHistoryV2,
 } from './shared/useYjsCollaboration';
 
-type Props = {
+type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+
+type CollaborationPluginProps = {
   id: string;
-  providerFactory: (
-    // eslint-disable-next-line no-shadow
-    id: string,
-    yjsDocMap: Map<string, Doc>,
-  ) => Provider;
+  providerFactory: ProviderFactory;
   shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;
@@ -61,44 +63,17 @@ export function CollaborationPlugin({
   excludedProperties,
   awarenessData,
   syncCursorPositionsFn,
-}: Props): JSX.Element {
+}: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
-  const isProviderInitialized = useRef(false);
 
   const collabContext = useCollaborationContext(username, cursorColor);
 
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
+  useCollabActive(collabContext, editor);
 
-  useEffect(() => {
-    collabContext.isCollabActive = true;
-
-    return () => {
-      // Resetting flag only when unmount top level editor collab plugin. Nested
-      // editors (e.g. image caption) should unmount without affecting it
-      if (editor._parentEditor == null) {
-        collabContext.isCollabActive = false;
-      }
-    };
-  }, [collabContext, editor]);
-
-  const [provider, setProvider] = useState<Provider>();
-
-  useEffect(() => {
-    if (isProviderInitialized.current) {
-      return;
-    }
-
-    isProviderInitialized.current = true;
-
-    const newProvider = providerFactory(id, yjsDocMap);
-    setProvider(newProvider);
-
-    return () => {
-      newProvider.disconnect();
-    };
-  }, [id, providerFactory, yjsDocMap]);
+  const provider = useProvider(id, yjsDocMap, providerFactory);
 
   const [doc, setDoc] = useState(yjsDocMap.get(id));
   const [binding, setBinding] = useState<Binding>();
@@ -207,3 +182,172 @@ function YjsCollaborationCursors({
 
   return cursors;
 }
+
+type CollaborationPluginV2Props = {
+  id: string;
+  providerFactory: ProviderFactory;
+  username?: string;
+  cursorColor?: string;
+  cursorsContainerRef?: CursorsContainerRef;
+  excludedProperties?: ExcludedProperties;
+  // `awarenessData` parameter allows arbitrary data to be added to the awareness.
+  awarenessData?: object;
+};
+
+export function CollaborationPluginV2__EXPERIMENTAL({
+  id,
+  providerFactory,
+  username,
+  cursorColor,
+  cursorsContainerRef,
+  excludedProperties,
+  awarenessData,
+}: CollaborationPluginV2Props): JSX.Element {
+  const isBindingInitialized = useRef(false);
+
+  const collabContext = useCollaborationContext(username, cursorColor);
+
+  const {yjsDocMap, name, color} = collabContext;
+
+  const [editor] = useLexicalComposerContext();
+  useCollabActive(collabContext, editor);
+
+  const provider = useProvider(id, yjsDocMap, providerFactory);
+
+  const [doc, setDoc] = useState(yjsDocMap.get(id));
+  const [binding, setBinding] = useState<BindingV2>();
+
+  useEffect(() => {
+    if (!provider) {
+      return;
+    }
+
+    if (isBindingInitialized.current) {
+      return;
+    }
+
+    isBindingInitialized.current = true;
+
+    const newBinding = createBindingV2__EXPERIMENTAL(
+      editor,
+      id,
+      doc || yjsDocMap.get(id),
+      yjsDocMap,
+      excludedProperties,
+    );
+    setBinding(newBinding);
+  }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);
+
+  if (!provider || !binding) {
+    return <></>;
+  }
+
+  return (
+    <YjsCollaborationCursorsV2__EXPERIMENTAL
+      awarenessData={awarenessData}
+      binding={binding}
+      collabContext={collabContext}
+      color={color}
+      cursorsContainerRef={cursorsContainerRef}
+      editor={editor}
+      id={id}
+      name={name}
+      provider={provider}
+      setDoc={setDoc}
+      shouldBootstrap={false}
+      yjsDocMap={yjsDocMap}
+    />
+  );
+}
+
+function YjsCollaborationCursorsV2__EXPERIMENTAL({
+  editor,
+  id,
+  provider,
+  yjsDocMap,
+  name,
+  color,
+  cursorsContainerRef,
+  awarenessData,
+  collabContext,
+  binding,
+  setDoc,
+}: {
+  editor: LexicalEditor;
+  id: string;
+  provider: Provider;
+  yjsDocMap: Map<string, Doc>;
+  name: string;
+  color: string;
+  shouldBootstrap: boolean;
+  binding: BindingV2;
+  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>;
+  cursorsContainerRef?: CursorsContainerRef | undefined;
+  initialEditorState?: InitialEditorStateType | undefined;
+  awarenessData?: object;
+  collabContext: CollaborationContextType;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
+}) {
+  const cursors = useYjsCollaborationV2__EXPERIMENTAL(
+    editor,
+    id,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+    binding,
+    setDoc,
+    cursorsContainerRef,
+    awarenessData,
+  );
+
+  collabContext.clientID = binding.clientID;
+
+  useYjsHistoryV2(editor, binding);
+  useYjsFocusTracking(editor, provider, name, color, awarenessData);
+
+  return cursors;
+}
+
+const useCollabActive = (
+  collabContext: CollaborationContextType,
+  editor: LexicalEditor,
+) => {
+  useEffect(() => {
+    collabContext.isCollabActive = true;
+
+    return () => {
+      // Resetting flag only when unmount top level editor collab plugin. Nested
+      // editors (e.g. image caption) should unmount without affecting it
+      if (editor._parentEditor == null) {
+        collabContext.isCollabActive = false;
+      }
+    };
+  }, [collabContext, editor]);
+};
+
+const useProvider = (
+  id: string,
+  yjsDocMap: Map<string, Doc>,
+  providerFactory: ProviderFactory,
+) => {
+  const isProviderInitialized = useRef(false);
+  const [provider, setProvider] = useState<Provider>();
+
+  useEffect(() => {
+    if (isProviderInitialized.current) {
+      return;
+    }
+
+    isProviderInitialized.current = true;
+
+    const newProvider = providerFactory(id, yjsDocMap);
+    setProvider(newProvider);
+
+    return () => {
+      newProvider.disconnect();
+    };
+  }, [id, providerFactory, yjsDocMap]);
+
+  return provider;
+};

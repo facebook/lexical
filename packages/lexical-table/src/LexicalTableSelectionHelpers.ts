@@ -918,6 +918,7 @@ export function applyTableHandlers(
 
             const {cell} = interimGridMap[row][col];
             const originalChildren = cell.getChildren();
+            cell.setBackgroundColor(templateCell.getBackgroundColor());
             templateCell.getChildren().forEach((child) => {
               if ($isTextNode(child)) {
                 const paragraphNode = $createParagraphNode();

@@ -228,6 +228,53 @@ export function $insertGeneratedNodes(
     })
   ) {
     selection.insertNodes(nodes);
+
+    if ($isRangeSelection(selection) && selection.isCollapsed()) {
+      const anchor = selection.anchor;
+      let nodeToInspect: LexicalNode | null = null;
+
+      if (anchor.type === 'text') {
+        const potentialNode = anchor.getNode();
+        if ($isTextNode(potentialNode)) {
+          nodeToInspect = potentialNode;
+        }
+      } else if (anchor.type === 'element') {
+        const elementNode = anchor.getNode();
+        if (anchor.offset > 0 && $isElementNode(elementNode)) {
+          const nodeBefore = elementNode.getChildAtIndex(anchor.offset - 1);
+          if (nodeBefore && $isTextNode(nodeBefore)) {
+            nodeToInspect = nodeBefore;
+          } else if (
+            nodeBefore &&
+            $isElementNode(nodeBefore) &&
+            nodeBefore.isInline()
+          ) {
+            let potentialTextChild = nodeBefore.getLastDescendant();
+            while (
+              potentialTextChild &&
+              !$isTextNode(potentialTextChild) &&
+              potentialTextChild.getPreviousSibling()
+            ) {
+              potentialTextChild = potentialTextChild.getPreviousSibling();
+            }
+            if (potentialTextChild && $isTextNode(potentialTextChild)) {
+              nodeToInspect = potentialTextChild;
+            }
+          }
+        }
+      }
+
+      if (nodeToInspect && $isTextNode(nodeToInspect)) {
+        const newFormat = nodeToInspect.getFormat();
+        const newStyle = nodeToInspect.getStyle();
+
+        if (selection.format !== newFormat || selection.style !== newStyle) {
+          selection.format = newFormat;
+          selection.style = newStyle;
+          selection.dirty = true;
+        }
+      }
+    }
   }
   return;
 }

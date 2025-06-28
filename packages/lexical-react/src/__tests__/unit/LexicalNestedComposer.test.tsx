@@ -13,6 +13,7 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {mergeRegister} from '@lexical/utils';
+import {axe, toHaveNoViolations} from 'jest-axe';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -38,6 +39,7 @@ import {useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
+expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   __decorate?: (node: this) => React.ReactNode;
   __inline?: boolean;
@@ -525,7 +527,9 @@ describe('LexicalNestedComposer', () => {
                       return nestedEditor ? (
                         <LexicalNestedComposer initialEditor={nestedEditor}>
                           <RichTextPlugin
-                            contentEditable={<ContentEditable />}
+                            contentEditable={
+                              <ContentEditable aria-label="nested" />
+                            }
                             placeholder={<></>}
                             ErrorBoundary={LexicalErrorBoundary}
                           />
@@ -541,7 +545,7 @@ describe('LexicalNestedComposer', () => {
             },
           }}>
           <RichTextPlugin
-            contentEditable={<ContentEditable />}
+            contentEditable={<ContentEditable aria-label="parent" />}
             placeholder={<></>}
             ErrorBoundary={LexicalErrorBoundary}
           />
@@ -573,6 +577,7 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          aria-label="parent"
           data-lexical-editor="true">
           <p dir="ltr"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
@@ -581,6 +586,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              aria-label="nested"
               data-lexical-editor="true">
               <p dir="ltr"><span data-lexical-text="true">nested</span></p>
             </div>
@@ -588,6 +594,8 @@ describe('LexicalNestedComposer', () => {
         </div>
       `,
     );
+    const editableA11yResults = await axe(container!);
+    expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
     await ReactTestUtils.act(async () => {
       editor!.setEditable(false);
@@ -599,18 +607,22 @@ describe('LexicalNestedComposer', () => {
       html`
         <div
           contenteditable="false"
+          role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           aria-autocomplete="none"
+          aria-label="parent"
           aria-readonly="true"
           data-lexical-editor="true">
           <p dir="ltr"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-autocomplete="none"
+              aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
               <p dir="ltr"><span data-lexical-text="true">nested</span></p>
@@ -619,6 +631,8 @@ describe('LexicalNestedComposer', () => {
         </div>
       `,
     );
+    const uneditableA11yResults = await axe(container!);
+    expect(uneditableA11yResults).toHaveNoViolations();
     await ReactTestUtils.act(async () => {
       editor!.setEditable(true);
     });
@@ -664,7 +678,9 @@ describe('LexicalNestedComposer', () => {
                           initialEditor={nestedEditor}
                           skipEditableListener={true}>
                           <RichTextPlugin
-                            contentEditable={<ContentEditable />}
+                            contentEditable={
+                              <ContentEditable aria-label="nested" />
+                            }
                             placeholder={<></>}
                             ErrorBoundary={LexicalErrorBoundary}
                           />
@@ -680,7 +696,7 @@ describe('LexicalNestedComposer', () => {
             },
           }}>
           <RichTextPlugin
-            contentEditable={<ContentEditable />}
+            contentEditable={<ContentEditable aria-label="parent" />}
             placeholder={<></>}
             ErrorBoundary={LexicalErrorBoundary}
           />
@@ -712,14 +728,17 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          aria-label="parent"
           data-lexical-editor="true">
           <p dir="ltr"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-autocomplete="none"
+              aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
               <p dir="ltr"><span data-lexical-text="true">nested</span></p>
@@ -728,6 +747,8 @@ describe('LexicalNestedComposer', () => {
         </div>
       `,
     );
+    const editableA11yResults = await axe(container!);
+    expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
     await ReactTestUtils.act(async () => {
       editor!.setEditable(false);
@@ -739,18 +760,22 @@ describe('LexicalNestedComposer', () => {
       html`
         <div
           contenteditable="false"
+          role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           aria-autocomplete="none"
+          aria-label="parent"
           aria-readonly="true"
           data-lexical-editor="true">
           <p dir="ltr"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-autocomplete="none"
+              aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
               <p dir="ltr"><span data-lexical-text="true">nested</span></p>
@@ -759,6 +784,8 @@ describe('LexicalNestedComposer', () => {
         </div>
       `,
     );
+    const uneditableA11yResults = await axe(container!);
+    expect(uneditableA11yResults).toHaveNoViolations();
     await ReactTestUtils.act(async () => {
       editor!.setEditable(true);
     });

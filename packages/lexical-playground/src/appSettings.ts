@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS = {
   isRichText: true,
   listStrictIndent: false,
   measureTypingPerf: false,
+  optimizedTableSelectionObserver: false,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
   shouldPreserveNewLinesInMarkdown: false,

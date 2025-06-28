@@ -101,6 +101,7 @@ export default function Editor(): JSX.Element {
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
       listStrictIndent,
+      optimizedTableSelectionObserver,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -206,6 +207,7 @@ export default function Editor(): JSX.Element {
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
               hasHorizontalScroll={tableHorizontalScroll}
+              useOptimizedMode={optimizedTableSelectionObserver}
             />
             <TableCellResizer />
             <ImagesPlugin />

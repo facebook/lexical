@@ -256,7 +256,8 @@ function $createChildrenWithDirection(
   subTreeDirectionedTextContent = '';
   $createChildren(children, element, 0, endIndex, element.getDOMSlot(dom));
   reconcileBlockDirection(element, dom);
-  subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
+  subTreeDirectionedTextContent =
+    previousSubTreeDirectionedTextContent + subTreeDirectionedTextContent;
 }
 
 function $createChildren(
@@ -357,7 +358,7 @@ function reconcileBlockDirection(
 ): void {
   const previousSubTreeDirectionTextContent: string =
     dom.__lexicalDirTextContent || '';
-  const previousDirection: string = dom.__lexicalDir || '';
+  const previousDirection: string | null = dom.dir || null;
 
   if (
     previousSubTreeDirectionTextContent !== subTreeDirectionedTextContent ||
@@ -371,20 +372,21 @@ function reconcileBlockDirection(
     if (direction !== previousDirection) {
       const classList = dom.classList;
       const theme = activeEditorConfig.theme;
-      let previousDirectionTheme =
-        previousDirection !== null ? theme[previousDirection] : undefined;
       let nextDirectionTheme =
         direction !== null ? theme[direction] : undefined;
 
-      // Remove the old theme classes if they exist
-      if (previousDirectionTheme !== undefined) {
-        if (typeof previousDirectionTheme === 'string') {
-          const classNamesArr = normalizeClassNames(previousDirectionTheme);
-          previousDirectionTheme = theme[previousDirection] = classNamesArr;
-        }
+      if (previousDirection !== null) {
+        let previousDirectionTheme = theme[previousDirection];
+        // Remove the old theme classes if they exist
+        if (previousDirectionTheme !== undefined) {
+          if (typeof previousDirectionTheme === 'string') {
+            const classNamesArr = normalizeClassNames(previousDirectionTheme);
+            previousDirectionTheme = theme[previousDirection] = classNamesArr;
+          }
 
-        // @ts-ignore: intentional
-        classList.remove(...previousDirectionTheme);
+          // @ts-ignore: intentional
+          classList.remove(...previousDirectionTheme);
+        }
       }
 
       if (
@@ -419,7 +421,6 @@ function reconcileBlockDirection(
 
     activeTextDirection = direction;
     dom.__lexicalDirTextContent = subTreeDirectionedTextContent;
-    dom.__lexicalDir = direction;
   }
 }
 
@@ -436,7 +437,8 @@ function $reconcileChildrenWithDirection(
   reconcileBlockDirection(nextElement, dom);
   reconcileTextFormat(nextElement);
   reconcileTextStyle(nextElement);
-  subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
+  subTreeDirectionedTextContent =
+    previousSubTreeDirectionTextContent + subTreeDirectionedTextContent;
 }
 
 function createChildrenArray(

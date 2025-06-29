@@ -49,5 +49,52 @@ describe('LexicalReconciler', () => {
       });
       expect(para3Dir).toEqual('rtl');
     });
+
+    test('Should set direction to "ltr" when content is added to a node after being marked dirty as an empty node', async () => {
+      const {editor} = testEnv;
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.append(
+            $createParagraphNode().append($createTextNode('Hello')),
+            $createParagraphNode().append(),
+          );
+        },
+        {discrete: true},
+      );
+
+      // Trigger another update, marking the paragraphs as dirty.
+      editor.update(
+        () => {
+          $getRoot()
+            .getChildren()
+            .forEach((child) => {
+              child.markDirty();
+            });
+        },
+        {discrete: true},
+      );
+
+      expect(testEnv.innerHTML).toEqual(
+        '<p dir="ltr"><span data-lexical-text="true">Hello</span></p>' +
+          '<p><br></p>',
+      );
+
+      // Add content to the second paragraph.
+      editor.update(
+        () => {
+          $getRoot()
+            .getChildAtIndex<ParagraphNode>(1)!
+            .append($createTextNode('World'));
+        },
+        {discrete: true},
+      );
+
+      expect(testEnv.innerHTML).toEqual(
+        '<p dir="ltr"><span data-lexical-text="true">Hello</span></p>' +
+          '<p dir="ltr"><span data-lexical-text="true">World</span></p>',
+      );
+    });
   });
 });

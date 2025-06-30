@@ -156,10 +156,7 @@ export function registerCheckList(editor: LexicalEditor) {
   );
 }
 
-function handleCheckItemEvent(
-  event: PointerEvent | MouseEvent | TouchEvent,
-  callback: () => void,
-) {
+function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   const target = event.target;
 
   if (!isHTMLElement(target)) {
@@ -185,19 +182,7 @@ function handleCheckItemEvent(
 
   const rect = target.getBoundingClientRect();
   const zoom = calculateZoomLevel(target);
-
-  // Handle different event types properly for mobile devices
-  let clientX: number;
-  if ('touches' in event && event.touches.length > 0) {
-    // For touch events (touchstart, touchmove)
-    clientX = event.touches[0].clientX / zoom;
-  } else if ('changedTouches' in event && event.changedTouches.length > 0) {
-    // For touch events (touchend)
-    clientX = event.changedTouches[0].clientX / zoom;
-  } else {
-    // For mouse and pointer events
-    clientX = (event as MouseEvent | PointerEvent).clientX / zoom;
-  }
+  const clientX = (event as MouseEvent | PointerEvent).clientX / zoom;
 
   // Use getComputedStyle if available, otherwise fallback to 0px width
   const beforeStyles = window.getComputedStyle
@@ -206,8 +191,8 @@ function handleCheckItemEvent(
   const beforeWidthInPixels = parseFloat(beforeStyles.width);
 
   // Make click area slightly larger for touch devices to improve accessibility
-  const isTouchEvent = 'touches' in event || 'changedTouches' in event;
-  const clickAreaPadding = isTouchEvent ? 16 : 0; // Add 16px padding for touch events to create a 48px target
+  const isTouchEvent = event.pointerType === 'touch';
+  const clickAreaPadding = isTouchEvent ? 32 : 0; // Add 32px padding for touch events
 
   if (
     target.dir === 'rtl'
@@ -221,7 +206,7 @@ function handleCheckItemEvent(
 }
 
 function handleClick(event: Event) {
-  handleCheckItemEvent(event as PointerEvent | MouseEvent | TouchEvent, () => {
+  handleCheckItemEvent(event as PointerEvent, () => {
     if (isHTMLElement(event.target)) {
       const domNode = event.target;
       const editor = getNearestEditorFromDOMNode(domNode);

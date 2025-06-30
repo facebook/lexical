@@ -75,11 +75,16 @@ export function TablePlugin({
   useEffect(() => {
     let unregisterObservers: (() => void) | undefined;
 
-    if (useOptimizedMode && editor._window) {
-      unregisterObservers = registerOptimizedTableSelectionObserver(
-        editor,
-        hasTabHandler,
-      );
+    if (useOptimizedMode) {
+      editor.registerRootListener((root) => {
+        if (root) {
+          unregisterObservers = registerOptimizedTableSelectionObserver(
+            editor,
+            root,
+            hasTabHandler,
+          );
+        }
+      });
     } else {
       unregisterObservers = registerTableSelectionObserver(
         editor,
@@ -92,7 +97,7 @@ export function TablePlugin({
         unregisterObservers();
       }
     };
-  }, [editor, editor._window, hasTabHandler, useOptimizedMode]);
+  }, [editor, hasTabHandler, useOptimizedMode]);
 
   // Unmerge cells when the feature isn't enabled
   useEffect(() => {

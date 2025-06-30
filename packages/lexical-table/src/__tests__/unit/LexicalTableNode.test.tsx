@@ -8,6 +8,9 @@
 
 import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$generateHtmlFromNodes} from '@lexical/html';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
   $createTableCellNode,
@@ -1836,7 +1839,15 @@ describe('LexicalTableNode tests', () => {
     ) => void = () => {};
     function TablePluginWrapper() {
       [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
-      return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
+      return (
+        <>
+          <RichTextPlugin
+            contentEditable={<ContentEditable />}
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+          <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />
+        </>
+      );
     }
     initializeUnitTest(
       (testEnv) => {

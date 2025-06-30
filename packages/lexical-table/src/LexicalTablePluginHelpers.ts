@@ -90,7 +90,6 @@ import {
   DELETE_TEXT_COMMANDS,
   getDOMCellFromTarget,
   getDOMCellInTableFromTarget,
-  getEditorWindow,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
   isPointerDownOnEvent,
@@ -350,15 +349,9 @@ type TableEntry = {
 
 export function registerOptimizedTableSelectionObserver(
   editor: LexicalEditor,
+  rootElement: HTMLElement,
   hasTabHandler: boolean = true,
 ): () => void {
-  const rootElement = editor.getRootElement();
-  const editorWindow = getEditorWindow(editor);
-  invariant(
-    rootElement !== null && editorWindow !== null,
-    'applyTableHandlers: editor has no root element set',
-  );
-
   const tables = new Map<NodeKey, TableEntry>();
   const domToKey = new WeakMap<HTMLTableElement, NodeKey>();
   const tablePointerHandlers = new Map<
@@ -368,42 +361,48 @@ export function registerOptimizedTableSelectionObserver(
 
   let activeObserver: TableObserver | null = null;
 
-  const getActiveTableAndObserver = () => {
-    if (activeObserver) {
-      const tableEntry = tables.get(activeObserver.tableNodeKey);
-      if (tableEntry) {
-        return {
-          tableNode: tableEntry.node,
-          tableObserver: activeObserver,
-        };
-      }
+  const getTableAndObserver = (nodeKey: NodeKey) => {
+    const tableEntry = tables.get(nodeKey);
+    if (tableEntry) {
+      return {
+        tableNode: tableEntry.node,
+        tableObserver: tableEntry.observer,
+      };
     }
     return {tableNode: null, tableObserver: null};
   };
 
-  const onGlobalPointerDown = (event: PointerEvent) => {
+  const getActiveTableAndObserver = () => {
+    if (activeObserver) {
+      return getTableAndObserver(activeObserver.tableNodeKey);
+    }
+    return {tableNode: null, tableObserver: null};
+  };
+
+  const $onGlobalPointerDown = (event: PointerEvent) => {
     const target = event.target;
 
     if (event.button !== 0 || !isDOMNode(target)) {
       return;
     }
 
-    let tableKey: NodeKey | null = null;
-
-    const maybeTableElement = (event.target as HTMLElement).closest('table');
-    if (maybeTableElement && domToKey.has(maybeTableElement)) {
-      tableKey = domToKey.get(maybeTableElement) || null;
-    }
-
-    if (tableKey) {
-      const tableEntry = tables.get(tableKey);
-      if (!tableEntry) {
-        return;
+    // Clear previous highlighted tables
+    editor.getEditorState().read(() => {
+      const previousSelection = $getSelection();
+      const previousSelectedTables = previousSelection
+        ? previousSelection.getNodes().filter($isTableNode)
+        : [];
+      if (previousSelectedTables.length > 0) {
+        editor.update(() => {
+          for (const tableNode of previousSelectedTables) {
+            const tableEntry = tables.get(tableNode.getKey());
+            if (tableEntry) {
+              tableEntry.observer.$clearHighlight();
+            }
+          }
+        });
       }
-      editor.update(() => {
-        tableEntry.observer.$clearHighlight();
-      });
-    }
+    });
   };
 
   const createPointerHandlers = (tableNodeKey: NodeKey) => {
@@ -422,8 +421,8 @@ export function registerOptimizedTableSelectionObserver(
         return;
       }
       activeObserver.isSelecting = false;
-      editorWindow.removeEventListener('pointerup', onPointerUp);
-      editorWindow.removeEventListener('pointermove', onPointerMove);
+      rootElement.removeEventListener('pointerup', onPointerUp);
+      rootElement.removeEventListener('pointermove', onPointerMove);
     };
 
     const onPointerMove = (moveEvent: PointerEvent) => {
@@ -435,8 +434,8 @@ export function registerOptimizedTableSelectionObserver(
 
       if (!isPointerDownOnEvent(moveEvent) && activeObserver.isSelecting) {
         activeObserver.isSelecting = false;
-        editorWindow.removeEventListener('pointerup', onPointerUp);
-        editorWindow.removeEventListener('pointermove', onPointerMove);
+        rootElement.removeEventListener('pointerup', onPointerUp);
+        rootElement.removeEventListener('pointermove', onPointerMove);
         return;
       }
 
@@ -473,12 +472,12 @@ export function registerOptimizedTableSelectionObserver(
 
     activeObserver.isSelecting = true;
 
-    editorWindow.addEventListener(
+    rootElement.addEventListener(
       'pointerup',
       onPointerUp,
       activeObserver.listenerOptions,
     );
-    editorWindow.addEventListener(
+    rootElement.addEventListener(
       'pointermove',
       onPointerMove,
       activeObserver.listenerOptions,
@@ -1100,165 +1099,158 @@ export function registerOptimizedTableSelectionObserver(
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
-        const {tableNode, tableObserver} = getActiveTableAndObserver();
+        const selection = $getSelection();
 
-        if (!tableNode) {
+        if (
+          !selection ||
+          (!$isRangeSelection(selection) && !$isTableSelection(selection))
+        ) {
           return false;
         }
 
-        const selection = $getSelection();
-        const prevSelection = $getPreviousSelection();
-        const nextFocus = tableObserver.getAndClearNextFocus();
-        if (nextFocus !== null) {
-          const {focusCell} = nextFocus;
-          if (
-            $isTableSelection(selection) &&
-            selection.tableKey === tableObserver.tableNodeKey
-          ) {
+        const tablesInSelection = selection.getNodes().filter($isTableNode);
+
+        if (tablesInSelection.length === 0) {
+          return false;
+        }
+
+        for (const table of tablesInSelection) {
+          if (!tables.has(table.getKey())) {
+            continue;
+          }
+
+          const {tableNode, tableObserver} = getTableAndObserver(
+            table.getKey(),
+          );
+
+          if (!tableNode || !tableObserver) {
+            continue;
+          }
+
+          const prevSelection = $getPreviousSelection();
+          const nextFocus = tableObserver.getAndClearNextFocus();
+          if (nextFocus !== null) {
+            const {focusCell} = nextFocus;
             if (
-              focusCell.x === tableObserver.focusX &&
-              focusCell.y === tableObserver.focusY
+              $isTableSelection(selection) &&
+              selection.tableKey === tableObserver.tableNodeKey
             ) {
-              // The selection is already the correct table selection
-              return false;
-            } else {
+              if (
+                focusCell.x === tableObserver.focusX &&
+                focusCell.y === tableObserver.focusY
+              ) {
+                // The selection is already the correct table selection
+                return false;
+              } else {
+                tableObserver.$setFocusCellForSelection(focusCell);
+                return true;
+              }
+            } else if (
+              focusCell !== tableObserver.anchorCell &&
+              $isSelectionInTable(selection, tableNode)
+            ) {
+              // The selection has crossed cells
               tableObserver.$setFocusCellForSelection(focusCell);
               return true;
             }
-          } else if (
-            focusCell !== tableObserver.anchorCell &&
-            $isSelectionInTable(selection, tableNode)
+          }
+          const shouldCheckSelection =
+            tableObserver.getAndClearShouldCheckSelection();
+          // If they pressed the down arrow with the selection outside of the
+          // table, and then the selection ends up in the table but not in the
+          // first cell, then move the selection to the first cell.
+          if (
+            shouldCheckSelection &&
+            $isRangeSelection(prevSelection) &&
+            $isRangeSelection(selection) &&
+            selection.isCollapsed()
           ) {
-            // The selection has crossed cells
-            tableObserver.$setFocusCellForSelection(focusCell);
-            return true;
-          }
-        }
-        const shouldCheckSelection =
-          tableObserver.getAndClearShouldCheckSelection();
-        // If they pressed the down arrow with the selection outside of the
-        // table, and then the selection ends up in the table but not in the
-        // first cell, then move the selection to the first cell.
-        if (
-          shouldCheckSelection &&
-          $isRangeSelection(prevSelection) &&
-          $isRangeSelection(selection) &&
-          selection.isCollapsed()
-        ) {
-          const anchor = selection.anchor.getNode();
-          const firstRow = tableNode.getFirstChild();
-          const anchorCell = $findCellNode(anchor);
-          if (anchorCell !== null && $isTableRowNode(firstRow)) {
-            const firstCell = firstRow.getFirstChild();
-            if (
-              $isTableCellNode(firstCell) &&
-              tableNode.is(
-                $findMatchingParent(
-                  anchorCell,
-                  (node) => node.is(tableNode) || node.is(firstCell),
-                ),
-              )
-            ) {
-              // The selection moved to the table, but not in the first cell
-              firstCell.selectStart();
-              return true;
+            const anchor = selection.anchor.getNode();
+            const firstRow = tableNode.getFirstChild();
+            const anchorCell = $findCellNode(anchor);
+            if (anchorCell !== null && $isTableRowNode(firstRow)) {
+              const firstCell = firstRow.getFirstChild();
+              if (
+                $isTableCellNode(firstCell) &&
+                tableNode.is(
+                  $findMatchingParent(
+                    anchorCell,
+                    (node) => node.is(tableNode) || node.is(firstCell),
+                  ),
+                )
+              ) {
+                // The selection moved to the table, but not in the first cell
+                firstCell.selectStart();
+                return true;
+              }
             }
           }
-        }
 
-        if ($isRangeSelection(selection)) {
-          const {anchor, focus} = selection;
-          const anchorNode = anchor.getNode();
-          const focusNode = focus.getNode();
-          // Using explicit comparison with table node to ensure it's not a nested table
-          // as in that case we'll leave selection resolving to that table
-          const anchorCellNode = $findCellNode(anchorNode);
-          const focusCellNode = $findCellNode(focusNode);
-          const isAnchorInside = !!(
-            anchorCellNode && tableNode.is($findTableNode(anchorCellNode))
-          );
-          const isFocusInside = !!(
-            focusCellNode && tableNode.is($findTableNode(focusCellNode))
-          );
-          const isPartiallyWithinTable = isAnchorInside !== isFocusInside;
-          const isWithinTable = isAnchorInside && isFocusInside;
-          const isBackward = selection.isBackward();
+          if ($isRangeSelection(selection)) {
+            const {anchor, focus} = selection;
+            const anchorNode = anchor.getNode();
+            const focusNode = focus.getNode();
+            // Using explicit comparison with table node to ensure it's not a nested table
+            // as in that case we'll leave selection resolving to that table
+            const anchorCellNode = $findCellNode(anchorNode);
+            const focusCellNode = $findCellNode(focusNode);
+            const isAnchorInside = !!(
+              anchorCellNode && tableNode.is($findTableNode(anchorCellNode))
+            );
+            const isFocusInside = !!(
+              focusCellNode && tableNode.is($findTableNode(focusCellNode))
+            );
+            const isPartiallyWithinTable = isAnchorInside !== isFocusInside;
+            const isWithinTable = isAnchorInside && isFocusInside;
+            const isBackward = selection.isBackward();
 
-          if (isPartiallyWithinTable) {
-            const newSelection = selection.clone();
-            if (isFocusInside) {
-              const [tableMap] = $computeTableMap(
-                tableNode,
-                focusCellNode,
-                focusCellNode,
-              );
-              const firstCell = tableMap[0][0].cell;
-              const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
-              newSelection.focus.set(
-                isBackward ? firstCell.getKey() : lastCell.getKey(),
-                isBackward
-                  ? firstCell.getChildrenSize()
-                  : lastCell.getChildrenSize(),
-                'element',
-              );
-            } else if (isAnchorInside) {
-              const [tableMap] = $computeTableMap(
-                tableNode,
-                anchorCellNode,
-                anchorCellNode,
-              );
-              const firstCell = tableMap[0][0].cell;
-              const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
-              /**
-               * If isBackward, set the anchor to be at the end of the table so that when the cursor moves outside of
-               * the table in the backward direction, the entire table will be selected from its end.
-               * Otherwise, if forward, set the anchor to be at the start of the table so that when the focus is dragged
-               * outside th end of the table, it will start from the beginning of the table.
-               */
-              newSelection.anchor.set(
-                isBackward ? lastCell.getKey() : firstCell.getKey(),
-                isBackward ? lastCell.getChildrenSize() : 0,
-                'element',
-              );
-            }
-            $setSelection(newSelection);
-            $addHighlightStyleToTable(editor, tableObserver);
-          } else if (isWithinTable) {
-            // Handle case when selection spans across multiple cells but still
-            // has range selection, then we convert it into table selection
-            if (!anchorCellNode.is(focusCellNode)) {
-              tableObserver.$setAnchorCellForSelection(
-                $getObserverCellFromCellNodeOrThrow(
-                  tableObserver,
-                  anchorCellNode,
-                ),
-              );
-              tableObserver.$setFocusCellForSelection(
-                $getObserverCellFromCellNodeOrThrow(
-                  tableObserver,
+            if (isPartiallyWithinTable) {
+              const newSelection = selection.clone();
+              if (isFocusInside) {
+                const [tableMap] = $computeTableMap(
+                  tableNode,
                   focusCellNode,
-                ),
-                true,
-              );
-            }
-
-            // Handle case when the pointer type is touch and the current and
-            // previous selection are collapsed, and the previous anchor and current
-            // focus cell nodes are different, then we convert it into table selection
-            if (
-              tableObserver.pointerType === 'touch' &&
-              selection.isCollapsed() &&
-              $isRangeSelection(prevSelection) &&
-              prevSelection.isCollapsed()
-            ) {
-              const prevAnchorCellNode = $findCellNode(
-                prevSelection.anchor.getNode(),
-              );
-              if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
+                  focusCellNode,
+                );
+                const firstCell = tableMap[0][0].cell;
+                const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+                newSelection.focus.set(
+                  isBackward ? firstCell.getKey() : lastCell.getKey(),
+                  isBackward
+                    ? firstCell.getChildrenSize()
+                    : lastCell.getChildrenSize(),
+                  'element',
+                );
+              } else if (isAnchorInside) {
+                const [tableMap] = $computeTableMap(
+                  tableNode,
+                  anchorCellNode,
+                  anchorCellNode,
+                );
+                const firstCell = tableMap[0][0].cell;
+                const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+                /**
+                 * If isBackward, set the anchor to be at the end of the table so that when the cursor moves outside of
+                 * the table in the backward direction, the entire table will be selected from its end.
+                 * Otherwise, if forward, set the anchor to be at the start of the table so that when the focus is dragged
+                 * outside th end of the table, it will start from the beginning of the table.
+                 */
+                newSelection.anchor.set(
+                  isBackward ? lastCell.getKey() : firstCell.getKey(),
+                  isBackward ? lastCell.getChildrenSize() : 0,
+                  'element',
+                );
+              }
+              $setSelection(newSelection);
+              $addHighlightStyleToTable(editor, tableObserver);
+            } else if (isWithinTable) {
+              // Handle case when selection spans across multiple cells but still
+              // has range selection, then we convert it into table selection
+              if (!anchorCellNode.is(focusCellNode)) {
                 tableObserver.$setAnchorCellForSelection(
                   $getObserverCellFromCellNodeOrThrow(
                     tableObserver,
-                    prevAnchorCellNode,
+                    anchorCellNode,
                   ),
                 );
                 tableObserver.$setFocusCellForSelection(
@@ -1268,89 +1260,123 @@ export function registerOptimizedTableSelectionObserver(
                   ),
                   true,
                 );
-                tableObserver.pointerType = null;
               }
-            }
-          }
-        } else if (
-          selection &&
-          $isTableSelection(selection) &&
-          selection.is(prevSelection) &&
-          selection.tableKey === tableNode.getKey()
-        ) {
-          // if selection goes outside of the table we need to change it to Range selection
-          const domSelection = getDOMSelection(editorWindow);
-          if (
-            domSelection &&
-            domSelection.anchorNode &&
-            domSelection.focusNode
-          ) {
-            const focusNode = $getNearestNodeFromDOMNode(
-              domSelection.focusNode,
-            );
-            const isFocusOutside =
-              focusNode && !tableNode.isParentOf(focusNode);
 
-            const anchorNode = $getNearestNodeFromDOMNode(
-              domSelection.anchorNode,
-            );
-            const isAnchorInside =
-              anchorNode && tableNode.isParentOf(anchorNode);
-
-            if (
-              isFocusOutside &&
-              isAnchorInside &&
-              domSelection.rangeCount > 0
-            ) {
-              const newSelection = $createRangeSelectionFromDom(
-                domSelection,
-                editor,
-              );
-              if (newSelection) {
-                newSelection.anchor.set(
-                  tableNode.getKey(),
-                  selection.isBackward() ? tableNode.getChildrenSize() : 0,
-                  'element',
+              // Handle case when the pointer type is touch and the current and
+              // previous selection are collapsed, and the previous anchor and current
+              // focus cell nodes are different, then we convert it into table selection
+              if (
+                tableObserver.pointerType === 'touch' &&
+                selection.isCollapsed() &&
+                $isRangeSelection(prevSelection) &&
+                prevSelection.isCollapsed()
+              ) {
+                const prevAnchorCellNode = $findCellNode(
+                  prevSelection.anchor.getNode(),
                 );
-                domSelection.removeAllRanges();
-                $setSelection(newSelection);
+                if (
+                  prevAnchorCellNode &&
+                  !prevAnchorCellNode.is(focusCellNode)
+                ) {
+                  tableObserver.$setAnchorCellForSelection(
+                    $getObserverCellFromCellNodeOrThrow(
+                      tableObserver,
+                      prevAnchorCellNode,
+                    ),
+                  );
+                  tableObserver.$setFocusCellForSelection(
+                    $getObserverCellFromCellNodeOrThrow(
+                      tableObserver,
+                      focusCellNode,
+                    ),
+                    true,
+                  );
+                  tableObserver.pointerType = null;
+                }
+              }
+            }
+          } else if (
+            selection &&
+            $isTableSelection(selection) &&
+            selection.is(prevSelection) &&
+            selection.tableKey === tableNode.getKey()
+          ) {
+            // if selection goes outside of the table we need to change it to Range selection
+            // const editorWindow = getEditorWindow(editor);
+            const domSelection = getDOMSelection(null);
+            if (
+              domSelection &&
+              domSelection.anchorNode &&
+              domSelection.focusNode
+            ) {
+              const focusNode = $getNearestNodeFromDOMNode(
+                domSelection.focusNode,
+              );
+              const isFocusOutside =
+                focusNode && !tableNode.isParentOf(focusNode);
+
+              const anchorNode = $getNearestNodeFromDOMNode(
+                domSelection.anchorNode,
+              );
+              const isAnchorInside =
+                anchorNode && tableNode.isParentOf(anchorNode);
+
+              if (
+                isFocusOutside &&
+                isAnchorInside &&
+                domSelection.rangeCount > 0
+              ) {
+                const newSelection = $createRangeSelectionFromDom(
+                  domSelection,
+                  editor,
+                );
+                if (newSelection) {
+                  newSelection.anchor.set(
+                    tableNode.getKey(),
+                    selection.isBackward() ? tableNode.getChildrenSize() : 0,
+                    'element',
+                  );
+                  domSelection.removeAllRanges();
+                  $setSelection(newSelection);
+                }
               }
             }
           }
-        }
 
-        if (
-          selection &&
-          !selection.is(prevSelection) &&
-          ($isTableSelection(selection) || $isTableSelection(prevSelection)) &&
-          tableObserver.tableSelection &&
-          !tableObserver.tableSelection.is(prevSelection)
-        ) {
           if (
-            $isTableSelection(selection) &&
-            selection.tableKey === tableObserver.tableNodeKey
+            selection &&
+            !selection.is(prevSelection) &&
+            ($isTableSelection(selection) ||
+              $isTableSelection(prevSelection)) &&
+            tableObserver.tableSelection &&
+            !tableObserver.tableSelection.is(prevSelection)
           ) {
-            tableObserver.$updateTableTableSelection(selection);
-          } else if (
-            !$isTableSelection(selection) &&
-            $isTableSelection(prevSelection) &&
-            prevSelection.tableKey === tableObserver.tableNodeKey
-          ) {
-            tableObserver.$updateTableTableSelection(null);
+            if (
+              $isTableSelection(selection) &&
+              selection.tableKey === tableObserver.tableNodeKey
+            ) {
+              tableObserver.$updateTableTableSelection(selection);
+            } else if (
+              !$isTableSelection(selection) &&
+              $isTableSelection(prevSelection) &&
+              prevSelection.tableKey === tableObserver.tableNodeKey
+            ) {
+              tableObserver.$updateTableTableSelection(null);
+            }
+            return false;
           }
-          return false;
-        }
 
-        if (
-          tableObserver.hasHijackedSelectionStyles &&
-          !tableNode.isSelected()
-        ) {
-          $removeHighlightStyleToTable(editor, tableObserver);
-        } else if (
-          !tableObserver.hasHijackedSelectionStyles &&
-          tableNode.isSelected()
-        ) {
-          $addHighlightStyleToTable(editor, tableObserver);
+          if (
+            tableObserver.hasHijackedSelectionStyles &&
+            !tableNode.isSelected()
+          ) {
+            $removeHighlightStyleToTable(editor, tableObserver);
+          } else if (
+            !tableObserver.hasHijackedSelectionStyles &&
+            tableNode.isSelected()
+          ) {
+            $addHighlightStyleToTable(editor, tableObserver);
+          }
         }
 
         return false;
@@ -1434,10 +1460,10 @@ export function registerOptimizedTableSelectionObserver(
     );
   }
 
-  editorWindow.addEventListener('pointerdown', onGlobalPointerDown);
+  rootElement.addEventListener('pointerdown', $onGlobalPointerDown);
 
   return () => {
-    editorWindow.removeEventListener('pointerdown', onGlobalPointerDown);
+    rootElement.removeEventListener('pointerdown', $onGlobalPointerDown);
 
     unregisterMutationListener();
     unregisterCommands();

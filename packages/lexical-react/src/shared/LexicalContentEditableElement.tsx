@@ -114,7 +114,7 @@ function ContentEditableElementImpl(
       data-testid={testid}
       id={id}
       ref={mergedRefs}
-      role={isEditable ? role : undefined}
+      role={role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

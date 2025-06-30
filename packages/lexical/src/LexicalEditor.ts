@@ -44,11 +44,12 @@ import {
   getDefaultView,
   getDOMSelection,
   getStaticNodeConfig,
-  hasOwn,
+  hasOwnExportDOM,
+  hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {$isDecoratorNode} from './nodes/LexicalDecoratorNode';
+import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -547,7 +548,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
         const name = klass.name;
-        const nodeType = hasOwn(klass, 'getType') && klass.getType();
+        const nodeType =
+          hasOwnStaticMethod(klass, 'getType') && klass.getType();
 
         if (replaceWithKlass) {
           invariant(
@@ -567,24 +569,27 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           nodeType !== 'artificial'
         ) {
           const proto = klass.prototype;
-          ['getType', 'clone'].forEach((method) => {
-            if (!hasOwn(klass, method)) {
+          (['getType', 'clone'] as const).forEach((method) => {
+            if (!hasOwnStaticMethod(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
-          if (!hasOwn(klass, 'importDOM') && hasOwn(klass, 'exportDOM')) {
+          if (
+            !hasOwnStaticMethod(klass, 'importDOM') &&
+            hasOwnExportDOM(klass)
+          ) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
           if ($isDecoratorNode(proto)) {
-            if (!hasOwn(proto, 'decorate')) {
+            if (proto.decorate === DecoratorNode.prototype.decorate) {
               console.warn(
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
           }
-          if (!hasOwn(klass, 'importJSON')) {
+          if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );

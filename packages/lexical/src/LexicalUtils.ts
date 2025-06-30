@@ -21,13 +21,6 @@ import type {
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {
-  LexicalNode,
-  LexicalPrivateDOM,
-  NodeKey,
-  NodeMap,
-  StaticNodeConfigValue,
-} from './LexicalNode';
-import type {
   BaseSelection,
   PointType,
   RangeSelection,
@@ -71,6 +64,13 @@ import {
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
+import {
+  LexicalNode,
+  type LexicalPrivateDOM,
+  type NodeKey,
+  type NodeMap,
+  type StaticNodeConfigValue,
+} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
@@ -2002,16 +2002,31 @@ export function isDOMUnmanaged(elementDom: Node): boolean {
  *
  * Object.hasOwn ponyfill
  */
-export function hasOwn(o: object, k: string): boolean {
+function hasOwn(o: object, k: string): boolean {
   return Object.prototype.hasOwnProperty.call(o, k);
+}
+
+/**
+ * @internal
+ */
+export function hasOwnStaticMethod(
+  klass: Klass<LexicalNode>,
+  k: keyof Klass<LexicalNode>,
+): boolean {
+  return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
+}
+
+/**
+ * @internal
+ */
+export function hasOwnExportDOM(klass: Klass<LexicalNode>) {
+  return hasOwn(klass.prototype, 'exportDOM');
 }
 
 /** @internal */
 function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
   return (
-    klass === DecoratorNode ||
-    klass === ElementNode ||
-    klass === Object.getPrototypeOf(ElementNode)
+    klass === DecoratorNode || klass === ElementNode || klass === LexicalNode
   );
 }
 
@@ -2026,7 +2041,9 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       : undefined;
   const isAbstract = isAbstractNodeClass(klass);
   const nodeType =
-    !isAbstract && hasOwn(klass, 'getType') ? klass.getType() : undefined;
+    !isAbstract && hasOwnStaticMethod(klass, 'getType')
+      ? klass.getType()
+      : undefined;
   let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
   let ownNodeType = nodeType;
   if (nodeConfigRecord) {
@@ -2040,10 +2057,10 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     }
   }
   if (!isAbstract && ownNodeType) {
-    if (!hasOwn(klass, 'getType')) {
+    if (!hasOwnStaticMethod(klass, 'getType')) {
       klass.getType = () => ownNodeType;
     }
-    if (!hasOwn(klass, 'clone')) {
+    if (!hasOwnStaticMethod(klass, 'clone')) {
       if (__DEV__) {
         invariant(
           klass.length === 0,
@@ -2058,7 +2075,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
         return new klass();
       };
     }
-    if (!hasOwn(klass, 'importJSON')) {
+    if (!hasOwnStaticMethod(klass, 'importJSON')) {
       if (__DEV__) {
         invariant(
           klass.length === 0,
@@ -2072,7 +2089,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
         ((serializedNode) => new klass().updateFromJSON(serializedNode));
     }
-    if (!hasOwn(klass, 'importDOM') && ownNodeConfig) {
+    if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;
       if (importDOM) {
         klass.importDOM = () => importDOM;

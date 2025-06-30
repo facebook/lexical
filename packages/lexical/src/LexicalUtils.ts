@@ -26,7 +26,6 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
-import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
@@ -81,6 +80,7 @@ import {
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates';
+import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 export const emptyFunction = () => {
   return;
@@ -2061,7 +2061,10 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       klass.getType = () => ownNodeType;
     }
     if (!hasOwnStaticMethod(klass, 'clone')) {
-      if (__DEV__) {
+      // TextNode.length > 0 will only be true if the compiler output
+      // is not ES6 compliant, in which case we can not provide this
+      // warning
+      if (__DEV__ && TextNode.length === 0) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',

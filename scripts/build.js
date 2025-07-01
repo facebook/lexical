@@ -222,7 +222,6 @@ async function build(
         Object.assign(
           {
             __DEV__: isProd ? 'false' : 'true',
-            __IS_META_INTERNAL__: isWWW ? 'true' : 'false',
             delimiters: ['', ''],
             preventAssignment: true,
             'process.env.LEXICAL_VERSION': JSON.stringify(

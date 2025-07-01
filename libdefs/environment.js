@@ -10,8 +10,6 @@
 
 declare var __DEV__: boolean;
 
-declare var __IS_META_INTERNAL__: boolean;
-
 declare var queueMicrotask: (fn: () => void) => void;
 
 declare class CompositionEvent extends UIEvent {

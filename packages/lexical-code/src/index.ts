@@ -6,34 +6,61 @@
  *
  */
 
-import {$getEndOfCodeInLine, $getStartOfCodeInLine} from './CodeHighlighter';
+import {registerCodeHighlighting as registerCodePrismHighlighting} from './CodeHighlighterPrism';
 import {
+  $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
-} from './CodeHighlightNode';
+  $getStartOfCodeInLine,
+} from './FlatStructureUtils';
 
 export {
-  $getEndOfCodeInLine,
-  $getStartOfCodeInLine,
   PrismTokenizer,
-  registerCodeHighlighting,
-} from './CodeHighlighter';
+  registerCodeHighlighting as registerCodePrismHighlighting,
+} from './CodeHighlighterPrism';
+export {registerCodeHighlighting as registerCodeShikiHighlighting} from './CodeHighlighterShiki';
+export {
+  //getCodeLanguageOptions,
+  //getCodeThemeOptions,
+  registerCodeHighlighting as registerCodeHighlightingShiki,
+} from './CodeHighlighterShiki';
 export {
   $createCodeHighlightNode,
-  $getFirstCodeNodeOfLine,
-  $getLastCodeNodeOfLine,
   $isCodeHighlightNode,
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
   CodeHighlightNode,
-  DEFAULT_CODE_LANGUAGE,
-  getCodeLanguages,
-  getDefaultCodeLanguage,
-  getLanguageFriendlyName,
-  normalizeCodeLang,
 } from './CodeHighlightNode';
 export type {SerializedCodeNode} from './CodeNode';
-export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';
+export {
+  $createCodeNode,
+  $isCodeNode,
+  CodeNode,
+  DEFAULT_CODE_LANGUAGE,
+  getDefaultCodeLanguage,
+} from './CodeNode';
+export {
+  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
+  CODE_LANGUAGE_MAP,
+  getCodeLanguages,
+  getCodeLanguageOptions as getCodePrismLanguageOptions,
+  getCodeThemeOptions as getCodePrismThemeOptions,
+  getLanguageFriendlyName,
+  normalizeCodeLang,
+  normalizeCodeLang as normalizeCodePrismLanguage,
+} from './FacadePrism';
+export {
+  getCodeLanguageOptions as getCodeShikiLanguageOptions,
+  getCodeThemeOptions as getCodeShikiThemeOptions,
+  isCodeLanguageLoaded,
+  loadCodeLanguage,
+  loadCodeTheme,
+  normalizeCodeLanguage as normalizeCodeShikiLanguage,
+} from './FacadeShiki';
+export {
+  $getEndOfCodeInLine,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+  $getStartOfCodeInLine,
+} from './FlatStructureUtils';
 
 /** @deprecated renamed to {@link $getFirstCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
 export const getFirstCodeNodeOfLine = $getFirstCodeNodeOfLine;
@@ -43,3 +70,5 @@ export const getLastCodeNodeOfLine = $getLastCodeNodeOfLine;
 export const getEndOfCodeInLine = $getEndOfCodeInLine;
 /** @deprecated renamed to {@link $getStartOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
 export const getStartOfCodeInLine = $getStartOfCodeInLine;
+/** @deprecated renamed to {@link registerCodePrismHighlighting} by @lexical/eslint-plugin rules-of-lexical */
+export const registerCodeHighlighting = registerCodePrismHighlighting;

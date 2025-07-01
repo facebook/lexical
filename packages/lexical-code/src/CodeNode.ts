@@ -34,44 +34,24 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
-  $getFirstCodeNodeOfLine,
   $isCodeHighlightNode,
 } from './CodeHighlightNode';
+import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
 
 export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
+    theme: string | null | undefined;
   },
   SerializedElementNode
 >;
 
-const isLanguageSupportedByPrism = (
-  language: string | null | undefined,
-): boolean => {
-  const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
-  try {
-    if (!language) {
-      return false;
-    }
-    const langMatch = DIFF_LANGUAGE_REGEX.exec(language);
-    if (langMatch) {
-      return (
-        // eslint-disable-next-line no-prototype-builtins
-        Prism.languages.hasOwnProperty('diff') &&
-        // eslint-disable-next-line no-prototype-builtins
-        Prism.languages.hasOwnProperty(langMatch[1])
-      );
-    } else {
-      // eslint-disable-next-line no-prototype-builtins
-      return Prism.languages.hasOwnProperty(language);
-    }
-  } catch {
-    return false;
-  }
-};
+export const DEFAULT_CODE_LANGUAGE = 'javascript';
+export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
+
+export const DEFAULT_CODE_THEME = 'one-light';
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {
   for (const child of node.childNodes) {
@@ -85,11 +65,14 @@ function hasChildDOMNodeTag(node: Node, tagName: string) {
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
+const THEME_DATA_ATTRIBUTE = 'data-theme';
 
 /** @noInheritDoc */
 export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
+  /** @internal */
+  __theme: string | null | undefined;
   /** @internal */
   __isSyntaxHighlightSupported: boolean;
 
@@ -98,13 +81,22 @@ export class CodeNode extends ElementNode {
   }
 
   static clone(node: CodeNode): CodeNode {
-    return new CodeNode(node.__language, node.__key);
+    const newNode = new CodeNode(node.__key);
+    return newNode;
   }
 
-  constructor(language?: string | null | undefined, key?: NodeKey) {
+  constructor(key?: NodeKey) {
     super(key);
-    this.__language = language || undefined;
-    this.__isSyntaxHighlightSupported = isLanguageSupportedByPrism(language);
+    this.__language = undefined;
+    this.__isSyntaxHighlightSupported = false;
+    this.__theme = undefined;
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__language = prevNode.__language;
+    this.__theme = prevNode.__theme;
+    this.__isSyntaxHighlightSupported = prevNode.__isSyntaxHighlightSupported;
   }
 
   // View
@@ -115,10 +107,19 @@ export class CodeNode extends ElementNode {
     const language = this.getLanguage();
     if (language) {
       element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
-
       if (this.getIsSyntaxHighlightSupported()) {
         element.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
       }
+    }
+
+    const theme = this.getTheme();
+    if (theme) {
+      element.setAttribute(THEME_DATA_ATTRIBUTE, theme);
+    }
+
+    const style = this.getStyle();
+    if (style) {
+      element.setAttribute('style', style);
     }
     return element;
   }
@@ -129,18 +130,48 @@ export class CodeNode extends ElementNode {
     if (language) {
       if (language !== prevLanguage) {
         dom.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
-
-        if (this.__isSyntaxHighlightSupported) {
-          dom.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
-        }
       }
     } else if (prevLanguage) {
       dom.removeAttribute(LANGUAGE_DATA_ATTRIBUTE);
+    }
 
-      if (prevNode.__isSyntaxHighlightSupported) {
+    const isSyntaxHighlightSupported = this.__isSyntaxHighlightSupported;
+    const prevIsSyntaxHighlightSupported =
+      prevNode.__isSyntaxHighlightSupported;
+
+    if (prevIsSyntaxHighlightSupported && prevLanguage) {
+      if (isSyntaxHighlightSupported && language) {
+        if (language !== prevLanguage) {
+          dom.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
+        }
+      } else {
         dom.removeAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE);
       }
+    } else if (isSyntaxHighlightSupported && language) {
+      dom.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
     }
+
+    const theme = this.__theme;
+    const prevTheme = prevNode.__theme;
+
+    if (theme) {
+      if (theme !== prevTheme) {
+        dom.setAttribute(THEME_DATA_ATTRIBUTE, theme);
+      }
+    } else if (prevTheme) {
+      dom.removeAttribute(THEME_DATA_ATTRIBUTE);
+    }
+
+    const style = this.__style;
+    const prevStyle = prevNode.__style;
+    if (style) {
+      if (style !== prevStyle) {
+        dom.setAttribute('style', style);
+      }
+    } else if (prevStyle) {
+      dom.removeAttribute('style');
+    }
+
     return false;
   }
 
@@ -155,6 +186,16 @@ export class CodeNode extends ElementNode {
       if (this.getIsSyntaxHighlightSupported()) {
         element.setAttribute(HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE, language);
       }
+    }
+
+    const theme = this.getTheme();
+    if (theme) {
+      element.setAttribute(THEME_DATA_ATTRIBUTE, theme);
+    }
+
+    const style = this.getStyle();
+    if (style) {
+      element.setAttribute('style', style);
     }
     return {element};
   }
@@ -233,13 +274,15 @@ export class CodeNode extends ElementNode {
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
     return super
       .updateFromJSON(serializedNode)
-      .setLanguage(serializedNode.language);
+      .setLanguage(serializedNode.language)
+      .setTheme(serializedNode.theme);
   }
 
   exportJSON(): SerializedCodeNode {
     return {
       ...super.exportJSON(),
       language: this.getLanguage(),
+      theme: this.getTheme(),
     };
   }
 
@@ -338,8 +381,6 @@ export class CodeNode extends ElementNode {
   setLanguage(language: string | null | undefined): this {
     const writable = this.getWritable();
     writable.__language = language || undefined;
-    writable.__isSyntaxHighlightSupported =
-      isLanguageSupportedByPrism(language);
     return writable;
   }
 
@@ -347,15 +388,35 @@ export class CodeNode extends ElementNode {
     return this.getLatest().__language;
   }
 
+  setIsSyntaxHighlightSupported(isSupported: boolean): this {
+    const writable = this.getWritable();
+    writable.__isSyntaxHighlightSupported = isSupported;
+    return writable;
+  }
+
   getIsSyntaxHighlightSupported(): boolean {
     return this.getLatest().__isSyntaxHighlightSupported;
+  }
+
+  setTheme(theme: string | null | undefined): this {
+    const writable = this.getWritable();
+    writable.__theme = theme || undefined;
+    return writable;
+  }
+
+  getTheme(): string | null | undefined {
+    return this.getLatest().__theme;
   }
 }
 
 export function $createCodeNode(
   language?: string | null | undefined,
+  theme?: string | null | undefined,
 ): CodeNode {
-  return $applyNodeReplacement(new CodeNode(language));
+  const node = new CodeNode();
+  node.setLanguage(language);
+  node.setTheme(theme);
+  return $applyNodeReplacement(node);
 }
 
 export function $isCodeNode(

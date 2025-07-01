@@ -13,6 +13,11 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/utils": "0.32.1",
+    "@shikijs/core": "^3.7.0",
+    "@shikijs/engine-javascript": "^3.7.0",
+    "@shikijs/langs": "^3.7.0",
+    "@shikijs/themes": "^3.7.0",
+    "shiki": "^3.7.0",
     "lexical": "0.32.1",
     "prismjs": "^1.30.0"
   },
@@ -22,6 +27,7 @@
     "directory": "packages/lexical-code"
   },
   "devDependencies": {
+    "@shikijs/types": "^3.7.0",
     "@types/prismjs": "^1.26.0"
   },
   "module": "LexicalCode.mjs",

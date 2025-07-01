@@ -8,7 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {registerCodePrismHighlighting} from '@lexical/code';
+import {registerCodeShikiHighlighting} from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
@@ -16,7 +16,7 @@ export default function CodeHighlightPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return registerCodePrismHighlighting(editor);
+    return registerCodeShikiHighlighting(editor);
   }, [editor]);
 
   return null;

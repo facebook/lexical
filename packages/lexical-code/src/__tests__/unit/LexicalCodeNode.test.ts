@@ -10,7 +10,7 @@ import {
   $createCodeHighlightNode,
   $createCodeNode,
   $isCodeHighlightNode,
-  registerCodeHighlighting,
+  registerCodePrismHighlighting as registerCodeHighlighting,
 } from '@lexical/code';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
@@ -119,6 +119,7 @@ describe('LexicalCodeNode tests', () => {
           format: '',
           indent: 0,
           language: 'javascript',
+          theme: undefined,
           type: 'code',
           version: 1,
         });
@@ -944,7 +945,7 @@ describe('LexicalCodeNode tests', () => {
         );
         // before transform
         expect(testEnv.innerHTML).toBe(
-          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
+          '<code spellcheck="false" data-language="javascript" dir="ltr"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
         );
         registerRichText(editor);
         registerTabIndentation(editor);
@@ -952,7 +953,7 @@ describe('LexicalCodeNode tests', () => {
         await Promise.resolve(undefined);
         // after transforms
         expect(testEnv.innerHTML).toBe(
-          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
+          '<code spellcheck="false" data-language="javascript" dir="ltr" data-gutter="1" data-highlight-language="javascript"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
         );
       });
     });

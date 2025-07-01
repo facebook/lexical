@@ -29,6 +29,23 @@ const moduleNameMapper = {
     '<rootDir>/packages/shared/src/__mocks__/warnOnlyOnce.ts',
 };
 
+// necessary transformations for shiki support
+const npm_modules_transformed = [
+  'shiki',
+  '@shikijs',
+  'hast-util-to-html',
+  'html-void-elements',
+  'property-information',
+  'zwitch',
+  'stringify-entities',
+  'character-entities-legacy',
+  'character-entities-html4',
+  'ccount',
+  'comma-separated-tokens',
+  'space-separated-tokens',
+  'hast-util-whitespace',
+];
+
 module.exports = {
   projects: [
     {
@@ -45,6 +62,7 @@ module.exports = {
       testMatch: ['**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
       transform: {
         '^.+\\.jsx?$': 'babel-jest',
+        '^.+\\.mjs$': 'babel-jest',
         '^.+\\.tsx?$': [
           'ts-jest',
           {
@@ -52,6 +70,9 @@ module.exports = {
           },
         ],
       },
+      transformIgnorePatterns: [
+        '/node_modules/(?!(' + npm_modules_transformed.join('|') + '))',
+      ],
     },
     {
       ...common,

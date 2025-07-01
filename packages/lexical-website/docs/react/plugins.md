@@ -113,7 +113,7 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 
 ### `LexicalTablePlugin`
 
-[![See API Documentation](/img/see-api-documentation.svg)](../api/modules/lexical_react_LexicalTablePlugin.md)
+[![See API Documentation](/img/see-api-documentation.svg)](/docs/api/modules/lexical_react_LexicalTablePlugin)
 
 React wrapper for `@lexical/table` that adds support for tables.
 

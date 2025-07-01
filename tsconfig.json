@@ -207,6 +207,9 @@
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],
+      "@lexical/headless/src/__tests__/utils": [
+        "./packages/lexical-headless/src/__tests__/utils/index.ts"
+      ],
       "@lexical/history/src": ["./packages/lexical-history/src"],
       "@lexical/html/src": ["./packages/lexical-html/src"],
       "@lexical/link/src": ["./packages/lexical-link/src"],

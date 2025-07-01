@@ -38,9 +38,9 @@ can and can not do out of the box today.
 
 ### createState
 
-[createState](../api/modules/lexical.md#createstate)
+[createState](/docs/api/modules/lexical#createstate)
 creates a
-[StateConfig](../api/classes/lexical.StateConfig.md)
+[StateConfig](/docs/api/classes/lexical.StateConfig)
 which defines the key and configuration for your NodeState value.
 
 The key must be locally unique, two distinct StateConfig must not have the
@@ -65,7 +65,7 @@ In this case, the question must be a string, and the default is an
 empty string.
 
 See the
-[createState](../api/modules/lexical.md#createstate)
+[createState](/docs/api/modules/lexical#createstate)
 API documentation for more details, there are other optional settings
 that you may want to define particularly if the value is not a primitive
 value such as boolean, string, number, null, or undefined.
@@ -84,7 +84,7 @@ etc. especially when working with non-primitive data types.
 
 ### $getState
 
-[$getState](../api/modules/lexical.md#getstate) gets the
+[$getState](/docs/api/modules/lexical#getstate) gets the
 NodeState value from the given node, or the default if that key was never
 set on the node.
 
@@ -93,14 +93,14 @@ const question = $getValue(pollNode, questionState);
 ```
 
 See also
-[$getStateChange](../api/modules/lexical.md#getstatechange)
+[$getStateChange](/docs/api/modules/lexical#getstatechange)
 if you need an efficient way to determine if the state has changed on two
 versions of the same node (typically used in updateDOM, but may be useful in
 an update listener or mutation listener).
 
 ### $setState
 
-[$setState](../api/modules/lexical.md#setstate) sets the
+[$setState](/docs/api/modules/lexical#setstate) sets the
 NodeState value on the given node.
 
 ```ts
@@ -123,7 +123,7 @@ the node and its NodeState *won't* be marked dirty.
 
 The NodeState for a node, if any values are set to non-default values, is
 serialized to a record under a single
-[NODE_STATE_KEY](../api/modules/lexical.md#node_state_key)
+[NODE_STATE_KEY](/docs/api/modules/lexical#node_state_key)
 which is equal to `'$'`. In the future, it is expected that nodes will be
 able to declare required state and lift those values to the top-level of
 their serialized nodes
@@ -143,7 +143,7 @@ their serialized nodes
 By default, it is assumed that your parsed values are JSON serializable,
 but for advanced use cases you may use values such as Date, Map, or Set
 that need to be transformed before JSON serialization. See the
-[StateValueConfig](../api/interfaces/lexical.StateValueConfig.md)
+[StateValueConfig](/docs/api/interfaces/lexical.StateValueConfig)
 API documentation.
 
 :::

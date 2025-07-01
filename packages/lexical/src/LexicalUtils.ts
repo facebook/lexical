@@ -2079,7 +2079,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       };
     }
     if (!hasOwnStaticMethod(klass, 'importJSON')) {
-      if (__DEV__) {
+      if (__DEV__ && TextNode.length === 0) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',

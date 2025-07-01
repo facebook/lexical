@@ -12,7 +12,7 @@ import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 import {
   $createCodeNode,
   $isCodeNode,
-  registerCodeHighlighting,
+  registerCodePrismHighlighting as registerCodeHighlighting,
 } from '@lexical/code';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';

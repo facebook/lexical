@@ -10,9 +10,12 @@ import type {JSX} from 'react';
 
 import {
   $isCodeNode,
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
-  getLanguageFriendlyName,
+  getCodePrismLanguageOptions as getCodeLanguageOptions,
+  getCodePrismThemeOptions as getCodeThemeOptions,
+  normalizeCodePrismLanguage as normalizeCodeLanguage,
+  //normalizeCodeShikiLanguage as normalizeCodeLanguage,
+  //getCodeShikiLanguageOptions as getCodeLanguageOptions,
+  //getCodeShikiThemeOptions as getCodeThemeOptions,
 } from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
@@ -101,19 +104,51 @@ const rootTypeToRootName = {
   table: 'Table',
 };
 
-function getCodeLanguageOptions(): [string, string][] {
-  const options: [string, string][] = [];
-
-  for (const [lang, friendlyName] of Object.entries(
-    CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  )) {
-    options.push([lang, friendlyName]);
-  }
-
-  return options;
-}
-
-const CODE_LANGUAGE_OPTIONS = getCodeLanguageOptions();
+const CODE_LANGUAGE_OPTIONS: [string, string][] =
+  getCodeLanguageOptions().filter((option) =>
+    [
+      'c',
+      'clike',
+      'cpp',
+      'css',
+      'html',
+      'java',
+      'js',
+      'javascript',
+      'markdown',
+      'objc',
+      'objective-c',
+      'plain',
+      'powershell',
+      'py',
+      'python',
+      'rust',
+      'sql',
+      'swift',
+      'typescript',
+      'xml',
+    ].includes(option[0]),
+  );
+const CODE_THEME_OPTIONS: [string, string][] = getCodeThemeOptions().filter(
+  (option) =>
+    [
+      'catppuccin-latte',
+      'everforest-light',
+      'github-light',
+      'gruvbox-light-medium',
+      'kanagawa-lotus',
+      'dark-plus',
+      'light-plus',
+      'material-theme-lighter',
+      'min-light',
+      'one-light',
+      'rose-pine-dawn',
+      'slack-ochin',
+      'snazzy-light',
+      'solarized-light',
+      'vitesse-light',
+    ].includes(option[0]),
+);
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
   ['Arial', 'Arial'],
@@ -522,12 +557,13 @@ export default function ToolbarPlugin({
   const $handleCodeNode = useCallback(
     (element: LexicalNode) => {
       if ($isCodeNode(element)) {
-        const language =
-          element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
+        const language = element.getLanguage();
         updateToolbarState(
           'codeLanguage',
-          language ? CODE_LANGUAGE_MAP[language] || language : '',
+          language ? normalizeCodeLanguage(language) || language : '',
         );
+        const theme = element.getTheme();
+        updateToolbarState('codeTheme', theme || '');
         return;
       }
     },
@@ -778,6 +814,19 @@ export default function ToolbarPlugin({
     },
     [activeEditor, selectedElementKey],
   );
+  const onCodeThemeSelect = useCallback(
+    (value: string) => {
+      activeEditor.update(() => {
+        if (selectedElementKey !== null) {
+          const node = $getNodeByKey(selectedElementKey);
+          if ($isCodeNode(node)) {
+            node.setTheme(value);
+          }
+        }
+      });
+    },
+    [activeEditor, selectedElementKey],
+  );
   const insertGifOnClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
   };
@@ -823,24 +872,57 @@ export default function ToolbarPlugin({
           </>
         )}
       {toolbarState.blockType === 'code' ? (
-        <DropDown
-          disabled={!isEditable}
-          buttonClassName="toolbar-item code-language"
-          buttonLabel={getLanguageFriendlyName(toolbarState.codeLanguage)}
-          buttonAriaLabel="Select language">
-          {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
-            return (
-              <DropDownItem
-                className={`item ${dropDownActiveClass(
-                  value === toolbarState.codeLanguage,
-                )}`}
-                onClick={() => onCodeLanguageSelect(value)}
-                key={value}>
-                <span className="text">{name}</span>
-              </DropDownItem>
-            );
-          })}
-        </DropDown>
+        <>
+          <DropDown
+            disabled={!isEditable}
+            buttonClassName="toolbar-item code-language"
+            buttonLabel={
+              (CODE_LANGUAGE_OPTIONS.find(
+                (opt) =>
+                  opt[0] === normalizeCodeLanguage(toolbarState.codeLanguage),
+              ) || ['', ''])[1]
+            }
+            buttonAriaLabel="Select language">
+            {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
+              return (
+                <DropDownItem
+                  className={`item ${dropDownActiveClass(
+                    value === toolbarState.codeLanguage,
+                  )}`}
+                  onClick={() => onCodeLanguageSelect(value)}
+                  key={value}>
+                  <span className="text">{name}</span>
+                </DropDownItem>
+              );
+            })}
+          </DropDown>
+          {CODE_THEME_OPTIONS.length > 0 && (
+            <>
+              <DropDown
+                disabled={!isEditable}
+                buttonClassName="toolbar-item code-language"
+                buttonLabel={
+                  (CODE_THEME_OPTIONS.find(
+                    (opt) => opt[0] === toolbarState.codeTheme,
+                  ) || ['', ''])[1]
+                }
+                buttonAriaLabel="Select theme">
+                {CODE_THEME_OPTIONS.map(([value, name]) => {
+                  return (
+                    <DropDownItem
+                      className={`item ${dropDownActiveClass(
+                        value === toolbarState.codeTheme,
+                      )}`}
+                      onClick={() => onCodeThemeSelect(value)}
+                      key={value}>
+                      <span className="text">{name}</span>
+                    </DropDownItem>
+                  );
+                })}
+              </DropDown>
+            </>
+          )}
+        </>
       ) : (
         <>
           <FontDropDown

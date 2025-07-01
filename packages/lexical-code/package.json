@@ -22,6 +22,7 @@
     "directory": "packages/lexical-code"
   },
   "devDependencies": {
+    "@shikijs/types": "^3.7.0",
     "@types/prismjs": "^1.26.0"
   },
   "module": "LexicalCode.mjs",

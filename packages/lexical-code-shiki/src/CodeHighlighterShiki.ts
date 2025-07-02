@@ -16,6 +16,14 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {
+  $isCodeHighlightNode,
+  $isCodeNode,
+  CodeHighlightNode,
+  CodeNode,
+  DEFAULT_CODE_LANGUAGE,
+  DEFAULT_CODE_THEME,
+} from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -49,13 +57,6 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isCodeHighlightNode, CodeHighlightNode} from './CodeHighlightNode';
-import {
-  $isCodeNode,
-  CodeNode,
-  DEFAULT_CODE_LANGUAGE,
-  DEFAULT_CODE_THEME,
-} from './CodeNode';
 import {
   $getHighlightNodes,
   isCodeLanguageLoaded,

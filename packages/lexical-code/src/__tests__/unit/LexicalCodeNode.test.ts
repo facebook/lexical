@@ -10,7 +10,7 @@ import {
   $createCodeHighlightNode,
   $createCodeNode,
   $isCodeHighlightNode,
-  registerCodePrismHighlighting as registerCodeHighlighting,
+  registerCodeHighlighting,
 } from '@lexical/code';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';

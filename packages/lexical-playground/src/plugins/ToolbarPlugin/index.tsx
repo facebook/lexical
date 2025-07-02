@@ -8,15 +8,12 @@
 
 import type {JSX} from 'react';
 
+import {$isCodeNode} from '@lexical/code';
 import {
-  $isCodeNode,
-  getCodePrismLanguageOptions as getCodeLanguageOptions,
-  getCodePrismThemeOptions as getCodeThemeOptions,
-  normalizeCodePrismLanguage as normalizeCodeLanguage,
-  //normalizeCodeShikiLanguage as normalizeCodeLanguage,
-  //getCodeShikiLanguageOptions as getCodeLanguageOptions,
-  //getCodeShikiThemeOptions as getCodeThemeOptions,
-} from '@lexical/code';
+  getCodeLanguageOptions,
+  getCodeThemeOptions,
+  normalizeCodeLanguage,
+} from '@lexical/code-shiki';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';

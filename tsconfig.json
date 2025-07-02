@@ -228,7 +228,7 @@
   //     "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
   //     "shared/src": ["./packages/shared/src"]
   //   }
-  // },
+  },
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",

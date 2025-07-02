@@ -29,10 +29,9 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
-import {$createLineBreakNode, $createTabNode, $getNodeByKey} from 'lexical';
+import {$createLineBreakNode, $createTabNode} from 'lexical';
 
 import {$createCodeHighlightNode} from './CodeHighlightNode';
-import {$isCodeNode} from './CodeNode';
 
 declare global {
   interface Window {
@@ -133,25 +132,6 @@ export async function loadCodeLanguage(
   codeNodeKey?: NodeKey,
 ) {
   // NOT IMPLEMENTED
-  // the code below works as an example for loading awk
-  // more work is needed here (dependencies, list of available
-  // languages, ..) to have a full fledged dynamic prism
-  // language loader
-  language = 'awk';
-  const diffedLanguage = getDiffedLanguage(language);
-  const langId = diffedLanguage ? diffedLanguage : language;
-  if (!isCodeLanguageLoaded(langId)) {
-    await import('prismjs/components/prism-awk');
-    if (editor && codeNodeKey) {
-      editor.update(() => {
-        const codeNode = $getNodeByKey(codeNodeKey);
-        if ($isCodeNode(codeNode)) {
-          codeNode.setLanguage(language);
-          codeNode.setIsSyntaxHighlightSupported(true);
-        }
-      });
-    }
-  }
 }
 
 function getTextContent(token: TokenStream): string {

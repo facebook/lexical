@@ -80,7 +80,6 @@ export interface Token {
 export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
-  tokenize(code: string, language?: string): (string | Token)[];
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
 }
 
@@ -90,10 +89,6 @@ export const ShikiTokenizer: Tokenizer = {
   },
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   defaultTheme: DEFAULT_CODE_THEME,
-  tokenize(code: string, language?: string): Array<string | Token> {
-    // Not Implemented for Shiki
-    return [];
-  },
 };
 
 function $textNodeTransform(
@@ -167,6 +162,13 @@ function codeNodeTransform(
     node.setTheme(theme);
   }
 
+  // dynamic import of themes
+  let inFlight = false;
+  if (!isCodeThemeLoaded(theme)) {
+    loadCodeTheme(theme, editor, nodeKey);
+    inFlight = true;
+  }
+
   // dynamic import of languages
   if (isCodeLanguageLoaded(language)) {
     if (!node.getIsSyntaxHighlightSupported()) {
@@ -177,12 +179,10 @@ function codeNodeTransform(
       node.setIsSyntaxHighlightSupported(false);
     }
     loadCodeLanguage(language, editor, nodeKey);
-    return;
+    inFlight = true;
   }
 
-  // dynamic import of themes
-  if (!isCodeThemeLoaded(theme)) {
-    loadCodeTheme(theme, editor, nodeKey);
+  if (inFlight) {
     return;
   }
 

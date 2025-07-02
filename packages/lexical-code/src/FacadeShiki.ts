@@ -42,7 +42,7 @@ function getDiffedLanguage(language: string) {
 
 export function isCodeLanguageLoaded(language: string) {
   const diffedLanguage = getDiffedLanguage(language);
-  const langId = diffedLanguage ? diffedLanguage : language;
+  const langId = diffedLanguage || language;
 
   // handle shiki Hard-coded languages ['ansi', '', 'plaintext', 'txt', 'text', 'plain']
   if (isSpecialLang(langId)) {
@@ -53,7 +53,7 @@ export function isCodeLanguageLoaded(language: string) {
   return shiki.getLoadedLanguages().includes(langId);
 }
 
-export async function loadCodeLanguage(
+export function loadCodeLanguage(
   language: string,
   editor?: LexicalEditor,
   codeNodeKey?: NodeKey,
@@ -68,19 +68,22 @@ export async function loadCodeLanguage(
     if (languageInfo) {
       // in case we arrive here concurrently (not yet loaded language is loaded twice)
       // shiki's synchronous checks make sure to load it only once
-      await shiki.loadLanguage(languageInfo.import());
-
-      // here we know that the language is loaded
-      // make sure the code is highlighed with the correct language
-      if (editor && codeNodeKey) {
-        editor.update(() => {
-          const codeNode = $getNodeByKey(codeNodeKey);
-          if ($isCodeNode(codeNode)) {
-            codeNode.setLanguage(language);
-            codeNode.setIsSyntaxHighlightSupported(true);
-          }
-        });
-      }
+      shiki.loadLanguage(languageInfo.import()).then(() => {
+        // here we know that the language is loaded
+        // make sure the code is highlighed with the correct language
+        if (editor && codeNodeKey) {
+          editor.update(() => {
+            const codeNode = $getNodeByKey(codeNodeKey);
+            if (
+              $isCodeNode(codeNode) &&
+              codeNode.getLanguage() === language &&
+              !codeNode.getIsSyntaxHighlightSupported()
+            ) {
+              codeNode.setIsSyntaxHighlightSupported(true);
+            }
+          });
+        }
+      });
     }
   }
 }
@@ -104,15 +107,16 @@ export async function loadCodeTheme(
   if (!isCodeThemeLoaded(theme)) {
     const themeInfo = bundledThemesInfo.find((info) => info.id === theme);
     if (themeInfo) {
-      await shiki.loadTheme(themeInfo.import());
-      if (editor && codeNodeKey) {
-        editor.update(() => {
-          const codeNode = $getNodeByKey(codeNodeKey);
-          if ($isCodeNode(codeNode)) {
-            codeNode.setTheme(theme);
-          }
-        });
-      }
+      shiki.loadTheme(themeInfo.import()).then(() => {
+        if (editor && codeNodeKey) {
+          editor.update(() => {
+            const codeNode = $getNodeByKey(codeNodeKey);
+            if ($isCodeNode(codeNode)) {
+              codeNode.markDirty();
+            }
+          });
+        }
+      });
     }
   }
 }

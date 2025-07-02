@@ -5,6 +5,7 @@
     "emitDeclarationOnly": true,
     "declarationDir": "./.ts-temp",
     "strict": true,
+    "strictNullChecks": false
   //   "paths": {
   //     "lexical": ["./packages/lexical/src/index.ts"],
   //     "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],

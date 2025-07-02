@@ -17,6 +17,7 @@
       "lexical": ["./packages/lexical/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
+      "@lexical/code-shiki": ["./packages/lexical-code-shiki/src/index.ts"],
       "@lexical/devtools-core": [
         "./packages/lexical-devtools-core/src/index.ts"
       ],
@@ -201,6 +202,7 @@
       ],
       "@lexical/clipboard/src": ["./packages/lexical-clipboard/src"],
       "@lexical/code/src": ["./packages/lexical-code/src"],
+      "@lexical/code-shiki/src": ["./packages/lexical-code-shiki/src"],
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
       "@lexical/dragon/src": ["./packages/lexical-dragon/src"],
       "@lexical/eslint-plugin/src": ["./packages/lexical-eslint-plugin/src"],

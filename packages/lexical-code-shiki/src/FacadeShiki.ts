@@ -6,10 +6,11 @@
  *
  */
 
-import type {CodeNode} from './CodeNode';
+import type {CodeNode} from '@lexical/code';
 import type {ThemedToken, TokensResult} from '@shikijs/types';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
+import {$createCodeHighlightNode, $isCodeNode} from '@lexical/code';
 import {
   createHighlighterCoreSync,
   getTokenStyleObject,
@@ -24,9 +25,6 @@ import lang_markdown from '@shikijs/langs/markdown';
 import {$createLineBreakNode, $createTabNode, $getNodeByKey} from 'lexical';
 import {bundledLanguagesInfo} from 'shiki/langs';
 import {bundledThemesInfo} from 'shiki/themes';
-
-import {$createCodeHighlightNode} from './CodeHighlightNode';
-import {$isCodeNode} from './CodeNode';
 
 const shiki = createHighlighterCoreSync({
   engine: createJavaScriptRegexEngine(),

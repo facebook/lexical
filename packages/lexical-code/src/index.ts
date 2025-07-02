@@ -6,7 +6,6 @@
  *
  */
 
-import {registerCodeHighlighting as registerCodePrismHighlighting} from './CodeHighlighterPrism';
 import {
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
@@ -14,16 +13,7 @@ import {
   $getStartOfCodeInLine,
 } from './FlatStructureUtils';
 
-export {
-  PrismTokenizer,
-  registerCodeHighlighting as registerCodePrismHighlighting,
-} from './CodeHighlighterPrism';
-export {registerCodeHighlighting as registerCodeShikiHighlighting} from './CodeHighlighterShiki';
-export {
-  //getCodeLanguageOptions,
-  //getCodeThemeOptions,
-  registerCodeHighlighting as registerCodeHighlightingShiki,
-} from './CodeHighlighterShiki';
+export {PrismTokenizer, registerCodeHighlighting} from './CodeHighlighterPrism';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -35,26 +25,19 @@ export {
   $isCodeNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
+  DEFAULT_CODE_THEME,
   getDefaultCodeLanguage,
 } from './CodeNode';
 export {
   CODE_LANGUAGE_FRIENDLY_NAME_MAP,
   CODE_LANGUAGE_MAP,
+  getCodeLanguageOptions,
   getCodeLanguages,
-  getCodeLanguageOptions as getCodePrismLanguageOptions,
-  getCodeThemeOptions as getCodePrismThemeOptions,
+  getCodeThemeOptions,
   getLanguageFriendlyName,
   normalizeCodeLang,
-  normalizeCodeLang as normalizeCodePrismLanguage,
+  normalizeCodeLang as normalizeCodeLanguage,
 } from './FacadePrism';
-export {
-  getCodeLanguageOptions as getCodeShikiLanguageOptions,
-  getCodeThemeOptions as getCodeShikiThemeOptions,
-  isCodeLanguageLoaded,
-  loadCodeLanguage,
-  loadCodeTheme,
-  normalizeCodeLanguage as normalizeCodeShikiLanguage,
-} from './FacadeShiki';
 export {
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
@@ -70,5 +53,3 @@ export const getLastCodeNodeOfLine = $getLastCodeNodeOfLine;
 export const getEndOfCodeInLine = $getEndOfCodeInLine;
 /** @deprecated renamed to {@link $getStartOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
 export const getStartOfCodeInLine = $getStartOfCodeInLine;
-/** @deprecated renamed to {@link registerCodePrismHighlighting} by @lexical/eslint-plugin rules-of-lexical */
-export const registerCodeHighlighting = registerCodePrismHighlighting;

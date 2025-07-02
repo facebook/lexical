@@ -88,7 +88,7 @@ Node will be marked as dirty on any (or most) modifications done to it, it's chi
 
 Preconditions are fundamental for transforms to prevent them from running multiple times and ultimately causing an infinite loop.
 
-Transforms are designed to run when nodes have been modified (aka Interntionally Dirty). For the most part, transforms only need to run once after the update but the sequential nature of transforms makes it possible to have order bias. Hence, transforms are run over and over until this particular type of Node is no longer marked as intentionally dirty by any of the transforms.
+Transforms are designed to run when nodes have been modified (aka Intentionally Dirty). For the most part, transforms only need to run once after the update but the sequential nature of transforms makes it possible to have order bias. Hence, transforms are run over and over until this particular type of Node is no longer marked as intentionally dirty by any of the transforms.
 
 Hence, we have to make sure that the transforms do not mark the node dirty unnecessarily.
 

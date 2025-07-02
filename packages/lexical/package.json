@@ -58,5 +58,8 @@
   },
   "devDependencies": {
     "vite": "^7.0.0"
+  },
+  "peerDependencies": {
+    "shared":"workspace:../shared/src"
   }
 }

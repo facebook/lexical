@@ -25,7 +25,7 @@ import type {
 
 import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
-  $applyNodeReplacement,
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
@@ -43,7 +43,7 @@ import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
 export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
-    theme: string | null | undefined;
+    theme?: string | null | undefined;
   },
   SerializedElementNode
 >;
@@ -413,10 +413,7 @@ export function $createCodeNode(
   language?: string | null | undefined,
   theme?: string | null | undefined,
 ): CodeNode {
-  const node = new CodeNode();
-  node.setLanguage(language);
-  node.setTheme(theme);
-  return $applyNodeReplacement(node);
+  return $create(CodeNode).setLanguage(language).setTheme(theme);
 }
 
 export function $isCodeNode(

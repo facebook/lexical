@@ -1,0 +1,1 @@
+{"version":3,"file":"LexicalMarkdownShortcutPlugin.d.ts","sourceRoot":"","sources":["LexicalMarkdownShortcutPlugin.tsx"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,OAAO,KAAK,EAAqB,WAAW,EAAC,MAAM,mBAAmB,CAAC;AAgCvE,eAAO,MAAM,oBAAoB,eAAwB,CAAC;AAE1D,wBAAgB,sBAAsB,CAAC,EACrC,YAAmC,GACpC,EAAE,QAAQ,CAAC;IACV,YAAY,CAAC,EAAE,KAAK,CAAC,WAAW,CAAC,CAAC;CACnC,CAAC,GAAG,IAAI,CAQR"}

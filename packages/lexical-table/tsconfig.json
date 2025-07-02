@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.build.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "declarationDir": "dist/types"
+  },
+  "include": [
+    "src"
+  ]
+}

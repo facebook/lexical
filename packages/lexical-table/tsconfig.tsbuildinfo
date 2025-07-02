@@ -1,0 +1,1 @@
+{"root":["./src/lexicaltablecellnode.ts","./src/lexicaltablecommands.ts","./src/lexicaltablenode.ts","./src/lexicaltableobserver.ts","./src/lexicaltablepluginhelpers.ts","./src/lexicaltablerownode.ts","./src/lexicaltableselection.ts","./src/lexicaltableselectionhelpers.ts","./src/lexicaltableutils.ts","./src/constants.ts","./src/global.d.ts","./src/index.ts"],"version":"5.8.3"}

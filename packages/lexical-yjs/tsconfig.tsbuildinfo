@@ -1,0 +1,1 @@
+{"root":["./src/bindings.ts","./src/collabdecoratornode.ts","./src/collabelementnode.ts","./src/collablinebreaknode.ts","./src/collabtextnode.ts","./src/synccursors.ts","./src/synceditorstates.ts","./src/utils.ts","./src/global.d.ts","./src/index.ts"],"version":"5.8.3"}

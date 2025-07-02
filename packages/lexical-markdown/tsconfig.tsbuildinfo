@@ -1,0 +1,1 @@
+{"root":["./src/markdownexport.ts","./src/markdownimport.ts","./src/markdownshortcuts.ts","./src/markdowntransformers.ts","./src/global.d.ts","./src/importtextformattransformer.ts","./src/importtextmatchtransformer.ts","./src/importtexttransformers.ts","./src/index.ts","./src/utils.ts"],"version":"5.8.3"}

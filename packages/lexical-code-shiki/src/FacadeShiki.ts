@@ -22,6 +22,7 @@ import {createJavaScriptRegexEngine} from '@shikijs/engine-javascript';
 // pre-load necessary language modules: default language, markdown for markdown import/export
 import lang_javascript from '@shikijs/langs/javascript';
 import lang_markdown from '@shikijs/langs/markdown';
+import theme_one_light from '@shikijs/themes/one-light';
 import {$createLineBreakNode, $createTabNode, $getNodeByKey} from 'lexical';
 import {bundledLanguagesInfo} from 'shiki/langs';
 import {bundledThemesInfo} from 'shiki/themes';
@@ -29,7 +30,7 @@ import {bundledThemesInfo} from 'shiki/themes';
 const shiki = createHighlighterCoreSync({
   engine: createJavaScriptRegexEngine(),
   langs: [lang_javascript, lang_markdown],
-  themes: [],
+  themes: [theme_one_light],
 });
 
 function getDiffedLanguage(language: string) {

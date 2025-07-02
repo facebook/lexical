@@ -26,8 +26,8 @@
     "declaration:watch": "tsc --build --force --declaration --emitDeclarationOnly --declarationMap  --verbose --watch",
     "web": "cross-env NODE_OPTIONS=\"--max-old-space-size=20480\" vite --force --mode dev --host",
     "watch": "run-p build:watch",
-    "build:app": "pnpm build",
-    "build": "pnpm git && pnpm bump && pnpm ver &&  pnpm build:menu &&  pnpm build:vite",
+    "build": "pnpm git &&  pnpm build:vite",
+    "build:vite": "vite build",
     "dev": "run-p dev:only",
     "clean:nm:ps": "Get-ChildItem -Path . -Include node_modules -Recurse -Directory | Remove-Item -Force -Recurse -Confirm:$false",
     "clean:nm": "for /d /r . %d in (node_modules) do @if exist \"%d\" (echo Removing \"%d\" & rd /s /q \"%d\")"

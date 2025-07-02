@@ -10,14 +10,18 @@ import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
+  $caretFromPoint,
   $cloneWithProperties,
   $createTabNode,
+  $getCaretRange,
+  $getChildCaret,
   $getEditor,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $isTextPointCaret,
   $parseSerializedNode,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -238,32 +242,21 @@ function $updateSelectionOnInsert(selection: BaseSelection): void {
     const anchor = selection.anchor;
     let nodeToInspect: LexicalNode | null = null;
 
-    if (anchor.type === 'text') {
-      const potentialNode = anchor.getNode();
-      if ($isTextNode(potentialNode)) {
-        nodeToInspect = potentialNode;
-      }
-    } else if (anchor.type === 'element') {
-      const elementNode = anchor.getNode();
-      if (anchor.offset > 0 && $isElementNode(elementNode)) {
-        const nodeBefore = elementNode.getChildAtIndex(anchor.offset - 1);
-        if (nodeBefore && $isTextNode(nodeBefore)) {
-          nodeToInspect = nodeBefore;
-        } else if (
-          nodeBefore &&
-          $isElementNode(nodeBefore) &&
-          nodeBefore.isInline()
-        ) {
-          let potentialTextChild = nodeBefore.getLastDescendant();
-          while (
-            potentialTextChild &&
-            !$isTextNode(potentialTextChild) &&
-            potentialTextChild.getPreviousSibling()
-          ) {
-            potentialTextChild = potentialTextChild.getPreviousSibling();
-          }
-          if (potentialTextChild && $isTextNode(potentialTextChild)) {
-            nodeToInspect = potentialTextChild;
+    const anchorCaret = $caretFromPoint(anchor, 'previous');
+    if (anchorCaret) {
+      if ($isTextPointCaret(anchorCaret)) {
+        nodeToInspect = anchorCaret.origin;
+      } else {
+        const range = $getCaretRange(
+          anchorCaret,
+          $getChildCaret($getRoot(), 'next').getFlipped(),
+        );
+        for (const caret of range) {
+          if ($isTextNode(caret.origin)) {
+            nodeToInspect = caret.origin;
+            break;
+          } else if ($isElementNode(caret.origin) && !caret.origin.isInline()) {
+            break;
           }
         }
       }

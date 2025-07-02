@@ -26,7 +26,7 @@
     "declaration:watch": "tsc --build --force --declaration --emitDeclarationOnly --declarationMap  --verbose --watch",
     "web": "cross-env NODE_OPTIONS=\"--max-old-space-size=20480\" vite --force --mode dev --host",
     "watch": "run-p build:watch",
-    "build": "pnpm git &&  pnpm build:vite",
+    "build": "run-s git build:vite declaration",
     "build:vite": "vite build",
     "dev": "run-p dev:only",
     "clean:nm:ps": "Get-ChildItem -Path . -Include node_modules -Recurse -Directory | Remove-Item -Force -Recurse -Confirm:$false",

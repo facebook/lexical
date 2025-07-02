@@ -12,6 +12,26 @@
   "version": "0.32.1",
   "main": "Lexical.js",
   "types": "index.d.ts",
+  "scripts": {
+    "git": "cd ../.. && git add . && git commit -m \"Bump version\" && git push",
+    "bump": "run-p bump:debug bump:nu bump:extension bump:core bump:calendar20000 bump:styles bump:core bump:phone bump:fbase bump:admin bump:bazi bump:setting bump:qmdj bump:clothing bump:zeri bump:iching bump:compass bump:menu bump:calendar bump:bazip bump:app",
+    "ver": "powershell -Command \"(Get-Content -Raw -Path package.json | ConvertFrom-Json).version | Out-File -Encoding utf8 ../../public/version.txt; (Get-Content -Raw -Path package.json | ConvertFrom-Json).version | Out-File -Encoding utf8 ./build/version.txt\"",
+    "npmjs": "pnpm publish",
+    "release": "run-s -c git bump",
+    "preinstall": "npx only-allow pnpm",
+    "deps": "dpdm -T ./src/index.ts ",
+    "bump:debug": "cd ../debug && pnpm version patch",
+    "bump:app": "pnpm version patch",
+    "declaration": "tsc --build --force --declaration --emitDeclarationOnly --declarationMap  --verbose",
+    "declaration:watch": "tsc --build --force --declaration --emitDeclarationOnly --declarationMap  --verbose --watch",
+    "web": "cross-env NODE_OPTIONS=\"--max-old-space-size=20480\" vite --force --mode dev --host",
+    "watch": "run-p build:watch",
+    "build:app": "pnpm build",
+    "build": "pnpm git && pnpm bump && pnpm ver &&  pnpm build:menu &&  pnpm build:vite",
+    "dev": "run-p dev:only",
+    "clean:nm:ps": "Get-ChildItem -Path . -Include node_modules -Recurse -Directory | Remove-Item -Force -Recurse -Confirm:$false",
+    "clean:nm": "for /d /r . %d in (node_modules) do @if exist \"%d\" (echo Removing \"%d\" & rd /s /q \"%d\")"
+},
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
@@ -35,5 +55,8 @@
         "default": "./Lexical.js"
       }
     }
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
   }
 }

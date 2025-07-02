@@ -188,7 +188,7 @@
   //     "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
   //     "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"]
   //   }
-  // },
+  },
   "exclude": [
     "./libdefs/*.js",
     "**/__tests__/**",

@@ -49,10 +49,10 @@
         "default": "./Lexical.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./Lexical.dev.js",
-        "production": "./Lexical.prod.js",
-        "default": "./Lexical.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/Lexical.dev.js",
+        "production": "./dist/Lexical.prod.js",
+        "default": "./dist/Lexical.js"
       }
     }
   },

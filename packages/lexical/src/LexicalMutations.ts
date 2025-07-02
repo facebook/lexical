@@ -6,25 +6,18 @@
  *
  */
 
-import type {LexicalNode, TextNode} from '.';
-import type {LexicalEditor} from './LexicalEditor';
-import type {EditorState} from './LexicalEditorState';
-import type {LexicalPrivateDOM} from './LexicalNode';
-import type {BaseSelection} from './LexicalSelection';
+import type { LexicalEditor } from './LexicalEditor'
+import type { EditorState } from './LexicalEditorState'
+import type { LexicalNode, LexicalPrivateDOM } from './LexicalNode'
+import { $getSelection, $isRangeSelection, type BaseSelection } from './LexicalSelection'
 
-import {IS_FIREFOX} from 'shared/environment';
+import { IS_FIREFOX } from 'shared/environment'
 
-import {
-  $getSelection,
-  $isDecoratorNode,
-  $isRangeSelection,
-  $isTextNode,
-  $setSelection,
-} from '.';
-import {updateEditorSync} from './LexicalUpdates';
+import { updateEditorSync } from './LexicalUpdates'
 import {
   $getNodeByKey,
   $getNodeFromDOMNode,
+  $setSelection,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
   getNodeKeyFromDOMNode,
@@ -35,24 +28,26 @@ import {
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
   isHTMLElement,
-} from './LexicalUtils';
+} from './LexicalUtils'
+import { $isTextNode, TextNode } from './nodes/LexicalTextNode'
+import { $isDecoratorNode } from './nodes/LexicalDecoratorNode'
 // The time between a text entry event and the mutation observer firing.
-const TEXT_MUTATION_VARIANCE = 100;
+const TEXT_MUTATION_VARIANCE = 100
 
-let isProcessingMutations = false;
-let lastTextEntryTimeStamp = 0;
+let isProcessingMutations = false
+let lastTextEntryTimeStamp = 0
 
 export function getIsProcessingMutations(): boolean {
-  return isProcessingMutations;
+  return isProcessingMutations
 }
 
 function updateTimeStamp(event: Event) {
-  lastTextEntryTimeStamp = event.timeStamp;
+  lastTextEntryTimeStamp = event.timeStamp
 }
 
 function initTextEntryListener(editor: LexicalEditor): void {
   if (lastTextEntryTimeStamp === 0) {
-    getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
+    getWindow(editor).addEventListener('textInput', updateTimeStamp, true)
   }
 }
 
@@ -61,21 +56,21 @@ function isManagedLineBreak(
   target: Node & LexicalPrivateDOM,
   editor: LexicalEditor,
 ): boolean {
-  const isBR = dom.nodeName === 'BR';
-  const lexicalLineBreak = target.__lexicalLineBreak;
+  const isBR = dom.nodeName === 'BR'
+  const lexicalLineBreak = target.__lexicalLineBreak
   return (
     (lexicalLineBreak &&
       (dom === lexicalLineBreak ||
         (isBR && dom.previousSibling === lexicalLineBreak))) ||
     (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
-  );
+  )
 }
 
 function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   return editor.getEditorState().read(() => {
-    const selection = $getSelection();
-    return selection !== null ? selection.clone() : null;
-  });
+    const selection = $getSelection()
+    return selection !== null ? selection.clone() : null
+  })
 }
 
 function $handleTextMutation(
@@ -83,18 +78,18 @@ function $handleTextMutation(
   node: TextNode,
   editor: LexicalEditor,
 ): void {
-  const domSelection = getDOMSelection(getWindow(editor));
-  let anchorOffset = null;
-  let focusOffset = null;
+  const domSelection = getDOMSelection(getWindow(editor))
+  let anchorOffset = null
+  let focusOffset = null
 
   if (domSelection !== null && domSelection.anchorNode === target) {
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+    anchorOffset = domSelection.anchorOffset
+    focusOffset = domSelection.focusOffset
   }
 
-  const text = target.nodeValue;
+  const text = target.nodeValue
   if (text !== null) {
-    $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
+    $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false)
   }
 }
 
@@ -104,15 +99,15 @@ function shouldUpdateTextNodeFromMutation(
   targetNode: TextNode,
 ): boolean {
   if ($isRangeSelection(selection)) {
-    const anchorNode = selection.anchor.getNode();
+    const anchorNode = selection.anchor.getNode()
     if (
       anchorNode.is(targetNode) &&
       selection.format !== anchorNode.getFormat()
     ) {
-      return false;
+      return false
     }
   }
-  return isDOMTextNode(targetDOM) && targetNode.isAttached();
+  return isDOMTextNode(targetDOM) && targetNode.isAttached()
 }
 
 function $getNearestManagedNodePairFromDOMNode(
@@ -126,17 +121,17 @@ function $getNearestManagedNodePairFromDOMNode(
     dom && !isDOMUnmanaged(dom);
     dom = getParentElement(dom)
   ) {
-    const key = getNodeKeyFromDOMNode(dom, editor);
+    const key = getNodeKeyFromDOMNode(dom, editor)
     if (key !== undefined) {
-      const node = $getNodeByKey(key, editorState);
+      const node = $getNodeByKey(key, editorState)
       if (node) {
         // All decorator nodes are unmanaged
         return $isDecoratorNode(node) || !isHTMLElement(dom)
           ? undefined
-          : [dom, node];
+          : [dom, node]
       }
     } else if (dom === rootElement) {
-      return [rootElement, internalGetRoot(editorState)];
+      return [rootElement, internalGetRoot(editorState)]
     }
   }
 }
@@ -146,35 +141,35 @@ function flushMutations(
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
 ): void {
-  isProcessingMutations = true;
+  isProcessingMutations = true
   const shouldFlushTextMutations =
-    performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
+    performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE
   try {
     updateEditorSync(editor, () => {
-      const selection = $getSelection() || getLastSelection(editor);
-      const badDOMTargets = new Map<HTMLElement, LexicalNode>();
-      const rootElement = editor.getRootElement();
+      const selection = $getSelection() || getLastSelection(editor)
+      const badDOMTargets = new Map<HTMLElement, LexicalNode>()
+      const rootElement = editor.getRootElement()
       // We use the current editor state, as that reflects what is
       // actually "on screen".
-      const currentEditorState = editor._editorState;
-      const blockCursorElement = editor._blockCursorElement;
-      let shouldRevertSelection = false;
-      let possibleTextForFirefoxPaste = '';
+      const currentEditorState = editor._editorState
+      const blockCursorElement = editor._blockCursorElement
+      let shouldRevertSelection = false
+      let possibleTextForFirefoxPaste = ''
 
       for (let i = 0; i < mutations.length; i++) {
-        const mutation = mutations[i];
-        const type = mutation.type;
-        const targetDOM = mutation.target;
+        const mutation = mutations[i]
+        const type = mutation.type
+        const targetDOM = mutation.target
         const pair = $getNearestManagedNodePairFromDOMNode(
           targetDOM,
           editor,
           currentEditorState,
           rootElement,
-        );
+        )
         if (!pair) {
-          continue;
+          continue
         }
-        const [nodeDOM, targetNode] = pair;
+        const [nodeDOM, targetNode] = pair
 
         if (type === 'characterData') {
           // Text mutations are deferred and passed to mutation listeners to be
@@ -185,19 +180,19 @@ function flushMutations(
             isDOMTextNode(targetDOM) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            $handleTextMutation(targetDOM, targetNode, editor);
+            $handleTextMutation(targetDOM, targetNode, editor)
           }
         } else if (type === 'childList') {
-          shouldRevertSelection = true;
+          shouldRevertSelection = true
           // We attempt to "undo" any changes that have occurred outside
           // of Lexical. We want Lexical's editor state to be source of truth.
           // To the user, these will look like no-ops.
-          const addedDOMs = mutation.addedNodes;
+          const addedDOMs = mutation.addedNodes
 
           for (let s = 0; s < addedDOMs.length; s++) {
-            const addedDOM = addedDOMs[s];
-            const node = $getNodeFromDOMNode(addedDOM);
-            const parentDOM = addedDOM.parentNode;
+            const addedDOM = addedDOMs[s]
+            const node = $getNodeFromDOMNode(addedDOM)
+            const parentDOM = addedDOM.parentNode
 
             if (
               parentDOM != null &&
@@ -208,37 +203,37 @@ function flushMutations(
               if (IS_FIREFOX) {
                 const possibleText =
                   (isHTMLElement(addedDOM) ? addedDOM.innerText : null) ||
-                  addedDOM.nodeValue;
+                  addedDOM.nodeValue
 
                 if (possibleText) {
-                  possibleTextForFirefoxPaste += possibleText;
+                  possibleTextForFirefoxPaste += possibleText
                 }
               }
 
-              parentDOM.removeChild(addedDOM);
+              parentDOM.removeChild(addedDOM)
             }
           }
 
-          const removedDOMs = mutation.removedNodes;
-          const removedDOMsLength = removedDOMs.length;
+          const removedDOMs = mutation.removedNodes
+          const removedDOMsLength = removedDOMs.length
 
           if (removedDOMsLength > 0) {
-            let unremovedBRs = 0;
+            let unremovedBRs = 0
 
             for (let s = 0; s < removedDOMsLength; s++) {
-              const removedDOM = removedDOMs[s];
+              const removedDOM = removedDOMs[s]
 
               if (
                 isManagedLineBreak(removedDOM, targetDOM, editor) ||
                 blockCursorElement === removedDOM
               ) {
-                targetDOM.appendChild(removedDOM);
-                unremovedBRs++;
+                targetDOM.appendChild(removedDOM)
+                unremovedBRs++
               }
             }
 
             if (removedDOMsLength !== unremovedBRs) {
-              badDOMTargets.set(nodeDOM, targetNode);
+              badDOMTargets.set(nodeDOM, targetNode)
             }
           }
         }
@@ -250,71 +245,71 @@ function flushMutations(
       // an internal revert on the DOM.
       if (badDOMTargets.size > 0) {
         for (const [nodeDOM, targetNode] of badDOMTargets) {
-          targetNode.reconcileObservedMutation(nodeDOM, editor);
+          targetNode.reconcileObservedMutation(nodeDOM, editor)
         }
       }
 
       // Capture all the mutations made during this function. This
       // also prevents us having to process them on the next cycle
       // of onMutation, as these mutations were made by us.
-      const records = observer.takeRecords();
+      const records = observer.takeRecords()
 
       // Check for any random auto-added <br> elements, and remove them.
       // These get added by the browser when we undo the above mutations
       // and this can lead to a broken UI.
       if (records.length > 0) {
         for (let i = 0; i < records.length; i++) {
-          const record = records[i];
-          const addedNodes = record.addedNodes;
-          const target = record.target;
+          const record = records[i]
+          const addedNodes = record.addedNodes
+          const target = record.target
 
           for (let s = 0; s < addedNodes.length; s++) {
-            const addedDOM = addedNodes[s];
-            const parentDOM = addedDOM.parentNode;
+            const addedDOM = addedNodes[s]
+            const parentDOM = addedDOM.parentNode
 
             if (
               parentDOM != null &&
               addedDOM.nodeName === 'BR' &&
               !isManagedLineBreak(addedDOM, target, editor)
             ) {
-              parentDOM.removeChild(addedDOM);
+              parentDOM.removeChild(addedDOM)
             }
           }
         }
 
         // Clear any of those removal mutations
-        observer.takeRecords();
+        observer.takeRecords()
       }
 
       if (selection !== null) {
         if (shouldRevertSelection) {
-          $setSelection(selection);
+          $setSelection(selection)
         }
 
         if (IS_FIREFOX && isFirefoxClipboardEvents(editor)) {
-          selection.insertRawText(possibleTextForFirefoxPaste);
+          selection.insertRawText(possibleTextForFirefoxPaste)
         }
       }
-    });
+    })
   } finally {
-    isProcessingMutations = false;
+    isProcessingMutations = false
   }
 }
 
 export function flushRootMutations(editor: LexicalEditor): void {
-  const observer = editor._observer;
+  const observer = editor._observer
 
   if (observer !== null) {
-    const mutations = observer.takeRecords();
-    flushMutations(editor, mutations, observer);
+    const mutations = observer.takeRecords()
+    flushMutations(editor, mutations, observer)
   }
 }
 
 export function initMutationObserver(editor: LexicalEditor): void {
-  initTextEntryListener(editor);
+  initTextEntryListener(editor)
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      flushMutations(editor, mutations, observer);
+      flushMutations(editor, mutations, observer)
     },
-  );
+  )
 }

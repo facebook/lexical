@@ -6,51 +6,51 @@
  *
  */
 
-import {CAN_USE_DOM} from 'shared/canUseDOM';
+import { CAN_USE_DOM } from './canUseDOM'
 
 declare global {
   interface Document {
-    documentMode?: unknown;
+    documentMode?: unknown
   }
 
   interface Window {
-    MSStream?: unknown;
+    MSStream?: unknown
   }
 }
 
 const documentMode =
-  CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null;
+  CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null
 
 export const IS_APPLE: boolean =
-  CAN_USE_DOM && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  CAN_USE_DOM && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 
 export const IS_FIREFOX: boolean =
-  CAN_USE_DOM && /^(?!.*Seamonkey)(?=.*Firefox).*/i.test(navigator.userAgent);
+  CAN_USE_DOM && /^(?!.*Seamonkey)(?=.*Firefox).*/i.test(navigator.userAgent)
 
 export const CAN_USE_BEFORE_INPUT: boolean =
   CAN_USE_DOM && 'InputEvent' in window && !documentMode
     ? 'getTargetRanges' in new window.InputEvent('input')
-    : false;
+    : false
 
 export const IS_SAFARI: boolean =
-  CAN_USE_DOM && /Version\/[\d.]+.*Safari/.test(navigator.userAgent);
+  CAN_USE_DOM && /Version\/[\d.]+.*Safari/.test(navigator.userAgent)
 
 export const IS_IOS: boolean =
   CAN_USE_DOM &&
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-  !window.MSStream;
+  !window.MSStream
 
 export const IS_ANDROID: boolean =
-  CAN_USE_DOM && /Android/.test(navigator.userAgent);
+  CAN_USE_DOM && /Android/.test(navigator.userAgent)
 
 // Keep these in case we need to use them in the future.
 // export const IS_WINDOWS: boolean = CAN_USE_DOM && /Win/.test(navigator.platform);
 export const IS_CHROME: boolean =
-  CAN_USE_DOM && /^(?=.*Chrome).*/i.test(navigator.userAgent);
+  CAN_USE_DOM && /^(?=.*Chrome).*/i.test(navigator.userAgent)
 // export const canUseTextInputEvent: boolean = CAN_USE_DOM && 'TextEvent' in window && !documentMode;
 
 export const IS_ANDROID_CHROME: boolean =
-  CAN_USE_DOM && IS_ANDROID && IS_CHROME;
+  CAN_USE_DOM && IS_ANDROID && IS_CHROME
 
 export const IS_APPLE_WEBKIT =
-  CAN_USE_DOM && /AppleWebKit\/[\d.]+/.test(navigator.userAgent) && !IS_CHROME;
+  CAN_USE_DOM && /AppleWebKit\/[\d.]+/.test(navigator.userAgent) && !IS_CHROME

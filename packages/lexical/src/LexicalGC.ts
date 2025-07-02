@@ -6,36 +6,35 @@
  *
  */
 
-import type {ElementNode} from '.';
-import type {LexicalEditor} from './LexicalEditor';
-import type {EditorState} from './LexicalEditorState';
-import type {NodeKey, NodeMap} from './LexicalNode';
+import type { LexicalEditor } from './LexicalEditor'
+import type { EditorState } from './LexicalEditorState'
+import type { NodeKey, NodeMap } from './LexicalNode'
 
-import {$isElementNode} from '.';
-import {cloneDecorators} from './LexicalUtils';
+import { cloneDecorators } from './LexicalUtils'
+import { $isElementNode, ElementNode } from './nodes/LexicalElementNode'
 
 export function $garbageCollectDetachedDecorators(
   editor: LexicalEditor,
   pendingEditorState: EditorState,
 ): void {
-  const currentDecorators = editor._decorators;
-  const pendingDecorators = editor._pendingDecorators;
-  let decorators = pendingDecorators || currentDecorators;
-  const nodeMap = pendingEditorState._nodeMap;
-  let key;
+  const currentDecorators = editor._decorators
+  const pendingDecorators = editor._pendingDecorators
+  let decorators = pendingDecorators || currentDecorators
+  const nodeMap = pendingEditorState._nodeMap
+  let key
 
   for (key in decorators) {
     if (!nodeMap.has(key)) {
       if (decorators === currentDecorators) {
-        decorators = cloneDecorators(editor);
+        decorators = cloneDecorators(editor)
       }
 
-      delete decorators[key];
+      delete decorators[key]
     }
   }
 }
 
-type IntentionallyMarkedAsDirtyElement = boolean;
+type IntentionallyMarkedAsDirtyElement = boolean
 
 function $garbageCollectDetachedDeepChildNodes(
   node: ElementNode,
@@ -45,10 +44,10 @@ function $garbageCollectDetachedDeepChildNodes(
   nodeMapDelete: Array<NodeKey>,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  let child = node.getFirstChild();
+  let child = node.getFirstChild()
 
   while (child !== null) {
-    const childKey = child.__key;
+    const childKey = child.__key
     // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
     if (child.__parent === parentKey) {
       if ($isElementNode(child)) {
@@ -59,17 +58,17 @@ function $garbageCollectDetachedDeepChildNodes(
           nodeMap,
           nodeMapDelete,
           dirtyNodes,
-        );
+        )
       }
 
       // If we have created a node and it was dereferenced, then also
       // remove it from out dirty nodes Set.
       if (!prevNodeMap.has(childKey)) {
-        dirtyNodes.delete(childKey);
+        dirtyNodes.delete(childKey)
       }
-      nodeMapDelete.push(childKey);
+      nodeMapDelete.push(childKey)
     }
-    child = child.getNextSibling();
+    child = child.getNextSibling()
   }
 }
 
@@ -79,14 +78,14 @@ export function $garbageCollectDetachedNodes(
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  const prevNodeMap = prevEditorState._nodeMap;
-  const nodeMap = editorState._nodeMap;
+  const prevNodeMap = prevEditorState._nodeMap
+  const nodeMap = editorState._nodeMap
   // Store dirtyElements in a queue for later deletion; deleting dirty subtrees too early will
   // hinder accessing .__next on child nodes
-  const nodeMapDelete: Array<NodeKey> = [];
+  const nodeMapDelete: Array<NodeKey> = []
 
   for (const [nodeKey] of dirtyElements) {
-    const node = nodeMap.get(nodeKey);
+    const node = nodeMap.get(nodeKey)
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {
@@ -98,28 +97,28 @@ export function $garbageCollectDetachedNodes(
             nodeMap,
             nodeMapDelete,
             dirtyElements,
-          );
+          )
         }
         // If we have created a node and it was dereferenced, then also
         // remove it from out dirty nodes Set.
         if (!prevNodeMap.has(nodeKey)) {
-          dirtyElements.delete(nodeKey);
+          dirtyElements.delete(nodeKey)
         }
-        nodeMapDelete.push(nodeKey);
+        nodeMapDelete.push(nodeKey)
       }
     }
   }
   for (const nodeKey of nodeMapDelete) {
-    nodeMap.delete(nodeKey);
+    nodeMap.delete(nodeKey)
   }
 
   for (const nodeKey of dirtyLeaves) {
-    const node = nodeMap.get(nodeKey);
+    const node = nodeMap.get(nodeKey)
     if (node !== undefined && !node.isAttached()) {
       if (!prevNodeMap.has(nodeKey)) {
-        dirtyLeaves.delete(nodeKey);
+        dirtyLeaves.delete(nodeKey)
       }
-      nodeMap.delete(nodeKey);
+      nodeMap.delete(nodeKey)
     }
   }
 }

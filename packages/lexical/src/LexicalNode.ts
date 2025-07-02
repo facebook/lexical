@@ -12,31 +12,19 @@ import type {
   Klass,
   KlassConstructor,
   LexicalEditor,
-} from './LexicalEditor';
-import type {BaseSelection, RangeSelection} from './LexicalSelection';
+} from './LexicalEditor'
+import type { BaseSelection, RangeSelection } from './LexicalSelection'
 
-import invariant from 'shared/invariant';
+import invariant from 'shared/invariant'
 
-import {
-  $createParagraphNode,
-  $getCommonAncestor,
-  $getCommonAncestorResultBranchOrder,
-  $isDecoratorNode,
-  $isElementNode,
-  $isRootNode,
-  $isTextNode,
-  type DecoratorNode,
-  type ElementNode,
-  NODE_STATE_KEY,
-} from '.';
-import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
+import { NODE_STATE_KEY, PROTOTYPE_CONFIG_METHOD } from './LexicalConstants'
 import {
   $updateStateFromJSON,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
   type RequiredNodeStateConfig,
-} from './LexicalNodeState';
+} from './LexicalNodeState'
 import {
   $getSelection,
   $isNodeSelection,
@@ -44,12 +32,12 @@ import {
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
   moveSelectionPointToSibling,
-} from './LexicalSelection';
+} from './LexicalSelection'
 import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
-} from './LexicalUpdates';
+} from './LexicalUpdates'
 import {
   $cloneWithProperties,
   $getCompositionKey,
@@ -63,24 +51,30 @@ import {
   getRegisteredNode,
   internalMarkNodeAsDirty,
   removeFromParent,
-} from './LexicalUtils';
+} from './LexicalUtils'
+import { $isRootNode } from './nodes/LexicalRootNode'
+import { $isTextNode } from './nodes/LexicalTextNode'
+import { $isDecoratorNode, DecoratorNode } from './nodes/LexicalDecoratorNode'
+import { $isElementNode, ElementNode } from './nodes/LexicalElementNode'
+import { $getCommonAncestor, $getCommonAncestorResultBranchOrder } from './caret/LexicalCaret'
+import { $createParagraphNode } from './nodes/LexicalParagraphNode'
 
-export type NodeMap = Map<NodeKey, LexicalNode>;
+export type NodeMap = Map<NodeKey, LexicalNode>
 
 /**
  * The base type for all serialized nodes
  */
 export type SerializedLexicalNode = {
   /** The type string used by the Node class */
-  type: string;
+  type: string
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
   /**
    * Any state persisted with the NodeState API that is not
    * configured for flat storage
    */
-  [NODE_STATE_KEY]?: Record<string, unknown>;
-};
+  [NODE_STATE_KEY]?: Record<string, unknown>
+}
 
 /**
  * EXPERIMENTAL
@@ -103,21 +97,21 @@ export interface StaticNodeConfigValue<
    * The exact type of T.getType(), e.g. 'text' - the method itself must
    * have a more generic 'string' type to be compatible wtih subclassing.
    */
-  readonly type?: Type;
+  readonly type?: Type
   /**
    * An alternative to the internal static transform() method
    * that provides better type inference.
    */
-  readonly $transform?: (node: T) => void;
+  readonly $transform?: (node: T) => void
   /**
    * An alternative to the static importJSON() method
    * that provides better type inference.
    */
-  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T
   /**
    * An alternative to the static importDOM() method
    */
-  readonly importDOM?: DOMConversionMap;
+  readonly importDOM?: DOMConversionMap
   /**
    * EXPERIMENTAL
    *
@@ -149,7 +143,7 @@ export interface StaticNodeConfigValue<
    * }
    * ```
    */
-  readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  readonly stateConfigs?: readonly RequiredNodeStateConfig[]
   /**
    * If specified, this must be the exact superclass of the node. It is not
    * checked at compile time and it is provided automatically at runtime.
@@ -159,7 +153,7 @@ export interface StaticNodeConfigValue<
    * as required state. If you do not specify this, the inferred
    * types for your node class might be missing some of that.
    */
-  readonly extends?: Klass<LexicalNode>;
+  readonly extends?: Klass<LexicalNode>
 }
 
 /**
@@ -167,8 +161,8 @@ export interface StaticNodeConfigValue<
  * overridden by subclasses.
  */
 export type BaseStaticNodeConfig = {
-  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
-};
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>
+}
 
 /**
  * Used to extract the node and type from a StaticNodeConfigRecord
@@ -177,14 +171,14 @@ export type StaticNodeConfig<
   T extends LexicalNode,
   Type extends string,
 > = BaseStaticNodeConfig & {
-  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
-};
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>
+}
 
 /**
  * Any StaticNodeConfigValue (for generics and collections)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
+export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>
 
 /**
  * @internal
@@ -196,8 +190,8 @@ export type StaticNodeConfigRecord<
   Type extends string,
   Config extends AnyStaticNodeConfigValue,
 > = BaseStaticNodeConfig & {
-  readonly [K in Type]?: Config;
-};
+  readonly [K in Type]?: Config
+}
 
 /**
  * Extract the type from a node based on its $config
@@ -212,7 +206,7 @@ export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
   T[typeof PROTOTYPE_CONFIG_METHOD]
 > extends StaticNodeConfig<T, infer Type>
   ? Type
-  : string;
+  : string
 
 /**
  * The most precise type we can infer for the JSON that will
@@ -223,9 +217,9 @@ export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
  */
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<ReturnType<T['exportJSON']>, 'type'> & {
-    type: GetStaticNodeType<T>;
+    type: GetStaticNodeType<T>
   } & NodeStateJSON<T>
->;
+>
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
@@ -233,15 +227,15 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
 export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
   T,
   'children' | 'type' | 'version'
->;
+>
 
 /** @internal */
 export interface LexicalPrivateDOM {
-  __lexicalTextContent?: string | undefined | null;
-  __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
-  __lexicalDirTextContent?: string | undefined | null;
-  __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
-  __lexicalUnmanaged?: boolean | undefined;
+  __lexicalTextContent?: string | undefined | null
+  __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null
+  __lexicalDirTextContent?: string | undefined | null
+  __lexicalDir?: 'ltr' | 'rtl' | null | undefined
+  __lexicalUnmanaged?: boolean | undefined
 }
 
 export function $removeNode(
@@ -249,17 +243,17 @@ export function $removeNode(
   restoreSelection: boolean,
   preserveEmptyParent?: boolean,
 ): void {
-  errorOnReadOnly();
-  const key = nodeToRemove.__key;
-  const parent = nodeToRemove.getParent();
+  errorOnReadOnly()
+  const key = nodeToRemove.__key
+  const parent = nodeToRemove.getParent()
   if (parent === null) {
-    return;
+    return
   }
-  const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
-  let selectionMoved = false;
+  const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove)
+  let selectionMoved = false
   if ($isRangeSelection(selection) && restoreSelection) {
-    const anchor = selection.anchor;
-    const focus = selection.focus;
+    const anchor = selection.anchor
+    const focus = selection.focus
     if (anchor.key === key) {
       moveSelectionPointToSibling(
         anchor,
@@ -267,8 +261,8 @@ export function $removeNode(
         parent,
         nodeToRemove.getPreviousSibling(),
         nodeToRemove.getNextSibling(),
-      );
-      selectionMoved = true;
+      )
+      selectionMoved = true
     }
     if (focus.key === key) {
       moveSelectionPointToSibling(
@@ -277,24 +271,24 @@ export function $removeNode(
         parent,
         nodeToRemove.getPreviousSibling(),
         nodeToRemove.getNextSibling(),
-      );
-      selectionMoved = true;
+      )
+      selectionMoved = true
     }
   } else if (
     $isNodeSelection(selection) &&
     restoreSelection &&
     nodeToRemove.isSelected()
   ) {
-    nodeToRemove.selectPrevious();
+    nodeToRemove.selectPrevious()
   }
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     // Doing this is O(n) so lets avoid it unless we need to do it
-    const index = nodeToRemove.getIndexWithinParent();
-    removeFromParent(nodeToRemove);
-    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
+    const index = nodeToRemove.getIndexWithinParent()
+    removeFromParent(nodeToRemove)
+    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1)
   } else {
-    removeFromParent(nodeToRemove);
+    removeFromParent(nodeToRemove)
   }
 
   if (
@@ -303,7 +297,7 @@ export function $removeNode(
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
-    $removeNode(parent, restoreSelection);
+    $removeNode(parent, restoreSelection)
   }
   if (
     restoreSelection &&
@@ -311,21 +305,21 @@ export function $removeNode(
     $isRootNode(parent) &&
     parent.isEmpty()
   ) {
-    parent.selectEnd();
+    parent.selectEnd()
   }
 }
 
 export type DOMConversionProp<T extends HTMLElement> = (
   node: T,
-) => DOMConversion<T> | null;
+) => DOMConversion<T> | null
 
 export type DOMConversionPropByTagName<K extends string> = DOMConversionProp<
   K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K] : HTMLElement
->;
+>
 
 export type DOMConversionTagNameMap<K extends string> = {
-  [NodeName in K]?: DOMConversionPropByTagName<NodeName>;
-};
+  [NodeName in K]?: DOMConversionPropByTagName<NodeName>
+}
 
 /**
  * An identity function that will infer the type of DOM nodes
@@ -333,67 +327,67 @@ export type DOMConversionTagNameMap<K extends string> = {
  * DOMConversionMap.
  */
 export function buildImportMap<K extends string>(importMap: {
-  [NodeName in K]: DOMConversionPropByTagName<NodeName>;
+  [NodeName in K]: DOMConversionPropByTagName<NodeName>
 }): DOMConversionMap {
-  return importMap as unknown as DOMConversionMap;
+  return importMap as unknown as DOMConversionMap
 }
 
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
-  conversion: DOMConversionFn<T>;
-  priority?: 0 | 1 | 2 | 3 | 4;
-};
+  conversion: DOMConversionFn<T>
+  priority?: 0 | 1 | 2 | 3 | 4
+}
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
-) => DOMConversionOutput | null;
+) => DOMConversionOutput | null
 
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: LexicalNode | null | undefined,
-) => LexicalNode | null | undefined;
+) => LexicalNode | null | undefined
 
 export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
   NodeName,
   DOMConversionProp<T>
->;
-type NodeName = string;
+>
+type NodeName = string
 
 export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
-  forChild?: DOMChildConversion;
-  node: null | LexicalNode | Array<LexicalNode>;
-};
+  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>
+  forChild?: DOMChildConversion
+  node: null | LexicalNode | Array<LexicalNode>
+}
 
 export type DOMExportOutputMap = Map<
   Klass<LexicalNode>,
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
->;
+>
 
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
-  ) => HTMLElement | DocumentFragment | Text | null | undefined;
-  element: HTMLElement | DocumentFragment | Text | null;
-};
+  ) => HTMLElement | DocumentFragment | Text | null | undefined
+  element: HTMLElement | DocumentFragment | Text | null
+}
 
-export type NodeKey = string;
+export type NodeKey = string
 
 export class LexicalNode {
   // Allow us to look up the type including static props
-  ['constructor']!: KlassConstructor<typeof LexicalNode>;
+  ['constructor']!: KlassConstructor<typeof LexicalNode>
   /** @internal */
-  __type: string;
+  __type: string
   /** @internal */
   //@ts-ignore We set the key in the constructor.
-  __key: string;
+  __key: string
   /** @internal */
-  __parent: null | NodeKey;
+  __parent: null | NodeKey
   /** @internal */
-  __prev: null | NodeKey;
+  __prev: null | NodeKey
   /** @internal */
-  __next: null | NodeKey;
+  __next: null | NodeKey
   /** @internal */
-  __state?: NodeState<this>;
+  __state?: NodeState<this>
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -411,7 +405,7 @@ export class LexicalNode {
       false,
       'LexicalNode: Node %s does not implement .getType().',
       this.name,
-    );
+    )
   }
 
   /**
@@ -425,7 +419,7 @@ export class LexicalNode {
       false,
       'LexicalNode: Node %s does not implement .clone().',
       this.name,
-    );
+    )
   }
 
   /**
@@ -444,7 +438,7 @@ export class LexicalNode {
    * ```
    */
   $config(): BaseStaticNodeConfig {
-    return {};
+    return {}
   }
 
   /**
@@ -457,9 +451,9 @@ export class LexicalNode {
     config: Config,
   ): StaticNodeConfigRecord<Type, Config> {
     const parentKlass =
-      config.extends || Object.getPrototypeOf(this.constructor);
-    Object.assign(config, {extends: parentKlass, type});
-    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+      config.extends || Object.getPrototypeOf(this.constructor)
+    Object.assign(config, { extends: parentKlass, type })
+    return { [type]: config } as StaticNodeConfigRecord<Type, Config>
   }
 
   /**
@@ -514,35 +508,35 @@ export class LexicalNode {
    */
   afterCloneFrom(prevNode: this): void {
     if (this.__key === prevNode.__key) {
-      this.__parent = prevNode.__parent;
-      this.__next = prevNode.__next;
-      this.__prev = prevNode.__prev;
-      this.__state = prevNode.__state;
+      this.__parent = prevNode.__parent
+      this.__next = prevNode.__next
+      this.__prev = prevNode.__prev
+      this.__state = prevNode.__state
     } else if (prevNode.__state) {
-      this.__state = prevNode.__state.getWritable(this);
+      this.__state = prevNode.__state.getWritable(this)
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static importDOM?: () => DOMConversionMap<any> | null;
+  static importDOM?: () => DOMConversionMap<any> | null
 
   constructor(key?: NodeKey) {
-    this.__type = this.constructor.getType();
-    this.__parent = null;
-    this.__prev = null;
-    this.__next = null;
+    this.__type = this.constructor.getType()
+    this.__parent = null
+    this.__prev = null
+    this.__next = null
     Object.defineProperty(this, '__state', {
       configurable: true,
       enumerable: false,
       value: undefined,
       writable: true,
-    });
-    $setNodeKey(this, key);
+    })
+    $setNodeKey(this, key)
 
     if (__DEV__) {
       if (this.__type !== 'root') {
-        errorOnReadOnly();
-        errorOnTypeKlassMismatch(this.__type, this.constructor);
+        errorOnReadOnly()
+        errorOnTypeKlassMismatch(this.__type, this.constructor)
       }
     }
   }
@@ -552,7 +546,7 @@ export class LexicalNode {
    * Returns the string type of this node.
    */
   getType(): string {
-    return this.__type;
+    return this.__type
   }
 
   isInline(): boolean {
@@ -560,7 +554,7 @@ export class LexicalNode {
       false,
       'LexicalNode: Node %s does not implement .isInline().',
       this.constructor.name,
-    );
+    )
   }
 
   /**
@@ -569,20 +563,20 @@ export class LexicalNode {
    * won't be reconciled and will ultimately be cleaned up by the Lexical GC.
    */
   isAttached(): boolean {
-    let nodeKey: string | null = this.__key;
+    let nodeKey: string | null = this.__key
     while (nodeKey !== null) {
       if (nodeKey === 'root') {
-        return true;
+        return true
       }
 
-      const node: LexicalNode | null = $getNodeByKey(nodeKey);
+      const node: LexicalNode | null = $getNodeByKey(nodeKey)
 
       if (node === null) {
-        break;
+        break
       }
-      nodeKey = node.__parent;
+      nodeKey = node.__parent
     }
-    return false;
+    return false
   }
 
   /**
@@ -593,45 +587,45 @@ export class LexicalNode {
    * @param selection - The selection that we want to determine if the node is in.
    */
   isSelected(selection?: null | BaseSelection): boolean {
-    const targetSelection = selection || $getSelection();
+    const targetSelection = selection || $getSelection()
     if (targetSelection == null) {
-      return false;
+      return false
     }
 
     const isSelected = targetSelection
       .getNodes()
-      .some((n) => n.__key === this.__key);
+      .some((n) => n.__key === this.__key)
 
     if ($isTextNode(this)) {
-      return isSelected;
+      return isSelected
     }
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
     const isElementRangeSelection =
       $isRangeSelection(targetSelection) &&
       targetSelection.anchor.type === 'element' &&
-      targetSelection.focus.type === 'element';
+      targetSelection.focus.type === 'element'
 
     if (isElementRangeSelection) {
       if (targetSelection.isCollapsed()) {
-        return false;
+        return false
       }
 
-      const parentNode = this.getParent();
+      const parentNode = this.getParent()
       if ($isDecoratorNode(this) && this.isInline() && parentNode) {
         const firstPoint = targetSelection.isBackward()
           ? targetSelection.focus
-          : targetSelection.anchor;
+          : targetSelection.anchor
         if (
           parentNode.is(firstPoint.getNode()) &&
           firstPoint.offset === parentNode.getChildrenSize() &&
           this.is(parentNode.getLastChild())
         ) {
-          return false;
+          return false
         }
       }
     }
-    return isSelected;
+    return isSelected
   }
 
   /**
@@ -639,49 +633,49 @@ export class LexicalNode {
    */
   getKey(): NodeKey {
     // Key is stable between copies
-    return this.__key;
+    return this.__key
   }
 
   /**
    * Returns the zero-based index of this node within the parent.
    */
   getIndexWithinParent(): number {
-    const parent = this.getParent();
+    const parent = this.getParent()
     if (parent === null) {
-      return -1;
+      return -1
     }
-    let node = parent.getFirstChild();
-    let index = 0;
+    let node = parent.getFirstChild()
+    let index = 0
     while (node !== null) {
       if (this.is(node)) {
-        return index;
+        return index
       }
-      index++;
-      node = node.getNextSibling();
+      index++
+      node = node.getNextSibling()
     }
-    return -1;
+    return -1
   }
 
   /**
    * Returns the parent of this node, or null if none is found.
    */
   getParent<T extends ElementNode>(): T | null {
-    const parent = this.getLatest().__parent;
+    const parent = this.getLatest().__parent
     if (parent === null) {
-      return null;
+      return null
     }
-    return $getNodeByKey<T>(parent);
+    return $getNodeByKey<T>(parent)
   }
 
   /**
    * Returns the parent of this node, or throws if none is found.
    */
   getParentOrThrow<T extends ElementNode>(): T {
-    const parent = this.getParent<T>();
+    const parent = this.getParent<T>()
     if (parent === null) {
-      invariant(false, 'Expected node %s to have a parent.', this.__key);
+      invariant(false, 'Expected node %s to have a parent.', this.__key)
     }
-    return parent;
+    return parent
   }
 
   /**
@@ -690,19 +684,19 @@ export class LexicalNode {
    * for more information on which Elements comprise "roots".
    */
   getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
-    let node: ElementNode | this | null = this;
+    let node: ElementNode | this | null = this
     while (node !== null) {
-      const parent: ElementNode | null = node.getParent();
+      const parent: ElementNode | null = node.getParent()
       if ($isRootOrShadowRoot(parent)) {
         invariant(
           $isElementNode(node) || (node === this && $isDecoratorNode(node)),
           'Children of root nodes must be elements or decorators',
-        );
-        return node;
+        )
+        return node
       }
-      node = parent;
+      node = parent
     }
-    return null;
+    return null
   }
 
   /**
@@ -711,15 +705,15 @@ export class LexicalNode {
    * for more information on which Elements comprise "roots".
    */
   getTopLevelElementOrThrow(): ElementNode | DecoratorNode<unknown> {
-    const parent = this.getTopLevelElement();
+    const parent = this.getTopLevelElement()
     if (parent === null) {
       invariant(
         false,
         'Expected node %s to have a top parent element.',
         this.__key,
-      );
+      )
     }
-    return parent;
+    return parent
   }
 
   /**
@@ -728,13 +722,13 @@ export class LexicalNode {
    *
    */
   getParents(): Array<ElementNode> {
-    const parents: Array<ElementNode> = [];
-    let node = this.getParent();
+    const parents: Array<ElementNode> = []
+    let node = this.getParent()
     while (node !== null) {
-      parents.push(node);
-      node = node.getParent();
+      parents.push(node)
+      node = node.getParent()
     }
-    return parents;
+    return parents
   }
 
   /**
@@ -743,13 +737,13 @@ export class LexicalNode {
    *
    */
   getParentKeys(): Array<NodeKey> {
-    const parents = [];
-    let node = this.getParent();
+    const parents = []
+    let node = this.getParent()
     while (node !== null) {
-      parents.push(node.__key);
-      node = node.getParent();
+      parents.push(node.__key)
+      node = node.getParent()
     }
-    return parents;
+    return parents
   }
 
   /**
@@ -758,9 +752,9 @@ export class LexicalNode {
    *
    */
   getPreviousSibling<T extends LexicalNode>(): T | null {
-    const self = this.getLatest();
-    const prevKey = self.__prev;
-    return prevKey === null ? null : $getNodeByKey<T>(prevKey);
+    const self = this.getLatest()
+    const prevKey = self.__prev
+    return prevKey === null ? null : $getNodeByKey<T>(prevKey)
   }
 
   /**
@@ -769,20 +763,20 @@ export class LexicalNode {
    *
    */
   getPreviousSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
-    const parent = this.getParent();
+    const siblings: Array<T> = []
+    const parent = this.getParent()
     if (parent === null) {
-      return siblings;
+      return siblings
     }
-    let node: null | T = parent.getFirstChild();
+    let node: null | T = parent.getFirstChild()
     while (node !== null) {
       if (node.is(this)) {
-        break;
+        break
       }
-      siblings.push(node);
-      node = node.getNextSibling();
+      siblings.push(node)
+      node = node.getNextSibling()
     }
-    return siblings;
+    return siblings
   }
 
   /**
@@ -791,9 +785,9 @@ export class LexicalNode {
    *
    */
   getNextSibling<T extends LexicalNode>(): T | null {
-    const self = this.getLatest();
-    const nextKey = self.__next;
-    return nextKey === null ? null : $getNodeByKey<T>(nextKey);
+    const self = this.getLatest()
+    const nextKey = self.__next
+    return nextKey === null ? null : $getNodeByKey<T>(nextKey)
   }
 
   /**
@@ -802,13 +796,13 @@ export class LexicalNode {
    *
    */
   getNextSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
-    let node: null | T = this.getNextSibling();
+    const siblings: Array<T> = []
+    let node: null | T = this.getNextSibling()
     while (node !== null) {
-      siblings.push(node);
-      node = node.getNextSibling();
+      siblings.push(node)
+      node = node.getNextSibling()
     }
-    return siblings;
+    return siblings
   }
 
   /**
@@ -822,12 +816,12 @@ export class LexicalNode {
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const a = $isElementNode(this) ? this : this.getParent();
-    const b = $isElementNode(node) ? node : node.getParent();
-    const result = a && b ? $getCommonAncestor(a, b) : null;
+    const a = $isElementNode(this) ? this : this.getParent()
+    const b = $isElementNode(node) ? node : node.getParent()
+    const result = a && b ? $getCommonAncestor(a, b) : null
     return result
       ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
-      : null;
+      : null
   }
 
   /**
@@ -838,9 +832,9 @@ export class LexicalNode {
    */
   is(object: LexicalNode | null | undefined): boolean {
     if (object == null) {
-      return false;
+      return false
     }
-    return this.__key === object.__key;
+    return this.__key === object.__key
   }
 
   /**
@@ -855,21 +849,21 @@ export class LexicalNode {
    * @param targetNode - the node we're testing to see if it's after this one.
    */
   isBefore(targetNode: LexicalNode): boolean {
-    const compare = $getCommonAncestor(this, targetNode);
+    const compare = $getCommonAncestor(this, targetNode)
     if (compare === null) {
-      return false;
+      return false
     }
     if (compare.type === 'descendant') {
-      return true;
+      return true
     }
     if (compare.type === 'branch') {
-      return $getCommonAncestorResultBranchOrder(compare) === -1;
+      return $getCommonAncestorResultBranchOrder(compare) === -1
     }
     invariant(
       compare.type === 'same' || compare.type === 'ancestor',
       'LexicalNode.isBefore: exhaustiveness check',
-    );
-    return false;
+    )
+    return false
   }
 
   /**
@@ -878,8 +872,8 @@ export class LexicalNode {
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const result = $getCommonAncestor(this, targetNode);
-    return result !== null && result.type === 'ancestor';
+    const result = $getCommonAncestor(this, targetNode)
+    return result !== null && result.type === 'ancestor'
   }
 
   // TO-DO: this function can be simplified a lot
@@ -890,69 +884,69 @@ export class LexicalNode {
    * @param targetNode - the node that marks the other end of the range of nodes to be returned.
    */
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
-    const isBefore = this.isBefore(targetNode);
-    const nodes = [];
-    const visited = new Set();
-    let node: LexicalNode | this | null = this;
+    const isBefore = this.isBefore(targetNode)
+    const nodes = []
+    const visited = new Set()
+    let node: LexicalNode | this | null = this
     while (true) {
       if (node === null) {
-        break;
+        break
       }
-      const key = node.__key;
+      const key = node.__key
       if (!visited.has(key)) {
-        visited.add(key);
-        nodes.push(node);
+        visited.add(key)
+        nodes.push(node)
       }
       if (node === targetNode) {
-        break;
+        break
       }
       const child: LexicalNode | null = $isElementNode(node)
         ? isBefore
           ? node.getFirstChild()
           : node.getLastChild()
-        : null;
+        : null
       if (child !== null) {
-        node = child;
-        continue;
+        node = child
+        continue
       }
       const nextSibling: LexicalNode | null = isBefore
         ? node.getNextSibling()
-        : node.getPreviousSibling();
+        : node.getPreviousSibling()
       if (nextSibling !== null) {
-        node = nextSibling;
-        continue;
+        node = nextSibling
+        continue
       }
-      const parent: LexicalNode | null = node.getParentOrThrow();
+      const parent: LexicalNode | null = node.getParentOrThrow()
       if (!visited.has(parent.__key)) {
-        nodes.push(parent);
+        nodes.push(parent)
       }
       if (parent === targetNode) {
-        break;
+        break
       }
-      let parentSibling = null;
-      let ancestor: LexicalNode | null = parent;
+      let parentSibling = null
+      let ancestor: LexicalNode | null = parent
       do {
         if (ancestor === null) {
-          invariant(false, 'getNodesBetween: ancestor is null');
+          invariant(false, 'getNodesBetween: ancestor is null')
         }
         parentSibling = isBefore
           ? ancestor.getNextSibling()
-          : ancestor.getPreviousSibling();
-        ancestor = ancestor.getParent();
+          : ancestor.getPreviousSibling()
+        ancestor = ancestor.getParent()
         if (ancestor !== null) {
           if (parentSibling === null && !visited.has(ancestor.__key)) {
-            nodes.push(ancestor);
+            nodes.push(ancestor)
           }
         } else {
-          break;
+          break
         }
-      } while (parentSibling === null);
-      node = parentSibling;
+      } while (parentSibling === null)
+      node = parentSibling
     }
     if (!isBefore) {
-      nodes.reverse();
+      nodes.reverse()
     }
-    return nodes;
+    return nodes
   }
 
   /**
@@ -960,9 +954,9 @@ export class LexicalNode {
    *
    */
   isDirty(): boolean {
-    const editor = getActiveEditor();
-    const dirtyLeaves = editor._dirtyLeaves;
-    return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
+    const editor = getActiveEditor()
+    const dirtyLeaves = editor._dirtyLeaves
+    return dirtyLeaves !== null && dirtyLeaves.has(this.__key)
   }
 
   /**
@@ -971,14 +965,14 @@ export class LexicalNode {
    *
    */
   getLatest(): this {
-    const latest = $getNodeByKey<this>(this.__key);
+    const latest = $getNodeByKey<this>(this.__key)
     if (latest === null) {
       invariant(
         false,
         'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
-      );
+      )
     }
-    return latest;
+    return latest
   }
 
   /**
@@ -988,30 +982,30 @@ export class LexicalNode {
    *
    */
   getWritable(): this {
-    errorOnReadOnly();
-    const editorState = getActiveEditorState();
-    const editor = getActiveEditor();
-    const nodeMap = editorState._nodeMap;
-    const key = this.__key;
+    errorOnReadOnly()
+    const editorState = getActiveEditorState()
+    const editor = getActiveEditor()
+    const nodeMap = editorState._nodeMap
+    const key = this.__key
     // Ensure we get the latest node from pending state
-    const latestNode = this.getLatest();
-    const cloneNotNeeded = editor._cloneNotNeeded;
-    const selection = $getSelection();
+    const latestNode = this.getLatest()
+    const cloneNotNeeded = editor._cloneNotNeeded
+    const selection = $getSelection()
     if (selection !== null) {
-      selection.setCachedNodes(null);
+      selection.setCachedNodes(null)
     }
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internalMarkNodeAsDirty(latestNode);
-      return latestNode;
+      internalMarkNodeAsDirty(latestNode)
+      return latestNode
     }
-    const mutableNode = $cloneWithProperties(latestNode);
-    cloneNotNeeded.add(key);
-    internalMarkNodeAsDirty(mutableNode);
+    const mutableNode = $cloneWithProperties(latestNode)
+    cloneNotNeeded.add(key)
+    internalMarkNodeAsDirty(mutableNode)
     // Update reference in node map
-    nodeMap.set(key, mutableNode);
+    nodeMap.set(key, mutableNode)
 
-    return mutableNode;
+    return mutableNode
   }
 
   /**
@@ -1021,7 +1015,7 @@ export class LexicalNode {
    *
    */
   getTextContent(): string {
-    return '';
+    return ''
   }
 
   /**
@@ -1029,7 +1023,7 @@ export class LexicalNode {
    *
    */
   getTextContentSize(): number {
-    return this.getTextContent().length;
+    return this.getTextContent().length
   }
 
   // View
@@ -1047,7 +1041,7 @@ export class LexicalNode {
    *
    * */
   createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
-    invariant(false, 'createDOM: base method not extended');
+    invariant(false, 'createDOM: base method not extended')
   }
 
   /**
@@ -1065,7 +1059,7 @@ export class LexicalNode {
     _dom: HTMLElement,
     _config: EditorConfig,
   ): boolean {
-    invariant(false, 'updateDOM: base method not extended');
+    invariant(false, 'updateDOM: base method not extended')
   }
 
   /**
@@ -1077,8 +1071,8 @@ export class LexicalNode {
    *
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = this.createDOM(editor._config, editor);
-    return {element};
+    const element = this.createDOM(editor._config, editor)
+    return { element }
   }
 
   /**
@@ -1090,12 +1084,12 @@ export class LexicalNode {
    * */
   exportJSON(): SerializedLexicalNode {
     // eslint-disable-next-line dot-notation
-    const state = this.__state ? this.__state.toJSON() : undefined;
+    const state = this.__state ? this.__state.toJSON() : undefined
     return {
       type: this.__type,
       version: 1,
       ...state,
-    };
+    }
   }
 
   /**
@@ -1110,7 +1104,7 @@ export class LexicalNode {
       false,
       'LexicalNode: Node %s does not implement .importJSON().',
       this.name,
-    );
+    )
   }
 
   /**
@@ -1144,7 +1138,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY])
   }
 
   /**
@@ -1157,7 +1151,7 @@ export class LexicalNode {
    * Experimental - use at your own risk.
    */
   static transform(): ((node: LexicalNode) => void) | null {
-    return null;
+    return null
   }
 
   // Setters and mutators
@@ -1171,7 +1165,7 @@ export class LexicalNode {
    * other node heuristics such as {@link ElementNode#canBeEmpty}
    * */
   remove(preserveEmptyParent?: boolean): void {
-    $removeNode(this, true, preserveEmptyParent);
+    $removeNode(this, true, preserveEmptyParent)
   }
 
   /**
@@ -1182,66 +1176,66 @@ export class LexicalNode {
    * @param includeChildren - Whether or not to transfer the children of this node to the replacing node.
    * */
   replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
-    errorOnReadOnly();
-    let selection = $getSelection();
+    errorOnReadOnly()
+    let selection = $getSelection()
     if (selection !== null) {
-      selection = selection.clone();
+      selection = selection.clone()
     }
-    errorOnInsertTextNodeOnRoot(this, replaceWith);
-    const self = this.getLatest();
-    const toReplaceKey = this.__key;
-    const key = replaceWith.__key;
-    const writableReplaceWith = replaceWith.getWritable();
-    const writableParent = this.getParentOrThrow().getWritable();
-    const size = writableParent.__size;
-    removeFromParent(writableReplaceWith);
-    const prevSibling = self.getPreviousSibling();
-    const nextSibling = self.getNextSibling();
-    const prevKey = self.__prev;
-    const nextKey = self.__next;
-    const parentKey = self.__parent;
-    $removeNode(self, false, true);
+    errorOnInsertTextNodeOnRoot(this, replaceWith)
+    const self = this.getLatest()
+    const toReplaceKey = this.__key
+    const key = replaceWith.__key
+    const writableReplaceWith = replaceWith.getWritable()
+    const writableParent = this.getParentOrThrow().getWritable()
+    const size = writableParent.__size
+    removeFromParent(writableReplaceWith)
+    const prevSibling = self.getPreviousSibling()
+    const nextSibling = self.getNextSibling()
+    const prevKey = self.__prev
+    const nextKey = self.__next
+    const parentKey = self.__parent
+    $removeNode(self, false, true)
 
     if (prevSibling === null) {
-      writableParent.__first = key;
+      writableParent.__first = key
     } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      writablePrevSibling.__next = key;
+      const writablePrevSibling = prevSibling.getWritable()
+      writablePrevSibling.__next = key
     }
-    writableReplaceWith.__prev = prevKey;
+    writableReplaceWith.__prev = prevKey
     if (nextSibling === null) {
-      writableParent.__last = key;
+      writableParent.__last = key
     } else {
-      const writableNextSibling = nextSibling.getWritable();
-      writableNextSibling.__prev = key;
+      const writableNextSibling = nextSibling.getWritable()
+      writableNextSibling.__prev = key
     }
-    writableReplaceWith.__next = nextKey;
-    writableReplaceWith.__parent = parentKey;
-    writableParent.__size = size;
+    writableReplaceWith.__next = nextKey
+    writableReplaceWith.__parent = parentKey
+    writableParent.__size = size
     if (includeChildren) {
       invariant(
         $isElementNode(this) && $isElementNode(writableReplaceWith),
         'includeChildren should only be true for ElementNodes',
-      );
+      )
       this.getChildren().forEach((child: LexicalNode) => {
-        writableReplaceWith.append(child);
-      });
+        writableReplaceWith.append(child)
+      })
     }
     if ($isRangeSelection(selection)) {
-      $setSelection(selection);
-      const anchor = selection.anchor;
-      const focus = selection.focus;
+      $setSelection(selection)
+      const anchor = selection.anchor
+      const focus = selection.focus
       if (anchor.key === toReplaceKey) {
-        $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        $moveSelectionPointToEnd(anchor, writableReplaceWith)
       }
       if (focus.key === toReplaceKey) {
-        $moveSelectionPointToEnd(focus, writableReplaceWith);
+        $moveSelectionPointToEnd(focus, writableReplaceWith)
       }
     }
     if ($getCompositionKey() === toReplaceKey) {
-      $setCompositionKey(key);
+      $setCompositionKey(key)
     }
-    return writableReplaceWith;
+    return writableReplaceWith
   }
 
   /**
@@ -1252,63 +1246,63 @@ export class LexicalNode {
    * selection to the appropriate place after the operation is complete.
    * */
   insertAfter(nodeToInsert: LexicalNode, restoreSelection = true): LexicalNode {
-    errorOnReadOnly();
-    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    const oldParent = writableNodeToInsert.getParent();
-    const selection = $getSelection();
-    let elementAnchorSelectionOnNode = false;
-    let elementFocusSelectionOnNode = false;
+    errorOnReadOnly()
+    errorOnInsertTextNodeOnRoot(this, nodeToInsert)
+    const writableSelf = this.getWritable()
+    const writableNodeToInsert = nodeToInsert.getWritable()
+    const oldParent = writableNodeToInsert.getParent()
+    const selection = $getSelection()
+    let elementAnchorSelectionOnNode = false
+    let elementFocusSelectionOnNode = false
     if (oldParent !== null) {
       // TODO: this is O(n), can we improve?
-      const oldIndex = nodeToInsert.getIndexWithinParent();
-      removeFromParent(writableNodeToInsert);
+      const oldIndex = nodeToInsert.getIndexWithinParent()
+      removeFromParent(writableNodeToInsert)
       if ($isRangeSelection(selection)) {
-        const oldParentKey = oldParent.__key;
-        const anchor = selection.anchor;
-        const focus = selection.focus;
+        const oldParentKey = oldParent.__key
+        const anchor = selection.anchor
+        const focus = selection.focus
         elementAnchorSelectionOnNode =
           anchor.type === 'element' &&
           anchor.key === oldParentKey &&
-          anchor.offset === oldIndex + 1;
+          anchor.offset === oldIndex + 1
         elementFocusSelectionOnNode =
           focus.type === 'element' &&
           focus.key === oldParentKey &&
-          focus.offset === oldIndex + 1;
+          focus.offset === oldIndex + 1
       }
     }
-    const nextSibling = this.getNextSibling();
-    const writableParent = this.getParentOrThrow().getWritable();
-    const insertKey = writableNodeToInsert.__key;
-    const nextKey = writableSelf.__next;
+    const nextSibling = this.getNextSibling()
+    const writableParent = this.getParentOrThrow().getWritable()
+    const insertKey = writableNodeToInsert.__key
+    const nextKey = writableSelf.__next
     if (nextSibling === null) {
-      writableParent.__last = insertKey;
+      writableParent.__last = insertKey
     } else {
-      const writableNextSibling = nextSibling.getWritable();
-      writableNextSibling.__prev = insertKey;
+      const writableNextSibling = nextSibling.getWritable()
+      writableNextSibling.__prev = insertKey
     }
-    writableParent.__size++;
-    writableSelf.__next = insertKey;
-    writableNodeToInsert.__next = nextKey;
-    writableNodeToInsert.__prev = writableSelf.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
+    writableParent.__size++
+    writableSelf.__next = insertKey
+    writableNodeToInsert.__next = nextKey
+    writableNodeToInsert.__prev = writableSelf.__key
+    writableNodeToInsert.__parent = writableSelf.__parent
     if (restoreSelection && $isRangeSelection(selection)) {
-      const index = this.getIndexWithinParent();
+      const index = this.getIndexWithinParent()
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index + 1,
-      );
-      const writableParentKey = writableParent.__key;
+      )
+      const writableParentKey = writableParent.__key
       if (elementAnchorSelectionOnNode) {
-        selection.anchor.set(writableParentKey, index + 2, 'element');
+        selection.anchor.set(writableParentKey, index + 2, 'element')
       }
       if (elementFocusSelectionOnNode) {
-        selection.focus.set(writableParentKey, index + 2, 'element');
+        selection.focus.set(writableParentKey, index + 2, 'element')
       }
     }
-    return nodeToInsert;
+    return nodeToInsert
   }
 
   /**
@@ -1322,34 +1316,34 @@ export class LexicalNode {
     nodeToInsert: LexicalNode,
     restoreSelection = true,
   ): LexicalNode {
-    errorOnReadOnly();
-    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    const insertKey = writableNodeToInsert.__key;
-    removeFromParent(writableNodeToInsert);
-    const prevSibling = this.getPreviousSibling();
-    const writableParent = this.getParentOrThrow().getWritable();
-    const prevKey = writableSelf.__prev;
+    errorOnReadOnly()
+    errorOnInsertTextNodeOnRoot(this, nodeToInsert)
+    const writableSelf = this.getWritable()
+    const writableNodeToInsert = nodeToInsert.getWritable()
+    const insertKey = writableNodeToInsert.__key
+    removeFromParent(writableNodeToInsert)
+    const prevSibling = this.getPreviousSibling()
+    const writableParent = this.getParentOrThrow().getWritable()
+    const prevKey = writableSelf.__prev
     // TODO: this is O(n), can we improve?
-    const index = this.getIndexWithinParent();
+    const index = this.getIndexWithinParent()
     if (prevSibling === null) {
-      writableParent.__first = insertKey;
+      writableParent.__first = insertKey
     } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      writablePrevSibling.__next = insertKey;
+      const writablePrevSibling = prevSibling.getWritable()
+      writablePrevSibling.__next = insertKey
     }
-    writableParent.__size++;
-    writableSelf.__prev = insertKey;
-    writableNodeToInsert.__prev = prevKey;
-    writableNodeToInsert.__next = writableSelf.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
-    const selection = $getSelection();
+    writableParent.__size++
+    writableSelf.__prev = insertKey
+    writableNodeToInsert.__prev = prevKey
+    writableNodeToInsert.__next = writableSelf.__key
+    writableNodeToInsert.__parent = writableSelf.__parent
+    const selection = $getSelection()
     if (restoreSelection && $isRangeSelection(selection)) {
-      const parent = this.getParentOrThrow();
-      $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
+      const parent = this.getParentOrThrow()
+      $updateElementSelectionOnCreateDeleteNode(selection, parent, index)
     }
-    return nodeToInsert;
+    return nodeToInsert
   }
 
   /**
@@ -1359,7 +1353,7 @@ export class LexicalNode {
    *
    * */
   isParentRequired(): boolean {
-    return false;
+    return false
   }
 
   /**
@@ -1367,15 +1361,15 @@ export class LexicalNode {
    *
    * */
   createParentElementNode(): ElementNode {
-    return $createParagraphNode();
+    return $createParagraphNode()
   }
 
   selectStart(): RangeSelection {
-    return this.selectPrevious();
+    return this.selectPrevious()
   }
 
   selectEnd(): RangeSelection {
-    return this.selectNext(0, 0);
+    return this.selectNext(0, 0)
   }
 
   /**
@@ -1385,19 +1379,19 @@ export class LexicalNode {
    * @param focusOffset -  The focus offset for selection
    * */
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
-    errorOnReadOnly();
-    const prevSibling = this.getPreviousSibling();
-    const parent = this.getParentOrThrow();
+    errorOnReadOnly()
+    const prevSibling = this.getPreviousSibling()
+    const parent = this.getParentOrThrow()
     if (prevSibling === null) {
-      return parent.select(0, 0);
+      return parent.select(0, 0)
     }
     if ($isElementNode(prevSibling)) {
-      return prevSibling.select();
+      return prevSibling.select()
     } else if (!$isTextNode(prevSibling)) {
-      const index = prevSibling.getIndexWithinParent() + 1;
-      return parent.select(index, index);
+      const index = prevSibling.getIndexWithinParent() + 1
+      return parent.select(index, index)
     }
-    return prevSibling.select(anchorOffset, focusOffset);
+    return prevSibling.select(anchorOffset, focusOffset)
   }
 
   /**
@@ -1407,19 +1401,19 @@ export class LexicalNode {
    * @param focusOffset -  The focus offset for selection
    * */
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
-    errorOnReadOnly();
-    const nextSibling = this.getNextSibling();
-    const parent = this.getParentOrThrow();
+    errorOnReadOnly()
+    const nextSibling = this.getNextSibling()
+    const parent = this.getParentOrThrow()
     if (nextSibling === null) {
-      return parent.select();
+      return parent.select()
     }
     if ($isElementNode(nextSibling)) {
-      return nextSibling.select(0, 0);
+      return nextSibling.select(0, 0)
     } else if (!$isTextNode(nextSibling)) {
-      const index = nextSibling.getIndexWithinParent();
-      return parent.select(index, index);
+      const index = nextSibling.getIndexWithinParent()
+      return parent.select(index, index)
     }
-    return nextSibling.select(anchorOffset, focusOffset);
+    return nextSibling.select(anchorOffset, focusOffset)
   }
 
   /**
@@ -1428,7 +1422,7 @@ export class LexicalNode {
    *
    * */
   markDirty(): void {
-    this.getWritable();
+    this.getWritable()
   }
 
   /**
@@ -1438,7 +1432,7 @@ export class LexicalNode {
    * may be called to restore the node to a known good state.
    */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    this.markDirty();
+    this.markDirty()
   }
 }
 
@@ -1446,16 +1440,16 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Klass<LexicalNode>,
 ): void {
-  const registeredNode = getRegisteredNode(getActiveEditor(), type);
+  const registeredNode = getRegisteredNode(getActiveEditor(), type)
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(
       false,
       'Create node: Attempted to create node %s that was not configured to be used on the editor.',
       klass.name,
-    );
+    )
   }
-  const editorKlass = registeredNode.klass;
+  const editorKlass = registeredNode.klass
   if (editorKlass !== klass) {
     invariant(
       false,
@@ -1463,7 +1457,7 @@ function errorOnTypeKlassMismatch(
       type,
       klass.name,
       editorKlass.name,
-    );
+    )
   }
 }
 
@@ -1480,22 +1474,22 @@ export function insertRangeAfter(
   lastToInsert?: LexicalNode,
 ) {
   const lastToInsert2 =
-    lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
-  let current = firstToInsert;
-  const nodesToInsert = [firstToInsert];
+    lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!
+  let current = firstToInsert
+  const nodesToInsert = [firstToInsert]
   while (current !== lastToInsert2) {
     if (!current.getNextSibling()) {
       invariant(
         false,
         'insertRangeAfter: lastToInsert must be a later sibling of firstToInsert',
-      );
+      )
     }
-    current = current.getNextSibling()!;
-    nodesToInsert.push(current);
+    current = current.getNextSibling()!
+    nodesToInsert.push(current)
   }
 
-  let currentNode: LexicalNode = node;
+  let currentNode: LexicalNode = node
   for (const nodeToInsert of nodesToInsert) {
-    currentNode = currentNode.insertAfter(nodeToInsert);
+    currentNode = currentNode.insertAfter(nodeToInsert)
   }
 }

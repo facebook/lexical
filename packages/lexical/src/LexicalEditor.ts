@@ -6,24 +6,24 @@
  *
  */
 
-import type {EditorState, SerializedEditorState} from './LexicalEditorState';
+import type { EditorState, SerializedEditorState } from './LexicalEditorState'
 import type {
   DOMConversion,
   DOMConversionMap,
   DOMExportOutput,
   DOMExportOutputMap,
   NodeKey,
-} from './LexicalNode';
+} from './LexicalNode'
 
-import invariant from 'shared/invariant';
+import invariant from 'shared/invariant'
 
-import {$getRoot, $getSelection, TextNode} from '.';
-import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
-import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {flushRootMutations, initMutationObserver} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
-import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+// import {$getRoot, $getSelection, TextNode} from '.';
+import { FULL_RECONCILE, NO_DIRTY_NODES } from './LexicalConstants'
+import { cloneEditorState, createEmptyEditorState } from './LexicalEditorState'
+import { addRootElementEvents, removeRootElementEvents } from './LexicalEvents'
+import { flushRootMutations, initMutationObserver } from './LexicalMutations'
+import { LexicalNode } from './LexicalNode'
+import { createSharedNodeState, SharedNodeState } from './LexicalNodeState'
 import {
   $commitPendingUpdates,
   internalGetActiveEditor,
@@ -31,10 +31,11 @@ import {
   triggerListeners,
   updateEditor,
   updateEditorSync,
-} from './LexicalUpdates';
-import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
+} from './LexicalUpdates'
+import { FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag } from './LexicalUpdateTags'
 import {
   $addUpdateTag,
+  $getRoot,
   $onUpdate,
   $setSelection,
   createUID,
@@ -47,209 +48,211 @@ import {
   hasOwnExportDOM,
   hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
-} from './LexicalUtils';
-import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
-import {LineBreakNode} from './nodes/LexicalLineBreakNode';
-import {ParagraphNode} from './nodes/LexicalParagraphNode';
-import {RootNode} from './nodes/LexicalRootNode';
-import {TabNode} from './nodes/LexicalTabNode';
+} from './LexicalUtils'
+import { ArtificialNode__DO_NOT_USE } from './nodes/ArtificialNode'
+import { $isDecoratorNode, DecoratorNode } from './nodes/LexicalDecoratorNode'
+import { LineBreakNode } from './nodes/LexicalLineBreakNode'
+import { ParagraphNode } from './nodes/LexicalParagraphNode'
+import { RootNode } from './nodes/LexicalRootNode'
+import { TabNode } from './nodes/LexicalTabNode'
+import { TextNode } from './nodes/LexicalTextNode'
+import { $getSelection } from './LexicalSelection'
 
-export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
+export type Spread<T1, T2> = Omit<T2, keyof T1> & T1
 
 // https://github.com/microsoft/TypeScript/issues/3841
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type KlassConstructor<Cls extends GenericConstructor<any>> =
-  GenericConstructor<InstanceType<Cls>> & {[k in keyof Cls]: Cls[k]};
+  GenericConstructor<InstanceType<Cls>> & { [k in keyof Cls]: Cls[k] }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type GenericConstructor<T> = new (...args: any[]) => T;
+type GenericConstructor<T> = new (...args: any[]) => T
 
 export type Klass<T extends LexicalNode> = InstanceType<
   T['constructor']
 > extends T
   ? T['constructor']
-  : GenericConstructor<T> & T['constructor'];
+  : GenericConstructor<T> & T['constructor']
 
-export type EditorThemeClassName = string;
+export type EditorThemeClassName = string
 
 export type TextNodeThemeClasses = {
-  base?: EditorThemeClassName;
-  bold?: EditorThemeClassName;
-  code?: EditorThemeClassName;
-  highlight?: EditorThemeClassName;
-  italic?: EditorThemeClassName;
-  lowercase?: EditorThemeClassName;
-  uppercase?: EditorThemeClassName;
-  capitalize?: EditorThemeClassName;
-  strikethrough?: EditorThemeClassName;
-  subscript?: EditorThemeClassName;
-  superscript?: EditorThemeClassName;
-  underline?: EditorThemeClassName;
+  base?: EditorThemeClassName
+  bold?: EditorThemeClassName
+  code?: EditorThemeClassName
+  highlight?: EditorThemeClassName
+  italic?: EditorThemeClassName
+  lowercase?: EditorThemeClassName
+  uppercase?: EditorThemeClassName
+  capitalize?: EditorThemeClassName
+  strikethrough?: EditorThemeClassName
+  subscript?: EditorThemeClassName
+  superscript?: EditorThemeClassName
+  underline?: EditorThemeClassName
   underlineStrikethrough?: EditorThemeClassName;
-  [key: string]: EditorThemeClassName | undefined;
-};
+  [key: string]: EditorThemeClassName | undefined
+}
 
 export type EditorUpdateOptions = {
   /**
    * A function to run once the update is complete. See also {@link $onUpdate}.
    */
-  onUpdate?: () => void;
+  onUpdate?: () => void
   /**
    * Setting this to true will suppress all node
    * transforms for this update cycle.
    * Useful for synchronizing updates in some cases.
    */
-  skipTransforms?: true;
+  skipTransforms?: true
   /**
    * A tag to identify this update, in an update listener, for instance.
    * See also {@link $addUpdateTag}.
    */
-  tag?: UpdateTag | UpdateTag[];
+  tag?: UpdateTag | UpdateTag[]
   /**
    * If true, prevents this update from being batched, forcing it to
    * run synchronously.
    */
-  discrete?: true;
+  discrete?: true
   /** @internal */
-  event?: undefined | UIEvent | Event | null;
-};
+  event?: undefined | UIEvent | Event | null
+}
 
 export type EditorSetOptions = {
-  tag?: string;
-};
+  tag?: string
+}
 
 export interface EditorFocusOptions {
   /**
    * Where to move selection when the editor is
    * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
    */
-  defaultSelection?: 'rootStart' | 'rootEnd';
+  defaultSelection?: 'rootStart' | 'rootEnd'
 }
 
 export type EditorThemeClasses = {
-  blockCursor?: EditorThemeClassName;
-  characterLimit?: EditorThemeClassName;
-  code?: EditorThemeClassName;
-  codeHighlight?: Record<string, EditorThemeClassName>;
-  hashtag?: EditorThemeClassName;
-  specialText?: EditorThemeClassName;
+  blockCursor?: EditorThemeClassName
+  characterLimit?: EditorThemeClassName
+  code?: EditorThemeClassName
+  codeHighlight?: Record<string, EditorThemeClassName>
+  hashtag?: EditorThemeClassName
+  specialText?: EditorThemeClassName
   heading?: {
-    h1?: EditorThemeClassName;
-    h2?: EditorThemeClassName;
-    h3?: EditorThemeClassName;
-    h4?: EditorThemeClassName;
-    h5?: EditorThemeClassName;
-    h6?: EditorThemeClassName;
-  };
-  hr?: EditorThemeClassName;
-  hrSelected?: EditorThemeClassName;
-  image?: EditorThemeClassName;
-  link?: EditorThemeClassName;
+    h1?: EditorThemeClassName
+    h2?: EditorThemeClassName
+    h3?: EditorThemeClassName
+    h4?: EditorThemeClassName
+    h5?: EditorThemeClassName
+    h6?: EditorThemeClassName
+  }
+  hr?: EditorThemeClassName
+  hrSelected?: EditorThemeClassName
+  image?: EditorThemeClassName
+  link?: EditorThemeClassName
   list?: {
-    ul?: EditorThemeClassName;
-    ulDepth?: Array<EditorThemeClassName>;
-    ol?: EditorThemeClassName;
-    olDepth?: Array<EditorThemeClassName>;
-    checklist?: EditorThemeClassName;
-    listitem?: EditorThemeClassName;
-    listitemChecked?: EditorThemeClassName;
-    listitemUnchecked?: EditorThemeClassName;
+    ul?: EditorThemeClassName
+    ulDepth?: Array<EditorThemeClassName>
+    ol?: EditorThemeClassName
+    olDepth?: Array<EditorThemeClassName>
+    checklist?: EditorThemeClassName
+    listitem?: EditorThemeClassName
+    listitemChecked?: EditorThemeClassName
+    listitemUnchecked?: EditorThemeClassName
     nested?: {
-      list?: EditorThemeClassName;
-      listitem?: EditorThemeClassName;
-    };
-  };
-  ltr?: EditorThemeClassName;
-  mark?: EditorThemeClassName;
-  markOverlap?: EditorThemeClassName;
-  paragraph?: EditorThemeClassName;
-  quote?: EditorThemeClassName;
-  root?: EditorThemeClassName;
-  rtl?: EditorThemeClassName;
-  tab?: EditorThemeClassName;
-  table?: EditorThemeClassName;
-  tableAddColumns?: EditorThemeClassName;
-  tableAddRows?: EditorThemeClassName;
-  tableCellActionButton?: EditorThemeClassName;
-  tableCellActionButtonContainer?: EditorThemeClassName;
-  tableCellSelected?: EditorThemeClassName;
-  tableCell?: EditorThemeClassName;
-  tableCellHeader?: EditorThemeClassName;
-  tableCellResizer?: EditorThemeClassName;
-  tableRow?: EditorThemeClassName;
-  tableScrollableWrapper?: EditorThemeClassName;
-  tableSelected?: EditorThemeClassName;
-  tableSelection?: EditorThemeClassName;
-  text?: TextNodeThemeClasses;
+      list?: EditorThemeClassName
+      listitem?: EditorThemeClassName
+    }
+  }
+  ltr?: EditorThemeClassName
+  mark?: EditorThemeClassName
+  markOverlap?: EditorThemeClassName
+  paragraph?: EditorThemeClassName
+  quote?: EditorThemeClassName
+  root?: EditorThemeClassName
+  rtl?: EditorThemeClassName
+  tab?: EditorThemeClassName
+  table?: EditorThemeClassName
+  tableAddColumns?: EditorThemeClassName
+  tableAddRows?: EditorThemeClassName
+  tableCellActionButton?: EditorThemeClassName
+  tableCellActionButtonContainer?: EditorThemeClassName
+  tableCellSelected?: EditorThemeClassName
+  tableCell?: EditorThemeClassName
+  tableCellHeader?: EditorThemeClassName
+  tableCellResizer?: EditorThemeClassName
+  tableRow?: EditorThemeClassName
+  tableScrollableWrapper?: EditorThemeClassName
+  tableSelected?: EditorThemeClassName
+  tableSelection?: EditorThemeClassName
+  text?: TextNodeThemeClasses
   embedBlock?: {
-    base?: EditorThemeClassName;
-    focus?: EditorThemeClassName;
-  };
+    base?: EditorThemeClassName
+    focus?: EditorThemeClassName
+  }
   indent?: EditorThemeClassName;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-};
+  [key: string]: any
+}
 
 export type EditorConfig = {
-  disableEvents?: boolean;
-  namespace: string;
-  theme: EditorThemeClasses;
-};
+  disableEvents?: boolean
+  namespace: string
+  theme: EditorThemeClasses
+}
 
 export type LexicalNodeReplacement = {
-  replace: Klass<LexicalNode>;
+  replace: Klass<LexicalNode>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  with: <T extends {new (...args: any): any}>(
+  with: <T extends { new(...args: any): any }>(
     node: InstanceType<T>,
-  ) => LexicalNode;
-  withKlass?: Klass<LexicalNode>;
-};
+  ) => LexicalNode
+  withKlass?: Klass<LexicalNode>
+}
 
 export type HTMLConfig = {
-  export?: DOMExportOutputMap;
-  import?: DOMConversionMap;
-};
+  export?: DOMExportOutputMap
+  import?: DOMConversionMap
+}
 
 /**
  * A LexicalNode class or LexicalNodeReplacement configuration
  */
-export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
+export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement
 
 export type CreateEditorArgs = {
-  disableEvents?: boolean;
-  editorState?: EditorState;
-  namespace?: string;
-  nodes?: ReadonlyArray<LexicalNodeConfig>;
-  onError?: ErrorHandler;
-  parentEditor?: LexicalEditor;
-  editable?: boolean;
-  theme?: EditorThemeClasses;
-  html?: HTMLConfig;
-};
+  disableEvents?: boolean
+  editorState?: EditorState
+  namespace?: string
+  nodes?: ReadonlyArray<LexicalNodeConfig>
+  onError?: ErrorHandler
+  parentEditor?: LexicalEditor
+  editable?: boolean
+  theme?: EditorThemeClasses
+  html?: HTMLConfig
+}
 
-export type RegisteredNodes = Map<string, RegisteredNode>;
+export type RegisteredNodes = Map<string, RegisteredNode>
 
 export type RegisteredNode = {
-  klass: Klass<LexicalNode>;
-  transforms: Set<Transform<LexicalNode>>;
-  replace: null | ((node: LexicalNode) => LexicalNode);
-  replaceWithKlass: null | Klass<LexicalNode>;
+  klass: Klass<LexicalNode>
+  transforms: Set<Transform<LexicalNode>>
+  replace: null | ((node: LexicalNode) => LexicalNode)
+  replaceWithKlass: null | Klass<LexicalNode>
   exportDOM?: (
     editor: LexicalEditor,
     targetNode: LexicalNode,
-  ) => DOMExportOutput;
-  sharedNodeState: SharedNodeState;
-};
+  ) => DOMExportOutput
+  sharedNodeState: SharedNodeState
+}
 
-export type Transform<T extends LexicalNode> = (node: T) => void;
+export type Transform<T extends LexicalNode> = (node: T) => void
 
-export type ErrorHandler = (error: Error) => void;
+export type ErrorHandler = (error: Error) => void
 
-export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
+export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>
 
-export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>
 
-export type NodeMutation = 'created' | 'updated' | 'destroyed';
+export type NodeMutation = 'created' | 'updated' | 'destroyed'
 
 export interface MutationListenerOptions {
   /**
@@ -258,10 +261,10 @@ export interface MutationListenerOptions {
    * The default was previously true for backwards compatibility with <= 0.16.1
    * but this default has been changed to false as of 0.21.0.
    */
-  skipInitialization?: boolean;
+  skipInitialization?: boolean
 }
 
-const DEFAULT_SKIP_INITIALIZATION = false;
+const DEFAULT_SKIP_INITIALIZATION = false
 
 /**
  * The payload passed to an UpdateListener
@@ -272,17 +275,17 @@ export interface UpdateListenerPayload {
    * if the node was intentionally mutated ('unintentional' mutations
    * are triggered when an indirect descendant is marked dirty)
    */
-  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>
   /**
    * A Set of NodeKeys of all nodes that were marked dirty that
    * do not inherit from ElementNode.
    */
-  dirtyLeaves: Set<NodeKey>;
+  dirtyLeaves: Set<NodeKey>
   /**
    * The new EditorState after all updates have been processed,
    * equivalent to `editor.getEditorState()`
    */
-  editorState: EditorState;
+  editorState: EditorState
   /**
    * The Map of LexicalNode constructors to a `Map<NodeKey, NodeMutation>`,
    * this is useful when you have a mutation listener type use cases that
@@ -294,7 +297,7 @@ export interface UpdateListenerPayload {
    *
    * Added in v0.28.0
    */
-  mutatedNodes: null | MutatedNodes;
+  mutatedNodes: null | MutatedNodes
   /**
    * For advanced use cases only.
    *
@@ -303,60 +306,60 @@ export interface UpdateListenerPayload {
    * not exist in either editorState or prevEditorState and generally
    * this is only used for conflict resolution edge cases in collab.
    */
-  normalizedNodes: Set<NodeKey>;
+  normalizedNodes: Set<NodeKey>
   /**
    * The previous EditorState that is being discarded
    */
-  prevEditorState: EditorState;
+  prevEditorState: EditorState
   /**
    * The set of tags added with update options or {@link $addUpdateTag},
    * node that this includes all tags that were processed in this
    * reconciliation which may have been added by separate updates.
    */
-  tags: Set<string>;
+  tags: Set<string>
 }
 
 /**
  * A listener that gets called after the editor is updated
  */
-export type UpdateListener = (payload: UpdateListenerPayload) => void;
+export type UpdateListener = (payload: UpdateListenerPayload) => void
 
 export type DecoratorListener<T = never> = (
   decorator: Record<NodeKey, T>,
-) => void;
+) => void
 
 export type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
-) => void;
+) => void
 
-export type TextContentListener = (text: string) => void;
+export type TextContentListener = (text: string) => void
 
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
   payload: {
-    updateTags: Set<string>;
-    dirtyLeaves: Set<string>;
-    prevEditorState: EditorState;
+    updateTags: Set<string>
+    dirtyLeaves: Set<string>
+    prevEditorState: EditorState
   },
-) => void;
+) => void
 
-export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
+export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean
 
-export type EditableListener = (editable: boolean) => void;
+export type EditableListener = (editable: boolean) => void
 
-export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4
 
-export const COMMAND_PRIORITY_EDITOR = 0;
-export const COMMAND_PRIORITY_LOW = 1;
-export const COMMAND_PRIORITY_NORMAL = 2;
-export const COMMAND_PRIORITY_HIGH = 3;
-export const COMMAND_PRIORITY_CRITICAL = 4;
+export const COMMAND_PRIORITY_EDITOR = 0
+export const COMMAND_PRIORITY_LOW = 1
+export const COMMAND_PRIORITY_NORMAL = 2
+export const COMMAND_PRIORITY_HIGH = 3
+export const COMMAND_PRIORITY_CRITICAL = 4
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<TPayload> = {
-  type?: string;
-};
+  type?: string
+}
 
 /**
  * Type helper for extracting the payload type from a command.
@@ -379,21 +382,21 @@ export type LexicalCommand<TPayload> = {
  * ```
  */
 export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
-  TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
+  TCommand extends LexicalCommand<infer TPayload> ? TPayload : never
 
 type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
->;
+>
 
 export interface Listeners {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  decorator: Set<DecoratorListener<any>>;
-  mutation: MutationListeners;
-  editable: Set<EditableListener>;
-  root: Set<RootListener>;
-  textcontent: Set<TextContentListener>;
-  update: Set<UpdateListener>;
+  decorator: Set<DecoratorListener<any>>
+  mutation: MutationListeners
+  editable: Set<EditableListener>
+  root: Set<RootListener>
+  textcontent: Set<TextContentListener>
+  update: Set<UpdateListener>
 }
 
 export type SetListeners = {
@@ -401,24 +404,24 @@ export type SetListeners = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (...args: any[]) => void
   >
-    ? K
-    : never]: Listeners[K] extends Set<(...args: infer Args) => void>
-    ? Args
-    : never;
-};
+  ? K
+  : never]: Listeners[K] extends Set<(...args: infer Args) => void>
+  ? Args
+  : never
+}
 
-export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
+export type TransformerType = 'text' | 'decorator' | 'element' | 'root'
 
-type IntentionallyMarkedAsDirtyElement = boolean;
+type IntentionallyMarkedAsDirtyElement = boolean
 
 type DOMConversionCache = Map<
   string,
   Array<(node: Node) => DOMConversion | null>
->;
+>
 
 export type SerializedEditor = {
-  editorState: SerializedEditorState;
-};
+  editorState: SerializedEditorState
+}
 
 export function resetEditor(
   editor: LexicalEditor,
@@ -426,35 +429,35 @@ export function resetEditor(
   nextRootElement: null | HTMLElement,
   pendingEditorState: EditorState,
 ): void {
-  const keyNodeMap = editor._keyToDOMMap;
-  keyNodeMap.clear();
-  editor._editorState = createEmptyEditorState();
-  editor._pendingEditorState = pendingEditorState;
-  editor._compositionKey = null;
-  editor._dirtyType = NO_DIRTY_NODES;
-  editor._cloneNotNeeded.clear();
-  editor._dirtyLeaves = new Set();
-  editor._dirtyElements.clear();
-  editor._normalizedNodes = new Set();
-  editor._updateTags = new Set();
-  editor._updates = [];
-  editor._blockCursorElement = null;
+  const keyNodeMap = editor._keyToDOMMap
+  keyNodeMap.clear()
+  editor._editorState = createEmptyEditorState()
+  editor._pendingEditorState = pendingEditorState
+  editor._compositionKey = null
+  editor._dirtyType = NO_DIRTY_NODES
+  editor._cloneNotNeeded.clear()
+  editor._dirtyLeaves = new Set()
+  editor._dirtyElements.clear()
+  editor._normalizedNodes = new Set()
+  editor._updateTags = new Set()
+  editor._updates = []
+  editor._blockCursorElement = null
 
-  const observer = editor._observer;
+  const observer = editor._observer
 
   if (observer !== null) {
-    observer.disconnect();
-    editor._observer = null;
+    observer.disconnect()
+    editor._observer = null
   }
 
   // Remove all the DOM nodes from the root element
   if (prevRootElement !== null) {
-    prevRootElement.textContent = '';
+    prevRootElement.textContent = ''
   }
 
   if (nextRootElement !== null) {
-    nextRootElement.textContent = '';
-    keyNodeMap.set('root', nextRootElement);
+    nextRootElement.textContent = ''
+    keyNodeMap.set('root', nextRootElement)
   }
 }
 
@@ -462,38 +465,38 @@ function initializeConversionCache(
   nodes: RegisteredNodes,
   additionalConversions?: DOMConversionMap,
 ): DOMConversionCache {
-  const conversionCache = new Map();
-  const handledConversions = new Set();
+  const conversionCache = new Map()
+  const handledConversions = new Set()
   const addConversionsToCache = (map: DOMConversionMap) => {
     Object.keys(map).forEach((key) => {
-      let currentCache = conversionCache.get(key);
+      let currentCache = conversionCache.get(key)
 
       if (currentCache === undefined) {
-        currentCache = [];
-        conversionCache.set(key, currentCache);
+        currentCache = []
+        conversionCache.set(key, currentCache)
       }
 
-      currentCache.push(map[key]);
-    });
-  };
+      currentCache.push(map[key])
+    })
+  }
   nodes.forEach((node) => {
-    const importDOM = node.klass.importDOM;
+    const importDOM = node.klass.importDOM
 
     if (importDOM == null || handledConversions.has(importDOM)) {
-      return;
+      return
     }
 
-    handledConversions.add(importDOM);
-    const map = importDOM.call(node.klass);
+    handledConversions.add(importDOM)
+    const map = importDOM.call(node.klass)
 
     if (map !== null) {
-      addConversionsToCache(map);
+      addConversionsToCache(map)
     }
-  });
+  })
   if (additionalConversions) {
-    addConversionsToCache(additionalConversions);
+    addConversionsToCache(additionalConversions)
   }
-  return conversionCache;
+  return conversionCache
 }
 
 /**
@@ -504,17 +507,17 @@ function initializeConversionCache(
  * @returns a LexicalEditor instance
  */
 export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
-  const config = editorConfig || {};
-  const activeEditor = internalGetActiveEditor();
-  const theme = config.theme || {};
+  const config = editorConfig || {}
+  const activeEditor = internalGetActiveEditor()
+  const theme = config.theme || {}
   const parentEditor =
-    editorConfig === undefined ? activeEditor : config.parentEditor || null;
-  const disableEvents = config.disableEvents || false;
-  const editorState = createEmptyEditorState();
+    editorConfig === undefined ? activeEditor : config.parentEditor || null
+  const disableEvents = config.disableEvents || false
+  const editorState = createEmptyEditorState()
   const namespace =
     config.namespace ||
-    (parentEditor !== null ? parentEditor._config.namespace : createUID());
-  const initialEditorState = config.editorState;
+    (parentEditor !== null ? parentEditor._config.namespace : createUID())
+  const initialEditorState = config.editorState
   const nodes = [
     RootNode,
     TextNode,
@@ -523,33 +526,33 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     ParagraphNode,
     ArtificialNode__DO_NOT_USE,
     ...(config.nodes || []),
-  ];
-  const {onError, html} = config;
-  const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes: RegisteredNodes;
+  ]
+  const { onError, html } = config
+  const isEditable = config.editable !== undefined ? config.editable : true
+  let registeredNodes: RegisteredNodes
 
   if (editorConfig === undefined && activeEditor !== null) {
-    registeredNodes = activeEditor._nodes;
+    registeredNodes = activeEditor._nodes
   } else {
-    registeredNodes = new Map();
+    registeredNodes = new Map()
     for (let i = 0; i < nodes.length; i++) {
-      let klass = nodes[i];
-      let replace: RegisteredNode['replace'] = null;
-      let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null;
+      let klass = nodes[i]
+      let replace: RegisteredNode['replace'] = null
+      let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null
 
       if (typeof klass !== 'function') {
-        const options = klass;
-        klass = options.replace;
-        replace = options.with;
-        replaceWithKlass = options.withKlass || null;
+        const options = klass
+        klass = options.replace
+        replace = options.with
+        replaceWithKlass = options.withKlass || null
       }
-      const {ownNodeConfig} = getStaticNodeConfig(klass);
+      const { ownNodeConfig } = getStaticNodeConfig(klass)
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
-        const name = klass.name;
+        const name = klass.name
         const nodeType =
-          hasOwnStaticMethod(klass, 'getType') && klass.getType();
+          hasOwnStaticMethod(klass, 'getType') && klass.getType()
 
         if (replaceWithKlass) {
           invariant(
@@ -557,11 +560,11 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             "%s doesn't extend the %s",
             replaceWithKlass.name,
             name,
-          );
+          )
         } else if (replace) {
           console.warn(
             `Override for ${name} specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
-          );
+          )
         }
         if (
           name !== 'RootNode' &&
@@ -571,39 +574,39 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           const proto = klass.prototype;
           (['getType', 'clone'] as const).forEach((method) => {
             if (!hasOwnStaticMethod(klass, method)) {
-              console.warn(`${name} must implement static "${method}" method`);
+              console.warn(`${name} must implement static "${method}" method`)
             }
-          });
+          })
           if (
             !hasOwnStaticMethod(klass, 'importDOM') &&
             hasOwnExportDOM(klass)
           ) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
-            );
+            )
           }
           if ($isDecoratorNode(proto)) {
             if (proto.decorate === DecoratorNode.prototype.decorate) {
               console.warn(
                 `${proto.constructor.name} must implement "decorate" method`,
-              );
+              )
             }
           }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
+            )
           }
         }
       }
-      const type = klass.getType();
-      const transform = klass.transform();
-      const transforms = new Set<Transform<LexicalNode>>();
+      const type = klass.getType()
+      const transform = klass.transform()
+      const transforms = new Set<Transform<LexicalNode>>()
       if (ownNodeConfig && ownNodeConfig.$transform) {
-        transforms.add(ownNodeConfig.$transform);
+        transforms.add(ownNodeConfig.$transform)
       }
       if (transform !== null) {
-        transforms.add(transform);
+        transforms.add(transform)
       }
       registeredNodes.set(type, {
         exportDOM: html && html.export ? html.export.get(klass) : undefined,
@@ -612,7 +615,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replaceWithKlass,
         sharedNodeState: createSharedNodeState(nodes[i]),
         transforms,
-      });
+      })
     }
   }
   const editor = new LexicalEditor(
@@ -628,82 +631,82 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
     editorConfig,
-  );
+  )
 
   if (initialEditorState !== undefined) {
-    editor._pendingEditorState = initialEditorState;
-    editor._dirtyType = FULL_RECONCILE;
+    editor._pendingEditorState = initialEditorState
+    editor._dirtyType = FULL_RECONCILE
   }
 
-  return editor;
+  return editor
 }
 
 export class LexicalEditor {
-  ['constructor']!: KlassConstructor<typeof LexicalEditor>;
+  ['constructor']!: KlassConstructor<typeof LexicalEditor>
 
   /** The version with build identifiers for this editor (since 0.17.1) */
-  static version: string | undefined;
+  static version: string | undefined
 
   /** @internal */
-  _headless: boolean;
+  _headless: boolean
   /** @internal */
-  _parentEditor: null | LexicalEditor;
+  _parentEditor: null | LexicalEditor
   /** @internal */
-  _rootElement: null | HTMLElement;
+  _rootElement: null | HTMLElement
   /** @internal */
-  _editorState: EditorState;
+  _editorState: EditorState
   /** @internal */
-  _pendingEditorState: null | EditorState;
+  _pendingEditorState: null | EditorState
   /** @internal */
-  _compositionKey: null | NodeKey;
+  _compositionKey: null | NodeKey
   /** @internal */
-  _deferred: Array<() => void>;
+  _deferred: Array<() => void>
   /** @internal */
-  _keyToDOMMap: Map<NodeKey, HTMLElement>;
+  _keyToDOMMap: Map<NodeKey, HTMLElement>
   /** @internal */
-  _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
+  _updates: Array<[() => void, EditorUpdateOptions | undefined]>
   /** @internal */
-  _updating: boolean;
+  _updating: boolean
   /** @internal */
-  _listeners: Listeners;
+  _listeners: Listeners
   /** @internal */
-  _commands: Commands;
+  _commands: Commands
   /** @internal */
-  _nodes: RegisteredNodes;
+  _nodes: RegisteredNodes
   /** @internal */
-  _decorators: Record<NodeKey, unknown>;
+  _decorators: Record<NodeKey, unknown>
   /** @internal */
-  _pendingDecorators: null | Record<NodeKey, unknown>;
+  _pendingDecorators: null | Record<NodeKey, unknown>
   /** @internal */
-  _config: EditorConfig;
+  _config: EditorConfig
   /** @internal */
-  _dirtyType: 0 | 1 | 2;
+  _dirtyType: 0 | 1 | 2
   /** @internal */
-  _cloneNotNeeded: Set<NodeKey>;
+  _cloneNotNeeded: Set<NodeKey>
   /** @internal */
-  _dirtyLeaves: Set<NodeKey>;
+  _dirtyLeaves: Set<NodeKey>
   /** @internal */
-  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>
   /** @internal */
-  _normalizedNodes: Set<NodeKey>;
+  _normalizedNodes: Set<NodeKey>
   /** @internal */
-  _updateTags: Set<UpdateTag>;
+  _updateTags: Set<UpdateTag>
   /** @internal */
-  _observer: null | MutationObserver;
+  _observer: null | MutationObserver
   /** @internal */
-  _key: string;
+  _key: string
   /** @internal */
-  _onError: ErrorHandler;
+  _onError: ErrorHandler
   /** @internal */
-  _htmlConversions: DOMConversionCache;
+  _htmlConversions: DOMConversionCache
   /** @internal */
-  _window: null | Window;
+  _window: null | Window
   /** @internal */
-  _editable: boolean;
+  _editable: boolean
   /** @internal */
-  _blockCursorElement: null | HTMLDivElement;
+  _blockCursorElement: null | HTMLDivElement
   /** @internal */
-  _createEditorArgs?: undefined | CreateEditorArgs;
+  _createEditorArgs?: undefined | CreateEditorArgs
 
   /** @internal */
   constructor(
@@ -716,21 +719,21 @@ export class LexicalEditor {
     editable: boolean,
     createEditorArgs?: CreateEditorArgs,
   ) {
-    this._createEditorArgs = createEditorArgs;
-    this._parentEditor = parentEditor;
+    this._createEditorArgs = createEditorArgs
+    this._parentEditor = parentEditor
     // The root element associated with this editor
-    this._rootElement = null;
+    this._rootElement = null
     // The current editor state
-    this._editorState = editorState;
+    this._editorState = editorState
     // Handling of drafts and updates
-    this._pendingEditorState = null;
+    this._pendingEditorState = null
     // Used to help co-ordinate selection and events
-    this._compositionKey = null;
-    this._deferred = [];
+    this._compositionKey = null
+    this._deferred = []
     // Used during reconciliation
-    this._keyToDOMMap = new Map();
-    this._updates = [];
-    this._updating = false;
+    this._keyToDOMMap = new Map()
+    this._updates = []
+    this._updating = false
     // Listeners
     this._listeners = {
       decorator: new Set(),
@@ -739,34 +742,34 @@ export class LexicalEditor {
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
-    };
+    }
     // Commands
-    this._commands = new Map();
+    this._commands = new Map()
     // Editor configuration for theme/context.
-    this._config = config;
+    this._config = config
     // Mapping of types to their nodes
-    this._nodes = nodes;
+    this._nodes = nodes
     // React node decorators for portals
-    this._decorators = {};
-    this._pendingDecorators = null;
+    this._decorators = {}
+    this._pendingDecorators = null
     // Used to optimize reconciliation
-    this._dirtyType = NO_DIRTY_NODES;
-    this._cloneNotNeeded = new Set();
-    this._dirtyLeaves = new Set();
-    this._dirtyElements = new Map();
-    this._normalizedNodes = new Set();
-    this._updateTags = new Set();
+    this._dirtyType = NO_DIRTY_NODES
+    this._cloneNotNeeded = new Set()
+    this._dirtyLeaves = new Set()
+    this._dirtyElements = new Map()
+    this._normalizedNodes = new Set()
+    this._updateTags = new Set()
     // Handling of DOM mutations
-    this._observer = null;
+    this._observer = null
     // Used for identifying owning editors
-    this._key = createUID();
+    this._key = createUID()
 
-    this._onError = onError;
-    this._htmlConversions = htmlConversions;
-    this._editable = editable;
-    this._headless = parentEditor !== null && parentEditor._headless;
-    this._window = null;
-    this._blockCursorElement = null;
+    this._onError = onError
+    this._htmlConversions = htmlConversions
+    this._editable = editable
+    this._headless = parentEditor !== null && parentEditor._headless
+    this._window = null
+    this._blockCursorElement = null
   }
 
   /**
@@ -775,7 +778,7 @@ export class LexicalEditor {
    * through an IME, or 3P extension, for example. Returns false otherwise.
    */
   isComposing(): boolean {
-    return this._compositionKey != null;
+    return this._compositionKey != null
   }
   /**
    * Registers a listener for Editor update event. Will trigger the provided callback
@@ -785,11 +788,11 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerUpdateListener(listener: UpdateListener): () => void {
-    const listenerSetOrMap = this._listeners.update;
-    listenerSetOrMap.add(listener);
+    const listenerSetOrMap = this._listeners.update
+    listenerSetOrMap.add(listener)
     return () => {
-      listenerSetOrMap.delete(listener);
-    };
+      listenerSetOrMap.delete(listener)
+    }
   }
   /**
    * Registers a listener for for when the editor changes between editable and non-editable states.
@@ -799,11 +802,11 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerEditableListener(listener: EditableListener): () => void {
-    const listenerSetOrMap = this._listeners.editable;
-    listenerSetOrMap.add(listener);
+    const listenerSetOrMap = this._listeners.editable
+    listenerSetOrMap.add(listener)
     return () => {
-      listenerSetOrMap.delete(listener);
-    };
+      listenerSetOrMap.delete(listener)
+    }
   }
   /**
    * Registers a listener for when the editor's decorator object changes. The decorator object contains
@@ -815,11 +818,11 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerDecoratorListener<T>(listener: DecoratorListener<T>): () => void {
-    const listenerSetOrMap = this._listeners.decorator;
-    listenerSetOrMap.add(listener);
+    const listenerSetOrMap = this._listeners.decorator
+    listenerSetOrMap.add(listener)
     return () => {
-      listenerSetOrMap.delete(listener);
-    };
+      listenerSetOrMap.delete(listener)
+    }
   }
   /**
    * Registers a listener for when Lexical commits an update to the DOM and the text content of
@@ -832,11 +835,11 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerTextContentListener(listener: TextContentListener): () => void {
-    const listenerSetOrMap = this._listeners.textcontent;
-    listenerSetOrMap.add(listener);
+    const listenerSetOrMap = this._listeners.textcontent
+    listenerSetOrMap.add(listener)
     return () => {
-      listenerSetOrMap.delete(listener);
-    };
+      listenerSetOrMap.delete(listener)
+    }
   }
   /**
    * Registers a listener for when the editor's root DOM element (the content editable
@@ -850,13 +853,13 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerRootListener(listener: RootListener): () => void {
-    const listenerSetOrMap = this._listeners.root;
-    listener(this._rootElement, null);
-    listenerSetOrMap.add(listener);
+    const listenerSetOrMap = this._listeners.root
+    listener(this._rootElement, null)
+    listenerSetOrMap.add(listener)
     return () => {
-      listener(null, this._rootElement);
-      listenerSetOrMap.delete(listener);
-    };
+      listener(null, this._rootElement)
+      listenerSetOrMap.delete(listener)
+    }
   }
   /**
    * Registers a listener that will trigger anytime the provided command
@@ -886,10 +889,10 @@ export class LexicalEditor {
     priority: CommandListenerPriority,
   ): () => void {
     if (priority === undefined) {
-      invariant(false, 'Listener for type "command" requires a "priority".');
+      invariant(false, 'Listener for type "command" requires a "priority".')
     }
 
-    const commandsMap = this._commands;
+    const commandsMap = this._commands
 
     if (!commandsMap.has(command)) {
       commandsMap.set(command, [
@@ -898,32 +901,32 @@ export class LexicalEditor {
         new Set(),
         new Set(),
         new Set(),
-      ]);
+      ])
     }
 
-    const listenersInPriorityOrder = commandsMap.get(command);
+    const listenersInPriorityOrder = commandsMap.get(command)
 
     if (listenersInPriorityOrder === undefined) {
       invariant(
         false,
         'registerCommand: Command %s not found in command map',
         String(command),
-      );
+      )
     }
 
-    const listeners = listenersInPriorityOrder[priority];
-    listeners.add(listener as CommandListener<unknown>);
+    const listeners = listenersInPriorityOrder[priority]
+    listeners.add(listener as CommandListener<unknown>)
     return () => {
-      listeners.delete(listener as CommandListener<unknown>);
+      listeners.delete(listener as CommandListener<unknown>)
 
       if (
         listenersInPriorityOrder.every(
           (listenersSet) => listenersSet.size === 0,
         )
       ) {
-        commandsMap.delete(command);
+        commandsMap.delete(command)
       }
-    };
+    }
   }
 
   /**
@@ -951,44 +954,44 @@ export class LexicalEditor {
   ): () => void {
     const klassToMutate = this.resolveRegisteredNodeAfterReplacements(
       this.getRegisteredNode(klass),
-    ).klass;
-    const mutations = this._listeners.mutation;
-    let klassSet = mutations.get(listener);
+    ).klass
+    const mutations = this._listeners.mutation
+    let klassSet = mutations.get(listener)
     if (klassSet === undefined) {
-      klassSet = new Set();
-      mutations.set(listener, klassSet);
+      klassSet = new Set()
+      mutations.set(listener, klassSet)
     }
-    klassSet.add(klassToMutate);
-    const skipInitialization = options && options.skipInitialization;
+    klassSet.add(klassToMutate)
+    const skipInitialization = options && options.skipInitialization
     if (
       !(skipInitialization === undefined
         ? DEFAULT_SKIP_INITIALIZATION
         : skipInitialization)
     ) {
-      this.initializeMutationListener(listener, klassToMutate);
+      this.initializeMutationListener(listener, klassToMutate)
     }
 
     return () => {
-      klassSet.delete(klassToMutate);
+      klassSet.delete(klassToMutate)
       if (klassSet.size === 0) {
-        mutations.delete(listener);
+        mutations.delete(listener)
       }
-    };
+    }
   }
 
   /** @internal */
   getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
-    const registeredNode = this._nodes.get(klass.getType());
+    const registeredNode = this._nodes.get(klass.getType())
 
     if (registeredNode === undefined) {
       invariant(
         false,
         'Node %s has not been registered. Ensure node has been passed to createEditor.',
         klass.name,
-      );
+      )
     }
 
-    return registeredNode;
+    return registeredNode
   }
 
   /** @internal */
@@ -996,9 +999,9 @@ export class LexicalEditor {
     registeredNode: RegisteredNode,
   ): RegisteredNode {
     while (registeredNode.replaceWithKlass) {
-      registeredNode = this.getRegisteredNode(registeredNode.replaceWithKlass);
+      registeredNode = this.getRegisteredNode(registeredNode.replaceWithKlass)
     }
-    return registeredNode;
+    return registeredNode
   }
 
   /** @internal */
@@ -1006,23 +1009,23 @@ export class LexicalEditor {
     listener: MutationListener,
     klass: Klass<LexicalNode>,
   ): void {
-    const prevEditorState = this._editorState;
+    const prevEditorState = this._editorState
     const nodeMap = getCachedTypeToNodeMap(prevEditorState).get(
       klass.getType(),
-    );
+    )
     if (!nodeMap) {
-      return;
+      return
     }
-    const nodeMutationMap = new Map<string, NodeMutation>();
+    const nodeMutationMap = new Map<string, NodeMutation>()
     for (const k of nodeMap.keys()) {
-      nodeMutationMap.set(k, 'created');
+      nodeMutationMap.set(k, 'created')
     }
     if (nodeMutationMap.size > 0) {
       listener(nodeMutationMap, {
         dirtyLeaves: new Set(),
         prevEditorState,
         updateTags: new Set(['registerMutationListener']),
-      });
+      })
     }
   }
 
@@ -1031,10 +1034,10 @@ export class LexicalEditor {
     klass: Klass<T>,
     listener: Transform<T>,
   ): RegisteredNode {
-    const registeredNode = this.getRegisteredNode(klass);
-    registeredNode.transforms.add(listener as Transform<LexicalNode>);
+    const registeredNode = this.getRegisteredNode(klass)
+    registeredNode.transforms.add(listener as Transform<LexicalNode>)
 
-    return registeredNode;
+    return registeredNode
   }
 
   /**
@@ -1051,27 +1054,27 @@ export class LexicalEditor {
     klass: Klass<T>,
     listener: Transform<T>,
   ): () => void {
-    const registeredNode = this.registerNodeTransformToKlass(klass, listener);
-    const registeredNodes = [registeredNode];
+    const registeredNode = this.registerNodeTransformToKlass(klass, listener)
+    const registeredNodes = [registeredNode]
 
-    const replaceWithKlass = registeredNode.replaceWithKlass;
+    const replaceWithKlass = registeredNode.replaceWithKlass
     if (replaceWithKlass != null) {
       const registeredReplaceWithNode = this.registerNodeTransformToKlass(
         replaceWithKlass,
         listener as Transform<LexicalNode>,
-      );
-      registeredNodes.push(registeredReplaceWithNode);
+      )
+      registeredNodes.push(registeredReplaceWithNode)
     }
 
     markNodesWithTypesAsDirty(
       this,
       registeredNodes.map((node) => node.klass.getType()),
-    );
+    )
     return () => {
       registeredNodes.forEach((node) =>
         node.transforms.delete(listener as Transform<LexicalNode>),
-      );
-    };
+      )
+    }
   }
 
   /**
@@ -1080,7 +1083,7 @@ export class LexicalEditor {
    * @returns True if the editor has registered the provided node type, false otherwise.
    */
   hasNode<T extends Klass<LexicalNode>>(node: T): boolean {
-    return this._nodes.has(node.getType());
+    return this._nodes.has(node.getType())
   }
 
   /**
@@ -1089,7 +1092,7 @@ export class LexicalEditor {
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
   hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
-    return nodes.every(this.hasNode.bind(this));
+    return nodes.every(this.hasNode.bind(this))
   }
 
   /**
@@ -1106,7 +1109,7 @@ export class LexicalEditor {
     type: TCommand,
     payload: CommandPayloadType<TCommand>,
   ): boolean {
-    return dispatchCommand(this, type, payload);
+    return dispatchCommand(this, type, payload)
   }
 
   /**
@@ -1114,7 +1117,7 @@ export class LexicalEditor {
    * @returns A mapping of call decorator keys to their decorated content
    */
   getDecorators<T>(): Record<NodeKey, T> {
-    return this._decorators as Record<NodeKey, T>;
+    return this._decorators as Record<NodeKey, T>
   }
 
   /**
@@ -1124,7 +1127,7 @@ export class LexicalEditor {
    * this reference may not be stable.
    */
   getRootElement(): null | HTMLElement {
-    return this._rootElement;
+    return this._rootElement
   }
 
   /**
@@ -1132,7 +1135,7 @@ export class LexicalEditor {
    * @returns The editor key
    */
   getKey(): string {
-    return this._key;
+    return this._key
   }
 
   /**
@@ -1140,48 +1143,48 @@ export class LexicalEditor {
    * for events on.
    */
   setRootElement(nextRootElement: null | HTMLElement): void {
-    const prevRootElement = this._rootElement;
+    const prevRootElement = this._rootElement
 
     if (nextRootElement !== prevRootElement) {
-      const classNames = getCachedClassNameArray(this._config.theme, 'root');
-      const pendingEditorState = this._pendingEditorState || this._editorState;
-      this._rootElement = nextRootElement;
-      resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);
+      const classNames = getCachedClassNameArray(this._config.theme, 'root')
+      const pendingEditorState = this._pendingEditorState || this._editorState
+      this._rootElement = nextRootElement
+      resetEditor(this, prevRootElement, nextRootElement, pendingEditorState)
 
       if (prevRootElement !== null) {
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
-          removeRootElementEvents(prevRootElement);
+          removeRootElementEvents(prevRootElement)
         }
         if (classNames != null) {
-          prevRootElement.classList.remove(...classNames);
+          prevRootElement.classList.remove(...classNames)
         }
       }
 
       if (nextRootElement !== null) {
-        const windowObj = getDefaultView(nextRootElement);
-        const style = nextRootElement.style;
-        style.userSelect = 'text';
-        style.whiteSpace = 'pre-wrap';
-        style.wordBreak = 'break-word';
-        nextRootElement.setAttribute('data-lexical-editor', 'true');
-        this._window = windowObj;
-        this._dirtyType = FULL_RECONCILE;
-        initMutationObserver(this);
+        const windowObj = getDefaultView(nextRootElement)
+        const style = nextRootElement.style
+        style.userSelect = 'text'
+        style.whiteSpace = 'pre-wrap'
+        style.wordBreak = 'break-word'
+        nextRootElement.setAttribute('data-lexical-editor', 'true')
+        this._window = windowObj
+        this._dirtyType = FULL_RECONCILE
+        initMutationObserver(this)
 
-        this._updateTags.add(HISTORY_MERGE_TAG);
+        this._updateTags.add(HISTORY_MERGE_TAG)
 
-        $commitPendingUpdates(this);
+        $commitPendingUpdates(this)
 
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
-          addRootElementEvents(nextRootElement, this);
+          addRootElementEvents(nextRootElement, this)
         }
         if (classNames != null) {
-          nextRootElement.classList.add(...classNames);
+          nextRootElement.classList.add(...classNames)
         }
         if (__DEV__) {
-          const nextRootElementParent = nextRootElement.parentElement;
+          const nextRootElementParent = nextRootElement.parentElement
           if (
             nextRootElementParent != null &&
             ['flex', 'inline-flex'].includes(
@@ -1190,7 +1193,7 @@ export class LexicalEditor {
           ) {
             console.warn(
               `When using "display: flex" or "display: inline-flex" on an element containing content editable, Chrome may have unwanted focusing behavior when clicking outside of it. Consider wrapping the content editable within a non-flex element.`,
-            );
+            )
           }
         }
       } else {
@@ -1200,12 +1203,12 @@ export class LexicalEditor {
         // `_editorState = pendingEditorState` was used, but by
         // using a commit we preserve the readOnly invariant
         // for editor.getEditorState().
-        this._window = null;
-        this._updateTags.add(HISTORY_MERGE_TAG);
-        $commitPendingUpdates(this);
+        this._window = null
+        this._updateTags.add(HISTORY_MERGE_TAG)
+        $commitPendingUpdates(this)
       }
 
-      triggerListeners('root', this, false, nextRootElement, prevRootElement);
+      triggerListeners('root', this, false, nextRootElement, prevRootElement)
     }
   }
 
@@ -1215,7 +1218,7 @@ export class LexicalEditor {
    * @param key - the key of the LexicalNode.
    */
   getElementByKey(key: NodeKey): HTMLElement | null {
-    return this._keyToDOMMap.get(key) || null;
+    return this._keyToDOMMap.get(key) || null
   }
 
   /**
@@ -1223,7 +1226,7 @@ export class LexicalEditor {
    * @returns The editor state
    */
   getEditorState(): EditorState {
-    return this._editorState;
+    return this._editorState
   }
 
   /**
@@ -1236,45 +1239,45 @@ export class LexicalEditor {
       invariant(
         false,
         "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
-      );
+      )
     }
 
     // Ensure that we have a writable EditorState so that transforms can run
     // during a historic operation
-    let writableEditorState = editorState;
+    let writableEditorState = editorState
     if (writableEditorState._readOnly) {
-      writableEditorState = cloneEditorState(editorState);
+      writableEditorState = cloneEditorState(editorState)
       writableEditorState._selection = editorState._selection
         ? editorState._selection.clone()
-        : null;
+        : null
     }
 
-    flushRootMutations(this);
-    const pendingEditorState = this._pendingEditorState;
-    const tags = this._updateTags;
-    const tag = options !== undefined ? options.tag : null;
+    flushRootMutations(this)
+    const pendingEditorState = this._pendingEditorState
+    const tags = this._updateTags
+    const tag = options !== undefined ? options.tag : null
 
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
       if (tag != null) {
-        tags.add(tag);
+        tags.add(tag)
       }
-      $commitPendingUpdates(this);
+      $commitPendingUpdates(this)
     }
 
-    this._pendingEditorState = writableEditorState;
-    this._dirtyType = FULL_RECONCILE;
-    this._dirtyElements.set('root', false);
-    this._compositionKey = null;
+    this._pendingEditorState = writableEditorState
+    this._dirtyType = FULL_RECONCILE
+    this._dirtyElements.set('root', false)
+    this._compositionKey = null
 
     if (tag != null) {
-      tags.add(tag);
+      tags.add(tag)
     }
 
     // Only commit pending updates if not already in an editor.update
     // (e.g. dispatchCommand) otherwise this will cause a second commit
     // with an already read-only state and selection
     if (!this._updating) {
-      $commitPendingUpdates(this);
+      $commitPendingUpdates(this)
     }
   }
 
@@ -1293,8 +1296,8 @@ export class LexicalEditor {
     const serializedEditorState =
       typeof maybeStringifiedEditorState === 'string'
         ? JSON.parse(maybeStringifiedEditorState)
-        : maybeStringifiedEditorState;
-    return parseEditorState(serializedEditorState, this, updateFn);
+        : maybeStringifiedEditorState
+    return parseEditorState(serializedEditorState, this, updateFn)
   }
 
   /**
@@ -1306,8 +1309,8 @@ export class LexicalEditor {
    * @param callbackFn - A function that has access to read-only editor state.
    */
   read<T>(callbackFn: () => T): T {
-    $commitPendingUpdates(this);
-    return this.getEditorState().read(callbackFn, {editor: this});
+    $commitPendingUpdates(this)
+    return this.getEditorState().read(callbackFn, { editor: this })
   }
 
   /**
@@ -1317,7 +1320,7 @@ export class LexicalEditor {
    * @param options - A bag of options to control the behavior of the update.
    */
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
-    updateEditor(this, updateFn, options);
+    updateEditor(this, updateFn, options)
   }
 
   /**
@@ -1330,39 +1333,39 @@ export class LexicalEditor {
    * @param options - A bag of options
    */
   focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
-    const rootElement = this._rootElement;
+    const rootElement = this._rootElement
 
     if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
-      rootElement.setAttribute('autocapitalize', 'off');
+      rootElement.setAttribute('autocapitalize', 'off')
       updateEditorSync(this, () => {
-        const selection = $getSelection();
-        const root = $getRoot();
+        const selection = $getSelection()
+        const root = $getRoot()
 
         if (selection !== null) {
           // Marking the selection dirty will force the selection back to it
           if (!selection.dirty) {
-            $setSelection(selection.clone());
+            $setSelection(selection.clone())
           }
         } else if (root.getChildrenSize() !== 0) {
           if (options.defaultSelection === 'rootStart') {
-            root.selectStart();
+            root.selectStart()
           } else {
-            root.selectEnd();
+            root.selectEnd()
           }
         }
-        $addUpdateTag(FOCUS_TAG);
+        $addUpdateTag(FOCUS_TAG)
         $onUpdate(() => {
-          rootElement.removeAttribute('autocapitalize');
+          rootElement.removeAttribute('autocapitalize')
           if (callbackFn) {
-            callbackFn();
+            callbackFn()
           }
-        });
-      });
+        })
+      })
       // In the case where onUpdate doesn't fire (due to the focus update not
       // occurring).
       if (this._pendingEditorState === null) {
-        rootElement.removeAttribute('autocapitalize');
+        rootElement.removeAttribute('autocapitalize')
       }
     }
   }
@@ -1371,16 +1374,16 @@ export class LexicalEditor {
    * Removes focus from the editor.
    */
   blur(): void {
-    const rootElement = this._rootElement;
+    const rootElement = this._rootElement
 
     if (rootElement !== null) {
-      rootElement.blur();
+      rootElement.blur()
     }
 
-    const domSelection = getDOMSelection(this._window);
+    const domSelection = getDOMSelection(this._window)
 
     if (domSelection !== null) {
-      domSelection.removeAllRanges();
+      domSelection.removeAllRanges()
     }
   }
   /**
@@ -1388,7 +1391,7 @@ export class LexicalEditor {
    * @returns True if the editor is editable, false otherwise.
    */
   isEditable(): boolean {
-    return this._editable;
+    return this._editable
   }
   /**
    * Sets the editable property of the editor. When false, the
@@ -1397,8 +1400,8 @@ export class LexicalEditor {
    */
   setEditable(editable: boolean): void {
     if (this._editable !== editable) {
-      this._editable = editable;
-      triggerListeners('editable', this, true, editable);
+      this._editable = editable
+      triggerListeners('editable', this, true, editable)
     }
   }
   /**
@@ -1413,8 +1416,8 @@ export class LexicalEditor {
   toJSON(): SerializedEditor {
     return {
       editorState: this._editorState.toJSON(),
-    };
+    }
   }
 }
 
-LexicalEditor.version = process.env.LEXICAL_VERSION;
+LexicalEditor.version = process.env.LEXICAL_VERSION

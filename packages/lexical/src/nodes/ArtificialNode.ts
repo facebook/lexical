@@ -5,19 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {EditorConfig} from 'lexical';
+import type { EditorConfig } from '../LexicalEditor'
 
-import {ElementNode} from './LexicalElementNode';
+import { ElementNode } from './LexicalElementNode'
 
 // TODO: Cleanup ArtificialNode__DO_NOT_USE #5966
 export class ArtificialNode__DO_NOT_USE extends ElementNode {
   static getType(): string {
-    return 'artificial';
+    return 'artificial'
   }
 
   createDOM(config: EditorConfig): HTMLElement {
     // this isnt supposed to be used and is not used anywhere but defining it to appease the API
-    const dom = document.createElement('div');
-    return dom;
+    const dom = document.createElement('div')
+    return dom
   }
 }

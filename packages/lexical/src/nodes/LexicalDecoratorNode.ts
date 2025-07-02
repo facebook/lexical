@@ -6,47 +6,47 @@
  *
  */
 
-import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
-import type {ElementNode} from './LexicalElementNode';
-import type {EditorConfig} from 'lexical';
+import type { KlassConstructor, LexicalEditor } from '../LexicalEditor'
+import type { ElementNode } from './LexicalElementNode'
+import type { EditorConfig } from '../LexicalEditor'
 
-import invariant from 'shared/invariant';
+import invariant from 'shared/invariant'
 
-import {LexicalNode} from '../LexicalNode';
+import { LexicalNode } from '../LexicalNode'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface DecoratorNode<T> {
-  getTopLevelElement(): ElementNode | this | null;
-  getTopLevelElementOrThrow(): ElementNode | this;
+  getTopLevelElement(): ElementNode | this | null
+  getTopLevelElementOrThrow(): ElementNode | this
 }
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DecoratorNode<T> extends LexicalNode {
-  ['constructor']!: KlassConstructor<typeof DecoratorNode<T>>;
+  ['constructor']!: KlassConstructor<typeof DecoratorNode<T>>
 
   /**
    * The returned value is added to the LexicalEditor._decorators
    */
   decorate(editor: LexicalEditor, config: EditorConfig): T {
-    invariant(false, 'decorate: base method not extended');
+    invariant(false, 'decorate: base method not extended')
   }
 
   isIsolated(): boolean {
-    return false;
+    return false
   }
 
   isInline(): boolean {
-    return true;
+    return true
   }
 
   isKeyboardSelectable(): boolean {
-    return true;
+    return true
   }
 }
 
 export function $isDecoratorNode<T>(
   node: LexicalNode | null | undefined,
 ): node is DecoratorNode<T> {
-  return node instanceof DecoratorNode;
+  return node instanceof DecoratorNode
 }

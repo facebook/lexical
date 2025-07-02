@@ -6,18 +6,18 @@
  *
  */
 
-import type {SerializedEditorState} from './LexicalEditorState';
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type { SerializedEditorState } from './LexicalEditorState'
+import type { LexicalNode, SerializedLexicalNode } from './LexicalNode'
 
-import invariant from 'shared/invariant';
+import invariant from 'shared/invariant'
 
-import {
-  $isElementNode,
-  $isTextNode,
-  SELECTION_CHANGE_COMMAND,
-  SKIP_DOM_SELECTION_TAG,
-} from '.';
-import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
+// import {
+//   $isElementNode,
+//   $isTextNode,
+//   SELECTION_CHANGE_COMMAND,
+//   SKIP_DOM_SELECTION_TAG,
+// } from '.';
+import { FULL_RECONCILE, NO_DIRTY_NODES } from './LexicalConstants'
 import {
   CommandPayloadType,
   EditorUpdateOptions,
@@ -28,27 +28,27 @@ import {
   resetEditor,
   SetListeners,
   Transform,
-} from './LexicalEditor';
+} from './LexicalEditor'
 import {
   cloneEditorState,
   createEmptyEditorState,
   EditorState,
   editorStateHasDirtySelection,
-} from './LexicalEditorState';
+} from './LexicalEditorState'
 import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
-} from './LexicalGC';
-import {initMutationObserver} from './LexicalMutations';
-import {$normalizeTextNode} from './LexicalNormalization';
-import {$reconcileRoot} from './LexicalReconciler';
+} from './LexicalGC'
+import { initMutationObserver } from './LexicalMutations'
+import { $normalizeTextNode } from './LexicalNormalization'
+import { $reconcileRoot } from './LexicalReconciler'
 import {
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
   applySelectionTransforms,
   updateDOMSelection,
-} from './LexicalSelection';
+} from './LexicalSelection'
 import {
   $getCompositionKey,
   getDOMSelection,
@@ -62,30 +62,34 @@ import {
   scheduleMicroTask,
   setPendingNodeToClone,
   updateDOMBlockCursorElement,
-} from './LexicalUtils';
+} from './LexicalUtils'
+import { $isTextNode } from './nodes/LexicalTextNode'
+import { $isElementNode } from './nodes/LexicalElementNode'
+import { SKIP_DOM_SELECTION_TAG } from './LexicalUpdateTags'
+import { SELECTION_CHANGE_COMMAND } from './LexicalCommands'
 
-let activeEditorState: null | EditorState = null;
-let activeEditor: null | LexicalEditor = null;
-let isReadOnlyMode = false;
-let isAttemptingToRecoverFromReconcilerError = false;
-let infiniteTransformCount = 0;
+let activeEditorState: null | EditorState = null
+let activeEditor: null | LexicalEditor = null
+let isReadOnlyMode = false
+let isAttemptingToRecoverFromReconcilerError = false
+let infiniteTransformCount = 0
 
 const observerOptions = {
   characterData: true,
   childList: true,
   subtree: true,
-};
+}
 
 export function isCurrentlyReadOnlyMode(): boolean {
   return (
     isReadOnlyMode ||
     (activeEditorState !== null && activeEditorState._readOnly)
-  );
+  )
 }
 
 export function errorOnReadOnly(): void {
   if (isReadOnlyMode) {
-    invariant(false, 'Cannot use method in read-only mode.');
+    invariant(false, 'Cannot use method in read-only mode.')
   }
 }
 
@@ -94,7 +98,7 @@ export function errorOnInfiniteTransforms(): void {
     invariant(
       false,
       'One or more transforms are endlessly triggering additional transforms. May have encountered infinite recursion caused by transforms that have their preconditions too lose and/or conflict with each other.',
-    );
+    )
   }
 }
 
@@ -103,14 +107,14 @@ export function getActiveEditorState(): EditorState {
     invariant(
       false,
       'Unable to find an active editor state. ' +
-        'State helpers or node methods can only be used ' +
-        'synchronously during the callback of ' +
-        'editor.update(), editor.read(), or editorState.read().%s',
+      'State helpers or node methods can only be used ' +
+      'synchronously during the callback of ' +
+      'editor.update(), editor.read(), or editorState.read().%s',
       collectBuildInformation(),
-    );
+    )
   }
 
-  return activeEditorState;
+  return activeEditorState
 }
 
 export function getActiveEditor(): LexicalEditor {
@@ -118,54 +122,54 @@ export function getActiveEditor(): LexicalEditor {
     invariant(
       false,
       'Unable to find an active editor. ' +
-        'This method can only be used ' +
-        'synchronously during the callback of ' +
-        'editor.update() or editor.read().%s',
+      'This method can only be used ' +
+      'synchronously during the callback of ' +
+      'editor.update() or editor.read().%s',
       collectBuildInformation(),
-    );
+    )
   }
-  return activeEditor;
+  return activeEditor
 }
 
 function collectBuildInformation(): string {
-  let compatibleEditors = 0;
-  const incompatibleEditors = new Set<string>();
-  const thisVersion = LexicalEditor.version;
+  let compatibleEditors = 0
+  const incompatibleEditors = new Set<string>()
+  const thisVersion = LexicalEditor.version
   if (typeof window !== 'undefined') {
     for (const node of document.querySelectorAll('[contenteditable]')) {
-      const editor = getEditorPropertyFromDOMNode(node);
+      const editor = getEditorPropertyFromDOMNode(node)
       if (isLexicalEditor(editor)) {
-        compatibleEditors++;
+        compatibleEditors++
       } else if (editor) {
         let version = String(
           (
             editor.constructor as (typeof editor)['constructor'] &
-              Record<string, unknown>
+            Record<string, unknown>
           ).version || '<0.17.1',
-        );
+        )
         if (version === thisVersion) {
           version +=
-            ' (separately built, likely a bundler configuration issue)';
+            ' (separately built, likely a bundler configuration issue)'
         }
-        incompatibleEditors.add(version);
+        incompatibleEditors.add(version)
       }
     }
   }
-  let output = ` Detected on the page: ${compatibleEditors} compatible editor(s) with version ${thisVersion}`;
+  let output = ` Detected on the page: ${compatibleEditors} compatible editor(s) with version ${thisVersion}`
   if (incompatibleEditors.size) {
     output += ` and incompatible editors with versions ${Array.from(
       incompatibleEditors,
-    ).join(', ')}`;
+    ).join(', ')}`
   }
-  return output;
+  return output
 }
 
 export function internalGetActiveEditor(): LexicalEditor | null {
-  return activeEditor;
+  return activeEditor
 }
 
 export function internalGetActiveEditorState(): EditorState | null {
-  return activeEditorState;
+  return activeEditorState
 }
 
 export function $applyTransforms(
@@ -173,22 +177,22 @@ export function $applyTransforms(
   node: LexicalNode,
   transformsCache: Map<string, Array<Transform<LexicalNode>>>,
 ) {
-  const type = node.__type;
-  const registeredNode = getRegisteredNodeOrThrow(editor, type);
-  let transformsArr = transformsCache.get(type);
+  const type = node.__type
+  const registeredNode = getRegisteredNodeOrThrow(editor, type)
+  let transformsArr = transformsCache.get(type)
 
   if (transformsArr === undefined) {
-    transformsArr = Array.from(registeredNode.transforms);
-    transformsCache.set(type, transformsArr);
+    transformsArr = Array.from(registeredNode.transforms)
+    transformsCache.set(type, transformsArr)
   }
 
-  const transformsArrLength = transformsArr.length;
+  const transformsArrLength = transformsArr.length
 
   for (let i = 0; i < transformsArrLength; i++) {
-    transformsArr[i](node);
+    transformsArr[i](node)
 
     if (!node.isAttached()) {
-      break;
+      break
     }
   }
 }
@@ -202,18 +206,18 @@ function $isNodeValidForTransform(
     // We don't want to transform nodes being composed
     node.__key !== compositionKey &&
     node.isAttached()
-  );
+  )
 }
 
 function $normalizeAllDirtyTextNodes(
   editorState: EditorState,
   editor: LexicalEditor,
 ): void {
-  const dirtyLeaves = editor._dirtyLeaves;
-  const nodeMap = editorState._nodeMap;
+  const dirtyLeaves = editor._dirtyLeaves
+  const nodeMap = editorState._nodeMap
 
   for (const nodeKey of dirtyLeaves) {
-    const node = nodeMap.get(nodeKey);
+    const node = nodeMap.get(nodeKey)
 
     if (
       $isTextNode(node) &&
@@ -221,22 +225,22 @@ function $normalizeAllDirtyTextNodes(
       node.isSimpleText() &&
       !node.isUnmergeable()
     ) {
-      $normalizeTextNode(node);
+      $normalizeTextNode(node)
     }
   }
 }
 
 function addTags(editor: LexicalEditor, tags: undefined | string | string[]) {
   if (!tags) {
-    return;
+    return
   }
-  const updateTags = editor._updateTags;
-  let tags_ = tags;
+  const updateTags = editor._updateTags
+  let tags_ = tags
   if (!Array.isArray(tags)) {
-    tags_ = [tags];
+    tags_ = [tags]
   }
   for (const tag of tags_) {
-    updateTags.add(tag);
+    updateTags.add(tag)
   }
 }
 
@@ -254,16 +258,16 @@ function $applyAllTransforms(
   editorState: EditorState,
   editor: LexicalEditor,
 ): void {
-  const dirtyLeaves = editor._dirtyLeaves;
-  const dirtyElements = editor._dirtyElements;
-  const nodeMap = editorState._nodeMap;
-  const compositionKey = $getCompositionKey();
-  const transformsCache = new Map();
+  const dirtyLeaves = editor._dirtyLeaves
+  const dirtyElements = editor._dirtyElements
+  const nodeMap = editorState._nodeMap
+  const compositionKey = $getCompositionKey()
+  const transformsCache = new Map()
 
-  let untransformedDirtyLeaves = dirtyLeaves;
-  let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
-  let untransformedDirtyElements = dirtyElements;
-  let untransformedDirtyElementsLength = untransformedDirtyElements.size;
+  let untransformedDirtyLeaves = dirtyLeaves
+  let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size
+  let untransformedDirtyElements = dirtyElements
+  let untransformedDirtyElementsLength = untransformedDirtyElements.size
 
   while (
     untransformedDirtyLeavesLength > 0 ||
@@ -271,10 +275,10 @@ function $applyAllTransforms(
   ) {
     if (untransformedDirtyLeavesLength > 0) {
       // We leverage editor._dirtyLeaves to track the new dirty leaves after the transforms
-      editor._dirtyLeaves = new Set();
+      editor._dirtyLeaves = new Set()
 
       for (const nodeKey of untransformedDirtyLeaves) {
-        const node = nodeMap.get(nodeKey);
+        const node = nodeMap.get(nodeKey)
 
         if (
           $isTextNode(node) &&
@@ -282,85 +286,85 @@ function $applyAllTransforms(
           node.isSimpleText() &&
           !node.isUnmergeable()
         ) {
-          $normalizeTextNode(node);
+          $normalizeTextNode(node)
         }
 
         if (
           node !== undefined &&
           $isNodeValidForTransform(node, compositionKey)
         ) {
-          $applyTransforms(editor, node, transformsCache);
+          $applyTransforms(editor, node, transformsCache)
         }
 
-        dirtyLeaves.add(nodeKey);
+        dirtyLeaves.add(nodeKey)
       }
 
-      untransformedDirtyLeaves = editor._dirtyLeaves;
-      untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
+      untransformedDirtyLeaves = editor._dirtyLeaves
+      untransformedDirtyLeavesLength = untransformedDirtyLeaves.size
 
       // We want to prioritize node transforms over element transforms
       if (untransformedDirtyLeavesLength > 0) {
-        infiniteTransformCount++;
-        continue;
+        infiniteTransformCount++
+        continue
       }
     }
 
     // All dirty leaves have been processed. Let's do elements!
     // We have previously processed dirty leaves, so let's restart the editor leaves Set to track
     // new ones caused by element transforms
-    editor._dirtyLeaves = new Set();
-    editor._dirtyElements = new Map();
+    editor._dirtyLeaves = new Set()
+    editor._dirtyElements = new Map()
 
     // The root is always considered intentionally dirty if any attached node
     // is dirty and by deleting and re-inserting we will apply its transforms
     // last (e.g. its transform can be used as a sort of "update finalizer")
-    const rootDirty = untransformedDirtyElements.delete('root');
+    const rootDirty = untransformedDirtyElements.delete('root')
     if (rootDirty) {
-      untransformedDirtyElements.set('root', true);
+      untransformedDirtyElements.set('root', true)
     }
     for (const currentUntransformedDirtyElement of untransformedDirtyElements) {
-      const nodeKey = currentUntransformedDirtyElement[0];
-      const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
-      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
+      const nodeKey = currentUntransformedDirtyElement[0]
+      const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1]
+      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty)
       if (!intentionallyMarkedAsDirty) {
-        continue;
+        continue
       }
 
-      const node = nodeMap.get(nodeKey);
+      const node = nodeMap.get(nodeKey)
 
       if (
         node !== undefined &&
         $isNodeValidForTransform(node, compositionKey)
       ) {
-        $applyTransforms(editor, node, transformsCache);
+        $applyTransforms(editor, node, transformsCache)
       }
     }
 
-    untransformedDirtyLeaves = editor._dirtyLeaves;
-    untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
-    untransformedDirtyElements = editor._dirtyElements;
-    untransformedDirtyElementsLength = untransformedDirtyElements.size;
-    infiniteTransformCount++;
+    untransformedDirtyLeaves = editor._dirtyLeaves
+    untransformedDirtyLeavesLength = untransformedDirtyLeaves.size
+    untransformedDirtyElements = editor._dirtyElements
+    untransformedDirtyElementsLength = untransformedDirtyElements.size
+    infiniteTransformCount++
   }
 
-  editor._dirtyLeaves = dirtyLeaves;
-  editor._dirtyElements = dirtyElements;
+  editor._dirtyLeaves = dirtyLeaves
+  editor._dirtyElements = dirtyElements
 }
 
 type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>;
-  type: string;
-  version: number;
-};
+  children?: Array<InternalSerializedNode>
+  type: string
+  version: number
+}
 
 export function $parseSerializedNode(
   serializedNode: SerializedLexicalNode,
 ): LexicalNode {
-  const internalSerializedNode: InternalSerializedNode = serializedNode;
+  const internalSerializedNode: InternalSerializedNode = serializedNode
   return $parseSerializedNodeImpl(
     internalSerializedNode,
     getActiveEditor()._nodes,
-  );
+  )
 }
 
 function $parseSerializedNodeImpl<
@@ -369,38 +373,38 @@ function $parseSerializedNodeImpl<
   serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {
-  const type = serializedNode.type;
-  const registeredNode = registeredNodes.get(type);
+  const type = serializedNode.type
+  const registeredNode = registeredNodes.get(type)
 
   if (registeredNode === undefined) {
-    invariant(false, 'parseEditorState: type "%s" + not found', type);
+    invariant(false, 'parseEditorState: type "%s" + not found', type)
   }
 
-  const nodeClass = registeredNode.klass;
+  const nodeClass = registeredNode.klass
 
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
       'LexicalNode: Node %s does not implement .importJSON().',
       nodeClass.name,
-    );
+    )
   }
 
-  const node = nodeClass.importJSON(serializedNode);
-  const children = serializedNode.children;
+  const node = nodeClass.importJSON(serializedNode)
+  const children = serializedNode.children
 
   if ($isElementNode(node) && Array.isArray(children)) {
     for (let i = 0; i < children.length; i++) {
-      const serializedJSONChildNode = children[i];
+      const serializedJSONChildNode = children[i]
       const childNode = $parseSerializedNodeImpl(
         serializedJSONChildNode,
         registeredNodes,
-      );
-      node.append(childNode);
+      )
+      node.append(childNode)
     }
   }
 
-  return node;
+  return node
 }
 
 export function parseEditorState(
@@ -408,52 +412,52 @@ export function parseEditorState(
   editor: LexicalEditor,
   updateFn: void | (() => void),
 ): EditorState {
-  const editorState = createEmptyEditorState();
-  const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
-  const previousActiveEditor = activeEditor;
-  const previousDirtyElements = editor._dirtyElements;
-  const previousDirtyLeaves = editor._dirtyLeaves;
-  const previousCloneNotNeeded = editor._cloneNotNeeded;
-  const previousDirtyType = editor._dirtyType;
-  editor._dirtyElements = new Map();
-  editor._dirtyLeaves = new Set();
-  editor._cloneNotNeeded = new Set();
-  editor._dirtyType = 0;
-  activeEditorState = editorState;
-  isReadOnlyMode = false;
-  activeEditor = editor;
-  setPendingNodeToClone(null);
+  const editorState = createEmptyEditorState()
+  const previousActiveEditorState = activeEditorState
+  const previousReadOnlyMode = isReadOnlyMode
+  const previousActiveEditor = activeEditor
+  const previousDirtyElements = editor._dirtyElements
+  const previousDirtyLeaves = editor._dirtyLeaves
+  const previousCloneNotNeeded = editor._cloneNotNeeded
+  const previousDirtyType = editor._dirtyType
+  editor._dirtyElements = new Map()
+  editor._dirtyLeaves = new Set()
+  editor._cloneNotNeeded = new Set()
+  editor._dirtyType = 0
+  activeEditorState = editorState
+  isReadOnlyMode = false
+  activeEditor = editor
+  setPendingNodeToClone(null)
 
   try {
-    const registeredNodes = editor._nodes;
-    const serializedNode = serializedEditorState.root;
-    $parseSerializedNodeImpl(serializedNode, registeredNodes);
+    const registeredNodes = editor._nodes
+    const serializedNode = serializedEditorState.root
+    $parseSerializedNodeImpl(serializedNode, registeredNodes)
     if (updateFn) {
-      updateFn();
+      updateFn()
     }
 
     // Make the editorState immutable
-    editorState._readOnly = true;
+    editorState._readOnly = true
 
     if (__DEV__) {
-      handleDEVOnlyPendingUpdateGuarantees(editorState);
+      handleDEVOnlyPendingUpdateGuarantees(editorState)
     }
   } catch (error) {
     if (error instanceof Error) {
-      editor._onError(error);
+      editor._onError(error)
     }
   } finally {
-    editor._dirtyElements = previousDirtyElements;
-    editor._dirtyLeaves = previousDirtyLeaves;
-    editor._cloneNotNeeded = previousCloneNotNeeded;
-    editor._dirtyType = previousDirtyType;
-    activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
-    activeEditor = previousActiveEditor;
+    editor._dirtyElements = previousDirtyElements
+    editor._dirtyLeaves = previousDirtyLeaves
+    editor._cloneNotNeeded = previousCloneNotNeeded
+    editor._dirtyType = previousDirtyType
+    activeEditorState = previousActiveEditorState
+    isReadOnlyMode = previousReadOnlyMode
+    activeEditor = previousActiveEditor
   }
 
-  return editorState;
+  return editorState
 }
 
 // This technically isn't an update but given we need
@@ -465,20 +469,20 @@ export function readEditorState<V>(
   editorState: EditorState,
   callbackFn: () => V,
 ): V {
-  const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
-  const previousActiveEditor = activeEditor;
+  const previousActiveEditorState = activeEditorState
+  const previousReadOnlyMode = isReadOnlyMode
+  const previousActiveEditor = activeEditor
 
-  activeEditorState = editorState;
-  isReadOnlyMode = true;
-  activeEditor = editor;
+  activeEditorState = editorState
+  isReadOnlyMode = true
+  activeEditor = editor
 
   try {
-    return callbackFn();
+    return callbackFn()
   } finally {
-    activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
-    activeEditor = previousActiveEditor;
+    activeEditorState = previousActiveEditorState
+    isReadOnlyMode = previousReadOnlyMode
+    activeEditor = previousActiveEditor
   }
 }
 
@@ -487,61 +491,61 @@ function handleDEVOnlyPendingUpdateGuarantees(
 ): void {
   // Given we can't Object.freeze the nodeMap as it's a Map,
   // we instead replace its set, clear and delete methods.
-  const nodeMap = pendingEditorState._nodeMap;
+  const nodeMap = pendingEditorState._nodeMap
 
   nodeMap.set = () => {
-    throw new Error('Cannot call set() on a frozen Lexical node map');
-  };
+    throw new Error('Cannot call set() on a frozen Lexical node map')
+  }
 
   nodeMap.clear = () => {
-    throw new Error('Cannot call clear() on a frozen Lexical node map');
-  };
+    throw new Error('Cannot call clear() on a frozen Lexical node map')
+  }
 
   nodeMap.delete = () => {
-    throw new Error('Cannot call delete() on a frozen Lexical node map');
-  };
+    throw new Error('Cannot call delete() on a frozen Lexical node map')
+  }
 }
 
 export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
-  const pendingEditorState = editor._pendingEditorState;
-  const rootElement = editor._rootElement;
-  const shouldSkipDOM = editor._headless || rootElement === null;
+  const pendingEditorState = editor._pendingEditorState
+  const rootElement = editor._rootElement
+  const shouldSkipDOM = editor._headless || rootElement === null
 
   if (pendingEditorState === null) {
-    return;
+    return
   }
 
   // ======
   // Reconciliation has started.
   // ======
 
-  const currentEditorState = editor._editorState;
-  const currentSelection = currentEditorState._selection;
-  const pendingSelection = pendingEditorState._selection;
-  const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
-  const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
-  const previousActiveEditor = activeEditor;
-  const previouslyUpdating = editor._updating;
-  const observer = editor._observer;
-  let mutatedNodes = null;
-  editor._pendingEditorState = null;
-  editor._editorState = pendingEditorState;
+  const currentEditorState = editor._editorState
+  const currentSelection = currentEditorState._selection
+  const pendingSelection = pendingEditorState._selection
+  const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES
+  const previousActiveEditorState = activeEditorState
+  const previousReadOnlyMode = isReadOnlyMode
+  const previousActiveEditor = activeEditor
+  const previouslyUpdating = editor._updating
+  const observer = editor._observer
+  let mutatedNodes = null
+  editor._pendingEditorState = null
+  editor._editorState = pendingEditorState
 
   if (!shouldSkipDOM && needsUpdate && observer !== null) {
-    activeEditor = editor;
-    activeEditorState = pendingEditorState;
-    isReadOnlyMode = false;
+    activeEditor = editor
+    activeEditorState = pendingEditorState
+    isReadOnlyMode = false
     // We don't want updates to sync block the reconciliation.
-    editor._updating = true;
+    editor._updating = true
     try {
-      const dirtyType = editor._dirtyType;
-      const dirtyElements = editor._dirtyElements;
-      const dirtyLeaves = editor._dirtyLeaves;
-      observer.disconnect();
+      const dirtyType = editor._dirtyType
+      const dirtyElements = editor._dirtyElements
+      const dirtyLeaves = editor._dirtyLeaves
+      observer.disconnect()
 
       mutatedNodes = $reconcileRoot(
         currentEditorState,
@@ -550,64 +554,64 @@ export function $commitPendingUpdates(
         dirtyType,
         dirtyElements,
         dirtyLeaves,
-      );
+      )
     } catch (error) {
       // Report errors
       if (error instanceof Error) {
-        editor._onError(error);
+        editor._onError(error)
       }
 
       // Reset editor and restore incoming editor state to the DOM
       if (!isAttemptingToRecoverFromReconcilerError) {
-        resetEditor(editor, null, rootElement, pendingEditorState);
-        initMutationObserver(editor);
-        editor._dirtyType = FULL_RECONCILE;
-        isAttemptingToRecoverFromReconcilerError = true;
-        $commitPendingUpdates(editor, currentEditorState);
-        isAttemptingToRecoverFromReconcilerError = false;
+        resetEditor(editor, null, rootElement, pendingEditorState)
+        initMutationObserver(editor)
+        editor._dirtyType = FULL_RECONCILE
+        isAttemptingToRecoverFromReconcilerError = true
+        $commitPendingUpdates(editor, currentEditorState)
+        isAttemptingToRecoverFromReconcilerError = false
       } else {
         // To avoid a possible situation of infinite loops, lets throw
-        throw error;
+        throw error
       }
 
-      return;
+      return
     } finally {
-      observer.observe(rootElement, observerOptions);
-      editor._updating = previouslyUpdating;
-      activeEditorState = previousActiveEditorState;
-      isReadOnlyMode = previousReadOnlyMode;
-      activeEditor = previousActiveEditor;
+      observer.observe(rootElement, observerOptions)
+      editor._updating = previouslyUpdating
+      activeEditorState = previousActiveEditorState
+      isReadOnlyMode = previousReadOnlyMode
+      activeEditor = previousActiveEditor
     }
   }
 
   if (!pendingEditorState._readOnly) {
-    pendingEditorState._readOnly = true;
+    pendingEditorState._readOnly = true
     if (__DEV__) {
-      handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
+      handleDEVOnlyPendingUpdateGuarantees(pendingEditorState)
       if ($isRangeSelection(pendingSelection)) {
-        Object.freeze(pendingSelection.anchor);
-        Object.freeze(pendingSelection.focus);
+        Object.freeze(pendingSelection.anchor)
+        Object.freeze(pendingSelection.focus)
       }
-      Object.freeze(pendingSelection);
+      Object.freeze(pendingSelection)
     }
   }
 
-  const dirtyLeaves = editor._dirtyLeaves;
-  const dirtyElements = editor._dirtyElements;
-  const normalizedNodes = editor._normalizedNodes;
-  const tags = editor._updateTags;
-  const deferred = editor._deferred;
-  const nodeCount = pendingEditorState._nodeMap.size;
+  const dirtyLeaves = editor._dirtyLeaves
+  const dirtyElements = editor._dirtyElements
+  const normalizedNodes = editor._normalizedNodes
+  const tags = editor._updateTags
+  const deferred = editor._deferred
+  const nodeCount = pendingEditorState._nodeMap.size
 
   if (needsUpdate) {
-    editor._dirtyType = NO_DIRTY_NODES;
-    editor._cloneNotNeeded.clear();
-    editor._dirtyLeaves = new Set();
-    editor._dirtyElements = new Map();
-    editor._normalizedNodes = new Set();
-    editor._updateTags = new Set();
+    editor._dirtyType = NO_DIRTY_NODES
+    editor._cloneNotNeeded.clear()
+    editor._dirtyLeaves = new Set()
+    editor._dirtyElements = new Map()
+    editor._normalizedNodes = new Set()
+    editor._updateTags = new Set()
   }
-  $garbageCollectDetachedDecorators(editor, pendingEditorState);
+  $garbageCollectDetachedDecorators(editor, pendingEditorState)
 
   // ======
   // Reconciliation has finished. Now update selection and trigger listeners.
@@ -615,7 +619,7 @@ export function $commitPendingUpdates(
 
   const domSelection = shouldSkipDOM
     ? null
-    : getDOMSelection(getWindow(editor));
+    : getDOMSelection(getWindow(editor))
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
@@ -627,16 +631,16 @@ export function $commitPendingUpdates(
     rootElement !== null &&
     !tags.has(SKIP_DOM_SELECTION_TAG)
   ) {
-    activeEditor = editor;
-    activeEditorState = pendingEditorState;
+    activeEditor = editor
+    activeEditorState = pendingEditorState
     try {
       if (observer !== null) {
-        observer.disconnect();
+        observer.disconnect()
       }
       if (needsUpdate || pendingSelection === null || pendingSelection.dirty) {
-        const blockCursorElement = editor._blockCursorElement;
+        const blockCursorElement = editor._blockCursorElement
         if (blockCursorElement !== null) {
-          removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
+          removeDOMBlockCursorElement(blockCursorElement, editor, rootElement)
         }
         updateDOMSelection(
           currentSelection,
@@ -646,15 +650,15 @@ export function $commitPendingUpdates(
           tags,
           rootElement,
           nodeCount,
-        );
+        )
       }
-      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
+      updateDOMBlockCursorElement(editor, rootElement, pendingSelection)
     } finally {
       if (observer !== null) {
-        observer.observe(rootElement, observerOptions);
+        observer.observe(rootElement, observerOptions)
       }
-      activeEditor = previousActiveEditor;
-      activeEditorState = previousActiveEditorState;
+      activeEditor = previousActiveEditor
+      activeEditorState = previousActiveEditorState
     }
   }
 
@@ -665,23 +669,23 @@ export function $commitPendingUpdates(
       tags,
       dirtyLeaves,
       currentEditorState,
-    );
+    )
   }
   if (
     !$isRangeSelection(pendingSelection) &&
     pendingSelection !== null &&
     (currentSelection === null || !currentSelection.is(pendingSelection))
   ) {
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined)
   }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators
    */
-  const pendingDecorators = editor._pendingDecorators;
+  const pendingDecorators = editor._pendingDecorators
   if (pendingDecorators !== null) {
-    editor._decorators = pendingDecorators;
-    editor._pendingDecorators = null;
-    triggerListeners('decorator', editor, true, pendingDecorators);
+    editor._decorators = pendingDecorators
+    editor._pendingDecorators = null
+    triggerListeners('decorator', editor, true, pendingDecorators)
   }
 
   // If reconciler fails, we reset whole editor (so current editor state becomes empty)
@@ -693,7 +697,7 @@ export function $commitPendingUpdates(
     editor,
     recoveryEditorState || currentEditorState,
     pendingEditorState,
-  );
+  )
   triggerListeners('update', editor, true, {
     dirtyElements,
     dirtyLeaves,
@@ -702,9 +706,9 @@ export function $commitPendingUpdates(
     normalizedNodes,
     prevEditorState: recoveryEditorState || currentEditorState,
     tags,
-  });
-  triggerDeferredUpdateCallbacks(editor, deferred);
-  $triggerEnqueuedUpdates(editor);
+  })
+  triggerDeferredUpdateCallbacks(editor, deferred)
+  $triggerEnqueuedUpdates(editor)
 }
 
 function triggerTextContentListeners(
@@ -712,11 +716,11 @@ function triggerTextContentListeners(
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
 ): void {
-  const currentTextContent = getEditorStateTextContent(currentEditorState);
-  const latestTextContent = getEditorStateTextContent(pendingEditorState);
+  const currentTextContent = getEditorStateTextContent(currentEditorState)
+  const latestTextContent = getEditorStateTextContent(pendingEditorState)
 
   if (currentTextContent !== latestTextContent) {
-    triggerListeners('textcontent', editor, true, latestTextContent);
+    triggerListeners('textcontent', editor, true, latestTextContent)
   }
 }
 
@@ -727,19 +731,19 @@ function triggerMutationListeners(
   dirtyLeaves: Set<string>,
   prevEditorState: EditorState,
 ): void {
-  const listeners = Array.from(editor._listeners.mutation);
-  const listenersLength = listeners.length;
+  const listeners = Array.from(editor._listeners.mutation)
+  const listenersLength = listeners.length
 
   for (let i = 0; i < listenersLength; i++) {
-    const [listener, klassSet] = listeners[i];
+    const [listener, klassSet] = listeners[i]
     for (const klass of klassSet) {
-      const mutatedNodesByType = mutatedNodes.get(klass);
+      const mutatedNodesByType = mutatedNodes.get(klass)
       if (mutatedNodesByType !== undefined) {
         listener(mutatedNodesByType, {
           dirtyLeaves,
           prevEditorState,
           updateTags,
-        });
+        })
       }
     }
   }
@@ -751,18 +755,18 @@ export function triggerListeners<T extends keyof SetListeners>(
   isCurrentlyEnqueuingUpdates: boolean,
   ...payload: SetListeners[T]
 ): void {
-  const previouslyUpdating = editor._updating;
-  editor._updating = isCurrentlyEnqueuingUpdates;
+  const previouslyUpdating = editor._updating
+  editor._updating = isCurrentlyEnqueuingUpdates
 
   try {
     const listeners = Array.from(
       editor._listeners[type] as Set<(...args: SetListeners[T]) => void>,
-    );
+    )
     for (let i = 0; i < listeners.length; i++) {
-      listeners[i].apply(null, payload);
+      listeners[i].apply(null, payload)
     }
   } finally {
-    editor._updating = previouslyUpdating;
+    editor._updating = previouslyUpdating
   }
 }
 
@@ -773,49 +777,49 @@ export function triggerCommandListeners<
   type: TCommand,
   payload: CommandPayloadType<TCommand>,
 ): boolean {
-  const editors = getEditorsToPropagate(editor);
+  const editors = getEditorsToPropagate(editor)
 
   for (let i = 4; i >= 0; i--) {
     for (let e = 0; e < editors.length; e++) {
-      const currentEditor = editors[e];
-      const commandListeners = currentEditor._commands;
-      const listenerInPriorityOrder = commandListeners.get(type);
+      const currentEditor = editors[e]
+      const commandListeners = currentEditor._commands
+      const listenerInPriorityOrder = commandListeners.get(type)
 
       if (listenerInPriorityOrder !== undefined) {
-        const listenersSet = listenerInPriorityOrder[i];
+        const listenersSet = listenerInPriorityOrder[i]
 
         if (listenersSet !== undefined) {
-          const listeners = Array.from(listenersSet);
-          const listenersLength = listeners.length;
+          const listeners = Array.from(listenersSet)
+          const listenersLength = listeners.length
 
-          let returnVal = false;
+          let returnVal = false
           updateEditorSync(currentEditor, () => {
             for (let j = 0; j < listenersLength; j++) {
               if (listeners[j](payload, editor)) {
-                returnVal = true;
-                return;
+                returnVal = true
+                return
               }
             }
-          });
+          })
           if (returnVal) {
-            return returnVal;
+            return returnVal
           }
         }
       }
     }
   }
 
-  return false;
+  return false
 }
 
 function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
-  const queuedUpdates = editor._updates;
+  const queuedUpdates = editor._updates
 
   if (queuedUpdates.length !== 0) {
-    const queuedUpdate = queuedUpdates.shift();
+    const queuedUpdate = queuedUpdates.shift()
     if (queuedUpdate) {
-      const [updateFn, options] = queuedUpdate;
-      $beginUpdate(editor, updateFn, options);
+      const [updateFn, options] = queuedUpdate
+      $beginUpdate(editor, updateFn, options)
     }
   }
 }
@@ -824,18 +828,18 @@ function triggerDeferredUpdateCallbacks(
   editor: LexicalEditor,
   deferred: Array<() => void>,
 ): void {
-  editor._deferred = [];
+  editor._deferred = []
 
   if (deferred.length !== 0) {
-    const previouslyUpdating = editor._updating;
-    editor._updating = true;
+    const previouslyUpdating = editor._updating
+    editor._updating = true
 
     try {
       for (let i = 0; i < deferred.length; i++) {
-        deferred[i]();
+        deferred[i]()
       }
     } finally {
-      editor._updating = previouslyUpdating;
+      editor._updating = previouslyUpdating
     }
   }
 }
@@ -844,46 +848,46 @@ function processNestedUpdates(
   editor: LexicalEditor,
   initialSkipTransforms?: boolean,
 ): boolean {
-  const queuedUpdates = editor._updates;
-  let skipTransforms = initialSkipTransforms || false;
+  const queuedUpdates = editor._updates
+  let skipTransforms = initialSkipTransforms || false
 
   // Updates might grow as we process them, we so we'll need
   // to handle each update as we go until the updates array is
   // empty.
   while (queuedUpdates.length !== 0) {
-    const queuedUpdate = queuedUpdates.shift();
+    const queuedUpdate = queuedUpdates.shift()
     if (queuedUpdate) {
-      const [nextUpdateFn, options] = queuedUpdate;
+      const [nextUpdateFn, options] = queuedUpdate
 
-      let onUpdate;
+      let onUpdate
 
       if (options !== undefined) {
-        onUpdate = options.onUpdate;
+        onUpdate = options.onUpdate
 
         if (options.skipTransforms) {
-          skipTransforms = true;
+          skipTransforms = true
         }
         if (options.discrete) {
-          const pendingEditorState = editor._pendingEditorState;
+          const pendingEditorState = editor._pendingEditorState
           invariant(
             pendingEditorState !== null,
             'Unexpected empty pending editor state on discrete nested update',
-          );
-          pendingEditorState._flushSync = true;
+          )
+          pendingEditorState._flushSync = true
         }
 
         if (onUpdate) {
-          editor._deferred.push(onUpdate);
+          editor._deferred.push(onUpdate)
         }
 
-        addTags(editor, options.tag);
+        addTags(editor, options.tag)
       }
 
-      nextUpdateFn();
+      nextUpdateFn()
     }
   }
 
-  return skipTransforms;
+  return skipTransforms
 }
 
 function $beginUpdate(
@@ -891,93 +895,93 @@ function $beginUpdate(
   updateFn: () => void,
   options?: EditorUpdateOptions,
 ): void {
-  const updateTags = editor._updateTags;
-  let onUpdate;
-  let skipTransforms = false;
-  let discrete = false;
+  const updateTags = editor._updateTags
+  let onUpdate
+  let skipTransforms = false
+  let discrete = false
 
   if (options !== undefined) {
-    onUpdate = options.onUpdate;
-    addTags(editor, options.tag);
+    onUpdate = options.onUpdate
+    addTags(editor, options.tag)
 
-    skipTransforms = options.skipTransforms || false;
-    discrete = options.discrete || false;
+    skipTransforms = options.skipTransforms || false
+    discrete = options.discrete || false
   }
 
   if (onUpdate) {
-    editor._deferred.push(onUpdate);
+    editor._deferred.push(onUpdate)
   }
 
-  const currentEditorState = editor._editorState;
-  let pendingEditorState = editor._pendingEditorState;
-  let editorStateWasCloned = false;
+  const currentEditorState = editor._editorState
+  let pendingEditorState = editor._pendingEditorState
+  let editorStateWasCloned = false
 
   if (pendingEditorState === null || pendingEditorState._readOnly) {
     pendingEditorState = editor._pendingEditorState = cloneEditorState(
       pendingEditorState || currentEditorState,
-    );
-    editorStateWasCloned = true;
+    )
+    editorStateWasCloned = true
   }
-  pendingEditorState._flushSync = discrete;
+  pendingEditorState._flushSync = discrete
 
-  const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
-  const previousActiveEditor = activeEditor;
-  const previouslyUpdating = editor._updating;
-  activeEditorState = pendingEditorState;
-  isReadOnlyMode = false;
-  editor._updating = true;
-  activeEditor = editor;
-  const headless = editor._headless || editor.getRootElement() === null;
-  setPendingNodeToClone(null);
+  const previousActiveEditorState = activeEditorState
+  const previousReadOnlyMode = isReadOnlyMode
+  const previousActiveEditor = activeEditor
+  const previouslyUpdating = editor._updating
+  activeEditorState = pendingEditorState
+  isReadOnlyMode = false
+  editor._updating = true
+  activeEditor = editor
+  const headless = editor._headless || editor.getRootElement() === null
+  setPendingNodeToClone(null)
 
   try {
     if (editorStateWasCloned) {
       if (headless) {
         if (currentEditorState._selection !== null) {
-          pendingEditorState._selection = currentEditorState._selection.clone();
+          pendingEditorState._selection = currentEditorState._selection.clone()
         }
       } else {
         pendingEditorState._selection = $internalCreateSelection(
           editor,
           (options && options.event) || null,
-        );
+        )
       }
     }
 
-    const startingCompositionKey = editor._compositionKey;
-    updateFn();
-    skipTransforms = processNestedUpdates(editor, skipTransforms);
-    applySelectionTransforms(pendingEditorState, editor);
+    const startingCompositionKey = editor._compositionKey
+    updateFn()
+    skipTransforms = processNestedUpdates(editor, skipTransforms)
+    applySelectionTransforms(pendingEditorState, editor)
 
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       if (skipTransforms) {
-        $normalizeAllDirtyTextNodes(pendingEditorState, editor);
+        $normalizeAllDirtyTextNodes(pendingEditorState, editor)
       } else {
-        $applyAllTransforms(pendingEditorState, editor);
+        $applyAllTransforms(pendingEditorState, editor)
       }
 
-      processNestedUpdates(editor);
+      processNestedUpdates(editor)
       $garbageCollectDetachedNodes(
         currentEditorState,
         pendingEditorState,
         editor._dirtyLeaves,
         editor._dirtyElements,
-      );
+      )
     }
 
-    const endingCompositionKey = editor._compositionKey;
+    const endingCompositionKey = editor._compositionKey
 
     if (startingCompositionKey !== endingCompositionKey) {
-      pendingEditorState._flushSync = true;
+      pendingEditorState._flushSync = true
     }
 
-    const pendingSelection = pendingEditorState._selection;
+    const pendingSelection = pendingEditorState._selection
 
     if ($isRangeSelection(pendingSelection)) {
-      const pendingNodeMap = pendingEditorState._nodeMap;
-      const anchorKey = pendingSelection.anchor.key;
-      const focusKey = pendingSelection.focus.key;
+      const pendingNodeMap = pendingEditorState._nodeMap
+      const anchorKey = pendingSelection.anchor.key
+      const focusKey = pendingSelection.focus.key
 
       if (
         pendingNodeMap.get(anchorKey) === undefined ||
@@ -986,62 +990,62 @@ function $beginUpdate(
         invariant(
           false,
           'updateEditor: selection has been lost because the previously selected nodes have been removed and ' +
-            "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
-        );
+          "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
+        )
       }
     } else if ($isNodeSelection(pendingSelection)) {
       // TODO: we should also validate node selection?
       if (pendingSelection._nodes.size === 0) {
-        pendingEditorState._selection = null;
+        pendingEditorState._selection = null
       }
     }
   } catch (error) {
     // Report errors
     if (error instanceof Error) {
-      editor._onError(error);
+      editor._onError(error)
     }
 
     // Restore existing editor state to the DOM
-    editor._pendingEditorState = currentEditorState;
-    editor._dirtyType = FULL_RECONCILE;
+    editor._pendingEditorState = currentEditorState
+    editor._dirtyType = FULL_RECONCILE
 
-    editor._cloneNotNeeded.clear();
+    editor._cloneNotNeeded.clear()
 
-    editor._dirtyLeaves = new Set();
+    editor._dirtyLeaves = new Set()
 
-    editor._dirtyElements.clear();
+    editor._dirtyElements.clear()
 
-    $commitPendingUpdates(editor);
-    return;
+    $commitPendingUpdates(editor)
+    return
   } finally {
-    activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
-    activeEditor = previousActiveEditor;
-    editor._updating = previouslyUpdating;
-    infiniteTransformCount = 0;
+    activeEditorState = previousActiveEditorState
+    isReadOnlyMode = previousReadOnlyMode
+    activeEditor = previousActiveEditor
+    editor._updating = previouslyUpdating
+    infiniteTransformCount = 0
   }
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
     editor._deferred.length > 0 ||
-    editorStateHasDirtySelection(pendingEditorState, editor);
+    editorStateHasDirtySelection(pendingEditorState, editor)
 
   if (shouldUpdate) {
     if (pendingEditorState._flushSync) {
-      pendingEditorState._flushSync = false;
-      $commitPendingUpdates(editor);
+      pendingEditorState._flushSync = false
+      $commitPendingUpdates(editor)
     } else if (editorStateWasCloned) {
       scheduleMicroTask(() => {
-        $commitPendingUpdates(editor);
-      });
+        $commitPendingUpdates(editor)
+      })
     }
   } else {
-    pendingEditorState._flushSync = false;
+    pendingEditorState._flushSync = false
 
     if (editorStateWasCloned) {
-      updateTags.clear();
-      editor._deferred = [];
-      editor._pendingEditorState = null;
+      updateTags.clear()
+      editor._deferred = []
+      editor._pendingEditorState = null
     }
   }
 }
@@ -1057,9 +1061,9 @@ export function updateEditorSync(
   options?: EditorUpdateOptions,
 ): void {
   if (activeEditor === editor && options === undefined) {
-    updateFn();
+    updateFn()
   } else {
-    $beginUpdate(editor, updateFn, options);
+    $beginUpdate(editor, updateFn, options)
   }
 }
 
@@ -1069,8 +1073,8 @@ export function updateEditor(
   options?: EditorUpdateOptions,
 ): void {
   if (editor._updating) {
-    editor._updates.push([updateFn, options]);
+    editor._updates.push([updateFn, options])
   } else {
-    $beginUpdate(editor, updateFn, options);
+    $beginUpdate(editor, updateFn, options)
   }
 }

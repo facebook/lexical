@@ -12,20 +12,14 @@ import type {
   MutatedNodes,
   MutationListeners,
   RegisteredNodes,
-} from './LexicalEditor';
-import type {LexicalPrivateDOM, NodeKey, NodeMap} from './LexicalNode';
-import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
+} from './LexicalEditor'
+import type { LexicalPrivateDOM, NodeKey, NodeMap } from './LexicalNode'
+import { $isElementNode, type ElementDOMSlot, type ElementNode } from './nodes/LexicalElementNode'
 
-import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
+import invariant from 'shared/invariant'
+import normalizeClassNames from 'shared/normalizeClassNames'
 
-import {
-  $isDecoratorNode,
-  $isElementNode,
-  $isLineBreakNode,
-  $isRootNode,
-  $isTextNode,
-} from '.';
+
 import {
   DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
@@ -35,8 +29,8 @@ import {
   IS_ALIGN_LEFT,
   IS_ALIGN_RIGHT,
   IS_ALIGN_START,
-} from './LexicalConstants';
-import {EditorState} from './LexicalEditorState';
+} from './LexicalConstants'
+import { EditorState } from './LexicalEditorState'
 import {
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
@@ -44,48 +38,52 @@ import {
   getTextDirection,
   setMutatedNode,
   setNodeKeyOnDOMNode,
-} from './LexicalUtils';
+} from './LexicalUtils'
+import { $isTextNode } from './nodes/LexicalTextNode'
+import { $isDecoratorNode } from './nodes/LexicalDecoratorNode'
+import { $isLineBreakNode } from './nodes/LexicalLineBreakNode'
+import { $isRootNode } from './nodes/LexicalRootNode'
 
-type IntentionallyMarkedAsDirtyElement = boolean;
+type IntentionallyMarkedAsDirtyElement = boolean
 
-let subTreeTextContent = '';
-let subTreeDirectionedTextContent = '';
-let subTreeTextFormat: number | null = null;
-let subTreeTextStyle: string = '';
-let editorTextContent = '';
-let activeEditorConfig: EditorConfig;
-let activeEditor: LexicalEditor;
-let activeEditorNodes: RegisteredNodes;
-let treatAllNodesAsDirty = false;
-let activeEditorStateReadOnly = false;
-let activeMutationListeners: MutationListeners;
-let activeTextDirection: 'ltr' | 'rtl' | null = null;
-let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-let activeDirtyLeaves: Set<NodeKey>;
-let activePrevNodeMap: NodeMap;
-let activeNextNodeMap: NodeMap;
-let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
-let mutatedNodes: MutatedNodes;
+let subTreeTextContent = ''
+let subTreeDirectionedTextContent = ''
+let subTreeTextFormat: number | null = null
+let subTreeTextStyle: string = ''
+let editorTextContent = ''
+let activeEditorConfig: EditorConfig
+let activeEditor: LexicalEditor
+let activeEditorNodes: RegisteredNodes
+let treatAllNodesAsDirty = false
+let activeEditorStateReadOnly = false
+let activeMutationListeners: MutationListeners
+let activeTextDirection: 'ltr' | 'rtl' | null = null
+let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>
+let activeDirtyLeaves: Set<NodeKey>
+let activePrevNodeMap: NodeMap
+let activeNextNodeMap: NodeMap
+let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>
+let mutatedNodes: MutatedNodes
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
-  const node = activePrevNodeMap.get(key);
+  const node = activePrevNodeMap.get(key)
 
   if (parentDOM !== null) {
-    const dom = getPrevElementByKeyOrThrow(key);
+    const dom = getPrevElementByKeyOrThrow(key)
     if (dom.parentNode === parentDOM) {
-      parentDOM.removeChild(dom);
+      parentDOM.removeChild(dom)
     }
   }
 
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding LexicalNodes are removed from the editor state.
   if (!activeNextNodeMap.has(key)) {
-    activeEditor._keyToDOMMap.delete(key);
+    activeEditor._keyToDOMMap.delete(key)
   }
 
   if ($isElementNode(node)) {
-    const children = createChildrenArray(node, activePrevNodeMap);
-    destroyChildren(children, 0, children.length - 1, null);
+    const children = createChildrenArray(node, activePrevNodeMap)
+    destroyChildren(children, 0, children.length - 1, null)
   }
 
   if (node !== undefined) {
@@ -95,7 +93,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
       activeMutationListeners,
       node,
       'destroyed',
-    );
+    )
   }
 }
 
@@ -105,135 +103,135 @@ function destroyChildren(
   endIndex: number,
   dom: null | HTMLElement,
 ): void {
-  let startIndex = _startIndex;
+  let startIndex = _startIndex
 
   for (; startIndex <= endIndex; ++startIndex) {
-    const child = children[startIndex];
+    const child = children[startIndex]
 
     if (child !== undefined) {
-      destroyNode(child, dom);
+      destroyNode(child, dom)
     }
   }
 }
 
 function setTextAlign(domStyle: CSSStyleDeclaration, value: string): void {
-  domStyle.setProperty('text-align', value);
+  domStyle.setProperty('text-align', value)
 }
 
-const DEFAULT_INDENT_VALUE = '40px';
+const DEFAULT_INDENT_VALUE = '40px'
 
 function setElementIndent(dom: HTMLElement, indent: number): void {
-  const indentClassName = activeEditorConfig.theme.indent;
+  const indentClassName = activeEditorConfig.theme.indent
 
   if (typeof indentClassName === 'string') {
-    const elementHasClassName = dom.classList.contains(indentClassName);
+    const elementHasClassName = dom.classList.contains(indentClassName)
 
     if (indent > 0 && !elementHasClassName) {
-      dom.classList.add(indentClassName);
+      dom.classList.add(indentClassName)
     } else if (indent < 1 && elementHasClassName) {
-      dom.classList.remove(indentClassName);
+      dom.classList.remove(indentClassName)
     }
   }
 
   const indentationBaseValue =
     getComputedStyle(dom).getPropertyValue('--lexical-indent-base-value') ||
-    DEFAULT_INDENT_VALUE;
+    DEFAULT_INDENT_VALUE
 
   dom.style.setProperty(
     'padding-inline-start',
     indent === 0 ? '' : `calc(${indent} * ${indentationBaseValue})`,
-  );
+  )
 }
 
 function setElementFormat(dom: HTMLElement, format: number): void {
-  const domStyle = dom.style;
+  const domStyle = dom.style
 
   if (format === 0) {
-    setTextAlign(domStyle, '');
+    setTextAlign(domStyle, '')
   } else if (format === IS_ALIGN_LEFT) {
-    setTextAlign(domStyle, 'left');
+    setTextAlign(domStyle, 'left')
   } else if (format === IS_ALIGN_CENTER) {
-    setTextAlign(domStyle, 'center');
+    setTextAlign(domStyle, 'center')
   } else if (format === IS_ALIGN_RIGHT) {
-    setTextAlign(domStyle, 'right');
+    setTextAlign(domStyle, 'right')
   } else if (format === IS_ALIGN_JUSTIFY) {
-    setTextAlign(domStyle, 'justify');
+    setTextAlign(domStyle, 'justify')
   } else if (format === IS_ALIGN_START) {
-    setTextAlign(domStyle, 'start');
+    setTextAlign(domStyle, 'start')
   } else if (format === IS_ALIGN_END) {
-    setTextAlign(domStyle, 'end');
+    setTextAlign(domStyle, 'end')
   }
 }
 
 function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
-  const node = activeNextNodeMap.get(key);
+  const node = activeNextNodeMap.get(key)
 
   if (node === undefined) {
-    invariant(false, 'createNode: node does not exist in nodeMap');
+    invariant(false, 'createNode: node does not exist in nodeMap')
   }
-  const dom = node.createDOM(activeEditorConfig, activeEditor);
-  storeDOMWithKey(key, dom, activeEditor);
+  const dom = node.createDOM(activeEditorConfig, activeEditor)
+  storeDOMWithKey(key, dom, activeEditor)
 
   // This helps preserve the text, and stops spell check tools from
   // merging or break the spans (which happens if they are missing
   // this attribute).
   if ($isTextNode(node)) {
-    dom.setAttribute('data-lexical-text', 'true');
+    dom.setAttribute('data-lexical-text', 'true')
   } else if ($isDecoratorNode(node)) {
-    dom.setAttribute('data-lexical-decorator', 'true');
+    dom.setAttribute('data-lexical-decorator', 'true')
   }
 
   if ($isElementNode(node)) {
-    const indent = node.__indent;
-    const childrenSize = node.__size;
+    const indent = node.__indent
+    const childrenSize = node.__size
 
     if (indent !== 0) {
-      setElementIndent(dom, indent);
+      setElementIndent(dom, indent)
     }
     if (childrenSize !== 0) {
-      const endIndex = childrenSize - 1;
-      const children = createChildrenArray(node, activeNextNodeMap);
-      $createChildrenWithDirection(children, endIndex, node, dom);
+      const endIndex = childrenSize - 1
+      const children = createChildrenArray(node, activeNextNodeMap)
+      $createChildrenWithDirection(children, endIndex, node, dom)
     }
-    const format = node.__format;
+    const format = node.__format
 
     if (format !== 0) {
-      setElementFormat(dom, format);
+      setElementFormat(dom, format)
     }
     if (!node.isInline()) {
-      reconcileElementTerminatingLineBreak(null, node, dom);
+      reconcileElementTerminatingLineBreak(null, node, dom)
     }
     if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
-      subTreeTextContent += DOUBLE_LINE_BREAK;
-      editorTextContent += DOUBLE_LINE_BREAK;
+      subTreeTextContent += DOUBLE_LINE_BREAK
+      editorTextContent += DOUBLE_LINE_BREAK
     }
   } else {
-    const text = node.getTextContent();
+    const text = node.getTextContent()
 
     if ($isDecoratorNode(node)) {
-      const decorator = node.decorate(activeEditor, activeEditorConfig);
+      const decorator = node.decorate(activeEditor, activeEditorConfig)
 
       if (decorator !== null) {
-        reconcileDecorator(key, decorator);
+        reconcileDecorator(key, decorator)
       }
       // Decorators are always non editable
-      dom.contentEditable = 'false';
+      dom.contentEditable = 'false'
     } else if ($isTextNode(node)) {
       if (!node.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
+        subTreeDirectionedTextContent += text
       }
     }
-    subTreeTextContent += text;
-    editorTextContent += text;
+    subTreeTextContent += text
+    editorTextContent += text
   }
 
   if (slot !== null) {
-    slot.insertChild(dom);
+    slot.insertChild(dom)
   }
 
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
-    Object.freeze(node);
+    Object.freeze(node)
   }
 
   setMutatedNode(
@@ -242,8 +240,8 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     activeMutationListeners,
     node,
     'created',
-  );
-  return dom;
+  )
+  return dom
 }
 
 function $createChildrenWithDirection(
@@ -252,11 +250,11 @@ function $createChildrenWithDirection(
   element: ElementNode,
   dom: HTMLElement,
 ): void {
-  const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent;
-  subTreeDirectionedTextContent = '';
-  $createChildren(children, element, 0, endIndex, element.getDOMSlot(dom));
-  reconcileBlockDirection(element, dom);
-  subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
+  const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent
+  subTreeDirectionedTextContent = ''
+  $createChildren(children, element, 0, endIndex, element.getDOMSlot(dom))
+  reconcileBlockDirection(element, dom)
+  subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent
 }
 
 function $createChildren(
@@ -266,50 +264,50 @@ function $createChildren(
   endIndex: number,
   slot: ElementDOMSlot,
 ): void {
-  const previousSubTreeTextContent = subTreeTextContent;
-  subTreeTextContent = '';
-  let startIndex = _startIndex;
+  const previousSubTreeTextContent = subTreeTextContent
+  subTreeTextContent = ''
+  let startIndex = _startIndex
 
   for (; startIndex <= endIndex; ++startIndex) {
-    $createNode(children[startIndex], slot);
-    const node = activeNextNodeMap.get(children[startIndex]);
+    $createNode(children[startIndex], slot)
+    const node = activeNextNodeMap.get(children[startIndex])
     if (node !== null && $isTextNode(node)) {
       if (subTreeTextFormat === null) {
-        subTreeTextFormat = node.getFormat();
+        subTreeTextFormat = node.getFormat()
       }
       if (subTreeTextStyle === '') {
-        subTreeTextStyle = node.getStyle();
+        subTreeTextStyle = node.getStyle()
       }
     }
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
-    subTreeTextContent += DOUBLE_LINE_BREAK;
+    subTreeTextContent += DOUBLE_LINE_BREAK
   }
-  const dom: HTMLElement & LexicalPrivateDOM = slot.element;
-  dom.__lexicalTextContent = subTreeTextContent;
-  subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
+  const dom: HTMLElement & LexicalPrivateDOM = slot.element
+  dom.__lexicalTextContent = subTreeTextContent
+  subTreeTextContent = previousSubTreeTextContent + subTreeTextContent
 }
 
-type LastChildState = 'line-break' | 'decorator' | 'empty';
+type LastChildState = 'line-break' | 'decorator' | 'empty'
 function isLastChildLineBreakOrDecorator(
   element: null | ElementNode,
   nodeMap: NodeMap,
 ): null | LastChildState {
   if (element) {
-    const lastKey = element.__last;
+    const lastKey = element.__last
     if (lastKey) {
-      const node = nodeMap.get(lastKey);
+      const node = nodeMap.get(lastKey)
       if (node) {
         return $isLineBreakNode(node)
           ? 'line-break'
           : $isDecoratorNode(node) && node.isInline()
-          ? 'decorator'
-          : null;
+            ? 'decorator'
+            : null
       }
     }
-    return 'empty';
+    return 'empty'
   }
-  return null;
+  return null
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
@@ -321,13 +319,13 @@ function reconcileElementTerminatingLineBreak(
   const prevLineBreak = isLastChildLineBreakOrDecorator(
     prevElement,
     activePrevNodeMap,
-  );
+  )
   const nextLineBreak = isLastChildLineBreakOrDecorator(
     nextElement,
     activeNextNodeMap,
-  );
+  )
   if (prevLineBreak !== nextLineBreak) {
-    nextElement.getDOMSlot(dom).setManagedLineBreak(nextLineBreak);
+    nextElement.getDOMSlot(dom).setManagedLineBreak(nextLineBreak)
   }
 }
 
@@ -337,7 +335,7 @@ function reconcileTextFormat(element: ElementNode): void {
     subTreeTextFormat !== element.__textFormat &&
     !activeEditorStateReadOnly
   ) {
-    element.setTextFormat(subTreeTextFormat);
+    element.setTextFormat(subTreeTextFormat)
   }
 }
 
@@ -347,7 +345,7 @@ function reconcileTextStyle(element: ElementNode): void {
     subTreeTextStyle !== element.__textStyle &&
     !activeEditorStateReadOnly
   ) {
-    element.setTextStyle(subTreeTextStyle);
+    element.setTextStyle(subTreeTextStyle)
   }
 }
 
@@ -356,35 +354,35 @@ function reconcileBlockDirection(
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
   const previousSubTreeDirectionTextContent: string =
-    dom.__lexicalDirTextContent || '';
-  const previousDirection: string = dom.__lexicalDir || '';
+    dom.__lexicalDirTextContent || ''
+  const previousDirection: string = dom.__lexicalDir || ''
 
   if (
     previousSubTreeDirectionTextContent !== subTreeDirectionedTextContent ||
     previousDirection !== activeTextDirection
   ) {
-    const hasEmptyDirectionedTextContent = subTreeDirectionedTextContent === '';
+    const hasEmptyDirectionedTextContent = subTreeDirectionedTextContent === ''
     const direction = hasEmptyDirectionedTextContent
       ? activeTextDirection
-      : getTextDirection(subTreeDirectionedTextContent);
+      : getTextDirection(subTreeDirectionedTextContent)
 
     if (direction !== previousDirection) {
-      const classList = dom.classList;
-      const theme = activeEditorConfig.theme;
+      const classList = dom.classList
+      const theme = activeEditorConfig.theme
       let previousDirectionTheme =
-        previousDirection !== null ? theme[previousDirection] : undefined;
+        previousDirection !== null ? theme[previousDirection] : undefined
       let nextDirectionTheme =
-        direction !== null ? theme[direction] : undefined;
+        direction !== null ? theme[direction] : undefined
 
       // Remove the old theme classes if they exist
       if (previousDirectionTheme !== undefined) {
         if (typeof previousDirectionTheme === 'string') {
-          const classNamesArr = normalizeClassNames(previousDirectionTheme);
-          previousDirectionTheme = theme[previousDirection] = classNamesArr;
+          const classNamesArr = normalizeClassNames(previousDirectionTheme)
+          previousDirectionTheme = theme[previousDirection] = classNamesArr
         }
 
         // @ts-ignore: intentional
-        classList.remove(...previousDirectionTheme);
+        classList.remove(...previousDirectionTheme)
       }
 
       if (
@@ -392,34 +390,34 @@ function reconcileBlockDirection(
         (hasEmptyDirectionedTextContent && direction === 'ltr')
       ) {
         // Remove direction
-        dom.removeAttribute('dir');
+        dom.removeAttribute('dir')
       } else {
         // Apply the new theme classes if they exist
         if (nextDirectionTheme !== undefined) {
           if (typeof nextDirectionTheme === 'string') {
-            const classNamesArr = normalizeClassNames(nextDirectionTheme);
+            const classNamesArr = normalizeClassNames(nextDirectionTheme)
             // @ts-expect-error: intentional
-            nextDirectionTheme = theme[direction] = classNamesArr;
+            nextDirectionTheme = theme[direction] = classNamesArr
           }
 
           if (nextDirectionTheme !== undefined) {
-            classList.add(...nextDirectionTheme);
+            classList.add(...nextDirectionTheme)
           }
         }
 
         // Update direction
-        dom.dir = direction;
+        dom.dir = direction
       }
 
       if (!activeEditorStateReadOnly) {
-        const writableNode = element.getWritable();
-        writableNode.__dir = direction;
+        const writableNode = element.getWritable()
+        writableNode.__dir = direction
       }
     }
 
-    activeTextDirection = direction;
-    dom.__lexicalDirTextContent = subTreeDirectionedTextContent;
-    dom.__lexicalDir = direction;
+    activeTextDirection = direction
+    dom.__lexicalDirTextContent = subTreeDirectionedTextContent
+    dom.__lexicalDir = direction
   }
 }
 
@@ -428,32 +426,32 @@ function $reconcileChildrenWithDirection(
   nextElement: ElementNode,
   dom: HTMLElement,
 ): void {
-  const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
-  subTreeDirectionedTextContent = '';
-  subTreeTextFormat = null;
-  subTreeTextStyle = '';
-  $reconcileChildren(prevElement, nextElement, nextElement.getDOMSlot(dom));
-  reconcileBlockDirection(nextElement, dom);
-  reconcileTextFormat(nextElement);
-  reconcileTextStyle(nextElement);
-  subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
+  const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent
+  subTreeDirectionedTextContent = ''
+  subTreeTextFormat = null
+  subTreeTextStyle = ''
+  $reconcileChildren(prevElement, nextElement, nextElement.getDOMSlot(dom))
+  reconcileBlockDirection(nextElement, dom)
+  reconcileTextFormat(nextElement)
+  reconcileTextStyle(nextElement)
+  subTreeDirectionedTextContent = previousSubTreeDirectionTextContent
 }
 
 function createChildrenArray(
   element: ElementNode,
   nodeMap: NodeMap,
 ): Array<NodeKey> {
-  const children = [];
-  let nodeKey = element.__first;
+  const children = []
+  let nodeKey = element.__first
   while (nodeKey !== null) {
-    const node = nodeMap.get(nodeKey);
+    const node = nodeMap.get(nodeKey)
     if (node === undefined) {
-      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
+      invariant(false, 'createChildrenArray: node does not exist in nodeMap')
     }
-    children.push(nodeKey);
-    nodeKey = node.__next;
+    children.push(nodeKey)
+    nodeKey = node.__next
   }
-  return children;
+  return children
 }
 
 function $reconcileChildren(
@@ -461,58 +459,55 @@ function $reconcileChildren(
   nextElement: ElementNode,
   slot: ElementDOMSlot,
 ): void {
-  const previousSubTreeTextContent = subTreeTextContent;
-  const prevChildrenSize = prevElement.__size;
-  const nextChildrenSize = nextElement.__size;
-  subTreeTextContent = '';
-  const dom: HTMLElement & LexicalPrivateDOM = slot.element;
+  const previousSubTreeTextContent = subTreeTextContent
+  const prevChildrenSize = prevElement.__size
+  const nextChildrenSize = nextElement.__size
+  subTreeTextContent = ''
+  const dom: HTMLElement & LexicalPrivateDOM = slot.element
 
   if (prevChildrenSize === 1 && nextChildrenSize === 1) {
-    const prevFirstChildKey: NodeKey = prevElement.__first!;
-    const nextFirstChildKey: NodeKey = nextElement.__first!;
+    const prevFirstChildKey: NodeKey = prevElement.__first!
+    const nextFirstChildKey: NodeKey = nextElement.__first!
     if (prevFirstChildKey === nextFirstChildKey) {
-      $reconcileNode(prevFirstChildKey, dom);
+      $reconcileNode(prevFirstChildKey, dom)
     } else {
-      const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
-      const replacementDOM = $createNode(nextFirstChildKey, null);
+      const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey)
+      const replacementDOM = $createNode(nextFirstChildKey, null)
       try {
-        dom.replaceChild(replacementDOM, lastDOM);
+        dom.replaceChild(replacementDOM, lastDOM)
       } catch (error) {
         if (typeof error === 'object' && error != null) {
-          const msg = `${error.toString()} Parent: ${
-            dom.tagName
-          }, new child: {tag: ${
-            replacementDOM.tagName
-          } key: ${nextFirstChildKey}}, old child: {tag: ${
-            lastDOM.tagName
-          }, key: ${prevFirstChildKey}}.`;
-          throw new Error(msg);
+          const msg = `${error.toString()} Parent: ${dom.tagName
+            }, new child: {tag: ${replacementDOM.tagName
+            } key: ${nextFirstChildKey}}, old child: {tag: ${lastDOM.tagName
+            }, key: ${prevFirstChildKey}}.`
+          throw new Error(msg)
         } else {
-          throw error;
+          throw error
         }
       }
-      destroyNode(prevFirstChildKey, null);
+      destroyNode(prevFirstChildKey, null)
     }
-    const nextChildNode = activeNextNodeMap.get(nextFirstChildKey);
+    const nextChildNode = activeNextNodeMap.get(nextFirstChildKey)
     if ($isTextNode(nextChildNode)) {
       if (subTreeTextFormat === null) {
-        subTreeTextFormat = nextChildNode.getFormat();
+        subTreeTextFormat = nextChildNode.getFormat()
       }
       if (subTreeTextStyle === '') {
-        subTreeTextStyle = nextChildNode.getStyle();
+        subTreeTextStyle = nextChildNode.getStyle()
       }
     }
   } else {
-    const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
-    const nextChildren = createChildrenArray(nextElement, activeNextNodeMap);
+    const prevChildren = createChildrenArray(prevElement, activePrevNodeMap)
+    const nextChildren = createChildrenArray(nextElement, activeNextNodeMap)
     invariant(
       prevChildren.length === prevChildrenSize,
       '$reconcileChildren: prevChildren.length !== prevChildrenSize',
-    );
+    )
     invariant(
       nextChildren.length === nextChildrenSize,
       '$reconcileChildren: nextChildren.length !== nextChildrenSize',
-    );
+    )
 
     if (prevChildrenSize === 0) {
       if (nextChildrenSize !== 0) {
@@ -522,7 +517,7 @@ function $reconcileChildren(
           0,
           nextChildrenSize - 1,
           slot,
-        );
+        )
       }
     } else if (nextChildrenSize === 0) {
       if (prevChildrenSize !== 0) {
@@ -530,17 +525,17 @@ function $reconcileChildren(
           slot.after == null &&
           slot.before == null &&
           (slot.element as HTMLElement & LexicalPrivateDOM)
-            .__lexicalLineBreak == null;
+            .__lexicalLineBreak == null
         destroyChildren(
           prevChildren,
           0,
           prevChildrenSize - 1,
           canUseFastPath ? null : dom,
-        );
+        )
 
         if (canUseFastPath) {
           // Fast path for removing DOM nodes
-          dom.textContent = '';
+          dom.textContent = ''
         }
       }
     } else {
@@ -551,70 +546,70 @@ function $reconcileChildren(
         prevChildrenSize,
         nextChildrenSize,
         slot,
-      );
+      )
     }
   }
 
   if ($textContentRequiresDoubleLinebreakAtEnd(nextElement)) {
-    subTreeTextContent += DOUBLE_LINE_BREAK;
+    subTreeTextContent += DOUBLE_LINE_BREAK
   }
 
-  dom.__lexicalTextContent = subTreeTextContent;
-  subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
+  dom.__lexicalTextContent = subTreeTextContent
+  subTreeTextContent = previousSubTreeTextContent + subTreeTextContent
 }
 
 function $reconcileNode(
   key: NodeKey,
   parentDOM: HTMLElement | null,
 ): HTMLElement {
-  const prevNode = activePrevNodeMap.get(key);
-  let nextNode = activeNextNodeMap.get(key);
+  const prevNode = activePrevNodeMap.get(key)
+  let nextNode = activeNextNodeMap.get(key)
 
   if (prevNode === undefined || nextNode === undefined) {
     invariant(
       false,
       'reconcileNode: prevNode or nextNode does not exist in nodeMap',
-    );
+    )
   }
 
   const isDirty =
     treatAllNodesAsDirty ||
     activeDirtyLeaves.has(key) ||
-    activeDirtyElements.has(key);
+    activeDirtyElements.has(key)
   const dom: HTMLElement & LexicalPrivateDOM = getElementByKeyOrThrow(
     activeEditor,
     key,
-  );
+  )
 
   // If the node key points to the same instance in both states
   // and isn't dirty, we just update the text content cache
   // and return the existing DOM Node.
   if (prevNode === nextNode && !isDirty) {
     if ($isElementNode(prevNode)) {
-      const previousSubTreeTextContent = dom.__lexicalTextContent;
+      const previousSubTreeTextContent = dom.__lexicalTextContent
 
       if (previousSubTreeTextContent !== undefined) {
-        subTreeTextContent += previousSubTreeTextContent;
-        editorTextContent += previousSubTreeTextContent;
+        subTreeTextContent += previousSubTreeTextContent
+        editorTextContent += previousSubTreeTextContent
       }
 
-      const previousSubTreeDirectionTextContent = dom.__lexicalDirTextContent;
+      const previousSubTreeDirectionTextContent = dom.__lexicalDirTextContent
 
       if (previousSubTreeDirectionTextContent !== undefined) {
-        subTreeDirectionedTextContent += previousSubTreeDirectionTextContent;
+        subTreeDirectionedTextContent += previousSubTreeDirectionTextContent
       }
     } else {
-      const text = prevNode.getTextContent();
+      const text = prevNode.getTextContent()
 
       if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
+        subTreeDirectionedTextContent += text
       }
 
-      editorTextContent += text;
-      subTreeTextContent += text;
+      editorTextContent += text
+      subTreeTextContent += text
     }
 
-    return dom;
+    return dom
   }
   // If the node key doesn't point to the same instance in both maps,
   // it was cloned. If it's also dirty, we mark it as mutated.
@@ -625,62 +620,62 @@ function $reconcileNode(
       activeMutationListeners,
       nextNode,
       'updated',
-    );
+    )
   }
 
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
-    const replacementDOM = $createNode(key, null);
+    const replacementDOM = $createNode(key, null)
 
     if (parentDOM === null) {
-      invariant(false, 'reconcileNode: parentDOM is null');
+      invariant(false, 'reconcileNode: parentDOM is null')
     }
 
-    parentDOM.replaceChild(replacementDOM, dom);
-    destroyNode(key, null);
-    return replacementDOM;
+    parentDOM.replaceChild(replacementDOM, dom)
+    destroyNode(key, null)
+    return replacementDOM
   }
 
   if ($isElementNode(prevNode) && $isElementNode(nextNode)) {
     // Reconcile element children
-    const nextIndent = nextNode.__indent;
+    const nextIndent = nextNode.__indent
 
     if (nextIndent !== prevNode.__indent) {
-      setElementIndent(dom, nextIndent);
+      setElementIndent(dom, nextIndent)
     }
 
-    const nextFormat = nextNode.__format;
+    const nextFormat = nextNode.__format
 
     if (nextFormat !== prevNode.__format) {
-      setElementFormat(dom, nextFormat);
+      setElementFormat(dom, nextFormat)
     }
     if (isDirty) {
-      $reconcileChildrenWithDirection(prevNode, nextNode, dom);
+      $reconcileChildrenWithDirection(prevNode, nextNode, dom)
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
-        reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+        reconcileElementTerminatingLineBreak(prevNode, nextNode, dom)
       }
     }
 
     if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
-      subTreeTextContent += DOUBLE_LINE_BREAK;
-      editorTextContent += DOUBLE_LINE_BREAK;
+      subTreeTextContent += DOUBLE_LINE_BREAK
+      editorTextContent += DOUBLE_LINE_BREAK
     }
   } else {
-    const text = nextNode.getTextContent();
+    const text = nextNode.getTextContent()
 
     if ($isDecoratorNode(nextNode)) {
-      const decorator = nextNode.decorate(activeEditor, activeEditorConfig);
+      const decorator = nextNode.decorate(activeEditor, activeEditorConfig)
 
       if (decorator !== null) {
-        reconcileDecorator(key, decorator);
+        reconcileDecorator(key, decorator)
       }
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
-      subTreeDirectionedTextContent += text;
+      subTreeDirectionedTextContent += text
     }
 
-    subTreeTextContent += text;
-    editorTextContent += text;
+    subTreeTextContent += text
+    editorTextContent += text
   }
 
   if (
@@ -689,43 +684,43 @@ function $reconcileNode(
     nextNode.__cachedText !== editorTextContent
   ) {
     // Cache the latest text content.
-    const nextRootNode = nextNode.getWritable();
-    nextRootNode.__cachedText = editorTextContent;
-    nextNode = nextRootNode;
+    const nextRootNode = nextNode.getWritable()
+    nextRootNode.__cachedText = editorTextContent
+    nextNode = nextRootNode
   }
 
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
-    Object.freeze(nextNode);
+    Object.freeze(nextNode)
   }
 
-  return dom;
+  return dom
 }
 
 function reconcileDecorator(key: NodeKey, decorator: unknown): void {
-  let pendingDecorators = activeEditor._pendingDecorators;
-  const currentDecorators = activeEditor._decorators;
+  let pendingDecorators = activeEditor._pendingDecorators
+  const currentDecorators = activeEditor._decorators
 
   if (pendingDecorators === null) {
     if (currentDecorators[key] === decorator) {
-      return;
+      return
     }
 
-    pendingDecorators = cloneDecorators(activeEditor);
+    pendingDecorators = cloneDecorators(activeEditor)
   }
 
-  pendingDecorators[key] = decorator;
+  pendingDecorators[key] = decorator
 }
 
 function getNextSibling(element: HTMLElement): Node | null {
-  let nextSibling = element.nextSibling;
+  let nextSibling = element.nextSibling
   if (
     nextSibling !== null &&
     nextSibling === activeEditor._blockCursorElement
   ) {
-    nextSibling = nextSibling.nextSibling;
+    nextSibling = nextSibling.nextSibling
   }
-  return nextSibling;
+  return nextSibling
 }
 
 function $reconcileNodeChildren(
@@ -736,88 +731,88 @@ function $reconcileNodeChildren(
   nextChildrenLength: number,
   slot: ElementDOMSlot,
 ): void {
-  const prevEndIndex = prevChildrenLength - 1;
-  const nextEndIndex = nextChildrenLength - 1;
-  let prevChildrenSet: Set<NodeKey> | undefined;
-  let nextChildrenSet: Set<NodeKey> | undefined;
-  let siblingDOM: null | Node = slot.getFirstChild();
-  let prevIndex = 0;
-  let nextIndex = 0;
+  const prevEndIndex = prevChildrenLength - 1
+  const nextEndIndex = nextChildrenLength - 1
+  let prevChildrenSet: Set<NodeKey> | undefined
+  let nextChildrenSet: Set<NodeKey> | undefined
+  let siblingDOM: null | Node = slot.getFirstChild()
+  let prevIndex = 0
+  let nextIndex = 0
 
   while (prevIndex <= prevEndIndex && nextIndex <= nextEndIndex) {
-    const prevKey = prevChildren[prevIndex];
-    const nextKey = nextChildren[nextIndex];
+    const prevKey = prevChildren[prevIndex]
+    const nextKey = nextChildren[nextIndex]
 
     if (prevKey === nextKey) {
-      siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
-      prevIndex++;
-      nextIndex++;
+      siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element))
+      prevIndex++
+      nextIndex++
     } else {
       if (prevChildrenSet === undefined) {
-        prevChildrenSet = new Set(prevChildren);
+        prevChildrenSet = new Set(prevChildren)
       }
 
       if (nextChildrenSet === undefined) {
-        nextChildrenSet = new Set(nextChildren);
+        nextChildrenSet = new Set(nextChildren)
       }
 
-      const nextHasPrevKey = nextChildrenSet.has(prevKey);
-      const prevHasNextKey = prevChildrenSet.has(nextKey);
+      const nextHasPrevKey = nextChildrenSet.has(prevKey)
+      const prevHasNextKey = prevChildrenSet.has(nextKey)
 
       if (!nextHasPrevKey) {
         // Remove prev
-        siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
-        destroyNode(prevKey, slot.element);
-        prevIndex++;
+        siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey))
+        destroyNode(prevKey, slot.element)
+        prevIndex++
       } else if (!prevHasNextKey) {
         // Create next
-        $createNode(nextKey, slot.withBefore(siblingDOM));
-        nextIndex++;
+        $createNode(nextKey, slot.withBefore(siblingDOM))
+        nextIndex++
       } else {
         // Move next
-        const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
+        const childDOM = getElementByKeyOrThrow(activeEditor, nextKey)
 
         if (childDOM === siblingDOM) {
-          siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
+          siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element))
         } else {
-          slot.withBefore(siblingDOM).insertChild(childDOM);
-          $reconcileNode(nextKey, slot.element);
+          slot.withBefore(siblingDOM).insertChild(childDOM)
+          $reconcileNode(nextKey, slot.element)
         }
 
-        prevIndex++;
-        nextIndex++;
+        prevIndex++
+        nextIndex++
       }
     }
 
-    const node = activeNextNodeMap.get(nextKey);
+    const node = activeNextNodeMap.get(nextKey)
     if (node !== null && $isTextNode(node)) {
       if (subTreeTextFormat === null) {
-        subTreeTextFormat = node.getFormat();
+        subTreeTextFormat = node.getFormat()
       }
       if (subTreeTextStyle === '') {
-        subTreeTextStyle = node.getStyle();
+        subTreeTextStyle = node.getStyle()
       }
     }
   }
 
-  const appendNewChildren = prevIndex > prevEndIndex;
-  const removeOldChildren = nextIndex > nextEndIndex;
+  const appendNewChildren = prevIndex > prevEndIndex
+  const removeOldChildren = nextIndex > nextEndIndex
 
   if (appendNewChildren && !removeOldChildren) {
-    const previousNode = nextChildren[nextEndIndex + 1];
+    const previousNode = nextChildren[nextEndIndex + 1]
     const insertDOM =
       previousNode === undefined
         ? null
-        : activeEditor.getElementByKey(previousNode);
+        : activeEditor.getElementByKey(previousNode)
     $createChildren(
       nextChildren,
       nextElement,
       nextIndex,
       nextEndIndex,
       slot.withBefore(insertDOM),
-    );
+    )
   } else if (removeOldChildren && !appendNewChildren) {
-    destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);
+    destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element)
   }
 }
 
@@ -831,52 +826,52 @@ export function $reconcileRoot(
 ): MutatedNodes {
   // We cache text content to make retrieval more efficient.
   // The cache must be rebuilt during reconciliation to account for any changes.
-  subTreeTextContent = '';
-  editorTextContent = '';
-  subTreeDirectionedTextContent = '';
+  subTreeTextContent = ''
+  editorTextContent = ''
+  subTreeDirectionedTextContent = ''
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
-  treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
-  activeTextDirection = null;
-  activeEditor = editor;
-  activeEditorConfig = editor._config;
-  activeEditorNodes = editor._nodes;
-  activeMutationListeners = activeEditor._listeners.mutation;
-  activeDirtyElements = dirtyElements;
-  activeDirtyLeaves = dirtyLeaves;
-  activePrevNodeMap = prevEditorState._nodeMap;
-  activeNextNodeMap = nextEditorState._nodeMap;
-  activeEditorStateReadOnly = nextEditorState._readOnly;
-  activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
+  treatAllNodesAsDirty = dirtyType === FULL_RECONCILE
+  activeTextDirection = null
+  activeEditor = editor
+  activeEditorConfig = editor._config
+  activeEditorNodes = editor._nodes
+  activeMutationListeners = activeEditor._listeners.mutation
+  activeDirtyElements = dirtyElements
+  activeDirtyLeaves = dirtyLeaves
+  activePrevNodeMap = prevEditorState._nodeMap
+  activeNextNodeMap = nextEditorState._nodeMap
+  activeEditorStateReadOnly = nextEditorState._readOnly
+  activePrevKeyToDOMMap = new Map(editor._keyToDOMMap)
   // We keep track of mutated nodes so we can trigger mutation
   // listeners later in the update cycle.
-  const currentMutatedNodes = new Map();
-  mutatedNodes = currentMutatedNodes;
-  $reconcileNode('root', null);
+  const currentMutatedNodes = new Map()
+  mutatedNodes = currentMutatedNodes
+  $reconcileNode('root', null)
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we
   // can leak memory.
   // @ts-ignore
-  activeEditor = undefined;
+  activeEditor = undefined
   // @ts-ignore
-  activeEditorNodes = undefined;
+  activeEditorNodes = undefined
   // @ts-ignore
-  activeDirtyElements = undefined;
+  activeDirtyElements = undefined
   // @ts-ignore
-  activeDirtyLeaves = undefined;
+  activeDirtyLeaves = undefined
   // @ts-ignore
-  activePrevNodeMap = undefined;
+  activePrevNodeMap = undefined
   // @ts-ignore
-  activeNextNodeMap = undefined;
+  activeNextNodeMap = undefined
   // @ts-ignore
-  activeEditorConfig = undefined;
+  activeEditorConfig = undefined
   // @ts-ignore
-  activePrevKeyToDOMMap = undefined;
+  activePrevKeyToDOMMap = undefined
   // @ts-ignore
-  mutatedNodes = undefined;
+  mutatedNodes = undefined
 
-  return currentMutatedNodes;
+  return currentMutatedNodes
 }
 
 export function storeDOMWithKey(
@@ -884,21 +879,21 @@ export function storeDOMWithKey(
   dom: HTMLElement,
   editor: LexicalEditor,
 ): void {
-  const keyToDOMMap = editor._keyToDOMMap;
-  setNodeKeyOnDOMNode(dom, editor, key);
-  keyToDOMMap.set(key, dom);
+  const keyToDOMMap = editor._keyToDOMMap
+  setNodeKeyOnDOMNode(dom, editor, key)
+  keyToDOMMap.set(key, dom)
 }
 
 function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
-  const element = activePrevKeyToDOMMap.get(key);
+  const element = activePrevKeyToDOMMap.get(key)
 
   if (element === undefined) {
     invariant(
       false,
       'Reconciliation: could not find DOM element for node key %s',
       key,
-    );
+    )
   }
 
-  return element;
+  return element
 }

@@ -90,7 +90,9 @@ export class ParagraphNode extends ElementNode {
       }
 
       const formatType = this.getFormatType();
-      element.style.textAlign = formatType;
+      if (formatType) {
+        element.style.textAlign = formatType;
+      }
     }
 
     return {

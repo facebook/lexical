@@ -60,6 +60,7 @@ import {
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
+  setPendingNodeToClone,
   updateDOMBlockCursorElement,
 } from './LexicalUtils';
 
@@ -422,6 +423,7 @@ export function parseEditorState(
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
+  setPendingNodeToClone(null);
 
   try {
     const registeredNodes = editor._nodes;
@@ -729,14 +731,16 @@ function triggerMutationListeners(
   const listenersLength = listeners.length;
 
   for (let i = 0; i < listenersLength; i++) {
-    const [listener, klass] = listeners[i];
-    const mutatedNodesByType = mutatedNodes.get(klass);
-    if (mutatedNodesByType !== undefined) {
-      listener(mutatedNodesByType, {
-        dirtyLeaves,
-        prevEditorState,
-        updateTags,
-      });
+    const [listener, klassSet] = listeners[i];
+    for (const klass of klassSet) {
+      const mutatedNodesByType = mutatedNodes.get(klass);
+      if (mutatedNodesByType !== undefined) {
+        listener(mutatedNodesByType, {
+          dirtyLeaves,
+          prevEditorState,
+          updateTags,
+        });
+      }
     }
   }
 }
@@ -925,6 +929,7 @@ function $beginUpdate(
   editor._updating = true;
   activeEditor = editor;
   const headless = editor._headless || editor.getRootElement() === null;
+  setPendingNodeToClone(null);
 
   try {
     if (editorStateWasCloned) {

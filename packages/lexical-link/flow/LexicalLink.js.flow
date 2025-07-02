@@ -96,3 +96,4 @@ declare export function $toggleLink(
 ): void;
 /** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
 declare const toggleLink: typeof $toggleLink;
+declare export function formatUrl(url: string): string;

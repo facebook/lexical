@@ -51,6 +51,7 @@ import {
   TEXT_TYPE_TO_MODE,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
+import {$cloneNodeState} from '../LexicalNodeState';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -1007,11 +1008,11 @@ export class TextNode extends LexicalNode {
       writableNode.__format = format;
       writableNode.__style = style;
       writableNode.__detail = detail;
+      writableNode.__state = $cloneNodeState(self, writableNode);
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = self.getWritable();
-      writableNode.__text = firstPart;
+      writableNode = self.setTextContent(firstPart);
     }
 
     // Then handle all other parts
@@ -1025,6 +1026,7 @@ export class TextNode extends LexicalNode {
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;
+      sibling.__state = $cloneNodeState(self, sibling);
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
       if (compositionKey === key) {

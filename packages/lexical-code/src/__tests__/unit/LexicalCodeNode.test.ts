@@ -29,6 +29,7 @@ import {
   $isTextNode,
   $setSelection,
   HISTORY_MERGE_TAG,
+  INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
@@ -230,7 +231,7 @@ describe('LexicalCodeNode tests', () => {
       );
     });
 
-    test('can indent/outdent one line by selecting all line (with tabs)', async () => {
+    test('can indent/outdent one line by forward selecting all line (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
       registerTabIndentation(editor);
@@ -246,24 +247,67 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
         invariant($isTextNode(codeText));
+        // forward selection
         codeText.select(0, 'function'.length);
       });
+      const HTMLTabNode = '<span data-lexical-text="true">\t</span>';
+      const HTMLTextNode = '<span data-lexical-text="true">function</span>';
+
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">\t</span><span data-lexical-text="true">function</span></code>',
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
       );
 
-      await editor.update(() => {
-        const root = $getRoot();
-        const codeTab = root.getFirstDescendant()!;
-        const codeText = root.getLastDescendant()!;
-        const selection = $createRangeSelection();
-        selection.anchor.set(codeTab.getKey(), 0, 'text');
-        selection.focus.set(codeText.getKey(), 'function'.length, 'text');
-      });
+      // test 2nd Tab Keypress (cf github issue #7541)
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
+      );
+
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span></code>',
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTextNode}</code>`,
+      );
+    });
+
+    test('can indent/outdent one line by backward selecting all line (with tabs)', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerTabIndentation(editor);
+      registerCodeHighlighting(editor);
+      await editor.update(() => {
+        const root = $getRoot();
+        const code = $createCodeNode();
+        root.append(code);
+        code.selectStart();
+        $getSelection()!.insertText('function');
+      });
+      // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
+      await editor.update(() => {
+        const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
+        // backward selection
+        codeText.select('function'.length, 0);
+      });
+      const HTMLTabNode = '<span data-lexical-text="true">\t</span>';
+      const HTMLTextNode = '<span data-lexical-text="true">function</span>';
+
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
+      );
+
+      // test 2nd Tab Keypress (cf github issue #7541)
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
+      );
+
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTextNode}</code>`,
       );
     });
 
@@ -355,6 +399,32 @@ describe('LexicalCodeNode tests', () => {
       expect(testEnv.innerHTML)
         .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
 2"><span data-lexical-text="true">hello</span><br><span data-lexical-text="true">\t</span></code>`);
+    });
+
+    test('can indent when selection has a CodeNode element (with indent)', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerTabIndentation(editor);
+      registerCodeHighlighting(editor);
+      await editor.update(() => {
+        const root = $getRoot();
+        const code = $createCodeNode();
+        root.append(code);
+        code.selectStart();
+        $getSelection()!.insertRawText('\nhello');
+      });
+      await editor.update(() => {
+        const firstCode = $getRoot().getFirstChild()!;
+        const lastCodeText = $getRoot().getLastDescendant()!;
+        const selection = $createRangeSelection();
+        selection.anchor.set(firstCode.getKey(), 0, 'element');
+        selection.focus.set(lastCodeText.getKey(), 3, 'text');
+        $setSelection(selection);
+      });
+      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      expect(testEnv.innerHTML)
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+2"><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span></code>`);
     });
 
     test('can outdent at arbitrary points in the line (with tabs)', async () => {

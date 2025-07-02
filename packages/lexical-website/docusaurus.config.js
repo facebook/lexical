@@ -226,11 +226,15 @@ const config = {
   favicon: 'img/favicon.ico',
 
   future: {
-    // See https://docusaurus.io/blog/releases/3.6
+    // See https://docusaurus.io/blog/releases/3.8
     experimental_faster: true,
+    v4: {
+      removeLegacyPostBuildHeadAttribute: true, // required
+    },
   },
 
   markdown: {
+    mermaid: true,
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
         'https://stackblitz.com/github/facebook/lexical/tree/main/',
@@ -285,7 +289,6 @@ const config = {
       },
     ],
   ].filter((plugin) => plugin != null),
-
   presets: [
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
@@ -451,6 +454,8 @@ const config = {
         theme: lightCodeTheme,
       },
     }),
+
+  themes: ['@docusaurus/theme-mermaid'],
 
   title: TITLE,
   url: 'https://lexical.dev',

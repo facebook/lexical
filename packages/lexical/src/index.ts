@@ -66,7 +66,6 @@ export {
   $updateRangeSelectionFromCaretRange,
   type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';
-export type {PasteCommandType} from './LexicalCommands';
 export {
   BLUR_COMMAND,
   CAN_REDO_COMMAND,
@@ -108,6 +107,7 @@ export {
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
+  type PasteCommandType,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
@@ -144,9 +144,11 @@ export type {
   KlassConstructor,
   LexicalCommand,
   LexicalEditor,
+  LexicalNodeConfig,
   LexicalNodeReplacement,
   MutationListener,
   NodeMutation,
+  RootListener,
   SerializedEditor,
   Spread,
   Transform,
@@ -168,6 +170,7 @@ export type {
 } from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export type {
+  BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
@@ -175,23 +178,31 @@ export type {
   DOMConversionOutput,
   DOMExportOutput,
   DOMExportOutputMap,
+  LexicalExportJSON,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  StaticNodeConfig,
+  StaticNodeConfigRecord,
+  StaticNodeConfigValue,
 } from './LexicalNode';
+export {buildImportMap} from './LexicalNode';
 export {
   $getState,
   $getStateChange,
   $getWritableNodeState,
   $setState,
   type AnyStateConfig,
+  createSharedNodeState,
   createState,
+  type NodeStateJSON,
   type StateConfig,
   type StateConfigKey,
   type StateConfigValue,
   type StateValueConfig,
+  type StateValueOrUpdater,
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
@@ -224,6 +235,7 @@ export {
   $applyNodeReplacement,
   $cloneWithProperties,
   $copyNode,
+  $create,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
@@ -237,6 +249,7 @@ export {
   $isLeafNode,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
+  $isTokenOrTab,
   $nodesOfType,
   $onUpdate,
   $selectAll,
@@ -249,6 +262,8 @@ export {
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  getRegisteredNode,
+  getRegisteredNodeOrThrow,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
@@ -310,4 +325,5 @@ export {
   SKIP_COLLAB_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
+  type UpdateTag,
 } from './LexicalUpdateTags';

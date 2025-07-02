@@ -112,6 +112,7 @@ export default function EmojiPickerPlugin() {
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch(':', {
     minLength: 0,
+    punctuation: '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]\\\\/!%\'"~=<>:;', // allow _ and -
   });
 
   const options: Array<EmojiOption> = useMemo(() => {

@@ -12,22 +12,31 @@ import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {$createTextNode, $getRoot, $insertNodes} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $insertNodes,
+  $isRangeSelection,
+} from 'lexical';
 
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   LINK,
+  registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
   TRANSFORMERS,
 } from '../..';
 import {
   CODE,
+  ElementTransformer,
+  HEADING,
   MultilineElementTransformer,
   normalizeMarkdown,
 } from '../../MarkdownTransformers';
-import {formatUrl} from '../../utils';
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
   dependencies: [LinkNode],
@@ -212,6 +221,18 @@ const CODE_TAG_COUNTER_EXAMPLE: MultilineElementTransformer = {
   regExpStart: CODE.regExpStart,
   replace: CODE.replace,
   type: 'multiline-element',
+};
+
+export const CANCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
+  dependencies: [HeadingNode],
+  export: () => {
+    return null;
+  },
+  regExp: /^(#{1,6})\s/,
+  replace: () => {
+    return false;
+  },
+  type: 'element',
 };
 
 describe('Markdown', () => {
@@ -521,7 +542,7 @@ describe('Markdown', () => {
     },
     {
       customTransformers: [SIMPLE_INLINE_JSX_MATCHER],
-      html: '<p><span style="white-space: pre-wrap;">Hello </span><a href="simple-jsx"><span style="white-space: pre-wrap;">One &lt;MyTag&gt;Two&lt;/MyTag&gt;</span></a><span style="white-space: pre-wrap;"> there</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello </span><a href="https://simple-jsx"><span style="white-space: pre-wrap;">One &lt;MyTag&gt;Two&lt;/MyTag&gt;</span></a><span style="white-space: pre-wrap;"> there</span></p>',
       md: 'Hello <MyTag>One <MyTag>Two</MyTag></MyTag> there',
       skipExport: true,
     },
@@ -735,6 +756,145 @@ describe('Markdown', () => {
       ).toBe(mdAfterExport ?? md);
     });
   }
+
+  for (const {
+    md,
+    skipImport,
+    shouldPreserveNewLines,
+    shouldMergeAdjacentLines,
+    customTransformers,
+  } of IMPORT_AND_EXPORT) {
+    if (skipImport) {
+      continue;
+    }
+
+    it(`should not select when importing "${md.replace(/\n/g, '\\n')}"`, () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            md,
+            [
+              ...(customTransformers || []),
+              ...TRANSFORMERS,
+              HIGHLIGHT_TEXT_MATCH_IMPORT,
+            ],
+            undefined,
+            shouldPreserveNewLines,
+            shouldMergeAdjacentLines,
+          ),
+        {
+          discrete: true,
+        },
+      );
+
+      expect(editor.getEditorState().read(() => $getSelection())).toBe(null);
+    });
+  }
+
+  it('should not remove leading node and transform if replace returns false', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    registerMarkdownShortcuts(editor, [CANCELED_HEADING_REPLACE_EXAMPLE]);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectEnd();
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText('#');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<p><span style="white-space: pre-wrap;"># </span></p>',
+    );
+  });
+
+  it('should remove leading node and execute transform if replace does not return false', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    registerMarkdownShortcuts(editor, [HEADING]);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectEnd();
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText('#');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<h1><br></h1>',
+    );
+  });
 });
 
 describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
@@ -887,41 +1047,5 @@ E3
 | c | d |
 `;
     expect(normalizeMarkdown(markdown, false)).toBe(markdown);
-  });
-});
-
-describe('formatUrl', () => {
-  it('should not modify URLs with protocols', () => {
-    expect(formatUrl('https://example.com')).toBe('https://example.com');
-    expect(formatUrl('http://example.com')).toBe('http://example.com');
-    expect(formatUrl('mailto:user@example.com')).toBe(
-      'mailto:user@example.com',
-    );
-    expect(formatUrl('tel:+1234567890')).toBe('tel:+1234567890');
-  });
-
-  it('should not modify relative paths', () => {
-    expect(formatUrl('/path/to/resource')).toBe('/path/to/resource');
-    expect(formatUrl('/index.html')).toBe('/index.html');
-  });
-
-  it('should add mailto: to email addresses', () => {
-    expect(formatUrl('user@example.com')).toBe('mailto:user@example.com');
-    expect(formatUrl('name.lastname@domain.co.uk')).toBe(
-      'mailto:name.lastname@domain.co.uk',
-    );
-  });
-
-  it('should add tel: to phone numbers', () => {
-    expect(formatUrl('+1234567890')).toBe('tel:+1234567890');
-    expect(formatUrl('123-456-7890')).toBe('tel:123-456-7890');
-  });
-
-  it('should add https:// to URLs without protocols', () => {
-    expect(formatUrl('www.example.com')).toBe('https://www.example.com');
-    expect(formatUrl('example.com')).toBe('https://example.com');
-    expect(formatUrl('subdomain.example.com/path')).toBe(
-      'https://subdomain.example.com/path',
-    );
   });
 });

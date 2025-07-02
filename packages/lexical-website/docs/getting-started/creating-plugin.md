@@ -4,11 +4,11 @@ sidebar_position: 15
 
 # Creating a Plugin
 
-This page covers Lexical plugin creation, independently of any framework or library. For those not yet familiar with Lexical it's advisable to [check out the Quick Start (Vanilla JS) page](/docs/getting-started/quick-start).
+This page covers Lexical plugin creation, independently of any framework or library. For those not yet familiar with Lexical it's advisable to [check out the Quick Start (Vanilla JS) page](quick-start.md).
 
-Lexical, on the contrary to many other frameworks, doesn't define any specific interface for its plugins. The plugin in its simplest form is a function that accepts a `LexicalEditor` instance, and returns a cleanup function. With access to the `LexicalEditor`, plugin can extend editor via [Commands](/docs/concepts/commands), [Transforms](/docs/concepts/transforms), [Nodes](/docs/concepts/nodes), or other APIs.
+Lexical, on the contrary to many other frameworks, doesn't define any specific interface for its plugins. The plugin in its simplest form is a function that accepts a `LexicalEditor` instance, and returns a cleanup function. With access to the `LexicalEditor`, plugin can extend editor via [Commands](../concepts/commands.md), [Transforms](../concepts/transforms.md), [Nodes](../concepts/nodes.mdx), or other APIs.
 
-In this guide we'll create plugin that replaces smiles (`:)`, `:P`, etc...) with actual emojis (using [Node Transforms](/docs/concepts/transforms)) and uses own graphics for emojis rendering by creating our own custom node that extends [TextNode](/docs/concepts/nodes#textnode).
+In this guide we'll create plugin that replaces smiles (`:)`, `:P`, etc...) with actual emojis (using [Node Transforms](../concepts/transforms.md)) and uses own graphics for emojis rendering by creating our own custom node that extends [TextNode](../concepts/nodes.mdx#textnode).
 
 <figure class="text--center">
  <img src="/img/docs/lexical-emoji-plugin-design.drawio.svg" alt="Conceptual View"/>
@@ -29,12 +29,12 @@ export default function findEmoji(text: string): EmojiMatch | null;
 
 Lexical as a framework provides 2 ways to customize appearance of it's content:
 - By extending one of the base nodes:
-   - [`ElementNode`](/docs/concepts/nodes#elementnode) – used as parent for other nodes, can be block level or inline.
-   - [`TextNode`](/docs/concepts/nodes#textnode) - leaf type (_so it can't have child elements_) of node that contains text.
-   - [`DecoratorNode`](/docs/concepts/nodes#decoratornode) - useful to insert arbitrary view (component) inside the editor.
-- Via [Node Overrides](/docs/concepts/node-replacement) – useful if you want to augment behavior of the built in nodes, such as `ParagraphNode`.
+   - [`ElementNode`](../concepts/nodes.mdx#elementnode) – used as parent for other nodes, can be block level or inline.
+   - [`TextNode`](../concepts/nodes.mdx#textnode) - leaf type (_so it can't have child elements_) of node that contains text.
+   - [`DecoratorNode`](../concepts/nodes.mdx#decoratornode) - useful to insert arbitrary view (component) inside the editor.
+- Via [Node Replacement](../concepts/node-replacement.md) – useful if you want to augment behavior of the built in nodes, such as `ParagraphNode`.
 
-As in our case we don't expect `EmojiNode` to have any child nodes nor we aim to insert arbitrary component the best choice for us is to proceed with [`TextNode`](/docs/concepts/nodes#textnode) extension.
+As in our case we don't expect `EmojiNode` to have any child nodes nor we aim to insert arbitrary component the best choice for us is to proceed with [`TextNode`](../concepts/nodes.mdx#textnode) extension.
 
 ```typescript
 export class EmojiNode extends TextNode {
@@ -81,7 +81,7 @@ export class EmojiNode extends TextNode {
 }
 ```
 
-Example above represents absolute minimal setup of the custom node that extends [`TextNode`](/docs/concepts/nodes#textnode). Let's look at the key elements here:
+Example above represents absolute minimal setup of the custom node that extends [`TextNode`](../concepts/nodes.mdx#textnode). Let's look at the key elements here:
 
 - `constructor(...)` + class props – Allows us to store custom data within nodes at runtime as well as accept custom parameters.
 - `getType()` & `clone(...)` – methods allow Lexical to correctly identify node type as well as being able to clone it correctly as we may want to customize cloning behavior.
@@ -90,9 +90,9 @@ Example above represents absolute minimal setup of the custom node that extends 
 
 ## Creating Node Transform
 
-[Transforms](/docs/concepts/transforms) allow efficient response to changes to the `EditorState`, and so user input. Their efficiency comes from the fact that transforms are executed before DOM reconciliation (the most expensive operation in Lexical's life cycle).
+[Transforms](../concepts/transforms.md) allow efficient response to changes to the `EditorState`, and so user input. Their efficiency comes from the fact that transforms are executed before DOM reconciliation (the most expensive operation in Lexical's life cycle).
 
-Additionally it's important to mention that [Lexical Node Transforms](/docs/concepts/transforms) are smart enough to allow you not to think about any side effects of the modifications done within transform or interdependencies with other transform listeners. Rule of thumb here is that changes done to the node within a particular transform will trigger rerun of the other transforms till no changes are made to the `EditorState`. Read more about it in [Transform heuristic](/docs/concepts/transforms#transform-heuristic).
+Additionally it's important to mention that [Lexical Node Transforms](../concepts/transforms.md) are smart enough to allow you not to think about any side effects of the modifications done within transform or interdependencies with other transform listeners. Rule of thumb here is that changes done to the node within a particular transform will trigger rerun of the other transforms till no changes are made to the `EditorState`. Read more about it in [Transform heuristic](../concepts/transforms.md#transform-heuristic).
 
 In our example we have simple transform that executes the following business logic:
 1. Attempt to transform `TextNode`. It will be run on any change to `TextNode`'s.
@@ -154,7 +154,7 @@ export function registerEmoji(editor: LexicalEditor): () => void {
 
 Finally we configure Lexical instance with our newly created plugin by registering `EmojiNode` within editor config and executing `registerEmoji(editor)` plugin bootstrap function. Here for that sake of simplicity we assume that the plugin picks its own approach for CSS & Static Assets distribution (if any), Lexical doesn't enforce any rules on that.
 
-Refer to [Quick Start (Vanilla JS) Example](/docs/getting-started/quick-start#putting-it-together) to fill the gaps in this pseudocode.
+Refer to [Quick Start (Vanilla JS) Example](quick-start.md#putting-it-together) to fill the gaps in this pseudocode.
 
 ```typescript
 import {createEditor} from 'lexical';

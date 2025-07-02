@@ -334,6 +334,7 @@ export async function assertTableHTML(
 
 /**
  * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Page | import('@playwright/test').Frame}
  */
 export function getPageOrFrame(page) {
   return IS_COLLAB ? page.frame('left') : page;
@@ -524,6 +525,7 @@ export async function copyToClipboard(page) {
 async function pasteWithClipboardDataFromPageOrFrame(
   pageOrFrame,
   clipboardData,
+  editorSelector,
 ) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
@@ -562,7 +564,10 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
-      const editor = document.querySelector('div[contenteditable="true"]');
+      const editor =
+        document.activeElement && document.activeElement.isContentEditable
+          ? document.activeElement
+          : document.querySelector(editorSelector);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -594,7 +599,11 @@ async function pasteWithClipboardDataFromPageOrFrame(
 /**
  * @param {import('@playwright/test').Page} page
  */
-export async function pasteFromClipboard(page, clipboardData) {
+export async function pasteFromClipboard(
+  page,
+  clipboardData,
+  editorSelector = 'div[contenteditable="true"]',
+) {
   if (clipboardData === undefined) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('v');
@@ -604,6 +613,7 @@ export async function pasteFromClipboard(page, clipboardData) {
   await pasteWithClipboardDataFromPageOrFrame(
     getPageOrFrame(page),
     clipboardData,
+    editorSelector,
   );
 }
 

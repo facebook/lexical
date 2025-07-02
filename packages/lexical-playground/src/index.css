@@ -779,13 +779,13 @@ i.page-break,
   background-color: #fff;
   border-radius: 8px;
   border: 0;
-  max-width: 250px;
+  max-width: 264px;
   min-width: 100px;
 }
 
 .dropdown .item.wide {
   align-items: center;
-  width: 248px;
+  width: 260px;
 }
 
 .dropdown .item.wide .icon-text-container {

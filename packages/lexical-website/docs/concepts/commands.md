@@ -23,7 +23,7 @@ editor.registerCommand(
     console.log(payload); // Hello World!
     return false;
   },
-  LowPriority,
+  COMMAND_PRIORITY_LOW,
 );
 ```
 
@@ -55,7 +55,7 @@ const formatBulletList = () => {
 };
 ```
 
-Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.js#L65) to insert the list into the editor.
+Which is later handled in [`registerList`](https://github.com/facebook/lexical/blob/main/packages/lexical-list/src/index.ts) to insert the list into the editor.
 
 ```js
 editor.registerCommand(
@@ -104,7 +104,7 @@ useEffect(() => {
 
 And as seen above and below, `registerCommand`'s callback can return `true` to signal to the other listeners that the command has been handled and propagation will be stopped.
 
-Here's a simplified example of handling a `KEY_TAB_COMMAND` from the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/76b28f4e2b70f1194cc8148dcc30c9f9ec61f811/packages/lexical-rich-text/src/index.js#L625), which is used to dispatch a `OUTDENT_CONTENT_COMMAND` or `INDENT_CONTENT_COMMAND`.
+Here's a simplified example of handling a `KEY_TAB_COMMAND` from the [`TabIndentationPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-react/src/LexicalTabIndentationPlugin.tsx), which is used to dispatch a `OUTDENT_CONTENT_COMMAND` or `INDENT_CONTENT_COMMAND`.
 
 ```js
 editor.registerCommand(
@@ -120,4 +120,4 @@ editor.registerCommand(
 );
 ```
 
-Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.js`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-table/src/LexicalTableSelectionHelpers.js#L733), which handles moving focus to the next or previous cell within a `Table`, but the priority is the highest it can be (`4`) because this behavior is very important.
+Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical-table/src/LexicalTableSelectionHelpers.ts), which handles moving focus to the next or previous cell within a `TableNode`, but the priority is the highest it can be (`COMMAND_PRIORITY_CRITICAL`) because this behavior is very important.

@@ -197,7 +197,7 @@ async function build(
         babelHelpers: 'bundled',
         babelrc: false,
         configFile: false,
-        exclude: '/**/node_modules/**',
+        exclude: '**/node_modules/**',
         extensions,
         plugins: [
           [

@@ -18,14 +18,19 @@ import {
   $createRangeSelection,
   $createTabNode,
   $createTextNode,
+  $getCaretRange,
+  $getCaretRangeInDirection,
   $getRoot,
   $getSelection,
+  $getTextPointCaret,
   $insertNodes,
   $isElementNode,
   $isRangeSelection,
   $isTabNode,
   $isTextNode,
+  $selectAll,
   $setSelection,
+  $setSelectionFromCaretRange,
   KEY_TAB_COMMAND,
 } from 'lexical';
 
@@ -277,6 +282,46 @@ describe('LexicalTabNode tests', () => {
         const textNodes = $getRoot().getAllTextNodes();
         expect(textNodes).toHaveLength(1);
         expect($isTabNode(textNodes[0])).toBe(true);
+      });
+    });
+
+    describe('TabNode at selection boundaries with normal TextNode sibling (#7602)', () => {
+      const input = 'x\tx';
+      (['next', 'previous'] as const).forEach((direction) => {
+        [
+          {output: 'yx', start: 0},
+          {output: 'xy', start: 1},
+        ].forEach(({output, start}) => {
+          test(`TabNode ${JSON.stringify(input)} to ${JSON.stringify(
+            output,
+          )} at ${start} (${direction})`, () => {
+            const {editor} = testEnv;
+            editor.update(
+              () => {
+                $selectAll().insertRawText(input);
+                const textNodes = $getRoot().getAllTextNodes();
+                expect(textNodes.map($isTabNode)).toEqual([false, true, false]);
+                const caretRange = $getCaretRange(
+                  $getTextPointCaret(textNodes[start], 'next', 0),
+                  $getTextPointCaret(textNodes[start + 1], 'next', 'next'),
+                );
+                const range = $setSelectionFromCaretRange(
+                  $getCaretRangeInDirection(caretRange, direction),
+                );
+                range.insertRawText('y');
+              },
+              {discrete: true},
+            );
+            // Using read here because we want to see the post-normalization merged state
+            editor.read(() => {
+              const expectNodes = $getRoot().getAllTextNodes();
+              expect(expectNodes.map((node) => node.getTextContent())).toEqual([
+                output,
+              ]);
+              expect(expectNodes.map($isTabNode)).toEqual([false]);
+            });
+          });
+        });
       });
     });
   });

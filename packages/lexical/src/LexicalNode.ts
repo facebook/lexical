@@ -26,10 +26,17 @@ import {
   $isRootNode,
   $isTextNode,
   type DecoratorNode,
-  ElementNode,
+  type ElementNode,
   NODE_STATE_KEY,
 } from '.';
-import {$updateStateFromJSON, type NodeState} from './LexicalNodeState';
+import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
+import {
+  $updateStateFromJSON,
+  type NodeState,
+  type NodeStateJSON,
+  type Prettify,
+  type RequiredNodeStateConfig,
+} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -53,6 +60,7 @@ import {
   $setNodeKey,
   $setSelection,
   errorOnInsertTextNodeOnRoot,
+  getRegisteredNode,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
@@ -67,8 +75,157 @@ export type SerializedLexicalNode = {
   type: string;
   /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  /**
+   * Any state persisted with the NodeState API that is not
+   * configured for flat storage
+   */
   [NODE_STATE_KEY]?: Record<string, unknown>;
 };
+
+/**
+ * EXPERIMENTAL
+ * The configuration of a node returned by LexicalNode.$config()
+ *
+ * @example
+ * ```ts
+ * class CustomText extends TextNode {
+ *   $config() {
+ *     return this.config('custom-text', {extends: TextNode}};
+ *   }
+ * }
+ * ```
+ */
+export interface StaticNodeConfigValue<
+  T extends LexicalNode,
+  Type extends string,
+> {
+  /**
+   * The exact type of T.getType(), e.g. 'text' - the method itself must
+   * have a more generic 'string' type to be compatible wtih subclassing.
+   */
+  readonly type?: Type;
+  /**
+   * An alternative to the internal static transform() method
+   * that provides better type inference.
+   */
+  readonly $transform?: (node: T) => void;
+  /**
+   * An alternative to the static importJSON() method
+   * that provides better type inference.
+   */
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  /**
+   * An alternative to the static importDOM() method
+   */
+  readonly importDOM?: DOMConversionMap;
+  /**
+   * EXPERIMENTAL
+   *
+   * An array of RequiredNodeStateConfig to initialize your node with
+   * its state requirements. This may be used to configure serialization of
+   * that state.
+   *
+   * This function will be called (at most) once per editor initialization,
+   * directly on your node's prototype. It must not depend on any state
+   * initialized in the constructor.
+   *
+   * @example
+   * ```ts
+   * const flatState = createState("flat", {parse: parseNumber});
+   * const nestedState = createState("nested", {parse: parseNumber});
+   * class MyNode extends TextNode {
+   *   $config() {
+   *     return this.config(
+   *       'my-node',
+   *       {
+   *         extends: TextNode,
+   *         stateConfigs: [
+   *           { stateConfig: flatState, flat: true},
+   *           nestedState,
+   *         ]
+   *       },
+   *     );
+   *   }
+   * }
+   * ```
+   */
+  readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * If specified, this must be the exact superclass of the node. It is not
+   * checked at compile time and it is provided automatically at runtime.
+   *
+   * You would want to specify this when you are extending a node that
+   * has non-trivial configuration in its $config such
+   * as required state. If you do not specify this, the inferred
+   * types for your node class might be missing some of that.
+   */
+  readonly extends?: Klass<LexicalNode>;
+}
+
+/**
+ * This is the type of LexicalNode.$config() that can be
+ * overridden by subclasses.
+ */
+export type BaseStaticNodeConfig = {
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+};
+
+/**
+ * Used to extract the node and type from a StaticNodeConfigRecord
+ */
+export type StaticNodeConfig<
+  T extends LexicalNode,
+  Type extends string,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
+};
+
+/**
+ * Any StaticNodeConfigValue (for generics and collections)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
+
+/**
+ * @internal
+ *
+ * This is the more specific type than BaseStaticNodeConfig that a subclass
+ * should return from $config()
+ */
+export type StaticNodeConfigRecord<
+  Type extends string,
+  Config extends AnyStaticNodeConfigValue,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: Config;
+};
+
+/**
+ * Extract the type from a node based on its $config
+ *
+ * @example
+ * ```ts
+ * type TextNodeType = GetStaticNodeType<TextNode>;
+ *      // ? 'text'
+ * ```
+ */
+export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
+  T[typeof PROTOTYPE_CONFIG_METHOD]
+> extends StaticNodeConfig<T, infer Type>
+  ? Type
+  : string;
+
+/**
+ * The most precise type we can infer for the JSON that will
+ * be produced by T.exportJSON().
+ *
+ * Do not use this for the return type of T.exportJSON()! It must be
+ * a more generic type to be compatible with subclassing.
+ */
+export type LexicalExportJSON<T extends LexicalNode> = Prettify<
+  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+    type: GetStaticNodeType<T>;
+  } & NodeStateJSON<T>
+>;
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
@@ -158,6 +315,29 @@ export function $removeNode(
   }
 }
 
+export type DOMConversionProp<T extends HTMLElement> = (
+  node: T,
+) => DOMConversion<T> | null;
+
+export type DOMConversionPropByTagName<K extends string> = DOMConversionProp<
+  K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K] : HTMLElement
+>;
+
+export type DOMConversionTagNameMap<K extends string> = {
+  [NodeName in K]?: DOMConversionPropByTagName<NodeName>;
+};
+
+/**
+ * An identity function that will infer the type of DOM nodes
+ * based on tag names to make it easier to construct a
+ * DOMConversionMap.
+ */
+export function buildImportMap<K extends string>(importMap: {
+  [NodeName in K]: DOMConversionPropByTagName<NodeName>;
+}): DOMConversionMap {
+  return importMap as unknown as DOMConversionMap;
+}
+
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   conversion: DOMConversionFn<T>;
   priority?: 0 | 1 | 2 | 3 | 4;
@@ -174,7 +354,7 @@ export type DOMChildConversion = (
 
 export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
   NodeName,
-  (node: T) => DOMConversion<T> | null
+  DOMConversionProp<T>
 >;
 type NodeName = string;
 
@@ -192,7 +372,7 @@ export type DOMExportOutputMap = Map<
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
-  ) => HTMLElement | Text | null | undefined;
+  ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
 };
 
@@ -249,6 +429,40 @@ export class LexicalNode {
   }
 
   /**
+   * Override this to implement the new static node configuration protocol,
+   * this method is called directly on the prototype and must not depend
+   * on anything initialized in the constructor. Generally it should be
+   * a trivial implementation.
+   *
+   * @example
+   * ```ts
+   * class MyNode extends TextNode {
+   *   $config() {
+   *     return this.config('my-node', {extends: TextNode});
+   *   }
+   * }
+   * ```
+   */
+  $config(): BaseStaticNodeConfig {
+    return {};
+  }
+
+  /**
+   * This is a convenience method for $config that
+   * aids in type inference. See {@link LexicalNode.$config}
+   * for example usage.
+   */
+  config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
+    type: Type,
+    config: Config,
+  ): StaticNodeConfigRecord<Type, Config> {
+    const parentKlass =
+      config.extends || Object.getPrototypeOf(this.constructor);
+    Object.assign(config, {extends: parentKlass, type});
+    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+  }
+
+  /**
    * Perform any state updates on the clone of prevNode that are not already
    * handled by the constructor call in the static clone method. If you have
    * state to update in your clone that is not handled directly by the
@@ -299,10 +513,14 @@ export class LexicalNode {
    *
    */
   afterCloneFrom(prevNode: this): void {
-    this.__parent = prevNode.__parent;
-    this.__next = prevNode.__next;
-    this.__prev = prevNode.__prev;
-    this.__state = prevNode.__state;
+    if (this.__key === prevNode.__key) {
+      this.__parent = prevNode.__parent;
+      this.__next = prevNode.__next;
+      this.__prev = prevNode.__prev;
+      this.__state = prevNode.__state;
+    } else if (prevNode.__state) {
+      this.__state = prevNode.__state.getWritable(this);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1228,7 +1446,7 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Klass<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._nodes.get(type);
+  const registeredNode = getRegisteredNode(getActiveEditor(), type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(

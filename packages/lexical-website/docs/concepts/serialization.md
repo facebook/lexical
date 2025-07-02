@@ -151,6 +151,184 @@ If the imported ```<table>``` doesn't align with the expected GitHub code HTML, 
 
 Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. 
 
+### `html` Property for Import and Export Configuration
+
+The `html` property in `CreateEditorArgs` provides an alternate way to configure HTML import and export behavior in Lexical without subclassing or node replacement. It includes two properties:
+
+- `import` - Similar to `importDOM`, it controls how HTML elements are transformed into `LexicalNodes`. However, instead of defining conversions directly on each `LexicalNode`, `html.import` provides a configuration that can be overridden easily in the editor setup.
+  
+- `export` - Similar to `exportDOM`, this property customizes how `LexicalNodes` are serialized into HTML. With `html.export`, users can specify transformations for various nodes collectively, offering a flexible override mechanism that can adapt without needing to extend or replace specific `LexicalNodes`.
+
+#### Key Differences from `importDOM` and `exportDOM`
+
+While `importDOM` and `exportDOM` allow for highly customized, node-specific conversions by defining them directly within the `LexicalNode` class, the `html` property enables broader, editor-wide configurations. This setup benefits situations where:
+
+- **Consistent Transformations**: You want uniform import/export behavior across different nodes without adjusting each node individually.
+- **No Subclassing Required**: Overrides to import and export logic are applied at the editor configuration level, simplifying customization and reducing the need for extensive subclassing.
+
+#### Type Definitions
+
+```typescript
+type HTMLConfig = {
+  export?: DOMExportOutputMap;  // Optional map defining how nodes are exported to HTML.
+  import?: DOMConversionMap;     // Optional record defining how HTML is converted into nodes.
+};
+```
+
+#### Example of a use case for the `html` Property for Import and Export Configuration:
+
+[Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+
+### Handling extended HTML styling
+
+Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON \<-\> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
+
+You need to override the base TextNode:
+
+```js
+const initialConfig: InitialConfigType = {
+    namespace: 'editor',
+    theme: editorThemeClasses,
+    onError: (error: any) => console.log(error),
+    nodes: [
+      ExtendedTextNode,
+      {
+        replace: TextNode,
+        with: (node: TextNode) => new ExtendedTextNode(node.__text),
+        withKlass: ExtendedTextNode,
+      },
+      ListNode,
+      ListItemNode,
+    ]
+  };
+```
+
+and create a new Extended Text Node plugin
+
+```js
+import {
+  $applyNodeReplacement,
+  $isTextNode,
+  DOMConversion,
+  DOMConversionMap,
+  DOMConversionOutput,
+  NodeKey,
+  TextNode,
+  SerializedTextNode,
+  LexicalNode
+} from 'lexical';
+
+export class ExtendedTextNode extends TextNode {
+  constructor(text: string, key?: NodeKey) {
+    super(text, key);
+  }
+
+  static getType(): string {
+    return 'extended-text';
+  }
+
+  static clone(node: ExtendedTextNode): ExtendedTextNode {
+    return new ExtendedTextNode(node.__text, node.__key);
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    const importers = TextNode.importDOM();
+    return {
+      ...importers,
+      code: () => ({
+        conversion: patchStyleConversion(importers?.code),
+        priority: 1
+      }),
+      em: () => ({
+        conversion: patchStyleConversion(importers?.em),
+        priority: 1
+      }),
+      span: () => ({
+        conversion: patchStyleConversion(importers?.span),
+        priority: 1
+      }),
+      strong: () => ({
+        conversion: patchStyleConversion(importers?.strong),
+        priority: 1
+      }),
+      sub: () => ({
+        conversion: patchStyleConversion(importers?.sub),
+        priority: 1
+      }),
+      sup: () => ({
+        conversion: patchStyleConversion(importers?.sup),
+        priority: 1
+      }),
+    };
+  }
+
+  static importJSON(serializedNode: SerializedTextNode): TextNode {
+    return $createExtendedTextNode().updateFromJSON(serializedNode);
+  }
+
+  isSimpleText() {
+    return this.__type === 'extended-text' && this.__mode === 0;
+  }
+
+  // no need to add exportJSON here, since we are not adding any new properties
+}
+
+export function $createExtendedTextNode(text: string = ''): ExtendedTextNode {
+  return $applyNodeReplacement(new ExtendedTextNode(text));
+}
+
+export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {
+	return node instanceof ExtendedTextNode;
+}
+
+function patchStyleConversion(
+  originalDOMConverter?: (node: HTMLElement) => DOMConversion | null
+): (node: HTMLElement) => DOMConversionOutput | null {
+  return (node) => {
+    const original = originalDOMConverter?.(node);
+    if (!original) {
+      return null;
+    }
+    const originalOutput = original.conversion(node);
+
+    if (!originalOutput) {
+      return originalOutput;
+    }
+
+    const backgroundColor = node.style.backgroundColor;
+    const color = node.style.color;
+    const fontFamily = node.style.fontFamily;
+    const fontWeight = node.style.fontWeight;
+    const fontSize = node.style.fontSize;
+    const textDecoration = node.style.textDecoration;
+
+    return {
+      ...originalOutput,
+      forChild: (lexicalNode, parent) => {
+        const originalForChild = originalOutput?.forChild ?? ((x) => x);
+        const result = originalForChild(lexicalNode, parent);
+        if ($isTextNode(result)) {
+          const style = [
+            backgroundColor ? `background-color: ${backgroundColor}` : null,
+            color ? `color: ${color}` : null,
+            fontFamily ? `font-family: ${fontFamily}` : null,
+            fontWeight ? `font-weight: ${fontWeight}` : null,
+            fontSize ? `font-size: ${fontSize}` : null,
+            textDecoration ? `text-decoration: ${textDecoration}` : null,
+          ]
+            .filter((value) => value != null)
+            .join('; ');
+          if (style.length) {
+            return result.setStyle(style);
+          }
+        }
+        return result;
+      }
+    };
+  };
+}
+```
+
 ## JSON
 
 ### Lexical -> JSON
@@ -345,182 +523,3 @@ So then you have a situation where there are possibly two JSON layouts for `Exte
 If you do have incompatible representations, it's probably best to choose a new type. This is basically the only way that will force old configurations to fail, as `importJSON` implementations often don't do runtime validation and dangerously assume that the values are the correct type.
 
 There are other schemes that would allow for composable versions, such as nesting the superclass data, or choosing a different name for a version property in each subclass. In practice, explicit versioning is generally redundant if the serialization is properly parsed, so it is recommended that you use the simpler approach with a flat representation with mostly optional properties.
-
-### Handling extended HTML styling
-
-Since the TextNode is foundational to all Lexical packages, including the plain text use case. Handling any rich text logic is undesirable. This creates the need to override the TextNode to handle serialization and deserialization of HTML/CSS styling properties to achieve full fidelity between JSON \<-\> HTML. Since this is a very popular use case, below we are proving a recipe to handle the most common use cases.
-
-You need to override the base TextNode:
-
-```js
-const initialConfig: InitialConfigType = {
-    namespace: 'editor',
-    theme: editorThemeClasses,
-    onError: (error: any) => console.log(error),
-    nodes: [
-      ExtendedTextNode,
-      {
-        replace: TextNode,
-        with: (node: TextNode) => new ExtendedTextNode(node.__text),
-        withKlass: ExtendedTextNode,
-      },
-      ListNode,
-      ListItemNode,
-    ]
-  };
-```
-
-and create a new Extended Text Node plugin
-
-```js
-import {
-  $applyNodeReplacement,
-  $isTextNode,
-  DOMConversion,
-  DOMConversionMap,
-  DOMConversionOutput,
-  NodeKey,
-  TextNode,
-  SerializedTextNode,
-  LexicalNode
-} from 'lexical';
-
-export class ExtendedTextNode extends TextNode {
-  constructor(text: string, key?: NodeKey) {
-    super(text, key);
-  }
-
-  static getType(): string {
-    return 'extended-text';
-  }
-
-  static clone(node: ExtendedTextNode): ExtendedTextNode {
-    return new ExtendedTextNode(node.__text, node.__key);
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    const importers = TextNode.importDOM();
-    return {
-      ...importers,
-      code: () => ({
-        conversion: patchStyleConversion(importers?.code),
-        priority: 1
-      }),
-      em: () => ({
-        conversion: patchStyleConversion(importers?.em),
-        priority: 1
-      }),
-      span: () => ({
-        conversion: patchStyleConversion(importers?.span),
-        priority: 1
-      }),
-      strong: () => ({
-        conversion: patchStyleConversion(importers?.strong),
-        priority: 1
-      }),
-      sub: () => ({
-        conversion: patchStyleConversion(importers?.sub),
-        priority: 1
-      }),
-      sup: () => ({
-        conversion: patchStyleConversion(importers?.sup),
-        priority: 1
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedTextNode): TextNode {
-    return $createExtendedTextNode().updateFromJSON(serializedNode);
-  }
-
-  isSimpleText() {
-    return this.__type === 'extended-text' && this.__mode === 0;
-  }
-
-  // no need to add exportJSON here, since we are not adding any new properties
-}
-
-export function $createExtendedTextNode(text: string = ''): ExtendedTextNode {
-  return $applyNodeReplacement(new ExtendedTextNode(text));
-}
-
-export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {
-	return node instanceof ExtendedTextNode;
-}
-
-function patchStyleConversion(
-  originalDOMConverter?: (node: HTMLElement) => DOMConversion | null
-): (node: HTMLElement) => DOMConversionOutput | null {
-  return (node) => {
-    const original = originalDOMConverter?.(node);
-    if (!original) {
-      return null;
-    }
-    const originalOutput = original.conversion(node);
-
-    if (!originalOutput) {
-      return originalOutput;
-    }
-
-    const backgroundColor = node.style.backgroundColor;
-    const color = node.style.color;
-    const fontFamily = node.style.fontFamily;
-    const fontWeight = node.style.fontWeight;
-    const fontSize = node.style.fontSize;
-    const textDecoration = node.style.textDecoration;
-
-    return {
-      ...originalOutput,
-      forChild: (lexicalNode, parent) => {
-        const originalForChild = originalOutput?.forChild ?? ((x) => x);
-        const result = originalForChild(lexicalNode, parent);
-        if ($isTextNode(result)) {
-          const style = [
-            backgroundColor ? `background-color: ${backgroundColor}` : null,
-            color ? `color: ${color}` : null,
-            fontFamily ? `font-family: ${fontFamily}` : null,
-            fontWeight ? `font-weight: ${fontWeight}` : null,
-            fontSize ? `font-size: ${fontSize}` : null,
-            textDecoration ? `text-decoration: ${textDecoration}` : null,
-          ]
-            .filter((value) => value != null)
-            .join('; ');
-          if (style.length) {
-            return result.setStyle(style);
-          }
-        }
-        return result;
-      }
-    };
-  };
-}
-```
-
-### `html` Property for Import and Export Configuration
-
-The `html` property in `CreateEditorArgs` provides an alternate way to configure HTML import and export behavior in Lexical without subclassing or node replacement. It includes two properties:
-
-- `import` - Similar to `importDOM`, it controls how HTML elements are transformed into `LexicalNodes`. However, instead of defining conversions directly on each `LexicalNode`, `html.import` provides a configuration that can be overridden easily in the editor setup.
-  
-- `export` - Similar to `exportDOM`, this property customizes how `LexicalNodes` are serialized into HTML. With `html.export`, users can specify transformations for various nodes collectively, offering a flexible override mechanism that can adapt without needing to extend or replace specific `LexicalNodes`.
-
-#### Key Differences from `importDOM` and `exportDOM`
-
-While `importDOM` and `exportDOM` allow for highly customized, node-specific conversions by defining them directly within the `LexicalNode` class, the `html` property enables broader, editor-wide configurations. This setup benefits situations where:
-
-- **Consistent Transformations**: You want uniform import/export behavior across different nodes without adjusting each node individually.
-- **No Subclassing Required**: Overrides to import and export logic are applied at the editor configuration level, simplifying customization and reducing the need for extensive subclassing.
-
-#### Type Definitions
-
-```typescript
-type HTMLConfig = {
-  export?: DOMExportOutputMap;  // Optional map defining how nodes are exported to HTML.
-  import?: DOMConversionMap;     // Optional record defining how HTML is converted into nodes.
-};
-```
-
-#### Example of a use case for the `html` Property for Import and Export Configuration:
-
-[Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
-

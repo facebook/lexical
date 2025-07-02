@@ -270,7 +270,11 @@
   height: 100%;
   border-right: 1px solid #bbb;
 }
-.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even),
+.PlaygroundEditorTheme__tableFrozenColumn
+  .PlaygroundEditorTheme__table.PlaygroundEditorTheme__tableRowStriping
+  tr:nth-child(even)
+  > td:first-child {
   background-color: #f2f5fb;
 }
 .PlaygroundEditorTheme__tableSelection *::selection {
@@ -449,6 +453,9 @@
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
+  background-color: var(--listitem-marker-background-color);
 }
 .PlaygroundEditorTheme__listItem::marker {
   color: var(--listitem-marker-color);
@@ -459,32 +466,34 @@
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {
   position: relative;
-  margin-left: 8px;
-  margin-right: 8px;
-  padding-left: 24px;
-  padding-right: 24px;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
   list-style-type: none;
   outline: none;
+  display: block;
+  min-height: 1.5em;
 }
-.PlaygroundEditorTheme__listItemChecked {
-  text-decoration: line-through;
+.PlaygroundEditorTheme__listItemChecked > *,
+.PlaygroundEditorTheme__listItemUnchecked > * {
+  margin-left: 0.01em;
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  top: 2px;
+  content: '\200B';
+  width: 0.9em;
+  height: 0.9em;
+  top: 50%;
   left: 0;
   cursor: pointer;
   display: block;
   background-size: cover;
   position: absolute;
+  transform: translateY(-50%);
 }
-.PlaygroundEditorTheme__listItemUnchecked[dir='rtl']:before,
-.PlaygroundEditorTheme__listItemChecked[dir='rtl']:before {
-  left: auto;
-  right: 0;
+.PlaygroundEditorTheme__listItemChecked {
+  text-decoration: line-through;
 }
 .PlaygroundEditorTheme__listItemUnchecked:focus:before,
 .PlaygroundEditorTheme__listItemChecked:focus:before {
@@ -508,13 +517,12 @@
   border-style: solid;
   position: absolute;
   display: block;
-  top: 6px;
-  width: 3px;
-  left: 7px;
-  right: 7px;
-  height: 6px;
-  transform: rotate(45deg);
-  border-width: 0 2px 2px 0;
+  top: 45%;
+  width: 0.2em;
+  left: 0.35em;
+  height: 0.4em;
+  transform: translateY(-50%) rotate(45deg);
+  border-width: 0 0.1em 0.1em 0;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;
@@ -525,6 +533,18 @@
 }
 .PlaygroundEditorTheme__tokenComment {
   color: slategray;
+}
+.PlaygroundEditorTheme__tokenDeleted {
+  border-image: linear-gradient(to right, #ffcecb 50%, #ffebe9 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenInserted {
+  border-image: linear-gradient(to right, #aceebb 50%, #dafbe1 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenUnchanged {
+  border-image: linear-gradient(to right, #ddd 50%, #f0f2f5 50%) fill 0/0/0
+    100vw;
 }
 .PlaygroundEditorTheme__tokenPunctuation {
   color: #999;
@@ -605,4 +625,49 @@
 .PlaygroundEditorTheme__specialText {
   background-color: yellow;
   font-weight: bold;
+}
+
+.PlaygroundEditorTheme__contextMenu {
+  outline: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+.PlaygroundEditorTheme__contextMenu button:first-child {
+  border-radius: 8px 8px 0px 0px;
+}
+.PlaygroundEditorTheme__contextMenu button:last-child {
+  border-radius: 0px 0px 8px 8px;
+}
+.PlaygroundEditorTheme__contextMenuItem {
+  width: 100%;
+  display: block;
+}
+.PlaygroundEditorTheme__contextMenuItem {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  background-color: #fff;
+  color: #050505;
+  border: 0;
+  border-radius: 0px;
+  font-size: 15px;
+  text-align: left;
+  line-height: 20px;
+  padding: 8px;
+  outline: 0;
+  cursor: pointer;
+}
+.PlaygroundEditorTheme__contextMenuItem.open {
+  background: #ddd;
+}
+.PlaygroundEditorTheme__contextMenuItem:focus,
+.PlaygroundEditorTheme__contextMenuItem:not([disabled]):active {
+  background: #eee;
+}
+.PlaygroundEditorTheme__contextMenuItem:disabled {
+  background: #fff;
+  color: #aaa;
+  cursor: not-allowed;
 }

@@ -488,6 +488,94 @@ test.describe('CodeBlock', () => {
     );
   });
 
+  test('Can indent text via tab when selecting the line with Shift+Down', async ({
+    page,
+    isRichText,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('``` alert(1);');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('alert(2);');
+    await moveToStart(page);
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await page.keyboard.press('Tab');
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="123"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            1
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+          <br />
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            2
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+        </code>
+      `,
+    );
+  });
+
   test('Can (un)indent multiple lines at once', async ({
     page,
     isRichText,
@@ -1233,5 +1321,194 @@ test.describe('CodeBlock', () => {
       focusOffset: 5,
       focusPath: [0, 4, 0],
     });
+  });
+
+  test('Can create code block with language `diff`', async ({
+    page,
+    isRichText,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```diff >let a = 1;\n<let b = 2;\nlet c = 3;\n let d = 4;',
+    );
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            spellcheck="false"
+            data-gutter="1234"
+            data-highlight-language="diff"
+            data-language="diff">
+            <span
+              class="PlaygroundEditorTheme__tokenInserted"
+              data-lexical-text="true">
+              &gt;
+            </span>
+            <span data-lexical-text="true">let a = 1;</span>
+            <br />
+            <span
+              class="PlaygroundEditorTheme__tokenDeleted"
+              data-lexical-text="true">
+              &lt;
+            </span>
+            <span data-lexical-text="true">let b = 2;</span>
+            <br />
+            <span data-lexical-text="true">let c = 3;</span>
+            <br />
+            <span
+              class="PlaygroundEditorTheme__tokenUnchanged"
+              data-lexical-text="true"></span>
+            <span data-lexical-text="true">let d = 4;</span>
+          </code>
+        `,
+      );
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">\`\`\`diff &gt;let a = 1;</span>
+            <br />
+            <span data-lexical-text="true">&lt;let b = 2;</span>
+            <br />
+            <span data-lexical-text="true">let c = 3;</span>
+            <br />
+            <span data-lexical-text="true">let d = 4;</span>
+          </p>
+        `,
+      );
+    }
+  });
+
+  test('Can create code block with language `diff-javascript`', async ({
+    page,
+    isRichText,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```diff-javascript +let a = 1;\n-let b = 2;\nlet c = 3;\n let d = 4;',
+    );
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            spellcheck="false"
+            data-gutter="1234"
+            data-highlight-language="diff-javascript"
+            data-language="diff-javascript">
+            <span
+              class="PlaygroundEditorTheme__tokenInserted"
+              data-lexical-text="true">
+              +
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenAttr"
+              data-lexical-text="true">
+              let
+            </span>
+            <span data-lexical-text="true">a</span>
+            <span
+              class="PlaygroundEditorTheme__tokenOperator"
+              data-lexical-text="true">
+              =
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tokenProperty"
+              data-lexical-text="true">
+              1
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true">
+              ;
+            </span>
+            <br />
+            <span
+              class="PlaygroundEditorTheme__tokenDeleted"
+              data-lexical-text="true">
+              -
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenAttr"
+              data-lexical-text="true">
+              let
+            </span>
+            <span data-lexical-text="true">b</span>
+            <span
+              class="PlaygroundEditorTheme__tokenOperator"
+              data-lexical-text="true">
+              =
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tokenProperty"
+              data-lexical-text="true">
+              2
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true">
+              ;
+            </span>
+            <br />
+            <span data-lexical-text="true">let c = 3;</span>
+            <br />
+            <span
+              class="PlaygroundEditorTheme__tokenUnchanged"
+              data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tokenAttr"
+              data-lexical-text="true">
+              let
+            </span>
+            <span data-lexical-text="true">d</span>
+            <span
+              class="PlaygroundEditorTheme__tokenOperator"
+              data-lexical-text="true">
+              =
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tokenProperty"
+              data-lexical-text="true">
+              4
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true">
+              ;
+            </span>
+          </code>
+        `,
+      );
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">
+              \`\`\`diff-javascript +let a = 1;
+            </span>
+            <br />
+            <span data-lexical-text="true">-let b = 2;</span>
+            <br />
+            <span data-lexical-text="true">let c = 3;</span>
+            <br />
+            <span data-lexical-text="true">let d = 4;</span>
+          </p>
+        `,
+      );
+    }
   });
 });

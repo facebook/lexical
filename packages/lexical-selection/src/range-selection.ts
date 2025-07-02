@@ -94,6 +94,11 @@ export function $setBlocksType<T extends ElementNode>(
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
       blockMap.set(node.getKey(), node);
+    } else if (anchorAndFocus === null) {
+      const ancestorBlock = $getAncestor(node, INTERNAL_$isBlock);
+      if ($isElementNode(ancestorBlock)) {
+        blockMap.set(ancestorBlock.getKey(), ancestorBlock);
+      }
     }
   }
   for (const [key, prevNode] of blockMap) {
@@ -142,7 +147,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 /**
- * @deprecated
+ * @deprecated In favor of $setBlockTypes
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
  * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.

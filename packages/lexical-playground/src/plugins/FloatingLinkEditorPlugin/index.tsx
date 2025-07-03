@@ -215,6 +215,23 @@ function FloatingLinkEditor({
     }
   }, [isLinkEditMode, isLink]);
 
+  useEffect(() => {
+    const editorElement = editorRef.current;
+    if (editorElement === null) {
+      return;
+    }
+    const handleBlur = (event: FocusEvent) => {
+      if (!editorElement.contains(event.relatedTarget as Element) && isLink) {
+        setIsLink(false);
+        setIsLinkEditMode(false);
+      }
+    };
+    editorElement.addEventListener('focusout', handleBlur);
+    return () => {
+      editorElement.removeEventListener('focusout', handleBlur);
+    };
+  }, [editorRef, setIsLink, setIsLinkEditMode, isLink]);
+
   const monitorInputInteraction = (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {

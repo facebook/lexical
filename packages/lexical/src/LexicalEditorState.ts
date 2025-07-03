@@ -14,10 +14,10 @@ import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
-import {readEditorState} from './LexicalUpdates';
-import {$getRoot} from './LexicalUtils';
-import {$isElementNode} from './nodes/LexicalElementNode';
-import {$createRootNode} from './nodes/LexicalRootNode';
+// import {readEditorState} from './LexicalUpdates'; // Removed
+// import {$getRoot} from './LexicalUtils'; // No longer needed here
+import {$isElementNode} from './nodes/LexicalElementNode'; // Keep if exportNodeToJSON or other internal logic needs it
+import {$createRootNode} from './nodes/LexicalRootNode'; // Keep for createEmptyEditorState
 
 export interface SerializedEditorState<
   T extends SerializedLexicalNode = SerializedLexicalNode,
@@ -112,12 +112,11 @@ export class EditorState {
     return this._nodeMap.size === 1 && this._selection === null;
   }
 
-  read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V {
-    return readEditorState(
-      (options && options.editor) || null,
-      this,
-      callbackFn,
-    );
+  read<V>(callbackFn: () => V, _options?: EditorStateReadOptions): V {
+    // Assumes read context is already set by the caller (e.g., LexicalEditor.read)
+    // The original readEditorState also managed activeEditor, activeEditorState, isReadOnlyMode.
+    // This direct call implies that these globals are managed by the initiator of the read operation.
+    return callbackFn();
   }
 
   clone(selection?: null | BaseSelection): EditorState {
@@ -130,8 +129,22 @@ export class EditorState {
     return editorState;
   }
   toJSON(): SerializedEditorState {
-    return readEditorState(null, this, () => ({
-      root: exportNodeToJSON($getRoot()),
-    }));
+    // Assumes read context is already set.
+    // The activeEditorState is available via getActiveEditorState() which is called by $getRoot,
+    // or, if we want to avoid $getRoot, we can directly access the root from the current editorState's nodeMap.
+    // Since toJSON is a method of EditorState, `this` is the editorState.
+    const root = this._nodeMap.get('root') as SerializedRootNode; // Cast needed if exportNodeToJSON expects RootNode but gets SerializedRootNode after processing
+    if (!root) {
+      invariant(false, 'LexicalEditorState.toJSON: Root node not found in nodeMap.');
+    }
+    // exportNodeToJSON expects a LexicalNode, not a SerializedRootNode directly from map if it's already serialized.
+    // The original $getRoot() returns a RootNode instance.
+    const rootNode = this._nodeMap.get('root') as RootNode;
+    if (!rootNode) {
+      invariant(false, 'LexicalEditorState.toJSON: Root node not found in nodeMap.');
+    }
+    return {
+      root: exportNodeToJSON(rootNode), // Pass the RootNode instance
+    };
   }
 }

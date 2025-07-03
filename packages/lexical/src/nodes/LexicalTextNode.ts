@@ -72,7 +72,7 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
-import {$createTabNode} from './LexicalTabNode';
+// import {$createTabNode} from './LexicalTabNode'; // Removed
 
 export type SerializedTextNode = Spread<
   {
@@ -1251,7 +1251,8 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
       if (part === '\n' || part === '\r\n') {
         nodes.push($createLineBreakNode());
       } else if (part === '\t') {
-        nodes.push($createTabNode());
+        // nodes.push($createTabNode()); // Old way
+        nodes.push($createTextNode('\t')); // New way: create a regular TextNode with tab character
       } else if (part !== '') {
         nodes.push($createTextNode(part));
       }

@@ -10,14 +10,18 @@ import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
+  $caretFromPoint,
   $cloneWithProperties,
   $createTabNode,
+  $getCaretRange,
+  $getChildCaret,
   $getEditor,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $isTextPointCaret,
   $parseSerializedNode,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -228,8 +232,47 @@ export function $insertGeneratedNodes(
     })
   ) {
     selection.insertNodes(nodes);
+    $updateSelectionOnInsert(selection);
   }
   return;
+}
+
+function $updateSelectionOnInsert(selection: BaseSelection): void {
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const anchor = selection.anchor;
+    let nodeToInspect: LexicalNode | null = null;
+
+    const anchorCaret = $caretFromPoint(anchor, 'previous');
+    if (anchorCaret) {
+      if ($isTextPointCaret(anchorCaret)) {
+        nodeToInspect = anchorCaret.origin;
+      } else {
+        const range = $getCaretRange(
+          anchorCaret,
+          $getChildCaret($getRoot(), 'next').getFlipped(),
+        );
+        for (const caret of range) {
+          if ($isTextNode(caret.origin)) {
+            nodeToInspect = caret.origin;
+            break;
+          } else if ($isElementNode(caret.origin) && !caret.origin.isInline()) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (nodeToInspect && $isTextNode(nodeToInspect)) {
+      const newFormat = nodeToInspect.getFormat();
+      const newStyle = nodeToInspect.getStyle();
+
+      if (selection.format !== newFormat || selection.style !== newStyle) {
+        selection.format = newFormat;
+        selection.style = newStyle;
+        selection.dirty = true;
+      }
+    }
+  }
 }
 
 export interface BaseSerializedNode {

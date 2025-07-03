@@ -40,7 +40,7 @@ const editorConfig = Object.freeze({
 
 describe('LexicalAutoAutoLinkNode tests', () => {
   initializeUnitTest((testEnv) => {
-    test('AutoAutoLinkNode.constructor', async () => {
+    test('AutoLinkNode.constructor', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
@@ -54,17 +54,17 @@ describe('LexicalAutoAutoLinkNode tests', () => {
       expect(() => new AutoLinkNode('')).toThrow();
     });
 
-    test('AutoAutoLinkNode.constructor with isUnlinked param set to true', async () => {
+    test('AutoLinkNode.constructor with isUnlinked param set to true', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const actutoLinkNode = new AutoLinkNode('/', {
+        const autoLinkNode = new AutoLinkNode('/', {
           isUnlinked: true,
         });
 
-        expect(actutoLinkNode.__type).toBe('autolink');
-        expect(actutoLinkNode.__url).toBe('/');
-        expect(actutoLinkNode.__isUnlinked).toBe(true);
+        expect(autoLinkNode.__type).toBe('autolink');
+        expect(autoLinkNode.__url).toBe('/');
+        expect(autoLinkNode.__isUnlinked).toBe(true);
       });
 
       expect(() => new AutoLinkNode('')).toThrow();
@@ -72,7 +72,7 @@ describe('LexicalAutoAutoLinkNode tests', () => {
 
     ///
 
-    test('LineBreakNode.clone()', async () => {
+    test('AutoLinkNode.clone()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {

@@ -7,36 +7,24 @@
  */
 
 import type {
-  CaretDirection,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
   LexicalUpdateJSON,
-  LineBreakNode,
   NodeKey,
   SerializedTextNode,
-  SiblingCaret,
   Spread,
-  TabNode,
 } from 'lexical';
 
 import {
-  $getAdjacentCaret,
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {
-  $applyNodeReplacement,
-  $getSiblingCaret,
-  $isTabNode,
-  ElementNode,
-  TextNode,
-} from 'lexical';
+import {$applyNodeReplacement, ElementNode, TextNode} from 'lexical';
 
-import {Prism} from './CodeHighlighterPrism';
 import {$createCodeNode} from './CodeNode';
 
-export const DEFAULT_CODE_LANGUAGE = 'javascript';
+//export const DEFAULT_CODE_LANGUAGE = 'javascript';
 
 type SerializedCodeHighlightNode = Spread<
   {
@@ -44,57 +32,6 @@ type SerializedCodeHighlightNode = Spread<
   },
   SerializedTextNode
 >;
-
-export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
-  c: 'C',
-  clike: 'C-like',
-  cpp: 'C++',
-  css: 'CSS',
-  html: 'HTML',
-  java: 'Java',
-  js: 'JavaScript',
-  markdown: 'Markdown',
-  objc: 'Objective-C',
-  plain: 'Plain Text',
-  powershell: 'PowerShell',
-  py: 'Python',
-  rust: 'Rust',
-  sql: 'SQL',
-  swift: 'Swift',
-  typescript: 'TypeScript',
-  xml: 'XML',
-};
-
-export const CODE_LANGUAGE_MAP: Record<string, string> = {
-  cpp: 'cpp',
-  java: 'java',
-  javascript: 'js',
-  md: 'markdown',
-  plaintext: 'plain',
-  python: 'py',
-  text: 'plain',
-  ts: 'typescript',
-};
-
-export function normalizeCodeLang(lang: string) {
-  return CODE_LANGUAGE_MAP[lang] || lang;
-}
-
-export function getLanguageFriendlyName(lang: string) {
-  const _lang = normalizeCodeLang(lang);
-  return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
-}
-
-export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
-
-export const getCodeLanguages = (): Array<string> =>
-  Object.keys(Prism.languages)
-    .filter(
-      // Prism has several language helpers mixed into languages object
-      // so filtering them out here to get langs list
-      (language) => typeof Prism.languages[language] !== 'function',
-    )
-    .sort();
 
 /** @noInheritDoc */
 export class CodeHighlightNode extends TextNode {
@@ -226,34 +163,4 @@ export function $isCodeHighlightNode(
   node: LexicalNode | CodeHighlightNode | null | undefined,
 ): node is CodeHighlightNode {
   return node instanceof CodeHighlightNode;
-}
-
-function $getLastMatchingCodeNode<D extends CaretDirection>(
-  anchor: CodeHighlightNode | TabNode | LineBreakNode,
-  direction: D,
-): CodeHighlightNode | TabNode | LineBreakNode {
-  let matchingNode: CodeHighlightNode | TabNode | LineBreakNode = anchor;
-  for (
-    let caret: null | SiblingCaret<LexicalNode, D> = $getSiblingCaret(
-      anchor,
-      direction,
-    );
-    caret && ($isCodeHighlightNode(caret.origin) || $isTabNode(caret.origin));
-    caret = $getAdjacentCaret(caret)
-  ) {
-    matchingNode = caret.origin;
-  }
-  return matchingNode;
-}
-
-export function $getFirstCodeNodeOfLine(
-  anchor: CodeHighlightNode | TabNode | LineBreakNode,
-): CodeHighlightNode | TabNode | LineBreakNode {
-  return $getLastMatchingCodeNode(anchor, 'previous');
-}
-
-export function $getLastCodeNodeOfLine(
-  anchor: CodeHighlightNode | TabNode | LineBreakNode,
-): CodeHighlightNode | TabNode | LineBreakNode {
-  return $getLastMatchingCodeNode(anchor, 'next');
 }

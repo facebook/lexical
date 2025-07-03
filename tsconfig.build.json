@@ -9,6 +9,7 @@
       "lexical": ["./packages/lexical/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
+      "@lexical/code-shiki": ["./packages/lexical-code-shiki/src/index.ts"],
       "@lexical/devtools-core": [
         "./packages/lexical-devtools-core/src/index.ts"
       ],

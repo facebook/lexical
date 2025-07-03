@@ -1,3 +1,36 @@
+## v0.33.0 (2025-07-03)
+
+- lexical-playground fix close link popup when user clicks out of it (#7670) Achal Jhawar
+- lexical-playground Chore Fix AutocompleteNode importDOM warning (#7667) Bob Ippolito
+- lexical-react Bug Fix LexicalMenu position menu immediately regression (#7669) Bob Ippolito
+- lexical-table Bug Fix Fix table selection for touch devices (#7656) Rickert Mulder
+- lexical-clipboard Inherit style when typing after pasting rich text (#7657) Achal Jhawar
+- lexical-list Bug Fix Make tap target for checklists bigger so touch inputs register (#7655) Rickert Mulder
+- lexical-website Chore Fix typo in transforms (#7664) Noam Zaks
+- lexical Bug Fix Workarounds for import json  (#7661) Yuncheng Lu
+- lexical-website Documentation Update Update some doc links (#7660) Yuncheng Lu
+- lexical-react Bug Fix aria-prohibited-attr violation on LexicalContentEditableElement (#7647) so99ynoodles
+- lexical Bug Fix Workarounds in config protocol for loose inheritance (#7659) Bob Ippolito
+- lexical-playground lexical-list add ability to change ordered list start number (#7638) Achal Jhawar
+- lexical Bug Fix allow same mutation listener fn to be registered to multiple nodes (#7654) James Fitzsimmons
+- lexical-playground Bug Fix Allow deleting empty column layouts via backspace  (#7636) Lakshmanshankar C
+- lexical-react Bug Fix handle DraggableBlockPlugin in scrollable editors  (#7644) Randal
+- lexical-devtools-core Chore add NodeState to TreeView (#7642) Randal
+- lexical Bug Fix copy NodeState when splitting text nodes (#7641) Randal
+- lexical-table Bug Fix Ignore SELECTIONINSERTCLIPBOARDNODESCOMMAND dispatched from child editors (#7637) Bob Ippolito
+- LexicalRefactor Change UnionToIntersection flow type (#7643) Yuncheng Lu
+- Feature config protocol  NodeState registrationflattening (#7258) Bob Ippolito
+- lexical-headless-test Enhance navigator environment check with object type and structure validation (#7626) 0xobedient
+- lexical-react Chore make ref types mutable (#7633) Finlay Smith
+- Add in favor for to deprecated tag (#7634) sofiane-dj
+- lexical-playground Bug Fix Update alignment state for image selection (#7627) Kiran Dash
+- lexical-devtools-core Bug Fix Allow CustomPrintNodeFn to return undefined (#7619) Achal Jhawar
+- lexical-codelexical-markdownlexical-playground Feature Add code diff highlighting (#7613) jeromew
+- lexical-react Chore Remove confusing return value (#7607) Eliott Vincent
+- lexicalBreaking Change Bug Fix Change copyNode to use afterCloneFrom (#7609) Bob Ippolito
+- v0.32.1 (#7605) Bob Ippolito
+- v0.32.1 Lexical GitHub Actions Bot
+
 ## v0.32.1 (2025-06-05)
 
 - tests Chore Update table test to use locator API instead of page.evaluate (#7603) Bob Ippolito

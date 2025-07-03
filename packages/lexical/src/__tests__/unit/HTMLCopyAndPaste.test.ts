@@ -114,14 +114,12 @@ describe('HTMLCopyAndPaste tests', () => {
             );
             $insertDataTransferForRichText(dataTransfer, selection, editor);
             if (testCase.plainTextInsert) {
-              editor.update(() => {
-                const newSelection = $getSelection();
-                invariant(
-                  $isRangeSelection(newSelection),
-                  'isRangeSelection(newSelection) for plainTextInsert',
-                );
-                newSelection.insertText(testCase.plainTextInsert);
-              });
+              const newSelection = $getSelection();
+              invariant(
+                $isRangeSelection(newSelection),
+                'isRangeSelection(newSelection) for plainTextInsert',
+              );
+              newSelection.insertText(testCase.plainTextInsert);
             }
           });
           expect(testEnv.innerHTML).toBe(testCase.expectedHTML);

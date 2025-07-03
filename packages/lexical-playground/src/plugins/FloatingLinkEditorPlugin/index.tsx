@@ -221,10 +221,7 @@ function FloatingLinkEditor({
       return;
     }
     const handleBlur = (event: FocusEvent) => {
-      if (
-        !editorElement.contains(event.relatedTarget as Element) &&
-        isLink
-      ) {
+      if (!editorElement.contains(event.relatedTarget as Element) && isLink) {
         setIsLink(false);
         setIsLinkEditMode(false);
       }

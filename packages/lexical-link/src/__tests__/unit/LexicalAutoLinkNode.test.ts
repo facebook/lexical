@@ -70,8 +70,6 @@ describe('LexicalAutoAutoLinkNode tests', () => {
       expect(() => new AutoLinkNode('')).toThrow();
     });
 
-    ///
-
     test('AutoLinkNode.clone()', async () => {
       const {editor} = testEnv;
 

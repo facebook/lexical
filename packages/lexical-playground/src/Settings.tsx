@@ -37,6 +37,7 @@ export default function Settings(): JSX.Element {
       shouldAllowHighlightingWithBrackets,
       // tableHorizontalScroll,
       selectionAlwaysOnDisplay,
+      optimizedTableSelectionObserver,
     },
   } = useSettings();
   useEffect(() => {
@@ -196,6 +197,17 @@ export default function Settings(): JSX.Element {
             }}
             checked={selectionAlwaysOnDisplay}
             text="Retain selection"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption(
+                'optimizedTableSelectionObserver',
+                !optimizedTableSelectionObserver,
+              );
+            }}
+            checked={optimizedTableSelectionObserver}
+            text="Optimized Table Selection Observer"
           />
         </div>
       ) : null}

@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
+  registerOptimizedTableSelectionObserver,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
   registerTableSelectionObserver,
@@ -38,6 +39,10 @@ export interface TablePluginProps {
    * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
    */
   hasHorizontalScroll?: boolean;
+  /**
+   * When `true` (default `false`), will optimize the table selection observers and prevent redundant listeners to be declared.
+   */
+  useOptimizedMode?: boolean;
 }
 
 /**
@@ -51,6 +56,7 @@ export function TablePlugin({
   hasCellBackgroundColor = true,
   hasTabHandler = true,
   hasHorizontalScroll = false,
+  useOptimizedMode = false,
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -66,10 +72,32 @@ export function TablePlugin({
 
   useEffect(() => registerTablePlugin(editor), [editor]);
 
-  useEffect(
-    () => registerTableSelectionObserver(editor, hasTabHandler),
-    [editor, hasTabHandler],
-  );
+  useEffect(() => {
+    let unregisterObservers: (() => void) | undefined;
+
+    if (useOptimizedMode) {
+      editor.registerRootListener((root) => {
+        if (root) {
+          unregisterObservers = registerOptimizedTableSelectionObserver(
+            editor,
+            root,
+            hasTabHandler,
+          );
+        }
+      });
+    } else {
+      unregisterObservers = registerTableSelectionObserver(
+        editor,
+        hasTabHandler,
+      );
+    }
+
+    return () => {
+      if (unregisterObservers) {
+        unregisterObservers();
+      }
+    };
+  }, [editor, hasTabHandler, useOptimizedMode]);
 
   // Unmerge cells when the feature isn't enabled
   useEffect(() => {

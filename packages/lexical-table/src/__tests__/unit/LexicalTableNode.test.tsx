@@ -8,6 +8,9 @@
 
 import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$generateHtmlFromNodes} from '@lexical/html';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
   $createTableCellNode,
@@ -99,8 +102,13 @@ function wrapTableHtml(expected: string): string {
 polyfillContentEditable();
 
 describe('LexicalTableNode tests', () => {
-  [false, true].forEach((hasHorizontalScroll) => {
-    describe(`hasHorizontalScroll={${hasHorizontalScroll}}`, () => {
+  [
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ].forEach(([hasHorizontalScroll, useOptimizedMode]) => {
+    describe(`hasHorizontalScroll={${hasHorizontalScroll}}, useOptimizedMode={${useOptimizedMode}}`, () => {
       function expectTableHtmlToBeEqual(
         actual: string,
         expected: string,
@@ -1816,7 +1824,10 @@ describe('LexicalTableNode tests', () => {
           });
         },
         {theme: editorConfig.theme},
-        <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
+        <TablePlugin
+          hasHorizontalScroll={hasHorizontalScroll}
+          useOptimizedMode={useOptimizedMode}
+        />,
       );
     });
   });
@@ -1828,7 +1839,15 @@ describe('LexicalTableNode tests', () => {
     ) => void = () => {};
     function TablePluginWrapper() {
       [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
-      return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
+      return (
+        <>
+          <RichTextPlugin
+            contentEditable={<ContentEditable />}
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+          <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />
+        </>
+      );
     }
     initializeUnitTest(
       (testEnv) => {

@@ -566,7 +566,11 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         if (
           name !== 'RootNode' &&
           nodeType !== 'root' &&
-          nodeType !== 'artificial'
+          nodeType !== 'artificial' &&
+          // This is mostly for the unit test suite which
+          // uses LexicalNode in an otherwise incorrect way
+          // by mocking its static getType
+          klass !== LexicalNode
         ) {
           const proto = klass.prototype;
           (['getType', 'clone'] as const).forEach((method) => {

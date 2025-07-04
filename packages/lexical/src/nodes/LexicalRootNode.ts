@@ -12,8 +12,8 @@ import type {SerializedElementNode} from './LexicalElementNode';
 import invariant from 'shared/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
-import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
-import {$getRoot} from '../LexicalUtils';
+// import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates'; // To be removed
+// import {$getRoot} from '../LexicalUtils'; // Removed
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
@@ -47,15 +47,16 @@ export class RootNode extends ElementNode {
   }
 
   getTextContent(): string {
-    const cachedText = this.__cachedText;
-    if (
-      isCurrentlyReadOnlyMode() ||
-      getActiveEditor()._dirtyType === NO_DIRTY_NODES
-    ) {
-      if (cachedText !== null) {
-        return cachedText;
-      }
-    }
+    // Simplified: Remove caching logic that depends on getActiveEditor and isCurrentlyReadOnlyMode
+    // const cachedText = this.__cachedText;
+    // if (
+    //   isCurrentlyReadOnlyMode() ||
+    //   getActiveEditor()._dirtyType === NO_DIRTY_NODES
+    // ) {
+    //   if (cachedText !== null) {
+    //     return cachedText;
+    //   }
+    // }
     return super.getTextContent();
   }
 
@@ -97,8 +98,16 @@ export class RootNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedRootNode): RootNode {
-    // We don't create a root, and instead use the existing root.
-    return $getRoot().updateFromJSON(serializedNode);
+    const root = new RootNode();
+    // RootNode's updateFromJSON will call super.updateFromJSON and then its own specific deserialization.
+    // The children will be handled by the caller ($parseSerializedNodeImpl in LexicalUpdates)
+    // when it processes the 'children' array of the serializedNode if this were a generic ElementNode.
+    // However, for RootNode, its children are parsed by $parseSerializedNodeImpl directly on serializedNode.root.children
+    // So, this RootNode.importJSON is primarily for its own properties (direction, format, indent).
+    // The children are attached to it by the main parsing logic.
+    // Therefore, just updating its own properties from serializedNode is correct.
+    root.updateFromJSON(serializedNode);
+    return root;
   }
 
   collapseAtStart(): true {

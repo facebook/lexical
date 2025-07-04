@@ -469,7 +469,8 @@ export class ElementNode extends LexicalNode {
   getFirstChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest()
     const firstKey = self.__first
-    return firstKey === null ? null : $getNodeByKey<T>(firstKey)
+    const editorState = getActiveEditorState() // Get editorState
+    return firstKey === null ? null : editorState._nodeMap.get(firstKey) as T || null // Use editorState
   }
   getFirstChildOrThrow<T extends LexicalNode>(): T {
     const firstChild = this.getFirstChild<T>()
@@ -481,7 +482,8 @@ export class ElementNode extends LexicalNode {
   getLastChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest()
     const lastKey = self.__last
-    return lastKey === null ? null : $getNodeByKey<T>(lastKey)
+    const editorState = getActiveEditorState() // Get editorState
+    return lastKey === null ? null : editorState._nodeMap.get(lastKey) as T || null // Use editorState
   }
   getLastChildOrThrow<T extends LexicalNode>(): T {
     const lastChild = this.getLastChild<T>()
@@ -852,25 +854,28 @@ export class ElementNode extends LexicalNode {
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {
+    const children = this.getChildren<LexicalNode>(); // Get children
+    const serializedChildren = [];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      serializedChildren.push(child.exportJSON()); // Recursively call exportJSON on children
+    }
     const json: SerializedElementNode = {
-      children: [],
+      ...super.exportJSON(), // Call super first to get base properties like type, version
+      children: serializedChildren, // Add populated children array
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-      // As an exception here we invoke super at the end for historical reasons.
-      // Namely, to preserve the order of the properties and not to break the tests
-      // that use the serialized string representation.
-      ...super.exportJSON(),
-    }
-    const textFormat = this.getTextFormat()
-    const textStyle = this.getTextStyle()
+    };
+    const textFormat = this.getTextFormat();
+    const textStyle = this.getTextStyle();
     if (textFormat !== 0) {
-      json.textFormat = textFormat
+      json.textFormat = textFormat;
     }
     if (textStyle !== '') {
-      json.textStyle = textStyle
+      json.textStyle = textStyle;
     }
-    return json
+    return json;
   }
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedElementNode>,

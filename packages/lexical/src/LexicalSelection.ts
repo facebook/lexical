@@ -63,14 +63,15 @@ import {
   getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
-} from './LexicalUpdates'
+} from './LexicalUpdates' // getActiveEditorState will be used directly
 import {
   $getAncestor,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
-  $getNodeByKey,
+  // $getNodeByKey, // Removed
   $getNodeFromDOM,
-  $getRoot,
+  // $getRoot, // Removed
+  // internalGetRoot, // Removed
   $hasAncestor,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
@@ -94,7 +95,7 @@ import {
 import { $createTabNode, $isTabNode } from './nodes/LexicalTabNode'
 import { $caretFromPoint, $caretRangeFromSelection, $getCaretRangeInDirection, $isExtendableTextPointCaret, $normalizeCaret, $removeTextFromCaretRange, $rewindSiblingCaret, $setPointFromCaret, $setSelectionFromCaretRange, $updateRangeSelectionFromCaretRange } from './caret/LexicalCaretUtils'
 import { $comparePointCaretNext, $extendCaretToRange, $getAdjacentChildCaret, $getCaretRange, $getChildCaret, $getSiblingCaret, $isChildCaret, $isSiblingCaret, $isTextPointCaret, CaretRange, ChildCaret, NodeCaret, PointCaret } from './caret/LexicalCaret'
-import { $isRootNode } from './nodes/LexicalRootNode'
+import { $isRootNode, RootNode } from './nodes/LexicalRootNode' // Import RootNode
 import { $createParagraphNode } from './nodes/LexicalParagraphNode'
 import { $isDecoratorNode } from './nodes/LexicalDecoratorNode'
 import { $createLineBreakNode, $isLineBreakNode } from './nodes/LexicalLineBreakNode'
@@ -174,8 +175,9 @@ export class Point {
 
   getNode(): LexicalNode {
     const key = this.key
-    const node = $getNodeByKey(key)
-    if (node === null) {
+    const editorState = getActiveEditorState()
+    const node = editorState._nodeMap.get(key) as LexicalNode | undefined
+    if (node === undefined) {
       invariant(false, 'Point.getNode: node not found')
     }
     return node
@@ -201,7 +203,8 @@ export class Point {
     this.offset = offset
     this.type = type
     if (__DEV__) {
-      const node = $getNodeByKey(key)
+      const editorState = getActiveEditorState()
+      const node = editorState._nodeMap.get(key) as LexicalNode | undefined
       invariant(
         type === 'text' ? $isTextNode(node) : $isElementNode(node),
         'PointType.set: node with key %s is %s and can not be used for a %s point',
@@ -421,11 +424,12 @@ export class NodeSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes
     }
+    const editorState = getActiveEditorState()
     const objects = this._nodes
     const nodes = []
     for (const object of objects) {
-      const node = $getNodeByKey(object)
-      if (node !== null) {
+      const node = editorState._nodeMap.get(object) as LexicalNode | undefined
+      if (node !== undefined) {
         nodes.push(node)
       }
     }
@@ -1438,8 +1442,8 @@ export class RangeSelection implements BaseSelection {
    */
   insertParagraph(): ElementNode | null {
     if (this.anchor.key === 'root') {
-      const paragraph = $createParagraphNode()
-      $getRoot().splice(this.anchor.offset, 0, [paragraph])
+      const paragraph = $createParagraphNode();
+      (getActiveEditorState()._nodeMap.get('root') as RootNode).splice(this.anchor.offset, 0, [paragraph]);
       paragraph.select()
       return paragraph
     }
@@ -2669,7 +2673,8 @@ function $validatePoint(
   name: 'anchor' | 'focus',
   point: PointType,
 ): void {
-  const node = $getNodeByKey(point.key)
+  const editorState = getActiveEditorState()
+  const node = editorState._nodeMap.get(point.key) as LexicalNode | undefined
   invariant(
     node !== undefined,
     '$validatePoint: %s key %s not found in current editorState',
@@ -3106,7 +3111,7 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
   let selection = $getSelection() || $getPreviousSelection()
 
   if (selection === null) {
-    selection = $getRoot().selectEnd()
+    selection = (getActiveEditorState()._nodeMap.get('root') as RootNode).selectEnd();
   }
   selection.insertNodes(nodes)
 }
@@ -3157,10 +3162,10 @@ function $splitNodeAtPoint(
 ): [parent: ElementNode, offset: number] {
   const parent = node.getParent()
   if (!parent) {
-    const paragraph = $createParagraphNode()
-    $getRoot().append(paragraph)
-    paragraph.select()
-    return [$getRoot(), 0]
+    const paragraph = $createParagraphNode();
+    (getActiveEditorState()._nodeMap.get('root') as RootNode).append(paragraph);
+    paragraph.select();
+    return [(getActiveEditorState()._nodeMap.get('root') as RootNode), 0];
   }
 
   if ($isTextNode(node)) {

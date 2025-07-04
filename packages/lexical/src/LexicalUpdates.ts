@@ -25,7 +25,7 @@ import {
   LexicalEditor,
   MutatedNodes,
   RegisteredNodes,
-  resetEditor,
+  // resetEditor, // No longer imported, will be defined locally
   SetListeners,
   Transform,
 } from './LexicalEditor'
@@ -1066,6 +1066,119 @@ export function updateEditorSync(
     $beginUpdate(editor, updateFn, options)
   }
 }
+
+export function resetEditor(
+  editor: LexicalEditor,
+  prevRootElement: null | HTMLElement,
+  nextRootElement: null | HTMLElement,
+  pendingEditorState: EditorState,
+): void {
+  const keyNodeMap = editor._keyToDOMMap
+  keyNodeMap.clear()
+  editor._editorState = createEmptyEditorState()
+  editor._pendingEditorState = pendingEditorState
+  editor._compositionKey = null
+  editor._dirtyType = NO_DIRTY_NODES
+  editor._cloneNotNeeded.clear()
+  editor._dirtyLeaves = new Set()
+  editor._dirtyElements.clear()
+  editor._normalizedNodes = new Set()
+  editor._updateTags = new Set()
+  editor._updates = []
+  editor._blockCursorElement = null
+
+  const observer = editor._observer
+
+  if (observer !== null) {
+    observer.disconnect()
+    editor._observer = null
+  }
+
+  // Remove all the DOM nodes from the root element
+  if (prevRootElement !== null) {
+    prevRootElement.textContent = ''
+  }
+
+  if (nextRootElement !== null) {
+    nextRootElement.textContent = ''
+    keyNodeMap.set('root', nextRootElement)
+  }
+}
+
+// --- Augmentation for LexicalNode ---
+declare module './LexicalNode' { // Corrected path to LexicalNode for augmentation
+  interface LexicalNode {
+    getLatest(): this;
+    getWritable(): this;
+    getParent<T extends ElementNode>(): T | null;
+    getPreviousSibling<T extends LexicalNode>(): T | null;
+    getNextSibling<T extends LexicalNode>(): T | null;
+  }
+}
+
+LexicalNode.prototype.getLatest = function(): typeof this {
+  const editorState = getActiveEditorState(); // from LexicalUpdates scope
+  const latest = editorState._nodeMap.get(this.__key) as typeof this | undefined;
+  if (latest === undefined) { // Check for undefined from Map.get
+    invariant(
+      false,
+      'LexicalNode.getLatest: node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+    );
+  }
+  return latest!; // Non-null assertion because of invariant
+};
+
+LexicalNode.prototype.getWritable = function(): typeof this {
+  errorOnReadOnly(); // from LexicalUpdates scope
+  const editorState = getActiveEditorState(); // from LexicalUpdates scope
+  const editor = getActiveEditor(); // from LexicalUpdates scope
+  const nodeMap = editorState._nodeMap;
+  const key = this.__key;
+  const latestNode = this.getLatest(); // Calls the augmented getLatest
+  const cloneNotNeeded = editor._cloneNotNeeded;
+  const selection = $getSelection(); // Imported from LexicalSelection
+
+  if (selection !== null) {
+    selection.setCachedNodes(null);
+  }
+  if (cloneNotNeeded.has(key)) {
+    internalMarkNodeAsDirty(latestNode); // Now local to LexicalUpdates.ts
+    return latestNode;
+  }
+  // $cloneWithProperties is now local to LexicalUpdates.ts
+  const mutableNode = $cloneWithProperties(latestNode);
+  cloneNotNeeded.add(key);
+  internalMarkNodeAsDirty(mutableNode);
+  nodeMap.set(key, mutableNode);
+  return mutableNode;
+};
+
+LexicalNode.prototype.getParent = function<T extends ElementNode>(): T | null {
+  const parentKey = this.getLatest().__parent; // 'this.getLatest()' is the augmented one
+  if (parentKey === null) {
+    return null;
+  }
+  const editorState = getActiveEditorState();
+  return editorState._nodeMap.get(parentKey) as T | null;
+};
+
+LexicalNode.prototype.getPreviousSibling = function<T extends LexicalNode>(): T | null {
+  const prevKey = this.getLatest().__prev;
+  if (prevKey === null) {
+    return null;
+  }
+  const editorState = getActiveEditorState();
+  return editorState._nodeMap.get(prevKey) as T | null;
+};
+
+LexicalNode.prototype.getNextSibling = function<T extends LexicalNode>(): T | null {
+  const nextKey = this.getLatest().__next;
+  if (nextKey === null) {
+    return null;
+  }
+  const editorState = getActiveEditorState();
+  return editorState._nodeMap.get(nextKey) as T | null;
+};
 
 export function updateEditor(
   editor: LexicalEditor,

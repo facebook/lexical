@@ -17,7 +17,7 @@ const common = {
 // Use tsconfig's paths to configure jest's module name mapper
 const moduleNameMapper = {
   ...Object.fromEntries(
-    Object.entries(tsconfig.compilerOptions.paths).map(
+    Object.entries(tsconfig.compilerOptions.paths || {}).map(
       ([name, [firstPath]]) => [
         `^${name}$`,
         firstPath.replace(/^\./, '<rootDir>'),

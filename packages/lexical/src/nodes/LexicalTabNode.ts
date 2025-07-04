@@ -13,7 +13,7 @@ import invariant from 'shared/invariant';
 import {IS_UNMERGEABLE} from '../LexicalConstants';
 import {EditorConfig} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
+import { getCachedClassNameArray } from '../LexicalUtils'; // Remove $applyNodeReplacement
 import {
   SerializedTextNode,
   TextDetailType,
@@ -99,7 +99,7 @@ export class TabNode extends TextNode {
 }
 
 export function $createTabNode(): TabNode {
-  return $applyNodeReplacement(new TabNode());
+  return new TabNode(); // Directly instantiate
 }
 
 export function $isTabNode(

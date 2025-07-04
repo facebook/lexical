@@ -26,6 +26,7 @@ import {
   type PointType,
   type RangeSelection,
 } from '../LexicalSelection';
+import { getActiveEditorState } from '../LexicalUpdates'; // Import getActiveEditorState
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
@@ -63,7 +64,8 @@ export function $caretFromPoint<D extends CaretDirection>(
   direction: D,
 ): PointCaret<D> {
   const {type, key, offset} = point;
-  const node = $getNodeByKeyOrThrow(point.key);
+  const editorState = getActiveEditorState();
+  const node = $getNodeByKeyOrThrow(point.key, editorState);
   if (type === 'text') {
     invariant(
       $isTextNode(node),

@@ -424,43 +424,7 @@ export type SerializedEditor = {
   editorState: SerializedEditorState
 }
 
-export function resetEditor(
-  editor: LexicalEditor,
-  prevRootElement: null | HTMLElement,
-  nextRootElement: null | HTMLElement,
-  pendingEditorState: EditorState,
-): void {
-  const keyNodeMap = editor._keyToDOMMap
-  keyNodeMap.clear()
-  editor._editorState = createEmptyEditorState()
-  editor._pendingEditorState = pendingEditorState
-  editor._compositionKey = null
-  editor._dirtyType = NO_DIRTY_NODES
-  editor._cloneNotNeeded.clear()
-  editor._dirtyLeaves = new Set()
-  editor._dirtyElements.clear()
-  editor._normalizedNodes = new Set()
-  editor._updateTags = new Set()
-  editor._updates = []
-  editor._blockCursorElement = null
-
-  const observer = editor._observer
-
-  if (observer !== null) {
-    observer.disconnect()
-    editor._observer = null
-  }
-
-  // Remove all the DOM nodes from the root element
-  if (prevRootElement !== null) {
-    prevRootElement.textContent = ''
-  }
-
-  if (nextRootElement !== null) {
-    nextRootElement.textContent = ''
-    keyNodeMap.set('root', nextRootElement)
-  }
-}
+// export function resetEditor(...) // Function moved to LexicalUpdates.ts
 
 function initializeConversionCache(
   nodes: RegisteredNodes,

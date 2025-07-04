@@ -16,7 +16,7 @@ import invariant from 'shared/invariant';
 
 // import {readEditorState} from './LexicalUpdates'; // Removed
 // import {$getRoot} from './LexicalUtils'; // No longer needed here
-import {$isElementNode} from './nodes/LexicalElementNode'; // Keep if exportNodeToJSON or other internal logic needs it
+// import {$isElementNode} from './nodes/LexicalElementNode'; // No longer needed by exportNodeToJSON
 import {$createRootNode} from './nodes/LexicalRootNode'; // Keep for createEmptyEditorState
 
 export interface SerializedEditorState<
@@ -59,32 +59,12 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
+  // It's good practice to ensure the type from exportJSON matches the node's actual type.
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
-      'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
-      nodeClass.name,
+      `LexicalNode: Node ${nodeClass.name} does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.`,
     );
-  }
-
-  if ($isElementNode(node)) {
-    const serializedChildren = (serializedNode as SerializedElementNode)
-      .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-
-    const children = node.getChildren();
-
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const serializedChildNode = exportNodeToJSON(child);
-      serializedChildren.push(serializedChildNode);
-    }
   }
 
   // @ts-expect-error

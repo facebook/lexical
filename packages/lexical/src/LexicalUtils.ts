@@ -79,7 +79,6 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
-  internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates'
@@ -309,19 +308,20 @@ export function $setNodeKey(
   node: LexicalNode,
   existingKey: NodeKey | null | undefined,
 ): void {
+  const editor = getActiveEditor() // Get editor first
+  const editorState = getActiveEditorState() // Then editorState
   const pendingNode = getPendingNodeToClone()
   existingKey = existingKey || (pendingNode && pendingNode.__key)
   if (existingKey != null) {
     if (__DEV__) {
-      errorOnNodeKeyConstructorMismatch(node, existingKey, pendingNode)
+      errorOnNodeKeyConstructorMismatch(node, existingKey, pendingNode, editorState) // Pass editorState
     }
     node.__key = existingKey
     return
   }
   errorOnReadOnly()
   errorOnInfiniteTransforms()
-  const editor = getActiveEditor()
-  const editorState = getActiveEditorState()
+  // editor and editorState already fetched
   const key = generateRandomKey()
   editorState._nodeMap.set(key, node)
   // TODO Split this function into leaf/element
@@ -339,10 +339,12 @@ function errorOnNodeKeyConstructorMismatch(
   node: LexicalNode,
   existingKey: NodeKey,
   pendingNode: null | LexicalNode,
+  editorState: EditorState | null, // Accept editorState as a parameter
 ) {
-  const editorState = internalGetActiveEditorState()
+  // const editorState = internalGetActiveEditorState() // No longer call this
   if (!editorState) {
     // tests expect to be able to do this kind of clone without an active editor state
+    // or if called from a context where editorState might legitimately be null
     return
   }
   const existingNode = editorState._nodeMap.get(existingKey)
@@ -484,17 +486,18 @@ export function internalMarkSiblingsAsDirty(node: LexicalNode) {
 export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly()
   const editor = getActiveEditor()
+  const editorState = getActiveEditorState() // Get editorState
   const previousCompositionKey = editor._compositionKey
   if (compositionKey !== previousCompositionKey) {
     editor._compositionKey = compositionKey
     if (previousCompositionKey !== null) {
-      const node = $getNodeByKey(previousCompositionKey)
+      const node = $getNodeByKey(previousCompositionKey, editorState) // Pass editorState
       if (node !== null) {
         node.getWritable()
       }
     }
     if (compositionKey !== null) {
-      const node = $getNodeByKey(compositionKey)
+      const node = $getNodeByKey(compositionKey, editorState) // Pass editorState
       if (node !== null) {
         node.getWritable()
       }
@@ -653,15 +656,16 @@ export function $flushMutations(): void {
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor()
+  const editorState = getActiveEditorState() // Get editorState
   const nodeKey = getNodeKeyFromDOMTree(dom, editor)
   if (nodeKey === null) {
     const rootElement = editor.getRootElement()
     if (dom === rootElement) {
-      return $getNodeByKey('root')
+      return $getNodeByKey('root', editorState) // Pass editorState
     }
     return null
   }
-  return $getNodeByKey(nodeKey)
+  return $getNodeByKey(nodeKey, editorState) // Pass editorState
 }
 
 export function getTextNodeOffset(
@@ -1580,8 +1584,8 @@ export function errorOnInsertTextNodeOnRoot(
   }
 }
 
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
-  const node = $getNodeByKey<N>(key)
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey, editorState?: EditorState): N {
+  const node = $getNodeByKey<N>(key, editorState) // Pass editorState
   if (node === null) {
     invariant(
       false,

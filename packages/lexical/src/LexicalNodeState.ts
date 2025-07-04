@@ -9,9 +9,9 @@
 import invariant from 'shared/invariant'
 
 import { NODE_STATE_KEY, PROTOTYPE_CONFIG_METHOD } from './LexicalConstants'
-import { errorOnReadOnly } from './LexicalUpdates'
-import { $getEditor, getRegisteredNodeOrThrow, getStaticNodeConfig } from './LexicalUtils'
-import { Klass, LexicalNodeConfig, Spread } from './LexicalEditor'
+import { errorOnReadOnly, getActiveEditor } from './LexicalUpdates' // Import getActiveEditor
+import { getRegisteredNodeOrThrow, getStaticNodeConfig } from './LexicalUtils' // Remove $getEditor
+import { Klass, LexicalEditor, LexicalNodeConfig, Spread } from './LexicalEditor' // Add LexicalEditor for type
 import { LexicalNode, StaticNodeConfigRecord } from './LexicalNode'
 
 /**
@@ -778,9 +778,10 @@ export function $getWritableNodeState<T extends LexicalNode>(
   node: T,
 ): NodeState<T> {
   const writable = node.getWritable()
+  const editor = getActiveEditor() // Get editor instance
   const state = writable.__state
     ? writable.__state.getWritable(writable)
-    : new NodeState(writable, $getSharedNodeState(writable))
+    : new NodeState(writable, $getSharedNodeState(writable, editor)) // Pass editor
   writable.__state = state
   return state
 }
@@ -792,8 +793,9 @@ export function $getWritableNodeState<T extends LexicalNode>(
  */
 export function $getSharedNodeState<T extends LexicalNode>(
   node: T,
+  editor: LexicalEditor, // Accept editor as a parameter
 ): SharedNodeState {
-  return getRegisteredNodeOrThrow($getEditor(), node.getType()).sharedNodeState
+  return getRegisteredNodeOrThrow(editor, node.getType()).sharedNodeState // Use passed editor
 }
 
 /**

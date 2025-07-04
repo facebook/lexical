@@ -17,6 +17,7 @@ import {
   $setSelection,
   createEditor,
   DecoratorNode,
+  EditorConfig,
   ElementNode,
   LexicalEditor,
   NodeKey,
@@ -85,13 +86,13 @@ class InlineDecoratorNode extends DecoratorNode<string> {
   }
 }
 
-// This is a hack to bypass the node type validation on LexicalNode. We never want to create
-// an LexicalNode directly but we're testing the base functionality in this module.
-LexicalNode.getType = function () {
-  return 'node';
-};
-
 describe('LexicalNode tests', () => {
+  beforeAll(() => {
+    jest.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
+  });
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
   initializeUnitTest(
     (testEnv) => {
       let paragraphNode: ParagraphNode;
@@ -1602,4 +1603,33 @@ describe('LexicalNode tests', () => {
       theme: {},
     },
   );
+});
+
+// These are outside of the above suite because of the
+// LexicalNode getType mock which ruins it
+describe('LexicalNode.$config() without registration', () => {
+  test('static getType() before registration', () => {
+    class IncorrectCustomDecoratorNode extends DecoratorNode<null> {
+      decorate(editor: LexicalEditor, config: EditorConfig): null {
+        return null;
+      }
+    }
+    class CorrectCustomDecoratorNode extends DecoratorNode<null> {
+      decorate(editor: LexicalEditor, config: EditorConfig): null {
+        return null;
+      }
+      $config() {
+        return this.config('correct-custom-decorator', {});
+      }
+    }
+    // Run twice to make sure that getStaticNodeConfig doesn't cache the wrong thing
+    for (let i = 0; i < 2; i++) {
+      expect(() => IncorrectCustomDecoratorNode.getType()).toThrow(
+        /does not implement \.getType/,
+      );
+      expect(CorrectCustomDecoratorNode.getType()).toEqual(
+        'correct-custom-decorator',
+      );
+    }
+  });
 });

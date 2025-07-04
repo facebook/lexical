@@ -61,6 +61,7 @@ import {
   $setSelection,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
+  getStaticNodeConfig,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
@@ -407,11 +408,13 @@ export class LexicalNode {
    *
    */
   static getType(): string {
+    const {ownNodeType} = getStaticNodeConfig(this);
     invariant(
-      false,
+      ownNodeType !== undefined,
       'LexicalNode: Node %s does not implement .getType().',
       this.name,
     );
+    return ownNodeType;
   }
 
   /**

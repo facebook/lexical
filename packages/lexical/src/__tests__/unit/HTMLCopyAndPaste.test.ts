@@ -92,6 +92,12 @@ describe('HTMLCopyAndPaste tests', () => {
           name: 'github checklist',
           pastedHTML: `<meta charset='utf-8'><p dir="auto" style="box-sizing: border-box; margin-top: 0px !important; margin-bottom: 16px; color: rgb(31, 35, 40); font-family: -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">checklist</p><ul class="contains-task-list" style="box-sizing: border-box; padding: 0px; margin-top: 0px; margin-bottom: 0px !important; position: relative; color: rgb(31, 35, 40); font-family: -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><li class="task-list-item enabled" style="box-sizing: border-box; list-style-type: none; padding: 2px 15px 2px 42px; margin-right: -15px; margin-left: -15px; line-height: 1.5; border: 0px;"><span class="handle" style="box-sizing: border-box; display: block; float: left; width: 20px; padding: 2px 0px 0px 2px; margin-left: -43px; opacity: 0;"><svg class="drag-handle" aria-hidden="true" width="16" height="16"><path d="M10 13a1 1 0 100-2 1 1 0 000 2zm-4 0a1 1 0 100-2 1 1 0 000 2zm1-5a1 1 0 11-2 0 1 1 0 012 0zm3 1a1 1 0 100-2 1 1 0 000 2zm1-5a1 1 0 11-2 0 1 1 0 012 0zM6 5a1 1 0 100-2 1 1 0 000 2z"></path></svg></span><input type="checkbox" id="" class="task-list-item-checkbox" checked="" style="box-sizing: border-box; font: inherit; margin: 0px 0.2em 0.25em -1.4em; overflow: visible; padding: 0px; vertical-align: middle;"><span></span>done</li><li class="task-list-item enabled" style="box-sizing: border-box; list-style-type: none; margin-top: 0px; padding: 2px 15px 2px 42px; margin-right: -15px; margin-left: -15px; line-height: 1.5; border: 0px;"><span class="handle" style="box-sizing: border-box; display: block; float: left; width: 20px; padding: 2px 0px 0px 2px; margin-left: -43px; opacity: 0;"><svg class="drag-handle" aria-hidden="true" width="16" height="16"><path d="M10 13a1 1 0 100-2 1 1 0 000 2zm-4 0a1 1 0 100-2 1 1 0 000 2zm1-5a1 1 0 11-2 0 1 1 0 012 0zm3 1a1 1 0 100-2 1 1 0 000 2zm1-5a1 1 0 11-2 0 1 1 0 012 0zM6 5a1 1 0 100-2 1 1 0 000 2z"></path></svg></span><input type="checkbox" id="" class="task-list-item-checkbox" style="box-sizing: border-box; font: inherit; margin: 0px 0.2em 0.25em -1.4em; overflow: visible; padding: 0px; vertical-align: middle;"><span></span>todo</li></ul>`,
         },
+        {
+          expectedHTML: `<p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">hello world</strong></p>`,
+          name: 'pasting inheritance',
+          pastedHTML: `<strong>hello</strong>`,
+          plainTextInsert: ' world',
+        },
       ];
 
       HTML_COPY_PASTING_TESTS.forEach((testCase, i) => {
@@ -107,6 +113,14 @@ describe('HTMLCopyAndPaste tests', () => {
               'isRangeSelection(selection)',
             );
             $insertDataTransferForRichText(dataTransfer, selection, editor);
+            if (testCase.plainTextInsert) {
+              const newSelection = $getSelection();
+              invariant(
+                $isRangeSelection(newSelection),
+                'isRangeSelection(newSelection) for plainTextInsert',
+              );
+              newSelection.insertText(testCase.plainTextInsert);
+            }
           });
           expect(testEnv.innerHTML).toBe(testCase.expectedHTML);
         });

@@ -31,7 +31,8 @@ import {
   triggerListeners,
   updateEditor,
   updateEditorSync,
-  readEditorState, // Added import
+  readEditorState,
+  resetEditor, // Added import
 } from './LexicalUpdates'
 import { FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag } from './LexicalUpdateTags'
 import {
@@ -1274,10 +1275,10 @@ export class LexicalEditor {
    * @param callbackFn - A function that has access to read-only editor state.
    */
   read<T>(callbackFn: () => T): T {
-    $commitPendingUpdates(this);
+    $commitPendingUpdates(this)
     // Pass 'this' (LexicalEditor instance) as the editor argument to readEditorState,
     // and this.getEditorState() as the editorState argument.
-    return readEditorState(this, this.getEditorState(), callbackFn);
+    return readEditorState(this, this.getEditorState(), callbackFn)
   }
 
   /**

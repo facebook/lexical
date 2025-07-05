@@ -4,7 +4,10 @@
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
-    "declarationDir": "dist/types"
+    "declarationDir": "dist/types",
+    "paths": {
+      "shared":["../shared/src"]
+    }
   },
   "include": [
     "src"

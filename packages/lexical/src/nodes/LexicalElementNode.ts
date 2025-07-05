@@ -43,7 +43,7 @@ import {
   $isRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection'
-import { errorOnReadOnly, getActiveEditor } from '../LexicalUpdates'
+import { errorOnReadOnly, getActiveEditor, getActiveEditorState } from '../LexicalUpdates'
 import {
   $getNodeByKey,
   $isRootOrShadowRoot,
@@ -854,11 +854,11 @@ export class ElementNode extends LexicalNode {
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {
-    const children = this.getChildren<LexicalNode>(); // Get children
-    const serializedChildren = [];
+    const children = this.getChildren<LexicalNode>() // Get children
+    const serializedChildren = []
     for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      serializedChildren.push(child.exportJSON()); // Recursively call exportJSON on children
+      const child = children[i]
+      serializedChildren.push(child.exportJSON()) // Recursively call exportJSON on children
     }
     const json: SerializedElementNode = {
       ...super.exportJSON(), // Call super first to get base properties like type, version
@@ -866,16 +866,16 @@ export class ElementNode extends LexicalNode {
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-    };
-    const textFormat = this.getTextFormat();
-    const textStyle = this.getTextStyle();
+    }
+    const textFormat = this.getTextFormat()
+    const textStyle = this.getTextStyle()
     if (textFormat !== 0) {
-      json.textFormat = textFormat;
+      json.textFormat = textFormat
     }
     if (textStyle !== '') {
-      json.textStyle = textStyle;
+      json.textStyle = textStyle
     }
-    return json;
+    return json
   }
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedElementNode>,

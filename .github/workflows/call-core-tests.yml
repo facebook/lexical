@@ -11,7 +11,6 @@ jobs:
         node-version: [20.11.0]
     env:
       CI: true
-      GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}

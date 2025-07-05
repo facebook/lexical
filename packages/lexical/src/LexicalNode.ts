@@ -7,21 +7,36 @@
  */
 
 /* eslint-disable no-constant-condition */
-import type {EditorConfig, LexicalEditor} from './LexicalEditor';
+import type {
+  EditorConfig,
+  Klass,
+  KlassConstructor,
+  LexicalEditor,
+} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
-import type {Klass, KlassConstructor} from 'lexical';
 
 import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $getCommonAncestor,
+  $getCommonAncestorResultBranchOrder,
   $isDecoratorNode,
   $isElementNode,
   $isRootNode,
   $isTextNode,
   type DecoratorNode,
-  ElementNode,
+  type ElementNode,
+  NODE_STATE_KEY,
 } from '.';
+import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
+import {
+  $updateStateFromJSON,
+  type NodeState,
+  type NodeStateJSON,
+  type Prettify,
+  type RequiredNodeStateConfig,
+} from './LexicalNodeState';
 import {
   $getSelection,
   $isNodeSelection,
@@ -45,16 +60,181 @@ import {
   $setNodeKey,
   $setSelection,
   errorOnInsertTextNodeOnRoot,
+  getRegisteredNode,
+  getStaticNodeConfig,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
+/**
+ * The base type for all serialized nodes
+ */
 export type SerializedLexicalNode = {
+  /** The type string used by the Node class */
   type: string;
+  /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
   version: number;
+  /**
+   * Any state persisted with the NodeState API that is not
+   * configured for flat storage
+   */
+  [NODE_STATE_KEY]?: Record<string, unknown>;
 };
+
+/**
+ * EXPERIMENTAL
+ * The configuration of a node returned by LexicalNode.$config()
+ *
+ * @example
+ * ```ts
+ * class CustomText extends TextNode {
+ *   $config() {
+ *     return this.config('custom-text', {extends: TextNode}};
+ *   }
+ * }
+ * ```
+ */
+export interface StaticNodeConfigValue<
+  T extends LexicalNode,
+  Type extends string,
+> {
+  /**
+   * The exact type of T.getType(), e.g. 'text' - the method itself must
+   * have a more generic 'string' type to be compatible wtih subclassing.
+   */
+  readonly type?: Type;
+  /**
+   * An alternative to the internal static transform() method
+   * that provides better type inference.
+   */
+  readonly $transform?: (node: T) => void;
+  /**
+   * An alternative to the static importJSON() method
+   * that provides better type inference.
+   */
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  /**
+   * An alternative to the static importDOM() method
+   */
+  readonly importDOM?: DOMConversionMap;
+  /**
+   * EXPERIMENTAL
+   *
+   * An array of RequiredNodeStateConfig to initialize your node with
+   * its state requirements. This may be used to configure serialization of
+   * that state.
+   *
+   * This function will be called (at most) once per editor initialization,
+   * directly on your node's prototype. It must not depend on any state
+   * initialized in the constructor.
+   *
+   * @example
+   * ```ts
+   * const flatState = createState("flat", {parse: parseNumber});
+   * const nestedState = createState("nested", {parse: parseNumber});
+   * class MyNode extends TextNode {
+   *   $config() {
+   *     return this.config(
+   *       'my-node',
+   *       {
+   *         extends: TextNode,
+   *         stateConfigs: [
+   *           { stateConfig: flatState, flat: true},
+   *           nestedState,
+   *         ]
+   *       },
+   *     );
+   *   }
+   * }
+   * ```
+   */
+  readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * If specified, this must be the exact superclass of the node. It is not
+   * checked at compile time and it is provided automatically at runtime.
+   *
+   * You would want to specify this when you are extending a node that
+   * has non-trivial configuration in its $config such
+   * as required state. If you do not specify this, the inferred
+   * types for your node class might be missing some of that.
+   */
+  readonly extends?: Klass<LexicalNode>;
+}
+
+/**
+ * This is the type of LexicalNode.$config() that can be
+ * overridden by subclasses.
+ */
+export type BaseStaticNodeConfig = {
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+};
+
+/**
+ * Used to extract the node and type from a StaticNodeConfigRecord
+ */
+export type StaticNodeConfig<
+  T extends LexicalNode,
+  Type extends string,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
+};
+
+/**
+ * Any StaticNodeConfigValue (for generics and collections)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
+
+/**
+ * @internal
+ *
+ * This is the more specific type than BaseStaticNodeConfig that a subclass
+ * should return from $config()
+ */
+export type StaticNodeConfigRecord<
+  Type extends string,
+  Config extends AnyStaticNodeConfigValue,
+> = BaseStaticNodeConfig & {
+  readonly [K in Type]?: Config;
+};
+
+/**
+ * Extract the type from a node based on its $config
+ *
+ * @example
+ * ```ts
+ * type TextNodeType = GetStaticNodeType<TextNode>;
+ *      // ? 'text'
+ * ```
+ */
+export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
+  T[typeof PROTOTYPE_CONFIG_METHOD]
+> extends StaticNodeConfig<T, infer Type>
+  ? Type
+  : string;
+
+/**
+ * The most precise type we can infer for the JSON that will
+ * be produced by T.exportJSON().
+ *
+ * Do not use this for the return type of T.exportJSON()! It must be
+ * a more generic type to be compatible with subclassing.
+ */
+export type LexicalExportJSON<T extends LexicalNode> = Prettify<
+  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+    type: GetStaticNodeType<T>;
+  } & NodeStateJSON<T>
+>;
+
+/**
+ * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
+ */
+export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
+  T,
+  'children' | 'type' | 'version'
+>;
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -126,9 +306,37 @@ export function $removeNode(
   ) {
     $removeNode(parent, restoreSelection);
   }
-  if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
+  if (
+    restoreSelection &&
+    selection &&
+    $isRootNode(parent) &&
+    parent.isEmpty()
+  ) {
     parent.selectEnd();
   }
+}
+
+export type DOMConversionProp<T extends HTMLElement> = (
+  node: T,
+) => DOMConversion<T> | null;
+
+export type DOMConversionPropByTagName<K extends string> = DOMConversionProp<
+  K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K] : HTMLElement
+>;
+
+export type DOMConversionTagNameMap<K extends string> = {
+  [NodeName in K]?: DOMConversionPropByTagName<NodeName>;
+};
+
+/**
+ * An identity function that will infer the type of DOM nodes
+ * based on tag names to make it easier to construct a
+ * DOMConversionMap.
+ */
+export function buildImportMap<K extends string>(importMap: {
+  [NodeName in K]: DOMConversionPropByTagName<NodeName>;
+}): DOMConversionMap {
+  return importMap as unknown as DOMConversionMap;
 }
 
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
@@ -147,7 +355,7 @@ export type DOMChildConversion = (
 
 export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
   NodeName,
-  (node: T) => DOMConversion<T> | null
+  DOMConversionProp<T>
 >;
 type NodeName = string;
 
@@ -165,7 +373,7 @@ export type DOMExportOutputMap = Map<
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
-  ) => HTMLElement | Text | null | undefined;
+  ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
 };
 
@@ -185,6 +393,8 @@ export class LexicalNode {
   __prev: null | NodeKey;
   /** @internal */
   __next: null | NodeKey;
+  /** @internal */
+  __state?: NodeState<this>;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -198,11 +408,13 @@ export class LexicalNode {
    *
    */
   static getType(): string {
+    const {ownNodeType} = getStaticNodeConfig(this);
     invariant(
-      false,
+      ownNodeType !== undefined,
       'LexicalNode: Node %s does not implement .getType().',
       this.name,
     );
+    return ownNodeType;
   }
 
   /**
@@ -217,6 +429,40 @@ export class LexicalNode {
       'LexicalNode: Node %s does not implement .clone().',
       this.name,
     );
+  }
+
+  /**
+   * Override this to implement the new static node configuration protocol,
+   * this method is called directly on the prototype and must not depend
+   * on anything initialized in the constructor. Generally it should be
+   * a trivial implementation.
+   *
+   * @example
+   * ```ts
+   * class MyNode extends TextNode {
+   *   $config() {
+   *     return this.config('my-node', {extends: TextNode});
+   *   }
+   * }
+   * ```
+   */
+  $config(): BaseStaticNodeConfig {
+    return {};
+  }
+
+  /**
+   * This is a convenience method for $config that
+   * aids in type inference. See {@link LexicalNode.$config}
+   * for example usage.
+   */
+  config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
+    type: Type,
+    config: Config,
+  ): StaticNodeConfigRecord<Type, Config> {
+    const parentKlass =
+      config.extends || Object.getPrototypeOf(this.constructor);
+    Object.assign(config, {extends: parentKlass, type});
+    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
   }
 
   /**
@@ -269,10 +515,15 @@ export class LexicalNode {
    * ```
    *
    */
-  afterCloneFrom(prevNode: this) {
-    this.__parent = prevNode.__parent;
-    this.__next = prevNode.__next;
-    this.__prev = prevNode.__prev;
+  afterCloneFrom(prevNode: this): void {
+    if (this.__key === prevNode.__key) {
+      this.__parent = prevNode.__parent;
+      this.__next = prevNode.__next;
+      this.__prev = prevNode.__prev;
+      this.__state = prevNode.__state;
+    } else if (prevNode.__state) {
+      this.__state = prevNode.__state.getWritable(this);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -283,6 +534,12 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
+    Object.defineProperty(this, '__state', {
+      configurable: true,
+      enumerable: false,
+      value: undefined,
+      writable: true,
+    });
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -312,7 +569,7 @@ export class LexicalNode {
   /**
    * Returns true if there is a path between this node and the RootNode, false otherwise.
    * This is a way of determining if the node is "attached" EditorState. Unattached nodes
-   * won't be reconciled and will ultimatelt be cleaned up by the Lexical GC.
+   * won't be reconciled and will ultimately be cleaned up by the Lexical GC.
    */
   isAttached(): boolean {
     let nodeKey: string | null = this.__key;
@@ -368,11 +625,10 @@ export class LexicalNode {
         const firstPoint = targetSelection.isBackward()
           ? targetSelection.focus
           : targetSelection.anchor;
-        const firstElement = firstPoint.getNode() as ElementNode;
         if (
-          firstPoint.offset === firstElement.getChildrenSize() &&
-          firstElement.is(parentNode) &&
-          firstElement.getLastChildOrThrow().is(this)
+          parentNode.is(firstPoint.getNode()) &&
+          firstPoint.offset === parentNode.getChildrenSize() &&
+          this.is(parentNode.getLastChild())
         ) {
           return false;
         }
@@ -559,6 +815,8 @@ export class LexicalNode {
   }
 
   /**
+   * @deprecated use {@link $getCommonAncestor}
+   *
    * Returns the closest common ancestor of this node and the provided one or null
    * if one cannot be found.
    *
@@ -567,27 +825,12 @@ export class LexicalNode {
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const a = this.getParents();
-    const b = node.getParents();
-    if ($isElementNode(this)) {
-      a.unshift(this);
-    }
-    if ($isElementNode(node)) {
-      b.unshift(node);
-    }
-    const aLength = a.length;
-    const bLength = b.length;
-    if (aLength === 0 || bLength === 0 || a[aLength - 1] !== b[bLength - 1]) {
-      return null;
-    }
-    const bSet = new Set(b);
-    for (let i = 0; i < aLength; i++) {
-      const ancestor = a[i] as T;
-      if (bSet.has(ancestor)) {
-        return ancestor;
-      }
-    }
-    return null;
+    const a = $isElementNode(this) ? this : this.getParent();
+    const b = $isElementNode(node) ? node : node.getParent();
+    const result = a && b ? $getCommonAncestor(a, b) : null;
+    return result
+      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
+      : null;
   }
 
   /**
@@ -604,62 +847,42 @@ export class LexicalNode {
   }
 
   /**
-   * Returns true if this node logical precedes the target node in the editor state.
+   * Returns true if this node logically precedes the target node in the
+   * editor state, false otherwise (including if there is no common ancestor).
+   *
+   * Note that this notion of isBefore is based on post-order; a descendant
+   * node is always before its ancestors. See also
+   * {@link $getCommonAncestor} and {@link $comparePointCaretNext} for
+   * more flexible ways to determine the relative positions of nodes.
    *
    * @param targetNode - the node we're testing to see if it's after this one.
    */
   isBefore(targetNode: LexicalNode): boolean {
-    if (this === targetNode) {
+    const compare = $getCommonAncestor(this, targetNode);
+    if (compare === null) {
       return false;
     }
-    if (targetNode.isParentOf(this)) {
+    if (compare.type === 'descendant') {
       return true;
     }
-    if (this.isParentOf(targetNode)) {
-      return false;
+    if (compare.type === 'branch') {
+      return $getCommonAncestorResultBranchOrder(compare) === -1;
     }
-    const commonAncestor = this.getCommonAncestor(targetNode);
-    let indexA = 0;
-    let indexB = 0;
-    let node: this | ElementNode | LexicalNode = this;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexA = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    node = targetNode;
-    while (true) {
-      const parent: ElementNode = node.getParentOrThrow();
-      if (parent === commonAncestor) {
-        indexB = node.getIndexWithinParent();
-        break;
-      }
-      node = parent;
-    }
-    return indexA < indexB;
+    invariant(
+      compare.type === 'same' || compare.type === 'ancestor',
+      'LexicalNode.isBefore: exhaustiveness check',
+    );
+    return false;
   }
 
   /**
-   * Returns true if this node is the parent of the target node, false otherwise.
+   * Returns true if this node is an ancestor of and distinct from the target node, false otherwise.
    *
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const key = this.__key;
-    if (key === targetNode.__key) {
-      return false;
-    }
-    let node: ElementNode | LexicalNode | null = targetNode;
-    while (node !== null) {
-      if (node.__key === key) {
-        return true;
-      }
-      node = node.getParent();
-    }
-    return false;
+    const result = $getCommonAncestor(this, targetNode);
+    return result !== null && result.type === 'ancestor';
   }
 
   // TO-DO: this function can be simplified a lot
@@ -820,7 +1043,7 @@ export class LexicalNode {
    *
    * This method must return exactly one HTMLElement. Nested elements are not supported.
    *
-   * Do not attempt to update the Lexical EditorState during this phase of the update lifecyle.
+   * Do not attempt to update the Lexical EditorState during this phase of the update lifecycle.
    *
    * @param _config - allows access to things like the EditorTheme (to apply classes) during reconciliation.
    * @param _editor - allows access to the editor for context during reconciliation.
@@ -869,7 +1092,13 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
-    invariant(false, 'exportJSON: base method not extended');
+    // eslint-disable-next-line dot-notation
+    const state = this.__state ? this.__state.toJSON() : undefined;
+    return {
+      type: this.__type,
+      version: 1,
+      ...state,
+    };
   }
 
   /**
@@ -886,6 +1115,41 @@ export class LexicalNode {
       this.name,
     );
   }
+
+  /**
+   * Update this LexicalNode instance from serialized JSON. It's recommended
+   * to implement as much logic as possible in this method instead of the
+   * static importJSON method, so that the functionality can be inherited in subclasses.
+   *
+   * The LexicalUpdateJSON utility type should be used to ignore any type, version,
+   * or children properties in the JSON so that the extended JSON from subclasses
+   * are acceptable parameters for the super call.
+   *
+   * If overridden, this method must call super.
+   *
+   * @example
+   * ```ts
+   * class MyTextNode extends TextNode {
+   *   // ...
+   *   static importJSON(serializedNode: SerializedMyTextNode): MyTextNode {
+   *     return $createMyTextNode()
+   *       .updateFromJSON(serializedNode);
+   *   }
+   *   updateFromJSON(
+   *     serializedNode: LexicalUpdateJSON<SerializedMyTextNode>,
+   *   ): this {
+   *     return super.updateFromJSON(serializedNode)
+   *       .setMyProperty(serializedNode.myProperty);
+   *   }
+   * }
+   * ```
+   **/
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+  ): this {
+    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
+  }
+
   /**
    * @experimental
    *
@@ -1185,7 +1449,7 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Klass<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._nodes.get(type);
+  const registeredNode = getRegisteredNode(getActiveEditor(), type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(

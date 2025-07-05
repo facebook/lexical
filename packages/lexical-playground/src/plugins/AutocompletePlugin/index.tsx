@@ -7,6 +7,7 @@
  */
 
 import type {BaseSelection, NodeKey, TextNode} from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
@@ -20,6 +21,7 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_LOW,
+  HISTORY_MERGE_TAG,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
 } from 'lexical';
@@ -32,7 +34,7 @@ import {
 } from '../../nodes/AutocompleteNode';
 import {addSwipeRightListener} from '../../utils/swipe';
 
-const HISTORY_MERGE = {tag: 'history-merge'};
+const HISTORY_MERGE = {tag: HISTORY_MERGE_TAG};
 
 declare global {
   interface Navigator {
@@ -50,7 +52,7 @@ type SearchPromise = {
 export const uuid = Math.random()
   .toString(36)
   .replace(/[^a-z]+/g, '')
-  .substr(0, 5);
+  .substring(0, 5);
 
 // TODO lookup should be custom
 function $search(selection: null | BaseSelection): [boolean, string] {

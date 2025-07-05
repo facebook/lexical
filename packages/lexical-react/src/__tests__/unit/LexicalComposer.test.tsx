@@ -6,6 +6,7 @@
  *
  */
 
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
@@ -16,8 +17,6 @@ import {
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-
-import {LexicalComposer} from '../../LexicalComposer';
 
 describe('LexicalComposer tests', () => {
   let container: HTMLDivElement | null = null;

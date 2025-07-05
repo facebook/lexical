@@ -15,7 +15,7 @@ import {
   $applyNodeReplacement,
   $createTextNode,
   $isElementNode,
-  DOMConversionMap,
+  buildImportMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
@@ -23,11 +23,11 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
@@ -59,17 +59,28 @@ export class ListNode extends ElementNode {
   /** @internal */
   __listType: ListType;
 
-  static getType(): string {
-    return 'list';
+  /** @internal */
+  $config() {
+    return this.config('list', {
+      $transform: (node: ListNode): void => {
+        mergeNextSiblingListIfSameType(node);
+        updateChildrenListItemValue(node);
+      },
+      extends: ElementNode,
+      importDOM: buildImportMap({
+        ol: () => ({
+          conversion: $convertListNode,
+          priority: 0,
+        }),
+        ul: () => ({
+          conversion: $convertListNode,
+          priority: 0,
+        }),
+      }),
+    });
   }
 
-  static clone(node: ListNode): ListNode {
-    const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
-
-    return new ListNode(listType, node.__start, node.__key);
-  }
-
-  constructor(listType: ListType, start: number, key?: NodeKey) {
+  constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
     super(key);
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
@@ -77,22 +88,36 @@ export class ListNode extends ElementNode {
     this.__start = start;
   }
 
-  getTag(): ListNodeTagType {
-    return this.__tag;
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__listType = prevNode.__listType;
+    this.__tag = prevNode.__tag;
+    this.__start = prevNode.__start;
   }
 
-  setListType(type: ListType): void {
+  getTag(): ListNodeTagType {
+    return this.getLatest().__tag;
+  }
+
+  setListType(type: ListType): this {
     const writable = this.getWritable();
     writable.__listType = type;
     writable.__tag = type === 'number' ? 'ol' : 'ul';
+    return writable;
   }
 
   getListType(): ListType {
-    return this.__listType;
+    return this.getLatest().__listType;
   }
 
   getStart(): number {
-    return this.__start;
+    return this.getLatest().__start;
+  }
+
+  setStart(start: number): this {
+    const self = this.getWritable();
+    self.__start = start;
+    return self;
   }
 
   // View
@@ -111,11 +136,7 @@ export class ListNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: ListNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     if (prevNode.__tag !== this.__tag) {
       return true;
     }
@@ -125,38 +146,16 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListNode(node), 'node is not a ListNode');
-      mergeNextSiblingListIfSameType(node);
-      updateChildrenListItemValue(node);
-    };
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      ol: () => ({
-        conversion: $convertListNode,
-        priority: 0,
-      }),
-      ul: () => ({
-        conversion: $convertListNode,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListNode): ListNode {
-    const node = $createListNode(serializedNode.listType, serializedNode.start);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedListNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setListType(serializedNode.listType)
+      .setStart(serializedNode.start);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       if (this.__start !== 1) {
         element.setAttribute('start', String(this.__start));
       }
@@ -175,8 +174,6 @@ export class ListNode extends ElementNode {
       listType: this.getListType(),
       start: this.getStart(),
       tag: this.getTag(),
-      type: 'list',
-      version: 1,
     };
   }
 
@@ -188,31 +185,26 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  append(...nodesToAppend: LexicalNode[]): this {
-    for (let i = 0; i < nodesToAppend.length; i++) {
-      const currentNode = nodesToAppend[i];
-
-      if ($isListItemNode(currentNode)) {
-        super.append(currentNode);
-      } else {
-        const listItemNode = $createListItemNode();
-
-        if ($isListNode(currentNode)) {
-          listItemNode.append(currentNode);
-        } else if ($isElementNode(currentNode)) {
-          if (currentNode.isInline()) {
-            listItemNode.append(currentNode);
-          } else {
-            const textNode = $createTextNode(currentNode.getTextContent());
-            listItemNode.append(textNode);
-          }
-        } else {
-          listItemNode.append(currentNode);
+  splice(
+    start: number,
+    deleteCount: number,
+    nodesToInsert: LexicalNode[],
+  ): this {
+    let listItemNodesToInsert = nodesToInsert;
+    for (let i = 0; i < nodesToInsert.length; i++) {
+      const node = nodesToInsert[i];
+      if (!$isListItemNode(node)) {
+        if (listItemNodesToInsert === nodesToInsert) {
+          listItemNodesToInsert = [...nodesToInsert];
         }
-        super.append(listItemNode);
+        listItemNodesToInsert[i] = $createListItemNode().append(
+          $isElementNode(node) && !($isListNode(node) || node.isInline())
+            ? $createTextNode(node.getTextContent())
+            : node,
+        );
       }
     }
-    return this;
+    return super.splice(start, deleteCount, listItemNodesToInsert);
   }
 
   extractWithChild(child: LexicalNode): boolean {
@@ -323,7 +315,9 @@ function isDomChecklist(domNode: HTMLElement) {
   return false;
 }
 
-function $convertListNode(domNode: HTMLElement): DOMConversionOutput {
+function $convertListNode(
+  domNode: HTMLOListElement | HTMLUListElement,
+): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
   if (nodeName === 'ol') {
@@ -355,7 +349,10 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
  * @param start - Where an ordered list starts its count, start = 1 if left undefined.
  * @returns The new ListNode
  */
-export function $createListNode(listType: ListType, start = 1): ListNode {
+export function $createListNode(
+  listType: ListType = 'number',
+  start = 1,
+): ListNode {
   return $applyNodeReplacement(new ListNode(listType, start));
 }
 

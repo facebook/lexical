@@ -114,6 +114,9 @@
       "@lexical/react/LexicalNestedComposer": [
         "./packages/lexical-react/src/LexicalNestedComposer.tsx"
       ],
+      "@lexical/react/LexicalNodeContextMenuPlugin": [
+        "./packages/lexical-react/src/LexicalNodeContextMenuPlugin.tsx"
+      ],
       "@lexical/react/LexicalNodeEventPlugin": [
         "./packages/lexical-react/src/LexicalNodeEventPlugin.ts"
       ],
@@ -134,9 +137,6 @@
       ],
       "@lexical/react/LexicalTabIndentationPlugin": [
         "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"
-      ],
-      "@lexical/react/LexicalTableOfContents": [
-        "./packages/lexical-react/src/LexicalTableOfContents.tsx"
       ],
       "@lexical/react/LexicalTableOfContentsPlugin": [
         "./packages/lexical-react/src/LexicalTableOfContentsPlugin.tsx"
@@ -173,7 +173,17 @@
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
       "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
+      "shared/devInvariant": ["./packages/shared/src/devInvariant.ts"],
       "shared/environment": ["./packages/shared/src/environment.ts"],
+      "shared/formatDevErrorMessage": [
+        "./packages/shared/src/formatDevErrorMessage.ts"
+      ],
+      "shared/formatProdErrorMessage": [
+        "./packages/shared/src/formatProdErrorMessage.ts"
+      ],
+      "shared/formatProdWarningMessage": [
+        "./packages/shared/src/formatProdWarningMessage.ts"
+      ],
       "shared/invariant": ["./packages/shared/src/invariant.ts"],
       "shared/normalizeClassNames": [
         "./packages/shared/src/normalizeClassNames.ts"
@@ -197,6 +207,9 @@
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],
+      "@lexical/headless/src/__tests__/utils": [
+        "./packages/lexical-headless/src/__tests__/utils/index.ts"
+      ],
       "@lexical/history/src": ["./packages/lexical-history/src"],
       "@lexical/html/src": ["./packages/lexical-html/src"],
       "@lexical/link/src": ["./packages/lexical-link/src"],
@@ -222,6 +235,7 @@
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",
+    "**/build/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

@@ -7,6 +7,14 @@
  * @flow strict
  */
 
-/**
- * LexicalNodeEventPlugin
- */
+import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+
+declare export function NodeEventPlugin({
+  nodeType: Class<LexicalNode>;
+  eventType: string;
+  eventListener: (
+    event: Event,
+    editor: LexicalEditor,
+    nodeKey: NodeKey,
+  ) => void;
+}): null;

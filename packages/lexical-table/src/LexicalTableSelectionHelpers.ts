@@ -15,14 +15,17 @@ import type {
 } from './LexicalTableSelection';
 import type {
   BaseSelection,
+  CaretDirection,
+  ChildCaret,
   EditorState,
-  ElementFormatType,
   ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
+  PointCaret,
   RangeSelection,
-  TextFormatType,
+  SiblingCaret,
 } from 'lexical';
 
 import {
@@ -36,17 +39,26 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
+  $caretFromPoint,
   $createParagraphNode,
   $createRangeSelectionFromDom,
   $createTextNode,
+  $extendCaretToRange,
+  $getAdjacentChildCaret,
+  $getChildCaret,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
-  $isDecoratorNode,
+  $getSiblingCaret,
+  $isChildCaret,
   $isElementNode,
+  $isExtendableTextPointCaret,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isSiblingCaret,
   $isTextNode,
+  $normalizeCaret,
+  $setPointFromCaret,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
@@ -60,6 +72,8 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
+  isDOMNode,
+  isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -76,6 +90,7 @@ import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {
+  $getElementForTableNode,
   $isScrollableTablesActive,
   $isTableNode,
   TableNode,
@@ -87,15 +102,24 @@ import {
   $computeTableCellRectBoundary,
   $computeTableCellRectSpans,
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $getNodeTriplet,
+  $insertTableColumnAtNode,
+  $insertTableRowAtNode,
+  $mergeCells,
+  $unmergeCellNode,
   TableCellRectBoundary,
 } from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
-const isMouseDownOnEvent = (event: MouseEvent) => {
+const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
+
+export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
+  return isHTMLElement(el) && el.nodeName === 'TABLE';
+}
 
 export function getTableElement<T extends HTMLElement | null>(
   tableNode: TableNode,
@@ -105,7 +129,7 @@ export function getTableElement<T extends HTMLElement | null>(
     return dom as T & null;
   }
   const element = (
-    dom.nodeName === 'TABLE' ? dom : tableNode.getDOMSlot(dom).element
+    isHTMLTableElement(dom) ? dom : tableNode.getDOMSlot(dom).element
   ) as HTMLTableElementWithWithTableSelectionState;
   invariant(
     element.nodeName === 'TABLE',
@@ -171,38 +195,41 @@ export function applyTableHandlers(
   const tableElement = getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
   tableObserver.listenersToRemove.add(() =>
-    detatchTableObserverFromTableElement(tableElement, tableObserver),
+    detachTableObserverFromTableElement(tableElement, tableObserver),
   );
 
-  const createMouseHandlers = () => {
+  const createPointerHandlers = () => {
     if (tableObserver.isSelecting) {
       return;
     }
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       tableObserver.isSelecting = false;
-      editorWindow.removeEventListener('mouseup', onMouseUp);
-      editorWindow.removeEventListener('mousemove', onMouseMove);
+      editorWindow.removeEventListener('pointerup', onPointerUp);
+      editorWindow.removeEventListener('pointermove', onPointerMove);
     };
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
         tableObserver.isSelecting = false;
-        editorWindow.removeEventListener('mouseup', onMouseUp);
-        editorWindow.removeEventListener('mousemove', onMouseMove);
+        editorWindow.removeEventListener('pointerup', onPointerUp);
+        editorWindow.removeEventListener('pointermove', onPointerMove);
         return;
       }
-      const override = !tableElement.contains(moveEvent.target as Node);
+      if (!isDOMNode(moveEvent.target)) {
+        return;
+      }
       let focusCell: null | TableDOMCell = null;
-      if (!override) {
-        focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+      // In firefox the moveEvent.target may be captured so we must always
+      // consult the coordinates #7245
+      const override = !(IS_FIREFOX || tableElement.contains(moveEvent.target));
+      if (override) {
+        focusCell = getDOMCellInTableFromTarget(tableElement, moveEvent.target);
       } else {
         for (const el of document.elementsFromPoint(
           moveEvent.clientX,
           moveEvent.clientY,
         )) {
-          focusCell = tableElement.contains(el)
-            ? getDOMCellFromTarget(el)
-            : null;
+          focusCell = getDOMCellInTableFromTarget(tableElement, el);
           if (focusCell) {
             break;
           }
@@ -219,27 +246,24 @@ export function applyTableHandlers(
     };
     tableObserver.isSelecting = true;
     editorWindow.addEventListener(
-      'mouseup',
-      onMouseUp,
+      'pointerup',
+      onPointerUp,
       tableObserver.listenerOptions,
     );
     editorWindow.addEventListener(
-      'mousemove',
-      onMouseMove,
+      'pointermove',
+      onPointerMove,
       tableObserver.listenerOptions,
     );
   };
 
-  const onMouseDown = (event: MouseEvent) => {
-    if (event.button !== 0) {
+  const onPointerDown = (event: PointerEvent) => {
+    tableObserver.pointerType = event.pointerType;
+    if (event.button !== 0 || !isDOMNode(event.target) || !editorWindow) {
       return;
     }
 
-    if (!editorWindow) {
-      return;
-    }
-
-    const targetCell = getDOMCellFromTarget(event.target as Node);
+    const targetCell = getDOMCellFromTarget(event.target);
     if (targetCell !== null) {
       editor.update(() => {
         const prevSelection = $getPreviousSelection();
@@ -277,28 +301,52 @@ export function applyTableHandlers(
             );
           }
         } else {
-          tableObserver.$setAnchorCellForSelection(targetCell);
+          // Only set anchor cell for selection if this is not a simple touch tap
+          // Touch taps should not initiate table selection mode
+          if (event.pointerType !== 'touch') {
+            tableObserver.$setAnchorCellForSelection(targetCell);
+          }
         }
       });
     }
 
-    createMouseHandlers();
+    createPointerHandlers();
+  };
+  tableElement.addEventListener(
+    'pointerdown',
+    onPointerDown,
+    tableObserver.listenerOptions,
+  );
+  tableObserver.listenersToRemove.add(() => {
+    tableElement.removeEventListener('pointerdown', onPointerDown);
+  });
+
+  const onTripleClick = (event: MouseEvent) => {
+    if (event.detail >= 3 && isDOMNode(event.target)) {
+      const targetCell = getDOMCellFromTarget(event.target);
+      if (targetCell !== null) {
+        event.preventDefault();
+      }
+    }
   };
   tableElement.addEventListener(
     'mousedown',
-    onMouseDown,
+    onTripleClick,
     tableObserver.listenerOptions,
   );
+  tableObserver.listenersToRemove.add(() => {
+    tableElement.removeEventListener('mousedown', onTripleClick);
+  });
 
   // Clear selection when clicking outside of dom.
-  const mouseDownCallback = (event: MouseEvent) => {
-    if (event.button !== 0) {
+  const pointerDownCallback = (event: PointerEvent) => {
+    const target = event.target;
+    if (event.button !== 0 || !isDOMNode(target)) {
       return;
     }
 
     editor.update(() => {
       const selection = $getSelection();
-      const target = event.target as Node;
       if (
         $isTableSelection(selection) &&
         selection.tableKey === tableObserver.tableNodeKey &&
@@ -310,14 +358,17 @@ export function applyTableHandlers(
   };
 
   editorWindow.addEventListener(
-    'mousedown',
-    mouseDownCallback,
+    'pointerdown',
+    pointerDownCallback,
     tableObserver.listenerOptions,
   );
+  tableObserver.listenersToRemove.add(() => {
+    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+  });
 
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         command,
         (event) =>
           $handleArrowKey(editor, event, direction, tableNode, tableObserver),
@@ -327,7 +378,7 @@ export function applyTableHandlers(
   }
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ESCAPE_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -456,6 +507,10 @@ export function applyTableHandlers(
       return false;
     }
 
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
+
     if ($isTableSelection(selection)) {
       if (event) {
         event.preventDefault();
@@ -471,7 +526,7 @@ export function applyTableHandlers(
 
   for (const command of DELETE_KEY_COMMANDS) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         command,
         $deleteCellHandler,
         COMMAND_PRIORITY_CRITICAL,
@@ -480,7 +535,7 @@ export function applyTableHandlers(
   }
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<KeyboardEvent | ClipboardEvent | null>(
+    editor.registerCommand(
       CUT_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -492,9 +547,7 @@ export function applyTableHandlers(
           // before we delete it
           void copyToClipboard(
             editor,
-            objectKlassEquals(event, ClipboardEvent)
-              ? (event as ClipboardEvent)
-              : null,
+            objectKlassEquals(event, ClipboardEvent) ? event : null,
             $getClipboardDataFromSelection(selection),
           );
           const intercepted = $deleteCellHandler(event);
@@ -511,7 +564,7 @@ export function applyTableHandlers(
   );
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<TextFormatType>(
+    editor.registerCommand(
       FORMAT_TEXT_COMMAND,
       (payload) => {
         const selection = $getSelection();
@@ -542,7 +595,7 @@ export function applyTableHandlers(
   );
 
   tableObserver.listenersToRemove.add(
-    editor.registerCommand<ElementFormatType>(
+    editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
       (formatType) => {
         const selection = $getSelection();
@@ -557,6 +610,12 @@ export function applyTableHandlers(
         const focusNode = selection.focus.getNode();
         if (!$isTableCellNode(anchorNode) || !$isTableCellNode(focusNode)) {
           return false;
+        }
+
+        // Align the table if the entire table is selected
+        if ($isFullTableSelection(selection, tableNode)) {
+          tableNode.setFormat(formatType);
+          return true;
         }
 
         const [tableMap, anchorCell, focusCell] = $computeTableMap(
@@ -649,7 +708,7 @@ export function applyTableHandlers(
 
   if (hasTabHandler) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_TAB_COMMAND,
         (event) => {
           const selection = $getSelection();
@@ -695,7 +754,10 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      (selectionPayload) => {
+      (selectionPayload, dispatchEditor) => {
+        if (editor !== dispatchEditor) {
+          return false;
+        }
         const {nodes, selection} = selectionPayload;
         const anchorAndFocus = selection.getStartEndPoints();
         const isTableSelection = $isTableSelection(selection);
@@ -718,95 +780,174 @@ export function applyTableHandlers(
         ) {
           return false;
         }
-        const [anchor] = anchorAndFocus;
 
-        const newGrid = nodes[0];
-        const newGridRows = newGrid.getChildren();
-        const newColumnCount = newGrid
-          .getFirstChildOrThrow<TableNode>()
-          .getChildrenSize();
-        const newRowCount = newGrid.getChildrenSize();
-        const gridCellNode = $findMatchingParent(anchor.getNode(), (n) =>
+        const [anchor, focus] = anchorAndFocus;
+        const [anchorCellNode, anchorRowNode, gridNode] =
+          $getNodeTriplet(anchor);
+        const focusCellNode = $findMatchingParent(focus.getNode(), (n) =>
           $isTableCellNode(n),
         );
-        const gridRowNode =
-          gridCellNode &&
-          $findMatchingParent(gridCellNode, (n) => $isTableRowNode(n));
-        const gridNode =
-          gridRowNode &&
-          $findMatchingParent(gridRowNode, (n) => $isTableNode(n));
 
         if (
-          !$isTableCellNode(gridCellNode) ||
-          !$isTableRowNode(gridRowNode) ||
+          !$isTableCellNode(anchorCellNode) ||
+          !$isTableCellNode(focusCellNode) ||
+          !$isTableRowNode(anchorRowNode) ||
           !$isTableNode(gridNode)
         ) {
           return false;
         }
 
-        const startY = gridRowNode.getIndexWithinParent();
-        const stopY = Math.min(
-          gridNode.getChildrenSize() - 1,
-          startY + newRowCount - 1,
+        const templateGrid = nodes[0];
+        const [initialGridMap, anchorCellMap, focusCellMap] = $computeTableMap(
+          gridNode,
+          anchorCellNode,
+          focusCellNode,
         );
-        const startX = gridCellNode.getIndexWithinParent();
-        const stopX = Math.min(
-          gridRowNode.getChildrenSize() - 1,
-          startX + newColumnCount - 1,
+        const [templateGridMap] = $computeTableMapSkipCellCheck(
+          templateGrid,
+          null,
+          null,
         );
-        const fromX = Math.min(startX, stopX);
-        const fromY = Math.min(startY, stopY);
-        const toX = Math.max(startX, stopX);
-        const toY = Math.max(startY, stopY);
-        const gridRowNodes = gridNode.getChildren();
-        let newRowIdx = 0;
+        const initialRowCount = initialGridMap.length;
+        const initialColCount =
+          initialRowCount > 0 ? initialGridMap[0].length : 0;
 
-        for (let r = fromY; r <= toY; r++) {
-          const currentGridRowNode = gridRowNodes[r];
+        // If we have a range selection, we'll fit the template grid into the
+        // table, growing the table if necessary.
+        let startRow = anchorCellMap.startRow;
+        let startCol = anchorCellMap.startColumn;
+        let affectedRowCount = templateGridMap.length;
+        let affectedColCount =
+          affectedRowCount > 0 ? templateGridMap[0].length : 0;
 
-          if (!$isTableRowNode(currentGridRowNode)) {
-            return false;
+        if (isTableSelection) {
+          // If we have a table selection, we'll only modify the cells within
+          // the selection boundary.
+          const selectionBoundary = $computeTableCellRectBoundary(
+            initialGridMap,
+            anchorCellMap,
+            focusCellMap,
+          );
+          const selectionRowCount =
+            selectionBoundary.maxRow - selectionBoundary.minRow + 1;
+          const selectionColCount =
+            selectionBoundary.maxColumn - selectionBoundary.minColumn + 1;
+          startRow = selectionBoundary.minRow;
+          startCol = selectionBoundary.minColumn;
+          affectedRowCount = Math.min(affectedRowCount, selectionRowCount);
+          affectedColCount = Math.min(affectedColCount, selectionColCount);
+        }
+
+        // Step 1: Unmerge all merged cells within the affected area
+        let didPerformMergeOperations = false;
+        const lastRowForUnmerge =
+          Math.min(initialRowCount, startRow + affectedRowCount) - 1;
+        const lastColForUnmerge =
+          Math.min(initialColCount, startCol + affectedColCount) - 1;
+        const unmergedKeys = new Set<NodeKey>();
+        for (let row = startRow; row <= lastRowForUnmerge; row++) {
+          for (let col = startCol; col <= lastColForUnmerge; col++) {
+            const cellMap = initialGridMap[row][col];
+            if (unmergedKeys.has(cellMap.cell.getKey())) {
+              continue; // cell was a merged cell that was already handled
+            }
+            if (cellMap.cell.__rowSpan === 1 && cellMap.cell.__colSpan === 1) {
+              continue; // cell is not a merged cell
+            }
+            $unmergeCellNode(cellMap.cell);
+            unmergedKeys.add(cellMap.cell.getKey());
+            didPerformMergeOperations = true;
           }
+        }
 
-          const newGridRowNode = newGridRows[newRowIdx];
+        let [interimGridMap] = $computeTableMapSkipCellCheck(
+          gridNode.getWritable(),
+          null,
+          null,
+        );
 
-          if (!$isTableRowNode(newGridRowNode)) {
-            return false;
-          }
+        // Step 2: Expand current table (if needed)
+        const rowsToInsert = affectedRowCount - initialRowCount + startRow;
+        for (let i = 0; i < rowsToInsert; i++) {
+          const cellMap = interimGridMap[initialRowCount - 1][0];
+          $insertTableRowAtNode(cellMap.cell);
+        }
+        const colsToInsert = affectedColCount - initialColCount + startCol;
+        for (let i = 0; i < colsToInsert; i++) {
+          const cellMap = interimGridMap[0][initialColCount - 1];
+          $insertTableColumnAtNode(cellMap.cell, true, false);
+        }
 
-          const gridCellNodes = currentGridRowNode.getChildren();
-          const newGridCellNodes = newGridRowNode.getChildren();
-          let newColumnIdx = 0;
+        [interimGridMap] = $computeTableMapSkipCellCheck(
+          gridNode.getWritable(),
+          null,
+          null,
+        );
 
-          for (let c = fromX; c <= toX; c++) {
-            const currentGridCellNode = gridCellNodes[c];
-
-            if (!$isTableCellNode(currentGridCellNode)) {
-              return false;
+        // Step 3: Merge cells and set cell content, to match template grid
+        for (let row = startRow; row < startRow + affectedRowCount; row++) {
+          for (let col = startCol; col < startCol + affectedColCount; col++) {
+            const templateRow = row - startRow;
+            const templateCol = col - startCol;
+            const templateCellMap = templateGridMap[templateRow][templateCol];
+            if (
+              templateCellMap.startRow !== templateRow ||
+              templateCellMap.startColumn !== templateCol
+            ) {
+              continue; // cell is a merged cell that was already handled
             }
 
-            const newGridCellNode = newGridCellNodes[newColumnIdx];
-
-            if (!$isTableCellNode(newGridCellNode)) {
-              return false;
+            const templateCell = templateCellMap.cell;
+            if (templateCell.__rowSpan !== 1 || templateCell.__colSpan !== 1) {
+              const cellsToMerge = [];
+              const lastRowForMerge =
+                Math.min(
+                  row + templateCell.__rowSpan,
+                  startRow + affectedRowCount,
+                ) - 1;
+              const lastColForMerge =
+                Math.min(
+                  col + templateCell.__colSpan,
+                  startCol + affectedColCount,
+                ) - 1;
+              for (let r = row; r <= lastRowForMerge; r++) {
+                for (let c = col; c <= lastColForMerge; c++) {
+                  const cellMap = interimGridMap[r][c];
+                  cellsToMerge.push(cellMap.cell);
+                }
+              }
+              $mergeCells(cellsToMerge);
+              didPerformMergeOperations = true;
             }
 
-            const originalChildren = currentGridCellNode.getChildren();
-            newGridCellNode.getChildren().forEach((child) => {
+            const {cell} = interimGridMap[row][col];
+            const originalChildren = cell.getChildren();
+            templateCell.getChildren().forEach((child) => {
               if ($isTextNode(child)) {
                 const paragraphNode = $createParagraphNode();
                 paragraphNode.append(child);
-                currentGridCellNode.append(child);
+                cell.append(child);
               } else {
-                currentGridCellNode.append(child);
+                cell.append(child);
               }
             });
             originalChildren.forEach((n) => n.remove());
-            newColumnIdx++;
           }
-
-          newRowIdx++;
         }
+
+        if (isTableSelection && didPerformMergeOperations) {
+          // reset the table selection in case the anchor or focus cell was
+          // removed via merge operations
+          const [finalGridMap] = $computeTableMapSkipCellCheck(
+            gridNode.getWritable(),
+            null,
+            null,
+          );
+          const newAnchorCellMap =
+            finalGridMap[anchorCellMap.startRow][anchorCellMap.startColumn];
+          newAnchorCellMap.cell.selectEnd();
+        }
+
         return true;
       },
       COMMAND_PRIORITY_CRITICAL,
@@ -952,6 +1093,39 @@ export function applyTableHandlers(
                 true,
               );
             }
+
+            // Handle case when the pointer type is touch and the current and
+            // previous selection are collapsed, and the previous anchor and current
+            // focus cell nodes are different, then we convert it into table selection
+            // However, only do this if the table observer is actively selecting (user dragging)
+            // to prevent unwanted selections when simply tapping between cells on mobile
+            if (
+              tableObserver.pointerType === 'touch' &&
+              tableObserver.isSelecting &&
+              selection.isCollapsed() &&
+              $isRangeSelection(prevSelection) &&
+              prevSelection.isCollapsed()
+            ) {
+              const prevAnchorCellNode = $findCellNode(
+                prevSelection.anchor.getNode(),
+              );
+              if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
+                tableObserver.$setAnchorCellForSelection(
+                  $getObserverCellFromCellNodeOrThrow(
+                    tableObserver,
+                    prevAnchorCellNode,
+                  ),
+                );
+                tableObserver.$setFocusCellForSelection(
+                  $getObserverCellFromCellNodeOrThrow(
+                    tableObserver,
+                    focusCellNode,
+                  ),
+                  true,
+                );
+                tableObserver.pointerType = null;
+              }
+            }
           }
         } else if (
           selection &&
@@ -1074,7 +1248,7 @@ export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {
   [LEXICAL_ELEMENT_KEY]?: TableObserver | undefined;
 };
 
-export function detatchTableObserverFromTableElement(
+export function detachTableObserverFromTableElement(
   tableElement: HTMLTableElementWithWithTableSelectionState,
   tableObserver: TableObserver,
 ) {
@@ -1100,7 +1274,7 @@ export function getTableObserverFromTableElement(
   return tableElement[LEXICAL_ELEMENT_KEY] || null;
 }
 
-export function getDOMCellFromTarget(node: Node): TableDOMCell | null {
+export function getDOMCellFromTarget(node: null | Node): TableDOMCell | null {
   let currentNode: ParentNode | Node | null = node;
 
   while (currentNode != null) {
@@ -1120,6 +1294,31 @@ export function getDOMCellFromTarget(node: Node): TableDOMCell | null {
     currentNode = currentNode.parentNode;
   }
 
+  return null;
+}
+
+export function getDOMCellInTableFromTarget(
+  table: HTMLTableElementWithWithTableSelectionState,
+  node: null | Node,
+): TableDOMCell | null {
+  if (!table.contains(node)) {
+    return null;
+  }
+  let cell: null | TableDOMCell = null;
+  for (
+    let currentNode: ParentNode | Node | null = node;
+    currentNode != null;
+    currentNode = currentNode.parentNode
+  ) {
+    if (currentNode === table) {
+      return cell;
+    }
+    const nodeName = currentNode.nodeName;
+    if (nodeName === 'TD' || nodeName === 'TH') {
+      // @ts-expect-error: internal field
+      cell = currentNode._cell || null;
+    }
+  }
   return null;
 }
 
@@ -1567,12 +1766,33 @@ function $isSelectionInTable(
   tableNode: TableNode,
 ): boolean {
   if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+    // TODO this should probably return false if there's an unrelated
+    //      shadow root between the node and the table (e.g. another table,
+    //      collapsible, etc.)
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
 
     return isAnchorInside && isFocusInside;
   }
 
+  return false;
+}
+
+function $isFullTableSelection(
+  selection: null | BaseSelection,
+  tableNode: TableNode,
+): boolean {
+  if ($isTableSelection(selection)) {
+    const anchorNode = selection.anchor.getNode() as TableCellNode;
+    const focusNode = selection.focus.getNode() as TableCellNode;
+    if (tableNode && anchorNode && focusNode) {
+      const [map] = $computeTableMap(tableNode, anchorNode, focusNode);
+      return (
+        anchorNode.getKey() === map[0][0].cell.getKey() &&
+        focusNode.getKey() === map[map.length - 1].at(-1)!.cell.getKey()
+      );
+    }
+  }
   return false;
 }
 
@@ -1635,6 +1855,115 @@ function $getBlockParentIfFirstNode(node: LexicalNode): ElementNode | null {
       } else if (!currentNode.isInline()) {
         return currentNode;
       }
+    }
+  }
+  return null;
+}
+
+function $handleHorizontalArrowKeyRangeSelection(
+  editor: LexicalEditor,
+  event: KeyboardEvent,
+  selection: RangeSelection,
+  alter: 'extend' | 'move',
+  isBackward: boolean,
+  tableNode: TableNode,
+  tableObserver: TableObserver,
+): boolean {
+  const initialFocus = $caretFromPoint(
+    selection.focus,
+    isBackward ? 'previous' : 'next',
+  );
+  if ($isExtendableTextPointCaret(initialFocus)) {
+    return false;
+  }
+  let lastCaret = initialFocus;
+  // TableCellNode is the only shadow root we are interested in piercing so
+  // we find the last internal caret and then check its parent
+  for (const nextCaret of $extendCaretToRange(initialFocus).iterNodeCarets(
+    'shadowRoot',
+  )) {
+    if (!($isSiblingCaret(nextCaret) && $isElementNode(nextCaret.origin))) {
+      return false;
+    }
+    lastCaret = nextCaret;
+  }
+  const lastCaretParent = lastCaret.getParentAtCaret();
+  if (!$isTableCellNode(lastCaretParent)) {
+    return false;
+  }
+  const anchorCell = lastCaretParent;
+  const focusCaret = $findNextTableCell(
+    $getSiblingCaret(anchorCell, lastCaret.direction),
+  );
+  const anchorCellTable = $findMatchingParent(anchorCell, $isTableNode);
+  if (!(anchorCellTable && anchorCellTable.is(tableNode))) {
+    return false;
+  }
+  const anchorCellDOM = editor.getElementByKey(anchorCell.getKey());
+  const anchorDOMCell = getDOMCellFromTarget(anchorCellDOM);
+  if (!anchorCellDOM || !anchorDOMCell) {
+    return false;
+  }
+
+  const anchorCellTableElement = $getElementForTableNode(
+    editor,
+    anchorCellTable,
+  );
+  tableObserver.table = anchorCellTableElement;
+  if (!focusCaret) {
+    if (alter === 'extend') {
+      // extend the selection from a range inside the cell to a table selection of the cell
+      tableObserver.$setAnchorCellForSelection(anchorDOMCell);
+      tableObserver.$setFocusCellForSelection(anchorDOMCell, true);
+    } else {
+      // exit the table
+      const outerFocusCaret = $getTableExitCaret(
+        $getSiblingCaret(anchorCellTable, initialFocus.direction),
+      );
+      $setPointFromCaret(selection.anchor, outerFocusCaret);
+      $setPointFromCaret(selection.focus, outerFocusCaret);
+    }
+  } else if (alter === 'extend') {
+    const focusDOMCell = getDOMCellFromTarget(
+      editor.getElementByKey(focusCaret.origin.getKey()),
+    );
+    if (!focusDOMCell) {
+      return false;
+    }
+    tableObserver.$setAnchorCellForSelection(anchorDOMCell);
+    tableObserver.$setFocusCellForSelection(focusDOMCell, true);
+  } else {
+    // alter === 'move'
+    const innerFocusCaret = $normalizeCaret(focusCaret);
+    $setPointFromCaret(selection.anchor, innerFocusCaret);
+    $setPointFromCaret(selection.focus, innerFocusCaret);
+  }
+  stopEvent(event);
+  return true;
+}
+
+function $getTableExitCaret<D extends CaretDirection>(
+  initialCaret: SiblingCaret<TableNode, D>,
+): PointCaret<D> {
+  const adjacent = $getAdjacentChildCaret(initialCaret);
+  return $isChildCaret(adjacent) ? $normalizeCaret(adjacent) : initialCaret;
+}
+
+function $findNextTableCell<D extends CaretDirection>(
+  initialCaret: SiblingCaret<TableCellNode, D>,
+): null | ChildCaret<TableCellNode, D> {
+  for (const nextCaret of $extendCaretToRange(initialCaret).iterNodeCarets(
+    'root',
+  )) {
+    const {origin} = nextCaret;
+    if ($isTableCellNode(origin)) {
+      // not sure why ts isn't narrowing here (even if the guard is on nextCaret.origin)
+      // but returning a new caret is fine
+      if ($isChildCaret(nextCaret)) {
+        return $getChildCaret(origin, initialCaret.direction);
+      }
+    } else if (!$isTableRowNode(origin)) {
+      break;
     }
   }
   return null;
@@ -1832,134 +2161,125 @@ function $handleArrowKey(
     return false;
   }
 
-  if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    const {anchor, focus} = selection;
-    const anchorCellNode = $findMatchingParent(
-      anchor.getNode(),
-      $isTableCellNode,
-    );
-    const focusCellNode = $findMatchingParent(
-      focus.getNode(),
-      $isTableCellNode,
-    );
-    if (
-      !$isTableCellNode(anchorCellNode) ||
-      !anchorCellNode.is(focusCellNode)
-    ) {
-      return false;
-    }
-    const anchorCellTable = $findTableNode(anchorCellNode);
-    if (anchorCellTable !== tableNode && anchorCellTable != null) {
-      const anchorCellTableElement = getTableElement(
-        anchorCellTable,
-        editor.getElementByKey(anchorCellTable.getKey()),
-      );
-      if (anchorCellTableElement != null) {
-        tableObserver.table = getTable(anchorCellTable, anchorCellTableElement);
-        return $handleArrowKey(
-          editor,
-          event,
-          direction,
-          anchorCellTable,
-          tableObserver,
-        );
-      }
-    }
-
+  if ($isRangeSelection(selection)) {
     if (direction === 'backward' || direction === 'forward') {
-      const anchorType = anchor.type;
-      const anchorOffset = anchor.offset;
-      const anchorNode = anchor.getNode();
-      if (!anchorNode) {
-        return false;
-      }
-
-      const selectedNodes = selection.getNodes();
-      if (selectedNodes.length === 1 && $isDecoratorNode(selectedNodes[0])) {
-        return false;
-      }
-
-      if (
-        isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
-      ) {
-        return $handleTableExit(
-          event,
-          anchorNode,
-          anchorCellNode,
-          tableNode,
-          direction,
-        );
-      }
-
-      return false;
-    }
-
-    const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
-    const anchorDOM = editor.getElementByKey(anchor.key);
-    if (anchorDOM == null || anchorCellDom == null) {
-      return false;
-    }
-
-    let edgeSelectionRect;
-    if (anchor.type === 'element') {
-      edgeSelectionRect = anchorDOM.getBoundingClientRect();
-    } else {
-      const domSelection = getDOMSelection(getEditorWindow(editor));
-      if (domSelection === null || domSelection.rangeCount === 0) {
-        return false;
-      }
-
-      const range = domSelection.getRangeAt(0);
-      edgeSelectionRect = range.getBoundingClientRect();
-    }
-
-    const edgeChild =
-      direction === 'up'
-        ? anchorCellNode.getFirstChild()
-        : anchorCellNode.getLastChild();
-    if (edgeChild == null) {
-      return false;
-    }
-
-    const edgeChildDOM = editor.getElementByKey(edgeChild.__key);
-
-    if (edgeChildDOM == null) {
-      return false;
-    }
-
-    const edgeRect = edgeChildDOM.getBoundingClientRect();
-    const isExiting =
-      direction === 'up'
-        ? edgeRect.top > edgeSelectionRect.top - edgeSelectionRect.height
-        : edgeSelectionRect.bottom + edgeSelectionRect.height > edgeRect.bottom;
-
-    if (isExiting) {
-      stopEvent(event);
-
-      const cords = tableNode.getCordsFromCellNode(
-        anchorCellNode,
-        tableObserver.table,
+      const alter = event.shiftKey ? 'extend' : 'move';
+      return $handleHorizontalArrowKeyRangeSelection(
+        editor,
+        event,
+        selection,
+        alter,
+        direction === 'backward',
+        tableNode,
+        tableObserver,
       );
+    }
 
-      if (event.shiftKey) {
-        const cell = tableNode.getDOMCellFromCordsOrThrow(
-          cords.x,
-          cords.y,
+    if (selection.isCollapsed()) {
+      const {anchor, focus} = selection;
+      const anchorCellNode = $findMatchingParent(
+        anchor.getNode(),
+        $isTableCellNode,
+      );
+      const focusCellNode = $findMatchingParent(
+        focus.getNode(),
+        $isTableCellNode,
+      );
+      if (
+        !$isTableCellNode(anchorCellNode) ||
+        !anchorCellNode.is(focusCellNode)
+      ) {
+        return false;
+      }
+      const anchorCellTable = $findTableNode(anchorCellNode);
+      if (anchorCellTable !== tableNode && anchorCellTable != null) {
+        const anchorCellTableElement = getTableElement(
+          anchorCellTable,
+          editor.getElementByKey(anchorCellTable.getKey()),
+        );
+        if (anchorCellTableElement != null) {
+          tableObserver.table = getTable(
+            anchorCellTable,
+            anchorCellTableElement,
+          );
+          return $handleArrowKey(
+            editor,
+            event,
+            direction,
+            anchorCellTable,
+            tableObserver,
+          );
+        }
+      }
+
+      const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
+      const anchorDOM = editor.getElementByKey(anchor.key);
+      if (anchorDOM == null || anchorCellDom == null) {
+        return false;
+      }
+
+      let edgeSelectionRect;
+      if (anchor.type === 'element') {
+        edgeSelectionRect = anchorDOM.getBoundingClientRect();
+      } else {
+        const domSelection = getDOMSelection(getEditorWindow(editor));
+        if (domSelection === null || domSelection.rangeCount === 0) {
+          return false;
+        }
+
+        const range = domSelection.getRangeAt(0);
+        edgeSelectionRect = range.getBoundingClientRect();
+      }
+
+      const edgeChild =
+        direction === 'up'
+          ? anchorCellNode.getFirstChild()
+          : anchorCellNode.getLastChild();
+      if (edgeChild == null) {
+        return false;
+      }
+
+      const edgeChildDOM = editor.getElementByKey(edgeChild.__key);
+
+      if (edgeChildDOM == null) {
+        return false;
+      }
+
+      const edgeRect = edgeChildDOM.getBoundingClientRect();
+      const isExiting =
+        direction === 'up'
+          ? edgeRect.top > edgeSelectionRect.top - edgeSelectionRect.height
+          : edgeSelectionRect.bottom + edgeSelectionRect.height >
+            edgeRect.bottom;
+
+      if (isExiting) {
+        stopEvent(event);
+
+        const cords = tableNode.getCordsFromCellNode(
+          anchorCellNode,
           tableObserver.table,
         );
-        tableObserver.$setAnchorCellForSelection(cell);
-        tableObserver.$setFocusCellForSelection(cell, true);
-      } else {
-        return selectTableNodeInDirection(
-          tableObserver,
-          tableNode,
-          cords.x,
-          cords.y,
-          direction,
-        );
-      }
 
-      return true;
+        if (event.shiftKey) {
+          const cell = tableNode.getDOMCellFromCordsOrThrow(
+            cords.x,
+            cords.y,
+            tableObserver.table,
+          );
+          tableObserver.$setAnchorCellForSelection(cell);
+          tableObserver.$setFocusCellForSelection(cell, true);
+        } else {
+          return selectTableNodeInDirection(
+            tableObserver,
+            tableNode,
+            cords.x,
+            cords.y,
+            direction,
+          );
+        }
+
+        return true;
+      }
     }
   } else if ($isTableSelection(selection)) {
     const {anchor, focus} = selection;
@@ -2042,123 +2362,6 @@ function isTypeaheadMenuInView(editor: LexicalEditor) {
     root.hasAttribute('aria-controls') &&
     root.getAttribute('aria-controls') === 'typeahead-menu'
   );
-}
-
-function isExitingTableAnchor(
-  type: string,
-  offset: number,
-  anchorNode: LexicalNode,
-  direction: 'backward' | 'forward',
-) {
-  return (
-    isExitingTableElementAnchor(type, anchorNode, direction) ||
-    $isExitingTableTextAnchor(type, offset, anchorNode, direction)
-  );
-}
-
-function isExitingTableElementAnchor(
-  type: string,
-  anchorNode: LexicalNode,
-  direction: 'backward' | 'forward',
-) {
-  return (
-    type === 'element' &&
-    (direction === 'backward'
-      ? anchorNode.getPreviousSibling() === null
-      : anchorNode.getNextSibling() === null)
-  );
-}
-
-function $isExitingTableTextAnchor(
-  type: string,
-  offset: number,
-  anchorNode: LexicalNode,
-  direction: 'backward' | 'forward',
-) {
-  const parentNode = $findMatchingParent(
-    anchorNode,
-    (n) => $isElementNode(n) && !n.isInline(),
-  );
-  if (!parentNode) {
-    return false;
-  }
-  const hasValidOffset =
-    direction === 'backward'
-      ? offset === 0
-      : offset === anchorNode.getTextContentSize();
-  return (
-    type === 'text' &&
-    hasValidOffset &&
-    (direction === 'backward'
-      ? parentNode.getPreviousSibling() === null
-      : parentNode.getNextSibling() === null)
-  );
-}
-
-function $handleTableExit(
-  event: KeyboardEvent,
-  anchorNode: LexicalNode,
-  anchorCellNode: TableCellNode,
-  tableNode: TableNode,
-  direction: 'backward' | 'forward',
-): boolean {
-  const [tableMap, cellValue] = $computeTableMap(
-    tableNode,
-    anchorCellNode,
-    anchorCellNode,
-  );
-  if (!isExitingCell(tableMap, cellValue, direction)) {
-    return false;
-  }
-
-  const toNode = $getExitingToNode(anchorNode, direction, tableNode);
-  if (!toNode || $isTableNode(toNode)) {
-    return false;
-  }
-
-  stopEvent(event);
-  if (direction === 'backward') {
-    toNode.selectEnd();
-  } else {
-    toNode.selectStart();
-  }
-  return true;
-}
-
-function isExitingCell(
-  tableMap: TableMapType,
-  cellValue: TableMapValueType,
-  direction: 'backward' | 'forward',
-) {
-  const firstCell = tableMap[0][0];
-  const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
-  const {startColumn, startRow} = cellValue;
-  return direction === 'backward'
-    ? startColumn === firstCell.startColumn && startRow === firstCell.startRow
-    : startColumn === lastCell.startColumn && startRow === lastCell.startRow;
-}
-
-function $getExitingToNode(
-  anchorNode: LexicalNode,
-  direction: 'backward' | 'forward',
-  tableNode: TableNode,
-) {
-  const parentNode = $findMatchingParent(
-    anchorNode,
-    (n) => $isElementNode(n) && !n.isInline(),
-  );
-  if (!parentNode) {
-    return undefined;
-  }
-  const anchorSibling =
-    direction === 'backward'
-      ? parentNode.getPreviousSibling()
-      : parentNode.getNextSibling();
-  return anchorSibling && $isTableNode(anchorSibling)
-    ? anchorSibling
-    : direction === 'backward'
-    ? tableNode.getPreviousSibling()
-    : tableNode.getNextSibling();
 }
 
 function $insertParagraphAtTableEdge(

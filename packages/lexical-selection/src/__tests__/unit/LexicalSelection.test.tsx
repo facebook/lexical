@@ -239,39 +239,6 @@ describe('LexicalSelection tests', () => {
     expect(actualSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const GRAPHEME_SCENARIOS = [
-    {
-      description: 'grapheme cluster',
-      // Hangul grapheme cluster.
-      // https://www.compart.com/en/unicode/U+AC01
-      grapheme: '\u1100\u1161\u11A8',
-    },
-    {
-      description: 'extended grapheme cluster',
-      // Tamil 'ni' grapheme cluster.
-      // http://unicode.org/reports/tr29/#Table_Sample_Grapheme_Clusters
-      grapheme: '\u0BA8\u0BBF',
-    },
-    {
-      description: 'tailored grapheme cluster',
-      // Devangari 'kshi' tailored grapheme cluster.
-      // http://unicode.org/reports/tr29/#Table_Sample_Grapheme_Clusters
-      grapheme: '\u0915\u094D\u0937\u093F',
-    },
-    {
-      description: 'Emoji sequence combined using zero-width joiners',
-      // https://emojipedia.org/family-woman-woman-girl-boy/
-      grapheme:
-        '\uD83D\uDC69\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66',
-    },
-    {
-      description: 'Emoji sequence with skin-tone modifier',
-      // https://emojipedia.org/clapping-hands-medium-skin-tone/
-      grapheme: '\uD83D\uDC4F\uD83C\uDFFD',
-    },
-  ];
-
   const suite = [
     {
       expectedHTML:
@@ -735,64 +702,6 @@ describe('LexicalSelection tests', () => {
     },
 
     // Tests need fixing:
-    // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
-    //   {
-    //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
-    //     inputs: [insertText(grapheme + grapheme), deleteBackward(1)],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: grapheme.length,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: grapheme.length,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    //   {
-    //     name: `Delete forward eliminates entire ${description} (${grapheme})`,
-    //     inputs: [
-    //       insertText(grapheme + grapheme),
-    //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //       deleteForward(),
-    //     ],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: 0,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: 0,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    //   {
-    //     name: `Move backward skips over grapheme cluster (${grapheme})`,
-    //     inputs: [insertText(grapheme + grapheme), moveBackward(1)],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: grapheme.length,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: grapheme.length,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    //   {
-    //     name: `Move forward skips over grapheme cluster (${grapheme})`,
-    //     inputs: [
-    //       insertText(grapheme + grapheme),
-    //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //       moveForward(),
-    //     ],
-    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
-    //     expectedSelection: {
-    //       anchorPath: [0, 0, 0],
-    //       anchorOffset: grapheme.length,
-    //       focusPath: [0, 0, 0],
-    //       focusOffset: grapheme.length,
-    //     },
-    //     setup: emptySetup,
-    //   },
-    // ]),
     // {
     //   name: 'Jump to beginning and insert',
     //   inputs: [
@@ -1290,7 +1199,8 @@ describe('LexicalSelection tests', () => {
         paragraph.append(elementNode);
         elementNode.append(text);
 
-        const selectedNodes = $getSelection()!.getNodes();
+        const selection = $getSelection()!;
+        const selectedNodes = selection.getNodes();
 
         expect(selectedNodes.length).toBe(1);
         expect(selectedNodes[0].getKey()).toBe(text.getKey());
@@ -2756,7 +2666,11 @@ describe('LexicalSelection tests', () => {
         expect(rootChildren[1].__type).toBe('heading');
         expect(rootChildren.length).toBe(2);
         const sel = $getSelection()!;
-        expect(sel.getNodes().length).toBe(2);
+        expect(sel).toMatchObject({
+          anchor: {key: rootChildren[0].__key, offset: 0, type: 'element'},
+          focus: {key: rootChildren[1].__key, offset: 0, type: 'element'},
+        });
+        expect(sel.getNodes()).toEqual(rootChildren);
       });
     });
 
@@ -3008,15 +2922,17 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const ul1 = $createListNode('bullet');
         const text1 = $createTextNode('1');
-        const li1 = $createListItemNode().append(text1);
+        const li1 = $createListItemNode();
         const li1_wrapper = $createListItemNode();
         const ul2 = $createListNode('bullet');
         const text1_1 = $createTextNode('1.1');
-        const li1_1 = $createListItemNode().append(text1_1);
-        ul1.append(li1, li1_wrapper);
-        li1_wrapper.append(ul2);
-        ul2.append(li1_1);
-        root.append(ul1);
+        const li1_1 = $createListItemNode();
+        root.append(
+          ul1.append(
+            li1.append(text1),
+            li1_wrapper.append(ul2.append(li1_1.append(text1_1))),
+          ),
+        );
 
         const selection = $createRangeSelection();
         $setSelection(selection);
@@ -3040,7 +2956,7 @@ describe('LexicalSelection tests', () => {
       );
     });
 
-    test('Nested list with listItem twice indented from his father', async () => {
+    test('Nested list with listItem twice indented from its parent', async () => {
       const testEditor = createTestEditor();
       const element = document.createElement('div');
       testEditor.setRootElement(element);
@@ -3051,11 +2967,10 @@ describe('LexicalSelection tests', () => {
         const li1_wrapper = $createListItemNode();
         const ul2 = $createListNode('bullet');
         const text1_1 = $createTextNode('1.1');
-        const li1_1 = $createListItemNode().append(text1_1);
-        ul1.append(li1_wrapper);
-        li1_wrapper.append(ul2);
-        ul2.append(li1_1);
-        root.append(ul1);
+        const li1_1 = $createListItemNode();
+        root.append(
+          ul1.append(li1_wrapper.append(ul2.append(li1_1.append(text1_1)))),
+        );
 
         const selection = $createRangeSelection();
         $setSelection(selection);

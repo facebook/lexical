@@ -38,6 +38,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   PASTE_COMMAND,
+  PASTE_TAG,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
 } from 'lexical';
@@ -56,7 +57,7 @@ function onCopyForPlainText(
     if (event !== null) {
       const clipboardData = objectKlassEquals(event, KeyboardEvent)
         ? null
-        : (event as ClipboardEvent).clipboardData;
+        : event.clipboardData;
       const selection = $getSelection();
 
       if (selection !== null && clipboardData != null) {
@@ -81,13 +82,15 @@ function onPasteForPlainText(
   editor.update(
     () => {
       const selection = $getSelection();
-      const {clipboardData} = event as ClipboardEvent;
+      const clipboardData = objectKlassEquals(event, ClipboardEvent)
+        ? event.clipboardData
+        : null;
       if (clipboardData != null && $isRangeSelection(selection)) {
         $insertDataTransferForPlainText(clipboardData, selection);
       }
     },
     {
-      tag: 'paste',
+      tag: PASTE_TAG,
     },
   );
 }

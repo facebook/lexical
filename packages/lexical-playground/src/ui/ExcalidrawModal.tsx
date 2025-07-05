@@ -6,15 +6,18 @@
  *
  */
 
-import './ExcalidrawModal.css';
-
-import {Excalidraw} from '@excalidraw/excalidraw';
-import {
+import type {
   AppState,
   BinaryFiles,
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
-} from '@excalidraw/excalidraw/types/types';
+} from '@excalidraw/excalidraw/types';
+import type {JSX} from 'react';
+
+import './ExcalidrawModal.css';
+
+import {Excalidraw} from '@excalidraw/excalidraw';
+import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -60,16 +63,6 @@ type Props = {
   ) => void;
 };
 
-export const useCallbackRefState = () => {
-  const [refValue, setRefValue] =
-    React.useState<ExcalidrawImperativeAPI | null>(null);
-  const refCallback = React.useCallback(
-    (value: ExcalidrawImperativeAPI | null) => setRefValue(value),
-    [],
-  );
-  return [refValue, refCallback] as const;
-};
-
 /**
  * @explorer-desc
  * A component which renders a modal with Excalidraw (a painting app)
@@ -86,16 +79,15 @@ export default function ExcalidrawModal({
   onClose,
 }: Props): ReactPortal | null {
   const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
-  const [excalidrawAPI, excalidrawAPIRefCallback] = useCallbackRefState();
+  const [excalidrawAPI, setExcalidrawAPI] =
+    useState<ExcalidrawImperativeAPI | null>(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<ExcalidrawInitialElements>(initialElements);
   const [files, setFiles] = useState<BinaryFiles>(initialFiles);
 
   useEffect(() => {
-    if (excaliDrawModelRef.current !== null) {
-      excaliDrawModelRef.current.focus();
-    }
+    excaliDrawModelRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -105,7 +97,8 @@ export default function ExcalidrawModal({
       const target = event.target;
       if (
         excaliDrawModelRef.current !== null &&
-        !excaliDrawModelRef.current.contains(target as Node) &&
+        isDOMNode(target) &&
+        !excaliDrawModelRef.current.contains(target) &&
         closeOnClickOutside
       ) {
         onDelete();
@@ -114,15 +107,11 @@ export default function ExcalidrawModal({
 
     if (excaliDrawModelRef.current !== null) {
       modalOverlayElement = excaliDrawModelRef.current?.parentElement;
-      if (modalOverlayElement !== null) {
-        modalOverlayElement?.addEventListener('click', clickOutsideHandler);
-      }
+      modalOverlayElement?.addEventListener('click', clickOutsideHandler);
     }
 
     return () => {
-      if (modalOverlayElement !== null) {
-        modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
-      }
+      modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
     };
   }, [closeOnClickOutside, onDelete]);
 
@@ -135,19 +124,15 @@ export default function ExcalidrawModal({
       }
     };
 
-    if (currentModalRef !== null) {
-      currentModalRef.addEventListener('keydown', onKeyDown);
-    }
+    currentModalRef?.addEventListener('keydown', onKeyDown);
 
     return () => {
-      if (currentModalRef !== null) {
-        currentModalRef.removeEventListener('keydown', onKeyDown);
-      }
+      currentModalRef?.removeEventListener('keydown', onKeyDown);
     };
   }, [elements, files, onDelete]);
 
   const save = () => {
-    if (elements && elements.filter((el) => !el.isDeleted).length > 0) {
+    if (elements?.some((el) => !el.isDeleted)) {
       const appState = excalidrawAPI?.getAppState();
       // We only need a subset of the state
       const partialState: Partial<AppState> = {
@@ -225,7 +210,7 @@ export default function ExcalidrawModal({
           {discardModalOpen && <ShowDiscardDialog />}
           <Excalidraw
             onChange={onChange}
-            excalidrawAPI={excalidrawAPIRefCallback}
+            excalidrawAPI={setExcalidrawAPI}
             initialData={{
               appState: initialAppState || {isLoading: false},
               elements: initialElements,

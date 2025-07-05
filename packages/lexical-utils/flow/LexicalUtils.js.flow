@@ -11,6 +11,14 @@ import type {
   LexicalEditor,
   LexicalNode,
   ElementNode,
+  NodeCaret,
+  CaretDirection,
+  SiblingCaret,
+  RootMode,
+  SplitAtPointCaretNextOptions,
+  PointCaret,
+  StateConfig,
+  ValueOrUpdater
 } from 'lexical';
 declare export function addClassNamesToElement(
   element: HTMLElement,
@@ -47,7 +55,7 @@ declare export function $dfsIterator(
 declare export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number];
-declare export function $getDepth(node: LexicalNode): number;
+declare export function $getDepth(node: null | LexicalNode): number;
 declare export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null;
@@ -98,7 +106,9 @@ declare export function $restoreEditorState(
   editorState: EditorState,
 ): void;
 
+
 declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T): T;
+declare export function $insertNodeToNearestRootAtCaret<T: LexicalNode>(node: T, caret: PointCaret<CaretDirection>, options?: SplitAtPointCaretNextOptions): T;
 
 declare export function $wrapNodeInElement(
   node: LexicalNode,
@@ -125,3 +135,90 @@ declare export function $splitNode(
 declare export function calculateZoomLevel(element: Element | null): number;
 
 declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;
+
+declare export function $unwrapAndFilterDescendants(
+  root: ElementNode,
+  $predicate: (node: LexicalNode) => boolean,
+): boolean;
+
+declare export function $firstToLastIterator(node: ElementNode): Iterable<LexicalNode>;
+
+declare export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode>;
+
+declare export function $unwrapNode(node: ElementNode): void;
+
+declare export function $getAdjacentCaret<D: CaretDirection>(
+  caret: null | NodeCaret<D>,
+): null | SiblingCaret<LexicalNode, D>;
+
+declare export function $reverseDfs(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode>;
+
+declare export function $reverseDfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Iterable<DFSNode>;
+
+declare export function $descendantsMatching<T: LexicalNode>(
+  children: LexicalNode[],
+  $predicate: (node: LexicalNode) => node is T,
+): T[];
+declare export function $descendantsMatching(
+  children: LexicalNode[],
+  $predicate: (node: LexicalNode) => boolean,
+): LexicalNode[];
+
+declare export function $getAdjacentSiblingOrParentSiblingCaret<
+  D: CaretDirection,
+>(
+  startCaret: NodeCaret<D>,
+  rootMode?: RootMode,
+): null | [NodeCaret<D>, number];
+
+export type StateConfigWrapper<K: string, V> = {
+  +stateConfig: StateConfig<K, V>;
+  +$get: <T: LexicalNode>(node: T) => V;
+  +$set: <T: LexicalNode>(
+    node: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+  /** `[$get, $set]` */
+  +accessors: $ReadOnly<[$get: StateConfigWrapper<K, V>['$get'], $set: StateConfigWrapper<K, V>['$set']]>;
+  /**
+   * `() => function () { return $get(this) }`
+   *
+   * Should be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   myGetter = myWrapper.makeGetterMethod<this>();
+   * }
+   * ```
+   */
+  makeGetterMethod<T: LexicalNode>(): (this: T) => V;
+  /**
+   * `() => function (valueOrUpdater) { return $set(this, valueOrUpdater) }`
+   *
+   * Must be called with an explicit `this` type parameter.
+   *
+   * @example
+   * ```ts
+   * class MyNode {
+   *   // …
+   *   mySetter = myWrapper.makeSetterMethod<this>();
+   * }
+   * ```
+   */
+  makeSetterMethod<T: LexicalNode>(): (
+    this: T,
+    valueOrUpdater: ValueOrUpdater<V>,
+  ) => T;
+};
+
+declare export function makeStateWrapper<K: string, V>(
+  stateConfig: StateConfig<K, V>,
+): StateConfigWrapper<K, V>;

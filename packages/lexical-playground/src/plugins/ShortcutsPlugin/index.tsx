@@ -13,7 +13,8 @@ import {
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
-  KEY_MODIFIER_COMMAND,
+  isModifierMatch,
+  KEY_DOWN_COMMAND,
   LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
@@ -21,6 +22,7 @@ import {Dispatch, useEffect} from 'react';
 
 import {useToolbarState} from '../../context/ToolbarContext';
 import {sanitizeUrl} from '../../utils/url';
+import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
 import {
   clearFormatting,
   formatBulletList,
@@ -34,6 +36,8 @@ import {
   UpdateFontSizeType,
 } from '../ToolbarPlugin/utils';
 import {
+  isAddComment,
+  isCapitalize,
   isCenterAlign,
   isClearFormatting,
   isDecreaseFontSize,
@@ -50,11 +54,13 @@ import {
   isInsertLink,
   isJustifyAlign,
   isLeftAlign,
+  isLowercase,
   isOutdent,
   isRightAlign,
   isStrikeThrough,
   isSubscript,
   isSuperscript,
+  isUppercase,
 } from './shortcuts';
 
 export default function ShortcutsPlugin({
@@ -67,92 +73,82 @@ export default function ShortcutsPlugin({
   const {toolbarState} = useToolbarState();
 
   useEffect(() => {
-    const keyboardShortcutsHandler = (payload: KeyboardEvent) => {
-      const event: KeyboardEvent = payload;
-
-      if (isFormatParagraph(event)) {
-        event.preventDefault();
+    const keyboardShortcutsHandler = (event: KeyboardEvent) => {
+      // Short-circuit, a least one modifier must be set
+      if (isModifierMatch(event, {})) {
+        return false;
+      } else if (isFormatParagraph(event)) {
         formatParagraph(editor);
       } else if (isFormatHeading(event)) {
-        event.preventDefault();
         const {code} = event;
         const headingSize = `h${code[code.length - 1]}` as HeadingTagType;
         formatHeading(editor, toolbarState.blockType, headingSize);
       } else if (isFormatBulletList(event)) {
-        event.preventDefault();
         formatBulletList(editor, toolbarState.blockType);
       } else if (isFormatNumberedList(event)) {
-        event.preventDefault();
         formatNumberedList(editor, toolbarState.blockType);
       } else if (isFormatCheckList(event)) {
-        event.preventDefault();
         formatCheckList(editor, toolbarState.blockType);
       } else if (isFormatCode(event)) {
-        event.preventDefault();
         formatCode(editor, toolbarState.blockType);
       } else if (isFormatQuote(event)) {
-        event.preventDefault();
         formatQuote(editor, toolbarState.blockType);
       } else if (isStrikeThrough(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+      } else if (isLowercase(event)) {
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
+      } else if (isUppercase(event)) {
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
+      } else if (isCapitalize(event)) {
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
       } else if (isIndent(event)) {
-        event.preventDefault();
         editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
       } else if (isOutdent(event)) {
-        event.preventDefault();
         editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
       } else if (isCenterAlign(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
       } else if (isLeftAlign(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
       } else if (isRightAlign(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
       } else if (isJustifyAlign(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
       } else if (isSubscript(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
       } else if (isSuperscript(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
       } else if (isInsertCodeBlock(event)) {
-        event.preventDefault();
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
       } else if (isIncreaseFontSize(event)) {
-        event.preventDefault();
         updateFontSize(
           editor,
           UpdateFontSizeType.increment,
           toolbarState.fontSizeInputValue,
         );
       } else if (isDecreaseFontSize(event)) {
-        event.preventDefault();
         updateFontSize(
           editor,
           UpdateFontSizeType.decrement,
           toolbarState.fontSizeInputValue,
         );
       } else if (isClearFormatting(event)) {
-        event.preventDefault();
         clearFormatting(editor);
       } else if (isInsertLink(event)) {
-        event.preventDefault();
         const url = toolbarState.isLink ? null : sanitizeUrl('https://');
         setIsLinkEditMode(!toolbarState.isLink);
-
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+      } else if (isAddComment(event)) {
+        editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
+      } else {
+        // No match for any of the event handlers
+        return false;
       }
-
-      return false;
+      event.preventDefault();
+      return true;
     };
 
     return editor.registerCommand(
-      KEY_MODIFIER_COMMAND,
+      KEY_DOWN_COMMAND,
       keyboardShortcutsHandler,
       COMMAND_PRIORITY_NORMAL,
     );

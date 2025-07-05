@@ -8,6 +8,7 @@
 
 import type {AutoLinkAttributes} from '@lexical/link';
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
+import type {JSX} from 'react';
 
 import {
   $createAutoLinkNode,
@@ -498,7 +499,6 @@ function useAutoLink(
               // invert the value
               parent.setIsUnlinked(!parent.getIsUnlinked());
               parent.markDirty();
-              return true;
             }
           });
           return false;

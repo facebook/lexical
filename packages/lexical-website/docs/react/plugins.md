@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Lexical Plugins
 
 React-based plugins are using Lexical editor instance from `<LexicalComposer>` context:
@@ -29,7 +25,7 @@ const initialConfig = {
   <HistoryPlugin />
   <OnChangePlugin onChange={onChange} />
   ...
-</LexicalComposer>
+</LexicalComposer>;
 ```
 
 > Note: Many plugins might require you to register the one or many Lexical nodes in order for the plugin to work. You can do this by passing a reference to the node to the `nodes` array in your initial editor configuration.
@@ -45,31 +41,39 @@ const initialConfig = {
 
 ### `LexicalPlainTextPlugin`
 
-React wrapper for `@lexical/plain-text` that adds major features for plain text editing, including typing, deletion and copy/pasting
+React wrapper for `@lexical/plain-text` that adds major features for plain text editing, including typing, deletion and copy/pasting.
 
 ```jsx
 <PlainTextPlugin
-  contentEditable={<ContentEditable />}
-  placeholder={<div>Enter some text...</div>}
+  contentEditable={
+    <ContentEditable
+      aria-placeholder={'Enter some text...'}
+      placeholder={<div>Enter some text...</div>}
+    />
+  }
   ErrorBoundary={LexicalErrorBoundary}
 />
 ```
 
 ### `LexicalRichTextPlugin`
 
-React wrapper for `@lexical/rich-text` that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting
+React wrapper for `@lexical/rich-text` that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting.
 
 ```jsx
 <RichTextPlugin
-  contentEditable={<ContentEditable />}
-  placeholder={<div>Enter some text...</div>}
+  contentEditable={
+    <ContentEditable
+      aria-placeholder={'Enter some text...'}
+      placeholder={<div>Enter some text...</div>}
+    />
+  }
   ErrorBoundary={LexicalErrorBoundary}
 />
 ```
 
 ### `LexicalOnChangePlugin`
 
-Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHistoryMergeTagChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call
+Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHistoryMergeTagChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call.
 
 ```jsx
 <OnChangePlugin onChange={onChange} />
@@ -77,7 +81,7 @@ Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHis
 
 ### `LexicalHistoryPlugin`
 
-React wrapper for `@lexical/history` that adds support for history stack management and `undo` / `redo` commands
+React wrapper for `@lexical/history` that adds support for history stack management and `undo` / `redo` commands.
 
 ```jsx
 <HistoryPlugin />
@@ -85,7 +89,7 @@ React wrapper for `@lexical/history` that adds support for history stack managem
 
 ### `LexicalLinkPlugin`
 
-React wrapper for `@lexical/link` that adds support for links, including `$toggleLink` command support that toggles link for selected text
+React wrapper for `@lexical/link` that adds support for links, including `$toggleLink` command support that toggles link for selected text.
 
 ```jsx
 <LinkPlugin />
@@ -111,7 +115,7 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 
 [![See API Documentation](/img/see-api-documentation.svg)](/docs/api/modules/lexical_react_LexicalTablePlugin)
 
-React wrapper for `@lexical/table` that adds support for tables
+React wrapper for `@lexical/table` that adds support for tables.
 
 ```jsx
 <TablePlugin />
@@ -127,7 +131,7 @@ Plugin that allows tab indentation in combination with `@lexical/rich-text`.
 
 ### `LexicalAutoLinkPlugin`
 
-Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automaticaly convert it into a link node
+Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automatically convert it into a link node
 
 ```jsx
 const URL_MATCHER =
@@ -157,7 +161,7 @@ const MATCHERS = [
 
 ### `LexicalClearEditorPlugin`
 
-Adds `clearEditor` command support to clear editor's content
+Adds `clearEditor` command support to clear editor's content.
 
 ```jsx
 <ClearEditorPlugin />
@@ -165,7 +169,7 @@ Adds `clearEditor` command support to clear editor's content
 
 ### `LexicalMarkdownShortcutPlugin`
 
-Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)
+Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough).
 
 ```jsx
 <MarkdownShortcutPlugin />
@@ -184,7 +188,9 @@ In order to use `TableOfContentsPlugin`, you need to pass a callback function in
 ```jsx
 <TableOfContentsPlugin>
   {(tableOfContentsArray) => {
-    return <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />;
+    return (
+      <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />
+    );
   }}
 </TableOfContentsPlugin>
 ```
@@ -195,8 +201,8 @@ Allows you to get a ref to the underlying editor instance outside of LexicalComp
 from a separate part of your application.
 
 ```jsx
-  const editorRef = useRef(null);
-  <EditorRefPlugin editorRef={editorRef} />
+const editorRef = useRef(null);
+<EditorRefPlugin editorRef={editorRef} />;
 ```
 
 ### `LexicalSelectionAlwaysOnDisplay`
@@ -204,5 +210,5 @@ from a separate part of your application.
 By default, browser text selection becomes invisible when clicking away from the editor. This plugin ensures the selection remains visible.
 
 ```jsx
-  <SelectionAlwaysOnDisplay />
+<SelectionAlwaysOnDisplay />
 ```

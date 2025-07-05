@@ -14,9 +14,12 @@ import type {
   SerializedLexicalNode,
 } from '../LexicalNode';
 
-import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement, isBlockDomNode} from '../LexicalUtils';
+import {
+  $applyNodeReplacement,
+  isBlockDomNode,
+  isDOMTextNode,
+} from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
 
@@ -47,6 +50,10 @@ export class LineBreakNode extends LexicalNode {
     return false;
   }
 
+  isInline(): true {
+    return true;
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
@@ -64,14 +71,7 @@ export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode {
-    return $createLineBreakNode();
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'linebreak',
-      version: 1,
-    };
+    return $createLineBreakNode().updateFromJSON(serializedLineBreakNode);
   }
 }
 
@@ -113,7 +113,7 @@ function isOnlyChildInBlockNode(node: Node): boolean {
 function isLastChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
   if (parentElement !== null && isBlockDomNode(parentElement)) {
-    // check if node is first child, because only childs dont count
+    // check if node is first child, because only child dont count
     const firstChild = parentElement.firstChild!;
     if (
       firstChild === node ||
@@ -135,8 +135,5 @@ function isLastChildInBlockNode(node: Node): boolean {
 }
 
 function isWhitespaceDomTextNode(node: Node): boolean {
-  return (
-    node.nodeType === DOM_TEXT_TYPE &&
-    /^( |\t|\r?\n)+$/.test(node.textContent || '')
-  );
+  return isDOMTextNode(node) && /^( |\t|\r?\n)+$/.test(node.textContent || '');
 }

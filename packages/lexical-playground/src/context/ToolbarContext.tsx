@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+import type {JSX} from 'react';
+
 import {ElementFormatType} from 'lexical';
 import React, {
   createContext,
@@ -40,6 +43,8 @@ export const blockTypeToBlockName = {
   quote: 'Quote',
 };
 
+//disable eslint sorting rule for quick reference to toolbar state
+/* eslint-disable sort-keys-fix/sort-keys-fix */
 const INITIAL_TOOLBAR_STATE = {
   bgColor: '#fff',
   blockType: 'paragraph' as keyof typeof blockTypeToBlockName,
@@ -55,6 +60,7 @@ const INITIAL_TOOLBAR_STATE = {
   fontSizeInputValue: `${DEFAULT_FONT_SIZE}`,
   isBold: false,
   isCode: false,
+  isHighlight: false,
   isImageCaption: false,
   isItalic: false,
   isLink: false,
@@ -63,7 +69,11 @@ const INITIAL_TOOLBAR_STATE = {
   isSubscript: false,
   isSuperscript: false,
   isUnderline: false,
+  isLowercase: false,
+  isUppercase: false,
+  isCapitalize: false,
   rootType: 'root' as keyof typeof rootTypeToRootName,
+  listStartNumber: null as number | null,
 };
 
 type ToolbarState = typeof INITIAL_TOOLBAR_STATE;

@@ -15,6 +15,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   getNearestEditorFromDOMNode,
+  isDOMNode,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -44,7 +45,7 @@ export function ClickableLinkPlugin({
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const target = event.target;
-      if (!(target instanceof Node)) {
+      if (!isDOMNode(target)) {
         return;
       }
       const nearestEditor = getNearestEditorFromDOMNode(target);
@@ -81,7 +82,7 @@ export function ClickableLinkPlugin({
         return;
       }
 
-      // Allow user to select link text without follwing url
+      // Allow user to select link text without following url
       const selection = editor.getEditorState().read($getSelection);
       if ($isRangeSelection(selection) && !selection.isCollapsed()) {
         event.preventDefault();
@@ -122,7 +123,3 @@ export function ClickableLinkPlugin({
 
   return null;
 }
-
-/** @deprecated use the named export {@link ClickableLinkPlugin} */
-// eslint-disable-next-line no-restricted-exports
-export default ClickableLinkPlugin;

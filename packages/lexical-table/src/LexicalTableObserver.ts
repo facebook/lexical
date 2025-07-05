@@ -18,18 +18,20 @@ import {
   $createTextNode,
   $getEditor,
   $getNodeByKey,
-  $getRoot,
   $getSelection,
   $isElementNode,
   $isParagraphNode,
+  $isRootNode,
   $setSelection,
   getDOMSelection,
+  INSERT_PARAGRAPH_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelection,
   $createTableSelectionFrom,
@@ -102,6 +104,7 @@ export class TableObserver {
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
+  pointerType: string | null;
   shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
@@ -128,6 +131,7 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
     this.isSelecting = false;
+    this.pointerType = null;
     this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};
@@ -321,7 +325,7 @@ export class TableObserver {
       // set one then the reconciler will undo it.
       // TODO - it would make sense to have one so that native
       //        copy/paste worked. Right now we have to emulate with
-      //        keyboard events but it won't fire if trigged from the menu
+      //        keyboard events but it won't fire if triggered from the menu
       if (domSelection && domSelection.rangeCount > 0) {
         domSelection.removeAllRanges();
       }
@@ -462,18 +466,32 @@ export class TableObserver {
 
     const selection = $getSelection();
 
-    if (!$isTableSelection(selection)) {
-      invariant(false, 'Expected grid selection');
-    }
+    invariant($isTableSelection(selection), 'Expected TableSelection');
 
     const selectedNodes = selection.getNodes().filter($isTableCellNode);
 
-    if (selectedNodes.length === this.table.columns * this.table.rows) {
+    // Check if the entire table is selected by verifying first and last cells
+    const firstRow = tableNode.getFirstChild();
+    const lastRow = tableNode.getLastChild();
+
+    const isEntireTableSelected =
+      selectedNodes.length > 0 &&
+      firstRow !== null &&
+      lastRow !== null &&
+      $isTableRowNode(firstRow) &&
+      $isTableRowNode(lastRow) &&
+      selectedNodes[0] === firstRow.getFirstChild() &&
+      selectedNodes[selectedNodes.length - 1] === lastRow.getLastChild();
+
+    if (isEntireTableSelected) {
       tableNode.selectPrevious();
+      const parent = tableNode.getParent();
       // Delete entire table
       tableNode.remove();
-      const rootNode = $getRoot();
-      rootNode.selectStart();
+      // Handle case when table was the only node
+      if ($isRootNode(parent) && parent.isEmpty()) {
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      }
       return;
     }
 

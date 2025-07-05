@@ -8,27 +8,25 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.21.0",
+  "version": "0.33.0",
   "dependencies": {
-    "@lexical/clipboard": "0.21.0",
-    "@lexical/code": "0.21.0",
-    "@lexical/devtools-core": "0.21.0",
-    "@lexical/dragon": "0.21.0",
-    "@lexical/hashtag": "0.21.0",
-    "@lexical/history": "0.21.0",
-    "@lexical/link": "0.21.0",
-    "@lexical/list": "0.21.0",
-    "@lexical/mark": "0.21.0",
-    "@lexical/markdown": "0.21.0",
-    "@lexical/overflow": "0.21.0",
-    "@lexical/plain-text": "0.21.0",
-    "@lexical/rich-text": "0.21.0",
-    "@lexical/selection": "0.21.0",
-    "@lexical/table": "0.21.0",
-    "@lexical/text": "0.21.0",
-    "@lexical/utils": "0.21.0",
-    "@lexical/yjs": "0.21.0",
-    "lexical": "0.21.0",
+    "@floating-ui/react": "^0.27.8",
+    "@lexical/devtools-core": "0.33.0",
+    "@lexical/dragon": "0.33.0",
+    "@lexical/hashtag": "0.33.0",
+    "@lexical/history": "0.33.0",
+    "@lexical/link": "0.33.0",
+    "@lexical/list": "0.33.0",
+    "@lexical/mark": "0.33.0",
+    "@lexical/markdown": "0.33.0",
+    "@lexical/overflow": "0.33.0",
+    "@lexical/plain-text": "0.33.0",
+    "@lexical/rich-text": "0.33.0",
+    "@lexical/table": "0.33.0",
+    "@lexical/text": "0.33.0",
+    "@lexical/utils": "0.33.0",
+    "@lexical/yjs": "0.33.0",
+    "lexical": "0.33.0",
     "react-error-boundary": "^3.1.4"
   },
   "peerDependencies": {
@@ -821,6 +819,36 @@
         "default": "./LexicalNestedComposer.js"
       }
     },
+    "./LexicalNodeContextMenuPlugin": {
+      "import": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.mjs",
+        "production": "./LexicalNodeContextMenuPlugin.prod.mjs",
+        "node": "./LexicalNodeContextMenuPlugin.node.mjs",
+        "default": "./LexicalNodeContextMenuPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.js",
+        "production": "./LexicalNodeContextMenuPlugin.prod.js",
+        "default": "./LexicalNodeContextMenuPlugin.js"
+      }
+    },
+    "./LexicalNodeContextMenuPlugin.js": {
+      "import": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.mjs",
+        "production": "./LexicalNodeContextMenuPlugin.prod.mjs",
+        "node": "./LexicalNodeContextMenuPlugin.node.mjs",
+        "default": "./LexicalNodeContextMenuPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./LexicalNodeContextMenuPlugin.dev.js",
+        "production": "./LexicalNodeContextMenuPlugin.prod.js",
+        "default": "./LexicalNodeContextMenuPlugin.js"
+      }
+    },
     "./LexicalNodeEventPlugin": {
       "import": {
         "types": "./LexicalNodeEventPlugin.d.ts",
@@ -1029,36 +1057,6 @@
         "development": "./LexicalTabIndentationPlugin.dev.js",
         "production": "./LexicalTabIndentationPlugin.prod.js",
         "default": "./LexicalTabIndentationPlugin.js"
-      }
-    },
-    "./LexicalTableOfContents": {
-      "import": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.mjs",
-        "production": "./LexicalTableOfContents.prod.mjs",
-        "node": "./LexicalTableOfContents.node.mjs",
-        "default": "./LexicalTableOfContents.mjs"
-      },
-      "require": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.js",
-        "production": "./LexicalTableOfContents.prod.js",
-        "default": "./LexicalTableOfContents.js"
-      }
-    },
-    "./LexicalTableOfContents.js": {
-      "import": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.mjs",
-        "production": "./LexicalTableOfContents.prod.mjs",
-        "node": "./LexicalTableOfContents.node.mjs",
-        "default": "./LexicalTableOfContents.mjs"
-      },
-      "require": {
-        "types": "./LexicalTableOfContents.d.ts",
-        "development": "./LexicalTableOfContents.dev.js",
-        "production": "./LexicalTableOfContents.prod.js",
-        "default": "./LexicalTableOfContents.js"
       }
     },
     "./LexicalTableOfContentsPlugin": {
@@ -1332,5 +1330,9 @@
       }
     }
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "devDependencies": {
+    "@types/jest-axe": "^3.5.9",
+    "jest-axe": "^10.0.0"
+  }
 }

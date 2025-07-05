@@ -17,10 +17,10 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 type Dimension = number | 'inherit';
 
@@ -79,15 +79,14 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
       serializedNode.data,
       serializedNode.width ?? 'inherit',
       serializedNode.height ?? 'inherit',
-    );
+    ).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedExcalidrawNode {
     return {
+      ...super.exportJSON(),
       data: this.__data,
       height: this.__height === 'inherit' ? undefined : this.__height,
-      type: 'excalidraw',
-      version: 1,
       width: this.__width === 'inherit' ? undefined : this.__width,
     };
   }
@@ -180,14 +179,12 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <ExcalidrawComponent
-          nodeKey={this.getKey()}
-          data={this.__data}
-          width={this.__width}
-          height={this.__height}
-        />
-      </Suspense>
+      <ExcalidrawComponent
+        nodeKey={this.getKey()}
+        data={this.__data}
+        width={this.__width}
+        height={this.__height}
+      />
     );
   }
 }

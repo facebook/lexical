@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {
   AutoEmbedOption,
@@ -28,7 +29,7 @@ import {INSERT_TWEET_COMMAND} from '../TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from '../YouTubePlugin';
 
 interface PlaygroundEmbedConfig extends EmbedConfig {
-  // Human readable name of the embeded content e.g. Tweet or Google Map.
+  // Human readable name of the embedded content e.g. Tweet or Google Map.
   contentName: string;
 
   // Icon for display.
@@ -80,12 +81,12 @@ export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
 
 export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
   // e.g. Tweet or Google Map.
-  contentName: 'Tweet',
+  contentName: 'X(Tweet)',
 
-  exampleUrl: 'https://twitter.com/jack/status/20',
+  exampleUrl: 'https://x.com/jack/status/20',
 
   // Icon for display.
-  icon: <i className="icon tweet" />,
+  icon: <i className="icon x" />,
 
   // Create the Lexical embed node from the url data.
   insertNode: (editor: LexicalEditor, result: EmbedMatchResult) => {
@@ -93,7 +94,7 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
   },
 
   // For extra searching.
-  keywords: ['tweet', 'twitter'],
+  keywords: ['tweet', 'twitter', 'x'],
 
   // Determine if a given URL is a match and return url data.
   parseUrl: (text: string) => {

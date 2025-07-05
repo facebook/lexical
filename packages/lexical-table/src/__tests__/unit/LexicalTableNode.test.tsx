@@ -10,11 +10,17 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
+  $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,
+  $createTableRowNode,
   $createTableSelection,
-  $insertTableColumn__EXPERIMENTAL,
+  $getElementForTableNode,
+  $insertTableColumnAtSelection,
+  $isScrollableTablesActive,
   $isTableCellNode,
+  $isTableNode,
+  TableNode,
 } from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
@@ -36,8 +42,8 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-
-import {$getElementForTableNode, TableNode} from '../../LexicalTableNode';
+import {useState} from 'react';
+import {act} from 'shared/react-test-utils';
 
 export class ClipboardDataMock {
   getData: jest.Mock<string, [string]>;
@@ -73,6 +79,12 @@ const editorConfig = Object.freeze({
   namespace: '',
   theme: {
     table: 'test-table-class',
+    tableAlignment: {
+      center: 'test-table-alignment-center',
+      right: 'test-table-alignment-right',
+    },
+    tableFrozenColumn: 'test-table-frozen-column-class',
+    tableFrozenRow: 'test-table-frozen-row-class',
     tableRowStriping: 'test-table-row-striping-class',
     tableScrollableWrapper: 'table-scrollable-wrapper',
   },
@@ -137,6 +149,115 @@ describe('LexicalTableNode tests', () => {
                 `,
               );
             });
+          });
+
+          test('TableNode.createDOM() and updateDOM() style', () => {
+            const {editor} = testEnv;
+            const $createSmallTable = () =>
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append($createParagraphNode()),
+                ),
+              );
+
+            editor.update(
+              () => {
+                $getRoot().clear().append(
+                  // no style
+                  $createSmallTable(),
+                  // with style
+                  $createSmallTable().setStyle('background-color: blue;'),
+                );
+                $setSelection(null);
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="background-color: blue">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
+            editor.update(
+              () => {
+                $getRoot()
+                  .getChildren()
+                  .map((node, i) => {
+                    if ($isTableNode(node)) {
+                      node.setStyle(`--table-index: ${i};`);
+                    }
+                  });
+              },
+              {discrete: true},
+            );
+            {
+              const tables = [
+                ...testEnv.container.querySelectorAll(
+                  ':scope > [contentEditable] > *',
+                ),
+              ];
+              expect(tables).toHaveLength(2);
+              expectTableHtmlToBeEqual(
+                tables[0]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 0">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+              expectTableHtmlToBeEqual(
+                tables[1]!.outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table}"
+                    style="--table-index: 1">
+                    <colgroup><col /></colgroup>
+                    <tr>
+                      <td>
+                        <p><br /></p>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              );
+            }
           });
 
           test('TableNode.exportDOM() with range selection', async () => {
@@ -317,6 +438,318 @@ describe('LexicalTableNode tests', () => {
             );
           });
 
+          test('Copy table with caption/tbody/thead/tfoot from an external source', async () => {
+            const {editor} = testEnv;
+
+            const dataTransfer = new DataTransferMock();
+            dataTransfer.setData(
+              'text/html',
+              // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
+              html`
+                <meta charset="utf-8" />
+                <table
+                  style="box-sizing: border-box; border-collapse: collapse; border: 2px solid rgb(140, 140, 140); font-family: sans-serif; font-size: 0.8rem; letter-spacing: 1px; color: rgb(21, 20, 26); font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; orphans: 2; text-align: start; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">
+                  <caption
+                    style="box-sizing: border-box; caption-side: bottom; padding: 10px;">
+                    Council budget (in £) 2018
+                  </caption>
+                  <thead
+                    style="box-sizing: border-box; background-color: rgb(44, 94, 119); color: rgb(255, 255, 255);">
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="col"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px;">
+                        Items
+                      </th>
+                      <th
+                        scope="col"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px;">
+                        Expenditure
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    style="box-sizing: border-box; background-color: rgb(228, 240, 245);">
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="row"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px;">
+                        Donuts
+                      </th>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center;">
+                        3,000
+                      </td>
+                    </tr>
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="row"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px;">
+                        Stationery
+                      </th>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center;">
+                        18,000
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot
+                    style="box-sizing: border-box; background-color: rgb(44, 94, 119); color: rgb(255, 255, 255);">
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="row"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px;">
+                        Totals
+                      </th>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center;">
+                        21,000
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              `,
+            );
+            await editor.update(() => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'isRangeSelection(selection)',
+              );
+              $insertDataTransferForRichText(dataTransfer, selection, editor);
+            });
+            // Here we are testing the createDOM, not the exportDOM, so the tbody is not there
+            expectTableHtmlToBeEqual(
+              testEnv.innerHTML,
+              html`
+                <table class="test-table-class">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tr style="text-align: start">
+                    <th>
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Items</span>
+                      </p>
+                    </th>
+                    <th>
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Expenditure</span>
+                      </p>
+                    </th>
+                  </tr>
+                  <tr style="text-align: start">
+                    <th>
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Donuts</span>
+                      </p>
+                    </th>
+                    <td>
+                      <p style="text-align: center;">
+                        <span data-lexical-text="true">3,000</span>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr style="text-align: start">
+                    <th>
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Stationery</span>
+                      </p>
+                    </th>
+                    <td>
+                      <p style="text-align: center;">
+                        <span data-lexical-text="true">18,000</span>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr style="text-align: start">
+                    <th>
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Totals</span>
+                      </p>
+                    </th>
+                    <td>
+                      <p style="text-align: center;">
+                        <span data-lexical-text="true">21,000</span>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              `,
+            );
+          });
+
+          test('Copy table with caption from an external source', async () => {
+            const {editor} = testEnv;
+
+            const dataTransfer = new DataTransferMock();
+            dataTransfer.setData(
+              'text/html',
+              // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
+              html`
+                <meta charset="utf-8" />
+                <table
+                  style="box-sizing: border-box; border-collapse: collapse; border: 2px solid rgb(140, 140, 140); font-family: sans-serif; font-size: 0.8rem; letter-spacing: 1px; color: rgb(21, 20, 26); font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; orphans: 2; text-align: start; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">
+                  <caption
+                    style="box-sizing: border-box; caption-side: bottom; padding: 10px; font-weight: bold;">
+                    He-Man and Skeletor facts
+                  </caption>
+                  <tbody style="box-sizing: border-box;">
+                    <tr style="box-sizing: border-box;">
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(240, 240, 240);"></td>
+                      <th
+                        class="heman"
+                        scope="col"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; background-color: rgb(230, 230, 230); font: 1.4rem molot; text-shadow: rgb(255, 255, 255) 1px 1px 1px, rgb(0, 0, 0) 2px 2px 1px;">
+                        He-Man
+                      </th>
+                      <th
+                        class="skeletor"
+                        scope="col"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; background-color: rgb(230, 230, 230); font: 1.7rem rapscallion; letter-spacing: 3px; text-shadow: rgb(255, 255, 255) 1px 1px 0px, rgb(0, 0, 0) 0px 0px 9px;">
+                        Skeletor
+                      </th>
+                    </tr>
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="row"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; background-color: rgb(230, 230, 230);">
+                        Role
+                      </th>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(250, 250, 250);">
+                        Hero
+                      </td>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(250, 250, 250);">
+                        Villain
+                      </td>
+                    </tr>
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="row"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; background-color: rgb(230, 230, 230);">
+                        Weapon
+                      </th>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(240, 240, 240);">
+                        Power Sword
+                      </td>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(240, 240, 240);">
+                        Havoc Staff
+                      </td>
+                    </tr>
+                    <tr style="box-sizing: border-box;">
+                      <th
+                        scope="row"
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; background-color: rgb(230, 230, 230);">
+                        Dark secret
+                      </th>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(250, 250, 250);">
+                        Expert florist
+                      </td>
+                      <td
+                        style="box-sizing: border-box; border: 1px solid rgb(160, 160, 160); padding: 8px 10px; text-align: center; background-color: rgb(250, 250, 250);">
+                        Cries at romcoms
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              `,
+            );
+            await editor.update(() => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'isRangeSelection(selection)',
+              );
+              $insertDataTransferForRichText(dataTransfer, selection, editor);
+            });
+            // Here we are testing the createDOM, not the exportDOM, so the tbody is not there
+            expectTableHtmlToBeEqual(
+              testEnv.innerHTML,
+              html`
+                <table class="test-table-class">
+                  <colgroup>
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tr style="text-align: start">
+                    <td style="background-color: rgb(240, 240, 240)">
+                      <p style="text-align: center"><br /></p>
+                    </td>
+                    <th style="background-color: rgb(230, 230, 230)">
+                      <p dir="ltr">
+                        <span data-lexical-text="true">He-Man</span>
+                      </p>
+                    </th>
+                    <th style="background-color: rgb(230, 230, 230)">
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Skeletor</span>
+                      </p>
+                    </th>
+                  </tr>
+                  <tr style="text-align: start">
+                    <th style="background-color: rgb(230, 230, 230)">
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Role</span>
+                      </p>
+                    </th>
+                    <td style="background-color: rgb(250, 250, 250)">
+                      <p dir="ltr" style="text-align: center">
+                        <span data-lexical-text="true">Hero</span>
+                      </p>
+                    </td>
+                    <td style="background-color: rgb(250, 250, 250)">
+                      <p dir="ltr" style="text-align: center">
+                        <span data-lexical-text="true">Villain</span>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr style="text-align: start">
+                    <th style="background-color: rgb(230, 230, 230)">
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Weapon</span>
+                      </p>
+                    </th>
+                    <td style="background-color: rgb(240, 240, 240)">
+                      <p dir="ltr" style="text-align: center">
+                        <span data-lexical-text="true">Power Sword</span>
+                      </p>
+                    </td>
+                    <td style="background-color: rgb(240, 240, 240)">
+                      <p dir="ltr" style="text-align: center">
+                        <span data-lexical-text="true">Havoc Staff</span>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr style="text-align: start">
+                    <th style="background-color: rgb(230, 230, 230)">
+                      <p dir="ltr">
+                        <span data-lexical-text="true">Dark secret</span>
+                      </p>
+                    </th>
+                    <td style="background-color: rgb(250, 250, 250)">
+                      <p dir="ltr" style="text-align: center">
+                        <span data-lexical-text="true">Expert florist</span>
+                      </p>
+                    </td>
+                    <td style="background-color: rgb(250, 250, 250)">
+                      <p dir="ltr" style="text-align: center">
+                        <span data-lexical-text="true">Cries at romcoms</span>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              `,
+            );
+          });
+
           test('Copy table from an external source like gdoc with formatting', async () => {
             const {editor} = testEnv;
 
@@ -338,39 +771,39 @@ describe('LexicalTableNode tests', () => {
               html`
                 <table class="test-table-class">
                   <colgroup>
-                    <col />
-                    <col />
-                    <col />
+                    <col style="width: 100px" />
+                    <col style="width: 189px" />
+                    <col style="width: 171px" />
                   </colgroup>
                   <tr style="height: 21px;">
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <strong data-lexical-text="true">Surface</strong>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p style="text-align: right;">
                         <span data-lexical-text="true">77349</span>
                       </p>
                     </td>
                   </tr>
                   <tr style="height: 21px;">
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">Lexical</span>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
                       </p>
                     </td>
-                    <td>
+                    <td style="vertical-align: bottom">
                       <p dir="ltr">
                         <span data-lexical-text="true">sdvd</span>
                         <strong data-lexical-text="true">sdfvsfs</strong>
@@ -728,6 +1161,584 @@ describe('LexicalTableNode tests', () => {
             });
           });
 
+          if (hasHorizontalScroll) {
+            test('Toggle frozen first column ON/OFF', async () => {
+              const {editor} = testEnv;
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = $createTableNodeWithDimensions(4, 4, true);
+                root.append(table);
+              });
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                if (table) {
+                  table.setFrozenColumns(1);
+                }
+              });
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                expectHtmlToBeEqual(
+                  table!.createDOM(editorConfig).outerHTML,
+                  html`
+                    <div
+                      class="${editorConfig.theme
+                        .tableScrollableWrapper} ${editorConfig.theme
+                        .tableFrozenColumn}">
+                      <table
+                        class="${editorConfig.theme.table}"
+                        data-lexical-frozen-column="true">
+                        <colgroup>
+                          <col />
+                          <col />
+                          <col />
+                          <col />
+                        </colgroup>
+                      </table>
+                    </div>
+                  `,
+                );
+              });
+
+              const stringifiedEditorState = JSON.stringify(
+                editor.getEditorState(),
+              );
+              const expectedStringifiedEditorState = `{
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "textFormat": 0,
+                    "textStyle": "",
+                    "type": "paragraph",
+                    "version": 1
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 3,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 1,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      },
+                      {
+                        "children": [
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 2,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          },
+                          {
+                            "backgroundColor": null,
+                            "children": [
+                              {
+                                "children": [],
+                                "direction": null,
+                                "format": "",
+                                "indent": 0,
+                                "textFormat": 0,
+                                "textStyle": "",
+                                "type": "paragraph",
+                                "version": 1
+                              }
+                            ],
+                            "colSpan": 1,
+                            "direction": null,
+                            "format": "",
+                            "headerState": 0,
+                            "indent": 0,
+                            "rowSpan": 1,
+                            "type": "tablecell",
+                            "version": 1
+                          }
+                        ],
+                        "direction": null,
+                        "format": "",
+                        "indent": 0,
+                        "type": "tablerow",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "frozenColumnCount": 1,
+                    "indent": 0,
+                    "type": "table",
+                    "version": 1
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "root",
+                "version": 1
+              }
+            }`;
+
+              expect(JSON.parse(stringifiedEditorState)).toEqual(
+                JSON.parse(expectedStringifiedEditorState),
+              );
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                if (table) {
+                  table.setFrozenColumns(0);
+                }
+              });
+
+              await editor.update(() => {
+                const root = $getRoot();
+                const table = root.getLastChild<TableNode>();
+                expectHtmlToBeEqual(
+                  table!.createDOM(editorConfig).outerHTML,
+                  html`
+                    <div class="${editorConfig.theme.tableScrollableWrapper}">
+                      <table class="${editorConfig.theme.table}">
+                        <colgroup>
+                          <col />
+                          <col />
+                          <col />
+                          <col />
+                        </colgroup>
+                      </table>
+                    </div>
+                  `,
+                );
+              });
+            });
+          }
+
+          test('Change Table-level alignment', async () => {
+            const {editor} = testEnv;
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = $createTableNodeWithDimensions(4, 4, true);
+              root.append(table);
+            });
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFormat('center');
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table
+                    class="${editorConfig.theme.table} ${editorConfig.theme
+                      .tableAlignment.center}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              if (table) {
+                table.setFormat('left');
+              }
+            });
+
+            await editor.update(() => {
+              const root = $getRoot();
+              const table = root.getLastChild<TableNode>();
+              expectTableHtmlToBeEqual(
+                table!.createDOM(editorConfig).outerHTML,
+                html`
+                  <table class="${editorConfig.theme.table}">
+                    <colgroup>
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                    </colgroup>
+                  </table>
+                `,
+              );
+            });
+          });
+
           test('Update column widths', async () => {
             const {editor} = testEnv;
 
@@ -780,7 +1791,7 @@ describe('LexicalTableNode tests', () => {
                 table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
               );
               $setSelection(selection);
-              $insertTableColumn__EXPERIMENTAL();
+              $insertTableColumnAtSelection();
               table!.setColWidths([50, 50, 100]);
             });
 
@@ -808,5 +1819,127 @@ describe('LexicalTableNode tests', () => {
         <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />,
       );
     });
+  });
+
+  describe(`hasHorizontalScroll false -> true`, () => {
+    let hasHorizontalScroll = false;
+    let setHasHorizontalScroll: (
+      _hasHorizontalScroll: boolean,
+    ) => void = () => {};
+    function TablePluginWrapper() {
+      [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
+      return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
+    }
+    initializeUnitTest(
+      (testEnv) => {
+        beforeEach(async () => {
+          const {editor} = testEnv;
+          await editor.update(() => {
+            const root = $getRoot();
+            root.clear().append($createTableNodeWithDimensions(2, 2, true));
+          });
+        });
+        test('table is re-rendered when scroll changes', async () => {
+          await Promise.resolve().then();
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+            setHasHorizontalScroll(true);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <div class="table-scrollable-wrapper">
+                <table class="test-table-class">
+                  <colgroup>
+                    <col />
+                    <col />
+                  </colgroup>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            `,
+          );
+          act(() => {
+            expect(testEnv.editor.read($isScrollableTablesActive)).toBe(true);
+            setHasHorizontalScroll(false);
+          });
+          await Promise.resolve().then();
+          expect(testEnv.editor.read($isScrollableTablesActive)).toBe(false);
+          expectHtmlToBeEqual(
+            testEnv.innerHTML,
+            html`
+              <table class="test-table-class">
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            `,
+          );
+        });
+      },
+      {theme: editorConfig.theme},
+      <TablePluginWrapper />,
+    );
   });
 });

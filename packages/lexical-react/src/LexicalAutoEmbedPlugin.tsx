@@ -10,6 +10,7 @@ import type {
   LexicalNode,
   MutationListener,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -28,6 +29,7 @@ import {
   LexicalCommand,
   LexicalEditor,
   NodeKey,
+  PASTE_TAG,
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
@@ -134,7 +136,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       for (const [key, mutation] of nodeMutations) {
         if (
           mutation === 'created' &&
-          updateTags.has('paste') &&
+          updateTags.has(PASTE_TAG) &&
           dirtyLeaves.size <= 3
         ) {
           checkIfLinkNodeIsEmbeddable(key);

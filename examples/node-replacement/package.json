@@ -1,0 +1,26 @@
+{
+  "name": "@lexical/node-replacement-example",
+  "private": true,
+  "version": "0.33.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "monorepo:dev": "vite -c vite.config.monorepo.ts",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@lexical/react": "0.33.0",
+    "lexical": "0.33.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.59",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.11"
+  }
+}

@@ -21,26 +21,35 @@ import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
+import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
   updateEditor,
+  updateEditorSync,
 } from './LexicalUpdates';
+import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
 import {
+  $addUpdateTag,
+  $onUpdate,
+  $setSelection,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
-  markAllNodesAsDirty,
+  getStaticNodeConfig,
+  hasOwnExportDOM,
+  hasOwnStaticMethod,
+  markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {DecoratorNode} from './nodes/LexicalDecoratorNode';
+import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -69,6 +78,9 @@ export type TextNodeThemeClasses = {
   code?: EditorThemeClassName;
   highlight?: EditorThemeClassName;
   italic?: EditorThemeClassName;
+  lowercase?: EditorThemeClassName;
+  uppercase?: EditorThemeClassName;
+  capitalize?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
   subscript?: EditorThemeClassName;
   superscript?: EditorThemeClassName;
@@ -78,19 +90,41 @@ export type TextNodeThemeClasses = {
 };
 
 export type EditorUpdateOptions = {
+  /**
+   * A function to run once the update is complete. See also {@link $onUpdate}.
+   */
   onUpdate?: () => void;
+  /**
+   * Setting this to true will suppress all node
+   * transforms for this update cycle.
+   * Useful for synchronizing updates in some cases.
+   */
   skipTransforms?: true;
-  tag?: string | Array<string>;
+  /**
+   * A tag to identify this update, in an update listener, for instance.
+   * See also {@link $addUpdateTag}.
+   */
+  tag?: UpdateTag | UpdateTag[];
+  /**
+   * If true, prevents this update from being batched, forcing it to
+   * run synchronously.
+   */
   discrete?: true;
+  /** @internal */
+  event?: undefined | UIEvent | Event | null;
 };
 
 export type EditorSetOptions = {
   tag?: string;
 };
 
-export type EditorFocusOptions = {
+export interface EditorFocusOptions {
+  /**
+   * Where to move selection when the editor is
+   * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
+   */
   defaultSelection?: 'rootStart' | 'rootEnd';
-};
+}
 
 export type EditorThemeClasses = {
   blockCursor?: EditorThemeClassName;
@@ -108,6 +142,7 @@ export type EditorThemeClasses = {
     h6?: EditorThemeClassName;
   };
   hr?: EditorThemeClassName;
+  hrSelected?: EditorThemeClassName;
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;
   list?: {
@@ -131,6 +166,7 @@ export type EditorThemeClasses = {
   quote?: EditorThemeClassName;
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
+  tab?: EditorThemeClassName;
   table?: EditorThemeClassName;
   tableAddColumns?: EditorThemeClassName;
   tableAddRows?: EditorThemeClassName;
@@ -174,11 +210,16 @@ export type HTMLConfig = {
   import?: DOMConversionMap;
 };
 
+/**
+ * A LexicalNode class or LexicalNodeReplacement configuration
+ */
+export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
+
 export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  nodes?: ReadonlyArray<LexicalNodeConfig>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
@@ -197,13 +238,14 @@ export type RegisteredNode = {
     editor: LexicalEditor,
     targetNode: LexicalNode,
   ) => DOMExportOutput;
+  sharedNodeState: SharedNodeState;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
 
-export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
+export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
 
 export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
@@ -221,14 +263,63 @@ export interface MutationListenerOptions {
 
 const DEFAULT_SKIP_INITIALIZATION = false;
 
-export type UpdateListener = (arg0: {
+/**
+ * The payload passed to an UpdateListener
+ */
+export interface UpdateListenerPayload {
+  /**
+   * A Map of NodeKeys of ElementNodes to a boolean that is true
+   * if the node was intentionally mutated ('unintentional' mutations
+   * are triggered when an indirect descendant is marked dirty)
+   */
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  /**
+   * A Set of NodeKeys of all nodes that were marked dirty that
+   * do not inherit from ElementNode.
+   */
   dirtyLeaves: Set<NodeKey>;
+  /**
+   * The new EditorState after all updates have been processed,
+   * equivalent to `editor.getEditorState()`
+   */
   editorState: EditorState;
+  /**
+   * The Map of LexicalNode constructors to a `Map<NodeKey, NodeMutation>`,
+   * this is useful when you have a mutation listener type use cases that
+   * should apply to all or most nodes. Will be null if no DOM was mutated,
+   * such as when only the selection changed. Note that this will be empty
+   * unless at least one MutationListener is explicitly registered
+   * (any MutationListener is sufficient to compute the mutatedNodes Map
+   * for all nodes).
+   *
+   * Added in v0.28.0
+   */
+  mutatedNodes: null | MutatedNodes;
+  /**
+   * For advanced use cases only.
+   *
+   * Tracks the keys of TextNode descendants that have been merged
+   * with their siblings by normalization. Note that these keys may
+   * not exist in either editorState or prevEditorState and generally
+   * this is only used for conflict resolution edge cases in collab.
+   */
   normalizedNodes: Set<NodeKey>;
+  /**
+   * The previous EditorState that is being discarded
+   */
   prevEditorState: EditorState;
+  /**
+   * The set of tags added with update options or {@link $addUpdateTag},
+   * node that this includes all tags that were processed in this
+   * reconciliation which may have been added by separate updates.
+   */
   tags: Set<string>;
-}) => void;
+}
+
+/**
+ * A listener that gets called after the editor is updated
+ */
+export type UpdateListener = (payload: UpdateListenerPayload) => void;
 
 export type DecoratorListener<T = never> = (
   decorator: Record<NodeKey, T>,
@@ -278,11 +369,11 @@ export type LexicalCommand<TPayload> = {
  *
  * editor.registerCommand(MY_COMMAND, payload => {
  *   // Type of `payload` is inferred here. But lets say we want to extract a function to delegate to
- *   handleMyCommand(editor, payload);
+ *   $handleMyCommand(editor, payload);
  *   return true;
  * });
  *
- * function handleMyCommand(editor: LexicalEditor, payload: CommandPayloadType<typeof MY_COMMAND>) {
+ * function $handleMyCommand(editor: LexicalEditor, payload: CommandPayloadType<typeof MY_COMMAND>) {
  *   // `payload` is of type `SomeType`, extracted from the command.
  * }
  * ```
@@ -294,30 +385,27 @@ type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
 >;
-type Listeners = {
-  decorator: Set<DecoratorListener>;
+
+export interface Listeners {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  decorator: Set<DecoratorListener<any>>;
   mutation: MutationListeners;
   editable: Set<EditableListener>;
   root: Set<RootListener>;
   textcontent: Set<TextContentListener>;
   update: Set<UpdateListener>;
+}
+
+export type SetListeners = {
+  [K in keyof Listeners as Listeners[K] extends Set<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (...args: any[]) => void
+  >
+    ? K
+    : never]: Listeners[K] extends Set<(...args: infer Args) => void>
+    ? Args
+    : never;
 };
-
-export type Listener =
-  | DecoratorListener
-  | EditableListener
-  | MutationListener
-  | RootListener
-  | TextContentListener
-  | UpdateListener;
-
-export type ListenerType =
-  | 'update'
-  | 'root'
-  | 'decorator'
-  | 'textcontent'
-  | 'mutation'
-  | 'editable';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -438,7 +526,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   ];
   const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes: Map<string, RegisteredNode>;
+  let registeredNodes: RegisteredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -455,13 +543,13 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
+      const {ownNodeConfig} = getStaticNodeConfig(klass);
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
-        const nodeType =
-          Object.prototype.hasOwnProperty.call(klass, 'getType') &&
-          klass.getType();
         const name = klass.name;
+        const nodeType =
+          hasOwnStaticMethod(klass, 'getType') && klass.getType();
 
         if (replaceWithKlass) {
           invariant(
@@ -470,52 +558,44 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             replaceWithKlass.name,
             name,
           );
+        } else if (replace) {
+          console.warn(
+            `Override for ${name} specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+          );
         }
-
         if (
           name !== 'RootNode' &&
           nodeType !== 'root' &&
-          nodeType !== 'artificial'
+          nodeType !== 'artificial' &&
+          // This is mostly for the unit test suite which
+          // uses LexicalNode in an otherwise incorrect way
+          // by mocking its static getType
+          klass !== LexicalNode
         ) {
           const proto = klass.prototype;
-          ['getType', 'clone'].forEach((method) => {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!klass.hasOwnProperty(method)) {
+          (['getType', 'clone'] as const).forEach((method) => {
+            if (!hasOwnStaticMethod(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
           if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importDOM') &&
-            // eslint-disable-next-line no-prototype-builtins
-            klass.hasOwnProperty('exportDOM')
+            !hasOwnStaticMethod(klass, 'importDOM') &&
+            hasOwnExportDOM(klass)
           ) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
-          if (proto instanceof DecoratorNode) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!proto.hasOwnProperty('decorate')) {
+          if ($isDecoratorNode(proto)) {
+            if (proto.decorate === DecoratorNode.prototype.decorate) {
               console.warn(
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
           }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importJSON')
-          ) {
+          if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
-          }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !proto.hasOwnProperty('exportJSON')
-          ) {
-            console.warn(
-              `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
         }
@@ -523,6 +603,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       const type = klass.getType();
       const transform = klass.transform();
       const transforms = new Set<Transform<LexicalNode>>();
+      if (ownNodeConfig && ownNodeConfig.$transform) {
+        transforms.add(ownNodeConfig.$transform);
+      }
       if (transform !== null) {
         transforms.add(transform);
       }
@@ -531,6 +614,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         klass,
         replace,
         replaceWithKlass,
+        sharedNodeState: createSharedNodeState(nodes[i]),
         transforms,
       });
     }
@@ -547,6 +631,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
+    editorConfig,
   );
 
   if (initialEditorState !== undefined) {
@@ -556,6 +641,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 
   return editor;
 }
+
 export class LexicalEditor {
   ['constructor']!: KlassConstructor<typeof LexicalEditor>;
 
@@ -605,7 +691,7 @@ export class LexicalEditor {
   /** @internal */
   _normalizedNodes: Set<NodeKey>;
   /** @internal */
-  _updateTags: Set<string>;
+  _updateTags: Set<UpdateTag>;
   /** @internal */
   _observer: null | MutationObserver;
   /** @internal */
@@ -620,6 +706,8 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /** @internal */
+  _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
   constructor(
@@ -630,7 +718,9 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
+    createEditorArgs?: CreateEditorArgs,
   ) {
+    this._createEditorArgs = createEditorArgs;
     this._parentEditor = parentEditor;
     // The root element associated with this editor
     this._rootElement = null;
@@ -774,14 +864,24 @@ export class LexicalEditor {
   }
   /**
    * Registers a listener that will trigger anytime the provided command
-   * is dispatched, subject to priority. Listeners that run at a higher priority can "intercept"
-   * commands and prevent them from propagating to other handlers by returning true.
+   * is dispatched with {@link LexicalEditor.dispatch}, subject to priority.
+   * Listeners that run at a higher priority can "intercept" commands and
+   * prevent them from propagating to other handlers by returning true.
    *
-   * Listeners registered at the same priority level will run deterministically in the order of registration.
+   * Listeners are always invoked in an {@link LexicalEditor.update} and can
+   * call dollar functions.
+   *
+   * Listeners registered at the same priority level will run
+   * deterministically in the order of registration.
    *
    * @param command - the command that will trigger the callback.
    * @param listener - the function that will execute when the command is dispatched.
    * @param priority - the relative priority of the listener. 0 | 1 | 2 | 3 | 4
+   *   (or {@link COMMAND_PRIORITY_EDITOR} |
+   *     {@link COMMAND_PRIORITY_LOW} |
+   *     {@link COMMAND_PRIORITY_NORMAL} |
+   *     {@link COMMAND_PRIORITY_HIGH} |
+   *     {@link COMMAND_PRIORITY_CRITICAL})
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerCommand<P>(
@@ -857,7 +957,12 @@ export class LexicalEditor {
       this.getRegisteredNode(klass),
     ).klass;
     const mutations = this._listeners.mutation;
-    mutations.set(listener, klassToMutate);
+    let klassSet = mutations.get(listener);
+    if (klassSet === undefined) {
+      klassSet = new Set();
+      mutations.set(listener, klassSet);
+    }
+    klassSet.add(klassToMutate);
     const skipInitialization = options && options.skipInitialization;
     if (
       !(skipInitialization === undefined
@@ -868,12 +973,15 @@ export class LexicalEditor {
     }
 
     return () => {
-      mutations.delete(listener);
+      klassSet.delete(klassToMutate);
+      if (klassSet.size === 0) {
+        mutations.delete(listener);
+      }
     };
   }
 
   /** @internal */
-  private getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
+  getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
     const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
@@ -888,7 +996,7 @@ export class LexicalEditor {
   }
 
   /** @internal */
-  private resolveRegisteredNodeAfterReplacements(
+  resolveRegisteredNodeAfterReplacements(
     registeredNode: RegisteredNode,
   ): RegisteredNode {
     while (registeredNode.replaceWithKlass) {
@@ -959,7 +1067,10 @@ export class LexicalEditor {
       registeredNodes.push(registeredReplaceWithNode);
     }
 
-    markAllNodesAsDirty(this, klass.getType());
+    markNodesWithTypesAsDirty(
+      this,
+      registeredNodes.map((node) => node.klass.getType()),
+    );
     return () => {
       registeredNodes.forEach((node) =>
         node.transforms.delete(listener as Transform<LexicalNode>),
@@ -988,7 +1099,10 @@ export class LexicalEditor {
   /**
    * Dispatches a command of the specified type with the specified payload.
    * This triggers all command listeners (set by {@link LexicalEditor.registerCommand})
-   * for this type, passing them the provided payload.
+   * for this type, passing them the provided payload. The command listeners
+   * will be triggered in an implicit {@link LexicalEditor.update}, unless
+   * this was invoked from inside an update in which case that update context
+   * will be re-used (as if this was a dollar function itself).
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */
@@ -1059,7 +1173,7 @@ export class LexicalEditor {
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
-        this._updateTags.add('history-merge');
+        this._updateTags.add(HISTORY_MERGE_TAG);
 
         $commitPendingUpdates(this);
 
@@ -1070,12 +1184,29 @@ export class LexicalEditor {
         if (classNames != null) {
           nextRootElement.classList.add(...classNames);
         }
+        if (__DEV__) {
+          const nextRootElementParent = nextRootElement.parentElement;
+          if (
+            nextRootElementParent != null &&
+            ['flex', 'inline-flex'].includes(
+              getComputedStyle(nextRootElementParent).display,
+            )
+          ) {
+            console.warn(
+              `When using "display: flex" or "display: inline-flex" on an element containing content editable, Chrome may have unwanted focusing behavior when clicking outside of it. Consider wrapping the content editable within a non-flex element.`,
+            );
+          }
+        }
       } else {
-        // If content editable is unmounted we'll reset editor state back to original
-        // (or pending) editor state since there will be no reconciliation
-        this._editorState = pendingEditorState;
-        this._pendingEditorState = null;
+        // When the content editable is unmounted we will still trigger a
+        // reconciliation so that any pending updates are flushed,
+        // to match the previous state change when
+        // `_editorState = pendingEditorState` was used, but by
+        // using a commit we preserve the readOnly invariant
+        // for editor.getEditorState().
         this._window = null;
+        this._updateTags.add(HISTORY_MERGE_TAG);
+        $commitPendingUpdates(this);
       }
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);
@@ -1122,7 +1253,7 @@ export class LexicalEditor {
         : null;
     }
 
-    $flushRootMutations(this);
+    flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
@@ -1188,25 +1319,19 @@ export class LexicalEditor {
    * where Lexical editor state can be safely mutated.
    * @param updateFn - A function that has access to writable editor state.
    * @param options - A bag of options to control the behavior of the update.
-   * @param options.onUpdate - A function to run once the update is complete.
-   * Useful for synchronizing updates in some cases.
-   * @param options.skipTransforms - Setting this to true will suppress all node
-   * transforms for this update cycle.
-   * @param options.tag - A tag to identify this update, in an update listener, for instance.
-   * Some tags are reserved by the core and control update behavior in different ways.
-   * @param options.discrete - If true, prevents this update from being batched, forcing it to
-   * run synchronously.
    */
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(this, updateFn, options);
   }
 
   /**
-   * Focuses the editor
+   * Focuses the editor by marking the existing selection as dirty, or by
+   * creating a new selection at `defaultSelection` if one does not already
+   * exist. If you want to force a specific selection, you should call
+   * `root.selectStart()` or `root.selectEnd()` in an update.
+   *
    * @param callbackFn - A function to run after the editor is focused.
    * @param options - A bag of options
-   * @param options.defaultSelection - Where to move selection when the editor is
-   * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
    */
   focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
     const rootElement = this._rootElement;
@@ -1214,35 +1339,32 @@ export class LexicalEditor {
     if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
-      updateEditor(
-        this,
-        () => {
-          const selection = $getSelection();
-          const root = $getRoot();
+      updateEditorSync(this, () => {
+        const selection = $getSelection();
+        const root = $getRoot();
 
-          if (selection !== null) {
-            // Marking the selection dirty will force the selection back to it
-            selection.dirty = true;
-          } else if (root.getChildrenSize() !== 0) {
-            if (options.defaultSelection === 'rootStart') {
-              root.selectStart();
-            } else {
-              root.selectEnd();
-            }
+        if (selection !== null) {
+          // Marking the selection dirty will force the selection back to it
+          if (!selection.dirty) {
+            $setSelection(selection.clone());
           }
-        },
-        {
-          onUpdate: () => {
-            rootElement.removeAttribute('autocapitalize');
-            if (callbackFn) {
-              callbackFn();
-            }
-          },
-          tag: 'focus',
-        },
-      );
+        } else if (root.getChildrenSize() !== 0) {
+          if (options.defaultSelection === 'rootStart') {
+            root.selectStart();
+          } else {
+            root.selectEnd();
+          }
+        }
+        $addUpdateTag(FOCUS_TAG);
+        $onUpdate(() => {
+          rootElement.removeAttribute('autocapitalize');
+          if (callbackFn) {
+            callbackFn();
+          }
+        });
+      });
       // In the case where onUpdate doesn't fire (due to the focus update not
-      // occuring).
+      // occurring).
       if (this._pendingEditorState === null) {
         rootElement.removeAttribute('autocapitalize');
       }

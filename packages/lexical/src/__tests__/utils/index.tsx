@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';
@@ -34,10 +36,12 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   RangeSelection,
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
+  Spread,
   TextNode,
 } from 'lexical';
 import path from 'path';
@@ -175,19 +179,7 @@ export class TestElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -215,15 +207,7 @@ export class TestTextNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    return new TestTextNode(serializedNode.text);
-  }
-
-  exportJSON(): SerializedTestTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_text',
-      version: 1,
-    };
+    return new TestTextNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -241,19 +225,7 @@ export class TestInlineElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestInlineElementNode,
   ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestInlineElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_inline_block',
-      version: 1,
-    };
+    return $createTestInlineElementNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -287,19 +259,7 @@ export class TestShadowRootNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestShadowRootNode,
   ): TestShadowRootNode {
-    const node = $createTestShadowRootNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestShadowRootNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+    return $createTestShadowRootNode().updateFromJSON(serializedNode);
   }
 
   createDOM() {
@@ -333,24 +293,11 @@ export class TestSegmentedNode extends TextNode {
   static importJSON(
     serializedNode: SerializedTestSegmentedNode,
   ): TestSegmentedNode {
-    const node = $createTestSegmentedNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
-  exportJSON(): SerializedTestSegmentedNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_segmented',
-      version: 1,
-    };
+    return $createTestSegmentedNode().updateFromJSON(serializedNode);
   }
 }
 
-export function $createTestSegmentedNode(text: string): TestSegmentedNode {
+export function $createTestSegmentedNode(text: string = ''): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
@@ -368,19 +315,9 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedTestExcludeFromCopyElementNode,
   ): TestExcludeFromCopyElementNode {
-    const node = $createTestExcludeFromCopyElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestExcludeFromCopyElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_exclude_from_copy_block',
-      version: 1,
-    };
+    return $createTestExcludeFromCopyElementNode().updateFromJSON(
+      serializedNode,
+    );
   }
 
   createDOM() {
@@ -400,9 +337,13 @@ export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElem
   return new TestExcludeFromCopyElementNode();
 }
 
-export type SerializedTestDecoratorNode = SerializedLexicalNode;
+export type SerializedTestDecoratorNode = Spread<
+  SerializedLexicalNode,
+  {block?: boolean}
+>;
 
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
+  __block: boolean = false;
   static getType(): string {
     return 'test_decorator';
   }
@@ -414,15 +355,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static importJSON(
     serializedNode: SerializedTestDecoratorNode,
   ): TestDecoratorNode {
-    return $createTestDecoratorNode();
-  }
-
-  exportJSON(): SerializedTestDecoratorNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_decorator',
-      version: 1,
-    };
+    return $createTestDecoratorNode().updateFromJSON(serializedNode);
   }
 
   static importDOM() {
@@ -433,6 +366,37 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
         };
       },
     };
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTestDecoratorNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setIsInline(!serializedNode.block);
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__block = prevNode.__block;
+  }
+
+  isInline(): boolean {
+    return !this.getLatest().__block;
+  }
+
+  setIsInline(inline: boolean): this {
+    const self = this.getWritable();
+    self.__block = !inline;
+    return self;
+  }
+
+  exportJSON(): SerializedTestDecoratorNode {
+    const json: SerializedTestDecoratorNode = super.exportJSON();
+    if (this.__block) {
+      json.block = this.__block;
+    }
+    return json;
   }
 
   exportDOM() {
@@ -446,11 +410,11 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM() {
-    return document.createElement('span');
+    return document.createElement(this.__block ? 'div' : 'span');
   }
 
-  updateDOM() {
-    return false;
+  updateDOM(prevNode: this) {
+    return this.__block !== prevNode.__block;
   }
 
   decorate() {

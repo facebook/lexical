@@ -21,8 +21,7 @@ import {
   $isTextNode,
   $setSelection,
 } from '.';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
-import {updateEditor} from './LexicalUpdates';
+import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
   $getNodeFromDOMNode,
@@ -32,8 +31,10 @@ import {
   getParentElement,
   getWindow,
   internalGetRoot,
+  isDOMTextNode,
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
+  isHTMLElement,
 } from './LexicalUtils';
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -82,7 +83,7 @@ function $handleTextMutation(
   node: TextNode,
   editor: LexicalEditor,
 ): void {
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(getWindow(editor));
   let anchorOffset = null;
   let focusOffset = null;
 
@@ -111,7 +112,7 @@ function shouldUpdateTextNodeFromMutation(
       return false;
     }
   }
-  return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
+  return isDOMTextNode(targetDOM) && targetNode.isAttached();
 }
 
 function $getNearestManagedNodePairFromDOMNode(
@@ -130,7 +131,9 @@ function $getNearestManagedNodePairFromDOMNode(
       const node = $getNodeByKey(key, editorState);
       if (node) {
         // All decorator nodes are unmanaged
-        return $isDecoratorNode(node) ? undefined : [dom as HTMLElement, node];
+        return $isDecoratorNode(node) || !isHTMLElement(dom)
+          ? undefined
+          : [dom, node];
       }
     } else if (dom === rootElement) {
       return [rootElement, internalGetRoot(editorState)];
@@ -138,7 +141,7 @@ function $getNearestManagedNodePairFromDOMNode(
   }
 }
 
-export function $flushMutations(
+function flushMutations(
   editor: LexicalEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
@@ -146,9 +149,8 @@ export function $flushMutations(
   isProcessingMutations = true;
   const shouldFlushTextMutations =
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
-
   try {
-    updateEditor(editor, () => {
+    updateEditorSync(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map<HTMLElement, LexicalNode>();
       const rootElement = editor.getRootElement();
@@ -180,14 +182,10 @@ export function $flushMutations(
           if (
             shouldFlushTextMutations &&
             $isTextNode(targetNode) &&
+            isDOMTextNode(targetDOM) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            $handleTextMutation(
-              // nodeType === DOM_TEXT_TYPE is a Text DOM node
-              targetDOM as Text,
-              targetNode,
-              editor,
-            );
+            $handleTextMutation(targetDOM, targetNode, editor);
           }
         } else if (type === 'childList') {
           shouldRevertSelection = true;
@@ -209,7 +207,8 @@ export function $flushMutations(
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
-                  (addedDOM as HTMLElement).innerText || addedDOM.nodeValue;
+                  (isHTMLElement(addedDOM) ? addedDOM.innerText : null) ||
+                  addedDOM.nodeValue;
 
                 if (possibleText) {
                   possibleTextForFirefoxPaste += possibleText;
@@ -289,7 +288,6 @@ export function $flushMutations(
 
       if (selection !== null) {
         if (shouldRevertSelection) {
-          selection.dirty = true;
           $setSelection(selection);
         }
 
@@ -303,12 +301,12 @@ export function $flushMutations(
   }
 }
 
-export function $flushRootMutations(editor: LexicalEditor): void {
+export function flushRootMutations(editor: LexicalEditor): void {
   const observer = editor._observer;
 
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    $flushMutations(editor, mutations, observer);
+    flushMutations(editor, mutations, observer);
   }
 }
 
@@ -316,7 +314,7 @@ export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      $flushMutations(editor, mutations, observer);
+      flushMutations(editor, mutations, observer);
     },
   );
 }

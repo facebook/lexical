@@ -57,9 +57,9 @@ describe('LexicalListNode tests', () => {
         expect(listNode.getTag()).toBe('ul');
         expect(listNode.getTextContent()).toBe('');
       });
-
-      // @ts-expect-error
-      expect(() => $createListNode()).toThrow();
+      await editor.update(() => {
+        expect(() => $createListNode()).not.toThrow();
+      });
     });
 
     test('ListNode.getTag()', async () => {
@@ -332,25 +332,6 @@ describe('LexicalListNode tests', () => {
         const bulletList = $createListNode('bullet', 1);
         expect(numberList.__listType).toBe('number');
         expect(bulletList.__listType).toBe('bullet');
-      });
-    });
-
-    test('ListNode.clone() without list type (backward compatibility)', async () => {
-      const {editor} = testEnv;
-
-      await editor.update(() => {
-        const olNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ol',
-        } as unknown as ListNode);
-        const ulNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ul',
-        } as unknown as ListNode);
-        expect(olNode.__listType).toBe('number');
-        expect(ulNode.__listType).toBe('bullet');
       });
     });
   });

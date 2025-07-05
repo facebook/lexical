@@ -29,6 +29,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  getRegisteredNode,
   isDocumentFragment,
   isInlineDomNode,
 } from 'lexical';
@@ -59,7 +60,7 @@ export function $generateNodesFromDOM(
       }
     }
   }
-  $unwrapArtificalNodes(allArtificialNodes);
+  $unwrapArtificialNodes(allArtificialNodes);
 
   return lexicalNodes;
 }
@@ -110,7 +111,7 @@ function $appendNodesToHTML(
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const registeredNode = editor._nodes.get(target.getType());
+  const registeredNode = getRegisteredNode(editor, target.getType());
   let exportOutput;
 
   // Use HTMLConfig overrides, if available.
@@ -355,7 +356,7 @@ function wrapContinuousInlines(
   return out;
 }
 
-function $unwrapArtificalNodes(
+function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   for (const node of allArtificialNodes) {

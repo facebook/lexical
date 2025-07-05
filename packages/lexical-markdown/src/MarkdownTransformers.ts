@@ -10,7 +10,12 @@ import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isAutoLinkNode,
+  $isLinkNode,
+  LinkNode,
+} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -30,7 +35,6 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
-  $isTextNode,
   ElementNode,
   Klass,
   LexicalNode,
@@ -172,8 +176,11 @@ export type TextMatchTransformer = Readonly<{
   regExp: RegExp;
   /**
    * Determines how the matched markdown text should be transformed into a node during the markdown import process
+   *
+   * @returns nothing, or a TextNode that may be a child of the new node that is created.
+   * If a TextNode is returned, text format matching will be applied to it (e.g. bold, italic, etc.)
    */
-  replace?: (node: TextNode, match: RegExpMatchArray) => void;
+  replace?: (node: TextNode, match: RegExpMatchArray) => void | TextNode;
   /**
    * For import operations, this function can be used to determine the end index of the match, after `importRegExp` has matched.
    * Without this function, the end index will be determined by the length of the match from `importRegExp`. Manually determining the end index can be useful if
@@ -196,7 +203,7 @@ const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
 const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
-const CODE_START_REGEX = /^[ \t]*```(\w+)?/;
+const CODE_START_REGEX = /^[ \t]*```([\w-]+)?/;
 const CODE_END_REGEX = /[ \t]*```$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
@@ -206,11 +213,13 @@ const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
-  return (parentNode, children, match) => {
+  return (parentNode, children, match, isImport) => {
     const node = createNode(match);
     node.append(...children);
     parentNode.replace(node);
-    node.select(0, 0);
+    if (!isImport) {
+      node.select(0, 0);
+    }
   };
 };
 
@@ -236,7 +245,7 @@ function getIndent(whitespaces: string): number {
 }
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
-  return (parentNode, children, match) => {
+  return (parentNode, children, match, isImport) => {
     const previousNode = parentNode.getPreviousSibling();
     const nextNode = parentNode.getNextSibling();
     const listItem = $createListItemNode(
@@ -266,7 +275,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       parentNode.replace(list);
     }
     listItem.append(...children);
-    listItem.select(0, 0);
+    if (!isImport) {
+      listItem.select(0, 0);
+    }
     const indent = getIndent(match[1]);
     if (indent) {
       listItem.setIndent(indent);
@@ -347,7 +358,6 @@ export const QUOTE: ElementTransformer = {
           $createLineBreakNode(),
           ...children,
         ]);
-        previousNode.select(0, 0);
         parentNode.remove();
         return;
       }
@@ -356,7 +366,9 @@ export const QUOTE: ElementTransformer = {
     const node = $createQuoteNode();
     node.append(...children);
     parentNode.replace(node);
-    node.select(0, 0);
+    if (!isImport) {
+      node.select(0, 0);
+    }
   },
   type: 'element',
 };
@@ -538,21 +550,18 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 export const LINK: TextMatchTransformer = {
   dependencies: [LinkNode],
   export: (node, exportChildren, exportFormat) => {
-    if (!$isLinkNode(node)) {
+    if (!$isLinkNode(node) || $isAutoLinkNode(node)) {
       return null;
     }
     const title = node.getTitle();
+
+    const textContent = exportChildren(node);
+
     const linkContent = title
-      ? `[${node.getTextContent()}](${node.getURL()} "${title}")`
-      : `[${node.getTextContent()}](${node.getURL()})`;
-    const firstChild = node.getFirstChild();
-    // Add text styles only if link has single text node inside. If it's more
-    // then one we ignore it as markdown does not support nested styles for links
-    if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
-      return exportFormat(firstChild, linkContent);
-    } else {
-      return linkContent;
-    }
+      ? `[${textContent}](${node.getURL()} "${title}")`
+      : `[${textContent}](${node.getURL()})`;
+
+    return linkContent;
   },
   importRegExp:
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
@@ -565,6 +574,8 @@ export const LINK: TextMatchTransformer = {
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);
     textNode.replace(linkNode);
+
+    return linkTextNode;
   },
   trigger: ')',
   type: 'text-match',

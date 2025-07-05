@@ -14,6 +14,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -36,8 +37,8 @@ import {
 import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
+  $getFirstCodeNodeOfLine,
   $isCodeHighlightNode,
-  getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
 
 export type SerializedCodeNode = Spread<
@@ -50,9 +51,23 @@ export type SerializedCodeNode = Spread<
 const isLanguageSupportedByPrism = (
   language: string | null | undefined,
 ): boolean => {
+  const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
   try {
-    // eslint-disable-next-line no-prototype-builtins
-    return language ? Prism.languages.hasOwnProperty(language) : false;
+    if (!language) {
+      return false;
+    }
+    const langMatch = DIFF_LANGUAGE_REGEX.exec(language);
+    if (langMatch) {
+      return (
+        // eslint-disable-next-line no-prototype-builtins
+        Prism.languages.hasOwnProperty('diff') &&
+        // eslint-disable-next-line no-prototype-builtins
+        Prism.languages.hasOwnProperty(langMatch[1])
+      );
+    } else {
+      // eslint-disable-next-line no-prototype-builtins
+      return Prism.languages.hasOwnProperty(language);
+    }
   } catch {
     return false;
   }
@@ -88,7 +103,7 @@ export class CodeNode extends ElementNode {
 
   constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
-    this.__language = language;
+    this.__language = language || undefined;
     this.__isSyntaxHighlightSupported = isLanguageSupportedByPrism(language);
   }
 
@@ -107,11 +122,7 @@ export class CodeNode extends ElementNode {
     }
     return element;
   }
-  updateDOM(
-    prevNode: CodeNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const language = this.__language;
     const prevLanguage = prevNode.__language;
 
@@ -216,19 +227,19 @@ export class CodeNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedCodeNode): CodeNode {
-    const node = $createCodeNode(serializedNode.language);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+    return $createCodeNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setLanguage(serializedNode.language);
   }
 
   exportJSON(): SerializedCodeNode {
     return {
       ...super.exportJSON(),
       language: this.getLanguage(),
-      type: 'code',
-      version: 1,
     };
   }
 
@@ -262,7 +273,8 @@ export class CodeNode extends ElementNode {
     const firstPoint = anchor.isBefore(focus) ? anchor : focus;
     const firstSelectionNode = firstPoint.getNode();
     if ($isTextNode(firstSelectionNode)) {
-      let node = getFirstCodeNodeOfLine(firstSelectionNode);
+      let node: null | LexicalNode =
+        $getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -323,11 +335,12 @@ export class CodeNode extends ElementNode {
     return true;
   }
 
-  setLanguage(language: string): void {
+  setLanguage(language: string | null | undefined): this {
     const writable = this.getWritable();
-    writable.__language = language;
+    writable.__language = language || undefined;
     writable.__isSyntaxHighlightSupported =
       isLanguageSupportedByPrism(language);
+    return writable;
   }
 
   getLanguage(): string | null | undefined {

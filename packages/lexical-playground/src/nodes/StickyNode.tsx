@@ -10,15 +10,16 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {$setSelection, createEditor, DecoratorNode} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 import {createPortal} from 'react-dom';
 
 const StickyComponent = React.lazy(() => import('./StickyComponent'));
@@ -55,11 +56,17 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    const stickyNode = new StickyNode(
+    return new StickyNode(
       serializedNode.xOffset,
       serializedNode.yOffset,
       serializedNode.color,
-    );
+    ).updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedStickyNode>,
+  ): this {
+    const stickyNode = super.updateFromJSON(serializedNode);
     const caption = serializedNode.caption;
     const nestedEditor = stickyNode.__caption;
     const editorState = nestedEditor.parseEditorState(caption.editorState);
@@ -85,10 +92,9 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedStickyNode {
     return {
+      ...super.exportJSON(),
       caption: this.__caption.toJSON(),
       color: this.__color,
-      type: 'sticky',
-      version: 1,
       xOffset: this.__x,
       yOffset: this.__y,
     };
@@ -118,15 +124,13 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return createPortal(
-      <Suspense fallback={null}>
-        <StickyComponent
-          color={this.__color}
-          x={this.__x}
-          y={this.__y}
-          nodeKey={this.getKey()}
-          caption={this.__caption}
-        />
-      </Suspense>,
+      <StickyComponent
+        color={this.__color}
+        x={this.__x}
+        y={this.__y}
+        nodeKey={this.getKey()}
+        caption={this.__caption}
+      />,
       document.body,
     );
   }

@@ -53,10 +53,10 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]) {
     .replace(/.use strict.;\n/g, '')
     .replace(/var _[^;]+;\n/g, '')
     .replace(/function _interopRequireDefault\([^)]*\) {[^;]+?;[\s\n]*}\n/g, '')
-    .replace(/_formatProdErrorMessage\d+/g, 'formatProdErrorMessage')
+    .replace(/_format(Dev|Prod)(Error|Warning)Message\d+/g, 'format$1$2Message')
     .replace(
-      /\(0,\s*formatProdErrorMessage\.default\)/g,
-      'formatProdErrorMessage',
+      /\(0,\s*format(Dev|Prod)(Error|Warning)Message\.default\)/g,
+      'format$1$2Message',
     )
     .trim();
   return prettier.format(before, {
@@ -98,83 +98,155 @@ async function expectTransform(opts) {
 }
 
 describe('transform-error-messages', () => {
-  describe('{extractCodes: true, noMinify: false}', () => {
-    const opts = {extractCodes: true, noMinify: false};
-    it('inserts known and extracts unknown message codes', async () => {
-      await expectTransform({
-        codeBefore: `
+  describe('invariant', () => {
+    describe('{extractCodes: true, noMinify: false}', () => {
+      const opts = {extractCodes: true, noMinify: false};
+      it('inserts known and extracts unknown message codes', async () => {
+        await expectTransform({
+          codeBefore: `
         invariant(condition, ${JSON.stringify(NEW_MSG)});
         invariant(condition, ${JSON.stringify(KNOWN_MSG)}, adj, noun);
         `,
-        codeExpect: `
+          codeExpect: `
         if (!condition) {
-          {
-            formatProdErrorMessage(1);
-          }
+          formatProdErrorMessage(1);
         }
         if (!condition) {
-          {
+          formatProdErrorMessage(0, adj, noun);
+        }`,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: NEW_MSG_MAP,
+          opts,
+        });
+      });
+    });
+    describe('{extractCodes: true, noMinify: true}', () => {
+      const opts = {extractCodes: true, noMinify: true};
+      it('inserts known and extracts unknown message codes', async () => {
+        await expectTransform({
+          codeBefore: `
+        invariant(condition, ${JSON.stringify(NEW_MSG)});
+        invariant(condition, ${JSON.stringify(KNOWN_MSG)}, adj, noun);
+        `,
+          codeExpect: `
+        if (!condition) {
+          formatDevErrorMessage(\`A new invariant\`);
+        }
+        if (!condition) {
+          formatDevErrorMessage(\`A \${adj} message that contains \${noun}\`);
+        }`,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: NEW_MSG_MAP,
+          opts,
+        });
+      });
+    });
+    describe('{extractCodes: false, noMinify: false}', () => {
+      const opts = {extractCodes: false, noMinify: false};
+      it('inserts known message', async () => {
+        await expectTransform({
+          codeBefore: `invariant(condition, ${JSON.stringify(
+            KNOWN_MSG,
+          )}, adj, noun)`,
+          codeExpect: `
+          if (!condition) {
             formatProdErrorMessage(0, adj, noun);
           }
-        }`,
-        messageMapBefore: KNOWN_MSG_MAP,
-        messageMapExpect: NEW_MSG_MAP,
-        opts,
-      });
-    });
-  });
-  describe('{extractCodes: true, noMinify: true}', () => {
-    const opts = {extractCodes: true, noMinify: true};
-    it('inserts known and extracts unknown message codes', async () => {
-      await expectTransform({
-        codeBefore: `
-        invariant(condition, ${JSON.stringify(NEW_MSG)});
-        invariant(condition, ${JSON.stringify(KNOWN_MSG)}, adj, noun);
         `,
-        codeExpect: `
-        if (!condition) {
-          throw Error(\`A new invariant\`);
-        }
-        if (!condition) {
-          throw Error(\`A \${adj} message that contains \${noun}\`);
-        }`,
-        messageMapBefore: KNOWN_MSG_MAP,
-        messageMapExpect: NEW_MSG_MAP,
-        opts,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: KNOWN_MSG_MAP,
+          opts,
+        });
       });
-    });
-  });
-  describe('{extractCodes: false, noMinify: false}', () => {
-    const opts = {extractCodes: false, noMinify: false};
-    it('inserts known message', async () => {
-      await expectTransform({
-        codeBefore: `invariant(condition, ${JSON.stringify(
-          KNOWN_MSG,
-        )}, adj, noun)`,
-        codeExpect: `
-          if (!condition) {
-            {
-              formatProdErrorMessage(0, adj, noun);
-            }
-          }
-        `,
-        messageMapBefore: KNOWN_MSG_MAP,
-        messageMapExpect: KNOWN_MSG_MAP,
-        opts,
-      });
-    });
-    it('inserts warning comment for unknown messages', async () => {
-      await expectTransform({
-        codeBefore: `invariant(condition, ${JSON.stringify(NEW_MSG)})`,
-        codeExpect: `
+      it('inserts warning comment for unknown messages', async () => {
+        await expectTransform({
+          codeBefore: `invariant(condition, ${JSON.stringify(NEW_MSG)})`,
+          codeExpect: `
           /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/
           if (!condition) {
-            throw Error(\`A new invariant\`);
+            formatDevErrorMessage(\`A new invariant\`);
           }
        `,
-        messageMapBefore: KNOWN_MSG_MAP,
-        messageMapExpect: KNOWN_MSG_MAP,
-        opts,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: KNOWN_MSG_MAP,
+          opts,
+        });
+      });
+    });
+  });
+  describe('devInvariant', () => {
+    describe('{extractCodes: true, noMinify: false}', () => {
+      const opts = {extractCodes: true, noMinify: false};
+      it('inserts known and extracts unknown message codes', async () => {
+        await expectTransform({
+          codeBefore: `
+        devInvariant(condition, ${JSON.stringify(NEW_MSG)});
+        devInvariant(condition, ${JSON.stringify(KNOWN_MSG)}, adj, noun);
+        `,
+          codeExpect: `
+        if (!condition) {
+          formatProdWarningMessage(1);
+        }
+        if (!condition) {
+          formatProdWarningMessage(0, adj, noun);
+        }`,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: NEW_MSG_MAP,
+          opts,
+        });
+      });
+    });
+    describe('{extractCodes: true, noMinify: true}', () => {
+      const opts = {extractCodes: true, noMinify: true};
+      it('inserts known and extracts unknown message codes', async () => {
+        await expectTransform({
+          codeBefore: `
+        devInvariant(condition, ${JSON.stringify(NEW_MSG)});
+        devInvariant(condition, ${JSON.stringify(KNOWN_MSG)}, adj, noun);
+        `,
+          codeExpect: `
+        if (!condition) {
+          formatDevErrorMessage(\`A new invariant\`);
+        }
+        if (!condition) {
+          formatDevErrorMessage(\`A \${adj} message that contains \${noun}\`);
+        }`,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: NEW_MSG_MAP,
+          opts,
+        });
+      });
+    });
+    describe('{extractCodes: false, noMinify: false}', () => {
+      const opts = {extractCodes: false, noMinify: false};
+      it('inserts known message', async () => {
+        await expectTransform({
+          codeBefore: `devInvariant(condition, ${JSON.stringify(
+            KNOWN_MSG,
+          )}, adj, noun)`,
+          codeExpect: `
+          if (!condition) {
+            formatProdWarningMessage(0, adj, noun);
+          }
+        `,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: KNOWN_MSG_MAP,
+          opts,
+        });
+      });
+      it('inserts warning comment for unknown messages', async () => {
+        await expectTransform({
+          codeBefore: `devInvariant(condition, ${JSON.stringify(NEW_MSG)})`,
+          codeExpect: `
+          /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/
+          if (!condition) {
+            formatDevErrorMessage(\`A new invariant\`);
+          }
+       `,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: KNOWN_MSG_MAP,
+          opts,
+        });
       });
     });
   });

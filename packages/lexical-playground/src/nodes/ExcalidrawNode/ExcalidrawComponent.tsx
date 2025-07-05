@@ -7,9 +7,10 @@
  */
 
 import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
+import type {AppState, BinaryFiles} from '@excalidraw/excalidraw/types';
 import type {NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
-import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -18,8 +19,7 @@ import {
   $getNodeByKey,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
+  isDOMNode,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
@@ -52,22 +52,6 @@ export default function ExcalidrawComponent({
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
-  const $onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      if (isSelected) {
-        event.preventDefault();
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if (node) {
-            node.remove();
-          }
-        });
-      }
-      return false;
-    },
-    [editor, isSelected, nodeKey],
-  );
-
   useEffect(() => {
     if (!isEditable) {
       if (isSelected) {
@@ -86,7 +70,11 @@ export default function ExcalidrawComponent({
             return true;
           }
 
-          if (buttonElem !== null && buttonElem.contains(eventTarget as Node)) {
+          if (
+            buttonElem !== null &&
+            isDOMNode(eventTarget) &&
+            buttonElem.contains(eventTarget)
+          ) {
             if (!event.shiftKey) {
               clearSelection();
             }
@@ -101,26 +89,8 @@ export default function ExcalidrawComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [
-    clearSelection,
-    editor,
-    isSelected,
-    isResizing,
-    $onDelete,
-    setSelected,
-    isEditable,
-  ]);
+  }, [clearSelection, editor, isSelected, isResizing, setSelected, isEditable]);
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);

@@ -225,7 +225,7 @@ async function assertHTMLOnPageOrFrame(
   frameName,
   actualHtmlModificationsCallback = (actualHtml) => actualHtml,
 ) {
-  const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
+  const expected = await prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
     ignoreInlineStyles,
   });
@@ -236,12 +236,12 @@ async function assertHTMLOnPageOrFrame(
         .first()
         .innerHTML(),
     );
-    let actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
+    let actual = await prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
       ignoreInlineStyles,
     });
 
-    actual = actualHtmlModificationsCallback(actual);
+    actual = await actualHtmlModificationsCallback(actual);
 
     expect(
       actual,
@@ -311,6 +311,30 @@ export async function assertHTML(
 
 /**
  * @param {import('@playwright/test').Page} page
+ */
+export async function assertTableHTML(
+  page,
+  expectedHtml,
+  expectedHtmlFrameRight = undefined,
+  options = undefined,
+  ...args
+) {
+  return await assertHTML(
+    page,
+    IS_TABLE_HORIZONTAL_SCROLL
+      ? wrapTableHtml(expectedHtml, options)
+      : expectedHtml,
+    IS_TABLE_HORIZONTAL_SCROLL && expectedHtmlFrameRight !== undefined
+      ? wrapTableHtml(expectedHtmlFrameRight, options)
+      : expectedHtmlFrameRight,
+    options,
+    ...args,
+  );
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Page | import('@playwright/test').Frame}
  */
 export function getPageOrFrame(page) {
   return IS_COLLAB ? page.frame('left') : page;
@@ -501,6 +525,7 @@ export async function copyToClipboard(page) {
 async function pasteWithClipboardDataFromPageOrFrame(
   pageOrFrame,
   clipboardData,
+  editorSelector,
 ) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
@@ -539,7 +564,10 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
-      const editor = document.querySelector('div[contenteditable="true"]');
+      const editor =
+        document.activeElement && document.activeElement.isContentEditable
+          ? document.activeElement
+          : document.querySelector(editorSelector);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -571,7 +599,11 @@ async function pasteWithClipboardDataFromPageOrFrame(
 /**
  * @param {import('@playwright/test').Page} page
  */
-export async function pasteFromClipboard(page, clipboardData) {
+export async function pasteFromClipboard(
+  page,
+  clipboardData,
+  editorSelector = 'div[contenteditable="true"]',
+) {
   if (clipboardData === undefined) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('v');
@@ -581,6 +613,7 @@ export async function pasteFromClipboard(page, clipboardData) {
   await pasteWithClipboardDataFromPageOrFrame(
     getPageOrFrame(page),
     clipboardData,
+    editorSelector,
   );
 }
 
@@ -733,11 +766,15 @@ export async function dragMouse(
   page,
   fromBoundingBox,
   toBoundingBox,
-  positionStart = 'middle',
-  positionEnd = 'middle',
-  mouseUp = true,
-  slow = false,
+  opts = {},
 ) {
+  const {
+    positionStart = 'middle',
+    positionEnd = 'middle',
+    mouseDown = true,
+    mouseUp = true,
+    slow = false,
+  } = opts;
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
   if (positionStart === 'middle') {
@@ -758,7 +795,9 @@ export async function dragMouse(
   }
 
   await page.mouse.move(fromX, fromY);
-  await page.mouse.down();
+  if (mouseDown) {
+    await page.mouse.down();
+  }
   await page.mouse.move(toX, toY, slow ? 10 : 1);
   if (mouseUp) {
     await page.mouse.up();
@@ -775,12 +814,14 @@ export async function dragImage(
     page,
     await selectorBoundingBox(page, '.editor-image img'),
     await selectorBoundingBox(page, toSelector),
-    positionStart,
-    positionEnd,
+    {positionEnd, positionStart},
   );
 }
 
-export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
+export async function prettifyHTML(
+  string,
+  {ignoreClasses, ignoreInlineStyles} = {},
+) {
   let output = string;
 
   if (ignoreClasses) {
@@ -793,15 +834,14 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
 
   output = output.replace(/\s__playwright_target__="[^"]+"/, '');
 
-  return prettier
-    .format(output, {
-      attributeGroups: ['$DEFAULT', '^data-'],
-      attributeSort: 'ASC',
-      bracketSameLine: true,
-      htmlWhitespaceSensitivity: 'ignore',
-      parser: 'html',
-    })
-    .trim();
+  return await prettier.format(output, {
+    attributeGroups: ['$DEFAULT', '^data-'],
+    attributeSort: 'asc',
+    bracketSameLine: true,
+    htmlWhitespaceSensitivity: 'ignore',
+    parser: 'html',
+    plugins: ['prettier-plugin-organize-attributes'],
+  });
 }
 
 // This function does not suppose to do anything, it's only used as a trigger
@@ -886,6 +926,20 @@ export async function insertCollapsible(page) {
   await selectFromInsertDropdown(page, '.item .caret-right');
 }
 
+export async function selectCellFromTableCoord(page, coord, isHeader = false) {
+  const leftFrame = getPageOrFrame(page);
+  if (IS_COLLAB) {
+    await focusEditor(page);
+  }
+
+  const cell = await leftFrame.locator(
+    `table:first-of-type > :nth-match(tr, ${coord.y + 1}) > ${
+      isHeader ? 'th' : 'td'
+    }:nth-child(${coord.x + 1})`,
+  );
+  await cell.click();
+}
+
 export async function selectCellsFromTableCords(
   page,
   firstCords,
@@ -916,7 +970,7 @@ export async function selectCellsFromTableCords(
 
   // const firstBox = await firstRowFirstColumnCell.boundingBox();
   // const secondBox = await secondRowSecondCell.boundingBox();
-  // await dragMouse(page, firstBox, secondBox, 'middle', 'middle', true, true);
+  // await dragMouse(page, firstBox, secondBox, {slow: true});
 }
 
 export async function clickTableCellActiveButton(page) {
@@ -959,6 +1013,11 @@ export async function unmergeTableCell(page) {
 export async function toggleColumnHeader(page) {
   await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-column-header"]');
+}
+
+export async function toggleRowHeader(page) {
+  await clickTableCellActiveButton(page);
+  await click(page, '.item[data-test-id="table-row-header"]');
 }
 
 export async function deleteTableRows(page) {
@@ -1029,8 +1088,7 @@ export async function dragDraggableMenuTo(
     page,
     await selectorBoundingBox(page, '.draggable-block-menu'),
     await selectorBoundingBox(page, toSelector),
-    positionStart,
-    positionEnd,
+    {positionEnd, positionStart},
   );
 }
 

@@ -15,12 +15,20 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
+import {$isParagraphNode, ElementNode} from 'lexical';
 
 export type SerializedLayoutItemNode = SerializedElementNode;
 
 function $convertLayoutItemElement(): DOMConversionOutput | null {
   return {node: $createLayoutItemNode()};
+}
+
+export function $isEmptyLayoutItemNode(node: LexicalNode): boolean {
+  if (!$isLayoutItemNode(node) || node.getChildrenSize() !== 1) {
+    return false;
+  }
+  const firstChild = node.getFirstChild();
+  return $isParagraphNode(firstChild) && firstChild.isEmpty();
 }
 
 export class LayoutItemNode extends ElementNode {
@@ -45,6 +53,18 @@ export class LayoutItemNode extends ElementNode {
     return false;
   }
 
+  collapseAtStart(): boolean {
+    const parent = this.getParentOrThrow();
+    if (
+      this.is(parent.getFirstChild()) &&
+      parent.getChildren().every($isEmptyLayoutItemNode)
+    ) {
+      parent.remove();
+      return true;
+    }
+    return false;
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       div: (domNode: HTMLElement) => {
@@ -59,20 +79,12 @@ export class LayoutItemNode extends ElementNode {
     };
   }
 
-  static importJSON(): LayoutItemNode {
-    return $createLayoutItemNode();
+  static importJSON(serializedNode: SerializedLayoutItemNode): LayoutItemNode {
+    return $createLayoutItemNode().updateFromJSON(serializedNode);
   }
 
   isShadowRoot(): boolean {
     return true;
-  }
-
-  exportJSON(): SerializedLayoutItemNode {
-    return {
-      ...super.exportJSON(),
-      type: 'layout-item',
-      version: 1,
-    };
   }
 }
 

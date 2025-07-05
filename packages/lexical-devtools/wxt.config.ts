@@ -101,45 +101,57 @@ export default defineConfig({
     ],
   },
   srcDir: './src',
-  vite: (configEnv) => ({
-    define: {
-      __DEV__: configEnv.mode === 'development',
-    },
-    plugins: [
-      babel({
-        babelHelpers: 'bundled',
-        babelrc: false,
-        configFile: false,
-        exclude: '/**/node_modules/**',
-        extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
-        plugins: [
-          '@babel/plugin-transform-flow-strip-types',
-          [
-            require('../../scripts/error-codes/transform-error-messages'),
-            {
-              noMinify: true,
-            },
-          ],
-        ],
-        presets: [['@babel/preset-react', {runtime: 'automatic'}]],
+  vite: (configEnv) => {
+    const isProd = configEnv.mode !== 'development';
+    const {version} = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, 'package.json'), {
+        encoding: 'utf8',
       }),
-      react(),
-    ],
-    resolve: {
-      alias: [
-        // See lexicalForExtension.ts for more details
-        {
-          find: /lexical$/,
-          replacement: path.resolve('./src/lexicalForExtension.ts'),
-        },
-        {
-          find: 'lexicalOriginal',
-          replacement: path.resolve('../lexical/src/index.ts'),
-        },
-        ...(moduleResolution('source') as Alias[]),
+    );
+
+    return {
+      define: {
+        __DEV__: !isProd,
+        'process.env.LEXICAL_VERSION': JSON.stringify(
+          `${version}+${isProd ? 'prod' : 'dev'}.devtools`,
+        ),
+      },
+      plugins: [
+        babel({
+          babelHelpers: 'bundled',
+          babelrc: false,
+          configFile: false,
+          exclude: '**/node_modules/**',
+          extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
+          plugins: [
+            '@babel/plugin-transform-flow-strip-types',
+            [
+              require('../../scripts/error-codes/transform-error-messages'),
+              {
+                noMinify: true,
+              },
+            ],
+          ],
+          presets: [['@babel/preset-react', {runtime: 'automatic'}]],
+        }),
+        react(),
       ],
-    },
-  }),
+      resolve: {
+        alias: [
+          // See lexicalForExtension.ts for more details
+          {
+            find: /lexical$/,
+            replacement: path.resolve('./src/lexicalForExtension.ts'),
+          },
+          {
+            find: 'lexicalOriginal',
+            replacement: path.resolve('../lexical/src/index.ts'),
+          },
+          ...(moduleResolution('source') as Alias[]),
+        ],
+      },
+    };
+  },
   zip: {
     sourcesRoot: path.resolve('../..'),
   },

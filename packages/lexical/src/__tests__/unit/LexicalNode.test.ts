@@ -7,6 +7,7 @@
  */
 
 import {
+  $create,
   $createRangeSelection,
   $getRoot,
   $getSelection,
@@ -16,11 +17,13 @@ import {
   $setSelection,
   createEditor,
   DecoratorNode,
+  EditorConfig,
   ElementNode,
   LexicalEditor,
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  SerializedLexicalNode,
   SerializedTextNode,
   TextNode,
 } from 'lexical';
@@ -35,7 +38,7 @@ import {
   TestInlineElementNode,
 } from '../utils';
 
-class TestNode extends LexicalNode {
+export class TestNode extends LexicalNode {
   static getType(): string {
     return 'test';
   }
@@ -48,12 +51,8 @@ class TestNode extends LexicalNode {
     return document.createElement('div');
   }
 
-  static importJSON() {
-    return new TestNode();
-  }
-
-  exportJSON() {
-    return {type: 'test', version: 1};
+  static importJSON(serializedNode: SerializedLexicalNode) {
+    return new TestNode().updateFromJSON(serializedNode);
   }
 }
 
@@ -66,12 +65,8 @@ class InlineDecoratorNode extends DecoratorNode<string> {
     return new InlineDecoratorNode();
   }
 
-  static importJSON() {
-    return new InlineDecoratorNode();
-  }
-
-  exportJSON() {
-    return {type: 'inline-decorator', version: 1};
+  static importJSON(serializedNode: SerializedLexicalNode) {
+    return new InlineDecoratorNode().updateFromJSON(serializedNode);
   }
 
   createDOM(): HTMLElement {
@@ -91,13 +86,13 @@ class InlineDecoratorNode extends DecoratorNode<string> {
   }
 }
 
-// This is a hack to bypass the node type validation on LexicalNode. We never want to create
-// an LexicalNode directly but we're testing the base functionality in this module.
-LexicalNode.getType = function () {
-  return 'node';
-};
-
 describe('LexicalNode tests', () => {
+  beforeAll(() => {
+    jest.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
+  });
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
   initializeUnitTest(
     (testEnv) => {
       let paragraphNode: ParagraphNode;
@@ -164,9 +159,6 @@ describe('LexicalNode tests', () => {
             return new VersionedTextNode(node.__text, node.__key);
           }
           static importJSON(node: SerializedTextNode): VersionedTextNode {
-            throw new Error('Not implemented');
-          }
-          exportJSON(): SerializedTextNode {
             throw new Error('Not implemented');
           }
           afterCloneFrom(node: this): void {
@@ -318,12 +310,8 @@ describe('LexicalNode tests', () => {
             return;
           }
 
-          selection.anchor.type = 'text';
-          selection.anchor.offset = 1;
-          selection.anchor.key = textNode.getKey();
-          selection.focus.type = 'text';
-          selection.focus.offset = 1;
-          selection.focus.key = newTextNode.getKey();
+          selection.anchor.set(textNode.getKey(), 1, 'text');
+          selection.focus.set(newTextNode.getKey(), 1, 'text');
         });
 
         await Promise.resolve().then();
@@ -363,12 +351,8 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const rangeSelection = $createRangeSelection();
 
-          rangeSelection.anchor.type = 'text';
-          rangeSelection.anchor.offset = 1;
-          rangeSelection.anchor.key = textNode.getKey();
-          rangeSelection.focus.type = 'text';
-          rangeSelection.focus.offset = 1;
-          rangeSelection.focus.key = newTextNode.getKey();
+          rangeSelection.anchor.set(textNode.getKey(), 1, 'text');
+          rangeSelection.focus.set(newTextNode.getKey(), 1, 'text');
 
           expect(paragraphNode.isSelected(rangeSelection)).toBe(true);
           expect(textNode.isSelected(rangeSelection)).toBe(true);
@@ -784,6 +768,7 @@ describe('LexicalNode tests', () => {
           bazParagraphNode = new ParagraphNode();
           bazTextNode = new TextNode('baz');
           bazTextNode.toggleUnmergeable();
+          expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(null);
           quxTextNode = new TextNode('qux');
           quxTextNode.toggleUnmergeable();
           paragraphNode.append(quxTextNode);
@@ -791,6 +776,9 @@ describe('LexicalNode tests', () => {
           barParagraphNode.append(barTextNode);
           bazParagraphNode.append(bazTextNode);
           expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
+          expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(
+            bazParagraphNode,
+          );
           rootNode.append(barParagraphNode, bazParagraphNode);
         });
 
@@ -1507,6 +1495,107 @@ describe('LexicalNode tests', () => {
           expect(selection.anchor.offset).toBe(1);
         });
       });
+      describe('LexicalNode.$config()', () => {
+        test('importJSON() with no boilerplate', () => {
+          class CustomTextNode extends TextNode {
+            $config() {
+              return this.config('custom-text', {extends: TextNode});
+            }
+          }
+          const editor = createEditor({
+            nodes: [CustomTextNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const node = CustomTextNode.importJSON({
+                detail: 0,
+                format: 0,
+                mode: 'normal',
+                style: '',
+                text: 'codegen!',
+                type: 'custom-text',
+                version: 1,
+              });
+              expect(node).toBeInstanceOf(CustomTextNode);
+              expect(node.getType()).toBe('custom-text');
+              expect(node.getTextContent()).toBe('codegen!');
+            },
+            {discrete: true},
+          );
+        });
+        test('clone() with no boilerplate', () => {
+          class SNCVersionedTextNode extends TextNode {
+            __version = 0;
+            $config() {
+              return this.config('snc-vtext', {});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__version = node.__version + 1;
+            }
+          }
+          const editor = createEditor({
+            nodes: [SNCVersionedTextNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          let versionedTextNode: SNCVersionedTextNode;
+
+          editor.update(
+            () => {
+              versionedTextNode =
+                $create(SNCVersionedTextNode).setTextContent('test');
+              $getRoot().append(
+                $createParagraphNode().append(versionedTextNode),
+              );
+              expect(versionedTextNode.__version).toEqual(0);
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              expect(versionedTextNode.getLatest().__version).toEqual(0);
+              const latest = versionedTextNode
+                .setTextContent('update')
+                .setMode('token');
+              expect(latest).toMatchObject({
+                __text: 'update',
+                __version: 1,
+              });
+              expect(versionedTextNode).toMatchObject({
+                __text: 'test',
+                __version: 0,
+              });
+            },
+            {discrete: true},
+          );
+          editor.update(
+            () => {
+              let latest = versionedTextNode.getLatest();
+              expect(versionedTextNode.__version).toEqual(0);
+              expect(versionedTextNode.__mode).toEqual(0);
+              expect(versionedTextNode.getMode()).toEqual('token');
+              expect(latest.__version).toEqual(1);
+              expect(latest.__mode).toEqual(1);
+              latest = latest.setTextContent('another update');
+              expect(latest.__version).toEqual(2);
+              expect(latest.getWritable().__version).toEqual(2);
+              expect(
+                versionedTextNode.getLatest().getWritable().__version,
+              ).toEqual(2);
+              expect(versionedTextNode.getLatest().__version).toEqual(2);
+              expect(versionedTextNode.__mode).toEqual(0);
+              expect(versionedTextNode.getLatest().__mode).toEqual(1);
+              expect(versionedTextNode.getMode()).toEqual('token');
+            },
+            {discrete: true},
+          );
+        });
+      });
     },
     {
       namespace: '',
@@ -1514,4 +1603,33 @@ describe('LexicalNode tests', () => {
       theme: {},
     },
   );
+});
+
+// These are outside of the above suite because of the
+// LexicalNode getType mock which ruins it
+describe('LexicalNode.$config() without registration', () => {
+  test('static getType() before registration', () => {
+    class IncorrectCustomDecoratorNode extends DecoratorNode<null> {
+      decorate(editor: LexicalEditor, config: EditorConfig): null {
+        return null;
+      }
+    }
+    class CorrectCustomDecoratorNode extends DecoratorNode<null> {
+      decorate(editor: LexicalEditor, config: EditorConfig): null {
+        return null;
+      }
+      $config() {
+        return this.config('correct-custom-decorator', {});
+      }
+    }
+    // Run twice to make sure that getStaticNodeConfig doesn't cache the wrong thing
+    for (let i = 0; i < 2; i++) {
+      expect(() => IncorrectCustomDecoratorNode.getType()).toThrow(
+        /does not implement \.getType/,
+      );
+      expect(CorrectCustomDecoratorNode.getType()).toEqual(
+        'correct-custom-decorator',
+      );
+    }
+  });
 });

@@ -17,10 +17,15 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-import type {BaseSelection, RangeSelection} from '../LexicalSelection';
+import type {
+  BaseSelection,
+  RangeSelection,
+  TextPointType,
+} from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
 import {IS_FIREFOX} from 'shared/environment';
@@ -29,8 +34,6 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
-  DOM_ELEMENT_TYPE,
-  DOM_TEXT_TYPE,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -48,6 +51,7 @@ import {
   TEXT_TYPE_TO_MODE,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
+import {$cloneNodeState} from '../LexicalNodeState';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -62,6 +66,7 @@ import {
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
+  isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
   toggleTextFormatType,
@@ -90,7 +95,10 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'lowercase'
+  | 'uppercase'
+  | 'capitalize';
 
 export type TextModeType = 'normal' | 'token' | 'segmented';
 
@@ -305,13 +313,14 @@ export class TextNode extends LexicalNode {
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
+    this.__text = prevNode.__text;
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
     this.__mode = prevNode.__mode;
     this.__detail = prevNode.__detail;
   }
 
-  constructor(text: string, key?: NodeKey) {
+  constructor(text: string = '', key?: NodeKey) {
     super(key);
     this.__text = text;
     this.__format = 0;
@@ -365,7 +374,7 @@ export class TextNode extends LexicalNode {
 
   /**
    * Returns whether or not the node is in "token" mode. TextNodes in token mode can be navigated through character-by-character
-   * with a RangeSelection, but are deleted as a single entity (not invdividually by character).
+   * with a RangeSelection, but are deleted as a single entity (not individually by character).
    *
    * @returns true if the node is in token mode, false otherwise.
    */
@@ -384,7 +393,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * Returns whether or not the node is in "segemented" mode. TextNodes in segemented mode can be navigated through character-by-character
+   * Returns whether or not the node is in "segmented" mode. TextNodes in segmented mode can be navigated through character-by-character
    * with a RangeSelection, but are deleted in space-delimited "segments".
    *
    * @returns true if the node is in segmented mode, false otherwise.
@@ -465,6 +474,13 @@ export class TextNode extends LexicalNode {
     return true;
   }
 
+  /**
+   * @returns true if the text node is inline, false otherwise.
+   */
+  isInline(): true {
+    return true;
+  }
+
   // View
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
@@ -490,11 +506,7 @@ export class TextNode extends LexicalNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const nextText = this.__text;
     const prevFormat = prevNode.__format;
     const nextFormat = this.__format;
@@ -579,6 +591,10 @@ export class TextNode extends LexicalNode {
         conversion: convertTextFormatElement,
         priority: 0,
       }),
+      mark: () => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
       s: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -607,12 +623,17 @@ export class TextNode extends LexicalNode {
   }
 
   static importJSON(serializedNode: SerializedTextNode): TextNode {
-    const node = $createTextNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    return $createTextNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTextNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setTextContent(serializedNode.text)
+      .setFormat(serializedNode.format)
+      .setDetail(serializedNode.detail)
+      .setMode(serializedNode.mode)
+      .setStyle(serializedNode.style);
   }
 
   // This improves Lexical's basic text output in copy+paste plus
@@ -621,10 +642,20 @@ export class TextNode extends LexicalNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     let {element} = super.exportDOM(editor);
     invariant(
-      element !== null && isHTMLElement(element),
+      isHTMLElement(element),
       'Expected TextNode createDOM to always return a HTMLElement',
     );
     element.style.whiteSpace = 'pre-wrap';
+
+    // Add text-transform styles for capitalization formats
+    if (this.hasFormat('lowercase')) {
+      element.style.textTransform = 'lowercase';
+    } else if (this.hasFormat('uppercase')) {
+      element.style.textTransform = 'uppercase';
+    } else if (this.hasFormat('capitalize')) {
+      element.style.textTransform = 'capitalize';
+    }
+
     // This is the only way to properly add support for most clients,
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.
@@ -653,8 +684,10 @@ export class TextNode extends LexicalNode {
       mode: this.getMode(),
       style: this.getStyle(),
       text: this.getTextContent(),
-      type: 'text',
-      version: 1,
+      // As an exception here we invoke super at the end for historical reasons.
+      // Namely, to preserve the order of the properties and not to break the tests
+      // that use the serialized string representation.
+      ...super.exportJSON(),
     };
   }
 
@@ -887,7 +920,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when a user event would cause text to be inserted before them in the editor. If true, Lexical will attempt
    * to insert text into this node. If false, it will insert the text in a new sibling node.
    *
@@ -898,7 +931,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when a user event would cause text to be inserted after them in the editor. If true, Lexical will attempt
    * to insert text into this node. If false, it will insert the text in a new sibling node.
    *
@@ -920,26 +953,29 @@ export class TextNode extends LexicalNode {
     errorOnReadOnly();
     const self = this.getLatest();
     const textContent = self.getTextContent();
+    if (textContent === '') {
+      return [];
+    }
     const key = self.__key;
     const compositionKey = $getCompositionKey();
-    const offsetsSet = new Set(splitOffsets);
-    const parts = [];
     const textLength = textContent.length;
-    let string = '';
-    for (let i = 0; i < textLength; i++) {
-      if (string !== '' && offsetsSet.has(i)) {
-        parts.push(string);
-        string = '';
+    splitOffsets.sort((a, b) => a - b);
+    splitOffsets.push(textLength);
+    const parts = [];
+    const splitOffsetsLength = splitOffsets.length;
+    for (
+      let start = 0, offsetIndex = 0;
+      start < textLength && offsetIndex <= splitOffsetsLength;
+      offsetIndex++
+    ) {
+      const end = splitOffsets[offsetIndex];
+      if (end > start) {
+        parts.push(textContent.slice(start, end));
+        start = end;
       }
-      string += textContent[i];
-    }
-    if (string !== '') {
-      parts.push(string);
     }
     const partsLength = parts.length;
-    if (partsLength === 0) {
-      return [];
-    } else if (parts[0] === textContent) {
+    if (partsLength === 1) {
       return [self];
     }
     const firstPart = parts[0];
@@ -950,21 +986,34 @@ export class TextNode extends LexicalNode {
     const detail = self.__detail;
     let hasReplacedSelf = false;
 
+    // Prepare to handle selection
+    let startTextPoint: TextPointType | null = null;
+    let endTextPoint: TextPointType | null = null;
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      const [startPoint, endPoint] = selection.isBackward()
+        ? [selection.focus, selection.anchor]
+        : [selection.anchor, selection.focus];
+      if (startPoint.type === 'text' && startPoint.key === key) {
+        startTextPoint = startPoint;
+      }
+      if (endPoint.type === 'text' && endPoint.key === key) {
+        endTextPoint = endPoint;
+      }
+    }
+
     if (self.isSegmented()) {
       // Create a new TextNode
       writableNode = $createTextNode(firstPart);
       writableNode.__format = format;
       writableNode.__style = style;
       writableNode.__detail = detail;
+      writableNode.__state = $cloneNodeState(self, writableNode);
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = self.getWritable();
-      writableNode.__text = firstPart;
+      writableNode = self.setTextContent(firstPart);
     }
-
-    // Handle selection
-    const selection = $getSelection();
 
     // Then handle all other parts
     const splitNodes: TextNode[] = [writableNode];
@@ -973,43 +1022,64 @@ export class TextNode extends LexicalNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = $createTextNode(part).getWritable();
+      const sibling = $createTextNode(part);
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;
+      sibling.__state = $cloneNodeState(self, sibling);
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
-
-      if ($isRangeSelection(selection)) {
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-
-        if (
-          anchor.key === key &&
-          anchor.type === 'text' &&
-          anchor.offset > textSize &&
-          anchor.offset <= nextTextSize
-        ) {
-          anchor.key = siblingKey;
-          anchor.offset -= textSize;
-          selection.dirty = true;
-        }
-        if (
-          focus.key === key &&
-          focus.type === 'text' &&
-          focus.offset > textSize &&
-          focus.offset <= nextTextSize
-        ) {
-          focus.key = siblingKey;
-          focus.offset -= textSize;
-          selection.dirty = true;
-        }
-      }
       if (compositionKey === key) {
         $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
       splitNodes.push(sibling);
+    }
+
+    // Move the selection to the best location in the split string.
+    // The end point is always left-biased, and the start point is
+    // generally left biased unless the end point would land on a
+    // later node in the split in which case it will prefer the start
+    // of that node so they will tend to be on the same node.
+    const originalStartOffset = startTextPoint ? startTextPoint.offset : null;
+    const originalEndOffset = endTextPoint ? endTextPoint.offset : null;
+    let startOffset = 0;
+    for (const node of splitNodes) {
+      if (!(startTextPoint || endTextPoint)) {
+        break;
+      }
+      const endOffset = startOffset + node.getTextContentSize();
+      if (
+        startTextPoint !== null &&
+        originalStartOffset !== null &&
+        originalStartOffset <= endOffset &&
+        originalStartOffset >= startOffset
+      ) {
+        // Set the start point to the first valid node
+        startTextPoint.set(
+          node.getKey(),
+          originalStartOffset - startOffset,
+          'text',
+        );
+        if (originalStartOffset < endOffset) {
+          // The start isn't on a border so we can stop checking
+          startTextPoint = null;
+        }
+      }
+      if (
+        endTextPoint !== null &&
+        originalEndOffset !== null &&
+        originalEndOffset <= endOffset &&
+        originalEndOffset >= startOffset
+      ) {
+        endTextPoint.set(
+          node.getKey(),
+          originalEndOffset - startOffset,
+          'text',
+        );
+        break;
+      }
+      startOffset = endOffset;
     }
 
     // Insert the nodes into the parent's children
@@ -1073,7 +1143,6 @@ export class TextNode extends LexicalNode {
           target,
           textLength,
         );
-        selection.dirty = true;
       }
       if (focus !== null && focus.key === targetKey) {
         adjustPointOffsetForMergedSibling(
@@ -1083,7 +1152,6 @@ export class TextNode extends LexicalNode {
           target,
           textLength,
         );
-        selection.dirty = true;
       }
     }
     const targetText = target.__text;
@@ -1095,7 +1163,7 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * This method is meant to be overridden by TextNode subclasses to control the behavior of those nodes
    * when used with the registerLexicalTextEntity function. If you're using registerLexicalTextEntity, the
    * node class that you create and replace matched text with should return true from this method.
    *
@@ -1137,13 +1205,13 @@ function convertBringAttentionToElement(
 const preParentCache = new WeakMap<Node, null | Node>();
 
 function isNodePre(node: Node): boolean {
-  return (
-    node.nodeName === 'PRE' ||
-    (node.nodeType === DOM_ELEMENT_TYPE &&
-      (node as HTMLElement).style !== undefined &&
-      (node as HTMLElement).style.whiteSpace !== undefined &&
-      (node as HTMLElement).style.whiteSpace.startsWith('pre'))
-  );
+  if (!isHTMLElement(node)) {
+    return false;
+  } else if (node.nodeName === 'PRE') {
+    return true;
+  }
+  const whiteSpace = node.style.whiteSpace;
+  return typeof whiteSpace === 'string' && whiteSpace.startsWith('pre');
 }
 
 export function findParentPreDOMNode(node: Node) {
@@ -1195,7 +1263,7 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
     return {node: null};
   }
   if (textContent[0] === ' ') {
-    // Traverse backward while in the same line. If content contains new line or tab -> pontential
+    // Traverse backward while in the same line. If content contains new line or tab -> potential
     // delete, other elements can borrow from this one. Deletion depends on whether it's also the
     // last space (see next condition: textContent[textContent.length - 1] === ' '))
     let previousText: null | Text = domNode_;
@@ -1259,8 +1327,8 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
       node = parentElement;
     }
     node = sibling;
-    if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = (node as HTMLElement).style.display;
+    if (isHTMLElement(node)) {
+      const display = node.style.display;
       if (
         (display === '' && !isInlineDomNode(node)) ||
         (display !== '' && !display.startsWith('inline'))
@@ -1272,8 +1340,8 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
     while ((descendant = forward ? node.firstChild : node.lastChild) !== null) {
       node = descendant;
     }
-    if (node.nodeType === DOM_TEXT_TYPE) {
-      return node as Text;
+    if (isDOMTextNode(node)) {
+      return node;
     } else if (node.nodeName === 'BR') {
       return null;
     }
@@ -1284,6 +1352,7 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   code: 'code',
   em: 'italic',
   i: 'italic',
+  mark: 'highlight',
   s: 'strikethrough',
   strong: 'bold',
   sub: 'subscript',

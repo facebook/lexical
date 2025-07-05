@@ -31,7 +31,3 @@ function subscription(editor: LexicalEditor): LexicalSubscription<boolean> {
 export function useLexicalEditable(): boolean {
   return useLexicalSubscription(subscription);
 }
-
-/** @deprecated use the named export {@link useLexicalEditable} */
-// eslint-disable-next-line no-restricted-exports
-export default useLexicalEditable;

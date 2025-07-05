@@ -51,18 +51,69 @@
 .PlaygroundEditorTheme__textBold {
   font-weight: bold;
 }
+.PlaygroundEditorTheme__paragraph mark {
+  background-color: unset;
+}
+.PlaygroundEditorTheme__textHighlight {
+  background: rgba(255, 212, 0, 0.14);
+  border-bottom: 2px solid rgba(255, 212, 0, 0.3);
+}
 .PlaygroundEditorTheme__textItalic {
   font-style: italic;
 }
 .PlaygroundEditorTheme__textUnderline {
   text-decoration: underline;
 }
+
 .PlaygroundEditorTheme__textStrikethrough {
   text-decoration: line-through;
 }
+
 .PlaygroundEditorTheme__textUnderlineStrikethrough {
   text-decoration: underline line-through;
 }
+
+.PlaygroundEditorTheme__tabNode {
+  position: relative;
+  text-decoration: none;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.15em;
+  border-bottom: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.69em;
+  border-top: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before,
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before {
+  top: 0.69em;
+  border-top: 0.1em solid currentColor;
+}
+
+.PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
+  bottom: 0.05em;
+  border-bottom: 0.1em solid currentColor;
+}
+
 .PlaygroundEditorTheme__textSubscript {
   font-size: 0.8em;
   vertical-align: sub !important;
@@ -77,6 +128,15 @@
   font-family: Menlo, Consolas, Monaco, monospace;
   font-size: 94%;
 }
+.PlaygroundEditorTheme__textLowercase {
+  text-transform: lowercase;
+}
+.PlaygroundEditorTheme__textUppercase {
+  text-transform: uppercase;
+}
+.PlaygroundEditorTheme__textCapitalize {
+  text-transform: capitalize;
+}
 .PlaygroundEditorTheme__hashtag {
   background-color: rgba(88, 144, 255, 0.15);
   border-bottom: 1px solid rgba(88, 144, 255, 0.3);
@@ -88,6 +148,25 @@
 .PlaygroundEditorTheme__link:hover {
   text-decoration: underline;
   cursor: pointer;
+}
+.PlaygroundEditorTheme__blockCursor {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+}
+.PlaygroundEditorTheme__blockCursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+  animation: CursorBlink 1.1s steps(2, start) infinite;
+}
+@keyframes CursorBlink {
+  to {
+    visibility: hidden;
+  }
 }
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);
@@ -121,8 +200,16 @@
   margin: 0px 25px 30px 0px;
 }
 .PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
-  /* Remove the table's margin and put it on the wrapper */
-  margin: 0;
+  /* Remove the table's vertical margin and put it on the wrapper */
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.PlaygroundEditorTheme__tableAlignmentCenter {
+  margin-left: auto;
+  margin-right: auto;
+}
+.PlaygroundEditorTheme__tableAlignmentRight {
+  margin-left: auto;
 }
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
@@ -131,9 +218,63 @@
   overflow-x: scroll;
   table-layout: fixed;
   width: fit-content;
-  margin: 0px 25px 30px 0px;
+  margin-top: 25px;
+  margin-bottom: 30px;
 }
-.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even) {
+.PlaygroundEditorTheme__tableScrollableWrapper.PlaygroundEditorTheme__tableFrozenRow {
+  /* position:sticky needs overflow:clip or visible
+     https://github.com/w3c/csswg-drafts/issues/865#issuecomment-350585274 */
+  overflow-x: clip;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td {
+  overflow: clip;
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  top: 44px;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th {
+  overflow: clip;
+  background-color: #f2f3f5;
+  position: sticky;
+  z-index: 2;
+  top: 44px;
+}
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th:after,
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  border-bottom: 1px solid #bbb;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
+  background-color: #ffffff;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
+  background-color: #f2f3f5;
+  position: sticky;
+  z-index: 2;
+  left: 0;
+}
+.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 100%;
+  border-right: 1px solid #bbb;
+}
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even),
+.PlaygroundEditorTheme__tableFrozenColumn
+  .PlaygroundEditorTheme__table.PlaygroundEditorTheme__tableRowStriping
+  tr:nth-child(even)
+  > td:first-child {
   background-color: #f2f5fb;
 }
 .PlaygroundEditorTheme__tableSelection *::selection {
@@ -150,6 +291,14 @@
   padding: 6px 8px;
   position: relative;
   outline: none;
+  overflow: auto;
+}
+/*
+  A firefox workaround to allow scrolling of overflowing table cell
+  ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1904159
+*/
+.PlaygroundEditorTheme__tableCell > * {
+  overflow: inherit;
 }
 .PlaygroundEditorTheme__tableCellResizer {
   position: absolute;
@@ -304,36 +453,47 @@
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
+  background-color: var(--listitem-marker-background-color);
+}
+.PlaygroundEditorTheme__listItem::marker {
+  color: var(--listitem-marker-color);
+  background-color: var(--listitem-marker-background-color);
+  font-family: var(--listitem-marker-font-family);
+  font-size: var(--listitem-marker-font-size);
 }
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {
   position: relative;
-  margin-left: 8px;
-  margin-right: 8px;
-  padding-left: 24px;
-  padding-right: 24px;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
   list-style-type: none;
   outline: none;
+  display: block;
+  min-height: 1.5em;
 }
-.PlaygroundEditorTheme__listItemChecked {
-  text-decoration: line-through;
+.PlaygroundEditorTheme__listItemChecked > *,
+.PlaygroundEditorTheme__listItemUnchecked > * {
+  margin-left: 0.01em;
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  top: 2px;
+  content: '\200B';
+  width: 0.9em;
+  height: 0.9em;
+  top: 50%;
   left: 0;
   cursor: pointer;
   display: block;
   background-size: cover;
   position: absolute;
+  transform: translateY(-50%);
 }
-.PlaygroundEditorTheme__listItemUnchecked[dir='rtl']:before,
-.PlaygroundEditorTheme__listItemChecked[dir='rtl']:before {
-  left: auto;
-  right: 0;
+.PlaygroundEditorTheme__listItemChecked {
+  text-decoration: line-through;
 }
 .PlaygroundEditorTheme__listItemUnchecked:focus:before,
 .PlaygroundEditorTheme__listItemChecked:focus:before {
@@ -357,13 +517,12 @@
   border-style: solid;
   position: absolute;
   display: block;
-  top: 6px;
-  width: 3px;
-  left: 7px;
-  right: 7px;
-  height: 6px;
-  transform: rotate(45deg);
-  border-width: 0 2px 2px 0;
+  top: 45%;
+  width: 0.2em;
+  left: 0.35em;
+  height: 0.4em;
+  transform: translateY(-50%) rotate(45deg);
+  border-width: 0 0.1em 0.1em 0;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;
@@ -374,6 +533,18 @@
 }
 .PlaygroundEditorTheme__tokenComment {
   color: slategray;
+}
+.PlaygroundEditorTheme__tokenDeleted {
+  border-image: linear-gradient(to right, #ffcecb 50%, #ffebe9 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenInserted {
+  border-image: linear-gradient(to right, #aceebb 50%, #dafbe1 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenUnchanged {
+  border-image: linear-gradient(to right, #ddd 50%, #f0f2f5 50%) fill 0/0/0
+    100vw;
 }
 .PlaygroundEditorTheme__tokenPunctuation {
   color: #999;
@@ -427,6 +598,8 @@
 .PlaygroundEditorTheme__layoutItem {
   border: 1px dashed #ddd;
   padding: 8px 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 .PlaygroundEditorTheme__autocomplete {
   color: #ccc;
@@ -444,7 +617,7 @@
   background-color: #ccc;
   line-height: 2px;
 }
-.PlaygroundEditorTheme__hr.selected {
+.PlaygroundEditorTheme__hr.PlaygroundEditorTheme__hrSelected {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
 }
@@ -452,4 +625,49 @@
 .PlaygroundEditorTheme__specialText {
   background-color: yellow;
   font-weight: bold;
+}
+
+.PlaygroundEditorTheme__contextMenu {
+  outline: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+.PlaygroundEditorTheme__contextMenu button:first-child {
+  border-radius: 8px 8px 0px 0px;
+}
+.PlaygroundEditorTheme__contextMenu button:last-child {
+  border-radius: 0px 0px 8px 8px;
+}
+.PlaygroundEditorTheme__contextMenuItem {
+  width: 100%;
+  display: block;
+}
+.PlaygroundEditorTheme__contextMenuItem {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  background-color: #fff;
+  color: #050505;
+  border: 0;
+  border-radius: 0px;
+  font-size: 15px;
+  text-align: left;
+  line-height: 20px;
+  padding: 8px;
+  outline: 0;
+  cursor: pointer;
+}
+.PlaygroundEditorTheme__contextMenuItem.open {
+  background: #ddd;
+}
+.PlaygroundEditorTheme__contextMenuItem:focus,
+.PlaygroundEditorTheme__contextMenuItem:not([disabled]):active {
+  background: #eee;
+}
+.PlaygroundEditorTheme__contextMenuItem:disabled {
+  background: #fff;
+  color: #aaa;
+  cursor: not-allowed;
 }

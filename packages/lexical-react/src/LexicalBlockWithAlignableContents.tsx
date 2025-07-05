@@ -7,6 +7,7 @@
  */
 
 import type {ElementFormatType, NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
@@ -18,17 +19,14 @@ import {
 import {
   $getNodeByKey,
   $getSelection,
-  $isDecoratorNode,
   $isNodeSelection,
   $isRangeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useCallback, useEffect, useRef} from 'react';
+import {ReactNode, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
@@ -51,24 +49,6 @@ export function BlockWithAlignableContents({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const ref = useRef(null);
-
-  const $onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        event.preventDefault();
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isDecoratorNode(node)) {
-              node.remove();
-            }
-          });
-        });
-      }
-      return false;
-    },
-    [editor, isSelected],
-  );
 
   useEffect(() => {
     return mergeRegister(
@@ -121,18 +101,8 @@ export function BlockWithAlignableContents({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
 
   return (
     <div

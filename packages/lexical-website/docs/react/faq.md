@@ -1,6 +1,3 @@
----
----
-
 # React FAQ
 
 ## My app does not work in dev when using StrictMode, help!?
@@ -14,18 +11,18 @@ conventions and guidelines. This is a great place to start:
 Some Lexical-specific concerns (which are consequences of React's
 concurrent and StrictMode semantics, not due to anything unusual in Lexical):
 
-* In React 19, `useMemo` calls are cached across StrictMode re-renders, so
+- In React 19, `useMemo` calls are cached across StrictMode re-renders, so
   only one editor will be used for both renders. If you have a `useEffect`
   call with side-effects (such as updating the document when a plug-in
   initializes), then you should first check to make sure that this effect
   has not already occurred (e.g. by checking the state of the document or
   undoing the change as a cleanup function returned by the effect)
-* `LexicalComposer`'s initialConfig prop is only considered once during
+- `LexicalComposer`'s initialConfig prop is only considered once during
   the first render (`useMemo` is used to create the `LexicalComposerContext`
   which includes the editor and theme)
-* If you are using an `editorState` argument in the config when creating the
+- If you are using an `editorState` argument in the config when creating the
   editor, it will only be called once when the editor is created.
-* You should generally prefer to use hooks that return state such as
+- You should generally prefer to use hooks that return state such as
   `useLexicalEditable` (`useLexicalSubscription` is a generalization of this
   style) rather than manually registering the listeners and expecting a
   particular sequence of triggers to be called, especially
@@ -45,10 +42,10 @@ build of Lexical that the hook was imported from.
 
 The most common root causes of this issue are:
 
-* You are trying to use `useLexicalComposerContext()` in a component that is
+- You are trying to use `useLexicalComposerContext()` in a component that is
   not a child of the `LexicalComposer`. If you need to do that, you need to
   pass the context or editor up the tree with something like `EditorRefPlugin`.
-* You have multiple builds of Lexical in your project. This could be because
+- You have multiple builds of Lexical in your project. This could be because
   you have a dependency that has a direct dependency on some other version
   of Lexical (these packages should have Lexical as `peerDependencies`, but
   not all do), or because your project mixes import and require statements

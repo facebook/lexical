@@ -10,14 +10,18 @@ import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
+  $caretFromPoint,
   $cloneWithProperties,
   $createTabNode,
+  $getCaretRange,
+  $getChildCaret,
   $getEditor,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $isTextPointCaret,
   $parseSerializedNode,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -148,7 +152,12 @@ export function $insertDataTransferForRichText(
   }
 
   const htmlString = dataTransfer.getData('text/html');
-  if (htmlString) {
+  const plainString = dataTransfer.getData('text/plain');
+
+  // Skip HTML handling if it matches the plain text representation.
+  // This avoids unnecessary processing for plain text strings created by
+  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
+  if (htmlString && plainString !== htmlString) {
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(
@@ -165,8 +174,7 @@ export function $insertDataTransferForRichText(
   // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
   // Webkit-specific: Supports read 'text/uri-list' in clipboard.
-  const text =
-    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
+  const text = plainString || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
       const parts = text.split(/(\r?\n|\t)/);
@@ -224,8 +232,47 @@ export function $insertGeneratedNodes(
     })
   ) {
     selection.insertNodes(nodes);
+    $updateSelectionOnInsert(selection);
   }
   return;
+}
+
+function $updateSelectionOnInsert(selection: BaseSelection): void {
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const anchor = selection.anchor;
+    let nodeToInspect: LexicalNode | null = null;
+
+    const anchorCaret = $caretFromPoint(anchor, 'previous');
+    if (anchorCaret) {
+      if ($isTextPointCaret(anchorCaret)) {
+        nodeToInspect = anchorCaret.origin;
+      } else {
+        const range = $getCaretRange(
+          anchorCaret,
+          $getChildCaret($getRoot(), 'next').getFlipped(),
+        );
+        for (const caret of range) {
+          if ($isTextNode(caret.origin)) {
+            nodeToInspect = caret.origin;
+            break;
+          } else if ($isElementNode(caret.origin) && !caret.origin.isInline()) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (nodeToInspect && $isTextNode(nodeToInspect)) {
+      const newFormat = nodeToInspect.getFormat();
+      const newStyle = nodeToInspect.getStyle();
+
+      if (selection.format !== newFormat || selection.style !== newStyle) {
+        selection.format = newFormat;
+        selection.style = newStyle;
+        selection.dirty = true;
+      }
+    }
+  }
 }
 
 export interface BaseSerializedNode {
@@ -365,7 +412,7 @@ export function $generateJSONFromSelectedNodes<
 }
 
 /**
- * This method takes an array of objects conforming to the BaseSeralizedNode interface and returns
+ * This method takes an array of objects conforming to the BaseSerializedNode interface and returns
  * an Array containing instances of the corresponding LexicalNode classes registered on the editor.
  * Normally, you'd get an Array of BaseSerialized nodes from {@link $generateJSONFromSelectedNodes}
  *
@@ -420,9 +467,9 @@ export async function copyToClipboard(
   }
 
   const rootElement = editor.getRootElement();
-  const windowDocument =
-    editor._window == null ? window.document : editor._window.document;
-  const domSelection = getDOMSelection(editor._window);
+  const editorWindow = editor._window || window;
+  const windowDocument = window.document;
+  const domSelection = getDOMSelection(editorWindow);
   if (rootElement === null || domSelection === null) {
     return false;
   }
@@ -445,9 +492,7 @@ export async function copyToClipboard(
             window.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
-          resolve(
-            $copyToClipboardEvent(editor, secondEvent as ClipboardEvent, data),
-          );
+          resolve($copyToClipboardEvent(editor, secondEvent, data));
         }
         // Block the entire copy flow while we wait for the next ClipboardEvent
         return true;

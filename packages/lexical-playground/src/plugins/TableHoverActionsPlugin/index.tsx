@@ -6,14 +6,16 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
   $getTableAndElementByKey,
   $getTableColumnIndexFromTableCellNode,
   $getTableRowIndexFromTableCellNode,
-  $insertTableColumn__EXPERIMENTAL,
-  $insertTableRow__EXPERIMENTAL,
+  $insertTableColumnAtSelection,
+  $insertTableRowAtSelection,
   $isTableCellNode,
   $isTableNode,
   getTableElement,
@@ -22,11 +24,17 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, NodeKey} from 'lexical';
+import {
+  $getNearestNodeFromDOMNode,
+  EditorThemeClasses,
+  isHTMLElement,
+  NodeKey,
+} from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import {getThemeSelector} from '../../utils/getThemeSelector';
 import {useDebounce} from '../CodeActionMenuPlugin/utils';
 
 const BUTTON_WIDTH_PX = 20;
@@ -36,7 +44,7 @@ function TableHoverActionsContainer({
 }: {
   anchorElem: HTMLElement;
 }): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
+  const [editor, {getTheme}] = useLexicalComposerContext();
   const isEditable = useLexicalEditable();
   const [isShownRow, setShownRow] = useState<boolean>(false);
   const [isShownColumn, setShownColumn] = useState<boolean>(false);
@@ -48,7 +56,7 @@ function TableHoverActionsContainer({
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
-      const {isOutside, tableDOMNode} = getMouseInfo(event);
+      const {isOutside, tableDOMNode} = getMouseInfo(event, getTheme);
 
       if (isOutside) {
         setShownRow(false);
@@ -115,6 +123,19 @@ function TableHoverActionsContainer({
           height: tableElemHeight,
         } = (tableDOMElement as HTMLTableElement).getBoundingClientRect();
 
+        // Adjust for using the scrollable table container
+        const parentElement = (tableDOMElement as HTMLTableElement)
+          .parentElement;
+        let tableHasScroll = false;
+        if (
+          parentElement &&
+          parentElement.classList.contains(
+            'PlaygroundEditorTheme__tableScrollableWrapper',
+          )
+        ) {
+          tableHasScroll =
+            parentElement.scrollWidth > parentElement.clientWidth;
+        }
         const {y: editorElemY, left: editorElemLeft} =
           anchorElem.getBoundingClientRect();
 
@@ -123,9 +144,15 @@ function TableHoverActionsContainer({
           setShownRow(true);
           setPosition({
             height: BUTTON_WIDTH_PX,
-            left: tableElemLeft - editorElemLeft,
+            left:
+              tableHasScroll && parentElement
+                ? parentElement.offsetLeft
+                : tableElemLeft - editorElemLeft,
             top: tableElemBottom - editorElemY + 5,
-            width: tableElemWidth,
+            width:
+              tableHasScroll && parentElement
+                ? parentElement.offsetWidth
+                : tableElemWidth,
           });
         } else if (hoveredColumnNode) {
           setShownColumn(true);
@@ -217,10 +244,10 @@ function TableHoverActionsContainer({
         );
         maybeTableNode?.selectEnd();
         if (insertRow) {
-          $insertTableRow__EXPERIMENTAL();
+          $insertTableRowAtSelection();
           setShownRow(false);
         } else {
-          $insertTableColumn__EXPERIMENTAL();
+          $insertTableColumnAtSelection();
           setShownColumn(false);
         }
       }
@@ -235,14 +262,14 @@ function TableHoverActionsContainer({
     <>
       {isShownRow && (
         <button
-          className={'PlaygroundEditorTheme__tableAddRows'}
+          className={`${getTheme()?.tableAddRows}`}
           style={{...position}}
           onClick={() => insertAction(true)}
         />
       )}
       {isShownColumn && (
         <button
-          className={'PlaygroundEditorTheme__tableAddColumns'}
+          className={`${getTheme()?.tableAddColumns}`}
           style={{...position}}
           onClick={() => insertAction(false)}
         />
@@ -251,24 +278,28 @@ function TableHoverActionsContainer({
   );
 }
 
-function getMouseInfo(event: MouseEvent): {
+function getMouseInfo(
+  event: MouseEvent,
+  getTheme: () => EditorThemeClasses | null | undefined,
+): {
   tableDOMNode: HTMLElement | null;
   isOutside: boolean;
 } {
   const target = event.target;
+  const tableCellClass = getThemeSelector(getTheme, 'tableCell');
 
-  if (target && target instanceof HTMLElement) {
+  if (isHTMLElement(target)) {
     const tableDOMNode = target.closest<HTMLElement>(
-      'td.PlaygroundEditorTheme__tableCell, th.PlaygroundEditorTheme__tableCell',
+      `td${tableCellClass}, th${tableCellClass}`,
     );
 
     const isOutside = !(
       tableDOMNode ||
       target.closest<HTMLElement>(
-        'button.PlaygroundEditorTheme__tableAddRows',
+        `button${getThemeSelector(getTheme, 'tableAddRows')}`,
       ) ||
       target.closest<HTMLElement>(
-        'button.PlaygroundEditorTheme__tableAddColumns',
+        `button${getThemeSelector(getTheme, 'tableAddColumns')}`,
       ) ||
       target.closest<HTMLElement>('div.TableCellResizer__resizer')
     );

@@ -10,6 +10,7 @@ import type {RangeSelection, TextNode} from '.';
 import type {PointType} from './LexicalSelection';
 
 import {$isElementNode, $isTextNode} from '.';
+import {nodeStatesAreEquivalent} from './LexicalNodeState';
 import {getActiveEditor} from './LexicalUpdates';
 
 function $canSimpleTextNodesBeMerged(
@@ -22,10 +23,15 @@ function $canSimpleTextNodesBeMerged(
   const node2Mode = node2.__mode;
   const node2Format = node2.__format;
   const node2Style = node2.__style;
+  const node1State = node1.__state;
+  const node2State = node2.__state;
   return (
     (node1Mode === null || node1Mode === node2Mode) &&
     (node1Format === null || node1Format === node2Format) &&
-    (node1Style === null || node1Style === node2Style)
+    (node1Style === null || node1Style === node2Style) &&
+    (node1.__state === null ||
+      node1State === node2State ||
+      nodeStatesAreEquivalent(node1State, node2State))
   );
 }
 
@@ -110,6 +116,7 @@ function $normalizePoint(point: PointType): void {
         nextNode.__key,
         nextOffsetAtEnd ? nextNode.getTextContentSize() : 0,
         'text',
+        true,
       );
       break;
     } else if (!$isElementNode(nextNode)) {
@@ -119,6 +126,7 @@ function $normalizePoint(point: PointType): void {
       nextNode.__key,
       nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,
       'element',
+      true,
     );
   }
 }

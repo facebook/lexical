@@ -26,10 +26,22 @@ import {ElementNode, TextNode} from 'lexical';
 /**
  *  CodeHighlighter
  */
+declare export function $getEndOfCodeInLine(
+  anchor: CodeHighlightNode | TabNode,
+): CodeHighlightNode | TabNode;
+/** @deprecated renamed to {@link $getEndOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
 declare export function getEndOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
 ): CodeHighlightNode | TabNode;
 
+declare export function $getStartOfCodeInLine(
+  anchor: CodeHighlightNode | TabNode,
+  offset: number,
+): null | {
+  node: CodeHighlightNode | TabNode | LineBreakNode,
+  offset: number,
+};
+/** @deprecated renamed to {@link $getStartOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
 declare export function getStartOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
   offset: number,
@@ -77,12 +89,6 @@ declare export class CodeHighlightNode extends TextNode {
   // $FlowFixMe
   static clone(node: CodeHighlightNode): CodeHighlightNode;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    // $FlowFixMe
-    prevNode: CodeHighlightNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
   setFormat(format: number): this;
 }
 
@@ -91,12 +97,20 @@ declare export var DEFAULT_CODE_LANGUAGE: string;
 declare export var getCodeLanguages: () => Array<string>;
 declare export var getDefaultCodeLanguage: () => string;
 
+declare export function $getFirstCodeNodeOfLine(
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): CodeHighlightNode | TabNode | LineBreakNode;
+/** @deprecated renamed to {@link $getFirstCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
 declare export function getFirstCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): null | CodeHighlightNode | TabNode | LineBreakNode;
 
 declare export function getLanguageFriendlyName(lang: string): string;
 
+declare export function $getLastCodeNodeOfLine(
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): CodeHighlightNode | TabNode | LineBreakNode;
+/** @deprecated renamed to {@link $getLastCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
 declare export function getLastCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): CodeHighlightNode | TabNode | LineBreakNode;
@@ -125,7 +139,6 @@ declare export class CodeNode extends ElementNode {
   static clone(node: CodeNode): CodeNode;
   constructor(language: ?string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

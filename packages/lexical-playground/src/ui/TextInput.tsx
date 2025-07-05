@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './Input.css';
 
 import * as React from 'react';

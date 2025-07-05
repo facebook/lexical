@@ -86,7 +86,7 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
         '<test-decorator></test-decorator>' +
         '<p><br></p>',
       initialHtml: '<p>Hello world</p>',
-      selectionOffset: 12, // Selection on text node after "Hello" world
+      selectionOffset: 'Hello world'.length, // Selection on text node after "Hello" world
       selectionPath: [0, 0],
     },
     {
@@ -96,7 +96,7 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
         '<test-decorator></test-decorator>' +
         '<p><span style="white-space: pre-wrap;">Hello world</span></p>',
       initialHtml: '<p>Hello world</p>',
-      selectionOffset: 0, // Selection on text node after "Hello" world
+      selectionOffset: 0, // Selection on text node before "Hello" world
       selectionPath: [0, 0],
     },
     {
@@ -163,13 +163,19 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
         // to use whatever was passed (e.g. keep selection on root node)
         const selection = $createRangeSelection();
         const type = $isElementNode(selectionNode) ? 'element' : 'text';
-        selection.anchor.key = selection.focus.key = selectionNode.getKey();
-        selection.anchor.offset = selection.focus.offset =
-          testCase.selectionOffset;
-        selection.anchor.type = selection.focus.type = type;
+        selection.anchor.set(
+          selectionNode.getKey(),
+          testCase.selectionOffset,
+          type,
+        );
+        selection.focus.set(
+          selectionNode.getKey(),
+          testCase.selectionOffset,
+          type,
+        );
         $setSelection(selection);
 
-        $insertNodeToNearestRoot($createTestDecoratorNode());
+        $insertNodeToNearestRoot($createTestDecoratorNode().setIsInline(false));
 
         // Cleaning up list value attributes as it's not really needed in this test
         // and it clutters expected output

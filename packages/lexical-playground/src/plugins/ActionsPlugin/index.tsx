@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {
@@ -30,7 +31,9 @@ import {
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
+  COLLABORATION_TAG,
   COMMAND_PRIORITY_EDITOR,
+  HISTORIC_TAG,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 
@@ -142,8 +145,8 @@ export default function ActionsPlugin({
         if (
           !isEditable &&
           dirtyElements.size > 0 &&
-          !tags.has('historic') &&
-          !tags.has('collaboration')
+          !tags.has(HISTORIC_TAG) &&
+          !tags.has(COLLABORATION_TAG)
         ) {
           validateEditorState(editor);
         }

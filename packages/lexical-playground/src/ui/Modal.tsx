@@ -6,8 +6,11 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './Modal.css';
 
+import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
@@ -42,7 +45,8 @@ function PortalImpl({
       const target = event.target;
       if (
         modalRef.current !== null &&
-        !modalRef.current.contains(target as Node) &&
+        isDOMNode(target) &&
+        !modalRef.current.contains(target) &&
         closeOnClickOutside
       ) {
         onClose();

@@ -6,7 +6,9 @@
  *
  */
 
+import type {LexicalCommandLog} from './useLexicalCommandsLog';
 import type {EditorSetOptions, EditorState} from 'lexical';
+import type {JSX} from 'react';
 
 import * as React from 'react';
 import {forwardRef, useCallback, useEffect, useRef, useState} from 'react';
@@ -26,6 +28,7 @@ export const TreeView = forwardRef<
     generateContent: (exportDOM: boolean) => Promise<string>;
     setEditorState: (state: EditorState, options?: EditorSetOptions) => void;
     setEditorReadOnly: (isReadonly: boolean) => void;
+    commandsLog?: LexicalCommandLog;
   }
 >(function TreeViewWrapped(
   {
@@ -39,6 +42,7 @@ export const TreeView = forwardRef<
     setEditorState,
     setEditorReadOnly,
     generateContent,
+    commandsLog = [],
   },
   ref,
 ): JSX.Element {
@@ -54,6 +58,7 @@ export const TreeView = forwardRef<
   const [isLimited, setIsLimited] = useState(false);
   const [showLimited, setShowLimited] = useState(false);
   const lastEditorStateRef = useRef<null | EditorState>();
+  const lastCommandsLogRef = useRef<LexicalCommandLog>([]);
   const lastGenerationID = useRef(0);
 
   const generateTree = useCallback(
@@ -84,12 +89,21 @@ export const TreeView = forwardRef<
       }
     }
 
-    // Prevent re-rendering if the editor state hasn't changed
-    if (lastEditorStateRef.current !== editorState) {
+    // Update view when either editor state changes or new commands are logged
+    const shouldUpdate =
+      lastEditorStateRef.current !== editorState ||
+      lastCommandsLogRef.current !== commandsLog;
+
+    if (shouldUpdate) {
+      // Check if it's a real editor state change
+      const isEditorStateChange = lastEditorStateRef.current !== editorState;
+
       lastEditorStateRef.current = editorState;
+      lastCommandsLogRef.current = commandsLog;
       generateTree(showExportDOM);
 
-      if (!timeTravelEnabled) {
+      // Only record in time travel if there was an actual editor state change
+      if (!timeTravelEnabled && isEditorStateChange) {
         setTimeStampedEditorStates((currentEditorStates) => [
           ...currentEditorStates,
           [Date.now(), editorState],
@@ -102,6 +116,7 @@ export const TreeView = forwardRef<
     showExportDOM,
     showLimited,
     timeTravelEnabled,
+    commandsLog,
   ]);
 
   const totalEditorStates = timeStampedEditorStates.length;

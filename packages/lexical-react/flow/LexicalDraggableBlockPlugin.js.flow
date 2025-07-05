@@ -16,8 +16,9 @@ type Props = $ReadOnly<{
   menuComponent: React.Node,
   targetLineComponent: React.Node,
   isOnMenu: (element: HTMLElement) => boolean,
+  onElementChanged?: (element: HTMLElement | null) => void
 }>;
 	
 declare export function DraggableBlockPlugin_EXPERIMENTAL(
   props: Props,
-): React$MixedElement;
+): React.MixedElement;

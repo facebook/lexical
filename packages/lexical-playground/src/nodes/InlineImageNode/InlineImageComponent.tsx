@@ -7,6 +7,7 @@
  */
 import type {Position} from './InlineImageNode';
 import type {BaseSelection, LexicalEditor, NodeKey} from 'lexical';
+import type {JSX} from 'react';
 
 import './InlineImageNode.css';
 
@@ -26,8 +27,6 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DRAGSTART_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -42,7 +41,7 @@ import ContentEditable from '../../ui/ContentEditable';
 import {DialogActions} from '../../ui/Dialog';
 import Select from '../../ui/Select';
 import TextInput from '../../ui/TextInput';
-import {$isInlineImageNode, InlineImageNode} from './InlineImageNode';
+import {InlineImageNode} from './InlineImageNode';
 
 const imageCache = new Set();
 
@@ -203,27 +202,6 @@ export default function InlineImageComponent({
   const activeEditorRef = useRef<LexicalEditor | null>(null);
   const isEditable = useLexicalEditable();
 
-  const $onDelete = useCallback(
-    (payload: KeyboardEvent) => {
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        const event: KeyboardEvent = payload;
-        event.preventDefault();
-        if (isSelected && $isNodeSelection(deleteSelection)) {
-          editor.update(() => {
-            deleteSelection.getNodes().forEach((node) => {
-              if ($isInlineImageNode(node)) {
-                node.remove();
-              }
-            });
-          });
-        }
-      }
-      return false;
-    },
-    [editor, isSelected],
-  );
-
   const $onEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
@@ -321,16 +299,6 @@ export default function InlineImageComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
@@ -347,7 +315,6 @@ export default function InlineImageComponent({
     editor,
     isSelected,
     nodeKey,
-    $onDelete,
     $onEnter,
     $onEscape,
     setSelected,

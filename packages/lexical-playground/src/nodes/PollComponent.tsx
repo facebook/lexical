@@ -7,6 +7,7 @@
  */
 
 import type {Option, Options, PollNode} from './PollNode';
+import type {JSX} from 'react';
 
 import './PollNode.css';
 
@@ -21,12 +22,10 @@ import {
   BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
   NodeKey,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import Button from '../ui/Button';
 import joinClasses from '../utils/joinClasses';
@@ -144,25 +143,6 @@ export default function PollComponent({
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const ref = useRef(null);
 
-  const $onDelete = useCallback(
-    (payload: KeyboardEvent) => {
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        const event: KeyboardEvent = payload;
-        event.preventDefault();
-        editor.update(() => {
-          deleteSelection.getNodes().forEach((node) => {
-            if ($isPollNode(node)) {
-              node.remove();
-            }
-          });
-        });
-      }
-      return false;
-    },
-    [editor, isSelected],
-  );
-
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
@@ -185,18 +165,8 @@ export default function PollComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
 
   const withPollNode = (
     cb: (node: PollNode) => void,

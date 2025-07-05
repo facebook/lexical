@@ -77,43 +77,28 @@ export class RootNode extends ElementNode {
 
   // View
 
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false {
+  updateDOM(prevNode: this, dom: HTMLElement): false {
     return false;
   }
 
   // Mutate
-
-  append(...nodesToAppend: LexicalNode[]): this {
-    for (let i = 0; i < nodesToAppend.length; i++) {
-      const node = nodesToAppend[i];
-      if (!$isElementNode(node) && !$isDecoratorNode(node)) {
-        invariant(
-          false,
-          'rootNode.append: Only element or decorator nodes can be appended to the root node',
-        );
-      }
+  splice(
+    start: number,
+    deleteCount: number,
+    nodesToInsert: LexicalNode[],
+  ): this {
+    for (const node of nodesToInsert) {
+      invariant(
+        $isElementNode(node) || $isDecoratorNode(node),
+        'rootNode.splice: Only element or decorator nodes can be inserted to the root node',
+      );
     }
-    return super.append(...nodesToAppend);
+    return super.splice(start, deleteCount, nodesToInsert);
   }
 
   static importJSON(serializedNode: SerializedRootNode): RootNode {
     // We don't create a root, and instead use the existing root.
-    const node = $getRoot();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedRootNode {
-    return {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      type: 'root',
-      version: 1,
-    };
+    return $getRoot().updateFromJSON(serializedNode);
   }
 
   collapseAtStart(): true {

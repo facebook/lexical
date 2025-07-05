@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -109,7 +111,7 @@ function getFullMatchOffset(
 ): number {
   let triggerOffset = offset;
   for (let i = triggerOffset; i <= entryText.length; i++) {
-    if (documentText.substr(-i) === entryText.substr(0, i)) {
+    if (documentText.slice(-i) === entryText.substring(0, i)) {
       triggerOffset = i;
     }
   }
@@ -265,6 +267,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   onSelectOption,
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
+  preselectFirstItem = true,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -280,14 +283,17 @@ export function LexicalMenu<TOption extends MenuOption>({
     matchingString: string,
   ) => void;
   commandPriority?: CommandListenerPriority;
+  preselectFirstItem?: boolean;
 }): JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
 
   const matchingString = resolution.match && resolution.match.matchingString;
 
   useEffect(() => {
-    setHighlightedIndex(0);
-  }, [matchingString]);
+    if (preselectFirstItem) {
+      setHighlightedIndex(0);
+    }
+  }, [matchingString, preselectFirstItem]);
 
   const selectOptionAndCleanUp = useCallback(
     (selectedEntry: TOption) => {
@@ -334,10 +340,10 @@ export function LexicalMenu<TOption extends MenuOption>({
   useLayoutEffect(() => {
     if (options === null) {
       setHighlightedIndex(null);
-    } else if (selectedIndex === null) {
+    } else if (selectedIndex === null && preselectFirstItem) {
       updateSelectedIndex(0);
     }
-  }, [options, selectedIndex, updateSelectedIndex]);
+  }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
 
   useEffect(() => {
     return mergeRegister(
@@ -362,9 +368,13 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_DOWN_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && options.length && selectedIndex !== null) {
+          if (options !== null && options.length) {
             const newSelectedIndex =
-              selectedIndex !== options.length - 1 ? selectedIndex + 1 : 0;
+              selectedIndex === null
+                ? 0
+                : selectedIndex !== options.length - 1
+                ? selectedIndex + 1
+                : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -387,9 +397,13 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_UP_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && options.length && selectedIndex !== null) {
+          if (options !== null && options.length) {
             const newSelectedIndex =
-              selectedIndex !== 0 ? selectedIndex - 1 : options.length - 1;
+              selectedIndex === null
+                ? options.length - 1
+                : selectedIndex !== 0
+                ? selectedIndex - 1
+                : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -478,6 +492,19 @@ export function LexicalMenu<TOption extends MenuOption>({
   );
 }
 
+function setContainerDivAttributes(
+  containerDiv: HTMLElement,
+  className?: string,
+) {
+  if (className != null) {
+    containerDiv.className = className;
+  }
+  containerDiv.setAttribute('aria-label', 'Typeahead menu');
+  containerDiv.setAttribute('role', 'listbox');
+  containerDiv.style.display = 'block';
+  containerDiv.style.position = 'absolute';
+}
+
 export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
@@ -486,9 +513,10 @@ export function useMenuAnchorRef(
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
 ): MutableRefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
-  const anchorElementRef = useRef<HTMLElement | null>(
-    CAN_USE_DOM ? document.createElement('div') : null,
-  );
+  const initialAnchorElement = CAN_USE_DOM
+    ? document.createElement('div')
+    : null;
+  const anchorElementRef = useRef<HTMLElement | null>(initialAnchorElement);
   const positionMenu = useCallback(() => {
     if (anchorElementRef.current === null || parent === undefined) {
       return;
@@ -538,17 +566,10 @@ export function useMenuAnchorRef(
       }
 
       if (!containerDiv.isConnected) {
-        if (className != null) {
-          containerDiv.className = className;
-        }
-        containerDiv.setAttribute('aria-label', 'Typeahead menu');
-        containerDiv.setAttribute('id', 'typeahead-menu');
-        containerDiv.setAttribute('role', 'listbox');
-        containerDiv.style.display = 'block';
-        containerDiv.style.position = 'absolute';
+        setContainerDivAttributes(containerDiv, className);
         parent.append(containerDiv);
       }
-      anchorElementRef.current = containerDiv;
+      containerDiv.setAttribute('id', 'typeahead-menu');
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
   }, [
@@ -563,17 +584,18 @@ export function useMenuAnchorRef(
     const rootElement = editor.getRootElement();
     if (resolution !== null) {
       positionMenu();
-      return () => {
-        if (rootElement !== null) {
-          rootElement.removeAttribute('aria-controls');
-        }
-
-        const containerDiv = anchorElementRef.current;
-        if (containerDiv !== null && containerDiv.isConnected) {
-          containerDiv.remove();
-        }
-      };
     }
+    return () => {
+      if (rootElement !== null) {
+        rootElement.removeAttribute('aria-controls');
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const containerDiv = anchorElementRef.current;
+      if (containerDiv !== null && containerDiv.isConnected) {
+        containerDiv.remove();
+        containerDiv.removeAttribute('id');
+      }
+    };
   }, [editor, positionMenu, resolution]);
 
   const onVisibilityChange = useCallback(
@@ -593,6 +615,17 @@ export function useMenuAnchorRef(
     positionMenu,
     onVisibilityChange,
   );
+
+  // Append the context for the menu immediately
+  if (
+    initialAnchorElement != null &&
+    initialAnchorElement === anchorElementRef.current
+  ) {
+    setContainerDivAttributes(initialAnchorElement, className);
+    if (parent != null) {
+      parent.append(initialAnchorElement);
+    }
+  }
 
   return anchorElementRef;
 }

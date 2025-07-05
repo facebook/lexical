@@ -17,7 +17,13 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {KlassConstructor, LexicalEditor, Spread} from 'lexical';
+import type {
+  KlassConstructor,
+  LexicalEditor,
+  LexicalUpdateJSON,
+  Spread,
+  TextFormatType,
+} from 'lexical';
 
 import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -27,6 +33,7 @@ import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
   ELEMENT_TYPE_TO_FORMAT,
+  TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
@@ -41,6 +48,7 @@ import {
   $isRootOrShadowRoot,
   isHTMLElement,
   removeFromParent,
+  toggleTextFormatType,
 } from '../LexicalUtils';
 
 export type SerializedElementNode<
@@ -51,6 +59,8 @@ export type SerializedElementNode<
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
+    textFormat?: number;
+    textStyle?: string;
   },
   SerializedLexicalNode
 >;
@@ -73,13 +83,13 @@ export interface ElementNode {
 /**
  * A utility class for managing the DOM children of an ElementNode
  */
-export class ElementDOMSlot {
-  element: HTMLElement;
-  before: Node | null;
-  after: Node | null;
+export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
+  readonly element: T;
+  readonly before: Node | null;
+  readonly after: Node | null;
   constructor(
     /** The element returned by createDOM */
-    element: HTMLElement,
+    element: T,
     /** All managed children will be inserted before this node, if defined */
     before?: Node | undefined | null,
     /** All managed children will be inserted after this node, if defined */
@@ -92,19 +102,24 @@ export class ElementDOMSlot {
   /**
    * Return a new ElementDOMSlot where all managed children will be inserted before this node
    */
-  withBefore(before: Node | undefined | null): ElementDOMSlot {
+  withBefore(before: Node | undefined | null): ElementDOMSlot<T> {
     return new ElementDOMSlot(this.element, before, this.after);
   }
   /**
    * Return a new ElementDOMSlot where all managed children will be inserted after this node
    */
-  withAfter(after: Node | undefined | null): ElementDOMSlot {
+  withAfter(after: Node | undefined | null): ElementDOMSlot<T> {
     return new ElementDOMSlot(this.element, this.before, after);
   }
   /**
    * Return a new ElementDOMSlot with an updated root element
    */
-  withElement(element: HTMLElement): ElementDOMSlot {
+  withElement<ElementType extends HTMLElement>(
+    element: ElementType,
+  ): ElementDOMSlot<ElementType> {
+    if (this.element === (element as HTMLElement)) {
+      return this as unknown as ElementDOMSlot<ElementType>;
+    }
     return new ElementDOMSlot(element, this.before, this.after);
   }
   /**
@@ -271,15 +286,15 @@ export class ElementDOMSlot {
   }
 }
 
-function indexPath(root: HTMLElement, child: Node): number[] {
+export function indexPath(root: HTMLElement, child: Node): number[] {
   const path: number[] = [];
   let node: Node | null = child;
-  for (; node !== root && node !== null; node = child.parentNode) {
+  for (; node !== root && node !== null; node = node.parentNode) {
     let i = 0;
     for (
       let sibling = node.previousSibling;
       sibling !== null;
-      sibling = node.previousSibling
+      sibling = sibling.previousSibling
     ) {
       i++;
     }
@@ -307,6 +322,10 @@ export class ElementNode extends LexicalNode {
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
+  /** @internal */
+  __textFormat: number;
+  /** @internal */
+  __textStyle: string;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -317,17 +336,23 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+    this.__textFormat = 0;
+    this.__textStyle = '';
   }
 
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
-    this.__first = prevNode.__first;
-    this.__last = prevNode.__last;
-    this.__size = prevNode.__size;
+    if (this.__key === prevNode.__key) {
+      this.__first = prevNode.__first;
+      this.__last = prevNode.__last;
+      this.__size = prevNode.__size;
+    }
     this.__indent = prevNode.__indent;
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
     this.__dir = prevNode.__dir;
+    this.__textFormat = prevNode.__textFormat;
+    this.__textStyle = prevNode.__textStyle;
   }
 
   getFormat(): number {
@@ -527,12 +552,35 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__dir;
   }
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
+  }
   hasFormat(type: ElementFormatType): boolean {
     if (type !== '') {
       const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
       return (this.getFormat() & formatFlag) !== 0;
     }
     return false;
+  }
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
+  }
+  /**
+   * Returns the format flags applied to the node as a 32-bit integer.
+   *
+   * @returns a number representing the TextFormatTypes applied to the node.
+   */
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+    const self = this.getLatest();
+    const format = self.__textFormat;
+    return toggleTextFormatType(format, type, alignWithFormat);
+  }
+
+  getTextStyle(): string {
+    const self = this.getLatest();
+    return self.__textStyle;
   }
 
   // Mutators
@@ -613,6 +661,16 @@ export class ElementNode extends LexicalNode {
     const self = this.getWritable();
     self.__style = style || '';
     return this;
+  }
+  setTextFormat(type: number): this {
+    const self = this.getWritable();
+    self.__textFormat = type;
+    return self;
+  }
+  setTextStyle(style: string): this {
+    const self = this.getWritable();
+    self.__textStyle = style;
+    return self;
   }
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
@@ -764,12 +822,12 @@ export class ElementNode extends LexicalNode {
    * or accessory nodes before or after the children. The root of the node returned
    * by createDOM must still be exactly one HTMLElement.
    */
-  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
     return new ElementDOMSlot(element);
   }
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
-    if (element && isHTMLElement(element)) {
+    if (isHTMLElement(element)) {
       const indent = this.getIndent();
       if (indent > 0) {
         // padding-inline-start is not widely supported in email HTML
@@ -781,20 +839,46 @@ export class ElementNode extends LexicalNode {
         // (see https://github.com/facebook/lexical/pull/4025)
         element.style.paddingInlineStart = `${indent * 40}px`;
       }
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
     }
 
     return {element};
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {
-    return {
+    const json: SerializedElementNode = {
       children: [],
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-      type: 'element',
-      version: 1,
+      // As an exception here we invoke super at the end for historical reasons.
+      // Namely, to preserve the order of the properties and not to break the tests
+      // that use the serialized string representation.
+      ...super.exportJSON(),
     };
+    const textFormat = this.getTextFormat();
+    const textStyle = this.getTextStyle();
+    if (textFormat !== 0) {
+      json.textFormat = textFormat;
+    }
+    if (textStyle !== '') {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setFormat(serializedNode.format)
+      .setIndent(serializedNode.indent)
+      .setDirection(serializedNode.direction)
+      .setTextFormat(serializedNode.textFormat || 0)
+      .setTextStyle(serializedNode.textStyle || '');
   }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(
@@ -807,9 +891,15 @@ export class ElementNode extends LexicalNode {
     return true;
   }
   /*
-   * This method controls the behavior of a the node during backwards
+   * This method controls the behavior of the node during backwards
    * deletion (i.e., backspace) when selection is at the beginning of
-   * the node (offset 0)
+   * the node (offset 0). You may use this to have the node replace
+   * itself, change its state, or do nothing. When you do make such
+   * a change, you should return true.
+   *
+   * When true is returned, the collapse phase will stop.
+   * When false is returned, and isInline() is true, and getPreviousSibling() is null,
+   * then this function will be called on its parent.
    */
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
@@ -838,7 +928,7 @@ export class ElementNode extends LexicalNode {
     return false;
   }
   // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
-  // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
+  // end of the hierarchy, most implementations should treat it as there's nothing (upwards)
   // beyond this point. For example, node.getTopLevelElement(), when performed inside a TableCellNode
   // will return the immediate first child underneath TableCellNode instead of RootNode.
   isShadowRoot(): boolean {

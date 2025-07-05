@@ -413,4 +413,332 @@ test.describe('Collaboration', () => {
       `,
     );
   });
+
+  test('Undo/redo where text node is split by formatting change', async ({
+    isRichText,
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(!isCollab);
+
+    // Left collaborator types two words, sets the second one to bold.
+    await focusEditor(page);
+    await page.keyboard.type('normal bold');
+
+    await sleep(1050);
+    await selectCharacters(page, 'left', 'bold'.length);
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            bold
+          </strong>
+        </p>
+      `,
+    );
+
+    // Right collaborator types in the middle of the bold word.
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('ArrowDown', {delay: 50});
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type('BOLD');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            boBOLDld
+          </strong>
+        </p>
+      `,
+    );
+
+    // Left collaborator undoes their bold text.
+    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+
+    // The undo causes the text to be appended to the original string, like in the above test.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal boldBOLD</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator redoes the bold text.
+    await page.frameLocator('iframe[name="left"]').getByLabel('Redo').click();
+
+    // The text should be back as it was prior to the undo.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            boBOLDld
+          </strong>
+        </p>
+      `,
+    );
+
+    // Collaboration should still work.
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    // TODO this is a workaround for Firefox so that the
+    // selection picks up the text format
+    if (browserName === 'firefox') {
+      await page.keyboard.press('ArrowLeft', {delay: 50});
+    }
+    await page.keyboard.press('ArrowDown', {delay: 50});
+    await page.keyboard.type(' text');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">normal</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            boBOLDld text
+          </strong>
+        </p>
+      `,
+    );
+  });
+
+  test('Undo/redo where text node is split by inline element node', async ({
+    isRichText,
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(!isCollab);
+
+    // Left collaborator types some text, then splits the text nodes with an element node.
+    await focusEditor(page);
+    await page.keyboard.type('Check out the website!');
+
+    await sleep(1050);
+    await page.keyboard.press('ArrowLeft');
+    await selectCharacters(page, 'left', 'website'.length);
+    await page
+      .frameLocator('iframe[name="left"]')
+      .getByLabel('Insert link')
+      .first()
+      .click();
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Check out the</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">website</span>
+          </a>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+    );
+
+    // Right collaborator adds some text.
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('ArrowDown', {delay: 50});
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type(' now');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Check out the</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">website</span>
+          </a>
+          <span data-lexical-text="true">now!</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator undoes the link.
+    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+
+    // The undo causes the text to be appended to the original string, like in the above test.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Check out the website! now</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator redoes the link.
+    await page.frameLocator('iframe[name="left"]').getByLabel('Redo').click();
+
+    // The text should be back as it was prior to the undo.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Check out the</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">website</span>
+          </a>
+          <span data-lexical-text="true">now!</span>
+        </p>
+      `,
+    );
+
+    // Collaboration should still work.
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('ArrowDown', {delay: 50});
+    await page.keyboard.type(' Check it out.');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Check out the</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">website</span>
+          </a>
+          <span data-lexical-text="true">now! Check it out.</span>
+        </p>
+      `,
+    );
+  });
+
+  test('$handleNormalizationMergeConflicts handles nodes that have been reparented', async ({
+    page,
+    isCollab,
+  }) => {
+    test.skip(!isCollab);
+
+    // Add paragraph, type ABC into second paragraph, bold the B, backspace text into the first paragraph to reparent the text nodes
+    await focusEditor(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('ABC');
+    await page.keyboard.press('ArrowLeft');
+    await selectCharacters(page, 'left', 'B'.length);
+    await toggleBold(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+
+    // Right collaborator deletes A, left deletes B.
+    await sleep(1050);
+    await page.keyboard.press('Delete');
+    await sleep(50);
+    await page
+      .frameLocator('iframe[name="right"]')
+      .locator('[data-lexical-editor="true"]')
+      .focus();
+    await page.keyboard.press('Delete');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+
+    // Left collaborator undoes their deletion of A.
+    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+
+    // Check that normalization worked properly.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">AC</span>
+        </p>
+      `,
+    );
+  });
 });

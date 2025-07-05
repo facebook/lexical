@@ -12,8 +12,11 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getState,
   $isNodeSelection,
   $isRangeSelection,
+  $setState,
+  createState,
   ElementNode,
   LexicalEditor,
   ParagraphNode,
@@ -32,13 +35,16 @@ import {
 } from '../../../__tests__/utils';
 import {
   IS_BOLD,
+  IS_CAPITALIZE,
   IS_CODE,
   IS_HIGHLIGHT,
   IS_ITALIC,
+  IS_LOWERCASE,
   IS_STRIKETHROUGH,
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  IS_UPPERCASE,
 } from '../../../LexicalConstants';
 import {
   $getCompositionKey,
@@ -51,12 +57,15 @@ const editorConfig = Object.freeze({
   theme: {
     text: {
       bold: 'my-bold-class',
+      capitalize: 'my-capitalize-class',
       code: 'my-code-class',
       highlight: 'my-highlight-class',
       italic: 'my-italic-class',
+      lowercase: 'my-lowercase-class',
       strikethrough: 'my-strikethrough-class',
       underline: 'my-underline-class',
       underlineStrikethrough: 'my-underline-strikethrough-class',
+      uppercase: 'my-uppercase-class',
     },
   },
 });
@@ -126,7 +135,7 @@ describe('LexicalTextNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.
+        // to accommodate these changes.
 
         expect(node.exportJSON()).toStrictEqual({
           detail: 0,
@@ -210,6 +219,9 @@ describe('LexicalTextNode tests', () => {
     ['subscript', IS_SUBSCRIPT],
     ['superscript', IS_SUPERSCRIPT],
     ['highlight', IS_HIGHLIGHT],
+    ['lowercase', IS_LOWERCASE],
+    ['uppercase', IS_UPPERCASE],
+    ['capitalize', IS_CAPITALIZE],
   ] as const)('%s flag', (formatFlag: TextFormatType, stateFormat: number) => {
     const flagPredicate = (node: TextNode) => node.hasFormat(formatFlag);
     const flagToggle = (node: TextNode) => node.toggleFormat(formatFlag);
@@ -315,6 +327,34 @@ describe('LexicalTextNode tests', () => {
       textNode.toggleFormat('superscript');
       expect(textNode.hasFormat('superscript')).toBe(false);
       expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
+  test('capitalization formats are mutually exclusive', async () => {
+    const capitalizationFormats: TextFormatType[] = [
+      'lowercase',
+      'uppercase',
+      'capitalize',
+    ];
+
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+
+      // Set each format and ensure that the other formats are cleared
+      capitalizationFormats.forEach((formatToSet) => {
+        textNode.toggleFormat(formatToSet as TextFormatType);
+
+        capitalizationFormats
+          .filter((format) => format !== formatToSet)
+          .forEach((format) =>
+            expect(textNode.hasFormat(format as TextFormatType)).toBe(false),
+          );
+
+        expect(textNode.hasFormat(formatToSet as TextFormatType)).toBe(true);
+      });
     });
   });
 
@@ -594,6 +634,46 @@ describe('LexicalTextNode tests', () => {
         ]);
       });
     });
+
+    test('copies state to all nodes', async () => {
+      await update(() => {
+        const textNode = $createTextNode('hello world');
+        const state = createState('state', {
+          parse: (v) => v,
+          unparse: (v) => v,
+        });
+        $setState(textNode, state, 'foo');
+        const splits = textNode.splitText(3, 5);
+        expect(
+          splits
+            .map((split) => $getState(split, state))
+            .every((v) => v === 'foo'),
+        ).toEqual(true);
+
+        // Check that the state value is not aliased to the original node.
+        $setState(splits[0], state, 'bar');
+        expect($getState(splits[0], state)).toEqual('bar');
+        expect($getState(splits[1], state)).toEqual('foo');
+        expect($getState(splits[2], state)).toEqual('foo');
+      });
+    });
+
+    test('copies state to all nodes (segmented)', async () => {
+      await update(() => {
+        const textNode = $createTestSegmentedNode('hello world');
+        const state = createState('state', {
+          parse: (v) => v,
+          unparse: (v) => v,
+        });
+        $setState(textNode, state, 'foo');
+        const splits = textNode.splitText(3, 5);
+        expect(
+          splits
+            .map((split) => $getState(split, state))
+            .every((v) => v === 'foo'),
+        ).toEqual(true);
+      });
+    });
   });
 
   describe('createDOM()', () => {
@@ -637,6 +717,24 @@ describe('LexicalTextNode tests', () => {
         '<code spellcheck="false"><span class="my-code-class">My text node</span></code>',
       ],
       [
+        'lowercase',
+        IS_LOWERCASE,
+        'My text node',
+        '<span class="my-lowercase-class">My text node</span>',
+      ],
+      [
+        'uppercase',
+        IS_UPPERCASE,
+        'My text node',
+        '<span class="my-uppercase-class">My text node</span>',
+      ],
+      [
+        'capitalize',
+        IS_CAPITALIZE,
+        'My text node',
+        '<span class="my-capitalize-class">My text node</span>',
+      ],
+      [
         'underline + strikethrough',
         IS_UNDERLINE | IS_STRIKETHROUGH,
         'My text node',
@@ -669,15 +767,16 @@ describe('LexicalTextNode tests', () => {
         '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
       ],
       [
-        'code + underline + strikethrough + bold + italic + highlight',
+        'code + underline + strikethrough + bold + italic + highlight + uppercase',
         IS_CODE |
           IS_UNDERLINE |
           IS_STRIKETHROUGH |
           IS_BOLD |
           IS_ITALIC |
-          IS_HIGHLIGHT,
+          IS_HIGHLIGHT |
+          IS_UPPERCASE,
         'My text node',
-        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
+        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class my-uppercase-class">My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {
@@ -809,6 +908,57 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+  });
+
+  describe('exportDOM()', () => {
+    test.each([
+      [
+        'lowercase format',
+        IS_LOWERCASE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.style.textTransform).toBe('lowercase');
+        },
+      ],
+      [
+        'uppercase format',
+        IS_UPPERCASE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.style.textTransform).toBe('uppercase');
+        },
+      ],
+      [
+        'capitalize format',
+        IS_CAPITALIZE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.style.textTransform).toBe('capitalize');
+        },
+      ],
+      [
+        'combined bold and lowercase format',
+        IS_BOLD | IS_LOWERCASE,
+        'Sample Text',
+        (element: HTMLElement) => {
+          expect(element.tagName.toLowerCase()).toBe('b');
+          // We need to check the child element for the style
+          const childElement = element.firstChild as HTMLElement;
+          expect(childElement.style.textTransform).toBe('lowercase');
+        },
+      ],
+    ])('%s', async (_type, format, contents, elementCheck) => {
+      await update(() => {
+        const textNode = $createTextNode(contents);
+        textNode.setFormat(format);
+        const {element} = textNode.exportDOM(editor);
+
+        expect(element).not.toBeNull();
+        if (element !== null) {
+          elementCheck(element as HTMLElement);
+        }
+      });
+    });
   });
 
   test('mergeWithSibling', async () => {

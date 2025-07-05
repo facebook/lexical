@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import './Dialog.css';
 
 import * as React from 'react';

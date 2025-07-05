@@ -11,12 +11,6 @@ on:
       channel:
         required: true
         type: string
-      git-repo:
-        required: true
-        type: string
-    secrets:
-      SSH_KEY:
-        required: true
     outputs:
       version:
         description: 'The new package.json version, e.g. "0.16.0"'
@@ -35,10 +29,11 @@ jobs:
       version: ${{ steps.increment-version.outputs.version }}
       tag-ref: ${{ steps.increment-version.outputs.tag-ref }}
       latest-release: ${{ steps.latest.outputs.release }}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ssh-key: ${{ secrets.SSH_KEY }}
           fetch-depth: 0
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v4
@@ -64,4 +59,3 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           LATEST_RELEASE: ${{ steps.latest.outputs.release }}
           DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
-          GIT_REPO: ${{ inputs.git-repo }}

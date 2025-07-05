@@ -9,12 +9,12 @@
 import type {ListNode, ListType} from './';
 import type {
   BaseSelection,
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -22,6 +22,7 @@ import type {
   Spread,
 } from 'lexical';
 
+import {getStyleObjectFromCSS} from '@lexical/selection';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -32,6 +33,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  buildImportMap,
   ElementNode,
   LexicalEditor,
 } from 'lexical';
@@ -50,6 +52,26 @@ export type SerializedListItemNode = Spread<
   SerializedElementNode
 >;
 
+function applyMarkerStyles(
+  dom: HTMLElement,
+  node: ListItemNode,
+  prevNode: ListItemNode | null,
+): void {
+  const styles: Record<string, string> = getStyleObjectFromCSS(
+    node.__textStyle,
+  );
+  for (const k in styles) {
+    dom.style.setProperty(`--listitem-marker-${k}`, styles[k]);
+  }
+  if (prevNode) {
+    for (const k in getStyleObjectFromCSS(prevNode.__textStyle)) {
+      if (!(k in styles)) {
+        dom.style.removeProperty(`--listitem-marker-${k}`);
+      }
+    }
+  }
+}
+
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
   /** @internal */
@@ -57,29 +79,76 @@ export class ListItemNode extends ElementNode {
   /** @internal */
   __checked?: boolean;
 
-  static getType(): string {
-    return 'listitem';
+  /** @internal */
+  $config() {
+    return this.config('listitem', {
+      $transform: (node: ListItemNode): void => {
+        if (node.__checked == null) {
+          return;
+        }
+        const parent = node.getParent();
+        if ($isListNode(parent)) {
+          if (parent.getListType() !== 'check' && node.getChecked() != null) {
+            node.setChecked(undefined);
+          }
+        }
+      },
+      extends: ElementNode,
+      importDOM: buildImportMap({
+        li: () => ({
+          conversion: $convertListItemElement,
+          priority: 0,
+        }),
+      }),
+    });
   }
 
-  static clone(node: ListItemNode): ListItemNode {
-    return new ListItemNode(node.__value, node.__checked, node.__key);
-  }
-
-  constructor(value?: number, checked?: boolean, key?: NodeKey) {
+  constructor(
+    value: number = 1,
+    checked: undefined | boolean = undefined,
+    key?: NodeKey,
+  ) {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__value = prevNode.__value;
+    this.__checked = prevNode.__checked;
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
+    this.updateListItemDOM(null, element, config);
+
+    return element;
+  }
+
+  updateListItemDOM(
+    prevNode: ListItemNode | null,
+    dom: HTMLLIElement,
+    config: EditorConfig,
+  ) {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(element, this, null, parent);
+      updateListItemChecked(dom, this, prevNode, parent);
     }
-    element.value = this.__value;
-    $setListItemThemeClassNames(element, config.theme, this);
-    return element;
+
+    dom.value = this.__value;
+    $setListItemThemeClassNames(dom, config.theme, this);
+    const prevStyle = prevNode ? prevNode.__style : '';
+    const nextStyle = this.__style;
+
+    if (prevStyle !== nextStyle) {
+      if (nextStyle === '') {
+        dom.removeAttribute('style');
+      } else {
+        dom.style.cssText = nextStyle;
+      }
+    }
+    applyMarkerStyles(dom, this, prevNode);
   }
 
   updateDOM(
@@ -87,53 +156,34 @@ export class ListItemNode extends ElementNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {
-    const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(dom, this, prevNode, parent);
-    }
     // @ts-expect-error - this is always HTMLListItemElement
-    dom.value = this.__value;
-    $setListItemThemeClassNames(dom, config.theme, this);
-
+    const element: HTMLLIElement = dom;
+    this.updateListItemDOM(prevNode, element, config);
     return false;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListItemNode(node), 'node is not a ListItemNode');
-      if (node.__checked == null) {
-        return;
-      }
-      const parent = node.getParent();
-      if ($isListNode(parent)) {
-        if (parent.getListType() !== 'check' && node.getChecked() != null) {
-          node.setChecked(undefined);
-        }
-      }
-    };
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      li: () => ({
-        conversion: $convertListItemElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = $createListItemNode();
-    node.setChecked(serializedNode.checked);
-    node.setValue(serializedNode.value);
-    node.setFormat(serializedNode.format);
-    node.setDirection(serializedNode.direction);
-    return node;
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setValue(serializedNode.value)
+      .setChecked(serializedNode.checked);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
-    element.style.textAlign = this.getFormatType();
+
+    const formatType = this.getFormatType();
+    if (formatType) {
+      element.style.textAlign = formatType;
+    }
+
+    const direction = this.getDirection();
+    if (direction) {
+      element.dir = direction;
+    }
+
     return {
       element,
     };
@@ -143,9 +193,7 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
-      type: 'listitem',
       value: this.getValue(),
-      version: 1,
     };
   }
 
@@ -259,9 +307,10 @@ export class ListItemNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = $createListItemNode(
-      this.__checked == null ? undefined : false,
-    );
+    const newElement = $createListItemNode()
+      .updateFromJSON(this.exportJSON())
+      .setChecked(this.getChecked() ? false : undefined);
+
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;
@@ -312,9 +361,10 @@ export class ListItemNode extends ElementNode {
     return self.__value;
   }
 
-  setValue(value: number): void {
+  setValue(value: number): this {
     const self = this.getWritable();
     self.__value = value;
+    return self;
   }
 
   getChecked(): boolean | undefined {
@@ -330,19 +380,21 @@ export class ListItemNode extends ElementNode {
     return listType === 'check' ? Boolean(self.__checked) : undefined;
   }
 
-  setChecked(checked?: boolean): void {
+  setChecked(checked?: boolean): this {
     const self = this.getWritable();
     self.__checked = checked;
+    return self;
   }
 
-  toggleChecked(): void {
-    this.setChecked(!this.__checked);
+  toggleChecked(): this {
+    const self = this.getWritable();
+    return self.setChecked(!self.__checked);
   }
 
   getIndent(): number {
     // If we don't have a parent, we are likely serializing
     const parent = this.getParent();
-    if (parent === null) {
+    if (parent === null || !this.isAttached()) {
       return this.getLatest().__indent;
     }
     // ListItemNode should always have a ListNode for a parent.
@@ -385,7 +437,7 @@ export class ListItemNode extends ElementNode {
   }
 
   canMergeWith(node: LexicalNode): boolean {
-    return $isParagraphNode(node) || $isListItemNode(node);
+    return $isListItemNode(node) || $isParagraphNode(node);
   }
 
   extractWithChild(child: LexicalNode, selection: BaseSelection): boolean {

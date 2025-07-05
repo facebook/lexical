@@ -35,7 +35,7 @@ import {LexicalCommandLog} from './useLexicalCommandsLog';
 export type CustomPrintNodeFn = (
   node: LexicalNode,
   obfuscateText?: boolean,
-) => string;
+) => string | undefined;
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =
   Object.freeze({
@@ -67,6 +67,8 @@ const FORMAT_PREDICATES = [
     node.hasFormat('superscript') && 'Superscript',
   (node: TextNode | RangeSelection) =>
     node.hasFormat('underline') && 'Underline',
+  (node: TextNode | RangeSelection) =>
+    node.hasFormat('highlight') && 'Highlight',
 ];
 
 const FORMAT_PREDICATES_PARAGRAPH = [
@@ -78,6 +80,7 @@ const FORMAT_PREDICATES_PARAGRAPH = [
   (node: ParagraphNode) => node.hasTextFormat('subscript') && 'Subscript',
   (node: ParagraphNode) => node.hasTextFormat('superscript') && 'Superscript',
   (node: ParagraphNode) => node.hasTextFormat('underline') && 'Underline',
+  (node: ParagraphNode) => node.hasTextFormat('highlight') && 'Highlight',
 ];
 
 const DETAIL_PREDICATES = [
@@ -312,6 +315,7 @@ function printAllTextNodeProperties(node: TextNode) {
     printFormatProperties(node),
     printDetailProperties(node),
     printModeProperties(node),
+    printStateProperties(node),
   ]
     .filter(Boolean)
     .join(', ');
@@ -322,6 +326,7 @@ function printAllLinkNodeProperties(node: LinkNode) {
     printTargetProperties(node),
     printRelProperties(node),
     printTitleProperties(node),
+    printStateProperties(node),
   ]
     .filter(Boolean)
     .join(', ');
@@ -389,6 +394,25 @@ function printTitleProperties(node: LinkNode) {
   // TODO Fix nullish on LinkNode
   if (str != null) {
     str = 'title: ' + str;
+  }
+  return str;
+}
+
+function printStateProperties(node: LexicalNode) {
+  if (!node.__state) {
+    return false;
+  }
+  const states = [];
+  for (const [stateType, value] of node.__state.knownState.entries()) {
+    if (stateType.isEqual(value, stateType.defaultValue)) {
+      continue;
+    }
+    const textValue = JSON.stringify(stateType.unparse(value));
+    states.push(`[${stateType.key}: ${textValue}]`);
+  }
+  let str = states.join(',');
+  if (str !== '') {
+    str = 'state: ' + str;
   }
   return str;
 }

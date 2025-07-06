@@ -32,7 +32,6 @@ import {
   $setState,
   $splitAtPointCaretNext,
   type CaretDirection,
-  cloneEditorState,
   type EditorState,
   ElementNode,
   type Klass,
@@ -536,7 +535,8 @@ export function $restoreEditorState(
   editorState: EditorState,
 ): void {
   const FULL_RECONCILE = 2;
-  const nodeMap = cloneEditorState(editorState)._nodeMap;
+  const nodeMap = editorState._nodeMap.clone();
+  nodeMap.clear();
   const activeEditorState = editor._pendingEditorState;
 
   for (const [key, node] of editorState._nodeMap) {

@@ -6,6 +6,8 @@
  *
  */
 
+import invariant from 'shared/invariant';
+
 const TOMBSTONE = null;
 
 /**
@@ -39,11 +41,15 @@ export class GenMap<K, V> {
   _size: number = 0;
   constructor(prev?: GenMap<K, V>) {
     if (prev) {
+      invariant(prev instanceof GenMap, '!prev instanceof GenMap');
       prev._mutable = false;
       this._old = prev._old;
       this._nursery = prev._nursery;
       this._size = prev._size;
     }
+  }
+  clone(): GenMap<K, V> {
+    return new GenMap(this);
   }
   get size() {
     return this._size;
@@ -94,17 +100,13 @@ export class GenMap<K, V> {
   delete(key: K): boolean {
     const deleted = this.has(key);
     if (deleted) {
+      this._getNursery().set(key, TOMBSTONE);
       this._size--;
-      const nursery = this._getNursery();
-      if (this._old && this._old.has(key)) {
-        nursery.set(key, TOMBSTONE);
-      } else {
-        nursery.delete(key);
-      }
     }
     return deleted;
   }
   clear(): void {
+    this._mutable = false;
     this._old = undefined;
     this._nursery = undefined;
     this._size = 0;

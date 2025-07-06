@@ -52,8 +52,11 @@ export function editorStateHasDirtySelection(
 }
 
 /** @internal */
-export function cloneEditorState(current: EditorState): EditorState {
-  return new EditorState(new GenMap(current._nodeMap));
+export function cloneEditorState(
+  current: EditorState,
+  selection: null | BaseSelection = null,
+): EditorState {
+  return new EditorState(current._nodeMap.clone(), selection);
 }
 
 export function createEmptyEditorState(): EditorState {
@@ -130,8 +133,8 @@ export class EditorState {
   }
 
   clone(selection?: null | BaseSelection): EditorState {
-    const editorState = new EditorState(
-      this._nodeMap,
+    const editorState = cloneEditorState(
+      this,
       selection === undefined ? this._selection : selection,
     );
     editorState._readOnly = true;

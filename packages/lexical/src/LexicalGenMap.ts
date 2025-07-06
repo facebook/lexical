@@ -62,9 +62,10 @@ export class GenMap<K, V> {
   }
   _getNursery() {
     if (!this._mutable) {
-      // Run a compaction when the nursery is greater than half the size of the snapshot
       if (this._nursery) {
         if (this._nursery.size * 2 > this._size) {
+          // Run a compaction when the nursery is greater than half the size
+          // of the snapshot
           const compact = new Map(this._old);
           for (const [k, v] of this._nursery) {
             if (v !== TOMBSTONE) {
@@ -76,6 +77,7 @@ export class GenMap<K, V> {
           this._old = compact;
           this._nursery = undefined;
         } else {
+          // Shallow copy
           this._nursery = new Map(this._nursery);
         }
       }

@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import invariant from 'shared/invariant';
 
 const TOMBSTONE = null;
 
 /**
  * A Copy-on-write Map scheme suitable for NodeMap usage. Before it is
- * written to it merely points to the previous GenMap. On first write it will
- * either do a compaction (create a new "_old" generation) or create a copy of
- * the "_nursery" from prev.
+ * written to it merely points to the Maps from the previous GenMap. On first
+ * write it will either do a compaction (create a new "_old" generation) or
+ * create a copy of the "_nursery" from prev.
  *
  * This is an optimization as `new Map(oldMap)` must allocate some
  * constant factor of `oldMap.size` even if very few values are changing from
@@ -21,34 +20,30 @@ const TOMBSTONE = null;
  */
 export class GenMap<K, V> {
   /**
-   * The previous GenMap, this will be set only until first write. This GenMap
-   * should already be "frozen" (e.g. from a readonly EditorState).
-   * This invariant is not checked.
+   * False if the GenMap is in its initial read-only state
    */
-  _prev: undefined | Omit<GenMap<K, V>, 'set' | 'delete' | 'clear'>;
+  _mutable: boolean = false;
   /**
    * A snapshot of the NodeMap when the last compaction occurred.
    */
-  _old: undefined | ReadonlyMap<K, V>;
+  _old: undefined | ReadonlyMap<K, V> = undefined;
   /**
    * This Map represents any changes from `_old`, deletions that are present
    * in `_old` are marked with `TOMBSTONE`.
    */
-  _nursery: undefined | Map<K, typeof TOMBSTONE | V>;
+  _nursery: undefined | Map<K, typeof TOMBSTONE | V> = undefined;
   /**
    * The current size of the Map, accounting for the various optimizations
    * used here.
    */
-  _size: number;
+  _size: number = 0;
   constructor(prev?: GenMap<K, V>) {
-    this._prev = (prev ? prev._prev : prev) || prev;
-    invariant(
-      this._prev === undefined || this._prev._prev === undefined,
-      'GenMap ancestry chain greater than one',
-    );
-    this._old = undefined;
-    this._nursery = undefined;
-    this._size = prev ? prev.size : 0;
+    if (prev) {
+      prev._mutable = false;
+      this._old = prev._old;
+      this._nursery = prev._nursery;
+      this._size = prev._size;
+    }
   }
   get size() {
     return this._size;
@@ -57,35 +52,32 @@ export class GenMap<K, V> {
     return this.get(key) !== undefined;
   }
   get(key: K): undefined | V {
-    if (this._prev) {
-      return this._prev.get(key);
-    }
     if (this._nursery) {
       const v = this._nursery.get(key);
       if (v !== undefined) {
         return v === TOMBSTONE ? undefined : v;
       }
     }
-    return this._old ? this._old.get(key) : undefined;
+    return this._old && this._old.get(key);
   }
   _getNursery() {
-    const prev = this._prev;
-    if (prev) {
-      this._prev = undefined;
-      const oldSize = prev._old ? prev._old.size : 0;
+    if (!this._mutable) {
       // Run a compaction when the nursery is greater than half the size of the snapshot
-      if (prev._nursery && prev._nursery.size * 2 > oldSize) {
-        const compact = new Map(prev._old);
-        for (const [k, v] of prev._nursery) {
-          if (v !== TOMBSTONE) {
-            compact.set(k, v);
+      if (this._nursery) {
+        if (this._nursery.size * 2 > this._size) {
+          const compact = new Map(this._old);
+          for (const [k, v] of this._nursery) {
+            if (v !== TOMBSTONE) {
+              compact.set(k, v);
+            }
           }
+          this._old = compact;
+          this._nursery = undefined;
+        } else {
+          this._nursery = new Map(this._nursery);
         }
-        this._old = compact;
-      } else {
-        this._old = prev._old;
-        this._nursery = new Map(prev._nursery);
       }
+      this._mutable = true;
     }
     if (!this._nursery) {
       this._nursery = new Map();
@@ -115,7 +107,6 @@ export class GenMap<K, V> {
   clear(): void {
     this._old = undefined;
     this._nursery = undefined;
-    this._prev = undefined;
     this._size = 0;
   }
   *keys(): IterableIterator<K> {
@@ -129,9 +120,6 @@ export class GenMap<K, V> {
     }
   }
   *entries(): IterableIterator<[K, V]> {
-    if (this._prev) {
-      yield* this._prev.entries();
-    }
     const nursery = this._nursery;
     const old = this._old;
     // seen is used so we can provide the same ordered Map semantics from

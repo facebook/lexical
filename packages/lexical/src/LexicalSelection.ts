@@ -700,6 +700,16 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
+   * Sets the value of the format property on the Selection
+   *
+   * @param format - the format to set at the value of the format property.
+   */
+  setFormat(format: number): void {
+    this.format = format;
+    this.dirty = true;
+  }
+
+  /**
    * Sets the value of the style property on the Selection
    *
    * @param style - the style to set at the value of the style property.

@@ -7,13 +7,19 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {LexicalNode, NodeMap, SerializedLexicalNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  NodeKey,
+  NodeMap,
+  SerializedLexicalNode,
+} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 import type {SerializedElementNode} from './nodes/LexicalElementNode';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
+import {GenMap} from './LexicalGenMap';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$isElementNode} from './nodes/LexicalElementNode';
@@ -45,12 +51,15 @@ export function editorStateHasDirtySelection(
   return false;
 }
 
+/** @internal */
 export function cloneEditorState(current: EditorState): EditorState {
-  return new EditorState(new Map(current._nodeMap));
+  return new EditorState(new GenMap(current._nodeMap));
 }
 
 export function createEmptyEditorState(): EditorState {
-  return new EditorState(new Map([['root', $createRootNode()]]));
+  return new EditorState(
+    new GenMap<NodeKey, LexicalNode>().set('root', $createRootNode()),
+  );
 }
 
 function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(

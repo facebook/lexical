@@ -419,7 +419,7 @@ export function parseEditorState(
   editor._dirtyElements = new Map();
   editor._dirtyLeaves = new Set();
   editor._cloneNotNeeded = new Set();
-  editor._dirtyType = 0;
+  editor._dirtyType = NO_DIRTY_NODES;
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;

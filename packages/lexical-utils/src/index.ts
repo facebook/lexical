@@ -8,7 +8,6 @@
 
 import {
   $caretFromPoint,
-  $cloneWithProperties,
   $createParagraphNode,
   $getAdjacentChildCaret,
   $getCaretInDirection,
@@ -32,6 +31,7 @@ import {
   $setState,
   $splitAtPointCaretNext,
   type CaretDirection,
+  cloneEditorState,
   type EditorState,
   ElementNode,
   type Klass,
@@ -535,15 +535,15 @@ export function $restoreEditorState(
   editorState: EditorState,
 ): void {
   const FULL_RECONCILE = 2;
-  const nodeMap = new Map();
   const activeEditorState = editor._pendingEditorState;
 
-  for (const [key, node] of editorState._nodeMap) {
-    nodeMap.set(key, $cloneWithProperties(node));
-  }
-
   if (activeEditorState) {
-    activeEditorState._nodeMap = nodeMap;
+    activeEditorState._nodeMap = cloneEditorState(editorState)._nodeMap;
+    editor._cloneNotNeeded.clear();
+    editor._dirtyLeaves = new Set();
+    editor._dirtyElements.clear();
+  } else {
+    editor._editorState = editorState;
   }
 
   editor._dirtyType = FULL_RECONCILE;

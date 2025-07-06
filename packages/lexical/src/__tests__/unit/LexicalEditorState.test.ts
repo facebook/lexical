@@ -11,22 +11,21 @@ import {
   $createTextNode,
   $getEditor,
   $getRoot,
+  $isRootNode,
   ParagraphNode,
+  type RootNode,
   TextNode,
 } from 'lexical';
 
-import {EditorState} from '../../LexicalEditorState';
-import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
+import {createEmptyEditorState} from '../../LexicalEditorState';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalEditorState tests', () => {
   initializeUnitTest((testEnv) => {
-    test('constructor', async () => {
-      const root = $createRootNode();
-      const nodeMap = new Map([['root', root]]);
-
-      const editorState = new EditorState(nodeMap);
-      expect(editorState._nodeMap).toBe(nodeMap);
+    test('createEmptyEditorState', async () => {
+      const editorState = createEmptyEditorState();
+      expect(editorState._nodeMap.size).toBe(1);
+      expect($isRootNode(editorState._nodeMap.get('root'))).toBe(true);
       expect(editorState._selection).toBe(null);
     });
 
@@ -134,30 +133,28 @@ describe('LexicalEditorState tests', () => {
         $getRoot().getFirstChild()!.remove();
       });
 
-      expect(editor.getEditorState()._nodeMap).toEqual(
-        new Map([
-          [
-            'root',
-            {
-              __cachedText: '',
-              __dir: null,
-              __first: null,
-              __format: 0,
-              __indent: 0,
-              __key: 'root',
-              __last: null,
-              __next: null,
-              __parent: null,
-              __prev: null,
-              __size: 0,
-              __style: '',
-              __textFormat: 0,
-              __textStyle: '',
-              __type: 'root',
-            },
-          ],
-        ]),
-      );
+      expect([...editor.getEditorState()._nodeMap]).toEqual([
+        [
+          'root',
+          {
+            __cachedText: '',
+            __dir: null,
+            __first: null,
+            __format: 0,
+            __indent: 0,
+            __key: 'root',
+            __last: null,
+            __next: null,
+            __parent: null,
+            __prev: null,
+            __size: 0,
+            __style: '',
+            __textFormat: 0,
+            __textStyle: '',
+            __type: 'root',
+          },
+        ],
+      ]);
     });
   });
 });

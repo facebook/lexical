@@ -26,7 +26,9 @@ export function cloneMap<K, V>(
   } else if (map instanceof GenMap) {
     return map.clone();
   } else {
-    return new GenMap<K, V>().init(new Map(map), undefined, map.size);
+    const clone = new GenMap<K, V>().init(undefined, new Map(map), map.size);
+    clone._mutable = true;
+    return clone;
   }
 }
 

@@ -7,12 +7,7 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-  SerializedLexicalNode,
-} from './LexicalNode';
+import type {LexicalNode, NodeMap, SerializedLexicalNode} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 import type {SerializedElementNode} from './nodes/LexicalElementNode';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
@@ -60,9 +55,7 @@ export function cloneEditorState(
 }
 
 export function createEmptyEditorState(): EditorState {
-  return new EditorState(
-    new Map<NodeKey, LexicalNode>().set('root', $createRootNode()),
-  );
+  return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
 function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(

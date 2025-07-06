@@ -18,6 +18,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  genMapDiff,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
@@ -434,6 +435,12 @@ export function registerHistory(
       }
 
       if (current !== null) {
+        if (undoStack.length > 0) {
+          current.editorState._nodeMap = genMapDiff(
+            undoStack[undoStack.length - 1].editorState._nodeMap,
+            current.editorState._nodeMap,
+          );
+        }
         undoStack.push({
           ...current,
         });

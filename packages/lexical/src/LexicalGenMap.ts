@@ -24,14 +24,45 @@ export function cloneMap<K, V>(
   if (map.size < minGenMapSize) {
     return new Map(map);
   } else if (map instanceof GenMap) {
-    return map.clone();
+    return map.compact().clone();
   } else {
-    const clone = new GenMap<K, V>();
+    const clone = new GenMap<K, V>().init(undefined, new Map(map), map.size);
     clone._mutable = true;
-    clone._nursery = new Map(map);
-    clone._size = clone._nursery.size;
     return clone;
   }
+}
+
+/**
+ * @internal
+ */
+export function genMapDiff<K, V>(
+  prev: ReadonlyMap<K, V>,
+  next: ReadonlyMap<K, V>,
+): GenMap<K, V> {
+  let clone: GenMap<K, V>;
+  if (prev instanceof GenMap) {
+    if (next instanceof GenMap && next._old === prev._old) {
+      // No-op, these GenMap are already related
+      next._mutable = false;
+      return next;
+    }
+    clone = prev.clone();
+  } else {
+    clone = new GenMap<K, V>();
+    clone._old = prev;
+    clone._size = prev.size;
+  }
+  const seen = new Set<K>();
+  for (const [k, v] of next.entries()) {
+    clone.set(k, v);
+    seen.add(k);
+  }
+  for (const k of prev.keys()) {
+    if (!seen.has(k)) {
+      clone.delete(k);
+    }
+  }
+  return clone.compact();
 }
 
 /**
@@ -65,11 +96,17 @@ export class GenMap<K, V> implements Map<K, V> {
   _size: number = 0;
   clone(): GenMap<K, V> {
     this._mutable = false;
-    const clone = new GenMap<K, V>();
-    clone._old = this._old;
-    clone._nursery = this._nursery;
-    clone._size = this._size;
-    return clone;
+    return new GenMap<K, V>().init(this._old, this._nursery, this._size);
+  }
+  init(
+    old: undefined | ReadonlyMap<K, V>,
+    nursery: undefined | Map<K, typeof TOMBSTONE | V>,
+    size: number,
+  ): this {
+    this._old = old;
+    this._nursery = nursery;
+    this._size = size;
+    return this;
   }
   get size() {
     return this._size;
@@ -77,7 +114,7 @@ export class GenMap<K, V> implements Map<K, V> {
   has(key: K): boolean {
     return this.get(key) !== undefined;
   }
-  _get(key: K): undefined | typeof TOMBSTONE | V {
+  getWithTombstone(key: K): undefined | typeof TOMBSTONE | V {
     if (this._nursery) {
       const v = this._nursery.get(key);
       if (v !== undefined) {
@@ -87,45 +124,50 @@ export class GenMap<K, V> implements Map<K, V> {
     return this._old && this._old.get(key);
   }
   get(key: K): undefined | V {
-    const v = this._get(key);
+    const v = this.getWithTombstone(key);
     return v === TOMBSTONE ? undefined : v;
   }
-  _shouldCompact(): boolean {
+  shouldCompact(): boolean {
     // Run a compaction when the nursery is greater than half the size
     // of the snapshot
     return this._nursery !== undefined && this._nursery.size * 2 > this._size;
   }
-  _getNursery() {
-    if (!this._mutable) {
-      if (this._nursery) {
-        if (this._shouldCompact()) {
-          const compact = new Map(this._old);
-          for (const [k, v] of this._nursery) {
-            if (v !== TOMBSTONE) {
-              compact.set(k, v);
-            } else {
-              compact.delete(k);
-            }
-          }
-          this._old = compact;
-          this._nursery = undefined;
-        } else {
-          // Shallow copy
-          this._nursery = new Map(this._nursery);
-        }
-      }
+  getNursery() {
+    if (!this._mutable || !this._nursery) {
+      this._nursery = new Map(this._nursery);
       this._mutable = true;
-    }
-    if (!this._nursery) {
-      this._nursery = new Map();
     }
     return this._nursery;
   }
+  compact(force = false): this {
+    if (
+      this._nursery &&
+      this._nursery.size > 0 &&
+      (force || this.shouldCompact())
+    ) {
+      const compact = new Map(this._old);
+      for (const [k, v] of this._nursery) {
+        if (v !== TOMBSTONE) {
+          compact.set(k, v);
+        } else {
+          compact.delete(k);
+        }
+      }
+      this._old = compact;
+      this._nursery = undefined;
+    }
+    this._mutable = false;
+    return this;
+  }
   set(key: K, value: V): this {
-    const nursery = this._getNursery();
-    const v = this._get(key);
+    const v = this.getWithTombstone(key);
+    if (v === value) {
+      return this;
+    }
+    const nursery = this.getNursery();
     if (v === TOMBSTONE || v === undefined) {
       this._size++;
+      // preserve iteration order
       if (v === TOMBSTONE) {
         nursery.delete(key);
       }
@@ -141,7 +183,7 @@ export class GenMap<K, V> implements Map<K, V> {
       // our use case, key resurrection isn't something that should
       // happen often in Lexical and the iteration order isn't
       // particularly meaningful outside of tests
-      this._getNursery().set(key, TOMBSTONE);
+      this.getNursery().set(key, TOMBSTONE);
       this._size--;
     }
     return deleted;
@@ -152,18 +194,17 @@ export class GenMap<K, V> implements Map<K, V> {
     this._nursery = undefined;
     this._size = 0;
   }
-  *keys(): MapIterator<K> {
+  *keys(): ReturnType<Map<K, V>['keys']> {
     for (const pair of this.entries()) {
       yield pair[0];
     }
   }
-  *values(): MapIterator<V> {
+  *values(): ReturnType<Map<K, V>['values']> {
     for (const pair of this.entries()) {
       yield pair[1];
     }
   }
-  *entries(): MapIterator<[K, V]> {
-    this._mutable = false;
+  *entries(): ReturnType<Map<K, V>['entries']> {
     const nursery = this._nursery;
     const old = this._old;
     // seen is used so we can provide the same ordered Map semantics from
@@ -206,7 +247,7 @@ export class GenMap<K, V> implements Map<K, V> {
   get [Symbol.toStringTag](): string {
     return 'GenMap';
   }
-  [Symbol.iterator](): MapIterator<[K, V]> {
+  [Symbol.iterator](): ReturnType<Map<K, V>['entries']> {
     return this.entries();
   }
 }

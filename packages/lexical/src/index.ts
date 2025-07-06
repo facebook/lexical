@@ -169,6 +169,7 @@ export type {
   SerializedEditorState,
 } from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
+export {genMapDiff} from './LexicalGenMap';
 export type {
   BaseStaticNodeConfig,
   DOMChildConversion,

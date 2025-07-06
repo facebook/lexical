@@ -24,45 +24,10 @@ export function cloneMap<K, V>(
   if (map.size < minGenMapSize) {
     return new Map(map);
   } else if (map instanceof GenMap) {
-    return map.compact().clone();
+    return map.clone();
   } else {
-    const clone = new GenMap<K, V>().init(undefined, new Map(map), map.size);
-    clone._mutable = true;
-    return clone;
+    return new GenMap<K, V>().init(new Map(map), undefined, map.size);
   }
-}
-
-/**
- * @internal
- */
-export function genMapDiff<K, V>(
-  prev: ReadonlyMap<K, V>,
-  next: ReadonlyMap<K, V>,
-): GenMap<K, V> {
-  let clone: GenMap<K, V>;
-  if (prev instanceof GenMap) {
-    if (next instanceof GenMap && next._old === prev._old) {
-      // No-op, these GenMap are already related
-      next._mutable = false;
-      return next;
-    }
-    clone = prev.clone();
-  } else {
-    clone = new GenMap<K, V>();
-    clone._old = prev;
-    clone._size = prev.size;
-  }
-  const seen = new Set<K>();
-  for (const [k, v] of next.entries()) {
-    clone.set(k, v);
-    seen.add(k);
-  }
-  for (const k of prev.keys()) {
-    if (!seen.has(k)) {
-      clone.delete(k);
-    }
-  }
-  return clone.compact();
 }
 
 /**
@@ -115,11 +80,9 @@ export class GenMap<K, V> implements Map<K, V> {
     return this.get(key) !== undefined;
   }
   getWithTombstone(key: K): undefined | typeof TOMBSTONE | V {
-    if (this._nursery) {
-      const v = this._nursery.get(key);
-      if (v !== undefined) {
-        return v;
-      }
+    const v = this._nursery && this._nursery.get(key);
+    if (v !== undefined) {
+      return v;
     }
     return this._old && this._old.get(key);
   }
@@ -134,6 +97,7 @@ export class GenMap<K, V> implements Map<K, V> {
   }
   getNursery() {
     if (!this._mutable || !this._nursery) {
+      this.compact();
       this._nursery = new Map(this._nursery);
       this._mutable = true;
     }
@@ -207,18 +171,13 @@ export class GenMap<K, V> implements Map<K, V> {
   *entries(): ReturnType<Map<K, V>['entries']> {
     const nursery = this._nursery;
     const old = this._old;
-    // seen is used so we can provide the same ordered Map semantics from
-    // the naive Map based NodeMap
-    const seen = new Set<K>();
     if (old) {
       for (const pair of old) {
         const k = pair[0];
         const v = nursery ? nursery.get(k) : undefined;
-        if (v !== undefined) {
-          seen.add(k);
-          if (v === TOMBSTONE) {
-            continue;
-          }
+        if (v === TOMBSTONE) {
+          continue;
+        } else if (v !== undefined) {
           pair[1] = v;
         }
         yield pair;
@@ -226,7 +185,7 @@ export class GenMap<K, V> implements Map<K, V> {
     }
     if (nursery) {
       for (const pair of nursery) {
-        if (!seen.has(pair[0]) && pair[1] !== TOMBSTONE) {
+        if (pair[1] !== TOMBSTONE && !(old && old.has(pair[0]))) {
           yield pair as [K, V];
         }
       }

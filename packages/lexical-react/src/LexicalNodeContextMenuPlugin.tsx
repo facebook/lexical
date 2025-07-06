@@ -43,6 +43,7 @@ class MenuOption {
 class NodeContextMenuOption extends MenuOption {
   type: string;
   title: string;
+  icon: JSX.Element | null;
   disabled: boolean;
   $onSelect: () => void;
   $showOn?: (node: LexicalNode) => boolean;
@@ -51,6 +52,7 @@ class NodeContextMenuOption extends MenuOption {
     title: string,
     options: {
       disabled?: boolean;
+      icon?: JSX.Element;
       $onSelect: () => void;
       $showOn?: (node: LexicalNode) => boolean;
     },
@@ -59,6 +61,7 @@ class NodeContextMenuOption extends MenuOption {
     this.type = 'item';
     this.title = title;
     this.disabled = options.disabled ?? false;
+    this.icon = options.icon ?? null;
     this.$onSelect = options.$onSelect;
     if (options.$showOn) {
       this.$showOn = options.$showOn;
@@ -93,8 +96,9 @@ const ContextMenuItem = forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
     label?: string;
     disabled?: boolean;
+    icon?: JSX.Element | null;
   }
->(({className, label, disabled, ...props}, ref) => {
+>(({className, label, disabled, icon, ...props}, ref) => {
   return (
     <button
       {...props}
@@ -102,7 +106,8 @@ const ContextMenuItem = forwardRef<
       ref={ref}
       role="menuitem"
       disabled={disabled}>
-      {label}
+      {icon}
+      <span style={{marginLeft: 10}}>{label}</span>
     </button>
   );
 });
@@ -226,6 +231,7 @@ const NodeContextMenuPlugin = forwardRef<
           return {
             className: itemClassName,
             disabled: (option as NodeContextMenuOption).disabled,
+            icon: (option as NodeContextMenuOption).icon,
             key: option.key,
             label: (option as NodeContextMenuOption).title,
             onClick: () =>

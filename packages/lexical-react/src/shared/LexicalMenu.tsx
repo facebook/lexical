@@ -260,11 +260,12 @@ export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
 const MenuItem = forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    icon?: JSX.Element;
     label?: string;
     disabled?: boolean;
     isSelected?: boolean;
   }
->(({className, label, disabled, isSelected, ...props}, ref) => {
+>(({className, label, disabled, isSelected, icon, ...props}, ref) => {
   return (
     <button
       {...props}
@@ -275,7 +276,8 @@ const MenuItem = forwardRef<
       ref={ref}
       role="menuitem"
       disabled={disabled}>
-      {label}
+      {icon}
+      <span style={{marginLeft: 10}}>{label}</span>
     </button>
   );
 });

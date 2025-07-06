@@ -6,8 +6,6 @@
  *
  */
 
-import invariant from 'shared/invariant';
-
 const TOMBSTONE = null;
 
 /**
@@ -39,17 +37,13 @@ export class GenMap<K, V> {
    * used here.
    */
   _size: number = 0;
-  constructor(prev?: GenMap<K, V>) {
-    if (prev) {
-      invariant(prev instanceof GenMap, '!prev instanceof GenMap');
-      prev._mutable = false;
-      this._old = prev._old;
-      this._nursery = prev._nursery;
-      this._size = prev._size;
-    }
-  }
   clone(): GenMap<K, V> {
-    return new GenMap(this);
+    this._mutable = false;
+    const clone = new GenMap<K, V>();
+    clone._old = this._old;
+    clone._nursery = this._nursery;
+    clone._size = this._size;
+    return clone;
   }
   get size() {
     return this._size;
@@ -75,6 +69,8 @@ export class GenMap<K, V> {
           for (const [k, v] of this._nursery) {
             if (v !== TOMBSTONE) {
               compact.set(k, v);
+            } else {
+              compact.delete(k);
             }
           }
           this._old = compact;
@@ -122,6 +118,7 @@ export class GenMap<K, V> {
     }
   }
   *entries(): IterableIterator<[K, V]> {
+    this._mutable = false;
     const nursery = this._nursery;
     const old = this._old;
     // seen is used so we can provide the same ordered Map semantics from

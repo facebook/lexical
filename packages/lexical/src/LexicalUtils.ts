@@ -578,7 +578,7 @@ export function markNodesWithTypesAsDirty(
   // We only need to mark nodes dirty if they were in the previous state.
   // If they aren't, then they are by definition dirty already.
   const cachedMap = getCachedTypeToNodeMap(editor.getEditorState());
-  const dirtyNodeMaps: Map<NodeKey, LexicalNode>[] = [];
+  const dirtyNodeMaps: NodeMap[] = [];
   for (const type of types) {
     const nodeMap = cachedMap.get(type);
     if (nodeMap) {
@@ -1886,7 +1886,7 @@ export function $getEditor(): LexicalEditor {
 }
 
 /** @internal */
-export type TypeToNodeMap = Map<string, Map<NodeKey, LexicalNode>>;
+export type TypeToNodeMap = Map<string, NodeMap>;
 /**
  * @internal
  * Compute a cached Map of node type to nodes for a frozen EditorState

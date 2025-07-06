@@ -7,6 +7,32 @@
  */
 
 const TOMBSTONE = null;
+const GEN_MAP_SIZE_THRESHOLD = 1000;
+
+/**
+ * Create a copy of the given Map or a copy-on-write GenMap based on the
+ * minGenMapSize threshold.
+ *
+ * @param map A Map or GenMap
+ * @param minGenMapSize The minimum threshold to use GenMap instead of a Map
+ * @returns A copy of the Map or clone of the GenMap
+ */
+export function cloneMap<K, V>(
+  map: Map<K, V>,
+  minGenMapSize = GEN_MAP_SIZE_THRESHOLD,
+): Map<K, V> {
+  if (map.size < minGenMapSize) {
+    return new Map(map);
+  } else if (map instanceof GenMap) {
+    return map.clone();
+  } else {
+    const clone = new GenMap<K, V>();
+    clone._mutable = true;
+    clone._nursery = new Map(map);
+    clone._size = clone._nursery.size;
+    return clone;
+  }
+}
 
 /**
  * A Copy-on-write Map scheme suitable for NodeMap usage. Before it is
@@ -18,7 +44,7 @@ const TOMBSTONE = null;
  * constant factor of `oldMap.size` even if very few values are changing from
  * one state to the next.
  */
-export class GenMap<K, V> {
+export class GenMap<K, V> implements Map<K, V> {
   /**
    * False if the GenMap is in its initial read-only state
    */
@@ -51,21 +77,28 @@ export class GenMap<K, V> {
   has(key: K): boolean {
     return this.get(key) !== undefined;
   }
-  get(key: K): undefined | V {
+  _get(key: K): undefined | typeof TOMBSTONE | V {
     if (this._nursery) {
       const v = this._nursery.get(key);
       if (v !== undefined) {
-        return v === TOMBSTONE ? undefined : v;
+        return v;
       }
     }
     return this._old && this._old.get(key);
   }
+  get(key: K): undefined | V {
+    const v = this._get(key);
+    return v === TOMBSTONE ? undefined : v;
+  }
+  _shouldCompact(): boolean {
+    // Run a compaction when the nursery is greater than half the size
+    // of the snapshot
+    return this._nursery !== undefined && this._nursery.size * 2 > this._size;
+  }
   _getNursery() {
     if (!this._mutable) {
       if (this._nursery) {
-        if (this._nursery.size * 2 > this._size) {
-          // Run a compaction when the nursery is greater than half the size
-          // of the snapshot
+        if (this._shouldCompact()) {
           const compact = new Map(this._old);
           for (const [k, v] of this._nursery) {
             if (v !== TOMBSTONE) {
@@ -89,15 +122,25 @@ export class GenMap<K, V> {
     return this._nursery;
   }
   set(key: K, value: V): this {
-    if (!this.has(key)) {
+    const nursery = this._getNursery();
+    const v = this._get(key);
+    if (v === TOMBSTONE || v === undefined) {
       this._size++;
+      if (v === TOMBSTONE) {
+        nursery.delete(key);
+      }
     }
-    this._getNursery().set(key, value);
+    nursery.set(key, value);
     return this;
   }
   delete(key: K): boolean {
     const deleted = this.has(key);
     if (deleted) {
+      // Note that if this key is resurrected, the iteration order
+      // won't be strict insertion order. This should be fine for
+      // our use case, key resurrection isn't something that should
+      // happen often in Lexical and the iteration order isn't
+      // particularly meaningful outside of tests
       this._getNursery().set(key, TOMBSTONE);
       this._size--;
     }
@@ -109,17 +152,17 @@ export class GenMap<K, V> {
     this._nursery = undefined;
     this._size = 0;
   }
-  *keys(): IterableIterator<K> {
-    for (const [k, _v] of this.entries()) {
-      yield k;
+  *keys(): MapIterator<K> {
+    for (const pair of this.entries()) {
+      yield pair[0];
     }
   }
-  *values(): IterableIterator<V> {
-    for (const [_k, v] of this.entries()) {
-      yield v;
+  *values(): MapIterator<V> {
+    for (const pair of this.entries()) {
+      yield pair[1];
     }
   }
-  *entries(): IterableIterator<[K, V]> {
+  *entries(): MapIterator<[K, V]> {
     this._mutable = false;
     const nursery = this._nursery;
     const old = this._old;
@@ -148,7 +191,22 @@ export class GenMap<K, V> {
       }
     }
   }
-  [Symbol.iterator](): IterableIterator<[K, V]> {
+  forEach(
+    callbackfn: (value: V, key: K, map: Map<K, V>) => void,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    thisArg?: any,
+  ): void {
+    if (thisArg !== undefined) {
+      callbackfn = callbackfn.bind(thisArg);
+    }
+    for (const [k, v] of this.entries()) {
+      callbackfn(v, k, this);
+    }
+  }
+  get [Symbol.toStringTag](): string {
+    return 'GenMap';
+  }
+  [Symbol.iterator](): MapIterator<[K, V]> {
     return this.entries();
   }
 }

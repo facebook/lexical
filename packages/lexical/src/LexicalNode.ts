@@ -30,7 +30,6 @@ import {
   NODE_STATE_KEY,
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
-import {GenMap} from './LexicalGenMap';
 import {
   $updateStateFromJSON,
   type NodeState,
@@ -67,7 +66,7 @@ import {
   removeFromParent,
 } from './LexicalUtils';
 
-export type NodeMap = GenMap<NodeKey, LexicalNode>;
+export type NodeMap = Map<NodeKey, LexicalNode>;
 
 /**
  * The base type for all serialized nodes

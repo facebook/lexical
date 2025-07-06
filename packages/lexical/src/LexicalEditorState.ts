@@ -19,7 +19,7 @@ import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
-import {GenMap} from './LexicalGenMap';
+import {cloneMap} from './LexicalGenMap';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$isElementNode} from './nodes/LexicalElementNode';
@@ -56,12 +56,12 @@ export function cloneEditorState(
   current: EditorState,
   selection: null | BaseSelection = null,
 ): EditorState {
-  return new EditorState(current._nodeMap.clone(), selection);
+  return new EditorState(cloneMap(current._nodeMap), selection);
 }
 
 export function createEmptyEditorState(): EditorState {
   return new EditorState(
-    new GenMap<NodeKey, LexicalNode>().set('root', $createRootNode()),
+    new Map<NodeKey, LexicalNode>().set('root', $createRootNode()),
   );
 }
 

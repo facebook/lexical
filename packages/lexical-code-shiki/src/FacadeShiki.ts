@@ -28,7 +28,7 @@ import {bundledLanguagesInfo} from 'shiki/langs';
 import {bundledThemesInfo} from 'shiki/themes';
 
 const shiki = createHighlighterCoreSync({
-  engine: createJavaScriptRegexEngine({target: 'ES2018'}),
+  engine: createJavaScriptRegexEngine(),
   langs: [lang_javascript, lang_markdown],
   themes: [theme_one_light],
 });

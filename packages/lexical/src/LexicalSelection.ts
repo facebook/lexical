@@ -2717,6 +2717,95 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   }
 }
 
+function $traverseNodes(
+  callback: (
+    node: LexicalNode,
+    absoluteOffset: number,
+  ) => {found: boolean; newOffset: number},
+) {
+  const root = $getRoot();
+  let absoluteOffset = 0;
+
+  const traverse = (node: LexicalNode): boolean => {
+    const result = callback(node, absoluteOffset);
+
+    if (result.found) {
+      absoluteOffset = result.newOffset;
+      return true; // Found - stop traversal
+    }
+
+    if ($isTextNode(node)) {
+      absoluteOffset += node.getTextContent().length;
+    } else if ($isElementNode(node)) {
+      return node.getChildren().some((child) => traverse(child));
+    }
+
+    return false;
+  };
+
+  root.getChildren().some((child) => traverse(child));
+  return absoluteOffset;
+}
+
+function $calculateSelectionPositions() {
+  const selection = $getSelection();
+
+  if (!$isRangeSelection(selection)) {
+    return {from: 0, to: 0};
+  }
+
+  const anchorPos = $calculateAbsolutePosition(selection.anchor);
+  const focusPos = $calculateAbsolutePosition(selection.focus);
+
+  return {
+    from: Math.min(anchorPos, focusPos),
+    to: Math.max(anchorPos, focusPos),
+  };
+}
+
+function $calculateAbsolutePosition(target: PointType | LexicalNode): number {
+  const targetKey =
+    target instanceof Object && 'key' in target ? target.key : target.getKey();
+  const targetOffset =
+    target instanceof Object && 'offset' in target ? target.offset : 0;
+
+  return $traverseNodes((node, currentOffset) => {
+    if (node.getKey() === targetKey) {
+      return {
+        found: true,
+        newOffset: currentOffset + targetOffset,
+      };
+    }
+    return {found: false, newOffset: currentOffset};
+  });
+}
+
+export function $normalizeSelectionByPosition(): null | BaseSelection {
+  const selection = getActiveEditorState()._selection;
+
+  if ($isRangeSelection(selection)) {
+    const {to} = $calculateSelectionPositions();
+    const allNodes = selection.getNodes();
+
+    // Filter nodes to make sure the all nodes are within the selected range
+    const filteredNodes = allNodes.filter((node) => {
+      const nodeStart = $calculateAbsolutePosition(node);
+      return nodeStart < to - 1 && $isTextNode(node);
+    });
+
+    if (filteredNodes.length > 0) {
+      const firstNode = filteredNodes[0];
+      const lastNode = filteredNodes[filteredNodes.length - 1];
+      const lastNodeEndOffset = lastNode.getTextContent().length;
+
+      selection.anchor.set(firstNode.getKey(), 0, 'text');
+      selection.focus.set(lastNode.getKey(), lastNodeEndOffset, 'text');
+    }
+  }
+
+  return selection;
+}
+
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;

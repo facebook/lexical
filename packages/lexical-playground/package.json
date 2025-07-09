@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
+    "@floating-ui/react": "^0.27.8",
     "@lexical/clipboard": "0.33.0",
     "@lexical/code": "0.33.0",
     "@lexical/file": "0.33.0",

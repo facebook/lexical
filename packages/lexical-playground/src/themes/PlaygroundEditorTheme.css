@@ -633,6 +633,13 @@
   border: 1px solid #ddd;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
+  /* Overrides for typeahead menu below */
+  max-height: 216px; /* 6 items * (20 line height + 8*2 top & bottom padding) */
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  width: 215px;
+  z-index: 4;
 }
 .PlaygroundEditorTheme__contextMenu button:first-child {
   border-radius: 8px 8px 0px 0px;
@@ -646,7 +653,7 @@
 }
 .PlaygroundEditorTheme__contextMenuItem {
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
   width: 100%;
   background-color: #fff;
   color: #050505;
@@ -662,6 +669,7 @@
 .PlaygroundEditorTheme__contextMenuItem.open {
   background: #ddd;
 }
+.PlaygroundEditorTheme__contextMenuItemFocused,
 .PlaygroundEditorTheme__contextMenuItem:focus,
 .PlaygroundEditorTheme__contextMenuItem:not([disabled]):active {
   background: #eee;

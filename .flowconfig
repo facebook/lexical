@@ -51,7 +51,6 @@ module.name_mapper='^@lexical/react/LexicalCollaborationPlugin$' -> '<PROJECT_RO
 module.name_mapper='^@lexical/react/LexicalComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalComposerContext$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposerContext.js.flow'
 module.name_mapper='^@lexical/react/LexicalContentEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContentEditable.js.flow'
-module.name_mapper='^@lexical/react/LexicalContextMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContextMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalDecoratorBlockNode$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDecoratorBlockNode.js.flow'
 module.name_mapper='^@lexical/react/LexicalDraggableBlockPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDraggableBlockPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalEditorRefPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalEditorRefPlugin.js.flow'

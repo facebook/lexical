@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {FloatingTree} from '@floating-ui/react';
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
@@ -238,7 +239,9 @@ export default function PlaygroundApp(): JSX.Element {
   return (
     <SettingsContext>
       <FlashMessageContext>
-        <App />
+        <FloatingTree>
+          <App />
+        </FloatingTree>
       </FlashMessageContext>
       <a
         href="https://github.com/facebook/lexical/tree/main/packages/lexical-playground"

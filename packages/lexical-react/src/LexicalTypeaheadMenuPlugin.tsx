@@ -7,7 +7,6 @@
  */
 
 import type {
-  MenuRenderFn,
   MenuResolution,
   MenuTextMatch,
   TriggerFn,
@@ -21,9 +20,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
-  createCommand,
   getDOMSelection,
-  LexicalCommand,
   LexicalEditor,
   RangeSelection,
   TextNode,
@@ -107,44 +104,6 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-// Got from https://stackoverflow.com/a/42543908/2013580
-export function getScrollParent(
-  element: HTMLElement,
-  includeHidden: boolean,
-): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element);
-  const excludeStaticParent = style.position === 'absolute';
-  const overflowRegex = includeHidden
-    ? /(auto|scroll|hidden)/
-    : /(auto|scroll)/;
-  if (style.position === 'fixed') {
-    return document.body;
-  }
-  for (
-    let parent: HTMLElement | null = element;
-    (parent = parent.parentElement);
-
-  ) {
-    style = getComputedStyle(parent);
-    if (excludeStaticParent && style.position === 'static') {
-      continue;
-    }
-    if (
-      overflowRegex.test(style.overflow + style.overflowY + style.overflowX)
-    ) {
-      return parent;
-    }
-  }
-  return document.body;
-}
-
-export {useDynamicPositioning} from './shared/LexicalMenu';
-
-export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number;
-  option: MenuOption;
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
-
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
   {
@@ -202,7 +161,6 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
-  menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
@@ -219,7 +177,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   onSelectOption,
   onOpen,
   onClose,
-  menuRenderFn,
   triggerFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
@@ -338,7 +295,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
-      menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
@@ -347,4 +303,4 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   );
 }
 
-export {MenuOption, MenuRenderFn, MenuResolution, MenuTextMatch, TriggerFn};
+export {MenuOption, MenuResolution, MenuTextMatch, TriggerFn};

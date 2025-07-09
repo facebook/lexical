@@ -8,6 +8,21 @@
 
 import type {JSX} from 'react';
 
+import {
+  autoUpdate,
+  flip,
+  FloatingFocusManager,
+  FloatingList,
+  FloatingNode,
+  FloatingPortal,
+  shift,
+  useDismiss,
+  useFloating,
+  useFloatingNodeId,
+  useInteractions,
+  useListNavigation,
+  useRole,
+} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -19,23 +34,20 @@ import {
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
-  KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   LexicalCommand,
   LexicalEditor,
   TextNode,
 } from 'lexical';
 import {
+  forwardRef,
   MutableRefObject,
-  ReactPortal,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type MenuTextMatch = {
   leadOffset: number;
@@ -48,9 +60,6 @@ export type MenuResolution = {
   getRect: () => DOMRect;
 };
 
-export const PUNCTUATION =
-  '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
-
 export class MenuOption {
   key: string;
   ref?: MutableRefObject<HTMLElement | null>;
@@ -58,24 +67,13 @@ export class MenuOption {
   constructor(key: string) {
     this.key = key;
     this.ref = {current: null};
-    this.setRefElement = this.setRefElement.bind(this);
+    // this.setRefElement = this.setRefElement.bind(this);
   }
 
-  setRefElement(element: HTMLElement | null) {
-    this.ref = {current: element};
-  }
+  // setRefElement(element: HTMLElement | null) {
+  //   this.ref = {current: element};
+  // }
 }
-
-export type MenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
-  itemProps: {
-    selectedIndex: number | null;
-    selectOptionAndCleanUp: (option: TOption) => void;
-    setHighlightedIndex: (index: number) => void;
-    options: Array<TOption>;
-  },
-  matchingString: string | null,
-) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   const typeaheadContainerNode = document.getElementById('typeahead-menu');
@@ -257,13 +255,53 @@ export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   option: MenuOption;
 }> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
+const MenuItem = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    icon?: JSX.Element;
+    label?: string;
+    disabled?: boolean;
+    isSelected?: boolean;
+  }
+>(({className, label, disabled, isSelected, icon, ...props}, ref) => {
+  return (
+    <button
+      {...props}
+      className={
+        className +
+        (isSelected ? ' PlaygroundEditorTheme__contextMenuItemFocused' : '')
+      }
+      ref={ref}
+      role="menuitem"
+      disabled={disabled}>
+      {icon}
+      <span style={{marginLeft: 10}}>{label}</span>
+    </button>
+  );
+});
+
+// IVO: the below is a duplicate, reminder to clean up
+interface MenuSeparatorType {
+  className: string;
+  key: string;
+  type: string;
+}
+
+interface MenuItemType extends MenuSeparatorType {
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+  title: string;
+}
+
+// type MenuType = MenuItemType | MenuSeparatorType;
+
 export function LexicalMenu<TOption extends MenuOption>({
   close,
   editor,
   anchorElementRef,
   resolution,
   options,
-  menuRenderFn,
   onSelectOption,
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
@@ -273,9 +311,8 @@ export function LexicalMenu<TOption extends MenuOption>({
   editor: LexicalEditor;
   anchorElementRef: MutableRefObject<HTMLElement | null>;
   resolution: MenuResolution;
-  options: Array<TOption>;
+  options: Array<MenuItemType | TOption>;
   shouldSplitNodeWithQuery?: boolean;
-  menuRenderFn: MenuRenderFn<TOption>;
   onSelectOption: (
     option: TOption,
     textNodeContainingQuery: TextNode | null,
@@ -285,15 +322,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   commandPriority?: CommandListenerPriority;
   preselectFirstItem?: boolean;
 }): JSX.Element | null {
-  const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
-
-  const matchingString = resolution.match && resolution.match.matchingString;
-
-  useEffect(() => {
-    if (preselectFirstItem) {
-      setHighlightedIndex(0);
-    }
-  }, [matchingString, preselectFirstItem]);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const selectOptionAndCleanUp = useCallback(
     (selectedEntry: TOption) => {
@@ -314,20 +343,6 @@ export function LexicalMenu<TOption extends MenuOption>({
     [editor, shouldSplitNodeWithQuery, resolution.match, onSelectOption, close],
   );
 
-  const updateSelectedIndex = useCallback(
-    (index: number) => {
-      const rootElem = editor.getRootElement();
-      if (rootElem !== null) {
-        rootElem.setAttribute(
-          'aria-activedescendant',
-          'typeahead-item-' + index,
-        );
-        setHighlightedIndex(index);
-      }
-    },
-    [editor],
-  );
-
   useEffect(() => {
     return () => {
       const rootElem = editor.getRootElement();
@@ -337,30 +352,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     };
   }, [editor]);
 
-  useLayoutEffect(() => {
-    if (options === null) {
-      setHighlightedIndex(null);
-    } else if (selectedIndex === null && preselectFirstItem) {
-      updateSelectedIndex(0);
-    }
-  }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand(
-        SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
-        ({option}) => {
-          if (option.ref && option.ref.current != null) {
-            scrollIntoViewIfNeeded(option.ref.current);
-            return true;
-          }
-
-          return false;
-        },
-        commandPriority,
-      ),
-    );
-  }, [editor, updateSelectedIndex, commandPriority]);
+  const virtualItemRef = useRef(null);
 
   useEffect(() => {
     return mergeRegister(
@@ -368,27 +360,15 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_DOWN_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && options.length) {
-            const newSelectedIndex =
-              selectedIndex === null
-                ? 0
-                : selectedIndex !== options.length - 1
-                ? selectedIndex + 1
-                : 0;
-            updateSelectedIndex(newSelectedIndex);
-            const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
-              editor.dispatchCommand(
-                SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
-                {
-                  index: newSelectedIndex,
-                  option,
-                },
-              );
-            }
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
+          const newSelectedIndex =
+            activeIndex === null
+              ? 0
+              : activeIndex !== options.length - 1
+              ? activeIndex + 1
+              : 0;
+          setActiveIndex(newSelectedIndex);
+          event.preventDefault();
+          event.stopImmediatePropagation();
           return true;
         },
         commandPriority,
@@ -397,32 +377,15 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_UP_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && options.length) {
-            const newSelectedIndex =
-              selectedIndex === null
-                ? options.length - 1
-                : selectedIndex !== 0
-                ? selectedIndex - 1
-                : options.length - 1;
-            updateSelectedIndex(newSelectedIndex);
-            const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
-              scrollIntoViewIfNeeded(option.ref.current);
-            }
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          return true;
-        },
-        commandPriority,
-      ),
-      editor.registerCommand<KeyboardEvent>(
-        KEY_ESCAPE_COMMAND,
-        (payload) => {
-          const event = payload;
+          const newSelectedIndex =
+            activeIndex === null
+              ? options.length - 1
+              : activeIndex !== 0
+              ? activeIndex - 1
+              : options.length - 1;
+          setActiveIndex(newSelectedIndex);
           event.preventDefault();
           event.stopImmediatePropagation();
-          close();
           return true;
         },
         commandPriority,
@@ -433,14 +396,14 @@ export function LexicalMenu<TOption extends MenuOption>({
           const event = payload;
           if (
             options === null ||
-            selectedIndex === null ||
-            options[selectedIndex] == null
+            activeIndex === null ||
+            options[activeIndex] == null
           ) {
             return false;
           }
           event.preventDefault();
           event.stopImmediatePropagation();
-          selectOptionAndCleanUp(options[selectedIndex]);
+          selectOptionAndCleanUp(options[activeIndex]);
           return true;
         },
         commandPriority,
@@ -450,8 +413,8 @@ export function LexicalMenu<TOption extends MenuOption>({
         (event: KeyboardEvent | null) => {
           if (
             options === null ||
-            selectedIndex === null ||
-            options[selectedIndex] == null
+            activeIndex === null ||
+            options[activeIndex] == null
           ) {
             return false;
           }
@@ -459,7 +422,7 @@ export function LexicalMenu<TOption extends MenuOption>({
             event.preventDefault();
             event.stopImmediatePropagation();
           }
-          selectOptionAndCleanUp(options[selectedIndex]);
+          selectOptionAndCleanUp(options[activeIndex]);
           return true;
         },
         commandPriority,
@@ -470,25 +433,114 @@ export function LexicalMenu<TOption extends MenuOption>({
     close,
     editor,
     options,
-    selectedIndex,
-    updateSelectedIndex,
+    activeIndex,
+    setActiveIndex,
     commandPriority,
   ]);
 
-  const listItemProps = useMemo(
-    () => ({
-      options,
-      selectOptionAndCleanUp,
-      selectedIndex,
-      setHighlightedIndex,
-    }),
-    [selectOptionAndCleanUp, selectedIndex, options],
-  );
+  const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
+  const [isOpen, setIsOpen] = useState(Boolean(anchorElementRef.current));
 
-  return menuRenderFn(
-    anchorElementRef,
-    listItemProps,
-    resolution.match ? resolution.match.matchingString : '',
+  // Subscribe this component to the <FloatingTree> wrapper:
+  const nodeId = useFloatingNodeId();
+  if (virtualItemRef.current) {
+    scrollIntoViewIfNeeded(virtualItemRef.current);
+  }
+  const {refs, floatingStyles, context} = useFloating({
+    elements: {
+      reference: anchorElementRef.current,
+    },
+    middleware: [
+      flip({
+        fallbackPlacements: ['top-start'],
+      }),
+      shift({
+        padding: 10,
+      }),
+    ],
+    nodeId,
+    onOpenChange(nextOpen, event, reason) {
+      setIsOpen(nextOpen);
+
+      if (event && reason === 'outside-press') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        close();
+      }
+    },
+    open: isOpen,
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+  });
+
+  const labelsRef = useRef<Array<string | null>>([]);
+  const role = useRole(context, {role: 'menu'});
+  const dismiss = useDismiss(context);
+  const listNavigation = useListNavigation(context, {
+    activeIndex,
+    allowEscape: true,
+    listRef: listItemsRef,
+    loop: true,
+    onNavigate: setActiveIndex,
+    selectedIndex: preselectFirstItem ? 0 : undefined,
+    virtual: true,
+    virtualItemRef,
+  });
+
+  const {getFloatingProps, getItemProps} = useInteractions([
+    role,
+    dismiss,
+    listNavigation,
+  ]);
+
+  return (
+    <FloatingNode id={nodeId}>
+      <FloatingList elementsRef={listItemsRef} labelsRef={labelsRef}>
+        {isOpen ? (
+          <FloatingPortal>
+            <FloatingFocusManager
+              context={context}
+              initialFocus={-1}
+              visuallyHiddenDismiss={true}>
+              <div
+                className="PlaygroundEditorTheme__contextMenu"
+                id="typeahead-menu"
+                ref={refs.setFloating}
+                style={floatingStyles}
+                aria-setsize={6}
+                {...getFloatingProps()}>
+                {options.map((item, index) => (
+                  <MenuItem
+                    isSelected={activeIndex === index}
+                    className="PlaygroundEditorTheme__contextMenuItem"
+                    {...getItemProps({
+                      ...item,
+                      onClick() {
+                        selectOptionAndCleanUp(item as TOption);
+                        // (item as MenuItemType).onClick();
+                        setIsOpen(false);
+                      },
+                      onMouseUp() {
+                        selectOptionAndCleanUp(item as TOption);
+                        // (item as MenuItemType).onClick();
+                        setIsOpen(false);
+                      },
+                      ref(node: HTMLButtonElement) {
+                        listItemsRef.current[index] = node;
+                      },
+                      tabIndex: activeIndex === index ? 0 : -1,
+                    })}
+                    // @ts-ignore
+                    label={item.title}
+                  />
+                ))}
+              </div>
+            </FloatingFocusManager>
+          </FloatingPortal>
+        ) : null}
+      </FloatingList>
+    </FloatingNode>
   );
 }
 

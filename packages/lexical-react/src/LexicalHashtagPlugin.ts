@@ -229,7 +229,9 @@ function getHashtagRegexString(): string {
   const hashtagAlpha = '[' + alpha + ']';
   const hashtagAlphanumeric = '[' + alphanumeric + ']';
   const hashtagBoundary = '^|$|[^&/' + alphanumeric + ']';
-  const hashCharList = '[' + hashChars + ']';
+  // const hashCharList = '[' + hashChars + ']';
+   // Prevent matching emoji hashtag: '#️⃣' == '#\uFE0F\u20E3'
+  const hashCharList = '(?!' + '[' + hashChars + ']' + '\\uFE0F\\u20E3)' + '[' + hashChars + ']';
 
   // A hashtag contains characters, numbers and underscores,
   // but not all numbers.

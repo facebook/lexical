@@ -638,7 +638,7 @@
   overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
-  width: 200px;
+  width: 215px;
   z-index: 4;
 }
 .PlaygroundEditorTheme__contextMenu button:first-child {

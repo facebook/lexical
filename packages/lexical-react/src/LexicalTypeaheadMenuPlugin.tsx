@@ -20,9 +20,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
-  createCommand,
   getDOMSelection,
-  LexicalCommand,
   LexicalEditor,
   RangeSelection,
   TextNode,
@@ -105,13 +103,6 @@ function isSelectionOnEntityBoundary(
     return false;
   });
 }
-
-// export {useDynamicPositioning} from './shared/LexicalMenu';
-
-export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number;
-  option: MenuOption;
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,

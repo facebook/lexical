@@ -360,7 +360,7 @@ i.horizontal-rule {
 i {
   width: 20px;
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: contain;
 }
 
 i.image {

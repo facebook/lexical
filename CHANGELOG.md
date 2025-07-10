@@ -1,3 +1,10 @@
+## v0.33.1 (2025-07-10)
+
+- Add a setter for the format property on RangeSelection (#5829) Omar A.
+- lexical-link Chore Fix test names (#7666) Noam Zaks
+- v0.33.0 (#7672) Bob Ippolito
+- v0.33.0 Lexical GitHub Actions Bot
+
 ## v0.33.0 (2025-07-03)
 
 - lexical-playground fix close link popup when user clicks out of it (#7670) Achal Jhawar

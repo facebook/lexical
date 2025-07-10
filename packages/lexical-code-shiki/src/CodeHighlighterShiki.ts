@@ -71,20 +71,13 @@ import {
   $getStartOfCodeInLine,
 } from './FlatStructureUtils';
 
-type TokenContent = string | Token | (string | Token)[];
-
-export interface Token {
-  type: string;
-  content: TokenContent;
-}
-
-export interface Tokenizer {
+interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
 }
 
-export const ShikiTokenizer: Tokenizer = {
+const ShikiTokenizer: Tokenizer = {
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[] {
     return $getHighlightNodes(codeNode, language || this.defaultLanguage);
   },

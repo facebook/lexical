@@ -824,11 +824,7 @@ export function $updateStateFromJSON<T extends LexicalNode>(
   const writable = node.getWritable();
   const unknownState = serialized[NODE_STATE_KEY];
   let parseState = unknownState;
-  const sharedState =
-    writable.__state && writable.__state.sharedNodeState
-      ? writable.__state.sharedNodeState
-      : $getSharedNodeState(writable);
-  for (const k of sharedState.flatKeys) {
+  for (const k of $getSharedNodeState(writable).flatKeys) {
     if (k in serialized) {
       if (parseState === undefined || parseState === unknownState) {
         parseState = {...unknownState};

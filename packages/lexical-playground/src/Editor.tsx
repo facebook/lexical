@@ -38,7 +38,8 @@ import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import CodeHighlightPlugin from './plugins/CodeHighlightShikiPlugin';
+import {default as CodeHighlightPrismPlugin} from './plugins/CodeHighlightPlugin';
+import {default as CodeHighlightShikiPlugin} from './plugins/CodeHighlightShikiPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
@@ -84,6 +85,8 @@ export default function Editor(): JSX.Element {
   const {historyState} = useSharedHistoryContext();
   const {
     settings: {
+      isCodeHighlighted,
+      isCodeShiki,
       isCollab,
       isAutocomplete,
       isMaxLength,
@@ -199,7 +202,12 @@ export default function Editor(): JSX.Element {
               ErrorBoundary={LexicalErrorBoundary}
             />
             <MarkdownShortcutPlugin />
-            <CodeHighlightPlugin />
+            {isCodeHighlighted &&
+              (isCodeShiki ? (
+                <CodeHighlightShikiPlugin />
+              ) : (
+                <CodeHighlightPrismPlugin />
+              ))}
             <ListPlugin hasStrictIndent={listStrictIndent} />
             <CheckListPlugin />
             <TablePlugin

@@ -48,8 +48,9 @@ function getShikiAssets(assetType) {
         path.dirname(__dirname),
         'node_modules/@shikijs/' + assetType + '/dist/*.mjs',
       ),
+      {windowsPathsNoEscape: true},
     )
-    .map((p) => path.basename(p, '.mjs'));
+    .map((p) => path.basename(p.replaceAll('\\', '/'), '.mjs'));
 }
 
 const wwwMappings = {

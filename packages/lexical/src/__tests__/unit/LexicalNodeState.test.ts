@@ -257,7 +257,10 @@ describe('LexicalNode state', () => {
             version: 1,
           };
           for (const doc of [flatJSON, nestedJSON, bothJSON]) {
-            expect(StateNode.importJSON(doc).exportJSON()).toEqual(flatJSON);
+            const node = StateNode.importJSON(doc);
+            expect(node.exportJSON()).toEqual(flatJSON);
+            expect($getState(node, boolState)).toBe(true);
+            expect($getState(node, numberState)).toBe(2);
           }
         });
       });

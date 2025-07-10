@@ -13,7 +13,9 @@ import {
   type Klass,
   type LexicalNode,
   type LexicalNodeConfig,
+  type LexicalUpdateJSON,
   NODE_STATE_KEY,
+  type SerializedLexicalNode,
   type Spread,
   type StaticNodeConfigRecord,
 } from '.';
@@ -800,7 +802,9 @@ export function $getWritableNodeState<T extends LexicalNode>(
 export function $getSharedNodeState<T extends LexicalNode>(
   node: T,
 ): SharedNodeState {
-  return getRegisteredNodeOrThrow($getEditor(), node.getType()).sharedNodeState;
+  return node.__state
+    ? node.__state.sharedNodeState
+    : getRegisteredNodeOrThrow($getEditor(), node.getType()).sharedNodeState;
 }
 
 /**
@@ -815,11 +819,25 @@ export function $getSharedNodeState<T extends LexicalNode>(
  */
 export function $updateStateFromJSON<T extends LexicalNode>(
   node: T,
-  unknownState: undefined | UnknownStateRecord,
+  serialized: LexicalUpdateJSON<SerializedLexicalNode>,
 ): T {
   const writable = node.getWritable();
-  if (unknownState || writable.__state) {
-    $getWritableNodeState(node).updateFromJSON(unknownState);
+  const unknownState = serialized[NODE_STATE_KEY];
+  let parseState = unknownState;
+  const sharedState =
+    writable.__state && writable.__state.sharedNodeState
+      ? writable.__state.sharedNodeState
+      : $getSharedNodeState(writable);
+  for (const k of sharedState.flatKeys) {
+    if (k in serialized) {
+      if (parseState === undefined || parseState === unknownState) {
+        parseState = {...unknownState};
+      }
+      parseState[k] = serialized[k as keyof typeof serialized];
+    }
+  }
+  if (writable.__state || parseState) {
+    $getWritableNodeState(node).updateFromJSON(parseState);
   }
   return writable;
 }

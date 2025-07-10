@@ -1147,7 +1147,7 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode[NODE_STATE_KEY]);
+    return $updateStateFromJSON(this, serializedNode);
   }
 
   /**

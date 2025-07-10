@@ -236,6 +236,32 @@ describe('LexicalNode state', () => {
         });
       });
 
+      test('flat config serialization round-trip', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const flatJSON: LexicalExportJSON<StateNode> = {
+            [NODE_STATE_KEY]: {boolState: true},
+            numberState: 2,
+            type: 'state',
+            version: 1,
+          };
+          const nestedJSON: LexicalExportJSON<StateNode> = {
+            [NODE_STATE_KEY]: {boolState: true, numberState: 2},
+            type: 'state',
+            version: 1,
+          };
+          const bothJSON: LexicalExportJSON<StateNode> = {
+            [NODE_STATE_KEY]: {boolState: true, numberState: 3},
+            numberState: 2,
+            type: 'state',
+            version: 1,
+          };
+          for (const doc of [flatJSON, nestedJSON, bothJSON]) {
+            expect(StateNode.importJSON(doc).exportJSON()).toEqual(flatJSON);
+          }
+        });
+      });
+
       test('default value should not be exported', async () => {
         const {editor} = testEnv;
         editor.update(() => {

@@ -223,15 +223,16 @@ function getHashtagRegexStringChars(): Readonly<{
   };
 }
 
-function getHashtagRegexString(): string {
+export function getHashtagRegexString(): string {
   const {alpha, alphanumeric, hashChars} = getHashtagRegexStringChars();
 
   const hashtagAlpha = '[' + alpha + ']';
   const hashtagAlphanumeric = '[' + alphanumeric + ']';
   const hashtagBoundary = '^|$|[^&/' + alphanumeric + ']';
   // const hashCharList = '[' + hashChars + ']';
-   // Prevent matching emoji hashtag: '#️⃣' == '#\uFE0F\u20E3'
-  const hashCharList = '(?!' + '[' + hashChars + ']' + '\\uFE0F\\u20E3)' + '[' + hashChars + ']';
+  // Prevent matching emoji hashtag: '#️⃣' == '#\uFE0F\u20E3'
+  const hashCharList =
+    '(?!' + '[' + hashChars + ']' + '\\uFE0F\\u20E3)' + '[' + hashChars + ']';
 
   // A hashtag contains characters, numbers and underscores,
   // but not all numbers.

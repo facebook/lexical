@@ -460,7 +460,12 @@ export function $shouldOverrideDefaultCharacterSelection(
   const isVertical = $isEditorVerticalOrientation(selection);
 
   // In vertical writing mode, we adjust the direction for correct caret movement
-  const adjustedIsBackward = isVertical ? !isBackward : isBackward;
+  let adjustedIsBackward = isVertical ? !isBackward : isBackward;
+
+  // In right-to-left writing mode, we invert the direction for correct caret movement
+  if ($isParentElementRTL(selection)) {
+    adjustedIsBackward = !adjustedIsBackward;
+  }
 
   const focusCaret = $caretFromPoint(
     selection.focus,

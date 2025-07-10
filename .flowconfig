@@ -23,6 +23,7 @@ component_syntax=true
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
 module.name_mapper='^@lexical/clipboard$' -> '<PROJECT_ROOT>/packages/lexical-clipboard/flow/LexicalClipboard.js.flow'
 module.name_mapper='^@lexical/code$' -> '<PROJECT_ROOT>/packages/lexical-code/flow/LexicalCode.js.flow'
+module.name_mapper='^@lexical/code-shiki$' -> '<PROJECT_ROOT>/packages/lexical-code-shiki/flow/LexicalCodeShiki.js.flow'
 module.name_mapper='^@lexical/devtools-core$' -> '<PROJECT_ROOT>/packages/lexical-devtools-core/flow/LexicalDevtoolsCore.js.flow'
 module.name_mapper='^@lexical/dragon$' -> '<PROJECT_ROOT>/packages/lexical-dragon/flow/LexicalDragon.js.flow'
 module.name_mapper='^@lexical/eslint-plugin$' -> '<PROJECT_ROOT>/packages/lexical-eslint-plugin/flow/LexicalEslintPlugin.js.flow'

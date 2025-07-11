@@ -37,6 +37,7 @@ import {
   MOVE_TO_START,
 } from 'lexical';
 import {
+  expectHtmlToBeEqual,
   initializeUnitTest,
   invariant,
   KeyboardEventMock,
@@ -952,8 +953,9 @@ describe('LexicalCodeNode tests', () => {
         registerCodeHighlighting(editor);
         await Promise.resolve(undefined);
         // after transforms
-        expect(testEnv.innerHTML).toBe(
-          '<code spellcheck="false" data-language="javascript" dir="ltr" data-gutter="1" data-highlight-language="javascript"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
         );
       });
     });

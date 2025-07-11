@@ -12,7 +12,7 @@ import {registerCodeHighlighting} from '@lexical/code-shiki';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
-export default function CodeHighlightPlugin(): JSX.Element | null {
+export default function CodeHighlightShikiPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

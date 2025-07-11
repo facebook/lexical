@@ -1066,6 +1066,59 @@ test.describe.parallel('Selection', () => {
     );
   });
 
+  test('Select previous with RTL (DecoratorNode) #7685', async ({page}) => {
+    await page.keyboard.type('קצת מלל');
+    await insertHorizontalRule(page);
+    await page.keyboard.type('עוד');
+    await moveRight(page, 4);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl">
+          <span data-lexical-text="true">קצת מלל</span>
+        </p>
+        <hr
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl">
+          <span data-lexical-text="true">עוד</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Select next with RTL (DecoratorNode) #7685', async ({page}) => {
+    await page.keyboard.type('קצת מלל');
+    await insertHorizontalRule(page);
+    await page.keyboard.type('עוד');
+    await moveToEditorBeginning(page);
+    await moveLeft(page, 8);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl">
+          <span data-lexical-text="true">קצת מלל</span>
+        </p>
+        <hr
+          class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl">
+          <span data-lexical-text="true">עוד</span>
+        </p>
+      `,
+    );
+  });
+
   test('Can delete table node present at the end #5543', async ({
     page,
     isPlainText,

@@ -17,6 +17,10 @@ import type {
 } from 'lexical';
 
 import {
+  $getEndOfCodeInLine,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+  $getStartOfCodeInLine,
   $isCodeHighlightNode,
   $isCodeNode,
   CodeHighlightNode,
@@ -64,12 +68,6 @@ import {
   loadCodeLanguage,
   loadCodeTheme,
 } from './FacadeShiki';
-import {
-  $getEndOfCodeInLine,
-  $getFirstCodeNodeOfLine,
-  $getLastCodeNodeOfLine,
-  $getStartOfCodeInLine,
-} from './FlatStructureUtils';
 
 interface Tokenizer {
   defaultLanguage: string;

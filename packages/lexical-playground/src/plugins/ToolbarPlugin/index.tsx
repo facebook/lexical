@@ -152,7 +152,6 @@ const CODE_LANGUAGE_OPTIONS_SHIKI: [string, string][] =
       'python',
       'rust',
       'sql',
-      'swift',
       'typescript',
       'xml',
     ].includes(option[0]),

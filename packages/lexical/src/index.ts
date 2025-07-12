@@ -220,6 +220,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $getCharacterOffsetBetweenNodes,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
@@ -228,6 +229,7 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $normalizeSelectionByPosition as $normalizeSelectionByPosition__EXPERIMENTAL,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {

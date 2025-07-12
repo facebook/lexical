@@ -26,6 +26,7 @@ import {
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
+  $getCommonAncestor,
   $getSiblingCaret,
   $isChildCaret,
   $isDecoratorNode,
@@ -2709,6 +2710,121 @@ function $validatePoint(
       String(size),
     );
   }
+}
+
+export function $getCharacterOffsetBetweenNodes(
+  startNode: LexicalNode,
+  targetNode: LexicalNode,
+) {
+  // this only works LTR
+  // so if the target node comes before the start node it will return 0
+  let offset = 0;
+    let start = false;
+  const parentNode = $getCommonAncestor(startNode, targetNode);
+  if (!parentNode) {return null;}
+
+  const traverse = (node: LexicalNode): number | undefined => {
+    if (node.getKey() === targetNode.getKey()) {
+      return offset;
+    }
+
+    if (!start && node.getKey() === startNode.getKey()) {
+      start = true;
+    }
+
+    if ($isTextNode(node) && start) {
+      offset += node.getTextContent().length;
+    } else if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        const result = traverse(child);
+        if (result !== undefined) {
+          return result;
+        }
+      }
+    }
+
+    return undefined;
+  };
+
+  if (parentNode && 'getChildren' in (parentNode.commonAncestor || {})) {
+    for (const child of (
+      parentNode.commonAncestor as ElementNode
+    ).getChildren() || []) {
+      const result = traverse(child);
+      if (result !== undefined) {
+        return result;
+      }
+    }
+  }
+  return offset;
+}
+
+function $calculateSelectionPositions() {
+  const selection = $getSelection();
+
+  if (!$isRangeSelection(selection)) {
+    return {from: 0, to: 0};
+  }
+  const selectedNodes = selection.getNodes();
+  const lastNode = selectedNodes[selectedNodes.length - 1];
+  const offset = $getCharacterOffsetBetweenNodes(selectedNodes[0], lastNode);
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+
+  const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
+
+  return {from: 0, to: offset ?? 0 + nodeOffset};
+}
+
+export function $normalizeSelectionByPosition(): null | BaseSelection {
+  const selection = getActiveEditorState()._selection;
+  if (!selection) {
+    return null;
+  }
+
+  const allNodes = selection.getNodes() ?? [];
+
+  if (
+    $isRangeSelection(selection) &&
+    !selection.isCollapsed() &&
+    ($isTextNode(allNodes[allNodes.length - 1]) ||
+      $isElementNode(allNodes[allNodes.length - 1])) &&
+    ($isTextNode(allNodes[0]) || $isElementNode(allNodes[0]))
+    // this fix still leaves out some edge cases
+    // but it works in pretty much all the likely scenarios
+  ) {
+    const {to} = $calculateSelectionPositions();
+
+    // Filter nodes to make sure the all nodes are within the selected range
+    const filteredNodes = allNodes.filter((node) => {
+      const nodeStart = $getCharacterOffsetBetweenNodes(allNodes[0], node);
+
+      return nodeStart && nodeStart < to;
+    });
+
+    if (filteredNodes.length > 0) {
+      const firstNode = filteredNodes[0];
+      const lastNode = filteredNodes[filteredNodes.length - 1];
+
+      const lastNodeEndOffset = lastNode.getTextContent().length;
+
+      selection.anchor.set(
+        firstNode.getKey(),
+        0,
+        $isTextNode(firstNode) ? 'text' : 'element',
+      );
+      selection.focus.set(
+        lastNode.getKey(),
+        lastNodeEndOffset,
+        $isTextNode(lastNode) ? 'text' : 'element',
+      );
+    } else {
+      return null;
+    }
+  }
+
+  return selection;
 }
 
 export function $getSelection(): null | BaseSelection {

@@ -16,6 +16,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $normalizeCaret,
+  $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
   $setPointFromCaret,
   ElementNode,
   LexicalNode,
@@ -63,7 +64,7 @@ function $isSelectingEmptyListItem(
  * @param listType - The type of list, "number" | "bullet" | "check".
  */
 export function $insertList(listType: ListType): void {
-  const selection = $getSelection();
+  const selection = $normalizeSelectionByPosition();
 
   if (selection !== null) {
     let nodes = selection.getNodes();

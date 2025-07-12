@@ -26,7 +26,8 @@ import {
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
-$getCommonAncestor, $getSiblingCaret,
+  $getCommonAncestor,
+  $getSiblingCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -49,7 +50,8 @@ $getCommonAncestor, $getSiblingCaret,
   NodeCaret,
   PointCaret,
   SKIP_SCROLL_INTO_VIEW_TAG,
-  TextNode} from '.';
+  TextNode,
+} from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
@@ -2700,19 +2702,27 @@ function $validatePoint(
   }
 }
 
-export function $traverseNodes(
+export function $getCharacterOffsetBetweenNodes(
   startNode: LexicalNode,
   targetNode: LexicalNode,
 ) {
+  // this only works LTR
+  // so if the target node comes before the start node it will return 0
   let offset = 0;
+    let start = false;
   const parentNode = $getCommonAncestor(startNode, targetNode);
+  if (!parentNode) {return null;}
 
   const traverse = (node: LexicalNode): number | undefined => {
     if (node.getKey() === targetNode.getKey()) {
       return offset;
     }
 
-    if ($isTextNode(node)) {
+    if (!start && node.getKey() === startNode.getKey()) {
+      start = true;
+    }
+
+    if ($isTextNode(node) && start) {
       offset += node.getTextContent().length;
     } else if ($isElementNode(node)) {
       for (const child of node.getChildren()) {
@@ -2747,19 +2757,21 @@ function $calculateSelectionPositions() {
   }
   const selectedNodes = selection.getNodes();
   const lastNode = selectedNodes[selectedNodes.length - 1];
-  const offset = $traverseNodes(selectedNodes[0], lastNode);
+  const offset = $getCharacterOffsetBetweenNodes(selectedNodes[0], lastNode);
 
   const anchor = selection.anchor;
   const focus = selection.focus;
 
   const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
 
-  return {from: 0, to: offset + nodeOffset};
+  return {from: 0, to: offset ?? 0 + nodeOffset};
 }
 
 export function $normalizeSelectionByPosition(): null | BaseSelection {
   const selection = getActiveEditorState()._selection;
-  if (!selection) {return null;}
+  if (!selection) {
+    return null;
+  }
 
   const allNodes = selection.getNodes() ?? [];
 
@@ -2776,9 +2788,9 @@ export function $normalizeSelectionByPosition(): null | BaseSelection {
 
     // Filter nodes to make sure the all nodes are within the selected range
     const filteredNodes = allNodes.filter((node) => {
-      const nodeStart = $traverseNodes(allNodes[0], node);
+      const nodeStart = $getCharacterOffsetBetweenNodes(allNodes[0], node);
 
-      return nodeStart < to;
+      return nodeStart && nodeStart < to;
     });
 
     if (filteredNodes.length > 0) {

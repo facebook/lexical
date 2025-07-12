@@ -22,6 +22,7 @@ const terser = require('@rollup/plugin-terser');
 const {exec} = require('child-process-promise');
 const {packagesManager} = require('./shared/packagesManager');
 const npmToWwwName = require('./www/npmToWwwName');
+const glob = require('glob');
 
 const headerTemplate = fs.readFileSync(
   path.resolve(__dirname, 'www', 'headerTemplate.js'),
@@ -40,9 +41,33 @@ const modulePackageMappings = Object.fromEntries(
   }),
 );
 
+function getShikiAssets(assetType) {
+  return glob
+    .sync(
+      path.resolve(
+        path.dirname(__dirname),
+        'node_modules/@shikijs/' + assetType + '/dist/*.mjs',
+      ),
+      {windowsPathsNoEscape: true},
+    )
+    .map((p) => path.basename(p.replaceAll('\\', '/'), '.mjs'));
+}
+
 const wwwMappings = {
   ...Object.fromEntries(
     Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
+  ),
+  ...Object.fromEntries(
+    getShikiAssets('langs').map((name) => [
+      `@shikijs/langs/${name}`,
+      `shikijs-langs-${name}`,
+    ]),
+  ),
+  ...Object.fromEntries(
+    getShikiAssets('themes').map((name) => [
+      `@shikijs/themes/${name}`,
+      `shikijs-themes-${name}`,
+    ]),
   ),
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
@@ -246,8 +271,12 @@ async function build(
         },
       },
     ],
-    // This ensures PrismJS imports get included in the bundle
-    treeshake: name !== 'Lexical Code' ? 'smallest' : false,
+    // Lexical Code: this ensures PrismJS imports get included in the bundle
+    // Lexical Code Shiki: 'recommended' preset has treeshake.tryCatchDeoptimization: true which avoids
+    //                     feature detection of oniguruma-to-es to be optimized out and cause a bug
+    treeshake: ['smallest', false, 'recommended'][
+      1 + ['Lexical Code', 'Lexical Code Shiki'].indexOf(name)
+    ],
   };
   /** @type {import('rollup').OutputOptions} */
   const outputOptions = {

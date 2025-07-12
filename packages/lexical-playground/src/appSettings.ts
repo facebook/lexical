@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS = {
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
+  isCodeHighlighted: true,
+  isCodeShiki: false,
   isCollab: false,
   isMaxLength: false,
   isRichText: true,

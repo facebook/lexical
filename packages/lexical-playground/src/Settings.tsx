@@ -37,6 +37,8 @@ export default function Settings(): JSX.Element {
       shouldAllowHighlightingWithBrackets,
       // tableHorizontalScroll,
       selectionAlwaysOnDisplay,
+      isCodeHighlighted,
+      isCodeShiki,
     },
   } = useSettings();
   useEffect(() => {
@@ -196,6 +198,22 @@ export default function Settings(): JSX.Element {
             }}
             checked={selectionAlwaysOnDisplay}
             text="Retain selection"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('isCodeHighlighted', !isCodeHighlighted);
+            }}
+            checked={isCodeHighlighted}
+            text="Enable Code Highlighting"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('isCodeShiki', !isCodeShiki);
+            }}
+            checked={isCodeShiki}
+            text="Use Shiki for Code Highlighting"
           />
         </div>
       ) : null}

@@ -2717,34 +2717,43 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   }
 }
 
-function $traverseNodes(
-  callback: (
-    node: LexicalNode,
-    absoluteOffset: number,
-  ) => {found: boolean; newOffset: number},
+export function $traverseNodes(
+  startNode: LexicalNode,
+  targetNode: LexicalNode,
 ) {
-  const root = $getRoot();
-  let absoluteOffset = 0;
+  let offset = 0;
+  const parentNode = $getCommonAncestor(startNode, targetNode);
 
-  const traverse = (node: LexicalNode): boolean => {
-    const result = callback(node, absoluteOffset);
-
-    if (result.found) {
-      absoluteOffset = result.newOffset;
-      return true; // Found - stop traversal
+  const traverse = (node: LexicalNode): number | undefined => {
+    if (node.getKey() === targetNode.getKey()) {
+      return offset;
     }
 
     if ($isTextNode(node)) {
-      absoluteOffset += node.getTextContent().length;
+      offset += node.getTextContent().length;
     } else if ($isElementNode(node)) {
-      return node.getChildren().some((child) => traverse(child));
+      for (const child of node.getChildren()) {
+        const result = traverse(child);
+        if (result !== undefined) {
+          return result;
+        }
+      }
     }
 
-    return false;
+    return undefined;
   };
 
-  root.getChildren().some((child) => traverse(child));
-  return absoluteOffset;
+  if (parentNode && 'getChildren' in (parentNode.commonAncestor || {})) {
+    for (const child of (
+      parentNode.commonAncestor as ElementNode
+    ).getChildren() || []) {
+      const result = traverse(child);
+      if (result !== undefined) {
+        return result;
+      }
+    }
+  }
+  return offset;
 }
 
 function $calculateSelectionPositions() {
@@ -2753,53 +2762,62 @@ function $calculateSelectionPositions() {
   if (!$isRangeSelection(selection)) {
     return {from: 0, to: 0};
   }
+  const selectedNodes = selection.getNodes();
+  const lastNode = selectedNodes[selectedNodes.length - 1];
+  const offset = $traverseNodes(selectedNodes[0], lastNode);
 
-  const anchorPos = $calculateAbsolutePosition(selection.anchor);
-  const focusPos = $calculateAbsolutePosition(selection.focus);
+  const anchor = selection.anchor;
+  const focus = selection.focus;
 
-  return {
-    from: Math.min(anchorPos, focusPos),
-    to: Math.max(anchorPos, focusPos),
-  };
-}
+  const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
 
-function $calculateAbsolutePosition(target: PointType | LexicalNode): number {
-  const targetKey =
-    target instanceof Object && 'key' in target ? target.key : target.getKey();
-  const targetOffset =
-    target instanceof Object && 'offset' in target ? target.offset : 0;
-
-  return $traverseNodes((node, currentOffset) => {
-    if (node.getKey() === targetKey) {
-      return {
-        found: true,
-        newOffset: currentOffset + targetOffset,
-      };
-    }
-    return {found: false, newOffset: currentOffset};
-  });
+  return {from: 0, to: offset + nodeOffset};
 }
 
 export function $normalizeSelectionByPosition(): null | BaseSelection {
   const selection = getActiveEditorState()._selection;
+  if (!selection) {
+    return null;
+  }
 
-  if ($isRangeSelection(selection)) {
+  const allNodes = selection.getNodes() ?? [];
+
+  if (
+    $isRangeSelection(selection) &&
+    !selection.isCollapsed() &&
+    ($isTextNode(allNodes[allNodes.length - 1]) ||
+      $isElementNode(allNodes[allNodes.length - 1])) &&
+    ($isTextNode(allNodes[0]) || $isElementNode(allNodes[0]))
+    // this fix still leaves out some edge cases
+    // but it works in pretty much all the likely scenarios
+  ) {
     const {to} = $calculateSelectionPositions();
-    const allNodes = selection.getNodes();
 
     // Filter nodes to make sure the all nodes are within the selected range
     const filteredNodes = allNodes.filter((node) => {
-      const nodeStart = $calculateAbsolutePosition(node);
-      return nodeStart < to - 1 && $isTextNode(node);
+      const nodeStart = $traverseNodes(allNodes[0], node);
+
+      return nodeStart < to;
     });
 
     if (filteredNodes.length > 0) {
       const firstNode = filteredNodes[0];
       const lastNode = filteredNodes[filteredNodes.length - 1];
+
       const lastNodeEndOffset = lastNode.getTextContent().length;
 
-      selection.anchor.set(firstNode.getKey(), 0, 'text');
-      selection.focus.set(lastNode.getKey(), lastNodeEndOffset, 'text');
+      selection.anchor.set(
+        firstNode.getKey(),
+        0,
+        $isTextNode(firstNode) ? 'text' : 'element',
+      );
+      selection.focus.set(
+        lastNode.getKey(),
+        lastNodeEndOffset,
+        $isTextNode(lastNode) ? 'text' : 'element',
+      );
+    } else {
+      return null;
     }
   }
 

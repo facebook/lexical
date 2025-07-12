@@ -1066,7 +1066,12 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Select previous with RTL (DecoratorNode) #7685', async ({page}) => {
+  test('Select previous with RTL (DecoratorNode) #7685', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
     await page.keyboard.type('קצת מלל');
     await insertHorizontalRule(page);
     await page.keyboard.type('עוד');
@@ -1092,7 +1097,12 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test('Select next with RTL (DecoratorNode) #7685', async ({page}) => {
+  test('Select next with RTL (DecoratorNode) #7685', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
     await page.keyboard.type('קצת מלל');
     await insertHorizontalRule(page);
     await page.keyboard.type('עוד');

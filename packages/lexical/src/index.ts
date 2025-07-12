@@ -220,6 +220,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $getCharacterOffsetBetweenNodes,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,

@@ -13,6 +13,7 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
+import {$createHeadingNode, HeadingNode} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $comparePointCaretNext,
@@ -21,6 +22,7 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getCaretInDirection,
+  $getCharacterOffsetBetweenNodes,
   $getRoot,
   $getSelection,
   $isParagraphNode,
@@ -806,6 +808,165 @@ describe('LexicalSelection tests', () => {
             ]);
             expect(leadingText.isAttached()).toBe(true);
           });
+        });
+      });
+    });
+  });
+});
+
+describe('normalize Selection by position', () => {
+  describe('$getCharacterOffsetBetweenNodes', () => {
+    let editor: LexicalEditor;
+
+    beforeEach(() => {
+      editor = createEditor({
+        nodes: [HeadingNode],
+      });
+    });
+
+    describe('Basic text node traversal', () => {
+      it('should return 0 when start and target are the same node', () => {
+        editor.update(() => {
+          const textNode = $createTextNode('Hello');
+          const paragraph = $createParagraphNode().append(textNode);
+          $getRoot().append(paragraph);
+
+          const result = $getCharacterOffsetBetweenNodes(textNode, textNode);
+          expect(result).toBe(0);
+        });
+      });
+
+      it('should handle empty text nodes', () => {
+        editor.update(() => {
+          const emptyText = $createTextNode('');
+          const text2 = $createTextNode('Hello');
+          const paragraph = $createParagraphNode().append(emptyText, text2);
+          $getRoot().append(paragraph);
+
+          const result = $getCharacterOffsetBetweenNodes(emptyText, text2);
+          expect(result).toBe(0); // Empty text contributes 0 to offset
+        });
+      });
+
+      it('should ignore all nodes before the start node', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Start');
+          const text2 = $createTextNode('Middle');
+          const text3 = $createTextNode('End');
+          const paragraph = $createParagraphNode().append(text1, text2, text3);
+          $getRoot().append(paragraph);
+
+          const result = $getCharacterOffsetBetweenNodes(text2, text3);
+          expect(result).toBe(6); // Only "Middle" text is counted
+        });
+      });
+
+      it('should calculate offset between two text nodes in same paragraph', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode(' world');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          const result = $getCharacterOffsetBetweenNodes(text1, text2);
+          expect(result).toBe(5); // Length of "Hello"
+        });
+      });
+
+      it('should be ltr', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode(' world');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          const result = $getCharacterOffsetBetweenNodes(text2, text1);
+          expect(result).toBe(0); // LTR so it starts from text1 regardless of the startNode.
+        });
+      });
+
+      it('should return null when the targetNode is not in the tree', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode('World');
+          const para1 = $createParagraphNode().append(text1);
+          $getRoot().append(para1);
+
+          const result = $getCharacterOffsetBetweenNodes(text1, text2);
+          expect(result).toBe(null);
+        });
+      });
+    });
+
+    describe('Multi-paragraph traversal', () => {
+      it('should traverse across multiple paragraphs', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('First');
+          const text2 = $createTextNode('Second');
+          const para1 = $createParagraphNode().append(text1);
+          const para2 = $createParagraphNode().append(text2);
+          $getRoot().append(para1, para2);
+
+          const result = $getCharacterOffsetBetweenNodes(text1, text2);
+          expect(result).toBe(5); // Length of "First"
+        });
+      });
+
+      it('should handle complex nested structure', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Start');
+          const text2 = $createTextNode('Header text');
+          const text3 = $createTextNode('End');
+
+          const heading = $createHeadingNode('h1').append(text2);
+          const para1 = $createParagraphNode().append(text1);
+          const para2 = $createParagraphNode().append(text3);
+
+          $getRoot().append(para1, heading, para2);
+
+          const result = $getCharacterOffsetBetweenNodes(text1, text3);
+          expect(result).toBe(16); // "Start" (5) + "Header text" (11)
+        });
+      });
+
+      it('should handle deeply nested nodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Some');
+          const text2 = $createTextNode('Nested');
+          const text3 = $createTextNode('Content');
+
+          const innerPara = $createParagraphNode().append(text2);
+          const outerPara = $createParagraphNode().append(
+            text1,
+            innerPara,
+            text3,
+          );
+          $getRoot().append(outerPara);
+
+          const result = $getCharacterOffsetBetweenNodes(text1, text3);
+          expect(result).toBe(10); // "Some" (4) + "Nested" (6)
+        });
+      });
+
+      it('should handle large number of nodes efficiently', () => {
+        editor.update(() => {
+          const paragraph = $createParagraphNode();
+          const nodes = [];
+
+          for (let i = 0; i < 100; i++) {
+            const textNode = $createTextNode(`Text${i}`);
+            nodes.push(textNode);
+            paragraph.append(textNode);
+          }
+
+          $getRoot().append(paragraph);
+
+          const startTime = performance.now();
+          const result = $getCharacterOffsetBetweenNodes(nodes[0], nodes[99]);
+          const endTime = performance.now();
+
+          expect(result).toBeGreaterThan(0);
+          expect(endTime - startTime).toBeLessThan(100); // Should complete in reasonable time
         });
       });
     });

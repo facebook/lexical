@@ -2720,50 +2720,41 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
 export function $getCharacterOffsetBetweenNodes(
   startNode: LexicalNode,
   targetNode: LexicalNode,
-) {
-  // this only works LTR
-  // so if the target node comes before the start node it will return 0
-  let offset = 0;
-  let start = false;
+): number | null {
   const parentNode = $getCommonAncestor(startNode, targetNode);
-  if (!parentNode) {
-    return null;
+  if (
+    !parentNode ||
+    !parentNode.commonAncestor ||
+    !('getChildren' in parentNode.commonAncestor)
+  ) {
+    return targetNode.getKey() === startNode.getKey() ? 0 : null;
   }
 
-  const traverse = (node: LexicalNode): number | undefined => {
+  let offset = 0;
+  let hasStarted = false;
+
+  const traverse = (node: LexicalNode): boolean => {
     if (node.getKey() === targetNode.getKey()) {
-      return offset;
+      return true;
+    } else if (!hasStarted && node.getKey() === startNode.getKey()) {
+      hasStarted = true;
     }
 
-    if (!start && node.getKey() === startNode.getKey()) {
-      start = true;
-    }
-
-    if ($isTextNode(node) && start) {
+    if (hasStarted && $isTextNode(node)) {
       offset += node.getTextContent().length;
     } else if ($isElementNode(node)) {
-      for (const child of node.getChildren()) {
-        const result = traverse(child);
-        if (result !== undefined) {
-          return result;
-        }
-      }
+      return node.getChildren().some((child) => traverse(child));
     }
 
-    return undefined;
+    return false;
   };
 
-  if (parentNode && 'getChildren' in (parentNode.commonAncestor || {})) {
-    for (const child of (
-      parentNode.commonAncestor as ElementNode
-    ).getChildren() || []) {
-      const result = traverse(child);
-      if (result !== undefined) {
-        return result;
-      }
-    }
-  }
-  return offset;
+  // Start traversal from common ancestor
+  const found = (parentNode.commonAncestor as ElementNode)
+    .getChildren()
+    .some((child) => traverse(child));
+
+  return found ? offset : null;
 }
 
 function $calculateSelectionPositions() {

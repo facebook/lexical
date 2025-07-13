@@ -2781,7 +2781,7 @@ function $calculateSelectionPositions() {
 
   const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
 
-  return {from: 0, to: offset ?? 0 + nodeOffset};
+  return {from: 0, to: (offset ?? 0) + nodeOffset};
 }
 
 export function $normalizeSelectionByPosition(): null | BaseSelection {

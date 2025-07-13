@@ -2709,9 +2709,11 @@ export function $getCharacterOffsetBetweenNodes(
   // this only works LTR
   // so if the target node comes before the start node it will return 0
   let offset = 0;
-    let start = false;
+  let start = false;
   const parentNode = $getCommonAncestor(startNode, targetNode);
-  if (!parentNode) {return null;}
+  if (!parentNode) {
+    return null;
+  }
 
   const traverse = (node: LexicalNode): number | undefined => {
     if (node.getKey() === targetNode.getKey()) {
@@ -2764,7 +2766,7 @@ function $calculateSelectionPositions() {
 
   const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
 
-  return {from: 0, to: offset ?? 0 + nodeOffset};
+  return {from: 0, to: (offset ?? 0) + nodeOffset};
 }
 
 export function $normalizeSelectionByPosition(): null | BaseSelection {

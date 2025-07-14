@@ -27,8 +27,10 @@ import {
   $getSelection,
   $isParagraphNode,
   $isTextNode,
+  $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
   $selectAll,
   $setSelection,
+  BaseSelection,
   createEditor,
   ElementNode,
   LexicalEditor,
@@ -44,6 +46,7 @@ import {
   $createTestInlineElementNode,
   initializeUnitTest,
   invariant,
+  TestDecoratorNode,
 } from '../utils';
 
 describe('LexicalSelection tests', () => {
@@ -967,6 +970,401 @@ describe('normalize Selection by position', () => {
 
           expect(result).toBeGreaterThan(0);
           expect(endTime - startTime).toBeLessThan(100); // Should complete in reasonable time
+        });
+      });
+    });
+  });
+
+  describe('$normalizeSelectionByPosition', () => {
+    let editor: LexicalEditor;
+
+    beforeEach(() => {
+      editor = createEditor({nodes: [TestDecoratorNode]});
+    });
+
+    const verifySelection = (
+      result: BaseSelection | null,
+      selection: RangeSelection,
+      expectedKeys: string[],
+      expectedOffsets: number[],
+      expectedTypes?: string[],
+    ) => {
+      expect(result).toBe(selection);
+      expect(selection.anchor.key).toBe(expectedKeys[0]);
+      expect(selection.anchor.offset).toBe(expectedOffsets[0]);
+      expect(selection.focus.key).toBe(expectedKeys[1]);
+      expect(selection.focus.offset).toBe(expectedOffsets[1]);
+
+      if (expectedTypes) {
+        expect(selection.anchor.type).toBe(expectedTypes[0]);
+        expect(selection.focus.type).toBe(expectedTypes[1]);
+      }
+    };
+
+    describe('Early return cases', () => {
+      it('should return selection unchanged when no selection exists', () => {
+        editor.update(() => {
+          const result = $normalizeSelectionByPosition();
+          expect(result).toBe($getSelection());
+        });
+      });
+
+      it('should return selection unchanged when selection length is 0', () => {
+        editor.update(() => {
+          const textNode = $createTextNode('Hello');
+          const paragraph = $createParagraphNode().append(textNode);
+          $getRoot().append(paragraph);
+
+          // Collapsed selection (cursor)
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 2, 'text');
+          selection.focus.set(textNode.getKey(), 2, 'text');
+          $setSelection(selection);
+
+          const result = $normalizeSelectionByPosition();
+          verifySelection(
+            result,
+            selection,
+            [textNode.getKey(), textNode.getKey()],
+            [2, 2],
+          );
+        });
+      });
+
+      it('should return selection unchanged when only one node is selected', () => {
+        editor.update(() => {
+          const textNode = $createTextNode('Hello World');
+          const paragraph = $createParagraphNode().append(textNode);
+          $getRoot().append(paragraph);
+
+          // Selection within single node
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 2, 'text');
+          selection.focus.set(textNode.getKey(), 8, 'text');
+          $setSelection(selection);
+
+          const result = $normalizeSelectionByPosition();
+          verifySelection(
+            result,
+            selection,
+            [textNode.getKey(), textNode.getKey()],
+            [2, 8],
+          );
+        });
+      });
+    });
+
+    describe('Multi-node selections that get normalized', () => {
+      it('should normalize selection across multiple text nodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode(' ');
+          const text3 = $createTextNode('World');
+          const paragraph = $createParagraphNode().append(text1, text2, text3);
+          $getRoot().append(paragraph);
+
+          // Select from middle of text1 to middle of text3
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 2, 'text');
+          selection.focus.set(text3.getKey(), 3, 'text');
+          $setSelection(selection);
+
+          const result = $normalizeSelectionByPosition();
+          verifySelection(
+            result,
+            selection,
+            [text1.getKey(), text3.getKey()],
+            [0, 5],
+          );
+        });
+      });
+
+      it('should normalize selection across text and element nodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Start');
+          const innerText = $createTextNode('Inside');
+          const innerPara = $createParagraphNode().append(innerText);
+          const text2 = $createTextNode('End');
+          const outerPara = $createParagraphNode().append(
+            text1,
+            innerPara,
+            text2,
+          );
+          $getRoot().append(outerPara);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 1, 'text');
+          selection.focus.set(text2.getKey(), 2, 'text');
+          $setSelection(selection);
+
+          verifySelection(
+            $normalizeSelectionByPosition(),
+            selection,
+            [text1.getKey(), text2.getKey()],
+            [0, 3],
+            ['text', 'text'],
+          );
+        });
+      });
+
+      it('should set correct point types for element nodes', () => {
+        editor.update(() => {
+          const para1 = $createParagraphNode();
+          const text1 = $createTextNode('Content');
+          para1.append(text1);
+          const para2 = $createParagraphNode();
+          const text2 = $createTextNode('More');
+          para2.append(text2);
+          $getRoot().append(para1, para2);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(para1.getKey(), 0, 'element');
+          selection.focus.set(para1.getKey(), 7, 'element');
+          $setSelection(selection);
+
+          verifySelection(
+            $normalizeSelectionByPosition(),
+            selection,
+            [para1.getKey(), para1.getKey()],
+            [0, 7],
+            ['element', 'element'],
+          );
+        });
+      });
+    });
+
+    /* eslint-disable @typescript-eslint/no-var-requires */
+    describe('Isolate Filtering logic', () => {
+      afterEach(() => {
+        jest.resetAllMocks();
+        jest.restoreAllMocks();
+      });
+
+      it('should filter out nodes beyond selection length', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('A');
+          const text2 = $createTextNode('VeryLongText');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          // Mock $getCharacterOffsetBetweenNodes to node start positions
+          jest
+            .spyOn(
+              require('../LexicalSelection'),
+              '$getCharacterOffsetBetweenNodes',
+            )
+            .mockImplementation((_, target) => {
+              if (target === text1) {return 0;}
+              if (target === text2) {return 10;} // Beyond selection length
+              return null;
+            });
+
+          // Mock $getSelectionLength to return selection length
+          jest
+            .spyOn(require('../LexicalSelection'), '$getSelectionLength')
+            .mockReturnValue(5);
+
+          // Should only include text1 since text2 is beyond selection length
+          verifySelection(
+            $normalizeSelectionByPosition(),
+            $createRangeSelection(),
+            [text1.getKey(), text1.getKey()],
+            [0, 1],
+          );
+        });
+      });
+
+      it('should return null when no nodes pass the filter', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('First');
+          const text2 = $createTextNode('Second');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          // Mock $getCharacterOffsetBetweenNodes to node start positions
+          jest
+            .spyOn(
+              require('../LexicalSelection'),
+              '$getCharacterOffsetBetweenNodes',
+            )
+            .mockImplementation(() => 100); // All beyond selection length
+
+          // Mock $getSelectionLength to return selection length
+          jest
+            .spyOn(require('../LexicalSelection'), '$getSelectionLength')
+            .mockReturnValue(5);
+
+          const result = $normalizeSelectionByPosition();
+          expect(result).toBeNull();
+        });
+      });
+
+      it('should handle null offset from $getCharacterOffsetBetweenNodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode('World');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          // Mock $getCharacterOffsetBetweenNodes to node start positions
+          jest
+            .spyOn(
+              require('../LexicalSelection'),
+              '$getCharacterOffsetBetweenNodes',
+            )
+            .mockImplementation((_, target) => {
+              if (target === text1) {return 0;}
+              return null; // text2 returns null
+            });
+
+          // Mock $getSelectionLength to return selection length
+          jest
+            .spyOn(require('../LexicalSelection'), '$getSelectionLength')
+            .mockReturnValue(10); // to include text 2
+
+          verifySelection(
+            $normalizeSelectionByPosition(),
+            $createRangeSelection(),
+            [text1.getKey(), text1.getKey()], // text2 is filtered out
+            [0, 5],
+          );
+        });
+      });
+    });
+
+    describe('first and last node validation', () => {
+      afterEach(() => {
+        jest.resetAllMocks();
+        jest.restoreAllMocks();
+      });
+
+      it('should return selection unchanged when first node is not text or element', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode('World');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 1, 'text');
+          selection.focus.set(text2.getKey(), 5, 'text');
+          $setSelection(selection);
+
+          const originalIsTextNode = require('lexical').$isTextNode;
+          const originalIsElementNode = require('lexical').$isElementNode;
+
+          // Mock $isTextNode and $isElementNode to return false for first node
+          jest
+            .spyOn(require('lexical'), '$isTextNode')
+            .mockImplementation((node) => {
+              if (node === text1) {return false;} // First node fails check
+              return originalIsTextNode(node);
+            });
+
+          jest
+            .spyOn(require('lexical'), '$isElementNode')
+            .mockImplementation((node) => {
+              if (node === text1) {return false;} // First node fails check
+              return originalIsElementNode(node);
+            });
+
+          verifySelection(
+            $normalizeSelectionByPosition(),
+            selection,
+            [text1.getKey(), text2.getKey()],
+            [1, 5],
+          );
+        });
+      });
+
+      it('should return selection unchanged when last node is not text or element', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode('World');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 5, 'text');
+          selection.focus.set(text2.getKey(), 1, 'text');
+          $setSelection(selection);
+
+          const originalIsTextNode = require('lexical').$isTextNode;
+          const originalIsElementNode = require('lexical').$isElementNode;
+
+          // Mock $isTextNode and $isElementNode to return false for last node
+          jest
+            .spyOn(require('lexical'), '$isTextNode')
+            .mockImplementation((node) => {
+              if (node === text2) {return false;} // Last node fails check
+              return originalIsTextNode(node);
+            });
+
+          jest
+            .spyOn(require('lexical'), '$isElementNode')
+            .mockImplementation((node) => {
+              if (node === text2) {return false;} // First node fails check
+              return originalIsElementNode(node);
+            });
+
+          verifySelection(
+            $normalizeSelectionByPosition(),
+            selection,
+            [text1.getKey(), text2.getKey()],
+            [5, 1],
+          );
+        });
+      });
+    });
+    /* eslint-enable @typescript-eslint/no-var-requires */
+
+    describe('Cross-paragraph selections', () => {
+      it('should normalize selection across multiple paragraphs', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('First paragraph');
+          const text2 = $createTextNode('Second paragraph');
+          const para1 = $createParagraphNode().append(text1);
+          const para2 = $createParagraphNode().append(text2);
+          $getRoot().append(para1, para2);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 5, 'text');
+          selection.focus.set(text2.getKey(), 6, 'text');
+          $setSelection(selection);
+
+          const result = $normalizeSelectionByPosition();
+
+          verifySelection(
+            result,
+            selection,
+            [text1.getKey(), text2.getKey()],
+            [0, 16],
+          );
+        });
+      });
+
+      it('should normalize selections spanning multiple element types when first and last nodes are TextNodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('First paragraph');
+          const decNode = $createTestDecoratorNode();
+          const text2 = $createTextNode('Second paragraph');
+          const para1 = $createParagraphNode().append(text1);
+          const para2 = $createParagraphNode().append(text2);
+          $getRoot().append(para1, decNode, para2);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 5, 'text');
+          selection.focus.set(text2.getKey(), 6, 'text');
+          $setSelection(selection);
+
+          const result = $normalizeSelectionByPosition();
+
+          verifySelection(
+            result,
+            selection,
+            [text1.getKey(), text2.getKey()],
+            [0, 16],
+          );
         });
       });
     });

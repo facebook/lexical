@@ -224,6 +224,7 @@ export {
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
+  $getSelectionLength,
   $getTextContent,
   $insertNodes,
   $isBlockElementNode,

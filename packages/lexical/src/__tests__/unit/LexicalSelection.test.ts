@@ -25,6 +25,7 @@ import {
   $getCharacterOffsetBetweenNodes,
   $getRoot,
   $getSelection,
+  $getSelectionLength,
   $isParagraphNode,
   $isTextNode,
   $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
@@ -975,6 +976,219 @@ describe('normalize Selection by position', () => {
     });
   });
 
+  describe('$getSelectionLength', () => {
+    let editor: LexicalEditor;
+
+    beforeEach(() => {
+      editor = createEditor();
+    });
+
+    it('should return 0 when no selection exists', () => {
+      editor.update(() => {
+        const result = $getSelectionLength();
+        expect(result).toBe(0);
+      });
+    });
+
+    describe('Single node selections', () => {
+      it('should calculate length for selection within single text node', () => {
+        editor.update(() => {
+          const textNode = $createTextNode('Hello World');
+          const paragraph = $createParagraphNode().append(textNode);
+          $getRoot().append(paragraph);
+
+          // Select "World" (positions 6-11)
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 2, 'text');
+          selection.focus.set(textNode.getKey(), 11, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          expect(result).toBe(11); // offset 0 (same node) + focus offset 11
+        });
+      });
+
+      it('should handle collapsed selection (cursor position)', () => {
+        editor.update(() => {
+          const textNode = $createTextNode('Hello');
+          const paragraph = $createParagraphNode().append(textNode);
+          $getRoot().append(paragraph);
+
+          // Cursor at position 3
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 3, 'text');
+          selection.focus.set(textNode.getKey(), 3, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          expect(result).toBe(3); // offset 0 + cursor position 3
+        });
+      });
+
+      it('should use anchor offset when anchor key matches last node', () => {
+        editor.update(() => {
+          const textNode = $createTextNode('Hello World');
+          const paragraph = $createParagraphNode().append(textNode);
+          $getRoot().append(paragraph);
+
+          // Backward selection within single node
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 8, 'text');
+          selection.focus.set(textNode.getKey(), 3, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          expect(result).toBe(8); // offset 0 + anchor offset 8
+        });
+      });
+    });
+
+    describe('Multi-node selections', () => {
+      it('should calculate length across multiple text nodes using focus offset', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode(' ');
+          const text3 = $createTextNode('World');
+          const paragraph = $createParagraphNode().append(text1, text2, text3);
+          $getRoot().append(paragraph);
+
+          // Select from start of text1 to middle of text3
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 0, 'text');
+          selection.focus.set(text3.getKey(), 3, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          // offset between text1 and text3 = 6 + focus offset (3) = 9
+          expect(result).toBe(9);
+        });
+      });
+
+      it('should calculate length using anchor offset when anchor is on last node', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('First');
+          const text2 = $createTextNode('Second');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          // Backward selection: anchor on last node
+          const selection = $createRangeSelection();
+          selection.anchor.set(text2.getKey(), 4, 'text');
+          selection.focus.set(text1.getKey(), 2, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          // offset 5 ("First") + anchor offset 4 = 9
+          expect(result).toBe(9);
+        });
+      });
+
+      it('should handle selection across three nodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('One');
+          const text2 = $createTextNode('Two');
+          const text3 = $createTextNode('Three');
+          const paragraph = $createParagraphNode().append(text1, text2, text3);
+          $getRoot().append(paragraph);
+
+          // Select from text1 to middle of text3
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 0, 'text');
+          selection.focus.set(text3.getKey(), 3, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          // offset 6 ("One" + "Two") + focus offset 3 = 9
+          expect(result).toBe(9);
+        });
+      });
+
+      it('should calculate length across multiple paragraphs', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('First paragraph');
+          const text2 = $createTextNode('Second paragraph');
+          const para1 = $createParagraphNode().append(text1);
+          const para2 = $createParagraphNode().append(text2);
+          $getRoot().append(para1, para2);
+
+          // Select from text1 to middle of text2
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 0, 'text');
+          selection.focus.set(text2.getKey(), 6, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          // offset 15 ("First paragraph") + focus offset 6 = 21
+          expect(result).toBe(21);
+        });
+      });
+    });
+
+    describe('Edge cases', () => {
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
+
+      it('should handle null offset from $getCharacterOffsetBetweenNodes', () => {
+        editor.update(() => {
+          const text1 = $createTextNode('Hello');
+          const text2 = $createTextNode('World');
+          const paragraph = $createParagraphNode().append(text1, text2);
+          $getRoot().append(paragraph);
+
+          jest
+            .spyOn(
+              // eslint-disable-next-line @typescript-eslint/no-var-requires
+              require('../LexicalSelection'),
+              '$getCharacterOffsetBetweenNodes',
+            )
+            .mockReturnValue(null);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(text1.getKey(), 0, 'text');
+          selection.focus.set(text2.getKey(), 5, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          expect(result).toBe(5); // 0 (null becomes 0) + focus offset 5
+        });
+      });
+
+      it('should handle empty text nodes', () => {
+        editor.update(() => {
+          const emptyText = $createTextNode('');
+          const text2 = $createTextNode('Content');
+          const paragraph = $createParagraphNode().append(emptyText, text2);
+          $getRoot().append(paragraph);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(emptyText.getKey(), 0, 'text');
+          selection.focus.set(text2.getKey(), 7, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          expect(result).toBe(7); // offset 0 (empty text) + focus offset 7
+        });
+      });
+
+      it('should handle selection with only empty nodes', () => {
+        editor.update(() => {
+          const emptyText = $createTextNode('');
+          const paragraph = $createParagraphNode().append(emptyText);
+          $getRoot().append(paragraph);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(emptyText.getKey(), 0, 'text');
+          selection.focus.set(emptyText.getKey(), 0, 'text');
+          $setSelection(selection);
+
+          const result = $getSelectionLength();
+          expect(result).toBe(0); // offset 0 + offset 0
+        });
+      });
+    });
+  });
+
   describe('$normalizeSelectionByPosition', () => {
     let editor: LexicalEditor;
 
@@ -1136,7 +1350,6 @@ describe('normalize Selection by position', () => {
     /* eslint-disable @typescript-eslint/no-var-requires */
     describe('Isolate Filtering logic', () => {
       afterEach(() => {
-        jest.resetAllMocks();
         jest.restoreAllMocks();
       });
 
@@ -1154,8 +1367,12 @@ describe('normalize Selection by position', () => {
               '$getCharacterOffsetBetweenNodes',
             )
             .mockImplementation((_, target) => {
-              if (target === text1) {return 0;}
-              if (target === text2) {return 10;} // Beyond selection length
+              if (target === text1) {
+                return 0;
+              }
+              if (target === text2) {
+                return 10;
+              } // Beyond selection length
               return null;
             });
 
@@ -1213,7 +1430,9 @@ describe('normalize Selection by position', () => {
               '$getCharacterOffsetBetweenNodes',
             )
             .mockImplementation((_, target) => {
-              if (target === text1) {return 0;}
+              if (target === text1) {
+                return 0;
+              }
               return null; // text2 returns null
             });
 
@@ -1234,7 +1453,6 @@ describe('normalize Selection by position', () => {
 
     describe('first and last node validation', () => {
       afterEach(() => {
-        jest.resetAllMocks();
         jest.restoreAllMocks();
       });
 
@@ -1257,14 +1475,18 @@ describe('normalize Selection by position', () => {
           jest
             .spyOn(require('lexical'), '$isTextNode')
             .mockImplementation((node) => {
-              if (node === text1) {return false;} // First node fails check
+              if (node === text1) {
+                return false;
+              } // First node fails check
               return originalIsTextNode(node);
             });
 
           jest
             .spyOn(require('lexical'), '$isElementNode')
             .mockImplementation((node) => {
-              if (node === text1) {return false;} // First node fails check
+              if (node === text1) {
+                return false;
+              } // First node fails check
               return originalIsElementNode(node);
             });
 
@@ -1296,14 +1518,18 @@ describe('normalize Selection by position', () => {
           jest
             .spyOn(require('lexical'), '$isTextNode')
             .mockImplementation((node) => {
-              if (node === text2) {return false;} // Last node fails check
+              if (node === text2) {
+                return false;
+              } // Last node fails check
               return originalIsTextNode(node);
             });
 
           jest
             .spyOn(require('lexical'), '$isElementNode')
             .mockImplementation((node) => {
-              if (node === text2) {return false;} // First node fails check
+              if (node === text2) {
+                return false;
+              } // First node fails check
               return originalIsElementNode(node);
             });
 

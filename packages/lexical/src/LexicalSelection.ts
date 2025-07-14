@@ -2769,7 +2769,12 @@ export function $getSelectionLength() {
   const anchor = selection.anchor;
   const focus = selection.focus;
 
-  const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
+  let nodeOffset: number;
+  if (anchor.key === focus.key) {
+    nodeOffset = Math.max(anchor.offset, focus.offset);
+  } else {
+    nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
+  }
 
   return (offset ?? 0) + nodeOffset;
 }
@@ -2777,6 +2782,7 @@ export function $getSelectionLength() {
 export function $normalizeSelectionByPosition(): null | BaseSelection {
   const selection = $getSelection();
   const selectionLength = $getSelectionLength();
+
   if (!selection || !selectionLength) {
     return selection;
   }

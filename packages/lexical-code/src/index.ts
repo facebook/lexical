@@ -25,7 +25,6 @@ export {
   $isCodeNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
-  DEFAULT_CODE_THEME,
   getDefaultCodeLanguage,
 } from './CodeNode';
 export {

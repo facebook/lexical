@@ -26,7 +26,6 @@ import {
   CodeHighlightNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
-  DEFAULT_CODE_THEME,
 } from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -69,13 +68,15 @@ import {
   loadCodeTheme,
 } from './FacadeShiki';
 
-interface Tokenizer {
+export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
 }
 
-const ShikiTokenizer: Tokenizer = {
+const DEFAULT_CODE_THEME = 'one-light';
+
+export const ShikiTokenizer: Tokenizer = {
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[] {
     return $getHighlightNodes(codeNode, language || this.defaultLanguage);
   },

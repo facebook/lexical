@@ -43,15 +43,13 @@ import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
 export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
-    theme?: string | null | undefined;
+    theme?: string | undefined;
   },
   SerializedElementNode
 >;
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
-
-export const DEFAULT_CODE_THEME = 'one-light';
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {
   for (const child of node.childNodes) {
@@ -72,7 +70,7 @@ export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
   /** @internal */
-  __theme: string | null | undefined;
+  __theme: string | undefined;
   /** @internal */
   __isSyntaxHighlightSupported: boolean;
 
@@ -81,13 +79,12 @@ export class CodeNode extends ElementNode {
   }
 
   static clone(node: CodeNode): CodeNode {
-    const newNode = new CodeNode(node.__key);
-    return newNode;
+    return new CodeNode(node.__language, node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
-    this.__language = undefined;
+    this.__language = language || undefined;
     this.__isSyntaxHighlightSupported = false;
     this.__theme = undefined;
   }
@@ -404,7 +401,7 @@ export class CodeNode extends ElementNode {
     return writable;
   }
 
-  getTheme(): string | null | undefined {
+  getTheme(): string | undefined {
     return this.getLatest().__theme;
   }
 }

@@ -6,7 +6,11 @@
  *
  */
 
-export {registerCodeHighlighting} from './CodeHighlighterShiki';
+export {
+  registerCodeHighlighting,
+  ShikiTokenizer,
+  type Tokenizer,
+} from './CodeHighlighterShiki';
 export {
   getCodeLanguageOptions,
   getCodeThemeOptions,

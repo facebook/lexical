@@ -2756,12 +2756,11 @@ export function $getCharacterOffsetBetweenNodes(
 
   return found ? offset : null;
 }
-
-function $calculateSelectionPositions() {
+export function $getSelectionLength() {
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection)) {
-    return {from: 0, to: 0};
+    return 0;
   }
   const selectedNodes = selection.getNodes();
   const lastNode = selectedNodes[selectedNodes.length - 1];
@@ -2772,13 +2771,14 @@ function $calculateSelectionPositions() {
 
   const nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
 
-  return {from: 0, to: (offset ?? 0) + nodeOffset};
+  return (offset ?? 0) + nodeOffset;
 }
 
 export function $normalizeSelectionByPosition(): null | BaseSelection {
-  const selection = getActiveEditorState()._selection;
-  if (!selection) {
-    return null;
+  const selection = $getSelection();
+  const selectionLength = $getSelectionLength();
+  if (!selection || !selectionLength) {
+    return selection;
   }
 
   const allNodes = selection.getNodes() ?? [];
@@ -2786,19 +2786,18 @@ export function $normalizeSelectionByPosition(): null | BaseSelection {
   if (
     $isRangeSelection(selection) &&
     !selection.isCollapsed() &&
+    allNodes.length > 1 &&
     ($isTextNode(allNodes[allNodes.length - 1]) ||
       $isElementNode(allNodes[allNodes.length - 1])) &&
     ($isTextNode(allNodes[0]) || $isElementNode(allNodes[0]))
     // this fix still leaves out some edge cases
     // but it works in pretty much all the likely scenarios
   ) {
-    const {to} = $calculateSelectionPositions();
-
     // Filter nodes to make sure the all nodes are within the selected range
     const filteredNodes = allNodes.filter((node) => {
       const nodeStart = $getCharacterOffsetBetweenNodes(allNodes[0], node);
 
-      return nodeStart && nodeStart < to;
+      return nodeStart !== null && nodeStart < selectionLength;
     });
 
     if (filteredNodes.length > 0) {

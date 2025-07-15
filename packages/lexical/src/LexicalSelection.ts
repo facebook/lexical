@@ -2756,6 +2756,7 @@ export function $getCharacterOffsetBetweenNodes(
 
   return found ? offset : null;
 }
+
 export function $getSelectionLength() {
   const selection = $getSelection();
 
@@ -2764,67 +2765,78 @@ export function $getSelectionLength() {
   }
   const selectedNodes = selection.getNodes();
   const lastNode = selectedNodes[selectedNodes.length - 1];
-  const offset = $getCharacterOffsetBetweenNodes(selectedNodes[0], lastNode);
+  const offset =
+    $getCharacterOffsetBetweenNodes(selectedNodes[0], lastNode) ?? 0;
 
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const {anchor, focus} = selection;
 
-  let nodeOffset: number;
-  if (anchor.key === focus.key) {
-    nodeOffset = Math.max(anchor.offset, focus.offset);
-  } else {
-    nodeOffset = (anchor.key === lastNode.getKey() ? anchor : focus).offset;
-  }
+  // Use the higher offset for same node, otherwise use offset from last node
+  const nodeOffset =
+    anchor.key === focus.key
+      ? Math.max(anchor.offset, focus.offset)
+      : (anchor.key === lastNode.getKey() ? anchor : focus).offset;
 
-  return (offset ?? 0) + nodeOffset;
+  return offset + nodeOffset;
 }
 
 export function $normalizeSelectionByPosition(): null | BaseSelection {
   const selection = $getSelection();
   const selectionLength = $getSelectionLength();
-
   if (!selection || !selectionLength) {
     return selection;
   }
 
   const allNodes = selection.getNodes() ?? [];
+  const lastNode = allNodes[allNodes.length - 1];
 
-  if (
+  // Only normalize multi-node range selections
+  const shouldNormalize =
     $isRangeSelection(selection) &&
     !selection.isCollapsed() &&
     allNodes.length > 1 &&
-    ($isTextNode(allNodes[allNodes.length - 1]) ||
-      $isElementNode(allNodes[allNodes.length - 1])) &&
-    ($isTextNode(allNodes[0]) || $isElementNode(allNodes[0]))
-    // this fix still leaves out some edge cases
-    // but it works in pretty much all the likely scenarios
-  ) {
-    // Filter nodes to make sure the all nodes are within the selected range
-    const filteredNodes = allNodes.filter((node) => {
-      const nodeStart = $getCharacterOffsetBetweenNodes(allNodes[0], node);
+    ($isTextNode(lastNode) || $isElementNode(lastNode));
 
-      return nodeStart !== null && nodeStart < selectionLength;
-    });
+  if (!shouldNormalize) {
+    return selection;
+  }
 
-    if (filteredNodes.length > 0) {
-      const firstNode = filteredNodes[0];
-      const lastNode = filteredNodes[filteredNodes.length - 1];
+  const endNode = selection.isBackward() ? 'anchor' : 'focus';
 
-      const lastNodeEndOffset = lastNode.getTextContent().length;
+  // Find the last valid node within selection range
+  let currentNode: LexicalNode | null = lastNode;
 
-      selection.anchor.set(
-        firstNode.getKey(),
-        0,
-        $isTextNode(firstNode) ? 'text' : 'element',
-      );
-      selection.focus.set(
-        lastNode.getKey(),
-        lastNodeEndOffset,
-        $isTextNode(lastNode) ? 'text' : 'element',
-      );
-    } else {
-      return null;
+  while (currentNode) {
+    const nodeStart = $getCharacterOffsetBetweenNodes(allNodes[0], currentNode);
+    const isInSelection = nodeStart !== null && nodeStart < selectionLength;
+    const isLineBreakNode = $isLineBreakNode(currentNode);
+
+    if (isInSelection || isLineBreakNode) {
+      if ($isTextNode(currentNode) || $isElementNode(currentNode)) {
+        const offset =
+          selection[endNode].offset || currentNode.getTextContentSize();
+
+        selection[endNode].set(
+          currentNode.getKey(),
+          offset,
+          $isTextNode(currentNode) ? 'text' : 'element',
+        );
+      } else {
+        const parentNode = currentNode.getParent();
+        if (parentNode) {
+          const childIndex = currentNode.getIndexWithinParent();
+
+          selection[endNode].set(
+            parentNode.getKey(),
+            childIndex + 1,
+            'element',
+          );
+        }
+      }
+      break;
     }
+
+    const prevKey = (parseInt(currentNode.getKey()) - 1).toString();
+    currentNode = $getNodeByKey(prevKey);
   }
 
   return selection;

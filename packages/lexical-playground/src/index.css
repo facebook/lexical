@@ -465,6 +465,12 @@ i.horizontal-rule {
   -webkit-mask-size: contain;
 }
 
+i {
+  width: 20px;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }
@@ -590,6 +596,10 @@ i.gif {
 
 i.copy {
   background-image: url(images/icons/copy.svg);
+}
+
+i.paste {
+  background-image: url(images/icons/clipboard.svg);
 }
 
 i.success {

@@ -38,7 +38,17 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CHECK_LIST_COMMAND',
 );
 
-export function registerCheckList(editor: LexicalEditor) {
+/**
+ * Registers the checklist plugin with the editor.
+ * @param editor The LexicalEditor instance.
+ * @param options Optional configuration.
+ *   - disableTakeFocusOnClick: If true, clicking a checklist item will not focus the editor (useful for mobile).
+ */
+export function registerCheckList(
+  editor: LexicalEditor,
+  options?: { disableTakeFocusOnClick?: boolean }
+) {
+  const disableTakeFocusOnClick = options?.disableTakeFocusOnClick ?? false;
   return mergeRegister(
     editor.registerCommand(
       INSERT_CHECK_LIST_COMMAND,
@@ -144,12 +154,12 @@ export function registerCheckList(editor: LexicalEditor) {
     ),
     editor.registerRootListener((rootElement, prevElement) => {
       if (rootElement !== null) {
-        rootElement.addEventListener('click', handleClick);
+        rootElement.addEventListener('click', (event) => handleClick(event, disableTakeFocusOnClick));
         rootElement.addEventListener('pointerdown', handlePointerDown);
       }
 
       if (prevElement !== null) {
-        prevElement.removeEventListener('click', handleClick);
+        prevElement.removeEventListener('click', (event) => handleClick(event, disableTakeFocusOnClick));
         prevElement.removeEventListener('pointerdown', handlePointerDown);
       }
     }),
@@ -205,7 +215,7 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   }
 }
 
-function handleClick(event: Event) {
+function handleClick(event: Event, disableTakeFocusOnClick = false) {
   handleCheckItemEvent(event as PointerEvent, () => {
     if (isHTMLElement(event.target)) {
       const domNode = event.target;
@@ -216,7 +226,9 @@ function handleClick(event: Event) {
           const node = $getNearestNodeFromDOMNode(domNode);
 
           if ($isListItemNode(node)) {
-            domNode.focus();
+            if (!disableTakeFocusOnClick) {
+              domNode.focus();
+            }
             node.toggleChecked();
           }
         });

@@ -10,11 +10,11 @@ import {registerCheckList} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
-export function CheckListPlugin(): null {
+export function CheckListPlugin({ disableTakeFocusOnClick = false }: { disableTakeFocusOnClick?: boolean } = {}): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return registerCheckList(editor);
-  }, [editor]);
+    return registerCheckList(editor, { disableTakeFocusOnClick });
+  }, [editor, disableTakeFocusOnClick]);
   return null;
 }

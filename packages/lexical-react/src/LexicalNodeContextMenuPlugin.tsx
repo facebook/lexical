@@ -107,7 +107,7 @@ const ContextMenuItem = forwardRef<
       role="menuitem"
       disabled={disabled}>
       {icon}
-      <span style={{marginLeft: 10}}>{label}</span>
+      {label}
     </button>
   );
 });

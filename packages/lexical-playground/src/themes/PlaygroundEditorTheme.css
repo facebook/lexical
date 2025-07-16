@@ -671,3 +671,9 @@
   color: #aaa;
   cursor: not-allowed;
 }
+.PlaygroundEditorTheme__contextMenuItemIcon {
+  width: 20px;
+  margin-right: 10px;
+  background-repeat: no-repeat;
+  background-size: contain;
+}

@@ -8,13 +8,11 @@
 
 import type {JSX} from 'react';
 
-import {$createLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement, mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
-  $getNodeByKey,
   $getSelection,
   $insertNodes,
   $isNodeSelection,
@@ -274,7 +272,6 @@ function $onDragStart(event: DragEvent): boolean {
   if (!dataTransfer) {
     return false;
   }
-
   dataTransfer.setData('text/plain', '_');
   dataTransfer.setDragImage(img, 0, 0);
   dataTransfer.setData(
@@ -309,67 +306,25 @@ function $onDragover(event: DragEvent): boolean {
 }
 
 function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
-  // Get the currently selected image node
   const node = $getImageNodeInSelection();
   if (!node) {
-    return false; // No image node selected, exit early
+    return false;
   }
-
-  // Get the parent node's key
-  const parent_key = String(node.__parent);
-  let link = '';
-  if (node) {
-    // Check if the parent node is a link
-    const nodelink = $getNodeByKey(parent_key);
-    if (nodelink?.__type === 'link') {
-      // Cast to LinkNode to safely access the URL
-      const linkNode = nodelink as LinkNode;
-      link = linkNode.__url || ''; // Extract the URL or default to empty string
-    }
-  }
-
-  // Retrieve image data from the drag event
   const data = getDragImageData(event);
   if (!data) {
-    return false; // No valid image data, exit early
+    return false;
   }
-
-  // Prevent default browser drop behavior
   event.preventDefault();
-
-  // Check if the image can be dropped at the current location
   if (canDropImage(event)) {
-    // Get the drop range from the event
     const range = getDragSelection(event);
-
-    // Remove the original image node
     node.remove();
-
-    // Create a new range selection for the drop position
     const rangeSelection = $createRangeSelection();
     if (range !== null && range !== undefined) {
-      // Apply the drop range to the selection
       rangeSelection.applyDOMRange(range);
     }
-
-    // Set the editor's selection to the new range
     $setSelection(rangeSelection);
-
-    if (link) {
-      // If a link exists, wrap the image in a link node
-      editor.update(() => {
-        const linkNode = $createLinkNode(link); // Create a new link node
-        const imageNode = $createImageNode(data); // Create a new image node
-        linkNode.append(imageNode); // Set image as child of link node
-        $insertNodes([linkNode]); // Insert the link node (with image) into the editor
-      });
-    } else {
-      // If no link, insert the image directly
-      editor.dispatchCommand(INSERT_IMAGE_COMMAND, data);
-    }
+    editor.dispatchCommand(INSERT_IMAGE_COMMAND, data);
   }
-
-  // Indicate that the drop event was handled
   return true;
 }
 

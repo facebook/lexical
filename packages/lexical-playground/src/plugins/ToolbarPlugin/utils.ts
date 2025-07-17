@@ -24,6 +24,7 @@ import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
@@ -214,7 +215,7 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
-      let selection = $getSelection();
+      const selection = $getSelection();
       if (!selection) {
         return;
       }
@@ -223,11 +224,14 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
       } else {
         const textContent = selection.getTextContent();
         const codeNode = $createCodeNode();
-        selection.insertNodes([codeNode]);
-        selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertRawText(textContent);
-        }
+        const anchorNode = selection.anchor.getNode();
+
+        // Insert code node just below the selected node (as its sibling)
+        anchorNode.insertAfter(codeNode);
+        // Insert the selected text into the code node
+        codeNode.append($createTextNode(textContent));
+        // Remove the selected content
+        selection.removeText();
       }
     });
   }

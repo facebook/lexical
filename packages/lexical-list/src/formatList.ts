@@ -63,6 +63,7 @@ function $isSelectingEmptyListItem(
  * @param listType - The type of list, "number" | "bullet" | "check".
  */
 export function $insertList(listType: ListType): void {
+  // TODO - extend normalizeSelectionByPosition to handle list selections
   const selection = $getSelection();
 
   if (selection !== null) {

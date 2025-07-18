@@ -33,6 +33,8 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
+import {getImageSource} from '../../utils/imageUtils';
+
 const InlineImageComponent = React.lazy(() => import('./InlineImageComponent'));
 
 export type Position = 'left' | 'right' | 'full' | undefined;
@@ -56,7 +58,9 @@ export interface UpdateInlineImagePayload {
 
 function $convertInlineImageElement(domNode: Node): null | DOMConversionOutput {
   if (isHTMLElement(domNode) && domNode.nodeName === 'IMG') {
-    const {alt: altText, src, width, height} = domNode as HTMLImageElement;
+    const img = domNode as HTMLImageElement;
+    const {alt: altText, width, height} = img;
+    const src = getImageSource(img);
     const node = $createInlineImageNode({altText, height, src, width});
     return {node};
   }

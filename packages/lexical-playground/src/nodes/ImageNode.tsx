@@ -36,6 +36,7 @@ import * as React from 'react';
 
 import {EmojiNode} from './EmojiNode';
 import {KeywordNode} from './KeywordNode';
+import {getImageSource} from '../utils/imageUtils';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
@@ -65,7 +66,8 @@ function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   if (img.src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
     return null;
   }
-  const {alt: altText, src, width, height} = img;
+  const {alt: altText, width, height} = img;
+  const src = getImageSource(img);
   const node = $createImageNode({altText, height, src, width});
   return {node};
 }

@@ -9,9 +9,9 @@
 import type {Option, Options, PollNode} from './DateTimeNode';
 import type {JSX} from 'react';
 
-import { setHours, setMinutes } from "date-fns";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/style.css";
+import {setHours, setMinutes} from 'date-fns';
+import {DayPicker} from 'react-day-picker';
+import 'react-day-picker/style.css';
 import './DateTimeNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
@@ -30,9 +30,21 @@ import {
 import * as React from 'react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
-import Button from '../../ui/Button';
 import joinClasses from '../../utils/joinClasses';
-import {$isPollNode, createPollOption} from './PollNode';
+import {
+  autoUpdate,
+  flip,
+  FloatingFocusManager,
+  FloatingOverlay,
+  FloatingPortal,
+  offset,
+  shift,
+  useDismiss,
+  useFloating,
+  useInteractions,
+  useRole,
+} from '@floating-ui/react';
+import { off } from 'process';
 
 function getTotalVotes(options: Options): number {
   return options.reduce((totalVotes, next) => {
@@ -137,10 +149,10 @@ export default function DateTimeComponent({
   dateTime: Date | undefined;
   nodeKey: NodeKey;
 }): JSX.Element {
-  // const [editor] = useLexicalComposerContext();
+  const [editor] = useLexicalComposerContext();
   // const totalVotes = useMemo(() => getTotalVotes(options), [options]);
-  // const [isSelected, setSelected, clearSelection] =
-    // useLexicalNodeSelection(nodeKey);
+  const [isNodeSelected, setNodeSelected, clearNodeSelection] =
+    useLexicalNodeSelection(nodeKey);
   // const [selection, setSelection] = useState<BaseSelection | null>(null);
   const ref = useRef(null);
 
@@ -191,8 +203,49 @@ export default function DateTimeComponent({
   // };
 
   // const isFocused = $isNodeSelection(selection) && isSelected;
+  ///
+  const [isOpen, setIsOpen] = useState(false);
 
-  const [selected, setSelected] = useState();
+  const {refs, floatingStyles, context} = useFloating({
+    elements: {
+      reference: ref.current,
+    },
+    middleware: [
+      offset(5),
+      flip({
+        fallbackPlacements: ['top-start'],
+      }),
+      shift({padding: 10}),
+    ],
+    onOpenChange: setIsOpen,
+    open: isOpen,
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+  });
+
+  const role = useRole(context, {role: 'dialog'});
+  const dismiss = useDismiss(context);
+
+  const {getFloatingProps} = useInteractions([role, dismiss]);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      e.preventDefault();
+      setIsOpen(true);
+    }
+
+    if (!ref.current) {
+      return;
+    }
+    ref.current.addEventListener('click', onClick);
+    return () => {
+      ref.current.removeEventListener('click', onClick);
+    };
+  }, [refs, editor]);
+
+  ///
+  const [selected, setSelected] = useState(dateTime);
   const [includeTime, setIncludeTime] = useState(false);
   const [timeValue, setTimeValue] = useState('00:00');
 
@@ -211,7 +264,9 @@ export default function DateTimeComponent({
       setTimeValue(time);
       return;
     }
-    const [hours, minutes] = time.split(':').map((str: string) => parseInt(str, 10));
+    const [hours, minutes] = time
+      .split(':')
+      .map((str: string) => parseInt(str, 10));
     const newSelectedDate = setHours(setMinutes(selected, minutes), hours);
     setSelected(newSelectedDate);
     setTimeValue(time);
@@ -230,39 +285,71 @@ export default function DateTimeComponent({
       date.getMonth(),
       date.getDate(),
       hours,
-      minutes
+      minutes,
     );
     setSelected(newDate);
   };
 
   return (
-    <div className={`abc`} ref={ref} style={{ height: "500px", width: "400px", zIndex: 1000 }}>
-      <div>
-        <DayPicker
-          captionLayout="dropdown"
-          navLayout="after"
-          fixedWeeks={false}
-          showOutsideDays={false}
-          mode="single"
-          selected={selected}
-          required={true} // Ensure the date is required
-          timeZone="UTC"
-          onSelect={handleDaySelect}
-          footer={`Selected date: ${
-            selected ? selected.toLocaleString() : "none"
-          }`}
-        />
-        <form style={{ marginBlockEnd: "1em" }}>
-          <input type="checkbox" id="option1" name="option1" value="value1" checked={includeTime}
-            onChange={handleCheckboxChange}
-          />
-          <label for="option1">Add time</label>
-          {" "}
-          <label>
-            <input type="time" value={timeValue} onChange={handleTimeChange} disabled={!includeTime} />
-          </label>
-        </form>
-      </div>
+    <div style={{border: isNodeSelected ? '1px solid blue' : 'none'}}>
+      <div
+        className={`PlaygroundEditorTheme__dateTimePill`}
+        ref={ref}
+        style={{cursor: 'pointer', width: 'fit-content'}}
+        >
+        {dateTime?.toDateString() || 'Invalid Date'}
+        </div>
+        <FloatingPortal>
+          {isOpen && (
+            <FloatingOverlay lockScroll={true}>
+              <FloatingFocusManager
+                context={context}
+                initialFocus={refs.floating}>
+                <div
+                  className={'PlaygroundEditorTheme__dateTimePicker'}
+                  ref={refs.setFloating}
+                  style={floatingStyles}
+                  {...getFloatingProps()}
+                >
+                  <DayPicker
+                    captionLayout="dropdown"
+                    navLayout="after"
+                    fixedWeeks={false}
+                    showOutsideDays={false}
+                    mode="single"
+                    selected={selected}
+                    required={true} // Ensure the date is required
+                    // timeZone="BST"
+                    // timeZone="UTC"
+                    onSelect={handleDaySelect}
+                    footer={`Selected date: ${
+                      selected ? selected.toLocaleString() : 'none'
+                    }`}
+                  />
+                  <form style={{marginBlockEnd: '1em'}}>
+                    <input
+                      type="checkbox"
+                      id="option1"
+                      name="option1"
+                      value="value1"
+                      checked={includeTime}
+                      onChange={handleCheckboxChange}
+                    />
+                    <label for="option1">Add time</label>{' '}
+                    <label>
+                      <input
+                        type="time"
+                        value={timeValue}
+                        onChange={handleTimeChange}
+                        disabled={!includeTime}
+                      />
+                    </label>
+                  </form>
+                </div>
+              </FloatingFocusManager>
+            </FloatingOverlay>
+          )}{' '}
+        </FloatingPortal>
     </div>
   );
 }

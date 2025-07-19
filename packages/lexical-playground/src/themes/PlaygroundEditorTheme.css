@@ -671,3 +671,19 @@
   color: #aaa;
   cursor: not-allowed;
 }
+.PlaygroundEditorTheme__dateTimePill {
+  outline: 0;
+  background: #ddd;
+  border: 1px solid #ddd;
+  /* box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3); */
+  border-radius: 8px;
+  padding: 0px 4px 0px 4px;
+}
+.PlaygroundEditorTheme__dateTimePicker {
+  outline: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0px 6px 0px 10px;
+}

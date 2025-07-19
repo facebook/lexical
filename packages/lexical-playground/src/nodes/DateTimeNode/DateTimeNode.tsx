@@ -12,9 +12,7 @@ import {
   DecoratorNode,
   DOMConversionMap,
   DOMConversionOutput,
-  DOMExportOutput,
   EditorConfig,
-  ElementNode,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -22,7 +20,6 @@ import {
   Spread,
 } from 'lexical';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 
 const DateTimeComponent = React.lazy(() => import('./DateTimeComponent'));
 
@@ -78,16 +75,15 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
-    element.setAttribute('data-lexical-date-time', this.getDateTime()?.toDateString() || '');
-    return {element};
-  }
+  // exportDOM(): DOMExportOutput {
+  //   const element = document.createElement('span');
+  //   element.setAttribute('data-lexical-date-time', this.getDateTime()?.toDateString() || '');
+  //   return {element};
+  // }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const elem = document.createElement('span');
-    elem.style.display = 'inline-block';
-    elem.textContent = 'this is date';
+    elem.setAttribute('data-lexical-date-time', this.getDateTime()?.toDateString() || '');
     return elem;
   }
 
@@ -109,11 +105,10 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <p>{"aaa"}</p>
-      // <DateTimeComponent
-      //   dateTime={this.getDateTime()}
-      //   nodeKey={this.__key}
-      // />
+      <DateTimeComponent
+        dateTime={this.getDateTime()}
+        nodeKey={this.getKey()}
+      />
     );
   }
 }

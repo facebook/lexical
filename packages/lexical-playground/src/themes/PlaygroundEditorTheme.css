@@ -656,6 +656,7 @@
   text-align: left;
   line-height: 20px;
   padding: 8px;
+  padding-right: 14px;
   outline: 0;
   cursor: pointer;
 }
@@ -673,7 +674,7 @@
 }
 .PlaygroundEditorTheme__contextMenuItemIcon {
   width: 20px;
-  margin-right: 10px;
+  margin-right: 8px;
   background-repeat: no-repeat;
   background-size: contain;
 }

@@ -295,7 +295,7 @@ function printNode(
   }
 }
 
-function printTextFormatProperties(nodeOrSelection: ParagraphNode) {
+export function printTextFormatProperties(nodeOrSelection: ParagraphNode) {
   let str = FORMAT_PREDICATES_PARAGRAPH.map((predicate) =>
     predicate(nodeOrSelection),
   )
@@ -332,7 +332,7 @@ function printAllLinkNodeProperties(node: LinkNode) {
     .join(', ');
 }
 
-function printDetailProperties(nodeOrSelection: TextNode) {
+export function printDetailProperties(nodeOrSelection: TextNode) {
   let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -345,7 +345,7 @@ function printDetailProperties(nodeOrSelection: TextNode) {
   return str;
 }
 
-function printModeProperties(nodeOrSelection: TextNode) {
+export function printModeProperties(nodeOrSelection: TextNode) {
   let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -358,7 +358,9 @@ function printModeProperties(nodeOrSelection: TextNode) {
   return str;
 }
 
-function printFormatProperties(nodeOrSelection: TextNode | RangeSelection) {
+export function printFormatProperties(
+  nodeOrSelection: TextNode | RangeSelection,
+) {
   let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -371,7 +373,7 @@ function printFormatProperties(nodeOrSelection: TextNode | RangeSelection) {
   return str;
 }
 
-function printTargetProperties(node: LinkNode) {
+export function printTargetProperties(node: LinkNode) {
   let str = node.getTarget();
   // TODO Fix nullish on LinkNode
   if (str != null) {
@@ -380,7 +382,7 @@ function printTargetProperties(node: LinkNode) {
   return str;
 }
 
-function printRelProperties(node: LinkNode) {
+export function printRelProperties(node: LinkNode) {
   let str = node.getRel();
   // TODO Fix nullish on LinkNode
   if (str != null) {
@@ -389,7 +391,7 @@ function printRelProperties(node: LinkNode) {
   return str;
 }
 
-function printTitleProperties(node: LinkNode) {
+export function printTitleProperties(node: LinkNode) {
   let str = node.getTitle();
   // TODO Fix nullish on LinkNode
   if (str != null) {

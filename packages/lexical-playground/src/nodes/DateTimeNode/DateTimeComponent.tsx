@@ -6,7 +6,7 @@
  *
  */
 
-import type {Option, Options, PollNode} from './DateTimeNode';
+import {$isDateTimeNode, type DateTimeNode, type Option, type Options, type PollNode} from './DateTimeNode';
 import type {JSX} from 'react';
 
 import {setHours, setMinutes} from 'date-fns';
@@ -44,103 +44,6 @@ import {
   useInteractions,
   useRole,
 } from '@floating-ui/react';
-import { off } from 'process';
-
-function getTotalVotes(options: Options): number {
-  return options.reduce((totalVotes, next) => {
-    return totalVotes + next.votes.length;
-  }, 0);
-}
-
-function PollOptionComponent({
-  option,
-  index,
-  options,
-  totalVotes,
-  withPollNode,
-}: {
-  index: number;
-  option: Option;
-  options: Options;
-  totalVotes: number;
-  withPollNode: (
-    cb: (pollNode: PollNode) => void,
-    onSelect?: () => void,
-  ) => void;
-}): JSX.Element {
-  const {clientID} = useCollaborationContext();
-  const checkboxRef = useRef(null);
-  const votesArray = option.votes;
-  const checkedIndex = votesArray.indexOf(clientID);
-  const checked = checkedIndex !== -1;
-  const votes = votesArray.length;
-  const text = option.text;
-
-  return (
-    <div className="PollNode__optionContainer">
-      <div
-        className={joinClasses(
-          'PollNode__optionCheckboxWrapper',
-          checked && 'PollNode__optionCheckboxChecked',
-        )}>
-        <input
-          ref={checkboxRef}
-          className="PollNode__optionCheckbox"
-          type="checkbox"
-          onChange={(e) => {
-            withPollNode((node) => {
-              node.toggleVote(option, clientID);
-            });
-          }}
-          checked={checked}
-        />
-      </div>
-      <div className="PollNode__optionInputWrapper">
-        <div
-          className="PollNode__optionInputVotes"
-          style={{width: `${votes === 0 ? 0 : (votes / totalVotes) * 100}%`}}
-        />
-        <span className="PollNode__optionInputVotesCount">
-          {votes > 0 && (votes === 1 ? '1 vote' : `${votes} votes`)}
-        </span>
-        <input
-          className="PollNode__optionInput"
-          type="text"
-          value={text}
-          onChange={(e) => {
-            const target = e.target;
-            const value = target.value;
-            const selectionStart = target.selectionStart;
-            const selectionEnd = target.selectionEnd;
-            withPollNode(
-              (node) => {
-                node.setOptionText(option, value);
-              },
-              () => {
-                target.selectionStart = selectionStart;
-                target.selectionEnd = selectionEnd;
-              },
-            );
-          }}
-          placeholder={`Option ${index + 1}`}
-        />
-      </div>
-      <button
-        disabled={options.length < 3}
-        className={joinClasses(
-          'PollNode__optionDelete',
-          options.length < 3 && 'PollNode__optionDeleteDisabled',
-        )}
-        aria-label="Remove"
-        onClick={() => {
-          withPollNode((node) => {
-            node.deleteOption(option);
-          });
-        }}
-      />
-    </div>
-  );
-}
 
 export default function DateTimeComponent({
   dateTime,
@@ -181,23 +84,23 @@ export default function DateTimeComponent({
   //   );
   // }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
 
-  // const withPollNode = (
-  //   cb: (node: PollNode) => void,
-  //   onUpdate?: () => void,
-  // ): void => {
-  //   editor.update(
-  //     () => {
-  //       const node = $getNodeByKey(nodeKey);
-  //       if ($isPollNode(node)) {
-  //         cb(node);
-  //       }
-  //     },
-  //     {onUpdate},
-  //   );
-  // };
+  const withDateTimeNode = (
+    cb: (node: DateTimeNode) => void,
+    onUpdate?: () => void,
+  ): void => {
+    editor.update(
+      () => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isDateTimeNode(node)) {
+          cb(node);
+        }
+      },
+      {onUpdate},
+    );
+  };
 
   // const addOption = () => {
-  //   withPollNode((node) => {
+  //   withDateTimeNode((node) => {
   //     node.addOption(createPollOption());
   //   });
   // };
@@ -273,21 +176,25 @@ export default function DateTimeComponent({
   };
 
   const handleDaySelect = (date) => {
-    if (!timeValue || !date) {
-      setSelected(date);
-      return;
-    }
-    const [hours, minutes] = timeValue
-      .split(':')
-      .map((str) => parseInt(str, 10));
-    const newDate = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      hours,
-      minutes,
-    );
-    setSelected(newDate);
+    withDateTimeNode((node) => {
+      node.setDateTime(date);
+
+      if (!timeValue || !date) {
+        setSelected(date);
+        return;
+      }
+      const [hours, minutes] = timeValue
+        .split(':')
+        .map((str) => parseInt(str, 10));
+      const newDate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        hours,
+        minutes,
+      );
+      setSelected(newDate);
+    });
   };
 
   return (

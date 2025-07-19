@@ -37,6 +37,7 @@ import {
   MOVE_TO_START,
 } from 'lexical';
 import {
+  expectHtmlToBeEqual,
   initializeUnitTest,
   invariant,
   KeyboardEventMock,
@@ -119,6 +120,7 @@ describe('LexicalCodeNode tests', () => {
           format: '',
           indent: 0,
           language: 'javascript',
+          theme: undefined,
           type: 'code',
           version: 1,
         });
@@ -944,14 +946,15 @@ describe('LexicalCodeNode tests', () => {
         );
         // before transform
         expect(testEnv.innerHTML).toBe(
-          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
+          '<code spellcheck="false" data-language="javascript" dir="ltr"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
         );
         registerRichText(editor);
         registerTabIndentation(editor);
         registerCodeHighlighting(editor);
         await Promise.resolve(undefined);
         // after transforms
-        expect(testEnv.innerHTML).toBe(
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
           '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
         );
       });

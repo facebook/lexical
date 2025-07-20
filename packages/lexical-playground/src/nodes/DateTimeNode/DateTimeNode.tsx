@@ -13,7 +13,6 @@ import {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
-  LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
@@ -25,12 +24,14 @@ const DateTimeComponent = React.lazy(() => import('./DateTimeComponent'));
 
 export type SerializedDateTimeNode = Spread<
   {
-    dateTime: Date;
+    dateTime?: Date;
   },
   SerializedLexicalNode
 >;
 
-function $convertDateTimeElement(domNode: HTMLElement): DOMConversionOutput | null {
+function $convertDateTimeElement(
+  domNode: HTMLElement,
+): DOMConversionOutput | null {
   const dateTimeValue = domNode.getAttribute('data-lexical-date-time');
   if (dateTimeValue) {
     const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
@@ -56,9 +57,16 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedDateTimeNode): DateTimeNode {
-    return $createDateTimeNode(
-      serializedNode.dateTime
-    ).updateFromJSON(serializedNode);
+    return $createDateTimeNode(serializedNode.dateTime).updateFromJSON(
+      serializedNode,
+    );
+  }
+
+  exportJSON(): SerializedDateTimeNode {
+    return {
+      ...super.exportJSON(),
+      dateTime: this.getDateTime(),
+    };
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -75,16 +83,13 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  // exportDOM(): DOMExportOutput {
-  //   const element = document.createElement('span');
-  //   element.setAttribute('data-lexical-date-time', this.getDateTime()?.toDateString() || '');
-  //   return {element};
-  // }
-
-  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const elem = document.createElement('span');
-    elem.setAttribute('data-lexical-date-time', this.getDateTime()?.toDateString() || '');
-    return elem;
+  createDOM(_config: EditorConfig): HTMLElement {
+    const element = document.createElement('span');
+    element.setAttribute(
+      'data-lexical-date-time',
+      this.getDateTime()?.toString() || '',
+    );
+    return element;
   }
 
   updateDOM(): false {
@@ -94,9 +99,21 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
   getDateTime(): Date | undefined {
     return this.getLatest().__dateTime;
   }
-  
+
   setDateTime(dateTime: Date | undefined): void {
     this.getWritable().__dateTime = dateTime;
+  }
+
+  getTextContent(): string {
+    const dateTime = this.__dateTime;
+    if (dateTime === undefined) {
+      return '';
+    }
+    const hours = dateTime?.getHours();
+    const minutes = dateTime?.getMinutes();
+    return hours === 0 && minutes === 0
+      ? dateTime.toDateString()
+      : dateTime.toString();
   }
 
   isInline(): boolean {

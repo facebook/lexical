@@ -44,29 +44,14 @@ export default function DateTimeComponent({
   nodeKey: NodeKey;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  // const totalVotes = useMemo(() => getTotalVotes(options), [options]);
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+  const [selected, setSelected] = useState(dateTime);
+  const [includeTime, setIncludeTime] = useState(false);
+  const [timeValue, setTimeValue] = useState('00:00');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isNodeSelected, setNodeSelected, clearNodeSelection] =
     useLexicalNodeSelection(nodeKey);
-  // const [selection, setSelection] = useState<BaseSelection | null>(null);
-  const ref = useRef(null);
-
-  const withDateTimeNode = (
-    cb: (node: DateTimeNode) => void,
-    onUpdate?: () => void,
-  ): void => {
-    editor.update(
-      () => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isDateTimeNode(node)) {
-          cb(node);
-        }
-      },
-      {onUpdate},
-    );
-  };
-
-  const [isOpen, setIsOpen] = useState(false);
 
   const {refs, floatingStyles, context} = useFloating({
     elements: {
@@ -109,12 +94,23 @@ export default function DateTimeComponent({
     };
   }, [refs, editor]);
 
-  const [selected, setSelected] = useState(dateTime);
-  const [includeTime, setIncludeTime] = useState(false);
-  const [timeValue, setTimeValue] = useState('00:00');
+  const withDateTimeNode = (
+    cb: (node: DateTimeNode) => void,
+    onUpdate?: () => void,
+  ): void => {
+    editor.update(
+      () => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isDateTimeNode(node)) {
+          cb(node);
+        }
+      },
+      {onUpdate},
+    );
+  };
 
-  const handleCheckboxChange = (event) => {
-    if (event.target.checked) {
+  const handleCheckboxChange = (e) => {
+    if (e.target.checked) {
       setIncludeTime(true);
     } else {
       setIncludeTime(false);
@@ -163,22 +159,20 @@ export default function DateTimeComponent({
   return (
     <div>
       <div
-        className={`PlaygroundEditorTheme__dateTimePill ${
-          isNodeSelected ? 'selected' : ''
-        }`}
+        className={`dateTimePill ${isNodeSelected ? 'selected' : ''}`}
         ref={ref}
         style={{cursor: 'pointer', width: 'fit-content'}}>
-        {dateTime?.toDateString() +
-          (timeValue !== '00:00' ? ' ' + timeValue : '') || 'Invalid Date'}
+        {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
+          'Invalid Date'}
       </div>
-      <FloatingPortal>
-        {isOpen && (
+      {isOpen && (
+        <FloatingPortal>
           <FloatingOverlay lockScroll={true}>
             <FloatingFocusManager
               context={context}
               initialFocus={refs.floating}>
               <div
-                className={'PlaygroundEditorTheme__dateTimePicker'}
+                className={'dateTimePicker'}
                 ref={refs.setFloating}
                 style={floatingStyles}
                 {...getFloatingProps()}>
@@ -189,8 +183,8 @@ export default function DateTimeComponent({
                   showOutsideDays={false}
                   mode="single"
                   selected={selected}
-                  required={true} // Ensure the date is required
-                  // timeZone="BST" for when we support time zone selection
+                  required={true}
+                  // timeZone="BST" TODO: Support time zone selection
                   onSelect={handleDaySelect}
                   startMonth={new Date(1925, 0)}
                   endMonth={new Date(2042, 7)}
@@ -225,8 +219,8 @@ export default function DateTimeComponent({
               </div>
             </FloatingFocusManager>
           </FloatingOverlay>
-        )}{' '}
-      </FloatingPortal>
+        </FloatingPortal>
+      )}
     </div>
   );
 }

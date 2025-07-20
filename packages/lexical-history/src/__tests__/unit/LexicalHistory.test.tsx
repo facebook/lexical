@@ -52,7 +52,7 @@ type SerializedCustomTextNode = Spread<
 >;
 
 class CustomTextNode extends TextNode {
-  ['constructor']!: KlassConstructor<typeof CustomTextNode>;
+  declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
   __classes: Set<string>;
   constructor(text: string, classes: Iterable<string>, key?: NodeKey) {

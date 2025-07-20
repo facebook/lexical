@@ -1,9 +1,9 @@
 {
   "extends": "./.wxt/tsconfig.json",
-  "lib": ["dom", "dom.iterable"],
+  "lib": ["esnext", "dom", "dom.iterable", "ESNext.Disposable"],
   "include": ["./.wxt/wxt.d.ts", "./**/*", "../../libdefs"],
   "compilerOptions": {
-    "target": "ES2019",
+    "target": "esnext",
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "allowJs": true,

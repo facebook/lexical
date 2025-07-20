@@ -35,5 +35,8 @@
         "default": "./Lexical.js"
       }
     }
+  },
+  "devDependencies": {
+    "expect-type": "^1.2.2"
   }
 }

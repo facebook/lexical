@@ -6,20 +6,30 @@
  *
  *
  */
-
-/* .PollNode__container {
-  border: 1px solid #eee;
-  background-color: #fcfcfc;
-  border-radius: 10px;
-  max-width: 600px;
-  min-width: 400px;
-  cursor: pointer;
-  user-select: none;
+.PlaygroundEditorTheme__dateTimePill {
+  outline: 0;
+  background: #ddd;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0px 4px 0px 4px;
 }
-.PollNode__container.focused {
-  outline: 2px solid rgb(60, 132, 244);
-} */
-
+.PlaygroundEditorTheme__dateTimePill .selected {
+  outline: 0;
+  border: 3px solid rgb(60, 132, 244);
+  border-radius: 8px;
+  padding: 0px 4px 0px 4px;
+}
+.PlaygroundEditorTheme__dateTimePill:hover {
+  background: #f2f2f2;
+}
+.PlaygroundEditorTheme__dateTimePicker {
+  outline: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0px 6px 0px 10px;
+}
 /* https://daypicker.dev/docs/styling#css-variables */
 .rdp-root {
   --rdp-accent-color: #76b6ff;

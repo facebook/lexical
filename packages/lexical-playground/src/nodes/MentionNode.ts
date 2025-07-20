@@ -79,12 +79,7 @@ export class MentionNode extends TextNode {
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
     dom.spellcheck = false;
-    dom.addEventListener('mouseover', () => {
-      console.log('over text');
-    });
-    dom.addEventListener('mouseout', () => {
-      console.log('over out');
-    });
+
     return dom;
   }
 

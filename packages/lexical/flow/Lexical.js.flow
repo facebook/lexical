@@ -1502,3 +1502,5 @@ declare export function createState<K: string, V>(
   valueConfig: StateValueConfig<V>,
 ): StateConfig<K, V>;
 declare export function $create<T>(cls: Class<T>): T;
+
+declare export function $isEditorState(x: mixed): x is EditorState;

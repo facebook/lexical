@@ -168,6 +168,7 @@ export type {
   EditorStateReadOptions,
   SerializedEditorState,
 } from './LexicalEditorState';
+export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export type {
   BaseStaticNodeConfig,

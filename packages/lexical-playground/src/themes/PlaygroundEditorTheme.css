@@ -675,9 +675,17 @@
   outline: 0;
   background: #ddd;
   border: 1px solid #ddd;
-  /* box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3); */
   border-radius: 8px;
   padding: 0px 4px 0px 4px;
+}
+.PlaygroundEditorTheme__dateTimePill .selected {
+  outline: 0;
+  border: 3px solid rgb(60, 132, 244);
+  border-radius: 8px;
+  padding: 0px 4px 0px 4px;
+}
+.PlaygroundEditorTheme__dateTimePill:hover {
+  background: #f2f2f2;
 }
 .PlaygroundEditorTheme__dateTimePicker {
   outline: 0;

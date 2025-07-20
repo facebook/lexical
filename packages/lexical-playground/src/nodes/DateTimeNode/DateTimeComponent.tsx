@@ -110,12 +110,18 @@ export default function DateTimeComponent({
   };
 
   const handleCheckboxChange = (e) => {
-    if (e.target.checked) {
-      setIncludeTime(true);
-    } else {
-      setIncludeTime(false);
-      setTimeValue('00:00');
-    }
+    withDateTimeNode((node) => {
+      if (e.target.checked) {
+        setIncludeTime(true);
+      } else {
+        if (selected) {
+          const newSelectedDate = setHours(setMinutes(selected, 0), 0);
+          node.setDateTime(newSelectedDate);
+        }
+        setIncludeTime(false);
+        setTimeValue('00:00');
+      }
+    });
   };
 
   const handleTimeChange = (e) => {

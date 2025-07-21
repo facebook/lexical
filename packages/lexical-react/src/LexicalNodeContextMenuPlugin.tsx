@@ -142,7 +142,6 @@ const NodeContextMenuPlugin = forwardRef<
 
   const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
   const listContentRef = useRef<Array<string | null>>([]);
-  const allowMouseUpCloseRef = useRef(false);
 
   const {refs, floatingStyles, context} = useFloating({
     middleware: [
@@ -183,8 +182,6 @@ const NodeContextMenuPlugin = forwardRef<
   const [renderItems, setRenderItems] = useState<MenuType[]>([]);
 
   useEffect(() => {
-    let timeout: number;
-
     function onContextMenu(e: MouseEvent) {
       e.preventDefault();
 
@@ -243,26 +240,11 @@ const NodeContextMenuPlugin = forwardRef<
       setRenderItems(renderableItems);
 
       setIsOpen(true);
-      clearTimeout(timeout);
-
-      allowMouseUpCloseRef.current = false;
-      timeout = window.setTimeout(() => {
-        allowMouseUpCloseRef.current = true;
-      }, 300);
-    }
-
-    function onMouseUp() {
-      if (allowMouseUpCloseRef.current) {
-        setIsOpen(false);
-      }
     }
 
     document.addEventListener('contextmenu', onContextMenu);
-    document.addEventListener('mouseup', onMouseUp);
     return () => {
       document.removeEventListener('contextmenu', onContextMenu);
-      document.removeEventListener('mouseup', onMouseUp);
-      clearTimeout(timeout);
     };
   }, [items, itemClassName, separatorClassName, refs, editor]);
 

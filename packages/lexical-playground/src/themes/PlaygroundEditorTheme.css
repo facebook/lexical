@@ -646,7 +646,7 @@
 }
 .PlaygroundEditorTheme__contextMenuItem {
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
   width: 100%;
   background-color: #fff;
   color: #050505;
@@ -656,6 +656,7 @@
   text-align: left;
   line-height: 20px;
   padding: 8px;
+  padding-right: 14px;
   outline: 0;
   cursor: pointer;
 }
@@ -670,4 +671,10 @@
   background: #fff;
   color: #aaa;
   cursor: not-allowed;
+}
+.PlaygroundEditorTheme__contextMenuItemIcon {
+  width: 20px;
+  margin-right: 8px;
+  background-repeat: no-repeat;
+  background-size: contain;
 }

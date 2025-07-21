@@ -9,6 +9,7 @@
 import {
   $isEditorState,
   defineExtension,
+  HISTORY_MERGE_TAG,
   safeCast,
   SerializedEditorState,
 } from 'lexical';
@@ -24,7 +25,7 @@ import {
   TextNode,
 } from 'lexical';
 
-const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
+const HISTORY_MERGE_OPTIONS = {tag: HISTORY_MERGE_TAG};
 
 function $defaultInitializer() {
   const root = $getRoot();

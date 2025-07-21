@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
@@ -27,7 +28,7 @@ import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
-import * as React from 'react';
+import {$getSelection, COMMAND_PRIORITY_NORMAL, PASTE_COMMAND} from 'lexical';
 import {useEffect, useState} from 'react';
 
 import {createWebsocketProvider} from './collaboration';
@@ -80,6 +81,209 @@ const skipCollaborationInit =
   // @ts-expect-error
   window.parent != null && window.parent.frames.right === window;
 
+function fixMsListMarkup(html: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const lists: Record<string, Array<{wrapper: Element; level: number}>> = {};
+
+  doc.querySelectorAll('.ListContainerWrapper').forEach((wrapper) => {
+    const li = wrapper.querySelector('li[data-listid]');
+    const listId = (li as HTMLElement)?.dataset.listid;
+
+    if (listId) {
+      lists[listId] ??= [];
+      lists[listId].push({
+        level: parseInt(li.dataset.ariaLevel, 10),
+        wrapper,
+      });
+    }
+  });
+
+  if (Object.keys(lists).length < 1) {
+    return html;
+  }
+
+  Object.values(lists).forEach((list) => {
+    const {wrapper: parentWrapper} = list.shift();
+
+    let parent = parentWrapper.querySelector('ol, ul');
+    parentWrapper.replaceWith(parent);
+
+    let currentLevel = 1;
+    let documentCurrentLevel = 1;
+    list.forEach(({wrapper, level}) => {
+      const listElement = wrapper.querySelector('ol, ul');
+      if (!listElement) {
+        return;
+      }
+
+      if (level > documentCurrentLevel) {
+        let target = null;
+        while (level > documentCurrentLevel) {
+          documentCurrentLevel += 1;
+          if (parent.lastElementChild) {
+            currentLevel += 1;
+            target = parent.lastElementChild;
+          }
+        }
+
+        target.append(listElement);
+        parent = listElement;
+      } else {
+        if (level < currentLevel) {
+          while (level < documentCurrentLevel) {
+            documentCurrentLevel -= 1;
+            const candidate = parent.parentNode.closest('ol, ul');
+            if (candidate) {
+              currentLevel -= 1;
+              parent = candidate;
+            }
+          }
+        }
+        parent.append(...listElement.querySelectorAll('li'));
+        listElement.remove();
+      }
+
+      wrapper.remove();
+    });
+  });
+
+  return doc.body.innerHTML;
+}
+
+function fixMsParaStylesMarkup(htmlString: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+
+  const PARA_STYLE_TO_TAG = {
+    Subtitle: 'h2',
+    Title: 'h1',
+    'heading 1': 'h1',
+    'heading 2': 'h2',
+    'heading 3': 'h3',
+    'heading 4': 'h4',
+    'heading 5': 'h5',
+    'heading 6': 'h6',
+  };
+  const PARA_STYLE_DATA_IDENTIFIER = 'data-ccp-parastyle';
+  const DATA_IDENTIFIERS_TO_SKIP = ['data-ccp-props'];
+
+  const elementsWithParaStyle = doc.querySelectorAll(
+    `[${PARA_STYLE_DATA_IDENTIFIER}]`,
+  );
+
+  elementsWithParaStyle.forEach((element) => {
+    const paraStyle = element.getAttribute(PARA_STYLE_DATA_IDENTIFIER);
+
+    if (
+      DATA_IDENTIFIERS_TO_SKIP.some((identifier) =>
+        element.getAttribute(identifier),
+      )
+    ) {
+      return;
+    }
+
+    if (paraStyle) {
+      // Normalize the style name (trim whitespace and convert to lowercase)
+      const normalizedStyle = paraStyle.trim().toLowerCase();
+
+      // Check if we have a mapping for this style
+      const targetTag = PARA_STYLE_TO_TAG[normalizedStyle];
+
+      if (targetTag && element.tagName.toLowerCase() !== targetTag) {
+        // Create the new element with the target tag
+        const newElement = doc.createElement(targetTag);
+
+        // Copy all attributes except the paragraph style identifier
+        Array.from(element.attributes).forEach((attr) => {
+          if (attr.name !== PARA_STYLE_DATA_IDENTIFIER) {
+            newElement.setAttribute(attr.name, attr.value);
+          }
+        });
+
+        // Copy all child nodes
+        while (element.firstChild) {
+          newElement.appendChild(element.firstChild);
+        }
+
+        // Replace the original element with the new one
+        element.parentNode?.replaceChild(newElement, element);
+      }
+    }
+  });
+
+  return doc.body.innerHTML;
+}
+
+function fixMSOfficeStyles(htmlString: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+
+  function calculateInheritedStyles(
+    element: HTMLElement,
+    parentStyles: Record<string, string> = {},
+  ) {
+    const computedStyles = window.getComputedStyle(element);
+    const inheritedStyles: Record<string, string> = {...parentStyles};
+
+    const formatProps = [
+      'fontWeight',
+      'fontStyle',
+      'color',
+      'textDecoration',
+      'textTransform',
+      'background',
+      'margin',
+      'padding',
+    ];
+
+    formatProps.forEach((prop: string) => {
+      const computedValue = computedStyles.getPropertyValue(prop);
+      const inlineValue =
+        element.style.getPropertyValue(prop) || element.style[prop];
+      const value = inlineValue || computedValue;
+
+      if (
+        value &&
+        ![
+          'normal',
+          'initial',
+          'inherit',
+          'unset',
+          'auto',
+          'none',
+          'transparent',
+        ].includes(value.trim())
+      ) {
+        inheritedStyles[prop] = value;
+      }
+    });
+
+    Object.keys(inheritedStyles).forEach((prop) => {
+      element.style[prop] = inheritedStyles[prop];
+    });
+
+    Array.from(element.children).forEach((child) => {
+      calculateInheritedStyles(child as HTMLElement, inheritedStyles);
+    });
+  }
+
+  const allSpans = doc.querySelectorAll('span:not(span span)');
+  allSpans.forEach((span) => {
+    calculateInheritedStyles(span as HTMLElement);
+  });
+
+  return doc.body.innerHTML;
+}
+
+function processHtmlPipeline(
+  html: string,
+  steps: Array<(input: string) => string>,
+): string {
+  return steps.reduce((currentHtml, step) => step(currentHtml), html);
+}
+
 export default function Editor(): JSX.Element {
   const {historyState} = useSharedHistoryContext();
   const {
@@ -122,6 +326,46 @@ export default function Editor(): JSX.Element {
       setFloatingAnchorElem(_floatingAnchorElem);
     }
   };
+
+  useEffect(() => {
+    return editor.registerCommand(
+      PASTE_COMMAND,
+      (event: ClipboardEvent) => {
+        const clipboard = event.clipboardData;
+        if (!clipboard) {
+          return false;
+        }
+
+        const pastedHtml = clipboard.getData('text/html');
+
+        const fixSteps = [
+          fixMSOfficeStyles,
+          fixMsListMarkup,
+          fixMsParaStylesMarkup,
+        ];
+
+        const processedHtml = processHtmlPipeline(pastedHtml, fixSteps);
+
+        const modifiedDataTransfer = new DataTransfer();
+        modifiedDataTransfer.setData('text/html', processedHtml);
+
+        const modifiedClipboardEvent = new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: modifiedDataTransfer,
+        });
+
+        $insertDataTransferForRichText(
+          modifiedClipboardEvent.clipboardData,
+          $getSelection(),
+          editor,
+        );
+
+        return true;
+      },
+      COMMAND_PRIORITY_NORMAL,
+    );
+  }, [editor]);
 
   useEffect(() => {
     const updateViewPortWidth = () => {

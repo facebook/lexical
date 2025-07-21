@@ -6,11 +6,15 @@
  *
  */
 
+import {disabledToggle, type DisabledToggleOutput} from '@lexical/extension';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  defineExtension,
   LexicalEditor,
+  provideOutput,
+  safeCast,
 } from 'lexical';
 
 export function registerDragonSupport(editor: LexicalEditor): () => void {
@@ -124,3 +128,23 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
     window.removeEventListener('message', handler, true);
   };
 }
+
+export interface DragonConfig {
+  disabled: boolean;
+}
+
+/**
+ * Add Dragon speech to text input support to the editor, via the
+ * \@lexical/dragon module.
+ */
+export const DragonExtension = defineExtension({
+  config: safeCast<DragonConfig>({disabled: typeof window === 'undefined'}),
+  name: '@lexical/dragon',
+  register: (editor, config) =>
+    provideOutput<DisabledToggleOutput>(
+      ...disabledToggle({
+        disabled: config.disabled,
+        register: () => registerDragonSupport(editor),
+      }),
+    ),
+});

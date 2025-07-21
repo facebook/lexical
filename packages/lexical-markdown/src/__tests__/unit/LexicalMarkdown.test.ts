@@ -450,13 +450,13 @@ describe('Markdown', () => {
       skipExport: true, // Export will fail, as the code transformer will add new lines to the code block to make it multi-line. This is expected though, as the lexical code block is a block node and cannot be inline.
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
+      html: '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
       md: '```javascript Incomplete tag',
       skipExport: true,
     },
     {
       html:
-        '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
+        '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
         '\n' +
         'Tag</span></pre>',
       md: '```javascript Incomplete multiline\n\nTag',
@@ -467,7 +467,7 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
+      html: '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```javascript\nCode\n```',
     },
     {
@@ -488,7 +488,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
+      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
       md: `### Code blocks
 
 \`\`\`javascript
@@ -536,7 +536,7 @@ describe('Markdown', () => {
     {
       customTransformers: [CODE_TAG_COUNTER_EXAMPLE],
       // Ensure special ``` code block supports nested code blocks
-      html: '<pre spellcheck="false" data-language="ts" data-highlight-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
+      html: '<pre spellcheck="false" data-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
       md: '```ts\nCode\n```ts\nSub Code\n```\n```',
       skipExport: true,
     },

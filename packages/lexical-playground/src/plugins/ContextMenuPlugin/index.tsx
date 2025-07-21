@@ -38,6 +38,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
         $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
         disabled: false,
+        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon" />,
       }),
       new NodeContextMenuSeparator({
         $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
@@ -47,12 +48,16 @@ export default function ContextMenuPlugin(): JSX.Element {
           editor.dispatchCommand(CUT_COMMAND, null);
         },
         disabled: false,
+        icon: (
+          <i className="PlaygroundEditorTheme__contextMenuItemIcon page-break" />
+        ),
       }),
       new NodeContextMenuOption(`Copy`, {
         $onSelect: () => {
           editor.dispatchCommand(COPY_COMMAND, null);
         },
         disabled: false,
+        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon copy" />,
       }),
       new NodeContextMenuOption(`Paste`, {
         $onSelect: () => {
@@ -84,6 +89,9 @@ export default function ContextMenuPlugin(): JSX.Element {
           });
         },
         disabled: false,
+        icon: (
+          <i className="PlaygroundEditorTheme__contextMenuItemIcon paste" />
+        ),
       }),
       new NodeContextMenuOption(`Paste as Plain Text`, {
         $onSelect: () => {
@@ -109,6 +117,7 @@ export default function ContextMenuPlugin(): JSX.Element {
           });
         },
         disabled: false,
+        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon" />,
       }),
       new NodeContextMenuSeparator(),
       new NodeContextMenuOption(`Delete Node`, {
@@ -131,6 +140,9 @@ export default function ContextMenuPlugin(): JSX.Element {
           }
         },
         disabled: false,
+        icon: (
+          <i className="PlaygroundEditorTheme__contextMenuItemIcon clear" />
+        ),
       }),
     ];
   }, [editor]);

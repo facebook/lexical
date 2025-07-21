@@ -12,6 +12,7 @@
       "lexical": ["../lexical/src/index.ts"],
       "@lexical/clipboard": ["../lexical-clipboard/src/index.ts"],
       "@lexical/code": ["../lexical-code/src/index.ts"],
+      "@lexical/code-shiki": ["../lexical-code-shiki/src/index.ts"],
       "@lexical/devtools-core": ["../lexical-devtools-core/src/index.ts"],
       "@lexical/dragon": ["../lexical-dragon/src/index.ts"],
       "@lexical/eslint-plugin": ["../lexical-eslint-plugin/src/index.ts"],

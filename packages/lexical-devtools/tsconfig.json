@@ -83,6 +83,9 @@
       "@lexical/react/LexicalErrorBoundary": [
         "../lexical-react/src/LexicalErrorBoundary.tsx"
       ],
+      "@lexical/react/LexicalExtensionComposer": [
+        "../lexical-react/src/LexicalExtensionComposer.tsx"
+      ],
       "@lexical/react/LexicalHashtagPlugin": [
         "../lexical-react/src/LexicalHashtagPlugin.ts"
       ],
@@ -142,6 +145,21 @@
       ],
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "../lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
+      ],
+      "@lexical/react/ReactExtension": [
+        "../lexical-react/src/ReactExtension.tsx"
+      ],
+      "@lexical/react/ReactPluginHostExtension": [
+        "../lexical-react/src/ReactPluginHostExtension.tsx"
+      ],
+      "@lexical/react/ReactProviderExtension": [
+        "../lexical-react/src/ReactProviderExtension.tsx"
+      ],
+      "@lexical/react/TreeViewExtension": [
+        "../lexical-react/src/TreeViewExtension.tsx"
+      ],
+      "@lexical/react/useExtensionComponent": [
+        "../lexical-react/src/useExtensionComponent.tsx"
       ],
       "@lexical/react/useLexicalEditable": [
         "../lexical-react/src/useLexicalEditable.ts"

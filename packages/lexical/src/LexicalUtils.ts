@@ -132,6 +132,7 @@ export function getRegisteredNode(
 
 export const isArray = Array.isArray;
 
+/** @internal */
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask

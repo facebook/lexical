@@ -76,7 +76,7 @@ export function getPeerDependencyFromEditor<
  *       dom,
  *       getPeerDependencyFromEditorOrThrow<typeof EmojiExtension>(
  *         editor || $getEditor(),
- *         "@etrepum/lexical-emoji-extension/Emoji",
+ *         "@lexical/playground/emoji",
  *       ).config.emojiClass,
  *     );
  *     return dom;

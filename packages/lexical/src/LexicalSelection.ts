@@ -2494,7 +2494,7 @@ function $internalResolveSelectionPoints(
   }
   if (__DEV__) {
     $validatePoint(editor, 'anchor', resolvedAnchorPoint);
-    $validatePoint(editor, 'focus', resolvedAnchorPoint);
+    $validatePoint(editor, 'focus', resolvedFocusPoint);
   }
   if (
     resolvedAnchorPoint.type === 'element' &&

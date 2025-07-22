@@ -77,7 +77,7 @@ export default function DateTimeComponent({
   const {getFloatingProps} = useInteractions([role, dismiss]);
 
   useEffect(() => {
-    const dateTimePillRef = ref.current;
+    const dateTimePillRef = ref.current as HTMLElement | null;
     function onClick(e: MouseEvent) {
       e.preventDefault();
       setIsOpen(true);
@@ -109,7 +109,7 @@ export default function DateTimeComponent({
     );
   };
 
-  const handleCheckboxChange = (e) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     withDateTimeNode((node) => {
       if (e.target.checked) {
         setIncludeTime(true);
@@ -124,7 +124,7 @@ export default function DateTimeComponent({
     });
   };
 
-  const handleTimeChange = (e) => {
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     withDateTimeNode((node) => {
       const time = e.target.value;
       if (!selected) {
@@ -141,7 +141,7 @@ export default function DateTimeComponent({
     });
   };
 
-  const handleDaySelect = (date) => {
+  const handleDaySelect = (date: Date | undefined) => {
     withDateTimeNode((node) => {
       if (!timeValue || !date) {
         setSelected(date);

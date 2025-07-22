@@ -177,14 +177,11 @@ function fixMsParaStylesMarkup(htmlString: string) {
     const paraStyle = element.getAttribute(PARA_STYLE_DATA_IDENTIFIER);
 
     if (
-      DATA_IDENTIFIERS_TO_SKIP.some((identifier) =>
+      paraStyle &&
+      !DATA_IDENTIFIERS_TO_SKIP.some((identifier) =>
         element.getAttribute(identifier),
       )
     ) {
-      return;
-    }
-
-    if (paraStyle) {
       // Normalize the style name (trim whitespace and convert to lowercase)
       const normalizedStyle = paraStyle.trim().toLowerCase();
 
@@ -230,6 +227,7 @@ function fixMSOfficeStyles(htmlString: string) {
     const formatProps = [
       'fontWeight',
       'fontStyle',
+      'fontSize',
       'color',
       'textDecoration',
       'textTransform',

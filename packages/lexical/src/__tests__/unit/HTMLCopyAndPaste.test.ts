@@ -98,6 +98,11 @@ describe('HTMLCopyAndPaste tests', () => {
           pastedHTML: `<strong>hello</strong>`,
           plainTextInsert: ' world',
         },
+        {
+          expectedHTML: `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" style="font-size: 24pt;">Random text at </span><span data-lexical-text="true" style="font-size: 36pt;">36 pt</span></p>`,
+          name: 'Pasting content with custom font-sizes',
+          pastedHTML: `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-1e6b36e2-7fff-9788-e6e2-d502cc6babbf"><p dir="ltr" style="line-height:1.56;margin-top:10pt;margin-bottom:0pt;"><span style="font-size:24pt;font-family:Lato,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Random text at </span><span style="font-size:36pt;font-family:Lato,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">36 pt</span></p></b><br class="Apple-interchange-newline">`,
+        },
       ];
 
       HTML_COPY_PASTING_TESTS.forEach((testCase, i) => {

@@ -12,6 +12,7 @@ import {
   DecoratorNode,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -89,7 +90,19 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
       'data-lexical-date-time',
       this.getDateTime()?.toString() || '',
     );
+    element.style.display = 'inline-block';
     return element;
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('span');
+    element.textContent = this.getDateTime()?.toString() || '';
+    element.setAttribute(
+      'data-lexical-date-time',
+      this.getDateTime()?.toString() || '',
+    );
+    // element.style.display = 'inline-block';
+    return {element};
   }
 
   updateDOM(): false {

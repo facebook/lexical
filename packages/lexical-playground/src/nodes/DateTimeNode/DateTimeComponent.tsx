@@ -164,19 +164,17 @@ export default function DateTimeComponent({
 
   return (
     <div>
-      <span
+      <div
         className={`dateTimePill ${isNodeSelected ? 'selected' : ''}`}
         ref={ref}
         style={{cursor: 'pointer', width: 'fit-content'}}>
         {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
           'Invalid Date'}
-      </span>
+      </div>
       {isOpen && (
         <FloatingPortal>
           <FloatingOverlay lockScroll={true}>
-            <FloatingFocusManager
-              context={context}
-              initialFocus={refs.floating}>
+            <FloatingFocusManager context={context} initialFocus={-1}>
               <div
                 className={'dateTimePicker'}
                 ref={refs.setFloating}

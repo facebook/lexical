@@ -14,9 +14,7 @@
   padding: 0px 4px 0px 4px;
 }
 .dateTimePill.selected {
-  border: 1px solid rgb(60, 132, 244);
-  border-radius: 8px;
-  padding: 0px 4px 0px 4px;
+  outline: 2px solid rgb(60, 132, 244);
 }
 .dateTimePill:hover {
   background: #f2f2f2;

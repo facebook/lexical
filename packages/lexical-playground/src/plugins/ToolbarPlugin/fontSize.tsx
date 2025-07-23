@@ -23,20 +23,13 @@ import {
 } from './utils';
 
 export function parseAllowedFontSize(input: string): string {
-  const pxMatch = input.match(/^(\d+(?:\.\d+)?)px$/);
-  const ptMatch = input.match(/^(\d+(?:\.\d+)?)pt$/);
-
-  let pxValue: number | undefined = pxMatch ? Number(pxMatch[1]) : undefined;
-
-  if (ptMatch) {
-    pxValue = Number(ptMatch[1]) * (4 / 3);
+  const pxOrptMatch = input.match(/^(\d+(?:\.\d+)?)(px|pt)$/);
+  if (!pxOrptMatch) {
+    return '';
   }
-
-  if (
-    pxValue &&
-    pxValue >= MIN_ALLOWED_FONT_SIZE &&
-    pxValue <= MAX_ALLOWED_FONT_SIZE
-  ) {
+  const pxValue =
+    Number(pxOrptMatch[1]) * (pxOrptMatch[2] === 'pt' ? 4 / 3 : 1);
+  if (pxValue >= MIN_ALLOWED_FONT_SIZE && pxValue <= MAX_ALLOWED_FONT_SIZE) {
     return input;
   }
 

@@ -691,23 +691,10 @@ export function applyTableHandlers(
               selection,
               tableNode,
             );
-            const lastChild = tableCellNode.getLastChild();
-            const isLastChildPageBreak =
-              lastChild && lastChild.getType() === 'page-break'; // Adjust 'page-break' to the actual node type for page breaks
             if (edgePosition) {
               $insertParagraphAtTableEdge(edgePosition, tableNode, [
                 $createTextNode(payload),
               ]);
-              return true;
-            } else if (isLastChildPageBreak && edgePosition === undefined) {
-              // Create a new paragraph node with the payload text
-              const newParagraph = $createParagraphNode();
-              newParagraph.append($createTextNode(payload));
-              // Insert the new paragraph after the last child (page-break)
-              lastChild.insertAfter(newParagraph);
-              // Optionally, move the selection to the new paragraph
-              newParagraph.selectEnd();
-
               return true;
             }
           }

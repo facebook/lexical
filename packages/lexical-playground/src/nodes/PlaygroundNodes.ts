@@ -28,6 +28,7 @@ import {ExcalidrawNode} from './ExcalidrawNode';
 import {FigmaNode} from './FigmaNode';
 import {ImageNode} from './ImageNode';
 import {InlineImageNode} from './InlineImageNode/InlineImageNode';
+import {InlineParagraphNode} from './InlineParagraphNode';
 import {KeywordNode} from './KeywordNode';
 import {LayoutContainerNode} from './LayoutContainerNode';
 import {LayoutItemNode} from './LayoutItemNode';
@@ -75,6 +76,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   LayoutContainerNode,
   LayoutItemNode,
   SpecialTextNode,
+  InlineParagraphNode,
 ];
 
 export default PlaygroundNodes;

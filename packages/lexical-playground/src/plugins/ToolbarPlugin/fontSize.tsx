@@ -30,11 +30,13 @@ export function parseAllowedFontSize(input: string): string {
 
   if (ptMatch) {
     pxValue = Number(ptMatch[1]) * (4 / 3);
-  } else {
-    return '';
   }
 
-  if (pxValue >= MIN_ALLOWED_FONT_SIZE && pxValue <= MAX_ALLOWED_FONT_SIZE) {
+  if (
+    pxValue &&
+    pxValue >= MIN_ALLOWED_FONT_SIZE &&
+    pxValue <= MAX_ALLOWED_FONT_SIZE
+  ) {
     return input;
   }
 

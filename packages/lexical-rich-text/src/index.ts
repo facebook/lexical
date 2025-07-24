@@ -515,7 +515,7 @@ export function eventFiles(
 function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
-  const selection = $getSelection();
+  const selection = $normalizeSelectionByPosition();
   if (!$isRangeSelection(selection)) {
     return false;
   }

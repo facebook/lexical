@@ -15,16 +15,11 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Regression test #2648', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page, isPlainText}) => {
+    test.skip(isPlainText);
 
-  const contentSetup = async (page) => {
-    await focusEditor(page);
-    await page.keyboard.type('line of text');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('line of text');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('line of text');
-  };
+    initialize({isCollab, page});
+  });
 
   // some distinct formats
   const blockFormats = [
@@ -93,7 +88,12 @@ test.describe('Regression test #2648', () => {
     .parallel('Block formatting after selecting the entire line', () => {
     blockFormats.forEach(({name, dropDown, expected}) => {
       test(`when ${name} format is applied`, async ({page}) => {
-        await contentSetup(page);
+        await focusEditor(page);
+        await page.keyboard.type('line of text');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('line of text');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('line of text');
 
         const firstLine = await page.getByText('line of text').nth(0);
         const secondLine = await page.getByText('line of text').nth(1);

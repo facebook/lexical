@@ -6,13 +6,14 @@ on:
 
 jobs:
   pre_job:
-    if: (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
+    if: (!contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
+        if: github.event_name != 'act_local'
         with:
           concurrent_skipping: 'same_content_newer'
           skip_after_successful_duplicate: 'true'
@@ -20,10 +21,10 @@ jobs:
           paths_ignore: '["packages/lexical-website/**", "packages/*/README.md", "examples/**"]'
   e2e-tests:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
+    if: needs.pre_job.outputs.should_skip != 'true' && (!contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     uses: ./.github/workflows/call-e2e-all-tests.yml
 
   integration-tests:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true' && (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))
+    if: needs.pre_job.outputs.should_skip != 'true' && (!contains(github.event.pull_request.labels.*.name, 'extended-tests'))
     uses: ./.github/workflows/call-integration-tests.yml

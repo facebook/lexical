@@ -13,6 +13,7 @@ import 'katex/dist/katex.css';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $insertNodes,
   $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
@@ -21,9 +22,9 @@ import {
   LexicalEditor,
 } from 'lexical';
 import {useCallback, useEffect} from 'react';
+import * as React from 'react';
 
 import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
-import {$createInlineParagraphNode} from '../../nodes/InlineParagraphNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 
 type CommandPayload = {
@@ -67,15 +68,10 @@ export default function EquationsPlugin(): JSX.Element | null {
       (payload) => {
         const {equation, inline} = payload;
         const equationNode = $createEquationNode(equation, inline);
-        const paragraphNode = $createInlineParagraphNode();
 
         $insertNodes([equationNode]);
-        equationNode.insertAfter(paragraphNode);
         if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
-          $wrapNodeInElement(
-            equationNode,
-            $createInlineParagraphNode,
-          ).selectEnd();
+          $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
         }
 
         return true;

@@ -120,13 +120,8 @@ test.describe('Mutations', () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const textNode = rootElement.querySelector('span').firstChild;
       textNode.nodeValue = 'Hi!';
-      const domSelection = window.getSelection();
-      const range = document.createRange();
-      const uiElement = document.querySelector('i.mic');
-      range.setStart(uiElement, 0);
-      range.setEnd(uiElement, 0);
-      domSelection.removeAllRanges();
-      domSelection.addRange(range);
+      // Select something else on the page that will not modify the lexical selection
+      document.querySelector('input').focus();
     });
 
     await assertHTML(

@@ -2892,6 +2892,25 @@ describe('LexicalEditor tests', () => {
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 
+  it('can read in a nested update', async () => {
+    init();
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode().append($createTextNode('foo')));
+      editor.read(() => {});
+      expect(editor.getRootElement()?.innerHTML).toBe(
+        '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+      );
+      editor.update(() => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('bar')),
+        );
+      });
+    });
+    expect(editor.getRootElement()?.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">foo</span></p><p dir="ltr"><span data-lexical-text="true">bar</span></p>',
+    );
+  });
+
   it('does not include linebreak into inline elements', async () => {
     init();
 

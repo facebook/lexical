@@ -160,7 +160,6 @@ test.describe('Mutations', () => {
       focusOffset: 3,
       focusPath: [0, 0, 0],
     });
-    await page.pause();
   });
   test(`Can restore the DOM to the editor state state`, async ({page}) => {
     await focusEditor(page);

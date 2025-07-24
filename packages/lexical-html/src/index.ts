@@ -14,6 +14,7 @@ import type {
   ElementFormatType,
   LexicalEditor,
   LexicalNode,
+  TextNode,
 } from 'lexical';
 
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
@@ -221,6 +222,23 @@ function $createNodesFromDOM(
     ? transformFunction(node as HTMLElement)
     : null;
   let postTransform = null;
+
+  if (
+    node.nodeName === '#text' &&
+    (node.nodeValue !== '' || node.nodeValue !== null) &&
+    ((node as HTMLElement).parentNode as HTMLElement).getAttribute('style') !==
+      null
+  ) {
+    if (transformOutput) {
+      const firstTextNode = (transformOutput.node as TextNode[])[0];
+      if (firstTextNode) {
+        firstTextNode.__style =
+          ((node as HTMLElement).parentNode as HTMLElement).getAttribute(
+            'style',
+          ) || '';
+      }
+    }
+  }
 
   if (transformOutput !== null) {
     postTransform = transformOutput.after;

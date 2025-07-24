@@ -896,18 +896,20 @@ export function $getTextPointCaret(
  *
  * @param origin a TextNode
  * @param offset An absolute offset into the TextNode string, or a direction for which end to use as the offset
+ * @param mode If 'error' (the default) out of bounds offsets will be an error in dev. Otherwise it will clamp to a valid offset.
  * @returns An absolute offset into the TextNode string
  */
 export function $getTextNodeOffset(
   origin: TextNode,
   offset: number | CaretDirection,
+  mode: 'error' | 'clamp' = 'error',
 ): number {
   const size = origin.getTextContentSize();
   let numericOffset =
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
   if (numericOffset < 0 || numericOffset > size) {
     devInvariant(
-      false,
+      mode === 'clamp',
       '$getTextNodeOffset: invalid offset %s for size %s at key %s',
       String(offset),
       String(size),

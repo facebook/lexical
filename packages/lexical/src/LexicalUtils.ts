@@ -656,13 +656,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   return $getNodeByKey(nodeKey);
 }
 
-export function getTextNodeOffset(
-  node: TextNode,
-  moveSelectionToEnd: boolean,
-): number {
-  return moveSelectionToEnd ? node.getTextContentSize() : 0;
-}
-
 function getNodeKeyFromDOMTree(
   // Note that node here refers to a DOM Node, not an Lexical Node
   dom: Node,

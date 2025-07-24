@@ -1297,6 +1297,8 @@ test.describe('Composition', () => {
       // await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
+        // The fourth character in the DOM is a zero-width space
+        // which is not represented in the lexical document (or this string)
         selectionEnd: 4,
         text: 'すｓｈ',
       });

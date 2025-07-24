@@ -6,7 +6,13 @@
  *
  */
 
-import type {Binding, Provider, SyncCursorPositionsFn} from '@lexical/yjs';
+import type {
+  BaseBinding,
+  Binding,
+  BindingV2,
+  Provider,
+  SyncCursorPositionsFn,
+} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
@@ -18,7 +24,9 @@ import {
   setLocalStateFocus,
   syncCursorPositions,
   syncLexicalUpdateToYjs,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
+  syncYjsChangesToLexicalV2__EXPERIMENTAL,
   TOGGLE_CONNECT_COMMAND,
 } from '@lexical/yjs';
 import {
@@ -44,6 +52,13 @@ import {InitialEditorStateType} from '../LexicalComposer';
 
 export type CursorsContainerRef = React.MutableRefObject<HTMLElement | null>;
 
+type OnYjsTreeChanges = (
+  // The below `any` type is taken directly from the vendor types for YJS.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  events: Array<YEvent<any>>,
+  transaction: Transaction,
+) => void;
+
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -59,50 +74,18 @@ export function useYjsCollaboration(
   awarenessData?: object,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): JSX.Element {
-  const isReloadingDoc = useRef(false);
-
-  const connect = useCallback(() => provider.connect(), [provider]);
-
-  const disconnect = useCallback(() => {
-    try {
-      provider.disconnect();
-    } catch (e) {
-      // Do nothing
+  const onBootstrap = useCallback(() => {
+    const {root} = binding;
+    if (shouldBootstrap && root.isEmpty() && root._xmlText._length === 0) {
+      initializeEditor(editor, initialEditorState);
     }
-  }, [provider]);
+  }, [binding, editor, initialEditorState, shouldBootstrap]);
 
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
 
-    const onStatus = ({status}: {status: string}) => {
-      editor.dispatchCommand(CONNECTED_COMMAND, status === 'connected');
-    };
-
-    const onSync = (isSynced: boolean) => {
-      if (
-        shouldBootstrap &&
-        isSynced &&
-        root.isEmpty() &&
-        root._xmlText._length === 0 &&
-        isReloadingDoc.current === false
-      ) {
-        initializeEditor(editor, initialEditorState);
-      }
-
-      isReloadingDoc.current = false;
-    };
-
-    const onAwarenessUpdate = () => {
-      syncCursorPositionsFn(binding, provider);
-    };
-
-    const onYjsTreeChanges = (
-      // The below `any` type is taken directly from the vendor types for YJS.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      events: Array<YEvent<any>>,
-      transaction: Transaction,
-    ) => {
+    const onYjsTreeChanges: OnYjsTreeChanges = (events, transaction) => {
       const origin = transaction.origin;
       if (origin !== binding) {
         const isFromUndoManger = origin instanceof UndoManager;
@@ -116,25 +99,6 @@ export function useYjsCollaboration(
       }
     };
 
-    initLocalState(
-      provider,
-      name,
-      color,
-      document.activeElement === editor.getRootElement(),
-      awarenessData || {},
-    );
-
-    const onProviderDocReload = (ydoc: Doc) => {
-      clearEditorSkipCollab(editor, binding);
-      setDoc(ydoc);
-      docMap.set(id, ydoc);
-      isReloadingDoc.current = true;
-    };
-
-    provider.on('reload', onProviderDocReload);
-    provider.on('status', onStatus);
-    provider.on('sync', onSync);
-    awareness.on('update', onAwarenessUpdate);
     // This updates the local editor state when we receive updates from other clients
     root.getSharedType().observeDeep(onYjsTreeChanges);
     const removeListener = editor.registerUpdateListener(
@@ -161,6 +125,155 @@ export function useYjsCollaboration(
       },
     );
 
+    const onAwarenessUpdate = () => {
+      syncCursorPositionsFn(binding, provider);
+    };
+    awareness.on('update', onAwarenessUpdate);
+
+    return () => {
+      binding.root.getSharedType().unobserveDeep(onYjsTreeChanges);
+      removeListener();
+      awareness.off('update', onAwarenessUpdate);
+    };
+  }, [binding, provider, editor, syncCursorPositionsFn]);
+
+  return useYjsCollaborationInternal(
+    editor,
+    id,
+    provider,
+    docMap,
+    name,
+    color,
+    binding,
+    setDoc,
+    cursorsContainerRef,
+    awarenessData,
+    onBootstrap,
+  );
+}
+
+export function useYjsCollaborationV2__EXPERIMENTAL(
+  editor: LexicalEditor,
+  id: string,
+  provider: Provider,
+  docMap: Map<string, Doc>,
+  name: string,
+  color: string,
+  binding: BindingV2,
+  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
+  cursorsContainerRef?: CursorsContainerRef,
+  awarenessData?: object,
+) {
+  // TODO(collab-v2): sync cursor positions.
+
+  useEffect(() => {
+    const {root} = binding;
+
+    const onYjsTreeChanges: OnYjsTreeChanges = (_events, transaction) => {
+      const origin = transaction.origin;
+      if (origin !== binding) {
+        const isFromUndoManger = origin instanceof UndoManager;
+        syncYjsChangesToLexicalV2__EXPERIMENTAL(
+          binding,
+          transaction,
+          isFromUndoManger,
+        );
+      }
+    };
+
+    // This updates the local editor state when we receive updates from other clients
+    root.observeDeep(onYjsTreeChanges);
+    const removeListener = editor.registerUpdateListener(
+      ({editorState, dirtyElements, normalizedNodes, tags}) => {
+        if (tags.has(SKIP_COLLAB_TAG) === false) {
+          syncLexicalUpdateToYjsV2__EXPERIMENTAL(
+            binding,
+            editorState,
+            dirtyElements,
+            normalizedNodes,
+            tags,
+          );
+        }
+      },
+    );
+
+    return () => {
+      root.unobserveDeep(onYjsTreeChanges);
+      removeListener();
+    };
+  }, [binding, editor]);
+
+  return useYjsCollaborationInternal(
+    editor,
+    id,
+    provider,
+    docMap,
+    name,
+    color,
+    binding,
+    setDoc,
+    cursorsContainerRef,
+    awarenessData,
+  );
+}
+
+function useYjsCollaborationInternal<T extends BaseBinding>(
+  editor: LexicalEditor,
+  id: string,
+  provider: Provider,
+  docMap: Map<string, Doc>,
+  name: string,
+  color: string,
+  binding: T,
+  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
+  cursorsContainerRef?: CursorsContainerRef,
+  awarenessData?: object,
+  onBootstrap?: () => void,
+): JSX.Element {
+  const isReloadingDoc = useRef(false);
+
+  const connect = useCallback(() => provider.connect(), [provider]);
+
+  const disconnect = useCallback(() => {
+    try {
+      provider.disconnect();
+    } catch (e) {
+      // Do nothing
+    }
+  }, [provider]);
+
+  useEffect(() => {
+    const onStatus = ({status}: {status: string}) => {
+      editor.dispatchCommand(CONNECTED_COMMAND, status === 'connected');
+    };
+
+    const onSync = (isSynced: boolean) => {
+      if (isSynced && isReloadingDoc.current === false && onBootstrap) {
+        onBootstrap();
+      }
+
+      isReloadingDoc.current = false;
+    };
+
+    initLocalState(
+      provider,
+      name,
+      color,
+      document.activeElement === editor.getRootElement(),
+      awarenessData || {},
+    );
+
+    const onProviderDocReload = (ydoc: Doc) => {
+      clearEditorSkipCollab(editor, binding);
+      setDoc(ydoc);
+      docMap.set(id, ydoc);
+      isReloadingDoc.current = true;
+    };
+
+    provider.on('reload', onProviderDocReload);
+    provider.on('status', onStatus);
+    provider.on('sync', onSync);
+
     const connectionPromise = connect();
 
     return () => {
@@ -182,10 +295,7 @@ export function useYjsCollaboration(
       provider.off('sync', onSync);
       provider.off('status', onStatus);
       provider.off('reload', onProviderDocReload);
-      awareness.off('update', onAwarenessUpdate);
-      root.getSharedType().unobserveDeep(onYjsTreeChanges);
       docMap.delete(id);
-      removeListener();
     };
   }, [
     binding,
@@ -195,13 +305,11 @@ export function useYjsCollaboration(
     docMap,
     editor,
     id,
-    initialEditorState,
     name,
     provider,
-    shouldBootstrap,
+    onBootstrap,
     awarenessData,
     setDoc,
-    syncCursorPositionsFn,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {
@@ -277,6 +385,22 @@ export function useYjsHistory(
     [binding],
   );
 
+  return useYjsUndoManager(editor, undoManager);
+}
+
+export function useYjsHistoryV2(
+  editor: LexicalEditor,
+  binding: BindingV2,
+): () => void {
+  const undoManager = useMemo(
+    () => createUndoManager(binding, binding.root),
+    [binding],
+  );
+
+  return useYjsUndoManager(editor, undoManager);
+}
+
+function useYjsUndoManager(editor: LexicalEditor, undoManager: UndoManager) {
   useEffect(() => {
     const undo = () => {
       undoManager.undo();
@@ -393,7 +517,7 @@ function initializeEditor(
   );
 }
 
-function clearEditorSkipCollab(editor: LexicalEditor, binding: Binding) {
+function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
   // reset editor state
   editor.update(
     () => {

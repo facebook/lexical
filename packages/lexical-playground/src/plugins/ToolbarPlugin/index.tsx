@@ -89,7 +89,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {InsertTableDialog} from '../TablePlugin';
-import FontSize, {parseAllowedFontSize} from './fontSize';
+import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
   clearFormatting,
   formatBulletList,
@@ -1000,7 +1000,7 @@ export default function ToolbarPlugin({
           />
           <Divider />
           <FontSize
-            selectionFontSize={parseAllowedFontSize(
+            selectionFontSize={parseFontSizeForToolbar(
               toolbarState.fontSize,
             ).slice(0, -2)}
             editor={activeEditor}

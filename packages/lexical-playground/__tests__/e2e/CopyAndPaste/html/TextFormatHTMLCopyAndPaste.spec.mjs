@@ -32,7 +32,7 @@ test.describe('HTML CopyAndPaste', () => {
           dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            style="font-size: 14.6667px"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Bold
           </strong>
@@ -42,7 +42,7 @@ test.describe('HTML CopyAndPaste', () => {
           dir="ltr">
           <em
             class="PlaygroundEditorTheme__textItalic"
-            style="font-size: 14.6667px"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Italic
           </em>
@@ -52,7 +52,7 @@ test.describe('HTML CopyAndPaste', () => {
           dir="ltr">
           <span
             class="PlaygroundEditorTheme__textUnderline"
-            style="font-size: 14.6667px"
+            style="font-size: 11pt"
             data-lexical-text="true">
             underline
           </span>
@@ -63,7 +63,7 @@ test.describe('HTML CopyAndPaste', () => {
           <strong
             class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
            PlaygroundEditorTheme__textUnderline"
-            style="font-size: 14.6667px"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Bold Italic Underline
           </strong>

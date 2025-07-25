@@ -983,10 +983,10 @@ test.describe('CopyAndPaste', () => {
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span style="font-size: 32px" data-lexical-text="true">
+            <span style="font-size: 24pt" data-lexical-text="true">
               Random text at
             </span>
-            <span style="font-size: 48px" data-lexical-text="true">36 pt</span>
+            <span style="font-size: 36pt" data-lexical-text="true">36 pt</span>
           </p>
         `,
       );
@@ -1020,7 +1020,7 @@ test.describe('CopyAndPaste', () => {
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span style="font-size: 48px;" data-lexical-text="true">
+            <span style="font-size: 36pt;" data-lexical-text="true">
               Text in 36pt
             </span>
           </p>

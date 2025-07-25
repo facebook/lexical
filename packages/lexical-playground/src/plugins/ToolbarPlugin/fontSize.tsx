@@ -22,6 +22,18 @@ import {
   UpdateFontSizeType,
 } from './utils';
 
+export function parseFontSizeForToolbar(input: string): string {
+  const pxOrptValue = parseAllowedFontSize(input);
+  if (!pxOrptValue) {return pxOrptValue;}
+
+  if (pxOrptValue.includes('pt')) {
+    const pxValue = Math.round((Number(pxOrptValue.replace('pt', '')) * 4) / 3);
+    return `${pxValue}px`;
+  }
+
+  return pxOrptValue;
+}
+
 export function parseAllowedFontSize(input: string): string {
   const pxOrptMatch = input.match(/^(\d+(?:\.\d+)?)(px|pt)$/);
   if (!pxOrptMatch) {
@@ -30,7 +42,7 @@ export function parseAllowedFontSize(input: string): string {
   const pxValue =
     Number(pxOrptMatch[1]) * (pxOrptMatch[2] === 'pt' ? 4 / 3 : 1);
   if (pxValue >= MIN_ALLOWED_FONT_SIZE && pxValue <= MAX_ALLOWED_FONT_SIZE) {
-    return pxValue + 'px';
+    return input;
   }
 
   return '';

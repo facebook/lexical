@@ -9,9 +9,13 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {ReactExtension} from '@lexical/react/ReactExtension';
+import {ReactConfig, ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
-import {type AnyLexicalExtensionArgument, scheduleMicroTask} from 'lexical';
+import {
+  type AnyLexicalExtensionArgument,
+  configExtension,
+  scheduleMicroTask,
+} from 'lexical';
 import {useEffect, useMemo} from 'react';
 
 export interface LexicalExtensionComposerProps {
@@ -23,6 +27,13 @@ export interface LexicalExtensionComposerProps {
    * Any children will have access to useLexicalComposerContext (e.g. for React plug-ins or UX)
    */
   children: React.ReactNode;
+  /**
+   * Override the default ContentEditable that is rendered as the first child of the
+   * composer. If this is null, then it is your responsibility to render a ContentEditable
+   * elsewhere in the tree. This is equivalent to
+   * `configExtension(ReactExtension, {contentEditable})` in your extension dependencies.
+   */
+  contentEditable?: ReactConfig['contentEditable'];
 }
 
 /**
@@ -74,15 +85,19 @@ export interface LexicalExtensionComposerProps {
 export function LexicalExtensionComposer({
   extension,
   children,
+  contentEditable,
 }: LexicalExtensionComposerProps) {
   const editor = useMemo(
     () =>
       buildEditorFromExtensions(
         ReactProviderExtension,
-        ReactExtension,
+        configExtension(
+          ReactExtension,
+          contentEditable === undefined ? {} : {contentEditable},
+        ),
         extension,
       ),
-    [extension],
+    [extension, contentEditable],
   );
   useEffect(() => {
     // This is an awful trick to detect StrictMode so we don't dispose the

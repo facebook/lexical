@@ -6,20 +6,20 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isTextNode,
+  defineExtension,
   DOMConversionMap,
   TextNode,
 } from 'lexical';
+import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {FlashMessageContext} from './context/FlashMessageContext';
@@ -193,23 +193,25 @@ function App(): JSX.Element {
     settings: {isCollab, emptyEditor, measureTypingPerf},
   } = useSettings();
 
-  const initialConfig = {
-    editorState: isCollab
-      ? null
-      : emptyEditor
-      ? undefined
-      : $prepopulatedRichText,
-    html: {import: buildImportMap()},
-    namespace: 'Playground',
-    nodes: [...PlaygroundNodes],
-    onError: (error: Error) => {
-      throw error;
-    },
-    theme: PlaygroundEditorTheme,
-  };
+  const app = useMemo(
+    () =>
+      defineExtension({
+        $initialEditorState: isCollab
+          ? null
+          : emptyEditor
+          ? undefined
+          : $prepopulatedRichText,
+        html: {import: buildImportMap()},
+        name: '@lexical/playground',
+        namespace: 'Playground',
+        nodes: PlaygroundNodes,
+        theme: PlaygroundEditorTheme,
+      }),
+    [emptyEditor, isCollab],
+  );
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
+    <LexicalExtensionComposer extension={app} contentEditable={null}>
       <SharedHistoryContext>
         <TableContext>
           <ToolbarContext>
@@ -230,7 +232,7 @@ function App(): JSX.Element {
           </ToolbarContext>
         </TableContext>
       </SharedHistoryContext>
-    </LexicalComposer>
+    </LexicalExtensionComposer>
   );
 }
 

@@ -23,6 +23,11 @@ export {
   InitialStateExtension,
 } from './InitialStateExtension';
 export {buildEditorFromExtensions, LexicalBuilder} from './LexicalBuilder';
+export {
+  namedStores,
+  type NamedStoresOptions,
+  type NamedStoresOutput,
+} from './namedStores';
 export {registerStoreToggle} from './registerStoreToggle';
 export {
   type MergedStoreValue,

@@ -283,7 +283,7 @@ export function registerLexicalHashtag(
 
 export const HashtagExtension = defineExtension({
   config: defaultHashtagExtensionConfig,
-  name: '@lexical/hashtag/HashtagExtension',
+  name: '@lexical/hashtag/Hashtag',
   nodes: [HashtagNode],
   register: registerLexicalHashtag,
 });

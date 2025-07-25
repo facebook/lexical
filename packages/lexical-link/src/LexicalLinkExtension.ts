@@ -1,0 +1,123 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {namedStores, subscribeAll} from '@lexical/extension';
+import {objectKlassEquals} from '@lexical/utils';
+import {
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
+  defineExtension,
+  LexicalEditor,
+  mergeOutputs,
+  PASTE_COMMAND,
+} from 'lexical';
+
+import {
+  $toggleLink,
+  LinkAttributes,
+  LinkNode,
+  TOGGLE_LINK_COMMAND,
+} from './LexicalLinkNode';
+
+type Props = {
+  validateUrl: undefined | ((url: string) => boolean);
+  attributes: undefined | LinkAttributes;
+};
+const defaultProps: Props = {attributes: undefined, validateUrl: undefined};
+
+/** @internal */
+export function registerLink(
+  editor: LexicalEditor,
+  props: Props = defaultProps,
+) {
+  const stores = namedStores(defaultProps)(props);
+  const cleanups: (() => void)[] = [];
+  function cleanup() {
+    let f;
+    while ((f = cleanups.pop())) {
+      f();
+    }
+  }
+  return mergeOutputs(
+    cleanup,
+    subscribeAll(stores, ({validateUrl, attributes}) => {
+      cleanup();
+      cleanups.push(
+        editor.registerCommand(
+          TOGGLE_LINK_COMMAND,
+          (payload) => {
+            if (payload === null) {
+              $toggleLink(payload);
+              return true;
+            } else if (typeof payload === 'string') {
+              if (validateUrl === undefined || validateUrl(payload)) {
+                $toggleLink(payload, attributes);
+                return true;
+              }
+              return false;
+            } else {
+              const {url, target, rel, title} = payload;
+              $toggleLink(url, {
+                ...attributes,
+                rel,
+                target,
+                title,
+              });
+              return true;
+            }
+          },
+          COMMAND_PRIORITY_LOW,
+        ),
+      );
+      if (validateUrl !== undefined) {
+        cleanups.push(
+          editor.registerCommand(
+            PASTE_COMMAND,
+            (event) => {
+              const selection = $getSelection();
+              if (
+                !$isRangeSelection(selection) ||
+                selection.isCollapsed() ||
+                !objectKlassEquals(event, ClipboardEvent)
+              ) {
+                return false;
+              }
+              if (event.clipboardData === null) {
+                return false;
+              }
+              const clipboardText = event.clipboardData.getData('text');
+              if (!validateUrl(clipboardText)) {
+                return false;
+              }
+              // If we select nodes that are elements then avoid applying the link.
+              if (!selection.getNodes().some((node) => $isElementNode(node))) {
+                editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+                  ...attributes,
+                  url: clipboardText,
+                });
+                event.preventDefault();
+                return true;
+              }
+              return false;
+            },
+            COMMAND_PRIORITY_LOW,
+          ),
+        );
+      }
+    }),
+  );
+}
+
+export const LinkExtension = defineExtension({
+  config: defaultProps,
+  name: '@lexical/link/Link',
+  nodes: [LinkNode],
+  register: registerLink,
+});

@@ -54,7 +54,7 @@ export function registerLink(
           TOGGLE_LINK_COMMAND,
           (payload) => {
             if (payload === null) {
-              $toggleLink(payload);
+              $toggleLink(null);
               return true;
             } else if (typeof payload === 'string') {
               if (validateUrl === undefined || validateUrl(payload)) {

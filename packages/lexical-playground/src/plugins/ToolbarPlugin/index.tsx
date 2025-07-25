@@ -763,7 +763,7 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.getEditorState().read(() => {
+    activeEditor.read(() => {
       $updateToolbar();
     });
   }, [activeEditor, $updateToolbar]);
@@ -774,9 +774,12 @@ export default function ToolbarPlugin({
         setIsEditable(editable);
       }),
       activeEditor.registerUpdateListener(({editorState}) => {
-        editorState.read(() => {
-          $updateToolbar();
-        });
+        editorState.read(
+          () => {
+            $updateToolbar();
+          },
+          {editor: activeEditor},
+        );
       }),
       activeEditor.registerCommand<boolean>(
         CAN_UNDO_COMMAND,

@@ -67,7 +67,7 @@ describe('defineExtension', () => {
           noCleanup: boolean;
           oneArg: boolean;
         },
-        never
+        unknown
       >
     >(
       defineExtension({

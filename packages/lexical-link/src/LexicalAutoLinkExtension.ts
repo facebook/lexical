@@ -514,8 +514,9 @@ export const AutoLinkExtension = defineExtension({
   mergeConfig(config, overrides) {
     const merged = shallowMergeConfig(config, overrides);
     for (const k of ['matchers', 'changeHandlers'] as const) {
-      if (Array.isArray(overrides[k])) {
-        (merged[k] as unknown[]) = [...config[k], ...overrides[k]];
+      const v = overrides[k];
+      if (Array.isArray(v)) {
+        (merged[k] as unknown[]) = [...config[k], ...v];
       }
     }
     return merged;

@@ -368,7 +368,11 @@ export interface InitialEditorConfig {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyOutputArg = any | [any, () => void];
+type AnyOutputArgObject = Record<string, any>;
+export type AnyOutputArg =
+  | AnyOutputArgObject
+  | [AnyOutputArgObject]
+  | [AnyOutputArgObject, undefined | (() => void)];
 export type MergeOutputs<Outputs> = Prettify<MergeOutputs_<Outputs>>;
 export type MergeOutputs_<Outputs> = Outputs extends [
   [infer Output, ...infer _Cleanup],

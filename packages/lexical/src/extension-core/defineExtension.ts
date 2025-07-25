@@ -150,7 +150,7 @@ export function provideOutput<Output>(
       }
     },
     {output} as const,
-  );
+  ) as RegisterCleanup<Output>;
 }
 
 /**
@@ -161,7 +161,7 @@ export function provideOutput<Output>(
  * @param outputs
  * @returns A cleanup function
  */
-export function mergeOutputs<Outputs extends readonly AnyOutputArg[]>(
+export function mergeOutputs<Outputs extends AnyOutputArg[]>(
   ...outputs: Outputs
 ): RegisterCleanup<MergeOutputs<Outputs>> {
   const cleanups: (() => void)[] = [];

@@ -16,10 +16,12 @@ export type NamedStoresOutput<Defaults> = {
 
 export function namedStores<Defaults>(defaults: Defaults) {
   return (opts: NamedStoresOptions<Defaults>): NamedStoresOutput<Defaults> => {
-    const initial = {} as {[K in keyof Defaults]: WritableStore<Defaults[K]>};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const initial = {} as Record<keyof Defaults, WritableStore<any>>;
     for (const k in defaults) {
       const v = opts[k];
-      initial[k] = new Store(v === undefined ? defaults[k] : v);
+      const store = new Store(v === undefined ? defaults[k] : v);
+      initial[k] = store;
     }
     return initial;
   };

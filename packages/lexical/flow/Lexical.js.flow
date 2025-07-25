@@ -1670,3 +1670,6 @@ declare export function shallowMergeConfig<T: ExtensionConfigBase>(
   config: T,
   overrides?: Partial<T>,
 ): T;
+
+// TODO AnyOutputArg
+// TODO MergeOutputs

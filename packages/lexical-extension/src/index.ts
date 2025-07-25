@@ -25,9 +25,11 @@ export {
 export {buildEditorFromExtensions, LexicalBuilder} from './LexicalBuilder';
 export {registerStoreToggle} from './registerStoreToggle';
 export {
+  type MergedStoreValue,
   type ReadableStore,
   Store,
   type StoreSubscriber,
+  subscribeAll,
   type WritableStore,
 } from './Store';
 export {

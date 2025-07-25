@@ -6,16 +6,18 @@
  *
  */
 
-import {defineExtension, provideOutput, safeCast} from 'lexical';
+import {defineExtension, mergeOutputs, safeCast} from 'lexical';
 
-import {disabledToggle, type DisabledToggleOutput} from './disabledToggle';
+import {disabledToggle} from './disabledToggle';
+import {namedStores} from './namedStores';
 
+export type DefaultSelection = 'rootStart' | 'rootEnd';
 export interface AutoFocusConfig {
   /**
    * Where to move the selection when the editor is focused and there is no
    * existing selection. Can be "rootStart" or "rootEnd" (the default).
    */
-  defaultSelection?: 'rootStart' | 'rootEnd';
+  defaultSelection?: DefaultSelection;
   /**
    * The initial state of disabled
    */
@@ -30,9 +32,12 @@ export const AutoFocusExtension = defineExtension({
   config: safeCast<AutoFocusConfig>({}),
   name: '@lexical/extension/AutoFocus',
   register(editor, config) {
-    const {defaultSelection} = config;
-    return provideOutput<DisabledToggleOutput>(
-      ...disabledToggle({
+    const stores = namedStores({
+      defaultSelection: safeCast<DefaultSelection>('rootEnd'),
+    })(config);
+    return mergeOutputs(
+      stores,
+      disabledToggle({
         disabled: config.disabled,
         register: () =>
           editor.registerRootListener((rootElement) => {
@@ -52,7 +57,7 @@ export const AutoFocusExtension = defineExtension({
                   rootElement.focus({preventScroll: true});
                 }
               },
-              {defaultSelection},
+              {defaultSelection: stores.defaultSelection.get()},
             );
           }),
       }),

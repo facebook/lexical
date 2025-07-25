@@ -6,6 +6,7 @@
  *
  */
 
+import type {Prettify} from '../LexicalNodeState';
 import type {
   configTypeSymbol,
   initTypeSymbol,
@@ -365,3 +366,15 @@ export interface InitialEditorConfig {
    */
   $initialEditorState?: InitialEditorStateType;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyOutputArg = any | [any, () => void];
+export type MergeOutputs<Outputs> = Prettify<MergeOutputs_<Outputs>>;
+export type MergeOutputs_<Outputs> = Outputs extends [
+  [infer Output, ...infer _Cleanup],
+  ...infer Rest,
+]
+  ? Output & MergeOutputs_<Rest>
+  : Outputs extends [infer Output, ...infer Rest]
+  ? Output & MergeOutputs_<Rest>
+  : Record<never, never>;

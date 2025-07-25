@@ -12,6 +12,7 @@ import {
   defineExtension,
   type ExtensionConfigBase,
   type LexicalExtension,
+  mergeOutputs,
   type NormalizedPeerDependency,
   provideOutput,
 } from 'lexical';
@@ -50,6 +51,35 @@ describe('defineExtension', () => {
         name: 'test',
         register() {
           return provideOutput({output: 321});
+        },
+      }),
+    );
+  });
+  it('infers the expected type (merged output inference)', () => {
+    assertType<
+      LexicalExtension<
+        ExtensionConfigBase,
+        'test',
+        {
+          output: number;
+          enabled: boolean;
+          cleanup: boolean;
+          noCleanup: boolean;
+          oneArg: boolean;
+        },
+        never
+      >
+    >(
+      defineExtension({
+        name: 'test',
+        register() {
+          return mergeOutputs(
+            {output: 321},
+            {enabled: true},
+            [{cleanup: true}, () => () => {}],
+            [{noCleanup: true}, undefined],
+            [{oneArg: true}],
+          );
         },
       }),
     );

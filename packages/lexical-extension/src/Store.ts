@@ -8,10 +8,51 @@
 export type StoreSubscriber<T> = (value: T) => void;
 export interface ReadableStore<T> {
   get: () => T;
-  subscribe: (callback: StoreSubscriber<T>) => () => void;
+  subscribe: (
+    callback: StoreSubscriber<T>,
+    skipInitialization?: boolean,
+  ) => () => void;
 }
 export interface WritableStore<T> extends ReadableStore<T> {
   set: (value: T) => void;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyReadableStore = ReadableStore<any>;
+export type MergedStoreValue<Stores extends {[K in string]: AnyReadableStore}> =
+  {
+    [K in keyof Stores]: Stores[K] extends ReadableStore<infer V> ? V : never;
+  };
+
+export function subscribeAll<Stores extends {[K in string]: AnyReadableStore}>(
+  stores: Stores,
+  callback: (arg: MergedStoreValue<Stores>) => void,
+  skipInitialization = false,
+) {
+  const merged = {} as MergedStoreValue<Stores>;
+  const cleanups: (() => void)[] = [];
+  let trigger = () => {};
+  for (const k in stores) {
+    const store = stores[k];
+    cleanups.push(
+      store.subscribe((v) => {
+        merged[k] = v;
+        trigger();
+      }),
+    );
+  }
+  trigger = () => {
+    callback(merged);
+  };
+  if (!skipInitialization) {
+    trigger();
+  }
+  return () => {
+    let cleanup;
+    while ((cleanup = cleanups.pop())) {
+      cleanup();
+    }
+  };
 }
 
 export class Store<T> implements WritableStore<T>, Disposable {

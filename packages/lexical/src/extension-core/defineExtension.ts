@@ -8,9 +8,11 @@
 
 import type {
   AnyLexicalExtension,
+  AnyOutputArg,
   ExtensionConfigBase,
   LexicalExtension,
   LexicalExtensionConfig,
+  MergeOutputs,
   NormalizedLexicalExtensionArgument,
   NormalizedPeerDependency,
   RegisterCleanup,
@@ -122,7 +124,7 @@ export function configExtension<
  * export const UniqueCommandExtension = defineExtension({
  *   name: 'UniqueCommand',
  *   register(editor) {
- *     const output: UniqueCommnadOutput = {command: createCommand('UNIQUE_COMMAND')};
+ *     const output: UniqueCommandOutput = {command: createCommand('UNIQUE_COMMAND')};
  *     const cleanup = registerCommand(
  *       command,
  *       (_payload) => {
@@ -149,6 +151,38 @@ export function provideOutput<Output>(
     },
     {output} as const,
   );
+}
+
+/**
+ * Provide output from the register function of an Extension, merging
+ * all given arguments into a single cleanup function containing the
+ * merged output. See {@link provideOutput}.
+ *
+ * @param outputs
+ * @returns A cleanup function
+ */
+export function mergeOutputs<Outputs extends readonly AnyOutputArg[]>(
+  ...outputs: Outputs
+): RegisterCleanup<MergeOutputs<Outputs>> {
+  const cleanups: (() => void)[] = [];
+  const output = {} as MergeOutputs<Outputs>;
+  for (const maybePair of outputs) {
+    if (Array.isArray(maybePair)) {
+      const cleanup = maybePair[1];
+      if (cleanup) {
+        cleanups.push(cleanup);
+      }
+      Object.assign(output, maybePair[1]);
+    } else {
+      Object.assign(output, maybePair);
+    }
+  }
+  return provideOutput(output, () => {
+    let cleanup;
+    while ((cleanup = cleanups.pop())) {
+      cleanup();
+    }
+  });
 }
 
 /**

@@ -230,12 +230,14 @@ function $createNodesFromDOM(
       null
   ) {
     if (transformOutput) {
-      const firstTextNode = (transformOutput.node as TextNode[])[0];
-      if (firstTextNode) {
-        firstTextNode.__style =
-          ((node as HTMLElement).parentNode as HTMLElement).getAttribute(
-            'style',
-          ) || '';
+      if (transformOutput.node) {
+        const firstTextNode = (transformOutput.node as TextNode[])[0];
+        if (firstTextNode) {
+          firstTextNode.__style =
+            ((node as HTMLElement).parentNode as HTMLElement).getAttribute(
+              'style',
+            ) || '';
+        }
       }
     }
   }

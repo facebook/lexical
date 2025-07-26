@@ -14,11 +14,12 @@ import {
   ParagraphNode,
 } from 'lexical';
 
+import {$getReconciledDirection} from '../../LexicalReconciler';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalReconciler', () => {
   initializeUnitTest((testEnv) => {
-    test('Should use activeEditorDirection as the direction for a node with no directioned text', async () => {
+    test('Should set direction of root node children to auto if root node has no direction', async () => {
       const {editor} = testEnv;
 
       editor.update(() => {
@@ -30,24 +31,133 @@ describe('LexicalReconciler', () => {
         );
       });
 
-      // The third paragraph has no directioned text, so it should be set to the direction of the previous sibling.
-      let para3Dir = editor.read(() => {
-        return $getRoot().getChildAtIndex<ParagraphNode>(2)!.getDirection();
+      const directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
       });
-      expect(para3Dir).toEqual('ltr');
+      expect(directions).toEqual(['auto', 'auto', 'auto']);
+    });
 
-      // Mark the first and third paragraphs as dirty to force the reconciler to run.
+    test('Should not set direction of root node children if root node has direction', async () => {
+      const {editor} = testEnv;
+
       editor.update(() => {
-        $getRoot().getChildAtIndex<ParagraphNode>(0)!.markDirty();
-        $getRoot().getChildAtIndex<ParagraphNode>(2)!.markDirty();
+        const root = $getRoot().clear();
+        root.setDirection('rtl');
+        root.append(
+          $createParagraphNode().append($createTextNode('فرعي')),
+          $createParagraphNode().append($createTextNode('Hello')),
+          $createParagraphNode().append($createLineBreakNode()),
+        );
       });
 
-      // Note: this is arguably a bug. It would be preferable for the node to keep its LTR direction. Added as a
-      // test so that the behaviour is at least documented.
-      para3Dir = editor.read(() => {
-        return $getRoot().getChildAtIndex<ParagraphNode>(2)!.getDirection();
+      const directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
       });
-      expect(para3Dir).toEqual('rtl');
+      expect(directions).toEqual([null, null, null]);
+    });
+
+    test('Should allow overriding direction of root node children when root node has no direction', async () => {
+      const {editor} = testEnv;
+
+      editor.update(() => {
+        const root = $getRoot().clear();
+        root.append(
+          $createParagraphNode()
+            .setDirection('rtl')
+            .append($createTextNode('فرعي')),
+          $createParagraphNode()
+            .setDirection('ltr')
+            .append($createTextNode('فرعي')),
+          $createParagraphNode()
+            .setDirection('ltr')
+            .append($createTextNode('Hello')),
+          $createParagraphNode()
+            .setDirection('rtl')
+            .append($createLineBreakNode()),
+          $createParagraphNode()
+            .setDirection(null)
+            .append($createLineBreakNode()),
+        );
+      });
+
+      const directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
+      });
+      expect(directions).toEqual(['rtl', 'ltr', 'ltr', 'rtl', 'auto']);
+    });
+
+    test('Should allow overriding direction of root node children when root node has direction', async () => {
+      const {editor} = testEnv;
+
+      editor.update(() => {
+        const root = $getRoot().clear();
+        root.setDirection('rtl');
+        root.append(
+          $createParagraphNode()
+            .setDirection('ltr')
+            .append($createTextNode('فرعي')),
+          $createParagraphNode().append($createTextNode('Hello')),
+          $createParagraphNode().append($createLineBreakNode()),
+        );
+      });
+
+      const directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
+      });
+      expect(directions).toEqual(['ltr', null, null]);
+    });
+
+    test('Should update root children when root node direction changes', async () => {
+      const {editor} = testEnv;
+
+      editor.update(() => {
+        const root = $getRoot().clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('فرعي')),
+          $createParagraphNode()
+            .setDirection('ltr')
+            .append($createTextNode('Hello')),
+        );
+      });
+
+      let directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
+      });
+      expect(directions).toEqual(['auto', 'ltr']);
+
+      // Remove 'auto' from un-directioned children.
+      editor.update(() => {
+        $getRoot().setDirection('rtl');
+      });
+
+      directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
+      });
+      expect(directions).toEqual([null, 'ltr']);
+
+      // Re-add 'auto' to children.
+      editor.update(() => {
+        $getRoot().setDirection(null);
+      });
+
+      directions = editor.read(() => {
+        return $getRoot()
+          .getChildren<ParagraphNode>()
+          .map((child) => $getReconciledDirection(child));
+      });
+      expect(directions).toEqual(['auto', 'ltr']);
     });
   });
 });

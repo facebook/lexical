@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2019",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom", "dom.iterable", "ESNext.Disposable"],
     "module": "esnext",
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
@@ -25,6 +25,7 @@
       "@lexical/eslint-plugin": [
         "./packages/lexical-eslint-plugin/src/index.ts"
       ],
+      "@lexical/extension": ["./packages/lexical-extension/src/index.ts"],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],
@@ -91,6 +92,9 @@
       "@lexical/react/LexicalErrorBoundary": [
         "./packages/lexical-react/src/LexicalErrorBoundary.tsx"
       ],
+      "@lexical/react/LexicalExtensionComposer": [
+        "./packages/lexical-react/src/LexicalExtensionComposer.tsx"
+      ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],
@@ -151,6 +155,21 @@
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "./packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
       ],
+      "@lexical/react/ReactExtension": [
+        "./packages/lexical-react/src/ReactExtension.tsx"
+      ],
+      "@lexical/react/ReactPluginHostExtension": [
+        "./packages/lexical-react/src/ReactPluginHostExtension.tsx"
+      ],
+      "@lexical/react/ReactProviderExtension": [
+        "./packages/lexical-react/src/ReactProviderExtension.tsx"
+      ],
+      "@lexical/react/TreeViewExtension": [
+        "./packages/lexical-react/src/TreeViewExtension.tsx"
+      ],
+      "@lexical/react/useExtensionComponent": [
+        "./packages/lexical-react/src/useExtensionComponent.tsx"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
       ],
@@ -206,6 +225,7 @@
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
       "@lexical/dragon/src": ["./packages/lexical-dragon/src"],
       "@lexical/eslint-plugin/src": ["./packages/lexical-eslint-plugin/src"],
+      "@lexical/extension/src": ["./packages/lexical-extension/src"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],

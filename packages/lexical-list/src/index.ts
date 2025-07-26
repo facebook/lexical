@@ -22,6 +22,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  defineExtension,
   INSERT_PARAGRAPH_COMMAND,
   TextNode,
 } from 'lexical';
@@ -278,3 +279,15 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => $removeList());
 }
+
+export const ListExtension = defineExtension({
+  name: '@lexical/list/List',
+  nodes: [ListNode, ListItemNode],
+  register: registerList,
+});
+
+export const CheckListExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '@lexical/list/CheckList',
+  register: registerCheckList,
+});

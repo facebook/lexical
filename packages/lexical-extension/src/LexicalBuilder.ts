@@ -136,23 +136,30 @@ export class LexicalBuilder {
     return new LexicalBuilder(roots);
   }
 
+  static maybeFromEditor(editor: LexicalEditor): undefined | LexicalBuilder {
+    const builder = maybeWithBuilder(editor)[builderSymbol];
+    if (builder) {
+      // The dev tools variant of this will relax some of these invariants
+      invariant(
+        builder.PACKAGE_VERSION === PACKAGE_VERSION,
+        'LexicalBuilder.fromEditor: The given editor was created with LexicalBuilder %s but this version is %s. A project should have exactly one copy of LexicalBuilder',
+        builder.PACKAGE_VERSION,
+        PACKAGE_VERSION,
+      );
+      invariant(
+        builder instanceof LexicalBuilder,
+        'LexicalBuilder.fromEditor: There are multiple copies of the same version of LexicalBuilder in your project, and this editor was created with another one. Your project, or one of its dependencies, has its package.json and/or bundler configured incorrectly.',
+      );
+    }
+    return builder;
+  }
+
   /** Look up the editor that was created by this LexicalBuilder or throw */
   static fromEditor(editor: LexicalEditor): LexicalBuilder {
-    const builder = maybeWithBuilder(editor)[builderSymbol];
+    const builder = LexicalBuilder.maybeFromEditor(editor);
     invariant(
-      builder && typeof builder === 'object',
-      'LexicalBuilder.fromEditor: The given editor was not created with LexicalBuilder, or has been disposed',
-    );
-    // The dev tools variant of this will relax some of these invariants
-    invariant(
-      builder.PACKAGE_VERSION === PACKAGE_VERSION,
-      'LexicalBuilder.fromEditor: The given editor was created with LexicalBuilder %s but this version is %s. A project should have exactly one copy of LexicalBuilder',
-      builder.PACKAGE_VERSION,
-      PACKAGE_VERSION,
-    );
-    invariant(
-      builder instanceof LexicalBuilder,
-      'LexicalBuilder.fromEditor: There are multiple copies of the same version of LexicalBuilder in your project, and this editor was created with another one. Your project, or one of its dependencies, has its package.json and/or bundler configured incorrectly.',
+      builder !== undefined,
+      'LexicalBuilder.fromEditor: The given editor was not created with LexicalBuilder',
     );
     return builder;
   }

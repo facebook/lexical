@@ -6,12 +6,10 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 
-import {Suspense, useEffect, useMemo, useState} from 'react';
-import {createPortal, flushSync} from 'react-dom';
-import invariant from 'shared/invariant';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {Suspense, useMemo, useSyncExternalStore} from 'react';
+import {createPortal} from 'react-dom';
 
 import {type ErrorBoundaryType} from './types';
 
@@ -20,38 +18,20 @@ export function useReactDecorators(
   editor: LexicalEditor,
   ErrorBoundary: ErrorBoundaryType,
 ): JSX.Element[] {
-  const [decorators, setDecorators] = useState<Record<NodeKey, JSX.Element>>(
-    () => editor.getDecorators<JSX.Element>(),
+  const [subscribe, getSnapshot] = useMemo(
+    () =>
+      [
+        (cb: () => void) => editor.registerDecoratorListener(cb),
+        () => editor.getDecorators<JSX.Element>(),
+      ] as const,
+    [editor],
   );
-
-  // Subscribe to changes
-  useLayoutEffect(() => {
-    return editor.registerDecoratorListener<JSX.Element>((nextDecorators) => {
-      flushSync(() => {
-        setDecorators(nextDecorators);
-      });
-    });
-  }, [editor]);
-
-  useEffect(() => {
-    // If the content editable mounts before the subscription is added, then
-    // nothing will be rendered on initial pass. We can get around that by
-    // ensuring that we set the value.
-    setDecorators(editor.getDecorators());
-  }, [editor]);
+  const decorators = useSyncExternalStore(subscribe, getSnapshot);
 
   // Return decorators defined as React Portals
   return useMemo(() => {
     const decoratedPortals = [];
-    const decoratorKeys = Object.keys(decorators);
-
-    for (let i = 0; i < decoratorKeys.length; i++) {
-      const nodeKey = decoratorKeys[i];
-      invariant(
-        nodeKey !== undefined,
-        'useReactDecorators: decoratorKeys[%s] must be defined',
-        String(i),
-      );
+    for (const nodeKey in decorators) {
       const element = editor.getElementByKey(nodeKey);
 
       if (element !== null) {

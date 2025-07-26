@@ -21,7 +21,7 @@ import {
   type LexicalEditor,
   type LexicalExtensionOutput,
 } from 'lexical';
-import {Suspense, useSyncExternalStore} from 'react';
+import {Suspense, useMemo, useSyncExternalStore} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
@@ -121,10 +121,14 @@ function PluginHostDecorator({
     ReactExtension,
   ).config;
   const onError = editor._onError.bind(editor);
-  const mountedPlugins = useSyncExternalStore(
-    (cb) => mountedPluginsStore.subscribe(cb, true),
-    () => mountedPluginsStore.get(),
+  const [subscribe, getSnapshot] = useMemo(
+    () => [
+      (cb: () => void) => mountedPluginsStore.subscribe(cb, true),
+      () => mountedPluginsStore.get(),
+    ],
+    [mountedPluginsStore],
   );
+  const mountedPlugins = useSyncExternalStore(subscribe, getSnapshot);
   const children: JSX.Element[] = [];
   for (const {key, element, domNode} of mountedPlugins.values()) {
     if (!element) {

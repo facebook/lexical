@@ -282,7 +282,6 @@ export {
   isSelectionWithinEditor,
   removeFromParent,
   resetRandomKey,
-  scheduleMicroTask,
   setDOMUnmanaged,
   setNodeIndentFromDOM,
 } from './LexicalUtils';

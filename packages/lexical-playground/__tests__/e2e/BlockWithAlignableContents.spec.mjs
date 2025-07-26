@@ -28,7 +28,6 @@ test.describe('BlockWithAlignableContents', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('Hello world');
-    await page.pause();
     await assertHTML(
       page,
       html`

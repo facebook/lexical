@@ -584,6 +584,10 @@ i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }
 
+i.calendar {
+  background-image: url(images/icons/calendar.svg);
+}
+
 i.gif {
   background-image: url(images/icons/filetype-gif.svg);
 }

@@ -10,7 +10,6 @@ import {namedStores, storeToggle} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {defineExtension, safeCast} from 'lexical';
 
-import {TableRowNode} from '../LexicalTable';
 import {TableCellNode} from './LexicalTableCellNode';
 import {
   $isScrollableTablesActive,
@@ -22,6 +21,7 @@ import {
   registerTablePlugin,
   registerTableSelectionObserver,
 } from './LexicalTablePluginHelpers';
+import {TableRowNode} from './LexicalTableRowNode';
 
 export interface TableConfig {
   /**

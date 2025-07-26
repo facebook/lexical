@@ -9,6 +9,11 @@
 import {$toggleLink} from './LexicalLinkNode';
 
 export {
+  type ClickableLinkConfig,
+  ClickableLinkExtension,
+  registerClickableLink,
+} from './ClickableLinkExtension';
+export {
   AutoLinkExtension,
   type ChangeHandler,
   createLinkMatcherWithRegExp,

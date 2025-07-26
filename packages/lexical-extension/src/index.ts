@@ -7,6 +7,11 @@
  */
 
 export {type AutoFocusConfig, AutoFocusExtension} from './AutoFocusExtension';
+export {
+  type ClearEditorConfig,
+  ClearEditorExtension,
+  registerClearEditor,
+} from './ClearEditorExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
 export {disabledToggle} from './disabledToggle';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';

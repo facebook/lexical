@@ -208,6 +208,10 @@ export class LexicalBuilder {
     return editor;
   }
 
+  hasExtensionByName(name: string): boolean {
+    return this.extensionNameMap.has(name);
+  }
+
   getExtensionRep<Extension extends AnyLexicalExtension>(
     extension: Extension,
   ): ExtensionRep<Extension> | undefined {

@@ -8,6 +8,7 @@
 import {LexicalBuilder} from '@lexical/extension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {type LexicalEditor} from 'lexical';
+import invariant from 'shared/invariant';
 
 import {type ErrorBoundaryType, useDecorators} from './useDecorators';
 
@@ -15,12 +16,17 @@ export {type ErrorBoundaryType};
 
 function isUsingReactExtension(editor: LexicalEditor): boolean {
   const builder = LexicalBuilder.maybeFromEditor(editor);
-  if (!builder) {
-    return false;
+  if (builder && builder.hasExtensionByName(ReactProviderExtension.name)) {
+    for (const name of ['@lexical/plain-text', '@lexical/rich-text']) {
+      invariant(
+        !builder.hasExtensionByName(name),
+        'LexicalBuilder: @lexical/react legacy text plugins conflict with the %s extension. Remove the legacy <RichTextPlugin/> or <PlainTextPlugin/> component.',
+        name,
+      );
+    }
+    return true;
   }
-  return builder
-    ? builder.getExtensionRep(ReactProviderExtension) !== undefined
-    : false;
+  return false;
 }
 
 function Decorators({
@@ -33,6 +39,14 @@ function Decorators({
   return useDecorators(editor, ErrorBoundary);
 }
 
+/**
+ * @internal
+ *
+ * When using @lexical/extension, the ReactProvider is expected to handle
+ * rendering decorators. This component allows RichTextPlugin and
+ * PlainTextPlugin to be used in extension projects that have not yet
+ * migrated to use RichTextExtension or PlainTextExtension.
+ **/
 export function LegacyDecorators({
   editor,
   ErrorBoundary,

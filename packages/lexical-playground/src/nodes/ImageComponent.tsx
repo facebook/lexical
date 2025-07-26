@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  BaseSelection,
-  LexicalCommand,
-  LexicalEditor,
-  NodeKey,
-} from 'lexical';
+import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 import type {JSX} from 'react';
 
 import './ImageNode.css';
@@ -43,7 +38,14 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {createWebsocketProvider} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
@@ -213,6 +215,8 @@ function BrokenImage(): JSX.Element {
   );
 }
 
+function noop() {}
+
 export default function ImageComponent({
   src,
   altText,
@@ -243,18 +247,26 @@ export default function ImageComponent({
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const {isCollabActive} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
-  const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
   const [isLoadError, setIsLoadError] = useState<boolean>(false);
   const isEditable = useLexicalEditable();
+  const isInNodeSelection = useMemo(
+    () =>
+      isSelected &&
+      editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        return $isNodeSelection(selection) && selection.has(nodeKey);
+      }),
+    [editor, isSelected, nodeKey],
+  );
 
   const $onEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
       const buttonElem = buttonRef.current;
       if (
-        isSelected &&
         $isNodeSelection(latestSelection) &&
+        latestSelection.has(nodeKey) &&
         latestSelection.getNodes().length === 1
       ) {
         if (showCaption) {
@@ -274,7 +286,7 @@ export default function ImageComponent({
       }
       return false;
     },
-    [caption, isSelected, showCaption],
+    [caption, nodeKey, showCaption],
   );
 
   const $onEscape = useCallback(
@@ -341,32 +353,13 @@ export default function ImageComponent({
   );
 
   useEffect(() => {
-    const rootElement = editor.getRootElement();
-    const unregister = mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
-        const updatedSelection = editorState.read(() => $getSelection());
-        if ($isNodeSelection(updatedSelection)) {
-          setSelection(updatedSelection);
-        } else {
-          setSelection(null);
-        }
-      }),
+    return mergeRegister(
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         (_, activeEditor) => {
           activeEditorRef.current = activeEditor;
           return false;
         },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        onClick,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(
-        RIGHT_CLICK_IMAGE_COMMAND,
-        onClick,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
@@ -382,32 +375,39 @@ export default function ImageComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
+    );
+  }, [editor]);
+  useEffect(() => {
+    let rootCleanup = noop;
+    return mergeRegister(
+      editor.registerCommand<MouseEvent>(
+        CLICK_COMMAND,
+        onClick,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand<MouseEvent>(
+        RIGHT_CLICK_IMAGE_COMMAND,
+        onClick,
+        COMMAND_PRIORITY_LOW,
+      ),
       editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         $onEscape,
         COMMAND_PRIORITY_LOW,
       ),
+      editor.registerRootListener((rootElement) => {
+        rootCleanup();
+        rootCleanup = noop;
+        if (rootElement) {
+          rootElement.addEventListener('contextmenu', onRightClick);
+          rootCleanup = () =>
+            rootElement.removeEventListener('contextmenu', onRightClick);
+        }
+      }),
+      () => rootCleanup(),
     );
-
-    rootElement?.addEventListener('contextmenu', onRightClick);
-
-    return () => {
-      unregister();
-      rootElement?.removeEventListener('contextmenu', onRightClick);
-    };
-  }, [
-    clearSelection,
-    editor,
-    isResizing,
-    isSelected,
-    nodeKey,
-    $onEnter,
-    $onEscape,
-    onClick,
-    onRightClick,
-    setSelected,
-  ]);
+  }, [editor, $onEnter, $onEscape, onClick, onRightClick]);
 
   const setShowCaption = () => {
     editor.update(() => {
@@ -444,7 +444,7 @@ export default function ImageComponent({
     settings: {showNestedEditorTreeView},
   } = useSettings();
 
-  const draggable = isSelected && $isNodeSelection(selection) && !isResizing;
+  const draggable = isInNodeSelection && !isResizing;
   const isFocused = (isSelected || isResizing) && isEditable;
   return (
     <Suspense fallback={null}>
@@ -456,7 +456,7 @@ export default function ImageComponent({
             <LazyImage
               className={
                 isFocused
-                  ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                  ? `focused ${isInNodeSelection ? 'draggable' : ''}`
                   : null
               }
               src={src}
@@ -502,7 +502,7 @@ export default function ImageComponent({
             </LexicalNestedComposer>
           </div>
         )}
-        {resizable && $isNodeSelection(selection) && isFocused && (
+        {resizable && isInNodeSelection && isFocused && (
           <ImageResizer
             showCaption={showCaption}
             setShowCaption={setShowCaption}

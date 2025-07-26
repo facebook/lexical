@@ -13,7 +13,7 @@ export {
   registerClearEditor,
 } from './ClearEditorExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
-export {disabledToggle} from './disabledToggle';
+export {disabledToggle, storeToggle} from './disabledToggle';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,
@@ -37,6 +37,11 @@ export {
   subscribeAll,
   type WritableStore,
 } from './Store';
+export {
+  registerTabIndentation,
+  type TabIndentationConfig,
+  TabIndentationExtension,
+} from './TabIndentationExtension';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,

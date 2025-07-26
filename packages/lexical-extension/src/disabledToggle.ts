@@ -10,16 +10,25 @@ import type {ReadableStore} from './Store';
 import {mergeRegister} from '@lexical/utils';
 
 const noop = () => {};
+
+export function storeToggle<T>(
+  store: ReadableStore<T>,
+  isEnabled: (v: T) => boolean,
+  register: () => () => void,
+) {
+  let cleanup = noop;
+  return mergeRegister(
+    () => cleanup(),
+    store.subscribe((v) => {
+      cleanup();
+      cleanup = isEnabled(v) ? register() : noop;
+    }),
+  );
+}
+
 export function disabledToggle(
   stores: {readonly disabled: ReadableStore<boolean>},
   register: () => () => void,
 ): () => void {
-  let cleanup = noop;
-  return mergeRegister(
-    () => cleanup(),
-    stores.disabled.subscribe((disabled) => {
-      cleanup();
-      cleanup = disabled ? noop : register();
-    }),
-  );
+  return storeToggle(stores.disabled, (v) => !v, register);
 }

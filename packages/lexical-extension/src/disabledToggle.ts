@@ -5,19 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {registerStoreToggle} from './registerStoreToggle';
-import {Store, type WritableStore} from './Store';
+import type {ReadableStore} from './Store';
 
-export interface DisabledToggleOptions {
-  disabled?: boolean;
-  register: () => () => void;
-}
-export interface DisabledToggleOutput {
-  disabled: WritableStore<boolean>;
-}
+import {mergeRegister} from '@lexical/utils';
+
+const noop = () => {};
 export function disabledToggle(
-  opts: DisabledToggleOptions,
-): [DisabledToggleOutput, () => void] {
-  const disabled = new Store(Boolean(opts.disabled));
-  return [{disabled}, registerStoreToggle(disabled, (v) => !v, opts.register)];
+  stores: {readonly disabled: ReadableStore<boolean>},
+  register: () => () => void,
+): () => void {
+  let cleanup = noop;
+  return mergeRegister(
+    () => cleanup(),
+    stores.disabled.subscribe((disabled) => {
+      cleanup();
+      cleanup = disabled ? noop : register();
+    }),
+  );
 }

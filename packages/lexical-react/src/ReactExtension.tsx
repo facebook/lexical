@@ -19,7 +19,6 @@ import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {
   declarePeerDependency,
   defineExtension,
-  provideOutput,
   shallowMergeConfig,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -73,6 +72,24 @@ const initialConfig: ReactConfig = {
  * some specific location, or effects that return null).
  */
 export const ReactExtension = defineExtension({
+  build(editor, config, state) {
+    const providerPeer = state.getPeer<typeof ReactProviderExtension>(
+      ReactProviderExtension.name,
+    );
+    if (!providerPeer) {
+      invariant(
+        false,
+        'No ReactProviderExtension detected. You must use ReactPluginHostExtension or LexicalExtensionComposer to host React extensions. The following extensions depend on ReactExtension: %s',
+        [...state.getDirectDependentNames()].join(' '),
+      );
+    }
+    const context: LexicalComposerContextWithEditor = [
+      editor,
+      {getTheme: () => editor._config.theme},
+    ];
+    const Component = buildEditorComponent(config, context);
+    return {Component, context};
+  },
   config: initialConfig,
   mergeConfig(a, b) {
     const config = shallowMergeConfig(a, b);
@@ -92,25 +109,4 @@ export const ReactExtension = defineExtension({
       ReactProviderExtension.name,
     ),
   ],
-  register(editor, config, state) {
-    const providerPeer = state.getPeer<typeof ReactProviderExtension>(
-      ReactProviderExtension.name,
-    );
-    if (!providerPeer) {
-      invariant(
-        false,
-        'No ReactProviderExtension detected. You must use ReactPluginHostExtension or LexicalExtensionComposer to host React extensions. The following extensions depend on ReactExtension: %s',
-        [...state.getDirectDependentNames()].join(' '),
-      );
-    }
-    const context: LexicalComposerContextWithEditor = [
-      editor,
-      {getTheme: () => editor._config.theme},
-    ];
-    const Component = buildEditorComponent(config, context);
-    return provideOutput<ReactOutputs>({
-      Component,
-      context,
-    });
-  },
 });

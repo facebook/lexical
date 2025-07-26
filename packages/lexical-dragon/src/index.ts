@@ -6,14 +6,13 @@
  *
  */
 
-import {disabledToggle} from '@lexical/extension';
+import {disabledToggle, namedStores} from '@lexical/extension';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   defineExtension,
   LexicalEditor,
-  mergeOutputs,
   safeCast,
 } from 'lexical';
 
@@ -138,13 +137,9 @@ export interface DragonConfig {
  * \@lexical/dragon module.
  */
 export const DragonExtension = defineExtension({
+  build: (editor, config, state) => namedStores(config),
   config: safeCast<DragonConfig>({disabled: typeof window === 'undefined'}),
   name: '@lexical/dragon',
-  register: (editor, config) =>
-    mergeOutputs(
-      disabledToggle({
-        disabled: config.disabled,
-        register: () => registerDragonSupport(editor),
-      }),
-    ),
+  register: (editor, config, state) =>
+    disabledToggle(state.getOutput(), () => registerDragonSupport(editor)),
 });

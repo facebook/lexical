@@ -7,7 +7,7 @@
  */
 
 import {namedStores, subscribeAll} from '@lexical/extension';
-import {objectKlassEquals} from '@lexical/utils';
+import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -15,7 +15,6 @@ import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
   LexicalEditor,
-  mergeOutputs,
   PASTE_COMMAND,
 } from 'lexical';
 
@@ -37,15 +36,13 @@ export function registerLink(
   editor: LexicalEditor,
   props: Props = defaultProps,
 ) {
-  const stores = namedStores(defaultProps)(props);
+  const stores = namedStores(defaultProps, props);
   const cleanups: (() => void)[] = [];
   function cleanup() {
-    let f;
-    while ((f = cleanups.pop())) {
-      f();
-    }
+    mergeRegister(...cleanups)();
+    cleanups.length = 0;
   }
-  return mergeOutputs(
+  return mergeRegister(
     cleanup,
     subscribeAll(stores, ({validateUrl, attributes}) => {
       cleanup();

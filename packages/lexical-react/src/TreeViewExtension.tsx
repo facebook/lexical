@@ -9,7 +9,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TreeView} from '@lexical/react/LexicalTreeView';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
-import {defineExtension, provideOutput} from 'lexical';
+import {defineExtension} from 'lexical';
 
 export type TreeViewConfig = Omit<Parameters<typeof TreeView>[0], 'editor'>;
 export function TreeViewExtensionComponent(
@@ -35,8 +35,8 @@ const config: TreeViewConfig = {
 };
 
 export const TreeViewExtension = defineExtension({
+  build: () => ({Component: TreeViewExtensionComponent}),
   config,
   dependencies: [ReactExtension],
   name: '@lexical/react/TreeView',
-  register: () => provideOutput({Component: TreeViewExtensionComponent}),
 });

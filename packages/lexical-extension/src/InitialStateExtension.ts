@@ -40,7 +40,7 @@ export interface InitialStateConfig {
 }
 
 export const InitialStateExtension = defineExtension({
-  afterInitialization(editor, {updateOptions, setOptions}, state) {
+  build(editor, {updateOptions, setOptions}, state) {
     const $initialEditorState = state.getInitResult();
     if ($isEditorState($initialEditorState)) {
       editor.setEditorState($initialEditorState, setOptions);
@@ -58,9 +58,6 @@ export const InitialStateExtension = defineExtension({
       );
       editor.setEditorState(parsedEditorState, setOptions);
     }
-    return () => {
-      /* noop */
-    };
   },
 
   config: safeCast<InitialStateConfig>({

@@ -9,6 +9,7 @@
 import type {LexicalBuilder} from './LexicalBuilder';
 import type {
   AnyLexicalExtension,
+  ExtensionBuildState,
   ExtensionInitState,
   ExtensionRegisterState,
   InitialEditorConfig,
@@ -17,32 +18,33 @@ import type {
   LexicalExtensionDependency,
   LexicalExtensionInit,
   LexicalExtensionOutput,
-  RegisterCleanup,
 } from 'lexical';
 
 import {shallowMergeConfig} from 'lexical';
 import invariant from 'shared/invariant';
 
 export const ExtensionRepStateIds = {
-  afterInitialization: 6,
+  /* eslint-disable sort-keys-fix/sort-keys-fix */
+  unmarked: 0,
+  temporary: 1,
+  permanent: 2,
   configured: 3,
   initialized: 4,
-  permanent: 2,
-  registered: 5,
-  temporary: 1,
-  unmarked: 0,
+  built: 5,
+  registered: 6,
+  afterRegistration: 7,
+  /* eslint-enable sort-keys-fix/sort-keys-fix */
 } as const;
 interface UnmarkedState {
   id: (typeof ExtensionRepStateIds)['unmarked'];
 }
-interface TemporaryState extends Omit<UnmarkedState, 'id'> {
+interface TemporaryState {
   id: (typeof ExtensionRepStateIds)['temporary'];
 }
-interface PermanentState extends Omit<TemporaryState, 'id'> {
+interface PermanentState {
   id: (typeof ExtensionRepStateIds)['permanent'];
 }
-interface ConfiguredState<Extension extends AnyLexicalExtension>
-  extends Omit<PermanentState, 'id'> {
+interface ConfiguredState<Extension extends AnyLexicalExtension> {
   id: (typeof ExtensionRepStateIds)['configured'];
   config: LexicalExtensionConfig<Extension>;
   registerState: ExtensionInitState;
@@ -51,16 +53,25 @@ interface InitializedState<Extension extends AnyLexicalExtension>
   extends Omit<ConfiguredState<Extension>, 'id' | 'registerState'> {
   id: (typeof ExtensionRepStateIds)['initialized'];
   initResult: LexicalExtensionInit<Extension>;
-  registerState: ExtensionRegisterState<LexicalExtensionInit<Extension>>;
+  registerState: ExtensionBuildState<LexicalExtensionInit<Extension>>;
+}
+interface BuiltState<Extension extends AnyLexicalExtension>
+  extends Omit<ConfiguredState<Extension>, 'id' | 'registerState'> {
+  id: (typeof ExtensionRepStateIds)['built'];
+  initResult: LexicalExtensionInit<Extension>;
+  output: LexicalExtensionOutput<Extension>;
+  registerState: ExtensionRegisterState<
+    LexicalExtensionInit<Extension>,
+    LexicalExtensionOutput<Extension>
+  >;
 }
 interface RegisteredState<Extension extends AnyLexicalExtension>
-  extends Omit<InitializedState<Extension>, 'id'> {
+  extends Omit<BuiltState<Extension>, 'id'> {
   id: (typeof ExtensionRepStateIds)['registered'];
-  output: LexicalExtensionOutput<Extension>;
 }
-interface AfterInitializationState<Extension extends AnyLexicalExtension>
+interface AfterRegistrationState<Extension extends AnyLexicalExtension>
   extends Omit<RegisteredState<Extension>, 'id'> {
-  id: (typeof ExtensionRepStateIds)['afterInitialization'];
+  id: (typeof ExtensionRepStateIds)['afterRegistration'];
 }
 
 export type ExtensionRepState<Extension extends AnyLexicalExtension> =
@@ -69,8 +80,9 @@ export type ExtensionRepState<Extension extends AnyLexicalExtension> =
   | PermanentState
   | ConfiguredState<Extension>
   | InitializedState<Extension>
+  | BuiltState<Extension>
   | RegisteredState<Extension>
-  | AfterInitializationState<Extension>;
+  | AfterRegistrationState<Extension>;
 
 export function isExactlyUnmarkedExtensionRepState<
   Extension extends AnyLexicalExtension,
@@ -87,32 +99,38 @@ export function isExactlyPermanentExtensionRepState<
 >(state: ExtensionRepState<Extension>): state is PermanentState {
   return state.id === ExtensionRepStateIds.permanent;
 }
-function isInitializedExtensionRepState<Extension extends AnyLexicalExtension>(
-  state: ExtensionRepState<Extension>,
-): state is
-  | InitializedState<Extension>
-  | RegisteredState<Extension>
-  | AfterInitializationState<Extension> {
-  return state.id >= ExtensionRepStateIds.initialized;
-}
 function isConfiguredExtensionRepState<Extension extends AnyLexicalExtension>(
   state: ExtensionRepState<Extension>,
 ): state is
   | ConfiguredState<Extension>
   | InitializedState<Extension>
+  | BuiltState<Extension>
   | RegisteredState<Extension>
-  | AfterInitializationState<Extension> {
+  | AfterRegistrationState<Extension> {
   return state.id >= ExtensionRepStateIds.configured;
 }
-function isRegisteredExtensionRepState<Extension extends AnyLexicalExtension>(
+function isInitializedExtensionRepState<Extension extends AnyLexicalExtension>(
   state: ExtensionRepState<Extension>,
-): state is RegisteredState<Extension> | AfterInitializationState<Extension> {
-  return state.id >= ExtensionRepStateIds.registered;
+): state is
+  | InitializedState<Extension>
+  | BuiltState<Extension>
+  | RegisteredState<Extension>
+  | AfterRegistrationState<Extension> {
+  return state.id >= ExtensionRepStateIds.initialized;
 }
-function isAfterInitializationState<Extension extends AnyLexicalExtension>(
+
+function isBuiltExtensionRepState<Extension extends AnyLexicalExtension>(
   state: ExtensionRepState<Extension>,
-): state is AfterInitializationState<Extension> {
-  return state.id >= ExtensionRepStateIds.afterInitialization;
+): state is
+  | BuiltState<Extension>
+  | RegisteredState<Extension>
+  | AfterRegistrationState<Extension> {
+  return state.id >= ExtensionRepStateIds.built;
+}
+function isAfterRegistrationState<Extension extends AnyLexicalExtension>(
+  state: ExtensionRepState<Extension>,
+): state is AfterRegistrationState<Extension> {
+  return state.id >= ExtensionRepStateIds.afterRegistration;
 }
 export function applyTemporaryMark<Extension extends AnyLexicalExtension>(
   state: ExtensionRepState<Extension>,
@@ -150,7 +168,7 @@ export function applyConfiguredState<Extension extends AnyLexicalExtension>(
 export function applyInitializedState<Extension extends AnyLexicalExtension>(
   state: ConfiguredState<Extension>,
   initResult: LexicalExtensionInit<Extension>,
-  registerState: ExtensionRegisterState<Extension>,
+  registerState: ExtensionBuildState<LexicalExtensionInit<Extension>>,
 ): InitializedState<Extension> {
   return Object.assign(state, {
     id: ExtensionRepStateIds.initialized,
@@ -158,19 +176,37 @@ export function applyInitializedState<Extension extends AnyLexicalExtension>(
     registerState,
   });
 }
-export function applyRegisteredState<Extension extends AnyLexicalExtension>(
+export function applyBuiltState<Extension extends AnyLexicalExtension>(
   state: InitializedState<Extension>,
-  cleanup?: RegisterCleanup<LexicalExtensionOutput<Extension>> | undefined,
+  output: LexicalExtensionOutput<Extension>,
+  registerState: ExtensionRegisterState<
+    LexicalExtensionInit<Extension>,
+    LexicalExtensionOutput<Extension>
+  >,
+): BuiltState<Extension> {
+  return Object.assign(state, {
+    id: ExtensionRepStateIds.built,
+    output,
+    registerState,
+  });
+}
+export function applyRegisteredState<Extension extends AnyLexicalExtension>(
+  state: BuiltState<Extension>,
 ) {
   return Object.assign(state, {
     id: ExtensionRepStateIds.registered,
-    output: cleanup ? cleanup.output : undefined,
   });
 }
-export function applyAfterInitializationState<
+export function applyAfterRegistrationState<
   Extension extends AnyLexicalExtension,
->(state: RegisteredState<Extension>): AfterInitializationState<Extension> {
-  return Object.assign(state, {id: ExtensionRepStateIds.afterInitialization});
+>(state: RegisteredState<Extension>): AfterRegistrationState<Extension> {
+  return Object.assign(state, {id: ExtensionRepStateIds.afterRegistration});
+}
+
+export function rollbackToBuiltState<Extension extends AnyLexicalExtension>(
+  state: AfterRegistrationState<Extension>,
+): BuiltState<Extension> {
+  return Object.assign(state, {id: ExtensionRepStateIds.built});
 }
 
 const emptySet: ReadonlySet<string> = new Set();
@@ -185,6 +221,8 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
   _peerNameSet?: Set<string>;
   extension: Extension;
   state: ExtensionRepState<Extension>;
+  _signal?: AbortSignal;
+
   constructor(builder: LexicalBuilder, extension: Extension) {
     this.builder = builder;
     this.extension = extension;
@@ -192,45 +230,21 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
     this.state = {id: ExtensionRepStateIds.unmarked};
   }
 
-  afterInitialization(editor: LexicalEditor): undefined | (() => void) {
-    const state = this.state;
-    invariant(
-      state.id === ExtensionRepStateIds.registered,
-      'ExtensionRep: afterInitialization called in state id %s (expected %s registered)',
-      String(state.id),
-      String(ExtensionRepStateIds.registered),
-    );
-    let rval: undefined | (() => void);
-    if (this.extension.afterInitialization) {
-      rval = this.extension.afterInitialization(
-        editor,
-        state.config,
-        state.registerState,
-      );
+  mergeConfigs(): LexicalExtensionConfig<Extension> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- LexicalExtensionConfig<Extension> is any
+    let config: LexicalExtensionConfig<Extension> = this.extension.config || {};
+    const mergeConfig = this.extension.mergeConfig
+      ? this.extension.mergeConfig.bind(this.extension)
+      : shallowMergeConfig;
+    for (const cfg of this.configs) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- LexicalExtensionConfig<Extension> is any
+      config = mergeConfig(config, cfg);
     }
-    this.state = applyAfterInitializationState(state);
-    return rval;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- any
+    return config;
   }
-  register(editor: LexicalEditor): undefined | (() => void) {
-    const state = this.state;
-    invariant(
-      state.id === ExtensionRepStateIds.initialized,
-      'ExtensionRep: register called in state id %s (expected %s initialized)',
-      String(state.id),
-      String(ExtensionRepStateIds.initialized),
-    );
-    let cleanup: undefined | RegisterCleanup<LexicalExtensionOutput<Extension>>;
-    if (this.extension.register) {
-      cleanup = this.extension.register(
-        editor,
-        state.config,
-        state.registerState,
-      ) as RegisterCleanup<LexicalExtensionOutput<Extension>>;
-    }
-    this.state = applyRegisteredState(state, cleanup);
-    return cleanup;
-  }
-  init(editorConfig: InitialEditorConfig, signal: AbortSignal) {
+
+  init(editorConfig: InitialEditorConfig) {
     const initialState = this.state;
     invariant(
       isExactlyPermanentExtensionRepState(initialState),
@@ -242,9 +256,8 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
       getDirectDependentNames: this.getDirectDependentNames.bind(this),
       getPeer: this.getInitPeer.bind(this),
       getPeerNameSet: this.getPeerNameSet.bind(this),
-      signal,
     };
-    const registerState: ExtensionRegisterState<Extension> = {
+    const buildState: ExtensionBuildState<LexicalExtensionInit<Extension>> = {
       ...initState,
       getDependency: this.getDependency.bind(this),
       getInitResult: this.getInitResult.bind(this),
@@ -265,8 +278,91 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
       ) as LexicalExtensionInit<Extension>;
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- false positive
-    this.state = applyInitializedState(state, initResult!, registerState);
+    this.state = applyInitializedState(state, initResult!, buildState);
   }
+
+  build(editor: LexicalEditor) {
+    const state = this.state;
+    invariant(
+      state.id === ExtensionRepStateIds.initialized,
+      'ExtensionRep: register called in state id %s (expected %s initialized)',
+      String(state.id),
+      String(ExtensionRepStateIds.built),
+    );
+    let output: undefined | LexicalExtensionOutput<Extension>;
+    if (this.extension.build) {
+      output = this.extension.build(editor, state.config, state.registerState);
+    }
+    const registerState: ExtensionRegisterState<
+      LexicalExtensionInit<Extension>,
+      LexicalExtensionOutput<Extension>
+    > = {
+      ...state.registerState,
+      getOutput: () => output!,
+      getSignal: this.getSignal.bind(this),
+    };
+    this.state = applyBuiltState(state, output!, registerState);
+  }
+
+  register(
+    editor: LexicalEditor,
+    signal: AbortSignal,
+  ): undefined | (() => void) {
+    this._signal = signal;
+    const state = this.state;
+    invariant(
+      state.id === ExtensionRepStateIds.built,
+      'ExtensionRep: register called in state id %s (expected %s built)',
+      String(state.id),
+      String(ExtensionRepStateIds.built),
+    );
+    const cleanup =
+      this.extension.register &&
+      this.extension.register(editor, state.config, state.registerState);
+    this.state = applyRegisteredState(state);
+    return () => {
+      const afterRegistrationState = this.state;
+      invariant(
+        afterRegistrationState.id === ExtensionRepStateIds.afterRegistration,
+        'ExtensionRep: rollbackToBuiltState called in state id %s (expected %s afterRegistration)',
+        String(state.id),
+        String(ExtensionRepStateIds.afterRegistration),
+      );
+      this.state = rollbackToBuiltState(afterRegistrationState);
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }
+
+  afterRegistration(editor: LexicalEditor): undefined | (() => void) {
+    const state = this.state;
+    invariant(
+      state.id === ExtensionRepStateIds.registered,
+      'ExtensionRep: afterRegistration called in state id %s (expected %s registered)',
+      String(state.id),
+      String(ExtensionRepStateIds.registered),
+    );
+    let rval: undefined | (() => void);
+    if (this.extension.afterRegistration) {
+      rval = this.extension.afterRegistration(
+        editor,
+        state.config,
+        state.registerState,
+      );
+    }
+    this.state = applyAfterRegistrationState(state);
+    return rval;
+  }
+
+  getSignal(): AbortSignal {
+    invariant(
+      this._signal !== undefined,
+      'ExtensionRep.getSignal() called before register',
+    );
+    return this._signal;
+  }
+
   getInitResult(): LexicalExtensionInit<Extension> {
     invariant(
       this.extension.init !== undefined,
@@ -286,14 +382,16 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
 
   getInitPeer<PeerExtension extends AnyLexicalExtension = never>(
     name: PeerExtension['name'],
-  ): undefined | Omit<LexicalExtensionDependency<PeerExtension>, 'output'> {
+  ):
+    | undefined
+    | Omit<LexicalExtensionDependency<PeerExtension>, 'output' | 'init'> {
     const rep = this.builder.extensionNameMap.get(name);
     return rep ? rep.getExtensionInitDependency() : undefined;
   }
 
   getExtensionInitDependency(): Omit<
     LexicalExtensionDependency<Extension>,
-    'output'
+    'output' | 'init'
   > {
     const state = this.state;
     invariant(
@@ -316,7 +414,7 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
 
   getInitDependency<Dependency extends AnyLexicalExtension>(
     dep: Dependency,
-  ): Omit<LexicalExtensionDependency<Dependency>, 'output'> {
+  ): Omit<LexicalExtensionDependency<Dependency>, 'output' | 'init'> {
     const rep = this.builder.getExtensionRep(dep);
     invariant(
       rep !== undefined,
@@ -340,13 +438,13 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
     return rep.getExtensionDependency();
   }
 
-  getState(): AfterInitializationState<Extension> {
+  getState(): AfterRegistrationState<Extension> {
     const state = this.state;
     invariant(
-      isAfterInitializationState(state),
-      'ExtensionRep getState called in state id %s (expected %s afterInitialization)',
+      isAfterRegistrationState(state),
+      'ExtensionRep getState called in state id %s (expected %s afterRegistration)',
       String(state.id),
-      String(ExtensionRepStateIds.afterInitialization),
+      String(ExtensionRepStateIds.afterRegistration),
     );
     return state;
   }
@@ -370,28 +468,16 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
     if (!this._dependency) {
       const state = this.state;
       invariant(
-        isRegisteredExtensionRepState(state),
-        'Extension %s used as a dependency before registration',
+        isBuiltExtensionRepState(state),
+        'Extension %s used as a dependency before build',
         this.extension.name,
       );
       this._dependency = {
         config: state.config,
+        init: state.initResult,
         output: state.output,
       };
     }
     return this._dependency;
-  }
-  mergeConfigs(): LexicalExtensionConfig<Extension> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- LexicalExtensionConfig<Extension> is any
-    let config: LexicalExtensionConfig<Extension> = this.extension.config || {};
-    const mergeConfig = this.extension.mergeConfig
-      ? this.extension.mergeConfig.bind(this.extension)
-      : shallowMergeConfig;
-    for (const cfg of this.configs) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- LexicalExtensionConfig<Extension> is any
-      config = mergeConfig(config, cfg);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- any
-    return config;
   }
 }

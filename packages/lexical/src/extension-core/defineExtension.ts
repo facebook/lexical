@@ -8,14 +8,11 @@
 
 import type {
   AnyLexicalExtension,
-  AnyOutputArg,
   ExtensionConfigBase,
   LexicalExtension,
   LexicalExtensionConfig,
-  MergeOutputs,
   NormalizedLexicalExtensionArgument,
   NormalizedPeerDependency,
-  RegisterCleanup,
 } from './types';
 
 /**
@@ -94,95 +91,6 @@ export function configExtension<
   ...args: NormalizedLexicalExtensionArgument<Config, Name, Output, Init>
 ): NormalizedLexicalExtensionArgument<Config, Name, Output, Init> {
   return args;
-}
-
-/**
- * Provide output from the register function of an Extension
- *
- * @returns A cleanup function
- *
- * @example Provide output with no other cleanup
- * ```ts
- * // This is entirely optional and would be inferred correctly, but
- * // it can be useful for documentation!
- * export interface RegisteredAtOutput {
- *   registered_at: number;
- * }
- * export const RegisteredAtExtension = defineExtension({
- *   name: "RegisteredAt",
- *   register(editor) {
- *     return provideOutput<RegisteredAtOutput>({ registered_at: Date.now() });
- *   },
- * });
- * ```
- *
- * @example Provide output with other cleanup
- * ```ts
- * export interface UniqueCommandOutput {
- *   command: LexicalCommand<unknown>;
- * }
- * export const UniqueCommandExtension = defineExtension({
- *   name: 'UniqueCommand',
- *   register(editor) {
- *     const output: UniqueCommandOutput = {command: createCommand('UNIQUE_COMMAND')};
- *     const cleanup = registerCommand(
- *       command,
- *       (_payload) => {
- *         console.log('Unique command received!');
- *         return true;
- *       }
- *       COMMAND_PRIORITY_EDITOR
- *     );
- *     return provideOutput(output, cleanup);
- *   },
- * });
- * ```
- *
- */
-export function provideOutput<Output>(
-  output: Output,
-  cleanup?: () => void,
-): RegisterCleanup<Output> {
-  return Object.assign(
-    () => {
-      if (cleanup) {
-        cleanup();
-      }
-    },
-    {output} as const,
-  ) as RegisterCleanup<Output>;
-}
-
-/**
- * Provide output from the register function of an Extension, merging
- * all given arguments into a single cleanup function containing the
- * merged output. See {@link provideOutput}.
- *
- * @param outputs
- * @returns A cleanup function
- */
-export function mergeOutputs<Outputs extends AnyOutputArg[]>(
-  ...outputs: Outputs
-): RegisterCleanup<MergeOutputs<Outputs>> {
-  const cleanups: (() => void)[] = [];
-  const output = {} as MergeOutputs<Outputs>;
-  for (const maybePair of outputs) {
-    if (Array.isArray(maybePair)) {
-      const cleanup = maybePair[1];
-      if (cleanup) {
-        cleanups.push(cleanup);
-      }
-      Object.assign(output, maybePair[1]);
-    } else {
-      Object.assign(output, maybePair);
-    }
-  }
-  return provideOutput(output, () => {
-    let cleanup;
-    while ((cleanup = cleanups.pop())) {
-      cleanup();
-    }
-  });
 }
 
 /**

@@ -1538,7 +1538,6 @@ declare export function defineExtension<
 ): LexicalExtension<Config, Name, Output, Init>;
 export type ExtensionConfigBase = Record<empty, empty>;
 export interface ExtensionInitState {
-  signal: AbortSignal;
   getPeer: <Dependency: AnyLexicalExtension = empty>(
     name: Dependency['name'],
   ) => void | Omit<LexicalExtensionDependency<Dependency>, 'output'>;
@@ -1548,7 +1547,7 @@ export interface ExtensionInitState {
   getDirectDependentNames: () => $ReadOnlySet<string>;
   getPeerNameSet: () => $ReadOnlySet<string>;
 }
-export interface ExtensionRegisterState<Init>
+export interface ExtensionBuildState<Init>
   extends Omit<ExtensionInitState, 'getPeer' | 'getDependency'> {
   getPeer: <Dependency: AnyLexicalExtension = empty>(
     name: Dependency['name'],
@@ -1557,6 +1556,12 @@ export interface ExtensionRegisterState<Init>
     dep: Dependency,
   ) => LexicalExtensionDependency<Dependency>;
   getInitResult: () => Init;
+}
+
+export interface ExtensionRegisterState<Init, Output>
+  extends ExtensionBuildState<Init> {
+  getSignal: () => AbortSignal;
+  getOutput: () => Output;
 }
 export interface InitialEditorConfig {
   disableEvents?: CreateEditorArgs['disableEvents'];
@@ -1600,15 +1605,20 @@ export interface LexicalExtension<
     config: Config,
     state: ExtensionInitState,
   ) => Init;
+  build?: (
+    editor: LexicalEditor,
+    config: Config,
+    state: ExtensionBuildState<Init>,
+  ) => Output;
   register?: (
     editor: LexicalEditor,
     config: Config,
-    state: ExtensionRegisterState<Init>,
-  ) => RegisterCleanup<Output>;
-  afterInitialization?: (
+    state: ExtensionRegisterState<Init, Output>,
+  ) => () => void;
+  afterRegistration?: (
     editor: LexicalEditor,
     config: Config,
-    state: ExtensionRegisterState<Init>,
+    state: ExtensionRegisterState<Init, Output>,
   ) => () => void;
 }
 export type LexicalExtensionArgument<
@@ -1659,17 +1669,8 @@ export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
   LexicalExtension<any, any, {Component: ComponentType}, any>;
 declare export const outputTypeSymbol: symbol;
-declare export function provideOutput<Output>(
-  output: Output,
-  cleanup?: () => void,
-): RegisterCleanup<Output>;
-export type RegisterCleanup<Output> = (() => void) &
-  (mixed extends Output ? {output?: Output} : {output: Output});
 declare export function safeCast<T>(value: T): T;
 declare export function shallowMergeConfig<T: ExtensionConfigBase>(
   config: T,
   overrides?: Partial<T>,
 ): T;
-
-// TODO AnyOutputArg
-// TODO MergeOutputs

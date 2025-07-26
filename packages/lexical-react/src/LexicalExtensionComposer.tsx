@@ -6,16 +6,12 @@
  *
  */
 import {
-  buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
+  LexicalBuilder,
 } from '@lexical/extension';
 import {ReactConfig, ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
-import {
-  type AnyLexicalExtensionArgument,
-  configExtension,
-  scheduleMicroTask,
-} from 'lexical';
+import {type AnyLexicalExtensionArgument, configExtension} from 'lexical';
 import {useEffect, useMemo} from 'react';
 
 export interface LexicalExtensionComposerProps {
@@ -87,33 +83,23 @@ export function LexicalExtensionComposer({
   children,
   contentEditable,
 }: LexicalExtensionComposerProps) {
-  const editor = useMemo(
-    () =>
-      buildEditorFromExtensions(
-        ReactProviderExtension,
-        configExtension(
-          ReactExtension,
-          contentEditable === undefined ? {} : {contentEditable},
-        ),
-        extension,
+  const builderEditor = useMemo(() => {
+    const builder = LexicalBuilder.fromExtensions([
+      ReactProviderExtension,
+      configExtension(
+        ReactExtension,
+        contentEditable === undefined ? {} : {contentEditable},
       ),
-    [extension, contentEditable],
-  );
+      extension,
+    ]);
+    const editor = builder.constructEditor();
+    return {builder, editor} as const;
+  }, [contentEditable, extension]);
   useEffect(() => {
-    // This is an awful trick to detect StrictMode so we don't dispose the
-    // editor that we just created
-    let didMount = false;
-    scheduleMicroTask(() => {
-      didMount = true;
-    });
-    return () => {
-      if (didMount) {
-        editor.dispose();
-      }
-    };
-  }, [editor]);
+    return builderEditor.builder.registerEditor(builderEditor.editor);
+  }, [builderEditor]);
   const {Component} = getExtensionDependencyFromEditor(
-    editor,
+    builderEditor.editor,
     ReactExtension,
   ).output;
   return <Component>{children}</Component>;

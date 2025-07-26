@@ -8,11 +8,7 @@
 
 export {type AutoFocusConfig, AutoFocusExtension} from './AutoFocusExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
-export {
-  disabledToggle,
-  type DisabledToggleOptions,
-  type DisabledToggleOutput,
-} from './disabledToggle';
+export {disabledToggle} from './disabledToggle';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,
@@ -28,7 +24,6 @@ export {
   type NamedStoresOptions,
   type NamedStoresOutput,
 } from './namedStores';
-export {registerStoreToggle} from './registerStoreToggle';
 export {
   type MergedStoreValue,
   type ReadableStore,
@@ -57,7 +52,6 @@ export {
   type NormalizedLexicalExtensionArgument,
   type NormalizedPeerDependency,
   type OutputComponentExtension,
-  provideOutput,
   safeCast,
   shallowMergeConfig,
 } from 'lexical';

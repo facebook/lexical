@@ -10,8 +10,6 @@ export {
   configExtension,
   declarePeerDependency,
   defineExtension,
-  mergeOutputs,
-  provideOutput,
 } from './defineExtension';
 export {
   type configTypeSymbol,
@@ -25,7 +23,7 @@ export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
   type AnyNormalizedLexicalExtensionArgument,
-  type AnyOutputArg,
+  type ExtensionBuildState,
   type ExtensionConfigBase,
   type ExtensionInitState,
   type ExtensionRegisterState,
@@ -39,9 +37,7 @@ export {
   type LexicalExtensionInit,
   type LexicalExtensionName,
   type LexicalExtensionOutput,
-  type MergeOutputs,
   type NormalizedLexicalExtensionArgument,
   type NormalizedPeerDependency,
   type OutputComponentExtension,
-  type RegisterCleanup,
 } from './types';

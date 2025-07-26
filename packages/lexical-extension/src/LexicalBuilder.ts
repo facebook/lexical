@@ -157,22 +157,13 @@ export class LexicalBuilder {
     return builder;
   }
 
-  buildEditor(): LexicalEditorWithDispose {
-    const controller = new AbortController();
+  constructEditor(): LexicalEditor & WithBuilder {
     const {
       $initialEditorState: _$initialEditorState,
       onError,
       ...editorConfig
-    } = this.buildCreateEditorArgs(controller.signal);
-    let disposeOnce = noop;
-    function dispose() {
-      try {
-        disposeOnce();
-      } finally {
-        disposeOnce = noop;
-      }
-    }
-    const editor: LexicalEditorWithDispose & WithBuilder = Object.assign(
+    } = this.buildCreateEditorArgs();
+    const editor = Object.assign(
       createEditor({
         ...editorConfig,
         ...(onError
@@ -183,16 +174,29 @@ export class LexicalBuilder {
             }
           : {}),
       }),
-      {[builderSymbol]: this, dispose, [Symbol.dispose]: dispose},
+      {[builderSymbol]: this},
     );
-    disposeOnce = mergeRegister(
-      () => {
-        maybeWithBuilder(editor)[builderSymbol] = undefined;
-      },
-      () => {
-        editor.setRootElement(null);
-      },
-      this.registerEditor(editor, controller),
+    for (const extensionRep of this.sortedExtensionReps()) {
+      extensionRep.build(editor);
+    }
+    return editor;
+  }
+
+  buildEditor(): LexicalEditorWithDispose {
+    let disposeOnce = noop;
+    function dispose() {
+      try {
+        disposeOnce();
+      } finally {
+        disposeOnce = noop;
+      }
+    }
+    const editor: LexicalEditorWithDispose & WithBuilder = Object.assign(
+      this.constructEditor(),
+      {dispose, [Symbol.dispose]: dispose},
+    );
+    disposeOnce = mergeRegister(this.registerEditor(editor), () =>
+      editor.setRootElement(null),
     );
     return editor;
   }
@@ -358,40 +362,27 @@ export class LexicalBuilder {
     return this._sortedExtensionReps;
   }
 
-  registerEditor(
-    editor: LexicalEditor,
-    controller: AbortController,
-  ): () => void {
-    const cleanups: (() => void)[] = [];
+  registerEditor(editor: LexicalEditor): () => void {
     const extensionReps = this.sortedExtensionReps();
+    const controller = new AbortController();
+    const cleanups: (() => void)[] = [() => controller.abort()];
+    const signal = controller.signal;
     for (const extensionRep of extensionReps) {
-      const cleanup = extensionRep.register(editor);
+      const cleanup = extensionRep.register(editor, signal);
       if (cleanup) {
         cleanups.push(cleanup);
       }
     }
     for (const extensionRep of extensionReps) {
-      const cleanup = extensionRep.afterInitialization(editor);
+      const cleanup = extensionRep.afterRegistration(editor);
       if (cleanup) {
         cleanups.push(cleanup);
       }
     }
-    return () => {
-      for (let i = cleanups.length - 1; i >= 0; i--) {
-        const cleanupFun = cleanups[i];
-        invariant(
-          cleanupFun !== undefined,
-          'LexicalBuilder: Expecting cleanups[%s] to be defined',
-          String(i),
-        );
-        cleanupFun();
-      }
-      cleanups.length = 0;
-      controller.abort();
-    };
+    return mergeRegister(...cleanups);
   }
 
-  buildCreateEditorArgs(signal: AbortSignal) {
+  buildCreateEditorArgs() {
     const config: InitialEditorConfig = {};
     const nodes = new Set<NonNullable<CreateEditorArgs['nodes']>[number]>();
     const replacedNodes = new Map<
@@ -472,7 +463,7 @@ export class LexicalBuilder {
       }
     }
     for (const extensionRep of extensionReps) {
-      extensionRep.init(config, signal);
+      extensionRep.init(config);
     }
     if (!config.onError) {
       config.onError = defaultOnError;

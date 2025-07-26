@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {mergeRegister} from '@lexical/utils';
+
 export type StoreSubscriber<T> = (value: T) => void;
 export interface ReadableStore<T> {
   get: () => T;
@@ -47,12 +49,7 @@ export function subscribeAll<Stores extends {[K in string]: AnyReadableStore}>(
   if (!skipInitialization) {
     trigger();
   }
-  return () => {
-    let cleanup;
-    while ((cleanup = cleanups.pop())) {
-      cleanup();
-    }
-  };
+  return mergeRegister(...cleanups);
 }
 
 export class Store<T> implements WritableStore<T>, Disposable {

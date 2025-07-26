@@ -6,7 +6,6 @@
  *
  */
 
-import type {Prettify} from '../LexicalNodeState';
 import type {
   configTypeSymbol,
   initTypeSymbol,
@@ -62,26 +61,26 @@ export type AnyNormalizedLexicalExtensionArgument =
   >;
 
 /**
- * An object that the register method can use to detect unmount and access the
+ * An object that the init method can use to access the
  * configuration for extension dependencies
  */
 export interface ExtensionInitState {
-  /** An AbortSignal that is aborted when the LexicalEditor is disposed */
-  signal: AbortSignal;
   /**
    * Get the result of a peerDependency by name, if it exists
    * (must be a peerDependency of this extension)
    */
   getPeer: <Dependency extends AnyLexicalExtension = never>(
     name: Dependency['name'],
-  ) => undefined | Omit<LexicalExtensionDependency<Dependency>, 'output'>;
+  ) =>
+    | undefined
+    | Omit<LexicalExtensionDependency<Dependency>, 'output' | 'init'>;
   /**
    * Get the configuration of a dependency by extension
    * (must be a direct dependency of this extension)
    */
   getDependency: <Dependency extends AnyLexicalExtension>(
     dep: Dependency,
-  ) => Omit<LexicalExtensionDependency<Dependency>, 'output'>;
+  ) => Omit<LexicalExtensionDependency<Dependency>, 'output' | 'init'>;
   /**
    * Get the names of any direct dependents of this
    * Extension, typically only used for error messages.
@@ -95,11 +94,7 @@ export interface ExtensionInitState {
   getPeerNameSet: () => ReadonlySet<string>;
 }
 
-/**
- * An object that the register method can use to detect unmount and access the
- * configuration for extension dependencies
- */
-export interface ExtensionRegisterState<Init>
+export interface ExtensionBuildState<Init>
   extends Omit<ExtensionInitState, 'getPeer' | 'getDependency'> {
   /**
    * Get the result of a peerDependency by name, if it exists
@@ -122,6 +117,20 @@ export interface ExtensionRegisterState<Init>
 }
 
 /**
+ * An object that the register method can use to detect unmount and access the
+ * configuration for extension dependencies
+ */
+export interface ExtensionRegisterState<Init, Output>
+  extends ExtensionBuildState<Init> {
+  /** An AbortSignal that is aborted when this LexicalEditor registration is disposed */
+  getSignal: () => AbortSignal;
+  /**
+   * The result of the output function
+   */
+  getOutput: () => Output;
+}
+
+/**
  * A {@link LexicalExtension} or {@link NormalizedLexicalExtensionArgument} (extension with config overrides)
  */
 export type LexicalExtensionArgument<
@@ -136,12 +145,10 @@ export type LexicalExtensionArgument<
 export interface LexicalExtensionDependency<
   out Dependency extends AnyLexicalExtension,
 > {
+  init: LexicalExtensionInit<Dependency>;
   config: LexicalExtensionConfig<Dependency>;
   output: LexicalExtensionOutput<Dependency>;
 }
-
-export type RegisterCleanup<Output> = (() => void) &
-  (unknown extends Output ? {output?: Output} : {output: Output});
 
 /**
  * An Extension is a composable unit of LexicalEditor configuration
@@ -211,15 +218,26 @@ export interface LexicalExtension<
    *
    * @param editorConfig - The in-progress editor configuration (mutable)
    * @param config - The merged configuration specific to this extension (mutable)
-   * @param state - An object containing an AbortSignal that can be
-   *   used, and methods for accessing the merged configuration of
-   *   dependencies and peerDependencies
+   * @param state - An object containing methods for accessing the merged
+   *   configuration of dependencies and peerDependencies
    */
   init?: (
     editorConfig: InitialEditorConfig,
     config: Config,
     state: ExtensionInitState,
   ) => Init;
+  /**
+   * Perform any tasks that require a LexicalEditor instance, but before
+   * registration has taken place. May provide output to be used by
+   * dependencies or the application (commands, components, etc.).
+   * This will only be run once, and any work performed by the output
+   * function must not require cleanup.
+   */
+  build?: (
+    editor: LexicalEditor,
+    config: Config,
+    state: ExtensionBuildState<Init>,
+  ) => Output;
   /**
    * Add behavior to the editor (register transforms, listeners, etc.) after
    * the Editor is created, but before its initial state is set.
@@ -236,8 +254,8 @@ export interface LexicalExtension<
   register?: (
     editor: LexicalEditor,
     config: Config,
-    state: ExtensionRegisterState<Init>,
-  ) => RegisterCleanup<Output>;
+    state: ExtensionRegisterState<Init, Output>,
+  ) => () => void;
 
   /**
    * Run any code that must happen after initialization of the
@@ -250,10 +268,10 @@ export interface LexicalExtension<
    *   dependencies and peerDependencies
    * @returns A clean-up function
    */
-  afterInitialization?: (
+  afterRegistration?: (
     editor: LexicalEditor,
     config: Config,
-    state: ExtensionRegisterState<Init>,
+    state: ExtensionRegisterState<Init, Output>,
   ) => () => void;
 }
 
@@ -366,19 +384,3 @@ export interface InitialEditorConfig {
    */
   $initialEditorState?: InitialEditorStateType;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyOutputArgObject = Record<string, any>;
-export type AnyOutputArg =
-  | AnyOutputArgObject
-  | [AnyOutputArgObject]
-  | [AnyOutputArgObject, undefined | (() => void)];
-export type MergeOutputs<Outputs> = Prettify<MergeOutputs_<Outputs>>;
-export type MergeOutputs_<Outputs> = Outputs extends [
-  [infer Output, ...infer _Cleanup],
-  ...infer Rest,
-]
-  ? Output & MergeOutputs_<Rest>
-  : Outputs extends [infer Output, ...infer Rest]
-  ? Output & MergeOutputs_<Rest>
-  : Record<never, never>;

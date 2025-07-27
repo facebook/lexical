@@ -92,6 +92,7 @@ module.name_mapper='^@lexical/react/useLexicalTextEntity$' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^@lexical/rich-text$' -> '<PROJECT_ROOT>/packages/lexical-rich-text/flow/LexicalRichText.js.flow'
 module.name_mapper='^@lexical/selection$' -> '<PROJECT_ROOT>/packages/lexical-selection/flow/LexicalSelection.js.flow'
 module.name_mapper='^@lexical/table$' -> '<PROJECT_ROOT>/packages/lexical-table/flow/LexicalTable.js.flow'
+module.name_mapper='^@lexical/tailwind$' -> '<PROJECT_ROOT>/packages/lexical-tailwind/flow/LexicalTailwind.js.flow'
 module.name_mapper='^@lexical/text$' -> '<PROJECT_ROOT>/packages/lexical-text/flow/LexicalText.js.flow'
 module.name_mapper='^@lexical/utils$' -> '<PROJECT_ROOT>/packages/lexical-utils/flow/LexicalUtils.js.flow'
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow/LexicalYjs.js.flow'

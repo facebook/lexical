@@ -30,7 +30,7 @@ import {
 } from 'lexical';
 
 import {namedStores} from './namedStores';
-import {ReadableStore} from './Store';
+import {type ReadableStore} from './Store';
 
 function $indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();
@@ -91,10 +91,13 @@ export function registerTabIndentation(
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        const currentMaxIndent =
-          maxIndent && typeof maxIndent === 'object'
+        const currentMaxIndent: null | number =
+          typeof maxIndent === 'number'
+            ? maxIndent
+            : maxIndent
             ? maxIndent.get()
-            : maxIndent;
+            : null;
+
         if (currentMaxIndent == null) {
           return false;
         }

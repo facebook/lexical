@@ -180,6 +180,7 @@
       "@lexical/rich-text": ["./packages/lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["./packages/lexical-selection/src/index.ts"],
       "@lexical/table": ["./packages/lexical-table/src/index.ts"],
+      "@lexical/tailwind": ["./packages/lexical-tailwind/src/index.ts"],
       "@lexical/text": ["./packages/lexical-text/src/index.ts"],
       "@lexical/utils": ["./packages/lexical-utils/src/index.ts"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],

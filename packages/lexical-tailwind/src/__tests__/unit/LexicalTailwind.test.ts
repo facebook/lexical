@@ -5,7 +5,39 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+/* eslint-disable no-shadow */
 
-describe('lexical-tailwind', () => {
-  // TODO
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {TailwindExtension} from '@lexical/tailwind';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
+
+describe('TailwindExtension', () => {
+  it('applies the expected classes', () => {
+    const container = document.createElement('div');
+    const editor = buildEditorFromExtensions({
+      $initialEditorState() {
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('Test!').toggleFormat('bold'),
+          ),
+        );
+      },
+      dependencies: [TailwindExtension],
+      name: '@lexical/tailwind/test',
+      register(editor) {
+        editor.setRootElement(container);
+        return () => editor.setRootElement(null);
+      },
+    });
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <p class="relative m-0 text-left" dir="ltr">
+          <strong class="font-bold" data-lexical-text="true">Test!</strong>
+        </p>
+      `,
+    );
+    editor.dispose();
+  });
 });

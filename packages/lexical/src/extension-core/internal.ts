@@ -6,21 +6,19 @@
  *
  */
 /** @internal */
-export const peerDependencySymbol = Symbol.for(
-  '@lexical/internal/peerDependency',
-);
+export declare const peerDependencySymbol: unique symbol;
 /** @internal */
 export type peerDependencySymbol = typeof peerDependencySymbol;
 /** @internal */
-export const configTypeSymbol = Symbol.for('@lexical/internal/configType');
+export declare const configTypeSymbol: unique symbol;
 /** @internal */
 export type configTypeSymbol = typeof configTypeSymbol;
 /** @internal */
-export const outputTypeSymbol = Symbol.for('@lexical/internal/outputType');
+export declare const outputTypeSymbol: unique symbol;
 /** @internal */
 export type outputTypeSymbol = typeof outputTypeSymbol;
 /** @internal */
-export const initTypeSymbol = Symbol.for('@lexical/internal/initType');
+export declare const initTypeSymbol: unique symbol;
 /** @internal */
 export type initTypeSymbol = typeof initTypeSymbol;
 

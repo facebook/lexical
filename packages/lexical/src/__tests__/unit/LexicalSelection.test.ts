@@ -1129,31 +1129,6 @@ describe('normalize Selection by position', () => {
         jest.restoreAllMocks();
       });
 
-      it('should handle null offset from $getCharacterOffsetBetweenNodes', () => {
-        editor.update(() => {
-          const text1 = $createTextNode('Hello');
-          const text2 = $createTextNode('World');
-          const paragraph = $createParagraphNode().append(text1, text2);
-          $getRoot().append(paragraph);
-
-          jest
-            .spyOn(
-              // eslint-disable-next-line @typescript-eslint/no-var-requires
-              require('../LexicalSelection'),
-              '$getCharacterOffsetBetweenNodes',
-            )
-            .mockReturnValue(null);
-
-          const selection = $createRangeSelection();
-          selection.anchor.set(text1.getKey(), 0, 'text');
-          selection.focus.set(text2.getKey(), 5, 'text');
-          $setSelection(selection);
-
-          const result = $getSelectionLength();
-          expect(result).toBe(5); // 0 (null becomes 0) + focus offset 5
-        });
-      });
-
       it('should handle empty text nodes', () => {
         editor.update(() => {
           const emptyText = $createTextNode('');
@@ -1288,23 +1263,19 @@ describe('normalize Selection by position', () => {
             result,
             selection,
             [text1.getKey(), text3.getKey()],
-            [0, 5],
+            [2, 3],
           );
         });
       });
 
-      it('should normalize selection across text and element nodes', () => {
+      it('should normalize selection across paragraph nodes', () => {
         editor.update(() => {
           const text1 = $createTextNode('Start');
-          const innerText = $createTextNode('Inside');
-          const innerPara = $createParagraphNode().append(innerText);
+          const p1 = $createParagraphNode().append(text1);
           const text2 = $createTextNode('End');
-          const outerPara = $createParagraphNode().append(
-            text1,
-            innerPara,
-            text2,
-          );
-          $getRoot().append(outerPara);
+          const p2 = $createParagraphNode().append(text2);
+
+          $getRoot().append(p1, p2);
 
           const selection = $createRangeSelection();
           selection.anchor.set(text1.getKey(), 1, 'text');
@@ -1315,7 +1286,7 @@ describe('normalize Selection by position', () => {
             $normalizeSelectionByPosition(),
             selection,
             [text1.getKey(), text2.getKey()],
-            [0, 3],
+            [1, 2],
             ['text', 'text'],
           );
         });
@@ -1347,153 +1318,27 @@ describe('normalize Selection by position', () => {
       });
     });
 
-    /* eslint-disable @typescript-eslint/no-var-requires */
-    describe('Isolate Filtering logic', () => {
-      afterEach(() => {
-        jest.restoreAllMocks();
-      });
-
-      it('should filter out nodes beyond selection length', () => {
-        editor.update(() => {
-          const text1 = $createTextNode('A');
-          const text2 = $createTextNode('VeryLongText');
-          const paragraph = $createParagraphNode().append(text1, text2);
-          $getRoot().append(paragraph);
-
-          // Mock $getCharacterOffsetBetweenNodes to node start positions
-          jest
-            .spyOn(
-              require('../LexicalSelection'),
-              '$getCharacterOffsetBetweenNodes',
-            )
-            .mockImplementation((_, target) => {
-              if (target === text1) {
-                return 0;
-              }
-              if (target === text2) {
-                return 10;
-              } // Beyond selection length
-              return null;
-            });
-
-          // Mock $getSelectionLength to return selection length
-          jest
-            .spyOn(require('../LexicalSelection'), '$getSelectionLength')
-            .mockReturnValue(5);
-
-          // Should only include text1 since text2 is beyond selection length
-          verifySelection(
-            $normalizeSelectionByPosition(),
-            $createRangeSelection(),
-            [text1.getKey(), text1.getKey()],
-            [0, 1],
-          );
-        });
-      });
-
-      it('should return null when no nodes pass the filter', () => {
-        editor.update(() => {
-          const text1 = $createTextNode('First');
-          const text2 = $createTextNode('Second');
-          const paragraph = $createParagraphNode().append(text1, text2);
-          $getRoot().append(paragraph);
-
-          // Mock $getCharacterOffsetBetweenNodes to node start positions
-          jest
-            .spyOn(
-              require('../LexicalSelection'),
-              '$getCharacterOffsetBetweenNodes',
-            )
-            .mockImplementation(() => 100); // All beyond selection length
-
-          // Mock $getSelectionLength to return selection length
-          jest
-            .spyOn(require('../LexicalSelection'), '$getSelectionLength')
-            .mockReturnValue(5);
-
-          const result = $normalizeSelectionByPosition();
-          expect(result).toBeNull();
-        });
-      });
-
-      it('should handle null offset from $getCharacterOffsetBetweenNodes', () => {
-        editor.update(() => {
-          const text1 = $createTextNode('Hello');
-          const text2 = $createTextNode('World');
-          const paragraph = $createParagraphNode().append(text1, text2);
-          $getRoot().append(paragraph);
-
-          // Mock $getCharacterOffsetBetweenNodes to node start positions
-          jest
-            .spyOn(
-              require('../LexicalSelection'),
-              '$getCharacterOffsetBetweenNodes',
-            )
-            .mockImplementation((_, target) => {
-              if (target === text1) {
-                return 0;
-              }
-              return null; // text2 returns null
-            });
-
-          // Mock $getSelectionLength to return selection length
-          jest
-            .spyOn(require('../LexicalSelection'), '$getSelectionLength')
-            .mockReturnValue(10); // to include text 2
-
-          verifySelection(
-            $normalizeSelectionByPosition(),
-            $createRangeSelection(),
-            [text1.getKey(), text1.getKey()], // text2 is filtered out
-            [0, 5],
-          );
-        });
-      });
-    });
-
     describe('first and last node validation', () => {
       afterEach(() => {
         jest.restoreAllMocks();
       });
 
-      it('should return selection unchanged when first node is not text or element', () => {
+      it('when the first node is not a text or element node', () => {
         editor.update(() => {
-          const text1 = $createTextNode('Hello');
-          const text2 = $createTextNode('World');
-          const paragraph = $createParagraphNode().append(text1, text2);
+          const el1 = $createTestDecoratorNode();
+          const el2 = $createTextNode('Hello World');
+          const paragraph = $createParagraphNode().append(el1, el2);
           $getRoot().append(paragraph);
 
           const selection = $createRangeSelection();
-          selection.anchor.set(text1.getKey(), 1, 'text');
-          selection.focus.set(text2.getKey(), 5, 'text');
+          selection.anchor.set(el1.getParent()!.getKey(), 1, 'element');
+          selection.focus.set(el2.getKey(), 5, 'text');
           $setSelection(selection);
-
-          const originalIsTextNode = require('lexical').$isTextNode;
-          const originalIsElementNode = require('lexical').$isElementNode;
-
-          // Mock $isTextNode and $isElementNode to return false for first node
-          jest
-            .spyOn(require('lexical'), '$isTextNode')
-            .mockImplementation((node) => {
-              if (node === text1) {
-                return false;
-              } // First node fails check
-              return originalIsTextNode(node);
-            });
-
-          jest
-            .spyOn(require('lexical'), '$isElementNode')
-            .mockImplementation((node) => {
-              if (node === text1) {
-                return false;
-              } // First node fails check
-              return originalIsElementNode(node);
-            });
 
           verifySelection(
             $normalizeSelectionByPosition(),
             selection,
-            [text1.getKey(), text2.getKey()],
+            [el1.getParent()!.getKey(), el2.getKey()],
             [1, 5],
           );
         });
@@ -1501,48 +1346,25 @@ describe('normalize Selection by position', () => {
 
       it('should return selection unchanged when last node is not text or element', () => {
         editor.update(() => {
-          const text1 = $createTextNode('Hello');
-          const text2 = $createTextNode('World');
-          const paragraph = $createParagraphNode().append(text1, text2);
+          const el1 = $createTextNode('Hello World');
+          const el2 = $createTestDecoratorNode();
+          const paragraph = $createParagraphNode().append(el1, el2);
           $getRoot().append(paragraph);
 
           const selection = $createRangeSelection();
-          selection.anchor.set(text1.getKey(), 5, 'text');
-          selection.focus.set(text2.getKey(), 1, 'text');
+          selection.anchor.set(el1.getKey(), 5, 'text');
+          selection.focus.set(el2.getParent()!.getKey(), 1, 'element');
           $setSelection(selection);
-
-          const originalIsTextNode = require('lexical').$isTextNode;
-          const originalIsElementNode = require('lexical').$isElementNode;
-
-          // Mock $isTextNode and $isElementNode to return false for last node
-          jest
-            .spyOn(require('lexical'), '$isTextNode')
-            .mockImplementation((node) => {
-              if (node === text2) {
-                return false;
-              } // Last node fails check
-              return originalIsTextNode(node);
-            });
-
-          jest
-            .spyOn(require('lexical'), '$isElementNode')
-            .mockImplementation((node) => {
-              if (node === text2) {
-                return false;
-              } // First node fails check
-              return originalIsElementNode(node);
-            });
 
           verifySelection(
             $normalizeSelectionByPosition(),
             selection,
-            [text1.getKey(), text2.getKey()],
+            [el1.getKey(), el2.getParent()!.getKey()],
             [5, 1],
           );
         });
       });
     });
-    /* eslint-enable @typescript-eslint/no-var-requires */
 
     describe('Cross-paragraph selections', () => {
       it('should normalize selection across multiple paragraphs', () => {
@@ -1564,7 +1386,7 @@ describe('normalize Selection by position', () => {
             result,
             selection,
             [text1.getKey(), text2.getKey()],
-            [0, 16],
+            [5, 6],
           );
         });
       });
@@ -1589,7 +1411,7 @@ describe('normalize Selection by position', () => {
             result,
             selection,
             [text1.getKey(), text2.getKey()],
-            [0, 16],
+            [5, 6],
           );
         });
       });

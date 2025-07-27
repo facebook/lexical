@@ -10,8 +10,6 @@ import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
 import type {ElementNode} from './LexicalElementNode';
 import type {EditorConfig} from 'lexical';
 
-import invariant from 'shared/invariant';
-
 import {LexicalNode} from '../LexicalNode';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -28,8 +26,8 @@ export class DecoratorNode<T> extends LexicalNode {
   /**
    * The returned value is added to the LexicalEditor._decorators
    */
-  decorate(editor: LexicalEditor, config: EditorConfig): T {
-    invariant(false, 'decorate: base method not extended');
+  decorate(editor: LexicalEditor, config: EditorConfig): null | T {
+    return null;
   }
 
   isIsolated(): boolean {

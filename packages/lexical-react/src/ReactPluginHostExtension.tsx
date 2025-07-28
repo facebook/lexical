@@ -7,7 +7,12 @@
  */
 import type {DecoratorComponentProps} from './shared/types';
 
-import {getExtensionDependencyFromEditor, Store} from '@lexical/extension';
+import {
+  effect,
+  getExtensionDependencyFromEditor,
+  signal,
+  untracked,
+} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {mergeRegister} from '@lexical/utils';
@@ -21,7 +26,7 @@ import {
   type LexicalEditor,
   type LexicalExtensionOutput,
 } from 'lexical';
-import {Suspense, useMemo, useSyncExternalStore} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
@@ -121,16 +126,12 @@ function PluginHostDecorator({
     ReactExtension,
   ).config;
   const onError = editor._onError.bind(editor);
-  const [subscribe, getSnapshot] = useMemo(
-    () => [
-      (cb: () => void) => mountedPluginsStore.subscribe(cb, true),
-      () => mountedPluginsStore.get(),
-    ],
-    [mountedPluginsStore],
+  const [{plugins}, setMountedPlugins] = useState(() =>
+    mountedPluginsStore.peek(),
   );
-  const mountedPlugins = useSyncExternalStore(subscribe, getSnapshot);
+  useEffect(() => effect(() => setMountedPlugins(mountedPluginsStore.value)));
   const children: JSX.Element[] = [];
-  for (const {key, element, domNode} of mountedPlugins.values()) {
+  for (const {key, element, domNode} of plugins.values()) {
     if (!element) {
       continue;
     }
@@ -158,10 +159,9 @@ function PluginHostDecorator({
  */
 export const ReactPluginHostExtension = defineExtension({
   build(editor, config, state) {
-    const mountedPluginsStore = new Store(
-      new Map<MountPluginCommandArg['key'], MountPluginCommandArg>(),
-      () => false,
-    );
+    const mountedPluginsStore = signal({
+      plugins: new Map<MountPluginCommandArg['key'], MountPluginCommandArg>(),
+    });
     return {
       mountReactPlugin: (arg: MountPluginCommandArg) => {
         editor.dispatchCommand(REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND, arg);
@@ -172,7 +172,6 @@ export const ReactPluginHostExtension = defineExtension({
         editor.dispatchCommand(REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND, {
           root: createRoot(container),
         }),
-
       mountedPluginsStore,
     };
   },
@@ -190,17 +189,19 @@ export const ReactPluginHostExtension = defineExtension({
         if (root) {
           root.unmount();
         }
-        const mountedPlugins = mountedPluginsStore.get();
-        mountedPlugins.clear();
-        mountedPluginsStore.set(mountedPlugins);
+        untracked(() => {
+          mountedPluginsStore.value.plugins.clear();
+        });
       },
       editor.registerCommand(
         REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND,
         (arg) => {
           // This runs before the PluginHost version
-          const mountedPlugins = mountedPluginsStore.get();
-          mountedPlugins.set(arg.key, arg);
-          mountedPluginsStore.set(mountedPlugins);
+          untracked(() => {
+            const {plugins} = mountedPluginsStore.value;
+            plugins.set(arg.key, arg);
+            mountedPluginsStore.value = {plugins};
+          });
           return false;
         },
         COMMAND_PRIORITY_CRITICAL,

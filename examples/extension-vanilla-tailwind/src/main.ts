@@ -10,9 +10,10 @@ import './styles.css';
 import {
   AutoFocusExtension,
   buildEditorFromExtensions,
-  Store,
+  effect,
+  Signal,
+  signal,
   TabIndentationExtension,
-  WritableStore,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
@@ -44,31 +45,28 @@ const stateRef = document.getElementById(
   'lexical-state',
 ) as HTMLTextAreaElement;
 
-function stringifyEditorState(editorState: EditorState) {
-  stateRef!.textContent = JSON.stringify(editorState.toJSON(), undefined, 2);
-}
-
 export const CurrentStateExtension = defineExtension<
   Record<never, never>,
   '@lexical/extension/CurrentStateExtension',
-  WritableStore<EditorState>,
+  Signal<EditorState>,
   unknown
 >({
   build(editor) {
-    return new Store(editor.getEditorState());
-  },
-  config: {},
-  name: '@lexical/extension/CurrentStateExtension',
-  register(editor, _config, state) {
-    const editorState = state.getOutput();
-    let prevState = editorState.get();
-    return editor.registerUpdateListener((payload) => {
-      if (payload.editorState !== prevState) {
-        prevState = payload.editorState;
-        editorState.set(prevState);
-      }
+    let dispose: undefined | (() => void);
+    return signal(editor.getEditorState(), {
+      unwatched() {
+        if (dispose) {
+          dispose();
+        }
+      },
+      watched() {
+        dispose = editor.registerUpdateListener((payload) => {
+          this.value = payload.editorState;
+        });
+      },
     });
   },
+  name: '@lexical/extension/CurrentStateExtension',
 });
 
 buildEditorFromExtensions({
@@ -86,11 +84,16 @@ buildEditorFromExtensions({
   namespace: '@lexical/extension-vanilla-tailwind-example',
   register(editor, _config, state) {
     editor.setRootElement(editorRef);
+    const editorState = state.getDependency(CurrentStateExtension).output;
     return mergeRegister(
       () => editor.setRootElement(null),
-      state
-        .getDependency(CurrentStateExtension)
-        .output.subscribe(stringifyEditorState),
+      effect(() => {
+        stateRef!.textContent = JSON.stringify(
+          editorState.value.toJSON(),
+          undefined,
+          2,
+        );
+      }),
     );
   },
 });

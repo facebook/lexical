@@ -6,7 +6,7 @@
  *
  */
 
-import {namedStores, storeToggle} from '@lexical/extension';
+import {effect, namedSignals} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {defineExtension, safeCast} from 'lexical';
 
@@ -45,7 +45,7 @@ export interface TableConfig {
 
 export const TableExtension = defineExtension({
   build(editor, config, state) {
-    return namedStores(config);
+    return namedSignals(config);
   },
   config: safeCast<TableConfig>({
     hasCellBackgroundColor: true,
@@ -58,7 +58,8 @@ export const TableExtension = defineExtension({
   register(editor, config, state) {
     const stores = state.getOutput();
     return mergeRegister(
-      stores.hasHorizontalScroll.subscribe((hasHorizontalScroll) => {
+      effect(() => {
+        const hasHorizontalScroll = stores.hasHorizontalScroll.value;
         const hadHorizontalScroll = $isScrollableTablesActive(editor);
         if (hadHorizontalScroll !== hasHorizontalScroll) {
           setScrollableTablesActive(editor, hasHorizontalScroll);
@@ -68,26 +69,22 @@ export const TableExtension = defineExtension({
         }
       }),
       registerTablePlugin(editor),
-      storeToggle(
-        stores.hasTabHandler,
-        () => true,
-        () =>
-          registerTableSelectionObserver(editor, stores.hasTabHandler.get()),
+      effect(() =>
+        registerTableSelectionObserver(editor, stores.hasTabHandler.value),
       ),
-      storeToggle(
-        stores.hasCellMerge,
-        (v) => !v,
-        () => registerTableCellUnmergeTransform(editor),
+      effect(() =>
+        stores.hasCellMerge.value
+          ? undefined
+          : registerTableCellUnmergeTransform(editor),
       ),
-      storeToggle(
-        stores.hasCellBackgroundColor,
-        (v) => !v,
-        () =>
-          editor.registerNodeTransform(TableCellNode, (node) => {
-            if (node.getBackgroundColor() !== null) {
-              node.setBackgroundColor(null);
-            }
-          }),
+      effect(() =>
+        stores.hasCellBackgroundColor.value
+          ? undefined
+          : editor.registerNodeTransform(TableCellNode, (node) => {
+              if (node.getBackgroundColor() !== null) {
+                node.setBackgroundColor(null);
+              }
+            }),
       ),
     );
   },

@@ -9,10 +9,11 @@
 import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {
-  disabledToggle,
+  batch,
+  effect,
   getPeerDependencyFromEditor,
-  namedStores,
-  ReadableStore,
+  namedSignals,
+  ReadonlySignal,
 } from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -232,7 +233,7 @@ function isTextNodeUnchanged(
 
 function createMergeActionGetter(
   editor: LexicalEditor,
-  delayOrStore: number | ReadableStore<number>,
+  delayOrStore: number | ReadonlySignal<number>,
 ): (
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
@@ -297,7 +298,7 @@ function createMergeActionGetter(
       }
 
       const delay =
-        typeof delayOrStore === 'number' ? delayOrStore : delayOrStore.get();
+        typeof delayOrStore === 'number' ? delayOrStore : delayOrStore.peek();
       if (
         shouldPushHistory === false &&
         changeType !== OTHER &&
@@ -403,7 +404,7 @@ function clearHistory(historyState: HistoryState) {
 export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
-  delay: number | ReadableStore<number>,
+  delay: number | ReadonlySignal<number>,
 ): () => void {
   const getMergeAction = createMergeActionGetter(editor, delay);
 
@@ -537,7 +538,7 @@ export interface HistoryConfig {
 
 export const HistoryExtension = defineExtension({
   build: (editor, {delay, createInitialHistoryState, disabled}) =>
-    namedStores({
+    namedSignals({
       delay,
       disabled,
       historyState: createInitialHistoryState(editor),
@@ -550,8 +551,10 @@ export const HistoryExtension = defineExtension({
   name: '@lexical/history/History',
   register: (editor, config, state) => {
     const stores = state.getOutput();
-    return disabledToggle(stores, () =>
-      registerHistory(editor, stores.historyState.get(), stores.delay),
+    return effect(() =>
+      stores.disabled.value
+        ? undefined
+        : registerHistory(editor, stores.historyState.value, stores.delay),
     );
   },
 });
@@ -587,10 +590,13 @@ export const SharedHistoryExtension = defineExtension({
       return () => {};
     }
     const parentOutput = parentPeer.output;
-    return mergeRegister(
-      parentOutput.delay.subscribe((v) => output.delay.set(v)),
-      parentOutput.historyState.subscribe((v) => output.historyState.set(v)),
-      parentOutput.disabled.subscribe((v) => output.disabled.set(v)),
+    return effect(() =>
+      batch(() => {
+        output.delay.value = parentOutput.delay.value;
+        output.historyState.value = parentOutput.historyState.value;
+        // Note that toggling the parent history will force this to be changed
+        output.disabled.value = parentOutput.disabled.value;
+      }),
     );
   },
 });

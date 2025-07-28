@@ -14,7 +14,7 @@ import type {
 } from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 
-import {namedStores, storeToggle} from '@lexical/extension';
+import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
@@ -292,16 +292,19 @@ export interface ListConfig {
 
 export const ListExtension = defineExtension({
   build(editor, config, state) {
-    return namedStores(config);
+    return namedSignals(config);
   },
   config: safeCast<ListConfig>({hasStrictIndent: false}),
   name: '@lexical/list/List',
   nodes: [ListNode, ListItemNode],
   register(editor, config, state) {
+    const stores = state.getOutput();
     return mergeRegister(
       registerList(editor),
-      storeToggle(state.getOutput().hasStrictIndent, Boolean, () =>
-        registerListStrictIndentTransform(editor),
+      effect(() =>
+        stores.hasStrictIndent.value
+          ? registerListStrictIndentTransform(editor)
+          : undefined,
       ),
     );
   },

@@ -29,8 +29,8 @@ const moduleNameMapper = {
     '<rootDir>/packages/shared/src/__mocks__/warnOnlyOnce.ts',
 };
 
-// necessary transformations for shiki support
 const npm_modules_transformed = [
+  // necessary transformations for shiki support
   'shiki',
   '@shikijs',
   'hast-util-to-html',
@@ -44,6 +44,8 @@ const npm_modules_transformed = [
   'comma-separated-tokens',
   'space-separated-tokens',
   'hast-util-whitespace',
+  // for @lexical/extension
+  '@preact/signals-core',
 ];
 
 module.exports = {

@@ -6,6 +6,7 @@
  *
  */
 
+import type {ReadonlySignal} from './signals';
 import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
 
 import {
@@ -29,8 +30,7 @@ import {
   safeCast,
 } from 'lexical';
 
-import {namedStores} from './namedStores';
-import {type ReadableStore} from './Store';
+import {namedSignals} from './namedSignals';
 
 function $indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();
@@ -67,7 +67,7 @@ function $indentOverTab(selection: RangeSelection): boolean {
 
 export function registerTabIndentation(
   editor: LexicalEditor,
-  maxIndent?: number | ReadableStore<null | number>,
+  maxIndent?: number | ReadonlySignal<null | number>,
 ) {
   return mergeRegister(
     editor.registerCommand<KeyboardEvent>(
@@ -95,7 +95,7 @@ export function registerTabIndentation(
           typeof maxIndent === 'number'
             ? maxIndent
             : maxIndent
-            ? maxIndent.get()
+            ? maxIndent.peek()
             : null;
 
         if (currentMaxIndent == null) {
@@ -131,7 +131,7 @@ export interface TabIndentationConfig {
  */
 export const TabIndentationExtension = defineExtension({
   build(editor, config, state) {
-    return namedStores(config);
+    return namedSignals(config);
   },
   config: safeCast<TabIndentationConfig>({maxIndent: null}),
   name: '@lexical/extension/TabIndentation',

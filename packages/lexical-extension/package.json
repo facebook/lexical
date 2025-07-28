@@ -24,6 +24,7 @@
   "module": "LexicalExtension.mjs",
   "dependencies": {
     "@lexical/utils": "0.33.1",
+    "@preact/signals-core": "^1.11.0",
     "lexical": "0.33.1"
   },
   "exports": {

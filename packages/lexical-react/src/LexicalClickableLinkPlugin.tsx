@@ -6,7 +6,7 @@
  *
  */
 
-import {namedStores} from '@lexical/extension';
+import {namedSignals} from '@lexical/extension';
 import {registerClickableLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
@@ -21,7 +21,7 @@ export function ClickableLinkPlugin({
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return registerClickableLink(editor, namedStores({disabled, newTab}));
+    return registerClickableLink(editor, namedSignals({disabled, newTab}));
   }, [editor, newTab, disabled]);
 
   return null;

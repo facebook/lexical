@@ -243,6 +243,7 @@ export {
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
+  $getNodeFromDOMNode,
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,

@@ -6,7 +6,7 @@
  *
  */
 
-import {namedStores, NamedStoresOutput} from '@lexical/extension';
+import {namedSignals, NamedSignalsOutput} from '@lexical/extension';
 import {$findMatchingParent, isHTMLAnchorElement} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
@@ -43,7 +43,7 @@ export interface ClickableLinkConfig {
 
 export function registerClickableLink(
   editor: LexicalEditor,
-  stores: NamedStoresOutput<ClickableLinkConfig>,
+  stores: NamedSignalsOutput<ClickableLinkConfig>,
   eventOptions: Pick<AddEventListenerOptions, 'signal'> = {},
 ) {
   const onClick = (event: MouseEvent) => {
@@ -63,7 +63,7 @@ export function registerClickableLink(
       const clickedNode = $getNearestNodeFromDOMNode(target);
       if (clickedNode !== null) {
         const maybeLinkNode = $findMatchingParent(clickedNode, $isElementNode);
-        if (!stores.disabled.get()) {
+        if (!stores.disabled.peek()) {
           if ($isLinkNode(maybeLinkNode)) {
             url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
             urlTarget = maybeLinkNode.getTarget();
@@ -92,7 +92,7 @@ export function registerClickableLink(
     const isMiddle = event.type === 'auxclick' && event.button === 1;
     window.open(
       url,
-      stores.newTab.get() ||
+      stores.newTab.peek() ||
         isMiddle ||
         event.metaKey ||
         event.ctrlKey ||
@@ -123,7 +123,7 @@ export function registerClickableLink(
 
 export const ClickableLinkExtension = defineExtension({
   build(editor, config, state) {
-    return namedStores(config);
+    return namedSignals(config);
   },
   config: safeCast<ClickableLinkConfig>({disabled: false, newTab: false}),
   name: '@lexical/link/ClickableLink',

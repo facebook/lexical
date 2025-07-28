@@ -8,8 +8,8 @@
 
 import {defineExtension, safeCast} from 'lexical';
 
-import {disabledToggle} from './disabledToggle';
-import {namedStores} from './namedStores';
+import {namedSignals} from './namedSignals';
+import {effect} from './signals';
 
 export type DefaultSelection = 'rootStart' | 'rootEnd';
 export interface AutoFocusConfig {
@@ -29,7 +29,9 @@ export interface AutoFocusConfig {
  * (typically only when the editor is first created).
  */
 export const AutoFocusExtension = defineExtension({
-  build: (editor, config, state) => namedStores(config),
+  build: (editor, config, state) => {
+    return namedSignals(config);
+  },
   config: safeCast<AutoFocusConfig>({
     defaultSelection: 'rootEnd',
     disabled: false,
@@ -37,26 +39,29 @@ export const AutoFocusExtension = defineExtension({
   name: '@lexical/extension/AutoFocus',
   register(editor, config, state) {
     const stores = state.getOutput();
-    return disabledToggle(stores, () =>
-      editor.registerRootListener((rootElement) => {
-        editor.focus(
-          () => {
-            // If we try and move selection to the same point with setBaseAndExtent, it won't
-            // trigger a re-focus on the element. So in the case this occurs, we'll need to correct it.
-            // Normally this is fine, Selection API !== Focus API, but fore the intents of the naming
-            // of this plugin, which should preserve focus too.
-            const activeElement = document.activeElement;
-            if (
-              rootElement !== null &&
-              (activeElement === null || !rootElement.contains(activeElement))
-            ) {
-              // Note: preventScroll won't work in Webkit.
-              rootElement.focus({preventScroll: true});
-            }
-          },
-          {defaultSelection: stores.defaultSelection.get()},
-        );
-      }),
+    return effect(() =>
+      stores.disabled.value
+        ? undefined
+        : editor.registerRootListener((rootElement) => {
+            editor.focus(
+              () => {
+                // If we try and move selection to the same point with setBaseAndExtent, it won't
+                // trigger a re-focus on the element. So in the case this occurs, we'll need to correct it.
+                // Normally this is fine, Selection API !== Focus API, but fore the intents of the naming
+                // of this plugin, which should preserve focus too.
+                const activeElement = document.activeElement;
+                if (
+                  rootElement !== null &&
+                  (activeElement === null ||
+                    !rootElement.contains(activeElement))
+                ) {
+                  // Note: preventScroll won't work in Webkit.
+                  rootElement.focus({preventScroll: true});
+                }
+              },
+              {defaultSelection: stores.defaultSelection.peek()},
+            );
+          }),
     );
   },
 });

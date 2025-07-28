@@ -1,0 +1,29 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+import {defineExtension} from 'lexical';
+
+import {signal} from './signals';
+
+export const EditorStateExtension = defineExtension({
+  build(editor) {
+    let dispose: undefined | (() => void);
+    return signal(editor.getEditorState(), {
+      unwatched() {
+        if (dispose) {
+          dispose();
+        }
+      },
+      watched() {
+        dispose = editor.registerUpdateListener((payload) => {
+          this.value = payload.editorState;
+        });
+      },
+    });
+  },
+  name: '@lexical/extension/EditorState',
+});

@@ -6,7 +6,7 @@
  *
  */
 
-import {namedStores, subscribeAll} from '@lexical/extension';
+import {effect, namedSignals} from '@lexical/extension';
 import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
@@ -36,78 +36,74 @@ export function registerLink(
   editor: LexicalEditor,
   props: Props = defaultProps,
 ) {
-  const stores = namedStores(defaultProps, props);
-  const cleanups: (() => void)[] = [];
-  function cleanup() {
-    mergeRegister(...cleanups)();
-    cleanups.length = 0;
-  }
+  const stores = namedSignals(defaultProps, props);
   return mergeRegister(
-    cleanup,
-    subscribeAll(stores, ({validateUrl, attributes}) => {
-      cleanup();
-      cleanups.push(
-        editor.registerCommand(
-          TOGGLE_LINK_COMMAND,
-          (payload) => {
-            if (payload === null) {
-              $toggleLink(null);
-              return true;
-            } else if (typeof payload === 'string') {
-              if (validateUrl === undefined || validateUrl(payload)) {
-                $toggleLink(payload, attributes);
-                return true;
-              }
-              return false;
-            } else {
-              const {url, target, rel, title} = payload;
-              $toggleLink(url, {
-                ...attributes,
-                rel,
-                target,
-                title,
-              });
+    effect(() =>
+      editor.registerCommand(
+        TOGGLE_LINK_COMMAND,
+        (payload) => {
+          const validateUrl = stores.validateUrl.peek();
+          const attributes = stores.attributes.peek();
+          if (payload === null) {
+            $toggleLink(null);
+            return true;
+          } else if (typeof payload === 'string') {
+            if (validateUrl === undefined || validateUrl(payload)) {
+              $toggleLink(payload, attributes);
               return true;
             }
-          },
-          COMMAND_PRIORITY_LOW,
-        ),
-      );
-      if (validateUrl !== undefined) {
-        cleanups.push(
-          editor.registerCommand(
-            PASTE_COMMAND,
-            (event) => {
-              const selection = $getSelection();
-              if (
-                !$isRangeSelection(selection) ||
-                selection.isCollapsed() ||
-                !objectKlassEquals(event, ClipboardEvent)
-              ) {
-                return false;
-              }
-              if (event.clipboardData === null) {
-                return false;
-              }
-              const clipboardText = event.clipboardData.getData('text');
-              if (!validateUrl(clipboardText)) {
-                return false;
-              }
-              // If we select nodes that are elements then avoid applying the link.
-              if (!selection.getNodes().some((node) => $isElementNode(node))) {
-                editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
-                  ...attributes,
-                  url: clipboardText,
-                });
-                event.preventDefault();
-                return true;
-              }
-              return false;
-            },
-            COMMAND_PRIORITY_LOW,
-          ),
-        );
+            return false;
+          } else {
+            const {url, target, rel, title} = payload;
+            $toggleLink(url, {
+              ...attributes,
+              rel,
+              target,
+              title,
+            });
+            return true;
+          }
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+    ),
+    effect(() => {
+      const validateUrl = stores.validateUrl.value;
+      if (!validateUrl) {
+        return;
       }
+      const attributes = stores.attributes.value;
+      return editor.registerCommand(
+        PASTE_COMMAND,
+        (event) => {
+          const selection = $getSelection();
+          if (
+            !$isRangeSelection(selection) ||
+            selection.isCollapsed() ||
+            !objectKlassEquals(event, ClipboardEvent)
+          ) {
+            return false;
+          }
+          if (event.clipboardData === null) {
+            return false;
+          }
+          const clipboardText = event.clipboardData.getData('text');
+          if (!validateUrl(clipboardText)) {
+            return false;
+          }
+          // If we select nodes that are elements then avoid applying the link.
+          if (!selection.getNodes().some((node) => $isElementNode(node))) {
+            editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+              ...attributes,
+              url: clipboardText,
+            });
+            event.preventDefault();
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      );
     }),
   );
 }

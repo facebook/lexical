@@ -13,7 +13,6 @@ export {
   registerClearEditor,
 } from './ClearEditorExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
-export {disabledToggle, storeToggle} from './disabledToggle';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,
@@ -25,18 +24,20 @@ export {
 } from './InitialStateExtension';
 export {buildEditorFromExtensions, LexicalBuilder} from './LexicalBuilder';
 export {
-  namedStores,
-  type NamedStoresOptions,
-  type NamedStoresOutput,
-} from './namedStores';
+  namedSignals,
+  type NamedSignalsOptions,
+  type NamedSignalsOutput,
+} from './namedSignals';
 export {
-  type MergedStoreValue,
-  type ReadableStore,
-  Store,
-  type StoreSubscriber,
-  subscribeAll,
-  type WritableStore,
-} from './Store';
+  batch,
+  computed,
+  effect,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+  type SignalOptions,
+  untracked,
+} from './signals';
 export {
   registerTabIndentation,
   type TabIndentationConfig,

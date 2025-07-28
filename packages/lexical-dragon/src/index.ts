@@ -6,7 +6,7 @@
  *
  */
 
-import {disabledToggle, namedStores} from '@lexical/extension';
+import {effect, namedSignals} from '@lexical/extension';
 import {
   $getSelection,
   $isRangeSelection,
@@ -137,9 +137,13 @@ export interface DragonConfig {
  * \@lexical/dragon module.
  */
 export const DragonExtension = defineExtension({
-  build: (editor, config, state) => namedStores(config),
+  build: (editor, config, state) => namedSignals(config),
   config: safeCast<DragonConfig>({disabled: typeof window === 'undefined'}),
   name: '@lexical/dragon',
   register: (editor, config, state) =>
-    disabledToggle(state.getOutput(), () => registerDragonSupport(editor)),
+    effect(() =>
+      state.getOutput().disabled.value
+        ? undefined
+        : registerDragonSupport(editor),
+    ),
 });

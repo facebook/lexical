@@ -18,7 +18,8 @@ import {
   safeCast,
 } from 'lexical';
 
-import {namedStores} from './namedStores';
+import {namedSignals} from './namedSignals';
+import {effect} from './signals';
 
 function $defaultOnClear() {
   const root = $getRoot();
@@ -46,7 +47,7 @@ export function registerClearEditor(
   return editor.registerCommand(
     CLEAR_EDITOR_COMMAND,
     (payload) => {
-      editor.update($defaultOnClear);
+      editor.update($onClear);
       return true;
     },
     COMMAND_PRIORITY_EDITOR,
@@ -55,12 +56,12 @@ export function registerClearEditor(
 
 export const ClearEditorExtension = defineExtension({
   build(editor, config, state) {
-    return namedStores(config);
+    return namedSignals(config);
   },
   config: safeCast<ClearEditorConfig>({$onClear: $defaultOnClear}),
   name: '@lexical/extension/ClearEditor',
   register(editor, config, state) {
     const {$onClear} = state.getOutput();
-    return registerClearEditor(editor, () => $onClear.get()());
+    return effect(() => registerClearEditor(editor, $onClear.value));
   },
 });

@@ -8,6 +8,7 @@
 import './styles.css';
 
 import {
+  $createHorizontalRuleNode,
   AutoFocusExtension,
   buildEditorFromExtensions,
   EditorStateExtension,
@@ -26,14 +27,13 @@ import {TailwindExtension} from '@lexical/tailwind';
 import {mergeRegister} from '@lexical/utils';
 import {$createTextNode, $getRoot} from 'lexical';
 
-import {$createHorizontalRuleNode} from '../../../packages/lexical-extension/src/HorizontalRuleExtension';
-
 function $prepopulatedRichText() {
   $getRoot().append(
     $createListNode('check').append(
       $createListItemNode(true).append($createTextNode('First item is done!')),
       $createListItemNode(false).append($createTextNode('TODO')),
     ),
+    // This is just to demo the vanilla js decorator stuff
     $createHorizontalRuleNode(),
     $createHorizontalRuleNode(),
   );
@@ -47,6 +47,8 @@ const stateRef = document.getElementById(
 buildEditorFromExtensions({
   $initialEditorState: $prepopulatedRichText,
   dependencies: [
+    // These don't have to be in any paritcular order, they will be
+    // topologically sorted by their dependencies
     TailwindExtension,
     HistoryExtension,
     RichTextExtension,
@@ -63,6 +65,9 @@ buildEditorFromExtensions({
     const editorState = state.getDependency(EditorStateExtension).output;
     return mergeRegister(
       () => editor.setRootElement(null),
+      // Using signals from @preact/signals-core allows us to do what is done
+      // from the legacy React plugins without having to wrap a component
+      // around a hook, plus it's all framework independent.
       effect(() => {
         stateRef!.textContent = JSON.stringify(
           editorState.value.toJSON(),

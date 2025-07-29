@@ -14,7 +14,8 @@ import {
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
-import {batch, computed, effect, ReadonlySignal, signal} from './signals';
+import {computed, effect, ReadonlySignal, signal} from './signals';
+import {watchedSignal} from './watchedSignal';
 
 const EMPTY_SET = new Set<NodeKey>();
 
@@ -24,27 +25,22 @@ export const NodeSelectionExtension = defineExtension({
     const watchedNodeStore = signal({
       watchedNodeKeys: new Map<NodeKey, Set<ReadonlySignal<boolean>>>(),
     });
-    let dispose: undefined | (() => void);
-    const selectedNodeKeys = signal<undefined | Set<NodeKey>>(undefined, {
-      unwatched: () => {
-        if (dispose) {
-          dispose();
-          dispose = undefined;
-        }
-      },
-      watched: () => {
-        dispose = effect(() => {
+    const selectedNodeKeys = watchedSignal<undefined | Set<NodeKey>>(
+      undefined,
+      () =>
+        effect(() => {
           const prevSelectedNodeKeys = selectedNodeKeys.peek();
           const {watchedNodeKeys} = watchedNodeStore.value;
           let nextSelectedNodeKeys: undefined | Set<string>;
           let didChange = false;
-          let unwatchedKeys = false;
           editorStateStore.value.read(() => {
             const selection = $getSelection();
             if (selection) {
               for (const [key, listeners] of watchedNodeKeys.entries()) {
                 if (listeners.size === 0) {
-                  unwatchedKeys = true;
+                  // We intentionally mutate this without firing a signal, to
+                  // avoid re-triggering this effect. There are no subscribers
+                  // so nothing can observe whether key was in the set or not
                   watchedNodeKeys.delete(key);
                   continue;
                 }
@@ -52,10 +48,10 @@ export const NodeSelectionExtension = defineExtension({
                 const isSelected = (node && node.isSelected()) || false;
                 didChange =
                   didChange ||
-                  isSelected ===
+                  isSelected !==
                     (prevSelectedNodeKeys
                       ? prevSelectedNodeKeys.has(key)
-                      : isSelected);
+                      : false);
                 if (isSelected) {
                   nextSelectedNodeKeys = nextSelectedNodeKeys || new Set();
                   nextSelectedNodeKeys.add(key);
@@ -63,34 +59,28 @@ export const NodeSelectionExtension = defineExtension({
               }
             }
           });
-          batch(() => {
-            if (unwatchedKeys) {
-              watchedNodeStore.value = {watchedNodeKeys};
-            }
-            if (
-              didChange ||
-              !(
-                nextSelectedNodeKeys &&
-                prevSelectedNodeKeys &&
-                nextSelectedNodeKeys.size === prevSelectedNodeKeys.size
-              )
-            ) {
-              selectedNodeKeys.value = nextSelectedNodeKeys;
-            }
-          });
-        });
-      },
-    });
+          if (
+            !(
+              !didChange &&
+              nextSelectedNodeKeys &&
+              prevSelectedNodeKeys &&
+              nextSelectedNodeKeys.size === prevSelectedNodeKeys.size
+            )
+          ) {
+            selectedNodeKeys.value = nextSelectedNodeKeys;
+          }
+        }),
+    );
     function watchNodeKey(key: NodeKey) {
       const watcher = computed(() =>
         (selectedNodeKeys.value || EMPTY_SET).has(key),
       );
       const {watchedNodeKeys} = watchedNodeStore.peek();
       let listeners = watchedNodeKeys.get(key);
-      const hasListener = listeners !== undefined;
+      const hadListener = listeners !== undefined;
       listeners = listeners || new Set();
       listeners.add(watcher);
-      if (!hasListener) {
+      if (!hadListener) {
         watchedNodeKeys.set(key, listeners);
         watchedNodeStore.value = {watchedNodeKeys};
       }

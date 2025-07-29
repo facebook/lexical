@@ -10,9 +10,9 @@ import './styles.css';
 import {
   AutoFocusExtension,
   buildEditorFromExtensions,
+  EditorStateExtension,
   effect,
-  Signal,
-  signal,
+  HorizontalRuleExtension,
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
@@ -24,12 +24,9 @@ import {
 import {RichTextExtension} from '@lexical/rich-text';
 import {TailwindExtension} from '@lexical/tailwind';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $createTextNode,
-  $getRoot,
-  defineExtension,
-  type EditorState,
-} from 'lexical';
+import {$createTextNode, $getRoot} from 'lexical';
+
+import {$createHorizontalRuleNode} from '../../../packages/lexical-extension/src/HorizontalRuleExtension';
 
 function $prepopulatedRichText() {
   $getRoot().append(
@@ -37,6 +34,8 @@ function $prepopulatedRichText() {
       $createListItemNode(true).append($createTextNode('First item is done!')),
       $createListItemNode(false).append($createTextNode('TODO')),
     ),
+    $createHorizontalRuleNode(),
+    $createHorizontalRuleNode(),
   );
 }
 
@@ -44,30 +43,6 @@ const editorRef = document.getElementById('lexical-editor');
 const stateRef = document.getElementById(
   'lexical-state',
 ) as HTMLTextAreaElement;
-
-export const CurrentStateExtension = defineExtension<
-  Record<never, never>,
-  '@lexical/extension/CurrentStateExtension',
-  Signal<EditorState>,
-  unknown
->({
-  build(editor) {
-    let dispose: undefined | (() => void);
-    return signal(editor.getEditorState(), {
-      unwatched() {
-        if (dispose) {
-          dispose();
-        }
-      },
-      watched() {
-        dispose = editor.registerUpdateListener((payload) => {
-          this.value = payload.editorState;
-        });
-      },
-    });
-  },
-  name: '@lexical/extension/CurrentStateExtension',
-});
 
 buildEditorFromExtensions({
   $initialEditorState: $prepopulatedRichText,
@@ -78,13 +53,14 @@ buildEditorFromExtensions({
     AutoFocusExtension,
     CheckListExtension,
     TabIndentationExtension,
-    CurrentStateExtension,
+    EditorStateExtension,
+    HorizontalRuleExtension,
   ],
   name: '[root]',
   namespace: '@lexical/extension-vanilla-tailwind-example',
   register(editor, _config, state) {
     editor.setRootElement(editorRef);
-    const editorState = state.getDependency(CurrentStateExtension).output;
+    const editorState = state.getDependency(EditorStateExtension).output;
     return mergeRegister(
       () => editor.setRootElement(null),
       effect(() => {

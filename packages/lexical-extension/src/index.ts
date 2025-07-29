@@ -13,11 +13,20 @@ export {
   registerClearEditor,
 } from './ClearEditorExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
+export {EditorStateExtension} from './EditorStateExtension';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,
   getPeerDependencyFromEditorOrThrow,
 } from './getPeerDependencyFromEditor';
+export {
+  $createHorizontalRuleNode,
+  $isHorizontalRuleNode,
+  HorizontalRuleExtension,
+  HorizontalRuleNode,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+  type SerializedHorizontalRuleNode,
+} from './HorizontalRuleExtension';
 export {
   type InitialStateConfig,
   InitialStateExtension,
@@ -28,6 +37,7 @@ export {
   type NamedSignalsOptions,
   type NamedSignalsOutput,
 } from './namedSignals';
+export {NodeSelectionExtension} from './NodeSelectionExtension';
 export {
   batch,
   computed,
@@ -43,6 +53,7 @@ export {
   type TabIndentationConfig,
   TabIndentationExtension,
 } from './TabIndentationExtension';
+export {watchedSignal} from './watchedSignal';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,

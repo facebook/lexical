@@ -7,23 +7,15 @@
  */
 import {defineExtension} from 'lexical';
 
-import {signal} from './signals';
+import {watchedSignal} from './watchedSignal';
 
 export const EditorStateExtension = defineExtension({
   build(editor) {
-    let dispose: undefined | (() => void);
-    return signal(editor.getEditorState(), {
-      unwatched() {
-        if (dispose) {
-          dispose();
-        }
-      },
-      watched() {
-        dispose = editor.registerUpdateListener((payload) => {
-          this.value = payload.editorState;
-        });
-      },
-    });
+    return watchedSignal(editor.getEditorState(), (editorStateSignal) =>
+      editor.registerUpdateListener((payload) => {
+        editorStateSignal.value = payload.editorState;
+      }),
+    );
   },
   name: '@lexical/extension/EditorState',
 });

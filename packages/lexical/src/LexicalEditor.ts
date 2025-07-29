@@ -49,7 +49,6 @@ import {
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -572,7 +571,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           // by mocking its static getType
           klass !== LexicalNode
         ) {
-          const proto = klass.prototype;
           (['getType', 'clone'] as const).forEach((method) => {
             if (!hasOwnStaticMethod(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
@@ -585,13 +583,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
-          }
-          if ($isDecoratorNode(proto)) {
-            if (proto.decorate === DecoratorNode.prototype.decorate) {
-              console.warn(
-                `${proto.constructor.name} must implement "decorate" method`,
-              );
-            }
           }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(

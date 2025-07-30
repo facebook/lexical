@@ -27,7 +27,7 @@ import {
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
-type SerializedCollapsibleContainerNode = Spread<
+export type SerializedCollapsibleContainerNode = Spread<
   {
     open: boolean;
   },

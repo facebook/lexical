@@ -12,6 +12,7 @@
   "main": "LexicalLink.js",
   "types": "index.d.ts",
   "dependencies": {
+    "@lexical/extension": "0.33.1",
     "@lexical/utils": "0.33.1",
     "lexical": "0.33.1"
   },

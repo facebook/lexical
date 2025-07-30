@@ -129,7 +129,10 @@ function PluginHostDecorator({
   const [{plugins}, setMountedPlugins] = useState(() =>
     mountedPluginsStore.peek(),
   );
-  useEffect(() => effect(() => setMountedPlugins(mountedPluginsStore.value)));
+  useEffect(
+    () => effect(() => setMountedPlugins(mountedPluginsStore.value)),
+    [mountedPluginsStore],
+  );
   const children: JSX.Element[] = [];
   for (const {key, element, domNode} of plugins.values()) {
     if (!element) {

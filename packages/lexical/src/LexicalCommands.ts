@@ -118,7 +118,7 @@ export const MOVE_TO_START: LexicalCommand<KeyboardEvent> =
 export const KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_ARROW_UP_COMMAND');
 /**
- * Dispatched when the `'ArrowUp'` key is pressed.
+ * Dispatched when the `'ArrowDown'` key is pressed.
  * The shift and/or alt (option) modifier keys may also be down.
  */
 export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =

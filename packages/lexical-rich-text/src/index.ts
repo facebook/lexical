@@ -59,6 +59,7 @@ import {
   $isRootNode,
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
+  $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
   $selectAll,
   $setSelection,
   CLICK_COMMAND,
@@ -514,7 +515,7 @@ export function eventFiles(
 function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
-  const selection = $getSelection();
+  const selection = $normalizeSelectionByPosition();
   if (!$isRangeSelection(selection)) {
     return false;
   }
@@ -696,7 +697,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<ElementFormatType>(
       FORMAT_ELEMENT_COMMAND,
       (format) => {
-        const selection = $getSelection();
+        const selection = $normalizeSelectionByPosition();
         if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false;
         }

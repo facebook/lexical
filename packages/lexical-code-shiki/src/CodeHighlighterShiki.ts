@@ -45,6 +45,7 @@ import {
   $isTabNode,
   $isTextNode,
   $normalizeCaret,
+  $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
   $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
   INDENT_CONTENT_COMMAND,
@@ -501,7 +502,7 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
 }
 
 function $handleMultilineIndent(type: LexicalCommand<void>): boolean {
-  const selection = $getSelection();
+  const selection = $normalizeSelectionByPosition();
   if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
     return false;
   }

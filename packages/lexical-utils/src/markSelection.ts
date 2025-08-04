@@ -47,7 +47,12 @@ function rangeFromPoints(
 ): Range {
   const editorDocument = editor._window ? editor._window.document : document;
   const range = editorDocument.createRange();
-  if (focusNode.isBefore(anchorNode)) {
+
+  const isBackwardSelection =
+    focusNode.isBefore(anchorNode) ||
+    (focusNode === anchorNode && focus.offset < anchor.offset);
+
+  if (isBackwardSelection) {
     range.setStart(...rangeTargetFromPoint(focus, focusNode, focusDOM));
     range.setEnd(...rangeTargetFromPoint(anchor, anchorNode, anchorDOM));
   } else {

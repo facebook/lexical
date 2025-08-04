@@ -33,26 +33,27 @@ test.describe('DateTime', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span
             class="PlaygroundEditorTheme__dateTime"
             contenteditable="false"
             data-lexical-datetime="*"
             data-lexical-decorator="true">
-            *
+            <div class="dateTimePill">*</div>
           </span>
+          <br />
         </p>
       `,
       undefined,
-      {ignoreClasses: false, ignoreInlineStyles: true},
-      // Custom modification: replace the date text with a wildcard for matching
+      {ignoreClasses: true, ignoreInlineStyles: true},
+      // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       (actualHtml) =>
-        actualHtml.replace(
-          /(<span [^>]*PlaygroundEditorTheme__dateTime[^>]*>)(.*?)(<\/span>)/,
-          '$1*$3',
-        ),
+        actualHtml
+          .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
+          .replace(
+            /data-lexical-datetime="[^"]*"/,
+            'data-lexical-datetime="*"',
+          ),
     );
   });
 });

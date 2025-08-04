@@ -39,6 +39,7 @@ test.describe('DateTime', () => {
           <span
             class="PlaygroundEditorTheme__dateTime"
             contenteditable="false"
+            data-lexical-datetime="*"
             data-lexical-decorator="true">
             *
           </span>

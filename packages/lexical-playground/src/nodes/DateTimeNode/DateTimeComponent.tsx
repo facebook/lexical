@@ -163,14 +163,12 @@ export default function DateTimeComponent({
   };
 
   return (
-    <div>
-      <div
-        className={`dateTimePill ${isNodeSelected ? 'selected' : ''}`}
-        ref={ref}
-        style={{cursor: 'pointer', width: 'fit-content'}}>
-        {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
-          'Invalid Date'}
-      </div>
+    <div
+      className={`dateTimePill ${isNodeSelected ? 'selected' : ''}`}
+      ref={ref}
+      style={{cursor: 'pointer', width: 'fit-content'}}>
+      {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
+        'Invalid Date'}
       {isOpen && (
         <FloatingPortal>
           <FloatingOverlay lockScroll={true}>

@@ -33,7 +33,7 @@ export type SerializedDateTimeNode = Spread<
 function $convertDateTimeElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
-  const dateTimeValue = domNode.getAttribute('data-lexical-date-time');
+  const dateTimeValue = domNode.getAttribute('data-lexical-datetime');
   if (dateTimeValue) {
     const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
     return {node};
@@ -45,7 +45,7 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
   __dateTime: Date | undefined;
 
   static getType(): string {
-    return 'date-time';
+    return 'datetime';
   }
 
   static clone(node: DateTimeNode): DateTimeNode {
@@ -73,7 +73,7 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-date-time')) {
+        if (!domNode.hasAttribute('data-lexical-datetime')) {
           return null;
         }
         return {
@@ -87,7 +87,7 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('span');
     element.setAttribute(
-      'data-lexical-date-time',
+      'data-lexical-datetime',
       this.getDateTime()?.toString() || '',
     );
     element.style.display = 'inline-block';
@@ -98,10 +98,9 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement('span');
     element.textContent = this.getDateTime()?.toString() || '';
     element.setAttribute(
-      'data-lexical-date-time',
+      'data-lexical-datetime',
       this.getDateTime()?.toString() || '',
     );
-    // element.style.display = 'inline-block';
     return {element};
   }
 

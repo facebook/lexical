@@ -596,6 +596,10 @@ i.copy {
   background-image: url(images/icons/copy.svg);
 }
 
+i.paste {
+  background-image: url(images/icons/clipboard.svg);
+}
+
 i.success {
   background-image: url(images/icons/success.svg);
 }

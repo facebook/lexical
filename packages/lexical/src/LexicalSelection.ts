@@ -27,6 +27,7 @@ import {
   $getCaretRangeInDirection,
   $getChildCaret,
   $getSiblingCaret,
+  $getTextNodeOffset,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -80,7 +81,6 @@ import {
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getTextNodeOffset,
   getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
@@ -2272,7 +2272,10 @@ function $internalResolveSelectionPoint(
     resolvedNode = $getNodeFromDOM(childDOM);
 
     if ($isTextNode(resolvedNode)) {
-      resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+      resolvedOffset = $getTextNodeOffset(
+        resolvedNode,
+        moveSelectionToEnd ? 'next' : 'previous',
+      );
     } else {
       let resolvedElement = $getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.
@@ -2324,7 +2327,10 @@ function $internalResolveSelectionPoint(
         if ($isTextNode(child)) {
           resolvedNode = child;
           resolvedElement = null;
-          resolvedOffset = getTextNodeOffset(child, moveSelectionToEnd);
+          resolvedOffset = $getTextNodeOffset(
+            child,
+            moveSelectionToEnd ? 'next' : 'previous',
+          );
         } else if (
           child !== resolvedElement &&
           moveSelectionToEnd &&
@@ -2362,7 +2368,11 @@ function $internalResolveSelectionPoint(
   if (!$isTextNode(resolvedNode)) {
     return null;
   }
-  return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
+  return $createPoint(
+    resolvedNode.__key,
+    $getTextNodeOffset(resolvedNode, resolvedOffset, 'clamp'),
+    'text',
+  );
 }
 
 function resolveSelectionPointOnBoundary(
@@ -2493,8 +2503,8 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
-    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
-    $validatePoint(editor, 'focus', resolvedAnchorPoint);
+    $validatePoint('anchor', resolvedAnchorPoint);
+    $validatePoint('focus', resolvedFocusPoint);
   }
   if (
     resolvedAnchorPoint.type === 'element' &&
@@ -2666,11 +2676,7 @@ export function $internalCreateRangeSelection(
   );
 }
 
-function $validatePoint(
-  editor: LexicalEditor,
-  name: 'anchor' | 'focus',
-  point: PointType,
-): void {
+function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(
     node !== undefined,

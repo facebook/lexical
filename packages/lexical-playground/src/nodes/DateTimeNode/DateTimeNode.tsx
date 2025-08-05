@@ -44,7 +44,7 @@ const getDateTimeText = (dateTime: Date) => {
 
 export type SerializedDateTimeNode = Spread<
   {
-    dateTime?: Date;
+    dateTime?: string;
   },
   SerializedLexicalNode
 >;
@@ -61,7 +61,7 @@ function $convertDateTimeElement(
 }
 
 const dateTimeState = createState('dateTime', {
-  parse: (v) => (v instanceof Date ? v : new Date()),
+  parse: (v) => (v instanceof Date ? v : new Date(v)),
 });
 
 export class DateTimeNode extends DecoratorNode<JSX.Element> {

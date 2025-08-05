@@ -26,7 +26,7 @@ import {
 } from '../../nodes/DateTimeNode/DateTimeNode';
 
 type CommandPayload = {
-  dateTime: Date | undefined;
+  dateTime: Date;
 };
 
 export const INSERT_DATETIME_COMMAND: LexicalCommand<CommandPayload> =

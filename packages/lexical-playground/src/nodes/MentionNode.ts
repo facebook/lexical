@@ -79,6 +79,7 @@ export class MentionNode extends TextNode {
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
     dom.spellcheck = false;
+
     return dom;
   }
 

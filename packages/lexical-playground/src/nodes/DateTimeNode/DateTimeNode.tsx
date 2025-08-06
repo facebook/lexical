@@ -62,6 +62,7 @@ function $convertDateTimeElement(
 
 const dateTimeState = createState('dateTime', {
   parse: (v) => new Date(v as string),
+  unparse: (v) => v.toISOString(),
 });
 
 export class DateTimeNode extends DecoratorNode<JSX.Element> {

@@ -27,7 +27,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
   LexicalEditor,
 } from 'lexical';
 
@@ -158,7 +157,7 @@ export const updateFontSize = (
 
 export const formatParagraph = (editor: LexicalEditor) => {
   editor.update(() => {
-    const selection = $normalizeSelectionByPosition();
+    const selection = $getSelection();
     $setBlocksType(selection, () => $createParagraphNode());
   });
 };
@@ -170,7 +169,7 @@ export const formatHeading = (
 ) => {
   if (blockType !== headingSize) {
     editor.update(() => {
-      const selection = $normalizeSelectionByPosition();
+      const selection = $getSelection();
       $setBlocksType(selection, () => $createHeadingNode(headingSize));
     });
   }
@@ -206,7 +205,7 @@ export const formatNumberedList = (
 export const formatQuote = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'quote') {
     editor.update(() => {
-      const selection = $normalizeSelectionByPosition();
+      const selection = $getSelection();
       $setBlocksType(selection, () => $createQuoteNode());
     });
   }
@@ -215,7 +214,7 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
-      let selection = $normalizeSelectionByPosition();
+      let selection = $getSelection();
       if (!selection) {
         return;
       }

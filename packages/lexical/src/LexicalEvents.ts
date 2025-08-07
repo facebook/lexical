@@ -28,6 +28,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -59,6 +60,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  LineBreakNode,
   MOVE_TO_END,
   MOVE_TO_START,
   PASTE_COMMAND,
@@ -79,7 +81,6 @@ import {
 } from './LexicalSelection';
 import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
-  $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
   $getNodeByKey,
@@ -470,6 +471,38 @@ function $updateSelectionFormatStyleFromElementNode(
   $updateSelectionFormatStyle(selection, format, style);
 }
 
+function selectFirstLine(node: LineBreakNode, selection: RangeSelection) {
+  const prevSibling = node.getPreviousSibling();
+
+  if (prevSibling) {
+    selection.focus.set(
+      prevSibling.getKey(),
+      prevSibling.getTextContentSize(),
+      $isElementNode(prevSibling) ? 'element' : 'text',
+    );
+  } else {
+    node.selectStart();
+  }
+}
+
+function selectLineAfterFirstLine(
+  nodes: LineBreakNode[],
+  selection: RangeSelection,
+) {
+  const {anchor, focus} = selection;
+  const lineBreakAfterSelectedNode = nodes.find(
+    (node) => parseInt(node.getKey(), 10) > parseInt(anchor.key, 10),
+  );
+
+  if (lineBreakAfterSelectedNode) {
+    focus.set(
+      focus.key,
+      focus.getNode().getTextContentSize(),
+      $isElementNode(focus.getNode()) ? 'element' : 'text',
+    );
+  }
+}
+
 // This is a work-around is mainly Chrome specific bug where if you select
 // the contents of an empty block, you cannot easily unselect anything.
 // This results in a tiny selection box that looks buggy/broken. This can
@@ -498,20 +531,31 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
         ) {
           domSelection.removeAllRanges();
           selection.dirty = true;
-        } else if (event.detail === 3 && !selection.isCollapsed()) {
+        } else if (event.detail >= 3 && !selection.isCollapsed()) {
           // Triple click causing selection to overflow into the nearest element. In that
           // case visually it looks like a single element content is selected, focus node
           // is actually at the beginning of the next element (if present) and any manipulations
           // with selection (formatting) are affecting second element as well
-          const focus = selection.focus;
-          const focusNode = focus.getNode();
-          if (anchorNode !== focusNode) {
-            const parentNode = $findMatchingParent(
-              anchorNode,
-              (node) => $isElementNode(node) && !node.isInline(),
-            );
-            if ($isElementNode(parentNode)) {
-              parentNode.select(0);
+
+          const allNodes = selection.getNodes();
+          const lineBreakInSelection = allNodes.find((node) =>
+            $isLineBreakNode(node),
+          );
+
+          if (lineBreakInSelection) {
+            selectFirstLine(lineBreakInSelection, selection);
+          } else {
+            const parentNode = selection.anchor.getNode().getParent();
+            const lineBreakNodes = parentNode!
+              .getChildren()
+              .filter((node) => $isLineBreakNode(node));
+
+            if (lineBreakNodes.length) {
+              selectLineAfterFirstLine(lineBreakNodes, selection);
+            } else {
+              if (parentNode) {
+                parentNode.select(0);
+              }
             }
           }
         }

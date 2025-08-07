@@ -20,7 +20,6 @@ import {
   $isBlockElementNode,
   $isRangeSelection,
   $normalizeSelection__EXPERIMENTAL,
-  $normalizeSelectionByPosition__EXPERIMENTAL as $normalizeSelectionByPosition,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   INDENT_CONTENT_COMMAND,
@@ -93,7 +92,7 @@ export function registerTabIndentation(
           return false;
         }
 
-        const selection = $normalizeSelectionByPosition();
+        const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }

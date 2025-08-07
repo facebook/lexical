@@ -8,6 +8,7 @@
 
 import {
   assertHTML,
+  assertSelection,
   click,
   focusEditor,
   html,
@@ -15,6 +16,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
+// this issue usually becomes apparent when you apply block formats to the selected line
 test.describe.parallel('Regression test #2648', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
@@ -112,8 +114,13 @@ test.describe.parallel('Regression test #2648', () => {
           await page.keyboard.press('Enter');
           await page.keyboard.type('line of text');
 
-          const firstLine = '.PlaygroundEditorTheme__paragraph:nth-child(1)';
-          const secondLine = '.PlaygroundEditorTheme__paragraph:nth-child(2)';
+          // code block test is failing
+          // consider adding more formats too
+          const firstLine = 'text="line of text" >> nth=0 >> xpath=..';
+          const secondLine = `text="line of text" >> nth=${
+            name === 'Code Block' ? 0 : 1
+          } >> xpath=..`;
+
           const unFormattedLine = html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -122,8 +129,23 @@ test.describe.parallel('Regression test #2648', () => {
             </p>
           `;
 
+          const firstLineSelection = {
+            anchorOffset: 0,
+            anchorPath: [0, 0, 0],
+            focusOffset: 12,
+            focusPath: [0, 0, 0],
+          };
+
+          const secondLineSelection = {
+            anchorOffset: 0,
+            anchorPath: [1, 0, 0],
+            focusOffset: 12,
+            focusPath: [1, 0, 0],
+          };
+
           //format and check the first line
           await click(page, firstLine, {clickCount: 4}); // Note: the issue sometimes shows up on  triple click but the 4th click seems to be a more reliable way to replicate it
+          await assertSelection(page, firstLineSelection);
           await click(page, dropDownSelector);
           await click(page, formatSelector);
           await assertHTML(
@@ -137,6 +159,7 @@ test.describe.parallel('Regression test #2648', () => {
 
           // format and test the middle line
           await click(page, secondLine, {clickCount: 4});
+          await assertSelection(page, secondLineSelection);
           await click(page, dropDownSelector);
           await click(page, formatSelector);
           await assertHTML(
@@ -149,4 +172,6 @@ test.describe.parallel('Regression test #2648', () => {
       },
     );
   });
+
+  // need to add some more tests for other types of blocks besides paragraph
 });

@@ -7,4 +7,4 @@
  */
 
 @import 'tailwindcss';
-@source "../../../packages/lexical-tailwind/";
+@source "../../../packages/lexical-tailwind/src/index.ts";

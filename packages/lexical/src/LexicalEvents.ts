@@ -7,7 +7,7 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {NodeKey} from './LexicalNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
@@ -60,7 +60,6 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
-  LineBreakNode,
   MOVE_TO_END,
   MOVE_TO_START,
   PASTE_COMMAND,
@@ -471,7 +470,7 @@ function $updateSelectionFormatStyleFromElementNode(
   $updateSelectionFormatStyle(selection, format, style);
 }
 
-function selectFirstLine(node: LineBreakNode, selection: RangeSelection) {
+function selectFirstLine(node: LexicalNode, selection: RangeSelection) {
   const prevSibling = node.getPreviousSibling();
 
   if (prevSibling) {
@@ -486,7 +485,7 @@ function selectFirstLine(node: LineBreakNode, selection: RangeSelection) {
 }
 
 function selectLineAfterFirstLine(
-  nodes: LineBreakNode[],
+  nodes: LexicalNode[],
   selection: RangeSelection,
 ) {
   const {anchor, focus} = selection;

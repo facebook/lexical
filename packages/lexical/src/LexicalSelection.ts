@@ -2710,6 +2710,7 @@ function $validatePoint(
     );
   }
 }
+
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;

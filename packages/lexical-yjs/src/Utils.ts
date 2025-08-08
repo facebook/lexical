@@ -51,7 +51,6 @@ const elementExcludedProperties = new Set<string>([
   '__first',
   '__last',
   '__size',
-  '__dir',
 ]);
 const rootExcludedProperties = new Set<string>(['__cachedText']);
 const textExcludedProperties = new Set<string>(['__text']);

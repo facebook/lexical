@@ -2716,6 +2716,7 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
     );
   }
 }
+
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;

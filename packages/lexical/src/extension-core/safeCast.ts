@@ -9,7 +9,7 @@
 /**
  * Explicitly and safely cast a value to a specific type when inference or
  * satisfies isn't going to work as expected (often useful for the config
- * property with defineExtension)
+ * property with {@link defineExtension})
  */
 export function safeCast<T>(value: T): T {
   return value;

@@ -30,14 +30,17 @@ export type AnyLexicalExtensionArgument =
  * The default extension configuration of an empty object
  */
 export type ExtensionConfigBase = Record<never, never>;
-
+/**
+ * The result of {@link declarePeerDependency}, a tuple of a peer dependency
+ * name and its associated configuration.
+ */
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
   Extension['name'],
   Partial<LexicalExtensionConfig<Extension>> | undefined,
-] & {readonly [peerDependencySymbol]: Extension};
+] & {readonly [peerDependencySymbol]?: Extension};
 
 /**
- * Any {@link NormalizedLexicalExtensionArgument}
+ * A tuple of `[extension, ...configOverrides]`
  */
 export type NormalizedLexicalExtensionArgument<
   Config extends ExtensionConfigBase,
@@ -47,7 +50,7 @@ export type NormalizedLexicalExtensionArgument<
 > = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
 
 /**
- * A tuple of [extension, ...configOverrides]
+ * Any {@link NormalizedLexicalExtensionArgument}
  */
 export type AnyNormalizedLexicalExtensionArgument =
   NormalizedLexicalExtensionArgument<
@@ -167,7 +170,14 @@ export interface LexicalExtension<
     LexicalExtensionInternal<Config, Output, Init> {
   /** The name of the Extension, must be unique */
   readonly name: Name;
-  /** Extension names that must not be loaded with this Extension */
+  /**
+   * Extension names that must not be loaded with this Extension.
+   * If this extension and any of the conflicting extensions are configured
+   * in the same editor then a runtime error will be thrown instead of
+   * creating the editor. This is used to prevent extensions with incompatible
+   * and overlapping functionality from being registered concurrently, such as
+   * PlainTextExtension and RichTextExtension.
+   **/
   conflictsWith?: string[];
   /** Other Extensions that this Extension depends on, can also be used to configure them */
   dependencies?: AnyLexicalExtensionArgument[];

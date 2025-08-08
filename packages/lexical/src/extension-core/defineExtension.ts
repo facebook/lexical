@@ -64,11 +64,11 @@ export function defineExtension<
  * an argument to {@link buildEditorFromExtensions}.
  *
  * Before building the editor, configurations will be merged using
- * extension.mergeConfig(extension, config) or {@link shallowMergeConfig} if
+ * `extension.mergeConfig(extension, config)` or {@link shallowMergeConfig} if
  * this is not directly implemented by the Extension.
  *
  * @param args - An extension followed by one or more config partials for that extension
- * @returns [extension, config, ...configs]
+ * @returns `[extension, config, ...configs]`
  *
  * @example
  * ```ts
@@ -105,10 +105,12 @@ export function configExtension<
  *
  * @example
  * ```ts
+ * import type {FooExtension} from "foo";
+ *
  * export const PeerExtension = defineExtension({
  *   name: 'PeerExtension',
  *   peerDependencies: [
- *     declarePeerDependency<typeof import("foo").FooExtension>("foo"),
+ *     declarePeerDependency<FooExtension>("foo"),
  *     declarePeerDependency<typeof import("bar").BarExtension>("bar", {config: "bar"}),
  *   ],
  * });

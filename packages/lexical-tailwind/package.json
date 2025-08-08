@@ -7,7 +7,7 @@
     "theme",
     "css"
   ],
-  "version": "0.33.1",
+  "version": "0.34.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -21,13 +21,13 @@
   },
   "homepage": "https://github.com/facebook/lexical#readme",
   "dependencies": {
-    "@lexical/extension": "0.33.1",
-    "lexical": "0.33.1"
+    "@lexical/extension": "0.34.0",
+    "lexical": "0.34.0"
   },
   "devDependencies": {
-    "tailwindcss": "^4.1.11",
     "@tailwindcss/cli": "^4.1.11",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.11"
   },
   "description": "This package contains an extension to use Tailwind for the editor theme",
   "sideEffects": false,

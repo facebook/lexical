@@ -1,7 +1,7 @@
 {
   "name": "@lexical/extension-vanilla-example",
   "private": true,
-  "version": "0.33.1",
+  "version": "0.34.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,11 +13,11 @@
     "startCommand": "npm i && npm run monorepo:dev"
   },
   "dependencies": {
-    "@lexical/history": "0.33.1",
-    "@lexical/list": "0.33.1",
-    "@lexical/rich-text": "0.33.1",
-    "@lexical/utils": "0.33.1",
-    "lexical": "0.33.1"
+    "@lexical/history": "0.34.0",
+    "@lexical/list": "0.34.0",
+    "@lexical/rich-text": "0.34.0",
+    "@lexical/utils": "0.34.0",
+    "lexical": "0.34.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.11",

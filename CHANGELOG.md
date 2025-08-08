@@ -1,3 +1,23 @@
+## v0.34.0 (2025-08-07)
+
+-  Chore Add a post-release action to update the examples (#7744) Bob Ippolito
+- lexical-examples  Bug Fix missing dependency lexicalutils at examplesreact-rich-collab (#7743) debuggingfuture (Vincent)
+- lexical-playground DateTime Plugin (#7707) Ivaylo Pavlov
+- lexical-utils fix Backward selection was not being retained (#7737) Jash Vithlani
+- Fix Key Arrow Down Documentation (#7733) zamorai
+- lexical-playground Bug Fix include font sizes in pt as well in parseAllowedFontSize (#7719) Harshkumar Metkel
+- lexical-react Bug Fix prevent race condition in CollaborationPlugin during rapid mountunmount cycles (#7723) Tobias Andersen
+- lexical Bug Fix Clamp DOM selection offsets to valid lexical TextNode offsets in internalResolveSelectionPoint (#7725) Bob Ippolito
+- Fix trigger reconcilation on nested read (#7724) Gerard Rovira
+- lexical-playgroundBug Fix Image links lose link state when dragged (#7693) Yuncheng Lu
+- lexical-websitedocs Documentation Update Fix typo  (#7713) JT
+- lexical-react feat Context Menu icons (#7697) Ivaylo Pavlov
+- lexical-react Clean up old mouseup events from context menu (#7705) Ivaylo Pavlov
+- lexical-codelexical-code-shikilexical-markdownlexical-playgroundlexical-devtools Feature Experimental Shiki support for code highlighting (#7662) jeromew
+- lexical-selection Bug Fix Correct backward inversion for RTL (#7686) Noam Zaks
+- v0.33.1 (#7684) Bob Ippolito
+- v0.33.1 Lexical GitHub Actions Bot
+
 ## v0.33.1 (2025-07-10)
 
 - Add a setter for the format property on RangeSelection (#5829) Omar A.

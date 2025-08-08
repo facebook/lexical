@@ -10,3 +10,8 @@ jobs:
       channel: latest
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  post-release:
+    uses: ./.github/workflows/call-post-release.yml
+    needs: release
+    with:
+      ref: main

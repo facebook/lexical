@@ -14,6 +14,7 @@ import type {
 } from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 
+import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
@@ -22,7 +23,9 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  defineExtension,
   INSERT_PARAGRAPH_COMMAND,
+  safeCast,
   TextNode,
 } from 'lexical';
 
@@ -278,3 +281,37 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => $removeList());
 }
+
+export interface ListConfig {
+  /**
+   * When `true`, enforces strict indentation rules for list items, ensuring consistent structure.
+   * When `false` (default), indentation is more flexible.
+   */
+  hasStrictIndent: boolean;
+}
+
+export const ListExtension = defineExtension({
+  build(editor, config, state) {
+    return namedSignals(config);
+  },
+  config: safeCast<ListConfig>({hasStrictIndent: false}),
+  name: '@lexical/list/List',
+  nodes: [ListNode, ListItemNode],
+  register(editor, config, state) {
+    const stores = state.getOutput();
+    return mergeRegister(
+      registerList(editor),
+      effect(() =>
+        stores.hasStrictIndent.value
+          ? registerListStrictIndentTransform(editor)
+          : undefined,
+      ),
+    );
+  },
+});
+
+export const CheckListExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '@lexical/list/CheckList',
+  register: registerCheckList,
+});

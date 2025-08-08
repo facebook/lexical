@@ -30,6 +30,7 @@ import {
   $insertDataTransferForRichText,
   copyToClipboard,
 } from '@lexical/clipboard';
+import {DragonExtension} from '@lexical/dragon';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -67,6 +68,7 @@ import {
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
+  defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -1131,3 +1133,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
   );
   return removeListener;
 }
+
+/**
+ * An extension to register \@lexical/rich-text behavior and nodes
+ * ({@link HeadingNode}, {@link QuoteNode})
+ */
+export const RichTextExtension = defineExtension({
+  conflictsWith: ['@lexical/plain-text'],
+  dependencies: [DragonExtension],
+  name: '@lexical/rich-text',
+  nodes: [HeadingNode, QuoteNode],
+  register: registerRichText,
+});

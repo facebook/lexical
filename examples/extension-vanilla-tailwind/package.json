@@ -1,0 +1,29 @@
+{
+  "name": "@lexical/extension-vanilla-example",
+  "private": true,
+  "version": "0.34.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "monorepo:dev": "vite -c vite.config.monorepo.ts",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "stackblitz": {
+    "startCommand": "npm i && npm run monorepo:dev"
+  },
+  "dependencies": {
+    "@lexical/history": "0.34.0",
+    "@lexical/list": "0.34.0",
+    "@lexical/rich-text": "0.34.0",
+    "@lexical/utils": "0.34.0",
+    "lexical": "0.34.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "cross-env": "^7.0.3",
+    "tailwindcss": "^4.1.11",
+    "typescript": "5.4.5",
+    "vite": "^5.2.11"
+  }
+}

@@ -648,6 +648,22 @@ describe('Markdown', () => {
       html: '<p><b><strong style="white-space: pre-wrap;">&nbsp;</strong></b></p>',
       md: '**&#160;**',
     },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
+      md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">hello]</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">hello[</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[hello[](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev" title="ti[t]le"><span style="white-space: pre-wrap;">hello[</span></a><a href="https://lexical.dev" title="tit]le"><span style="white-space: pre-wrap;">world[</span></a></p>',
+      md: '[hello[](https://lexical.dev "ti[t]le")[world[](https://lexical.dev "tit]le")',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

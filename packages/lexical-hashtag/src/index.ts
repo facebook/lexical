@@ -8,6 +8,7 @@
 
 export {
   HashtagExtension,
+  type HashtagExtensionConfig,
   registerLexicalHashtag,
 } from './LexicalHashtagExtension';
 export {

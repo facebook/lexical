@@ -13,7 +13,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {$applyNodeReplacement, ElementNode} from 'lexical';
+import {$applyNodeReplacement, defineExtension, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
@@ -66,3 +66,8 @@ export function $isOverflowNode(
 ): node is OverflowNode {
   return node instanceof OverflowNode;
 }
+
+export const OverflowExtension = defineExtension({
+  name: '@lexical/overflow',
+  nodes: [OverflowNode],
+});

@@ -10,6 +10,9 @@ import {defineExtension} from 'lexical';
 import {CodeHighlightNode} from './CodeHighlightNode';
 import {CodeNode} from './CodeNode';
 
+/**
+ * Add code blocks to the editor (syntax highlighting provided separately)
+ */
 export const CodeExtension = defineExtension({
   name: '@lexical/code',
   nodes: [CodeNode, CodeHighlightNode],

@@ -908,6 +908,9 @@ export function registerCodeHighlighting(
   return mergeRegister(...registrations);
 }
 
+/**
+ * Add code highlighting support for code blocks with Shiki
+ */
 export const CodeHighlighterShikiExtension = defineExtension({
   config: {tokenizer: ShikiTokenizer},
   dependencies: [CodeExtension],

@@ -265,7 +265,7 @@ function getHashtagMatch(text: string) {
 }
 
 /** @internal */
-const defaultHashtagExtensionConfig = {getHashtagMatch};
+const defaultHashtagExtensionConfig: HashtagExtensionConfig = {getHashtagMatch};
 /** @internal */
 export function registerLexicalHashtag(
   editor: LexicalEditor,
@@ -281,6 +281,20 @@ export function registerLexicalHashtag(
   );
 }
 
+export interface HashtagExtensionConfig {
+  /**
+   * The matching function used by the extension. Has a default
+   * implementation that should be suitable for most use cases.
+   *
+   * @param text The string of text to match
+   * @returns `null` if no match, otherwise an object with the start and end index of the first `#hashtag` match
+   */
+  getHashtagMatch: (text: string) => null | {start: number; end: number};
+}
+
+/**
+ * Add `#hashtag` support to the editor
+ */
 export const HashtagExtension = defineExtension({
   config: defaultHashtagExtensionConfig,
   name: '@lexical/hashtag/Hashtag',

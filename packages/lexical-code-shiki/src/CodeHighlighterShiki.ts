@@ -23,6 +23,7 @@ import {
   $getStartOfCodeInLine,
   $isCodeHighlightNode,
   $isCodeNode,
+  CodeExtension,
   CodeHighlightNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
@@ -47,6 +48,7 @@ import {
   $normalizeCaret,
   $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -905,3 +907,11 @@ export function registerCodeHighlighting(
 
   return mergeRegister(...registrations);
 }
+
+export const CodeHighlighterShikiExtension = defineExtension({
+  config: {tokenizer: ShikiTokenizer},
+  dependencies: [CodeExtension],
+  name: '@lexical/code-shiki',
+  register: (editor, {tokenizer}) =>
+    registerCodeHighlighting(editor, tokenizer),
+});

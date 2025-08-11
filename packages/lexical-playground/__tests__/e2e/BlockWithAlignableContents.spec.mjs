@@ -33,7 +33,7 @@ test.describe('BlockWithAlignableContents', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
       `,
@@ -44,7 +44,7 @@ test.describe('BlockWithAlignableContents', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
         <div contenteditable="false" data-lexical-decorator="true">
@@ -77,7 +77,7 @@ test.describe('BlockWithAlignableContents', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
         <div contenteditable="false" data-lexical-decorator="true">
@@ -102,7 +102,7 @@ test.describe('BlockWithAlignableContents', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           style="text-align: center">
           <span data-lexical-text="true">Hello world</span>
         </p>

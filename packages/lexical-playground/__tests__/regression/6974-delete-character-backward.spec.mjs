@@ -61,7 +61,7 @@ test.describe('Regression tests for #6974', () => {
         </span>
         <br />
       </p>
-      <p dir="ltr"><span data-lexical-text="true">test</span></p>
+      <p dir="auto"><span data-lexical-text="true">test</span></p>
     `;
     await assertHTML(page, beforeHtml, beforeHtml, {
       ignoreClasses: true,
@@ -70,7 +70,7 @@ test.describe('Regression tests for #6974', () => {
     await moveToLineBeginning(page);
     await deleteBackward(page);
     const afterHtml = html`
-      <p dir="ltr">
+      <p dir="auto">
         <span contenteditable="false" data-lexical-decorator="true">
           <img
             alt=""

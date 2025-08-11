@@ -31,7 +31,7 @@ test.describe('Regression test #1730', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">hello world</span>
         </p>
       `,
@@ -44,7 +44,7 @@ test.describe('Regression test #1730', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">hello worl</span>
         </p>
       `,

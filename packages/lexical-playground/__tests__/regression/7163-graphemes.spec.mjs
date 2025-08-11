@@ -164,28 +164,28 @@ test.describe('Grapheme deleteCharacter', () => {
         await page.keyboard.press('Enter');
         const expectedInitialHTML = isPlainText
           ? html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
                 <br />
                 <br />
               </p>
             `
           : html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
               </p>
-              <p><br /></p>
+              <p dir="auto"><br /></p>
             `;
         const expectedGraphemeHTML = isPlainText
           ? html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
                 <br />
                 <span data-lexical-text="true">${grapheme}</span>
               </p>
             `
           : html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
               </p>
               <p dir="${dir}">

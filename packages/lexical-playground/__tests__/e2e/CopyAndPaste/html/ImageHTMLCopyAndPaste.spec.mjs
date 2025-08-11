@@ -41,7 +41,7 @@ test.describe('HTML Image CopyAndPaste', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">An</span>
           <span
             class="editor-image"

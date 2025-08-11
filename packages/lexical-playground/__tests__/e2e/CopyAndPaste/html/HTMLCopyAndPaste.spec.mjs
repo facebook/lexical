@@ -56,7 +56,7 @@ test.describe('HTML CopyAndPaste', () => {
     await focusEditor(page);
 
     const clipboard = {
-      'text/html': `<meta charset='utf-8'><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="ltr"><span>Code block</span></p><code class="x1f6kntn x1fcty0u x16h55sf x1xmf6yo x1e56ztr x1q8sqs3 xeq4nuv x1lliihq xz9dl7a xn6708d xsag5q8 x1ye3gou" spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span class="xuc5kci">function</span><span> </span><span class="xu88d7e">foo</span><span class="x1noocy9">(</span><span class="x1noocy9">)</span><span> </span><span class="x1noocy9">{</span><br><span>  </span><span class="xuc5kci">return</span><span> </span><span class="x180nigk">'Hey there'</span><span class="x1noocy9">;</span><br><span class="x1noocy9">}</span></code><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="ltr"><span>--end--</span></p>`,
+      'text/html': `<meta charset='utf-8'><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="auto"><span>Code block</span></p><code class="x1f6kntn x1fcty0u x16h55sf x1xmf6yo x1e56ztr x1q8sqs3 xeq4nuv x1lliihq xz9dl7a xn6708d xsag5q8 x1ye3gou" spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span class="xuc5kci">function</span><span> </span><span class="xu88d7e">foo</span><span class="x1noocy9">(</span><span class="x1noocy9">)</span><span> </span><span class="x1noocy9">{</span><br><span>  </span><span class="xuc5kci">return</span><span> </span><span class="x180nigk">'Hey there'</span><span class="x1noocy9">;</span><br><span class="x1noocy9">}</span></code><p class="x1f6kntn x1fcty0u x16h55sf x12nagc xdj266r" dir="auto"><span>--end--</span></p>`,
     };
 
     await pasteFromClipboard(page, clipboard);
@@ -66,12 +66,12 @@ test.describe('HTML CopyAndPaste', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Code block</span>
         </p>
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           spellcheck="false"
           data-gutter="123"
           data-highlight-language="javascript"
@@ -129,7 +129,7 @@ test.describe('HTML CopyAndPaste', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">--end--</span>
         </p>
       `,
@@ -185,7 +185,7 @@ test.describe('HTML CopyAndPaste', () => {
           data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Text between HRs</span>
         </p>
         <hr
@@ -220,7 +220,7 @@ test.describe('HTML CopyAndPaste', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Hello</span>
         </p>
         <hr
@@ -229,7 +229,7 @@ test.describe('HTML CopyAndPaste', () => {
           data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,

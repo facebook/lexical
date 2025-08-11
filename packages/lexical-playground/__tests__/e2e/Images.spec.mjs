@@ -320,7 +320,7 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
@@ -362,7 +362,7 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
@@ -480,7 +480,7 @@ test.describe('Images', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">HelloWorld</span>
             <span
               class="editor-image"
@@ -516,7 +516,7 @@ test.describe('Images', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Hello</span>
             <span
               class="editor-image"
@@ -562,7 +562,7 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">HelloWorld</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph">
@@ -648,7 +648,7 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph">
@@ -668,7 +668,7 @@ test.describe('Images', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph">
@@ -688,7 +688,7 @@ test.describe('Images', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text3</span>
         </p>
       `,
@@ -713,18 +713,18 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -741,7 +741,7 @@ test.describe('Images', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text3</span>
         </p>
       `,
@@ -775,7 +775,7 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">HelloWorld</span>
           <span
             class="editor-image"

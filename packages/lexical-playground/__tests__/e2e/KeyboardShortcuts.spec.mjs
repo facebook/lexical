@@ -288,7 +288,7 @@ test.describe('Keyboard shortcuts', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <sub data-lexical-text="true">
             <strong
               class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textSubscript">
@@ -306,7 +306,7 @@ test.describe('Keyboard shortcuts', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
       `,
@@ -349,7 +349,7 @@ test.describe('Keyboard shortcuts', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          dir="ltr"
+          dir="auto"
           style="padding-inline-start: calc(120px);">
           <span data-lexical-text="true">abc</span>
         </p>
@@ -363,7 +363,7 @@ test.describe('Keyboard shortcuts', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          dir="ltr"
+          dir="auto"
           style="padding-inline-start: calc(40px);">
           <span data-lexical-text="true">abc</span>
         </p>
@@ -377,7 +377,7 @@ test.describe('Keyboard shortcuts', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           style="">
           <span data-lexical-text="true">abc</span>
         </p>

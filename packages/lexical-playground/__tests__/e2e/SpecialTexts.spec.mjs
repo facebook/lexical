@@ -34,7 +34,7 @@ test.describe('Special Text', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span
             class="PlaygroundEditorTheme__specialText"
             data-lexical-text="true">
@@ -53,7 +53,7 @@ test.describe('Special Text', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span
             class="PlaygroundEditorTheme__specialText"
             data-lexical-text="true">
@@ -87,7 +87,7 @@ test.describe('Special Text', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">[MLH Fellowship]</span>
         </p>
       `,

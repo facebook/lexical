@@ -39,12 +39,12 @@ test.describe('Element format', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          dir="ltr"
+          dir="auto"
           style="padding-inline-start: calc(80px); text-align: center;">
           <span data-lexical-text="true">Hello</span>
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            dir="auto"
             href="https://lexical.io">
             <span data-lexical-text="true">https://lexical.io</span>
           </a>

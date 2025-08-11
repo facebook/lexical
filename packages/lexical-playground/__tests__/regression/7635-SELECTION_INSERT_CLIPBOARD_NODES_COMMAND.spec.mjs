@@ -103,7 +103,7 @@ test.describe('Regression #7635', () => {
                 data-lexical-editor="true">
                 <p
                   class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="ltr">
+                  dir="auto">
                   <span data-lexical-text="true">some content</span>
                 </p>
               </div>
@@ -153,7 +153,7 @@ test.describe('Regression #7635', () => {
                 data-lexical-editor="true">
                 <p
                   class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="ltr">
+                  dir="auto">
                   <span data-lexical-text="true">Hello</span>
                   <strong
                     class="PlaygroundEditorTheme__textBold"
@@ -200,7 +200,7 @@ test.describe('Regression #7635', () => {
                 data-lexical-editor="true">
                 <p
                   class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="ltr">
+                  dir="auto">
                   <span data-lexical-text="true">Hello</span>
                   <strong
                     class="PlaygroundEditorTheme__textBold"
@@ -215,7 +215,7 @@ test.describe('Regression #7635', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Below the image</span>
         </p>
       `,

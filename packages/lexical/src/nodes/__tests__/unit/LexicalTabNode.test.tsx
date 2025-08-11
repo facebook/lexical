@@ -62,7 +62,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForPlainText(dataTransfer, selection);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -76,7 +76,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -96,7 +96,7 @@ describe('LexicalTabNode tests', () => {
     //         $insertDataTransferForRichText(dataTransfer, selection, editor);
     //       });
     //       expect(testEnv.innerHTML).toBe(
-    //         '<p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+    //         '<p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
     //       );
     // });
 
@@ -106,7 +106,7 @@ describe('LexicalTabNode tests', () => {
       // GDoc 2-liner hello\tworld (like previous test)
       dataTransfer.setData(
         'text/html',
-        `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-123"><p dir="ltr" style="line-height:1.38;margin-left: 36pt;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span class="Apple-tab-span" style="white-space:pre;">	</span></span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">world</span></p><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span class="Apple-tab-span" style="white-space:pre;">	</span></span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">world</span></b>`,
+        `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-123"><p dir="auto" style="line-height:1.38;margin-left: 36pt;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span class="Apple-tab-span" style="white-space:pre;">	</span></span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">world</span></p><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span class="Apple-tab-span" style="white-space:pre;">	</span></span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">world</span></b>`,
       );
       await editor.update(() => {
         const selection = $getSelection();
@@ -114,7 +114,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -132,7 +132,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>',
+        '<p dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>',
       );
     });
 
@@ -165,7 +165,9 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p><h1 dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">bar</span></h1><ol><li value="1"><ol><li value="1" dir="ltr"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
+        '<p dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>' +
+          '<h1 dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">bar</span></h1>' +
+          '<ol dir="auto"><li value="1"><ol><li value="1"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
       );
     });
 
@@ -181,7 +183,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">\t</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">\t</span></p>',
       );
     });
 
@@ -200,7 +202,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">oo</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">oo</span></p>',
       );
     });
 
@@ -219,7 +221,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">o</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">o</span></p>',
       );
     });
 
@@ -242,7 +244,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">hell</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">rld</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">hell</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">rld</span></p>',
       );
     });
 
@@ -256,7 +258,7 @@ describe('LexicalTabNode tests', () => {
         $getSelection()!.insertText('f');
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">\t</span><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">\t</span><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></p>',
       );
     });
 

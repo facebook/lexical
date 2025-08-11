@@ -152,12 +152,12 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Line1</span>
         </p>
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           spellcheck="false"
           data-gutter="1"
           data-highlight-language="javascript"
@@ -186,7 +186,7 @@ test.describe.parallel('Selection', () => {
         ? html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">${text}</span>
             </p>
           `
@@ -227,7 +227,7 @@ test.describe.parallel('Selection', () => {
         ? html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">${text}</span>
             </p>
           `
@@ -283,7 +283,7 @@ test.describe.parallel('Selection', () => {
         ? html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">${text}</span>
             </p>
           `
@@ -341,7 +341,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
       `,
@@ -403,7 +403,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -418,7 +418,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph">
@@ -435,12 +435,12 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           ${imageHtml}
           <span data-lexical-text="true">Two</span>
         </p>
@@ -468,7 +468,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -482,7 +482,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -496,7 +496,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -544,7 +544,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">text</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -591,7 +591,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">aaa</span>
           <br />
           <br />
@@ -608,7 +608,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">aaa</span>
         </p>
       `,
@@ -655,14 +655,14 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
         <${collapsibleTag} class="Collapsible__container" open="">
           <summary class="Collapsible__title">
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">title</span>
             </p>
           </summary>
@@ -700,14 +700,14 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
         <${collapsibleTag} class="Collapsible__container" open="">
           <summary class="Collapsible__title">
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">title</span>
             </p>
           </summary>
@@ -717,7 +717,7 @@ test.describe.parallel('Selection', () => {
         </${collapsibleTag}>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">after</span>
         </p>
       `,
@@ -742,7 +742,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
         <table class="PlaygroundEditorTheme__table">
@@ -785,7 +785,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
         <table class="PlaygroundEditorTheme__table">
@@ -806,7 +806,7 @@ test.describe.parallel('Selection', () => {
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">after</span>
         </p>
       `,
@@ -824,12 +824,12 @@ test.describe.parallel('Selection', () => {
       html`
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">A</span>
         </h1>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">b</span>
         </p>
       `,
@@ -845,7 +845,7 @@ test.describe.parallel('Selection', () => {
         </h1>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">b</span>
         </p>
       `,
@@ -860,7 +860,7 @@ test.describe.parallel('Selection', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">b</span>
         </p>
       `,
@@ -872,7 +872,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph  PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">b</span>
         </p>
       `,
@@ -897,7 +897,7 @@ test.describe.parallel('Selection', () => {
         html`
           <h1
             class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Title</span>
           </h1>
         `,
@@ -928,12 +928,12 @@ test.describe.parallel('Selection', () => {
       html`
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Paragraph 1</span>
         </h1>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
       `,
@@ -963,10 +963,10 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            dir="auto"
             href="https://test.com">
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1050,7 +1050,7 @@ test.describe.parallel('Selection', () => {
       html`
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
@@ -1059,7 +1059,7 @@ test.describe.parallel('Selection', () => {
           data-lexical-decorator="true" />
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">More text</span>
         </h1>
       `,
@@ -1280,7 +1280,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
@@ -1290,7 +1290,7 @@ test.describe.parallel('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
@@ -1299,7 +1299,7 @@ test.describe.parallel('Selection', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
@@ -1331,7 +1331,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
@@ -1341,12 +1341,12 @@ test.describe.parallel('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Line3</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             data-lexical-text="true">
@@ -1376,7 +1376,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
@@ -1385,7 +1385,7 @@ test.describe.parallel('Selection', () => {
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Line3</span>
         </p>
       `,
@@ -1413,7 +1413,7 @@ test.describe.parallel('Selection', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
             Line1
           </span>
@@ -1421,14 +1421,14 @@ test.describe.parallel('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
             Line3
           </span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
             Line2
           </span>

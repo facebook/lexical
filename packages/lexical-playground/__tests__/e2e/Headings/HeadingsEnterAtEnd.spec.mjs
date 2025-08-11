@@ -34,7 +34,7 @@ test('Headings - changes to a paragraph when you press enter at the end of a hea
     html`
       <h1
         class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">Welcome to the playground</span>
       </h1>
     `,
@@ -47,7 +47,7 @@ test('Headings - changes to a paragraph when you press enter at the end of a hea
     html`
       <h1
         class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">Welcome to the playground</span>
       </h1>
       <p class="PlaygroundEditorTheme__paragraph"><br /></p>

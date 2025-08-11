@@ -36,9 +36,9 @@ test.describe('Regression tests for #7246', () => {
     await page.keyboard.type('paragraph');
     const beforeHtml = html`
       <ul>
-        <li dir="ltr" value="1"><span data-lexical-text="true">list</span></li>
+        <li dir="auto" value="1"><span data-lexical-text="true">list</span></li>
       </ul>
-      <p dir="ltr"><span data-lexical-text="true">paragraph</span></p>
+      <p dir="auto"><span data-lexical-text="true">paragraph</span></p>
     `;
     await assertHTML(page, beforeHtml, beforeHtml, {
       ignoreClasses: true,
@@ -48,7 +48,7 @@ test.describe('Regression tests for #7246', () => {
     await deleteBackward(page);
     const afterHtml = html`
       <ul>
-        <li dir="ltr" value="1">
+        <li dir="auto" value="1">
           <span data-lexical-text="true">listparagraph</span>
         </li>
       </ul>

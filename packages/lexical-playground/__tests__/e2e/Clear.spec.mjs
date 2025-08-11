@@ -26,7 +26,7 @@ test.describe('Clear', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">foo</span>
         </p>
       `,
@@ -40,7 +40,7 @@ test.describe('Clear', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">foo</span>
         </p>
       `,
@@ -55,7 +55,7 @@ test.describe('Clear', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">bar</span>
         </p>
       `,

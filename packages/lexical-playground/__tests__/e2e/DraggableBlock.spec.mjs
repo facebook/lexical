@@ -49,18 +49,18 @@ test.describe('DraggableBlock', () => {
       `
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           style="">
           <span data-lexical-text="true">Paragraph 1</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Paragraph 3</span>
         </p>
       `,
@@ -96,13 +96,13 @@ test.describe('DraggableBlock', () => {
       `
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           style="">
           <span data-lexical-text="true">Paragraph 1</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
       `,
@@ -138,12 +138,12 @@ test.describe('DraggableBlock', () => {
       `
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Paragraph 1</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          dir="auto"
           style="">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
@@ -175,12 +175,12 @@ test.describe('DraggableBlock', () => {
       `
       <p
         class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">Paragraph 2</span>
       </p>
       <p
         class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr"
+        dir="auto"
         style="">
         <span data-lexical-text="true">Paragraph 1</span>
       </p>

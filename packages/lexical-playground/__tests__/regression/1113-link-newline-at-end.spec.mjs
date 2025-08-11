@@ -32,10 +32,10 @@ test.describe('Regression test #1113', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            dir="auto"
             href="https://www.example.com">
             <span data-lexical-text="true">https://www.example.com</span>
           </a>

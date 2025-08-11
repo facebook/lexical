@@ -43,7 +43,7 @@ const removeStylesExportDOM = (
     // in i, b, and strong tags.
     for (const el of [
       output.element,
-      ...output.element.querySelectorAll('[style],[class],[dir="ltr"]'),
+      ...output.element.querySelectorAll('[style],[class],[dir="auto"]'),
     ]) {
       el.removeAttribute('class');
       el.removeAttribute('style');

@@ -39,7 +39,7 @@ test.describe('Regression tests for #7319', () => {
     }
     async function assertHR(count) {
       const expectedHtml = html`
-        <p><br /></p>
+        <p dir="auto"><br /></p>
         ${Array.from(
           {length: count},
           () => '<hr contenteditable="false" data-lexical-decorator="true" />',

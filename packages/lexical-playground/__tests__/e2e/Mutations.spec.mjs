@@ -22,7 +22,7 @@ async function validateContent(page) {
     html`
       <p
         class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">Hello</span>
         <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
           #world
@@ -220,7 +220,7 @@ test.describe('Mutations', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Bonjour</span>
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #world

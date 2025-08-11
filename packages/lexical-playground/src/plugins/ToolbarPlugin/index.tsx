@@ -763,7 +763,7 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.read(() => {
+    activeEditor.getEditorState().read(() => {
       $updateToolbar();
     });
   }, [activeEditor, $updateToolbar]);

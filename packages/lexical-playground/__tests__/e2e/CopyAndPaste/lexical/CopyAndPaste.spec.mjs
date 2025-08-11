@@ -45,13 +45,13 @@ test.describe('CopyAndPaste', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
         `,
@@ -68,7 +68,7 @@ test.describe('CopyAndPaste', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
             <br />
             <br />
@@ -92,13 +92,13 @@ test.describe('CopyAndPaste', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
         `,
@@ -124,7 +124,7 @@ test.describe('CopyAndPaste', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
             <br />
             <br />
@@ -158,13 +158,13 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
             <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
           `,
@@ -175,7 +175,7 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
               <br />
               <br />
@@ -194,19 +194,19 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
             <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Sounds good!Copy + pasting?</span>
             </p>
             <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
           `,
@@ -223,7 +223,7 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
               <br />
               <br />
@@ -281,17 +281,17 @@ test.describe('CopyAndPaste', () => {
         html`
           <h1
             class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Heading</span>
           </h1>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Some text</span>
           </p>
           <h1
             class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Heading</span>
           </h1>
         `,
@@ -323,7 +323,7 @@ test.describe('CopyAndPaste', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Hello world</span>
             <span
               class="PlaygroundEditorTheme__hashtag"
@@ -345,7 +345,7 @@ test.describe('CopyAndPaste', () => {
           </p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Next</span>
             <span
               class="PlaygroundEditorTheme__hashtag"
@@ -380,7 +380,7 @@ test.describe('CopyAndPaste', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            dir="auto">
             <span data-lexical-text="true">Hello world</span>
             <span
               class="PlaygroundEditorTheme__hashtag"
@@ -479,7 +479,7 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -501,7 +501,7 @@ test.describe('CopyAndPaste', () => {
             </p>
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Next</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -535,7 +535,7 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -622,7 +622,7 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -644,7 +644,7 @@ test.describe('CopyAndPaste', () => {
             </p>
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Next</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -678,7 +678,7 @@ test.describe('CopyAndPaste', () => {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
+              dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -824,10 +824,10 @@ test.describe('CopyAndPaste', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            dir="auto"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
@@ -835,7 +835,7 @@ test.describe('CopyAndPaste', () => {
           <span data-lexical-text="true">World</span>
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            dir="auto"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
@@ -861,12 +861,12 @@ test.describe('CopyAndPaste', () => {
       html`
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </h1>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">And text below</span>
         </p>
       `,
@@ -951,12 +951,12 @@ test.describe('CopyAndPaste', () => {
       html`
         <blockquote
           class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </blockquote>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          dir="auto">
           <span data-lexical-text="true">Some text</span>
         </p>
       `,

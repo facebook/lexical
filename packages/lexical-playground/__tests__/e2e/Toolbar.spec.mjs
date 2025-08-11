@@ -94,7 +94,7 @@ test.describe('Toolbar', () => {
                   spellcheck="true"
                   aria-placeholder="Enter a caption..."
                   data-lexical-editor="true">
-                  <p dir="ltr">
+                  <p dir="auto">
                     <span data-lexical-text="true">
                       Yellow flower in tilt shift lens
                     </span>
@@ -111,18 +111,18 @@ test.describe('Toolbar', () => {
           ignoreInlineStyles: true,
         },
         (actualHtml) =>
-          // flaky fix: remove the extra <p><br /></p> that appears occasionally in CI runs
+          // flaky fix: remove the extra <p dir="auto"><br /></p> that appears occasionally in CI runs
           actualHtml.replace(
             html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">
                   Yellow flower in tilt shift lens
                 </span>
               </p>
-              <p><br /></p>
+              <p dir="auto"><br /></p>
             `,
             html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">
                   Yellow flower in tilt shift lens
                 </span>
@@ -142,7 +142,7 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p><br /></p>
+          <p dir="auto"><br /></p>
         `,
         undefined,
         {
@@ -171,91 +171,91 @@ test.describe('Toolbar', () => {
             </colgroup>
             <tr>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
             </tr>
             <tr>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
             </tr>
             <tr>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
             </tr>
             <tr>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
             </tr>
             <tr>
               <th>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </th>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
               <td>
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               </td>
             </tr>
           </table>
-          <p><br /></p>
+          <p dir="auto"><br /></p>
         `,
         undefined,
         {

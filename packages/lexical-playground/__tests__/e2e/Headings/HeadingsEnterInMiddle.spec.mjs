@@ -39,7 +39,7 @@ test(`Headings - stays as a heading when you press enter in the middle of a head
     html`
       <h1
         class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">Welcome to the playground</span>
       </h1>
     `,
@@ -56,12 +56,12 @@ test(`Headings - stays as a heading when you press enter in the middle of a head
     html`
       <h1
         class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">Welco</span>
       </h1>
       <h1
         class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        dir="auto">
         <span data-lexical-text="true">me to the playground</span>
       </h1>
     `,

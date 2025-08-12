@@ -40,17 +40,17 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="http://example.com">
+          <a href="http://example.com">
             <span data-lexical-text="true">http://example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="https://example.com/path?with=query#and-hash">
+          <a href="https://example.com/path?with=query#and-hash">
             <span data-lexical-text="true">
               https://example.com/path?with=query#and-hash
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="https://www.example.com">
+          <a href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -74,11 +74,11 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="mailto:name@example.com">
+          <a href="mailto:name@example.com">
             <span data-lexical-text="true">name@example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="mailto:anothername@test.example.uk">
+          <a href="mailto:anothername@test.example.uk">
             <span data-lexical-text="true">anothername@test.example.uk</span>
           </a>
           <span data-lexical-text="true">!</span>
@@ -96,7 +96,7 @@ test.describe.parallel('Auto Links', () => {
     test.skip(isPlainText);
     const htmlWithLink = html`
       <p dir="auto">
-        <a dir="auto" href="http://example.com">
+        <a href="http://example.com">
           <span data-lexical-text="true">http://example.com</span>
         </a>
       </p>
@@ -168,17 +168,17 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="http://example.com">
+          <a href="http://example.com">
             <span data-lexical-text="true">http://example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="https://example.com/path?with=query#and-hash">
+          <a href="https://example.com/path?with=query#and-hash">
             <span data-lexical-text="true">
               https://example.com/path?with=query#and-hash
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="https://www.example.com">
+          <a href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -203,15 +203,15 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="mailto:name@example.com">
+          <a href="mailto:name@example.com">
             <span data-lexical-text="true">name@example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="mailto:anothername@test.example.uk">
+          <a href="mailto:anothername@test.example.uk">
             <span data-lexical-text="true">anothername@test.example.uk</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="auto" href="https://www.example.com">
+          <a href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
           <span data-lexical-text="true">!</span>
@@ -235,7 +235,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <a dir="auto" href="https://" rel="noreferrer">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">hm</span>
           </a>
         </p>
@@ -250,7 +250,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <a dir="auto" href="https://" rel="noreferrer">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">https://facebook.com</span>
           </a>
         </p>
@@ -273,20 +273,20 @@ test.describe.parallel('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p>
-          <a dir="auto" href="https://1.com/">
+        <p dir="auto">
+          <a href="https://1.com/">
             <span data-lexical-text="true">https://1.com/</span>
           </a>
           <span data-lexical-text="true">,</span>
-          <a dir="auto" href="https://2.com/">
+          <a href="https://2.com/">
             <span data-lexical-text="true">https://2.com/</span>
           </a>
           <span data-lexical-text="true">;;;</span>
-          <a dir="auto" href="https://3.com">
+          <a href="https://3.com">
             <span data-lexical-text="true">https://3.com</span>
           </a>
           <span data-lexical-text="true">;</span>
-          <a dir="auto" href="mailto:name@domain.uk">
+          <a href="mailto:name@domain.uk">
             <span data-lexical-text="true">name@domain.uk</span>
           </a>
           <span data-lexical-text="true">;</span>
@@ -307,24 +307,24 @@ test.describe.parallel('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p>
-          <a dir="auto" href="https://1.com/">
+        <p dir="auto">
+          <a href="https://1.com/">
             <span data-lexical-text="true">https://1.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="auto" href="https://2.com/">
+          <a href="https://2.com/">
             <span data-lexical-text="true">https://2.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="auto" href="https://3.com/">
+          <a href="https://3.com/">
             <span data-lexical-text="true">https://3.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="auto" href="https://4.com/">
+          <a href="https://4.com/">
             <span data-lexical-text="true">https://4.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="auto" href="mailto:name-lastname@meta.com">
+          <a href="mailto:name-lastname@meta.com">
             <span data-lexical-text="true">name-lastname@meta.com</span>
           </a>
         </p>
@@ -347,7 +347,7 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hellohttps://example.com</span>
-          <a dir="auto" href="https://example.com">
+          <a href="https://example.com">
             <span data-lexical-text="true">https://example.com</span>
           </a>
         </p>
@@ -374,11 +374,11 @@ test.describe.parallel('Auto Links', () => {
           <span data-lexical-text="true">
             Hello name@example.c name@example.1
           </span>
-          <a dir="auto" href="mailto:name-lastname@example.com">
+          <a href="mailto:name-lastname@example.com">
             <span data-lexical-text="true">name-lastname@example.com</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="auto" href="mailto:name.lastname@meta.com">
+          <a href="mailto:name.lastname@meta.com">
             <span data-lexical-text="true">name.lastname@meta.com</span>
           </a>
         </p>
@@ -425,7 +425,7 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="http://example.com">
+          <a href="http://example.com">
             <span data-lexical-text="true">http://example.</span>
             <strong data-lexical-text="true">com</strong>
           </a>
@@ -473,7 +473,7 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
-          <a dir="auto" href="http://example.com">
+          <a href="http://example.com">
             <span style="font-size: 19px;" data-lexical-text="true">
               http://example.com
             </span>
@@ -551,7 +551,7 @@ test.describe.parallel('Auto Links', () => {
           page,
           html`
             <p dir="auto">
-              <a dir="auto" href="${url}">
+              <a href="${url}">
                 <span data-lexical-text="true">${rawUrl}</span>
               </a>
               <span data-lexical-text="true">ltr</span>
@@ -591,7 +591,7 @@ test.describe.parallel('Auto Links', () => {
           page,
           html`
             <p dir="auto">
-              <a dir="auto" ${href}>
+              <a ${href}>
                 <span data-lexical-text="true">${url}</span>
               </a>
               <span data-lexical-text="true">ltr</span>
@@ -704,7 +704,7 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="http://www.example.com">
+          <a href="http://www.example.com">
             <span data-lexical-text="true">http://www.example.com</span>
           </a>
           <span data-lexical-text="true">test</span>
@@ -723,7 +723,7 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span class="PlaygroundEditorTheme__ltr" dir="auto">
+          <span class="PlaygroundEditorTheme__ltr">
             <span data-lexical-text="true">http://www.example.com</span>
           </span>
           <span data-lexical-text="true">test</span>
@@ -742,7 +742,7 @@ test.describe.parallel('Auto Links', () => {
       html`
         <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="auto" href="http://www.example.com">
+          <a href="http://www.example.com">
             <span data-lexical-text="true">http://www.example.com</span>
           </a>
           <span data-lexical-text="true">test</span>

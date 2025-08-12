@@ -47,7 +47,7 @@ test.describe('Regression #7635', () => {
     await assertHTMLIgnoreInlineStyles(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -82,7 +82,7 @@ test.describe('Regression #7635', () => {
     await assertHTMLIgnoreInlineStyles(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -101,9 +101,7 @@ test.describe('Regression #7635', () => {
                 spellcheck="true"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
-                <p
-                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <span data-lexical-text="true">some content</span>
                 </p>
               </div>
@@ -132,7 +130,7 @@ test.describe('Regression #7635', () => {
     await assertHTMLIgnoreInlineStyles(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -151,9 +149,7 @@ test.describe('Regression #7635', () => {
                 spellcheck="true"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
-                <p
-                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <span data-lexical-text="true">Hello</span>
                   <strong
                     class="PlaygroundEditorTheme__textBold"
@@ -179,7 +175,7 @@ test.describe('Regression #7635', () => {
     await assertHTMLIgnoreInlineStyles(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -198,9 +194,7 @@ test.describe('Regression #7635', () => {
                 spellcheck="true"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
-                <p
-                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <span data-lexical-text="true">Hello</span>
                   <strong
                     class="PlaygroundEditorTheme__textBold"
@@ -213,9 +207,7 @@ test.describe('Regression #7635', () => {
           </span>
           <br />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Below the image</span>
         </p>
       `,

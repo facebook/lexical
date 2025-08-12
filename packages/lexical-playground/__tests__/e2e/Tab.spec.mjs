@@ -77,7 +77,7 @@ test.describe('Tab', () => {
         page,
         html`
           <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
             dir="auto"
             style="padding-inline-start: calc(40px)">
             <span data-lexical-text="true">すし</span>
@@ -102,7 +102,7 @@ test.describe('Tab', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="1"

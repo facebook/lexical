@@ -43,15 +43,11 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
         `,
@@ -66,9 +62,7 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
             <br />
             <br />
@@ -90,15 +84,11 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
         `,
@@ -122,9 +112,7 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
             <br />
             <br />
@@ -156,15 +144,11 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
           `,
@@ -173,9 +157,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
               <br />
               <br />
@@ -192,21 +174,15 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
           `,
@@ -221,9 +197,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
               <br />
               <br />
@@ -279,19 +253,13 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <h1
-            class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <h1 class="PlaygroundEditorTheme__h1" dir="auto">
             <span data-lexical-text="true">Heading</span>
           </h1>
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Some text</span>
           </p>
-          <h1
-            class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <h1 class="PlaygroundEditorTheme__h1" dir="auto">
             <span data-lexical-text="true">Heading</span>
           </h1>
         `,
@@ -321,9 +289,7 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Hello world</span>
             <span
               class="PlaygroundEditorTheme__hashtag"
@@ -343,9 +309,7 @@ test.describe('CopyAndPaste', () => {
               #not
             </span>
           </p>
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Next</span>
             <span
               class="PlaygroundEditorTheme__hashtag"
@@ -378,9 +342,7 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Hello world</span>
             <span
               class="PlaygroundEditorTheme__hashtag"
@@ -477,9 +439,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -499,9 +459,7 @@ test.describe('CopyAndPaste', () => {
                 #not
               </span>
             </p>
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Next</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -533,9 +491,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -620,9 +576,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -642,9 +596,7 @@ test.describe('CopyAndPaste', () => {
                 #not
               </span>
             </p>
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Next</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -676,9 +628,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Hello world</span>
               <span
                 class="PlaygroundEditorTheme__hashtag"
@@ -777,7 +727,7 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
       await assertSelection(page, {
@@ -822,20 +772,16 @@ test.describe('CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="auto"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
           <span data-lexical-text="true">World</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="auto"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
@@ -859,14 +805,10 @@ test.describe('CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <h1
-          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </h1>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">And text below</span>
         </p>
       `,
@@ -894,7 +836,7 @@ test.describe('CopyAndPaste', () => {
         await assertHTML(
           page,
           html`
-            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             <div contenteditable="false" data-lexical-decorator="true">
               <div class="PlaygroundEditorTheme__embedBlock">
                 <iframe
@@ -949,14 +891,10 @@ test.describe('CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <blockquote
-          class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <blockquote class="PlaygroundEditorTheme__quote" dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </blockquote>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Some text</span>
         </p>
       `,

@@ -36,7 +36,7 @@ test.describe('Regression tests for #6974', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type(testString);
     const beforeHtml = html`
-      <p>
+      <p dir="auto">
         <span contenteditable="false" data-lexical-decorator="true">
           <img
             alt=""

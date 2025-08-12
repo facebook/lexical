@@ -286,9 +286,7 @@ test.describe('Keyboard shortcuts', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <sub data-lexical-text="true">
             <strong
               class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textSubscript">
@@ -304,9 +302,7 @@ test.describe('Keyboard shortcuts', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
       `,
@@ -348,7 +344,7 @@ test.describe('Keyboard shortcuts', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(120px);">
           <span data-lexical-text="true">abc</span>
@@ -362,7 +358,7 @@ test.describe('Keyboard shortcuts', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(40px);">
           <span data-lexical-text="true">abc</span>
@@ -375,10 +371,7 @@ test.describe('Keyboard shortcuts', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto"
-          style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
           <span data-lexical-text="true">abc</span>
         </p>
       `,

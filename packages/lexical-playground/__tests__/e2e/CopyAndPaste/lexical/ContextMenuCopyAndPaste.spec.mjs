@@ -46,9 +46,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hellohello</span>
         </p>
       `,
@@ -89,16 +87,12 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span style="font-size: 17px;" data-lexical-text="true">
             MLH Fellowship
           </span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span style="font-size: 17px;" data-lexical-text="true">
             Fall 2024Fellowship
           </span>

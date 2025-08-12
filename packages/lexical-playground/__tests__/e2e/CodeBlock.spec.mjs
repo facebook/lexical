@@ -46,7 +46,7 @@ test.describe('CodeBlock', () => {
         page,
         html`
           <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__code"
             dir="auto"
             spellcheck="false"
             data-gutter="1"
@@ -87,9 +87,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">alert(1);</span>
           </p>
         `,
@@ -98,9 +96,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">\`\`\` alert(1);</span>
           </p>
         `,
@@ -127,7 +123,7 @@ test.describe('CodeBlock', () => {
         page,
         html`
           <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__code"
             dir="auto"
             spellcheck="false"
             data-gutter="1"
@@ -165,9 +161,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">\`\`\` alert(1);</span>
           </p>
         `,
@@ -195,25 +189,17 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">foo</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">bar</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">yar</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">meh</span>
         </p>
       `,
@@ -225,7 +211,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="12345"
@@ -265,25 +251,17 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">foo</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">bar</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">yar</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">meh</span>
         </p>
       `,
@@ -294,18 +272,14 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">foo</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">ba</span>
         </p>
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="1234"
@@ -333,7 +307,7 @@ test.describe('CodeBlock', () => {
         page,
         html`
           <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__code"
             dir="auto"
             spellcheck="false"
             data-gutter="1"
@@ -355,7 +329,7 @@ test.describe('CodeBlock', () => {
         page,
         html`
           <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__code"
             dir="auto"
             spellcheck="false"
             data-gutter="1"
@@ -386,9 +360,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">\`\`\` select * from users</span>
           </p>
         `,
@@ -414,7 +386,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="123"
@@ -510,7 +482,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="123"
@@ -595,7 +567,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="123"
@@ -669,7 +641,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="123"
@@ -757,7 +729,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="123"
@@ -836,7 +808,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="123"
@@ -904,7 +876,7 @@ test.describe('CodeBlock', () => {
     test.skip(isPlainText);
     const abcHTML = html`
       <code
-        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
         data-gutter="123"
@@ -976,7 +948,7 @@ test.describe('CodeBlock', () => {
     `;
     const bcaHTML = html`
       <code
-        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
         data-gutter="123"
@@ -1112,7 +1084,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="12"
@@ -1174,7 +1146,7 @@ test.describe('CodeBlock', () => {
       page,
       html`
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
           data-gutter="12"
@@ -1259,7 +1231,7 @@ test.describe('CodeBlock', () => {
       page,
       `
       <code
-        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
         data-gutter="12"
@@ -1336,7 +1308,7 @@ test.describe('CodeBlock', () => {
         page,
         html`
           <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__code"
             dir="auto"
             spellcheck="false"
             data-gutter="1234"
@@ -1369,9 +1341,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">\`\`\`diff &gt;let a = 1;</span>
             <br />
             <span data-lexical-text="true">&lt;let b = 2;</span>
@@ -1398,7 +1368,7 @@ test.describe('CodeBlock', () => {
         page,
         html`
           <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            class="PlaygroundEditorTheme__code"
             dir="auto"
             spellcheck="false"
             data-gutter="1234"
@@ -1494,9 +1464,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">
               \`\`\`diff-javascript +let a = 1;
             </span>

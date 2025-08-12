@@ -54,7 +54,7 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p>
+          <p dir="auto">
             <span contenteditable="false" data-lexical-decorator="true">
               <div draggable="false">
                 <img
@@ -79,7 +79,7 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p>
+          <p dir="auto">
             <span contenteditable="false" data-lexical-decorator="true">
               <div draggable="false">
                 <img
@@ -158,10 +158,10 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p>
+          <p dir="auto">
             <br />
           </p>
-          <table>
+          <table dir="auto">
             <colgroup>
               <col style="width: 92px" />
               <col style="width: 92px" />
@@ -171,87 +171,87 @@ test.describe('Toolbar', () => {
             </colgroup>
             <tr>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
             </tr>
             <tr>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
             </tr>
             <tr>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
             </tr>
             <tr>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
             </tr>
             <tr>
               <th>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </th>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
               <td>
-                <p dir="auto"><br /></p>
+                <p><br /></p>
               </td>
             </tr>
           </table>
@@ -276,7 +276,7 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -312,7 +312,10 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
+        <p
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
+          style="text-align: center">
           <span
             class="editor-image"
             contenteditable="false"

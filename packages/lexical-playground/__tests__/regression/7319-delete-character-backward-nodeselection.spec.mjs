@@ -77,7 +77,7 @@ test.describe('Regression tests for #7319', () => {
     }
     async function assertHR(count) {
       const expectedHtml = html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         ${Array.from(
           {length: count},
           (_, i) =>

@@ -58,12 +58,12 @@ export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
   return html`
     ${expected
       .replace(
-        /<table/g,
-        `<div${
+        /<table([^>]*)(dir="\w+")([^>]*)>/g,
+        `<div $2${
           ignoreClasses
             ? ''
             : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
-        }><table`,
+        }><table$1$3>`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;

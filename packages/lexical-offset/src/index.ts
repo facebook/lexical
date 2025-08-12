@@ -85,16 +85,15 @@ export class OffsetView {
 
     let start = originalStart;
     let end = originalEnd;
+    const isCollapsed = start === end;
+
     let startOffsetNode = $searchForNodeWithOffset(
       firstNode,
       start,
-      this._blockOffsetSize,
+      isCollapsed,
     );
-    let endOffsetNode = $searchForNodeWithOffset(
-      firstNode,
-      end,
-      this._blockOffsetSize,
-    );
+
+    let endOffsetNode = $searchForNodeWithOffset(firstNode, end, true);
 
     if (diffOffsetView !== undefined) {
       start = $getAdjustedOffsetFromDiff(
@@ -102,25 +101,15 @@ export class OffsetView {
         startOffsetNode,
         diffOffsetView,
         this,
-        this._blockOffsetSize,
       );
-      startOffsetNode = $searchForNodeWithOffset(
-        firstNode,
-        start,
-        this._blockOffsetSize,
-      );
+      startOffsetNode = $searchForNodeWithOffset(firstNode, start);
       end = $getAdjustedOffsetFromDiff(
         end,
         endOffsetNode,
         diffOffsetView,
         this,
-        this._blockOffsetSize,
       );
-      endOffsetNode = $searchForNodeWithOffset(
-        firstNode,
-        end,
-        this._blockOffsetSize,
-      );
+      endOffsetNode = $searchForNodeWithOffset(firstNode, end);
     }
 
     if (startOffsetNode === null || endOffsetNode === null) {
@@ -142,15 +131,21 @@ export class OffsetView {
     let endType: 'element' | 'text' = 'element';
 
     if (startOffsetNode.type === 'text') {
-      startOffset = start - startOffsetNode.start;
       startType = 'text';
+      const preferredTextNodeEndOverNextNodeStart = start > startOffsetNode.end;
+      startOffset = start - startOffsetNode.start;
+      if (preferredTextNodeEndOverNextNodeStart) {
+        startOffset--;
+      }
+
+      // TODO check the following logic.
       // If we are at the edge of a text node and we
       // don't have a collapsed selection, then let's
       // try and correct the offset node.
       const sibling = startNode.getNextSibling();
 
       if (
-        start !== end &&
+        !isCollapsed &&
         startOffset === startNode.getTextContentSize() &&
         $isTextNode(sibling)
       ) {
@@ -158,20 +153,26 @@ export class OffsetView {
         startKey = sibling.__key;
       }
     } else if (startOffsetNode.type === 'inline') {
+      const indexWithinParent = startNode.getIndexWithinParent();
       startKey = startNode.getParentOrThrow().getKey();
       startOffset =
-        end > startOffsetNode.start
-          ? startOffsetNode.end
-          : startOffsetNode.start;
+        start === startOffsetNode.end
+          ? indexWithinParent + 1
+          : indexWithinParent; // TODO can this happen in any ways?
     }
 
     if (endOffsetNode.type === 'text') {
-      endOffset = end - endOffsetNode.start;
       endType = 'text';
+      const preferredTextNodeEndOverNextNodeStart = end > endOffsetNode.end;
+      endOffset = end - endOffsetNode.start;
+      if (preferredTextNodeEndOverNextNodeStart) {
+        endOffset--;
+      }
     } else if (endOffsetNode.type === 'inline') {
+      const indexWithinParent = endNode.getIndexWithinParent();
       endKey = endNode.getParentOrThrow().getKey();
       endOffset =
-        end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
+        end === endOffsetNode.end ? indexWithinParent + 1 : indexWithinParent;
     }
 
     const selection = $createRangeSelection();
@@ -202,14 +203,20 @@ export class OffsetView {
         start = offsetNode.start + anchorOffset;
       }
     } else {
-      const node = anchor.getNode().getDescendantByIndex(anchorOffset);
+      const anchorNode = anchor.getNode();
+      if (anchorNode.isEmpty()) {
+        const anchorOffsetNode = offsetMap.get(anchorNode.getKey());
+        start = anchorOffsetNode ? anchorOffsetNode.start : -1;
+      } else {
+        const node = anchorNode.getDescendantByIndex(anchorOffset);
 
-      if (node !== null) {
-        const offsetNode = offsetMap.get(node.getKey());
+        if (node !== null) {
+          const offsetNode = offsetMap.get(node.getKey());
 
-        if (offsetNode !== undefined) {
-          const isAtEnd = node.getIndexWithinParent() !== anchorOffset;
-          start = isAtEnd ? offsetNode.end : offsetNode.start;
+          if (offsetNode !== undefined) {
+            const isAtEnd = node.getIndexWithinParent() !== anchorOffset;
+            start = isAtEnd ? offsetNode.end : offsetNode.start;
+          }
         }
       }
     }
@@ -221,14 +228,20 @@ export class OffsetView {
         end = offsetNode.start + focus.offset;
       }
     } else {
-      const node = focus.getNode().getDescendantByIndex(focusOffset);
+      const focusNode = focus.getNode();
+      if (focusNode.isEmpty()) {
+        const focusOffsetNode = offsetMap.get(focusNode.getKey());
+        end = focusOffsetNode ? focusOffsetNode.start : -1;
+      } else {
+        const node = focusNode.getDescendantByIndex(focusOffset);
 
-      if (node !== null) {
-        const offsetNode = offsetMap.get(node.getKey());
+        if (node !== null) {
+          const offsetNode = offsetMap.get(node.getKey());
 
-        if (offsetNode !== undefined) {
-          const isAtEnd = node.getIndexWithinParent() !== focusOffset;
-          end = isAtEnd ? offsetNode.end : offsetNode.start;
+          if (offsetNode !== undefined) {
+            const isAtEnd = node.getIndexWithinParent() !== focusOffset;
+            end = isAtEnd ? offsetNode.end : offsetNode.start;
+          }
         }
       }
     }
@@ -242,7 +255,6 @@ function $getAdjustedOffsetFromDiff(
   offsetNode: null | OffsetNode,
   prevOffsetView: OffsetView,
   offsetView: OffsetView,
-  blockOffsetSize: number,
 ): number {
   const prevOffsetMap = prevOffsetView._offsetMap;
   const offsetMap = offsetView._offsetMap;
@@ -310,11 +322,7 @@ function $getAdjustedOffsetFromDiff(
   const prevFirstNode = prevOffsetView._firstNode;
 
   if (prevFirstNode !== null) {
-    currentNode = $searchForNodeWithOffset(
-      prevFirstNode,
-      offset,
-      blockOffsetSize,
-    );
+    currentNode = $searchForNodeWithOffset(prevFirstNode, offset);
     let alreadyVisitedParentOfCurrentNode = false;
 
     while (currentNode !== null) {
@@ -356,16 +364,12 @@ function $getAdjustedOffsetFromDiff(
 function $searchForNodeWithOffset(
   firstNode: OffsetNode,
   offset: number,
-  blockOffsetSize: number,
+  preferTextNodeEndOverNextNodeStart = false,
 ): OffsetNode | null {
   let currentNode = firstNode;
 
   while (currentNode !== null) {
-    const end =
-      currentNode.end +
-      (currentNode.type !== 'element' || blockOffsetSize === 0 ? 1 : 0);
-
-    if (offset < end) {
+    if (offset < currentNode.end) {
       const child = currentNode.child;
 
       if (child !== null) {
@@ -374,11 +378,30 @@ function $searchForNodeWithOffset(
       }
 
       return currentNode;
+    } else if (currentNode.start === offset) {
+      return currentNode;
+    } else if (
+      preferTextNodeEndOverNextNodeStart &&
+      currentNode.type === 'text' &&
+      currentNode.end === offset
+    ) {
+      // We can think of a position on the 'edge' between two nodes as either:
+      //  - end of first node
+      // or
+      //  - start of the second node
+      //
+      // selecting via user input thinks as the end of first node when it comes to text nodes, so we adjust to that.
+      // Note, we only do this if preferTextNodeEndOverNextNodeStart is true, which should be the case when:
+      //  - we are getting the endNode for a selection
+      //  - we are getting the startNode for a selection and startOffset and endOffset are the same (collapsed selection)
+      return currentNode;
     }
 
     const sibling = currentNode.next;
-
     if (sibling === null) {
+      if (currentNode.end === offset) {
+        return currentNode;
+      }
       break;
     }
 

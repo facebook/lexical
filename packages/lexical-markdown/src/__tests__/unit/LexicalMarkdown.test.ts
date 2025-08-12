@@ -653,16 +653,16 @@ describe('Markdown', () => {
       md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
     },
     {
-      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">hello]</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
-      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">hello[</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
-      md: '[hello[](https://lexical.dev)[world](https://lexical.dev)',
-    },
-    {
-      html: '<p><a href="https://lexical.dev" title="ti[t]le"><span style="white-space: pre-wrap;">hello[</span></a><a href="https://lexical.dev" title="tit]le"><span style="white-space: pre-wrap;">world[</span></a></p>',
-      md: '[hello[](https://lexical.dev "ti[t]le")[world[](https://lexical.dev "tit]le")',
+      html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
   ];
 

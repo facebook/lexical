@@ -30,6 +30,7 @@ test.describe('HTML CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Bold
           </strong>
@@ -37,6 +38,7 @@ test.describe('HTML CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <em
             class="PlaygroundEditorTheme__textItalic"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Italic
           </em>
@@ -44,6 +46,7 @@ test.describe('HTML CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="PlaygroundEditorTheme__textUnderline"
+            style="font-size: 11pt"
             data-lexical-text="true">
             underline
           </span>
@@ -52,6 +55,7 @@ test.describe('HTML CopyAndPaste', () => {
           <strong
             class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
            PlaygroundEditorTheme__textUnderline"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Bold Italic Underline
           </strong>

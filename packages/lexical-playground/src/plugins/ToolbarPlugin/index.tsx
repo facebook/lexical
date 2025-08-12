@@ -76,6 +76,7 @@ import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
@@ -89,7 +90,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {InsertTableDialog} from '../TablePlugin';
-import FontSize from './fontSize';
+import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
   clearFormatting,
   formatBulletList,
@@ -1006,7 +1007,9 @@ export default function ToolbarPlugin({
           />
           <Divider />
           <FontSize
-            selectionFontSize={toolbarState.fontSize.slice(0, -2)}
+            selectionFontSize={parseFontSizeForToolbar(
+              toolbarState.fontSize,
+            ).slice(0, -2)}
             editor={activeEditor}
             disabled={!isEditable}
           />
@@ -1374,6 +1377,18 @@ export default function ToolbarPlugin({
                   className="item">
                   <i className="icon caret-right" />
                   <span className="text">Collapsible container</span>
+                </DropDownItem>
+                <DropDownItem
+                  onClick={() => {
+                    const dateTime = new Date();
+                    dateTime.setHours(0, 0, 0, 0);
+                    activeEditor.dispatchCommand(INSERT_DATETIME_COMMAND, {
+                      dateTime,
+                    });
+                  }}
+                  className="item">
+                  <i className="icon calendar" />
+                  <span className="text">Date</span>
                 </DropDownItem>
                 {EmbedConfigs.map((embedConfig) => (
                   <DropDownItem

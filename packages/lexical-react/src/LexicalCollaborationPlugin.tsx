@@ -84,6 +84,7 @@ export function CollaborationPlugin({
   }, [collabContext, editor]);
 
   const [provider, setProvider] = useState<Provider>();
+  const [doc, setDoc] = useState<Doc>();
 
   useEffect(() => {
     if (isProviderInitialized.current) {
@@ -94,13 +95,13 @@ export function CollaborationPlugin({
 
     const newProvider = providerFactory(id, yjsDocMap);
     setProvider(newProvider);
+    setDoc(yjsDocMap.get(id));
 
     return () => {
       newProvider.disconnect();
     };
   }, [id, providerFactory, yjsDocMap]);
 
-  const [doc, setDoc] = useState(yjsDocMap.get(id));
   const [binding, setBinding] = useState<Binding>();
 
   useEffect(() => {

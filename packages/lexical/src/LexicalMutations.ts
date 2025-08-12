@@ -180,6 +180,9 @@ function flushMutations(
           // Text mutations are deferred and passed to mutation listeners to be
           // processed outside of the Lexical engine.
           if (
+            // TODO there is an edge case here if a mutation happens too quickly
+            //      after text input, it may never be handled since we do not
+            //      track the ignored mutations in any way
             shouldFlushTextMutations &&
             $isTextNode(targetNode) &&
             isDOMTextNode(targetDOM) &&

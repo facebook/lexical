@@ -36,6 +36,7 @@ import {
   $createTextNode,
   $getPreviousSelection,
   $getSelection,
+  $getTextNodeOffset,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
@@ -656,13 +657,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   return $getNodeByKey(nodeKey);
 }
 
-export function getTextNodeOffset(
-  node: TextNode,
-  moveSelectionToEnd: boolean,
-): number {
-  return moveSelectionToEnd ? node.getTextContentSize() : 0;
-}
-
 function getNodeKeyFromDOMTree(
   // Note that node here refers to a DOM Node, not an Lexical Node
   dom: Node,
@@ -824,7 +818,7 @@ export function $updateTextNodeFromDOMContent(
         anchorOffset === null ||
         focusOffset === null
       ) {
-        node.setTextContent(normalizedTextContent);
+        $setTextContentWithSelection(node, normalizedTextContent, selection);
         return;
       }
       selection.setTextNodeRange(node, anchorOffset, node, focusOffset);
@@ -835,7 +829,24 @@ export function $updateTextNodeFromDOMContent(
         node.replace(replacement);
         node = replacement;
       }
-      node.setTextContent(normalizedTextContent);
+      $setTextContentWithSelection(node, normalizedTextContent, selection);
+    }
+  }
+}
+
+function $setTextContentWithSelection(
+  node: TextNode,
+  textContent: string,
+  selection: BaseSelection | null,
+) {
+  node.setTextContent(textContent);
+  if ($isRangeSelection(selection)) {
+    const key = node.getKey();
+    for (const k of ['anchor', 'focus'] as const) {
+      const pt = selection[k];
+      if (pt.type === 'text' && pt.key === key) {
+        pt.offset = $getTextNodeOffset(node, pt.offset, 'clamp');
+      }
     }
   }
 }

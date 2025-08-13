@@ -36,8 +36,7 @@ const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const IS_TABLE_HORIZONTAL_SCROLL =
   process.env.E2E_TABLE_MODE !== 'legacy';
-export const SAMPLE_SVG_URL =
-  E2E_PORT === 3000 ? '/src/images/logo.svg' : findAsset('logo*.svg');
+export const SAMPLE_SVG_URL = '/logo.svg';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'

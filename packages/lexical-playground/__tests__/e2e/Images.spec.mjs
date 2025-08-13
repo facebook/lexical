@@ -419,7 +419,7 @@ test.describe('Images', () => {
                 alt="lexical logo"
                 draggable="false"
                 src="${SAMPLE_SVG_URL}"
-                style="height: 110px; max-width: 500px; width: 500px" />
+                style="height: 112px; max-width: 500px; width: 500px" />
             </div>
           </span>
           <span
@@ -821,7 +821,7 @@ test.describe('Images', () => {
                 alt="lexical logo"
                 draggable="false"
                 src="${SAMPLE_SVG_URL}"
-                style="height: 110px; max-width: 500px; width: 500px" />
+                style="height: 112px; max-width: 500px; width: 500px" />
             </div>
           </span>
           <span

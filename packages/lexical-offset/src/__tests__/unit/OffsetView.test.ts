@@ -43,7 +43,10 @@ describe('OffsetView', () => {
       const nodeMap = nodeMapBuilder
         .addRootNode()
         .addParagraphNode('elementNode')
-        .addTextNodeOf(4, 'textNode')
+        .addTextNodeOf(4, 'lastChildOfElementNode')
+        .addParagraphNode('elementNode2')
+        .addTextNodeOf(4)
+        .addLineBreakNode('lastChildOfElementNode2')
         .build();
 
       // Act
@@ -57,8 +60,18 @@ describe('OffsetView', () => {
       const elementOffsetNode = offsetView._offsetMap.get('elementNode');
       expect(elementOffsetNode?.end).toBe(5);
 
-      const textNode = offsetView._offsetMap.get('textNode');
-      expect(textNode?.end).toBe(4);
+      const lastOffsetChildOfElementNode = offsetView._offsetMap.get(
+        'lastChildOfElementNode',
+      );
+      expect(lastOffsetChildOfElementNode?.end).toBe(4);
+
+      const elementOffsetNode2 = offsetView._offsetMap.get('elementNode2');
+      expect(elementOffsetNode2?.end).toBe(11);
+
+      const lastOffsetChildOfElementNode2 = offsetView._offsetMap.get(
+        'lastChildOfElementNode2',
+      );
+      expect(lastOffsetChildOfElementNode2?.end).toBe(10);
     });
 
     it('should internally produce an offset map with proper start and end offsets for nodes', () => {

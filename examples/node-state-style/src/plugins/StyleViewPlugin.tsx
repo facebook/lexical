@@ -692,27 +692,25 @@ const CSSPropertyComboBox = (props: CSSPropertyComboBoxProps) => {
   );
 
   return (
-    <>
-      <Combobox.RootProvider value={combobox} lazyMount={true}>
-        <Combobox.Control>
-          <Combobox.Input onKeyDown={handleKeydown} />
-        </Combobox.Control>
-        <Portal>
-          <Combobox.Positioner>
-            <Combobox.Content>
-              <Combobox.ItemGroup>
-                {combobox.collection.items.map((item) => (
-                  <Combobox.Item key={item} item={item}>
-                    <Combobox.ItemText>{item}</Combobox.ItemText>
-                    <Combobox.ItemIndicator>✓</Combobox.ItemIndicator>
-                  </Combobox.Item>
-                ))}
-              </Combobox.ItemGroup>
-            </Combobox.Content>
-          </Combobox.Positioner>
-        </Portal>
-      </Combobox.RootProvider>
-    </>
+    <Combobox.RootProvider value={combobox} lazyMount={true}>
+      <Combobox.Control>
+        <Combobox.Input onKeyDown={handleKeydown} />
+      </Combobox.Control>
+      <Portal>
+        <Combobox.Positioner>
+          <Combobox.Content>
+            <Combobox.ItemGroup>
+              {combobox.collection.items.map((item) => (
+                <Combobox.Item key={item} item={item}>
+                  <Combobox.ItemText>{item}</Combobox.ItemText>
+                  <Combobox.ItemIndicator>✓</Combobox.ItemIndicator>
+                </Combobox.Item>
+              ))}
+            </Combobox.ItemGroup>
+          </Combobox.Content>
+        </Combobox.Positioner>
+      </Portal>
+    </Combobox.RootProvider>
   );
 };
 

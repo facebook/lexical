@@ -17,7 +17,6 @@ import {NodeMapBuilder} from './helpers/NodeMapBuilder';
 
 describe('OffsetView', () => {
   describe('$createOffsetView', () => {
-    // TODO double-check
     it('should create an offset view with an offset map not containing the root node', () => {
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder

@@ -913,32 +913,30 @@ export default function ToolbarPlugin({
       {toolbarState.blockType === 'code' && isCodeHighlighted ? (
         <>
           {!isCodeShiki && (
-            <>
-              <DropDown
-                disabled={!isEditable}
-                buttonClassName="toolbar-item code-language"
-                buttonLabel={
-                  (CODE_LANGUAGE_OPTIONS_PRISM.find(
-                    (opt) =>
-                      opt[0] ===
-                      normalizeCodeLanguagePrism(toolbarState.codeLanguage),
-                  ) || ['', ''])[1]
-                }
-                buttonAriaLabel="Select language">
-                {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
-                  return (
-                    <DropDownItem
-                      className={`item ${dropDownActiveClass(
-                        value === toolbarState.codeLanguage,
-                      )}`}
-                      onClick={() => onCodeLanguageSelect(value)}
-                      key={value}>
-                      <span className="text">{name}</span>
-                    </DropDownItem>
-                  );
-                })}
-              </DropDown>
-            </>
+            <DropDown
+              disabled={!isEditable}
+              buttonClassName="toolbar-item code-language"
+              buttonLabel={
+                (CODE_LANGUAGE_OPTIONS_PRISM.find(
+                  (opt) =>
+                    opt[0] ===
+                    normalizeCodeLanguagePrism(toolbarState.codeLanguage),
+                ) || ['', ''])[1]
+              }
+              buttonAriaLabel="Select language">
+              {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
+                return (
+                  <DropDownItem
+                    className={`item ${dropDownActiveClass(
+                      value === toolbarState.codeLanguage,
+                    )}`}
+                    onClick={() => onCodeLanguageSelect(value)}
+                    key={value}>
+                    <span className="text">{name}</span>
+                  </DropDownItem>
+                );
+              })}
+            </DropDown>
           )}
           {isCodeShiki && (
             <>

@@ -37,28 +37,32 @@ describe('OffsetView', () => {
       expect(offsetView._offsetMap.has('textNode')).toBe(true);
     });
 
-    it("should internally produce an offset map with paragraph.end is greater than its last child node's end by 1", () => {
+    it("should internally produce an offset map with element node's end is greater than its last child node's end by 1", () => {
+      // Arrange
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder
         .addRootNode()
-        .addParagraphNode('paragraphNode')
+        .addParagraphNode('elementNode')
         .addTextNodeOf(4, 'textNode')
         .build();
 
+      // Act
       const offsetView: OffsetView = $createOffsetView(
         {} as LexicalEditor,
         1,
         arrangeEditorState(nodeMap),
       );
 
-      const paragraphOffsetNode = offsetView._offsetMap.get('paragraphNode');
-      expect(paragraphOffsetNode?.end).toBe(5);
+      // Assert
+      const elementOffsetNode = offsetView._offsetMap.get('elementNode');
+      expect(elementOffsetNode?.end).toBe(5);
 
       const textNode = offsetView._offsetMap.get('textNode');
       expect(textNode?.end).toBe(4);
     });
 
     it('should internally produce an offset map with proper start and end offsets for nodes', () => {
+      // Arrange
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder
         .addRootNode()
@@ -68,12 +72,14 @@ describe('OffsetView', () => {
         .addTextNodeOf(4, 'textNode2')
         .build();
 
+      // Act
       const offsetView: OffsetView = $createOffsetView(
         {} as LexicalEditor,
         1,
         arrangeEditorState(nodeMap),
       );
 
+      // Assert
       expect(offsetView).toBeTruthy();
       expect(offsetView._offsetMap.size).toEqual(4);
       const paragraphOffsetNode = offsetView._offsetMap.get('paragraphNode1');

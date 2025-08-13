@@ -17,7 +17,7 @@ import {NodeMapBuilder} from './helpers/NodeMapBuilder';
 
 describe('OffsetView', () => {
   describe('$createOffsetView', () => {
-    it('should create an offset view with an offset map not containing the root node', () => {
+    it('should internally produce an offset map not containing the root node', () => {
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder
         .addRootNode()
@@ -37,7 +37,28 @@ describe('OffsetView', () => {
       expect(offsetView._offsetMap.has('textNode')).toBe(true);
     });
 
-    it('should create an offset view with an offset map with proper start and end offsets for nodes', () => {
+    it("should internally produce an offset map with paragraph.end is greater than its last child node's end by 1", () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode('paragraphNode')
+        .addTextNodeOf(4, 'textNode')
+        .build();
+
+      const offsetView: OffsetView = $createOffsetView(
+        {} as LexicalEditor,
+        1,
+        arrangeEditorState(nodeMap),
+      );
+
+      const paragraphOffsetNode = offsetView._offsetMap.get('paragraphNode');
+      expect(paragraphOffsetNode?.end).toBe(5);
+
+      const textNode = offsetView._offsetMap.get('textNode');
+      expect(textNode?.end).toBe(4);
+    });
+
+    it('should internally produce an offset map with proper start and end offsets for nodes', () => {
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder
         .addRootNode()

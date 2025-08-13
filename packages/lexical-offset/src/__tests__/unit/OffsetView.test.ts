@@ -16,6 +16,64 @@ import {
 import {NodeMapBuilder} from './helpers/NodeMapBuilder';
 
 describe('OffsetView', () => {
+  describe('$createOffsetView', () => {
+    // TODO double-check
+    it('should create an offset view with an offset map not containing the root node', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode('paragraphNode')
+        .addTextNode('text', 'textNode')
+        .build();
+
+      const offsetView: OffsetView = $createOffsetView(
+        {} as LexicalEditor,
+        1,
+        arrangeEditorState(nodeMap),
+      );
+
+      expect(offsetView).toBeTruthy();
+      expect(offsetView._offsetMap.size).toEqual(2);
+      expect(offsetView._offsetMap.has('paragraphNode')).toBe(true);
+      expect(offsetView._offsetMap.has('textNode')).toBe(true);
+    });
+
+    it('should create an offset view with an offset map with proper start and end offsets for nodes', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode('paragraphNode1')
+        .addTextNode('text', 'textNode1')
+        .addLineBreakNode('lineBreakNode1')
+        .addTextNode('text', 'textNode2')
+        .build();
+
+      const offsetView: OffsetView = $createOffsetView(
+        {} as LexicalEditor,
+        1,
+        arrangeEditorState(nodeMap),
+      );
+
+      expect(offsetView).toBeTruthy();
+      expect(offsetView._offsetMap.size).toEqual(4);
+      const paragraphOffsetNode = offsetView._offsetMap.get('paragraphNode1');
+      expect(paragraphOffsetNode?.start).toBe(0);
+      expect(paragraphOffsetNode?.end).toBe(10);
+
+      const textNode1 = offsetView._offsetMap.get('textNode1');
+      expect(textNode1?.start).toBe(0);
+      expect(textNode1?.end).toBe(4);
+
+      const lineBreakNode = offsetView._offsetMap.get('lineBreakNode1');
+      expect(lineBreakNode?.start).toBe(4);
+      expect(lineBreakNode?.end).toBe(5);
+
+      const textNode2 = offsetView._offsetMap.get('textNode2');
+      expect(textNode2?.start).toBe(5);
+      expect(textNode2?.end).toBe(9);
+    });
+  });
+
   describe('createSelectionFromOffsets', () => {
     it('should return null when end offset is over text length', () => {
       const nodeMapBuilder = new NodeMapBuilder();
@@ -123,12 +181,16 @@ function $arrangeOffsetView(
       return nodeMap.get(key);
     });
   }
-  const editorState = {
-    _nodeMap: nodeMap,
-  } as EditorState;
+  const editorState = arrangeEditorState(nodeMap);
   const editor = {} as LexicalEditor;
   const offsetView: OffsetView = $createOffsetView(editor, 1, editorState);
   return offsetView;
+}
+
+function arrangeEditorState(nodeMap: Map<string, LexicalNode>) {
+  return {
+    _nodeMap: nodeMap,
+  } as EditorState;
 }
 
 jest.mock('lexical', () => {

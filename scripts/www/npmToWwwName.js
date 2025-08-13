@@ -26,7 +26,7 @@ module.exports = function npmToWwwName(name) {
   return parts
     .flatMap((part) => part.split('-'))
     .map((part) =>
-      part.startsWith('useLexical')
+      /^use[A-Z]/.test(part)
         ? part
         : part.charAt(0).toUpperCase() + part.slice(1),
     )

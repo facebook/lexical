@@ -66,6 +66,27 @@ describe('OffsetView', () => {
       expect(selection).toBeNull();
     });
 
+    it('should return null when end node cannot be found by its key', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNode('text', 'textNodeCanBeFound')
+        .addTextNode('some more text')
+        .build();
+      ($getNodeByKey as jest.Mock).mockImplementation((key) => {
+        if (key === 'textNodeCanBeFound') {
+          return nodeMap.get(key);
+        }
+        return null;
+      });
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap, false);
+
+      const selection = offsetView.createSelectionFromOffsets(0, 10);
+
+      expect(selection).toBeNull();
+    });
+
     it('should return selection with anchor being same as focus when start offset is same as end offset', () => {
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder

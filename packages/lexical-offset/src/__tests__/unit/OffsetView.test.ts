@@ -45,6 +45,27 @@ describe('OffsetView', () => {
       expect(selection).toBeNull();
     });
 
+    it('should return null when start node cannot be found by its key', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNode('text')
+        .addTextNode('some more text', 'textNodeCanBeFound')
+        .build();
+      ($getNodeByKey as jest.Mock).mockImplementation((key) => {
+        if (key === 'textNodeCanBeFound') {
+          return nodeMap.get(key);
+        }
+        return null;
+      });
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap, false);
+
+      const selection = offsetView.createSelectionFromOffsets(0, 10);
+
+      expect(selection).toBeNull();
+    });
+
     it('should return selection with anchor being same as focus when start offset is same as end offset', () => {
       const nodeMapBuilder = new NodeMapBuilder();
       const nodeMap = nodeMapBuilder
@@ -94,6 +115,7 @@ jest.mock('lexical', () => {
   return {
     ...actual,
     $createRangeSelection: jest.fn(() => {
+      // Have to do this as checks on PointType's set would require an active state...
       const createPointStub = () => {
         const pointStub = {
           key: '',

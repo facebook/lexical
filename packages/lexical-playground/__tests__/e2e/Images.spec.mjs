@@ -26,6 +26,7 @@ import {
   LEGACY_EVENTS,
   SAMPLE_IMAGE_URL,
   SAMPLE_LANDSCAPE_IMAGE_URL,
+  SAMPLE_SVG_URL,
   selectorBoundingBox,
   test,
   waitForSelector,
@@ -397,11 +398,7 @@ test.describe('Images', () => {
 
     await focusEditor(page);
 
-    await insertUrlImage(
-      page,
-      'https://lexical.dev/img/logo.svg',
-      'lexical logo',
-    );
+    await insertUrlImage(page, SAMPLE_SVG_URL, 'lexical logo');
 
     await insertUploadImage(
       page,
@@ -421,8 +418,8 @@ test.describe('Images', () => {
               <img
                 alt="lexical logo"
                 draggable="false"
-                src="https://lexical.dev/img/logo.svg"
-                style="height: 112px; max-width: 500px; width: 500px" />
+                src="${SAMPLE_SVG_URL}"
+                style="height: 110px; max-width: 500px; width: 500px" />
             </div>
           </span>
           <span
@@ -805,11 +802,7 @@ test.describe('Images', () => {
     await focusEditor(page);
 
     // Insert an SVG image using the Lexical logo
-    await insertUrlImage(
-      page,
-      'https://lexical.dev/img/logo.svg',
-      'lexical logo',
-    );
+    await insertUrlImage(page, SAMPLE_SVG_URL, 'lexical logo');
 
     // Insert a JPG image
     await insertUrlImage(page, SAMPLE_IMAGE_URL, 'sample image');
@@ -827,8 +820,8 @@ test.describe('Images', () => {
               <img
                 alt="lexical logo"
                 draggable="false"
-                src="https://lexical.dev/img/logo.svg"
-                style="height: 112px; max-width: 500px; width: 500px" />
+                src="${SAMPLE_SVG_URL}"
+                style="height: 110px; max-width: 500px; width: 500px" />
             </div>
           </span>
           <span

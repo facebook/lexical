@@ -43,9 +43,9 @@ describe('OffsetView', () => {
       const nodeMap = nodeMapBuilder
         .addRootNode()
         .addParagraphNode('paragraphNode1')
-        .addTextNode('text', 'textNode1')
+        .addTextNodeOf(4, 'textNode1')
         .addLineBreakNode('lineBreakNode1')
-        .addTextNode('text', 'textNode2')
+        .addTextNodeOf(4, 'textNode2')
         .build();
 
       const offsetView: OffsetView = $createOffsetView(

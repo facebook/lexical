@@ -56,6 +56,11 @@ export class NodeMapBuilder {
     return this;
   }
 
+  addTextNodeOf(length: number, key?: string): NodeMapBuilder {
+    const textContent = 'x'.repeat(length);
+    return this.addTextNode(textContent, key);
+  }
+
   addTextNode(text: string, key?: string): NodeMapBuilder {
     if (this.currentParagraph === null) {
       throw new Error('No paragraph to add text node to');

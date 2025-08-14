@@ -345,15 +345,13 @@ describe('LexicalTextNode tests', () => {
 
       // Set each format and ensure that the other formats are cleared
       capitalizationFormats.forEach((formatToSet) => {
-        textNode.toggleFormat(formatToSet as TextFormatType);
+        textNode.toggleFormat(formatToSet);
 
         capitalizationFormats
           .filter((format) => format !== formatToSet)
-          .forEach((format) =>
-            expect(textNode.hasFormat(format as TextFormatType)).toBe(false),
-          );
+          .forEach((format) => expect(textNode.hasFormat(format)).toBe(false));
 
-        expect(textNode.hasFormat(formatToSet as TextFormatType)).toBe(true);
+        expect(textNode.hasFormat(formatToSet)).toBe(true);
       });
     });
   });

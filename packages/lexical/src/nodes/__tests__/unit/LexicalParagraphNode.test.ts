@@ -11,7 +11,6 @@ import {
   $getRoot,
   $isParagraphNode,
   ParagraphNode,
-  RangeSelection,
 } from 'lexical';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
@@ -115,10 +114,7 @@ describe('LexicalParagraphNode tests', () => {
 
       await editor.update(() => {
         const selection = paragraphNode.select();
-        const result = paragraphNode.insertNewAfter(
-          selection as RangeSelection,
-          false,
-        );
+        const result = paragraphNode.insertNewAfter(selection, false);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
         expect(testEnv.outerHTML).toBe(

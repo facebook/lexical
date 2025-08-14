@@ -975,6 +975,75 @@ export function registerRichText(editor: LexicalEditor): () => void {
       DROP_COMMAND,
       (event) => {
         const [, files] = eventFiles(event);
+        // drag drop selected text
+        if (event.dataTransfer && event.dataTransfer.types.includes('text/plain') && !files.length) {
+          const text = event.dataTransfer.getData('text/plain');
+          const serializedSelection = event.dataTransfer.getData('application/x-lexical-selection');
+          const selectionData = JSON.parse(serializedSelection);
+          
+          const selectionSourceOffset = selectionData.anchor.offset;
+
+          if (text) {
+            const x = event.clientX;
+            const y = event.clientY;
+            const eventRange = caretFromPoint(x, y);
+            if (eventRange !== null) {
+              const {offset: domOffset, node: domNode} = eventRange;
+              const node = $getNearestNodeFromDOMNode(domNode);
+              if (node !== null) {
+                editor.update(() => {
+                  const selection = $createRangeSelection();
+                  if ($isTextNode(node)) {
+                    selection.anchor.set(node.getKey(), domOffset, 'text');
+                    selection.focus.set(node.getKey(), domOffset, 'text');
+                  } else {
+                    const parentKey = node.getParentOrThrow().getKey();
+                    const offset = node.getIndexWithinParent() + 1;
+                    selection.anchor.set(parentKey, offset, 'element');
+                    selection.focus.set(parentKey, offset, 'element');
+                  }
+                  
+                  const currentSelection = $getSelection();
+
+                  if ($isRangeSelection(currentSelection)) {
+                    let left : boolean = false;
+                    let right : boolean = false;
+                    if (selectionSourceOffset < domOffset) {
+                      right = true;
+                    } else {
+                      left = true;
+                    }
+
+                    if (right) {
+                      currentSelection.insertRawText(text);
+                      right = false;
+                    }
+                    
+                    if (serializedSelection) {
+                      try {
+                        const originalSelection = $createRangeSelection();
+                        originalSelection.anchor.set(selectionData.anchor.key, selectionData.anchor.offset, selectionData.anchor.type);
+                        originalSelection.focus.set(selectionData.focus.key, selectionData.focus.offset, selectionData.focus.type);
+                        originalSelection.removeText();
+                      } catch (e) {
+                        console.error('Failed to remove original text:', e);
+                      }
+                    }
+                    if (left) {
+                      currentSelection.insertRawText(text);
+                      left = false;
+                    }
+                  }
+                });
+              }
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            return true;
+          }
+        }
+        
+        // drag drop files
         if (files.length > 0) {
           const x = event.clientX;
           const y = event.clientY;
@@ -1015,10 +1084,19 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
       (event) => {
-        const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
+        const [isFileTransfer] = eventFiles(event);
+        
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
+        } else if ($isRangeSelection(selection) && !selection.isCollapsed() && event.dataTransfer) {
+          const serializedSelection = JSON.stringify(selection);
+          event.dataTransfer.setData('application/x-lexical-selection', serializedSelection);
+          
+          const text = selection.getTextContent();
+          event.dataTransfer.setData('text/plain', text);
+
+          return true;
         }
         return true;
       },

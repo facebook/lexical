@@ -1266,8 +1266,8 @@ export function $comparePointCaretNext(
 }
 
 /**
- * Return the ordering of siblings in a CommonAncestorResultBranch
- * @param branch Returns -1 if a precedes b, 1 otherwise
+ * Return the ordering of siblings in a {@link CommonAncestorResultBranch}
+ * @param compare Returns -1 if a precedes b, 1 otherwise
  */
 export function $getCommonAncestorResultBranchOrder<
   A extends LexicalNode,

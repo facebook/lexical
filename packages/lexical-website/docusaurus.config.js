@@ -179,22 +179,21 @@ const docusaurusPluginTypedocConfig = {
         .flatMap((pkg) =>
           pkg
             .getExportedNpmModuleEntries()
-            .map((entry) => [
+            .map((entry) =>
               path.relative(
                 __dirname,
                 pkg.resolve('src', entry.sourceFileName),
               ),
-            ]),
+            ),
         ),
   excludeInternal: true,
   plugin: [
-    './src/plugins/lexical-typedoc-plugin-no-inherit',
-    './src/plugins/lexical-typedoc-plugin-module-name',
+    'typedoc-plugin-no-inherit',
+    require.resolve('./src/plugins/lexical-typedoc-plugin-module-name'),
     'typedoc-plugin-rename-defaults',
   ],
   sidebar: {
     autoConfiguration: false,
-    position: 5,
   },
   tsconfig: '../../tsconfig.build.json',
   watch: process.env.TYPEDOC_WATCH === 'true',

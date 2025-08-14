@@ -1502,6 +1502,10 @@ declare export function createState<K: string, V>(
   valueConfig: StateValueConfig<V>,
 ): StateConfig<K, V>;
 declare export function $create<T>(cls: Class<T>): T;
+declare export function getStaticNodeConfig(cls: Class<LexicalNode>): {
+  ownNodeType: void | string;
+  ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
+};
 
 declare export function $isEditorState(x: mixed): x is EditorState;
 

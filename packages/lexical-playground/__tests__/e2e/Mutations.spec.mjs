@@ -56,9 +56,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world.</span>
         </p>
       `,
@@ -88,9 +86,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello.</span>
         </p>
       `,
@@ -130,9 +126,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hi!</span>
         </p>
       `,

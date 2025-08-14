@@ -1279,7 +1279,7 @@ export class RangeSelection implements BaseSelection {
     // Multiple nodes selected
     // The entire first node isn't selected, so split it
     if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-      [, firstNode as TextNode] = firstNode.splitText(startOffset);
+      [, firstNode] = firstNode.splitText(startOffset);
       startOffset = 0;
     }
     firstNode.setFormat(firstNextFormat);
@@ -1292,7 +1292,7 @@ export class RangeSelection implements BaseSelection {
         endOffset !== lastNode.getTextContentSize() &&
         !$isTokenOrSegmented(lastNode)
       ) {
-        [lastNode as TextNode] = lastNode.splitText(endOffset);
+        [lastNode] = lastNode.splitText(endOffset);
       }
       lastNode.setFormat(lastNextFormat);
     }

@@ -2407,13 +2407,19 @@ function resolveSelectionPointOnBoundary(
       $isElementNode(parent) &&
       parent.isInline()
     ) {
-      const parentSibling = parent.getPreviousSibling();
-      if ($isTextNode(parentSibling)) {
-        point.set(
-          parentSibling.__key,
-          parentSibling.getTextContent().length,
-          'text',
-        );
+      // For inline elements with a single text node child,
+      // keep selection inside rather than normalizing to siblings
+      if (parent.getChildrenSize() === 1) {
+        point.set(node.__key, 0, 'text');
+      } else {
+        const parentSibling = parent.getPreviousSibling();
+        if ($isTextNode(parentSibling)) {
+          point.set(
+            parentSibling.__key,
+            parentSibling.getTextContent().length,
+            'text',
+          );
+        }
       }
     }
   } else if (offset === node.getTextContent().length) {
@@ -2426,12 +2432,17 @@ function resolveSelectionPointOnBoundary(
       (isCollapsed || isBackward) &&
       nextSibling === null &&
       $isElementNode(parent) &&
-      parent.isInline() &&
-      !parent.canInsertTextAfter()
+      parent.isInline()
     ) {
-      const parentSibling = parent.getNextSibling();
-      if ($isTextNode(parentSibling)) {
-        point.set(parentSibling.__key, 0, 'text');
+      // For inline elements with a single text node child,
+      // keep selection inside rather than normalizing to siblings
+      if (parent.getChildrenSize() === 1) {
+        point.set(node.__key, offset, 'text');
+      } else if (!parent.canInsertTextAfter()) {
+        const parentSibling = parent.getNextSibling();
+        if ($isTextNode(parentSibling)) {
+          point.set(parentSibling.__key, 0, 'text');
+        }
       }
     }
   }

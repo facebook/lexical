@@ -52,37 +52,37 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">a</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">b</span>
               </p>
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">b</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">c</span>
               </p>
             </td>
           </tr>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">d</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">e</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">f</span>
               </p>
             </td>
@@ -114,21 +114,21 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </colgroup>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">
                   short
                 </span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">
                   wide
                 </span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">
                   default
                 </span>
@@ -137,17 +137,17 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </tr>
           <tr>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">a</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">b</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph>
+              <p class="PlaygroundEditorTheme__paragraph">
                 <span style="font-size: 11pt" data-lexical-text="true">c</span>
               </p>
             </td>

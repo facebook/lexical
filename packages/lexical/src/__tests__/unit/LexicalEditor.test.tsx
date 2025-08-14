@@ -2898,7 +2898,7 @@ describe('LexicalEditor tests', () => {
       $getRoot().append($createParagraphNode().append($createTextNode('foo')));
       editor.read(() => {});
       expect(editor.getRootElement()?.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
       );
       editor.update(() => {
         $getRoot().append(
@@ -2907,7 +2907,7 @@ describe('LexicalEditor tests', () => {
       });
     });
     expect(editor.getRootElement()?.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">foo</span></p><p dir="ltr"><span data-lexical-text="true">bar</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">foo</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p>',
     );
   });
 

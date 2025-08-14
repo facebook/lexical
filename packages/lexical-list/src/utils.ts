@@ -154,7 +154,7 @@ export function $findNearestListItemNode(
   const matchingParent = $findMatchingParent(node, (parent) =>
     $isListItemNode(parent),
   );
-  return matchingParent as ListItemNode | null;
+  return matchingParent;
 }
 
 /**

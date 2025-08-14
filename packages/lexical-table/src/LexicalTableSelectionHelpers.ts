@@ -2417,7 +2417,7 @@ function $getTableEdgeCursorPosition(
 
   const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
     $isTableCellNode(n),
-  ) as TableCellNode | null;
+  );
   if (!anchorCellNode) {
     return undefined;
   }

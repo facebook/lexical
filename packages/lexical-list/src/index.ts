@@ -278,3 +278,8 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => $removeList());
 }
+
+export function registerCheckList(
+  editor: LexicalEditor,
+  options?: { disableTakeFocusOnClick?: boolean }
+): () => void;

@@ -19,7 +19,6 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_MAC,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -38,7 +37,7 @@ test.describe('Collaboration', () => {
     isCollab,
     browserName,
   }) => {
-    test.skip(!isCollab || IS_MAC);
+    test.skip(!isCollab);
 
     await focusEditor(page);
     await page.keyboard.type('hello');
@@ -105,10 +104,11 @@ test.describe('Collaboration', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello</span>
         </p>
-        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+        <ul
+          class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist"
+          dir="auto">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"
-            dir="auto"
             role="checkbox"
             tabindex="-1"
             value="1"
@@ -117,7 +117,6 @@ test.describe('Collaboration', () => {
           </li>
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"
-            dir="auto"
             role="checkbox"
             tabindex="-1"
             value="2"
@@ -513,7 +512,6 @@ test.describe('Collaboration', () => {
           <span data-lexical-text="true">Check out the</span>
           <a
             class="PlaygroundEditorTheme__link"
-            dir="auto"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -539,7 +537,6 @@ test.describe('Collaboration', () => {
           <span data-lexical-text="true">Check out the</span>
           <a
             class="PlaygroundEditorTheme__link"
-            dir="auto"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -573,7 +570,6 @@ test.describe('Collaboration', () => {
           <span data-lexical-text="true">Check out the</span>
           <a
             class="PlaygroundEditorTheme__link"
-            dir="auto"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -598,7 +594,6 @@ test.describe('Collaboration', () => {
           <span data-lexical-text="true">Check out the</span>
           <a
             class="PlaygroundEditorTheme__link"
-            dir="auto"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>

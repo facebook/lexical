@@ -11,6 +11,7 @@ import {
   assertHTML,
   copyToClipboard,
   focusEditor,
+  html,
   initialize,
   pasteFromClipboard,
   test,
@@ -42,7 +43,113 @@ test.describe('Regression test #1384', () => {
     });
     await assertHTML(
       page,
-      `<code class="PlaygroundEditorTheme__code" spellcheck="false" dir="auto" data-gutter="123" data-language="javascript" data-highlight-language="javascript"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">3</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>`,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
+          spellcheck="false"
+          data-gutter="123"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            1
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            1
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            2
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true">
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            3
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+        </code>
+      `,
     );
   });
 });

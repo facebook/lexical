@@ -103,7 +103,7 @@ describe('CodeBlock tests', () => {
         {
           expectedHTML: `<h1 dir="auto"><span data-lexical-text="true">My document</span></h1>`,
           name: 'Title from Google Docs Wrapped in Paragraph',
-          pastedHTML: `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-wjatever"><p dir="auto" style="line-height:1.38;margin-top:0pt;margin-bottom:3pt;"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></p></b>`,
+          pastedHTML: `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-wjatever"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:3pt;"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></p></b>`,
         },
         {
           expectedHTML: `<p dir="auto"><sub data-lexical-text="true"><span>subscript</span></sub><span data-lexical-text="true"> and </span><sup data-lexical-text="true"><span>superscript</span></sup></p>`,

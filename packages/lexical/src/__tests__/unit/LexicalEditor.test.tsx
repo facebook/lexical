@@ -1530,10 +1530,11 @@ describe('LexicalEditor tests', () => {
     it('exportJSON API - parses parsed JSON', async () => {
       await update(() => {
         const paragraph = $createParagraphNode();
+        paragraph.setDirection('rtl');
         originalText = $createTextNode('Hello world');
         originalText.select(6, 11);
         paragraph.append(originalText);
-        $getRoot().append(paragraph);
+        $getRoot().clear().append(paragraph);
       });
       const stringifiedEditorState = JSON.stringify(editor.getEditorState());
       const parsedEditorStateFromObject = editor.parseEditorState(
@@ -1541,6 +1542,7 @@ describe('LexicalEditor tests', () => {
       );
       parsedEditorStateFromObject.read(() => {
         const root = $getRoot();
+        expect(root.getFirstChild<ParagraphNode>()!.getDirection()).toBe('rtl');
         expect(root.getTextContent()).toMatch(/Hello world/);
       });
     });

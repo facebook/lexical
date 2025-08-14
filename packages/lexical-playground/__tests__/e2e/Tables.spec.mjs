@@ -7048,50 +7048,50 @@ test.describe.parallel('Tables', () => {
 });
 
 const TABLE_WITH_MERGED_CELLS = `
-<table class="PlaygroundEditorTheme__table" dir="auto">
+<table class="PlaygroundEditorTheme__table">
   <colgroup>
     <col style="width: 92px;">
     <col style="width: 92px;">
     <col style="width: 92px;">
   </colgroup>
   <tbody>
-    <tr dir="auto">
-      <td class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+    <tr>
+      <td class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">a1</span>
         </p>
       </td>
-      <td class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+      <td class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">a2</span>
         </p>
       </td>
-      <td class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+      <td class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">a3</span>
         </p>
       </td>
     </tr>
     <tr style="height: 38px;">
-      <td rowspan="2" class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+      <td rowspan="2" class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">b1</span>
         </p>
       </td>
-      <td class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+      <td class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">b2</span>
         </p>
       </td>
-      <td class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+      <td class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">b3</span>
         </p>
       </td>
     </tr>
-    <tr dir="auto">
-      <td colspan="2" class="PlaygroundEditorTheme__tableCell" dir="auto" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+    <tr>
+      <td colspan="2" class="PlaygroundEditorTheme__tableCell" style="border: 1px solid black; width: 75px; vertical-align: top; text-align: start;">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span style="white-space: pre-wrap;">c2</span>
         </p>
       </td>

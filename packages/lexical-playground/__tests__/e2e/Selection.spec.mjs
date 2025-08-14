@@ -90,10 +90,11 @@ test.describe.parallel('Selection', () => {
       await evaluate(
         page,
         (_parentSelector) => {
-          const el = document.querySelector(
-            `${_parentSelector} > .tree-view-output pre`,
+          return (
+            document
+              .querySelector(`${_parentSelector} > .tree-view-output pre`)
+              .__lexicalEditor.getEditorState()._selection !== null
           );
-          return el.__lexicalEditor.getEditorState()._selection !== null;
         },
         parentSelector,
       );

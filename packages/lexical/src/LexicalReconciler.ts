@@ -168,11 +168,11 @@ export function $getReconciledDirection(
   if (direction !== null) {
     return direction;
   }
-  if (
-    $isRootNode(node) ||
-    !$isRootNode(node.getParent()) ||
-    node.getParentOrThrow().__dir !== null
-  ) {
+  if ($isRootNode(node)) {
+    return null;
+  }
+  const parent = node.getParentOrThrow();
+  if (!$isRootNode(parent) || parent.__dir !== null) {
     return null;
   }
   return 'auto';

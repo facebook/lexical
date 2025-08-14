@@ -2304,7 +2304,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
     });
 
-    test.skip('can insert a linebreak node before an inline element node', async () => {
+    test('can insert a linebreak node before an inline element node', async () => {
       const editor = createTestEditor();
       const element = document.createElement('div');
       editor.setRootElement(element);
@@ -2324,7 +2324,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // TODO #5109 ElementNode should have a way to control when other nodes can be inserted inside
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev/"><br><span data-lexical-text="true">Lexical</span></a></p>',
+        '<p dir="auto"><br><a href="https://lexical.dev/"><span data-lexical-text="true">Lexical</span></a></p>',
       );
     });
   });

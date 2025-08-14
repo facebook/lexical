@@ -290,6 +290,44 @@ describe('Collaboration', () => {
     client2.stop();
   });
 
+  it('Should sync direction of element node', async () => {
+    const connector = createTestConnection();
+    const client1 = connector.createClient('1');
+    const client2 = connector.createClient('2');
+    client1.start(container!);
+    client2.start(container!);
+
+    await expectCorrectInitialContent(client1, client2);
+
+    await waitForReact(() => {
+      client1.update(() => {
+        const root = $getRoot().clear();
+        root.append($createParagraphNode().append($createTextNode('hello')));
+      });
+    });
+
+    expect(client1.getHTML()).toEqual(
+      '<p dir="auto"><span data-lexical-text="true">hello</span></p>',
+    );
+    expect(client2.getHTML()).toEqual(client1.getHTML());
+
+    // Override direction
+    await waitForReact(() => {
+      client1.update(() => {
+        const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+        paragraph.setDirection('rtl');
+      });
+    });
+
+    expect(client1.getHTML()).toEqual(
+      '<p dir="rtl"><span data-lexical-text="true">hello</span></p>',
+    );
+    expect(client2.getHTML()).toEqual(client1.getHTML());
+
+    client1.stop();
+    client2.stop();
+  });
+
   it('Should allow the passing of arbitrary awareness data', async () => {
     const connector = createTestConnection();
 

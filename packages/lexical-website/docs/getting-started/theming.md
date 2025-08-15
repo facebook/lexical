@@ -8,8 +8,6 @@ Lexical tries to make theming straight-forward, by providing a way of passing a 
 
 ```js
 const exampleTheme = {
-  ltr: 'ltr',
-  rtl: 'rtl',
   paragraph: 'editor-paragraph',
 };
 ```
@@ -17,14 +15,6 @@ const exampleTheme = {
 In your CSS, you can then add something like:
 
 ```css
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
-}
-
 .editor-placeholder {
   color: #999;
   overflow: hidden;
@@ -85,8 +75,6 @@ Many of the Lexical's core nodes also accept theming properties. Here's a more c
 
 ```js
 const exampleTheme = {
-  ltr: 'ltr',
-  rtl: 'rtl',
   paragraph: 'editor-paragraph',
   quote: 'editor-quote',
   heading: {

@@ -38,60 +38,146 @@ describe('OffsetView', () => {
         expect(offsetView._offsetMap.has('textNode')).toBe(true);
       });
 
-      it('should handle inline nodes as they would have a character length of 1', () => {
-        const nodeMapBuilder = new NodeMapBuilder();
-        const nodeMap = nodeMapBuilder
-          .addRootNode()
-          .addParagraphNode()
-          .addLineBreakNode('inlineNode')
-          .build();
+      describe('inline nodes', () => {
+        it('should have type "inline"', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addLineBreakNode('inlineNode')
+            .build();
 
-        const offsetView: OffsetView = $createOffsetView(
-          {} as LexicalEditor,
-          1,
-          arrangeEditorState(nodeMap),
-        );
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
 
-        const inlineOffsetNode = offsetView._offsetMap.get('inlineNode');
-        expect(inlineOffsetNode?.start).toBe(0);
-        expect(inlineOffsetNode?.end).toBe(1);
+          const inlineOffsetNode = offsetView._offsetMap.get('inlineNode');
+          expect(inlineOffsetNode?.type).toBe('inline');
+        });
+
+        it('should have end being start plus 1', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addLineBreakNode('inlineNode')
+            .build();
+
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          const inlineOffsetNode = offsetView._offsetMap.get('inlineNode');
+          expect(inlineOffsetNode?.start).toBe(0);
+          expect(inlineOffsetNode?.end).toBe(1);
+        });
       });
 
-      it("should have element node's end greater than its last child node's end by 1", () => {
-        // Arrange
-        const nodeMapBuilder = new NodeMapBuilder();
-        const nodeMap = nodeMapBuilder
-          .addRootNode()
-          .addParagraphNode('elementNode')
-          .addTextNodeOf(4, 'lastChildOfElementNode')
-          .addParagraphNode('elementNode2')
-          .addTextNodeOf(4)
-          .addLineBreakNode('lastChildOfElementNode2')
-          .build();
+      describe('element nodes', () => {
+        it('should have type "element"', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .build();
 
-        // Act
-        const offsetView: OffsetView = $createOffsetView(
-          {} as LexicalEditor,
-          1,
-          arrangeEditorState(nodeMap),
-        );
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
 
-        // Assert
-        const elementOffsetNode = offsetView._offsetMap.get('elementNode');
-        expect(elementOffsetNode?.end).toBe(5);
+          const elementOffsetNode = offsetView._offsetMap.get('elementNode');
+          expect(elementOffsetNode?.type).toBe('element');
+        });
 
-        const lastOffsetChildOfElementNode = offsetView._offsetMap.get(
-          'lastChildOfElementNode',
-        );
-        expect(lastOffsetChildOfElementNode?.end).toBe(4);
+        it("should have end being greater than its last child node's end by 1", () => {
+          // Arrange
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .addTextNodeOf(4, 'lastChildOfElementNode')
+            .addParagraphNode('elementNode2')
+            .addTextNodeOf(4)
+            .addLineBreakNode('lastChildOfElementNode2')
+            .build();
 
-        const elementOffsetNode2 = offsetView._offsetMap.get('elementNode2');
-        expect(elementOffsetNode2?.end).toBe(11);
+          // Act
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
 
-        const lastOffsetChildOfElementNode2 = offsetView._offsetMap.get(
-          'lastChildOfElementNode2',
-        );
-        expect(lastOffsetChildOfElementNode2?.end).toBe(10);
+          // Assert
+          const elementOffsetNode = offsetView._offsetMap.get('elementNode');
+          expect(elementOffsetNode?.end).toBe(5);
+
+          const lastOffsetChildOfElementNode = offsetView._offsetMap.get(
+            'lastChildOfElementNode',
+          );
+          expect(lastOffsetChildOfElementNode?.end).toBe(4);
+
+          const elementOffsetNode2 = offsetView._offsetMap.get('elementNode2');
+          expect(elementOffsetNode2?.end).toBe(11);
+
+          const lastOffsetChildOfElementNode2 = offsetView._offsetMap.get(
+            'lastChildOfElementNode2',
+          );
+          expect(lastOffsetChildOfElementNode2?.end).toBe(10);
+        });
+      });
+
+      describe('text nodes', () => {
+        it('should have type "text"', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addTextNodeOf(5, 'textNode')
+            .build();
+
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          const textOffsetNode = offsetView._offsetMap.get('textNode');
+          expect(textOffsetNode?.type).toBe('text');
+        });
+
+        it('should have end being start plus length of text', () => {
+          // Arrange
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addTextNodeOf(1, 'textNode')
+            .addTextNodeOf(4, 'textNode2')
+            .build();
+
+          // Act
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          // Assert
+          const textOffsetNode = offsetView._offsetMap.get('textNode');
+          expect(textOffsetNode?.start).toBe(0);
+          expect(textOffsetNode?.end).toBe(1);
+
+          const textOffsetNode2 = offsetView._offsetMap.get('textNode2');
+          expect(textOffsetNode2?.start).toBe(1);
+          expect(textOffsetNode2?.end).toBe(5);
+        });
       });
 
       it('should have proper start and end offsets for nodes', () => {

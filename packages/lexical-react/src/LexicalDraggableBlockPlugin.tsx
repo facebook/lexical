@@ -298,7 +298,7 @@ function useDraggableBlockMenu(
         return;
       }
 
-      if (isOnMenu(target as HTMLElement)) {
+      if (isOnMenu(target)) {
         return;
       }
 

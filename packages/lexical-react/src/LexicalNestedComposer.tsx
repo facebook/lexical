@@ -19,6 +19,7 @@ import {
   createSharedNodeState,
   EditorThemeClasses,
   getRegisteredNode,
+  getStaticNodeConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -32,8 +33,19 @@ import warnOnlyOnce from 'shared/warnOnlyOnce';
 function getTransformSetFromKlass(
   klass: KlassConstructor<typeof LexicalNode>,
 ): Set<Transform<LexicalNode>> {
+  const transforms = new Set<Transform<LexicalNode>>();
+  const {ownNodeConfig} = getStaticNodeConfig(klass);
   const transform = klass.transform();
-  return new Set(transform ? [transform] : []);
+  if (ownNodeConfig) {
+    const $transform = ownNodeConfig.$transform;
+    if ($transform) {
+      transforms.add($transform);
+    }
+  }
+  if (transform) {
+    transforms.add(transform);
+  }
+  return transforms;
 }
 
 export interface LexicalNestedComposerProps {

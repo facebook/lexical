@@ -160,7 +160,7 @@ const isDropdownItemActive = async (page, dropdownItemIndex) => {
         )
         .click();
 
-      const isActive = await document
+      const isActive = document
         .querySelector('.dropdown')
         .children[_dropdownItemIndex].classList.contains('active');
 

@@ -47,7 +47,7 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
+          class=\"PlaygroundEditorTheme__code\"
           dir=\"ltr\"
           spellcheck=\"false\"
           data-gutter=\"123\"
@@ -117,7 +117,7 @@ test.describe('CodeActionMenu', () => {
       page,
       `
           <code
-          class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
+          class=\"PlaygroundEditorTheme__code\"
           dir=\"ltr\"
           spellcheck=\"false\"
           data-gutter=\"12345\"
@@ -196,8 +196,8 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
           spellcheck="false"
           data-gutter="1"
           data-language="javascript"
@@ -227,8 +227,8 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-        dir="ltr"
+        class="PlaygroundEditorTheme__code"
+        dir="auto"
         spellcheck="false"
         data-gutter="12"
         data-language="javascript"
@@ -272,8 +272,8 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
           spellcheck="false"
           data-gutter="1"
           data-language="javascript"

@@ -1943,7 +1943,7 @@ describe('LexicalSelectionHelpers', () => {
         });
 
         expect(testEnv.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });

@@ -92,7 +92,10 @@ const editorConfig = Object.freeze({
 
 function wrapTableHtml(expected: string): string {
   return expected
-    .replace(/<table/g, `<div class="table-scrollable-wrapper"><table`)
+    .replace(
+      /<table( dir="auto")?/g,
+      `<div class="table-scrollable-wrapper"$1><table`,
+    )
     .replace(/<\/table>/g, '</table></div>');
 }
 
@@ -110,6 +113,17 @@ describe('LexicalTableNode tests', () => {
           hasHorizontalScroll ? wrapTableHtml(expected) : expected,
         );
       }
+
+      function expectReconciledTableHtmlToBeEqual(
+        actual: string,
+        expected: string,
+      ): void {
+        return expectTableHtmlToBeEqual(
+          actual,
+          expected.replace(/<table/g, '<table dir="auto"'),
+        );
+      }
+
       initializeUnitTest(
         (testEnv) => {
           beforeEach(async () => {
@@ -179,7 +193,7 @@ describe('LexicalTableNode tests', () => {
                 ),
               ];
               expect(tables).toHaveLength(2);
-              expectTableHtmlToBeEqual(
+              expectReconciledTableHtmlToBeEqual(
                 tables[0]!.outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
@@ -192,7 +206,7 @@ describe('LexicalTableNode tests', () => {
                   </table>
                 `,
               );
-              expectTableHtmlToBeEqual(
+              expectReconciledTableHtmlToBeEqual(
                 tables[1]!.outerHTML,
                 html`
                   <table
@@ -227,7 +241,7 @@ describe('LexicalTableNode tests', () => {
                 ),
               ];
               expect(tables).toHaveLength(2);
-              expectTableHtmlToBeEqual(
+              expectReconciledTableHtmlToBeEqual(
                 tables[0]!.outerHTML,
                 html`
                   <table
@@ -242,7 +256,7 @@ describe('LexicalTableNode tests', () => {
                   </table>
                 `,
               );
-              expectTableHtmlToBeEqual(
+              expectReconciledTableHtmlToBeEqual(
                 tables[1]!.outerHTML,
                 html`
                   <table
@@ -405,7 +419,7 @@ describe('LexicalTableNode tests', () => {
             });
             // Make sure paragraph is inserted inside empty cells
             const emptyCell = '<td><p><br></p></td>';
-            expectTableHtmlToBeEqual(
+            expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
                 <table class="test-table-class">
@@ -415,19 +429,19 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr>
                     <td>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Hello there</span>
                       </p>
                     </td>
                     <td>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">General Kenobi!</span>
                       </p>
                     </td>
                   </tr>
                   <tr>
                     <td>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Lexical is nice</span>
                       </p>
                     </td>
@@ -519,7 +533,7 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Here we are testing the createDOM, not the exportDOM, so the tbody is not there
-            expectTableHtmlToBeEqual(
+            expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
                 <table class="test-table-class">
@@ -529,19 +543,19 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr style="text-align: start">
                     <th>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Items</span>
                       </p>
                     </th>
                     <th>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Expenditure</span>
                       </p>
                     </th>
                   </tr>
                   <tr style="text-align: start">
                     <th>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Donuts</span>
                       </p>
                     </th>
@@ -553,7 +567,7 @@ describe('LexicalTableNode tests', () => {
                   </tr>
                   <tr style="text-align: start">
                     <th>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Stationery</span>
                       </p>
                     </th>
@@ -565,7 +579,7 @@ describe('LexicalTableNode tests', () => {
                   </tr>
                   <tr style="text-align: start">
                     <th>
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Totals</span>
                       </p>
                     </th>
@@ -670,7 +684,7 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Here we are testing the createDOM, not the exportDOM, so the tbody is not there
-            expectTableHtmlToBeEqual(
+            expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
                 <table class="test-table-class">
@@ -684,63 +698,63 @@ describe('LexicalTableNode tests', () => {
                       <p style="text-align: center"><br /></p>
                     </td>
                     <th style="background-color: rgb(230, 230, 230)">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">He-Man</span>
                       </p>
                     </th>
                     <th style="background-color: rgb(230, 230, 230)">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Skeletor</span>
                       </p>
                     </th>
                   </tr>
                   <tr style="text-align: start">
                     <th style="background-color: rgb(230, 230, 230)">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Role</span>
                       </p>
                     </th>
                     <td style="background-color: rgb(250, 250, 250)">
-                      <p dir="ltr" style="text-align: center">
+                      <p style="text-align: center">
                         <span data-lexical-text="true">Hero</span>
                       </p>
                     </td>
                     <td style="background-color: rgb(250, 250, 250)">
-                      <p dir="ltr" style="text-align: center">
+                      <p style="text-align: center">
                         <span data-lexical-text="true">Villain</span>
                       </p>
                     </td>
                   </tr>
                   <tr style="text-align: start">
                     <th style="background-color: rgb(230, 230, 230)">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Weapon</span>
                       </p>
                     </th>
                     <td style="background-color: rgb(240, 240, 240)">
-                      <p dir="ltr" style="text-align: center">
+                      <p style="text-align: center">
                         <span data-lexical-text="true">Power Sword</span>
                       </p>
                     </td>
                     <td style="background-color: rgb(240, 240, 240)">
-                      <p dir="ltr" style="text-align: center">
+                      <p style="text-align: center">
                         <span data-lexical-text="true">Havoc Staff</span>
                       </p>
                     </td>
                   </tr>
                   <tr style="text-align: start">
                     <th style="background-color: rgb(230, 230, 230)">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Dark secret</span>
                       </p>
                     </th>
                     <td style="background-color: rgb(250, 250, 250)">
-                      <p dir="ltr" style="text-align: center">
+                      <p style="text-align: center">
                         <span data-lexical-text="true">Expert florist</span>
                       </p>
                     </td>
                     <td style="background-color: rgb(250, 250, 250)">
-                      <p dir="ltr" style="text-align: center">
+                      <p style="text-align: center">
                         <span data-lexical-text="true">Cries at romcoms</span>
                       </p>
                     </td>
@@ -766,7 +780,7 @@ describe('LexicalTableNode tests', () => {
               );
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
-            expectTableHtmlToBeEqual(
+            expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
                 <table class="test-table-class">
@@ -777,12 +791,12 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr style="height: 21px;">
                     <td style="vertical-align: bottom">
-                      <p dir="ltr">
+                      <p>
                         <strong data-lexical-text="true">Surface</strong>
                       </p>
                     </td>
                     <td style="vertical-align: bottom">
-                      <p dir="ltr">
+                      <p>
                         <em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em>
                       </p>
                     </td>
@@ -794,17 +808,17 @@ describe('LexicalTableNode tests', () => {
                   </tr>
                   <tr style="height: 21px;">
                     <td style="vertical-align: bottom">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">Lexical</span>
                       </p>
                     </td>
                     <td style="vertical-align: bottom">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
                       </p>
                     </td>
                     <td style="vertical-align: bottom">
-                      <p dir="ltr">
+                      <p>
                         <span data-lexical-text="true">sdvd</span>
                         <strong data-lexical-text="true">sdfvsfs</strong>
                       </p>
@@ -840,7 +854,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               `,
             );
           });
@@ -868,7 +882,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               `,
             );
           });
@@ -896,7 +910,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               `,
             );
           });
@@ -937,7 +951,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p><br /></p>
+                <p dir="auto"><br /></p>
               `,
             );
           });
@@ -975,10 +989,10 @@ describe('LexicalTableNode tests', () => {
               }
             });
 
-            expectTableHtmlToBeEqual(
+            expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p><br /></p>
+                <p dir="auto"><br /></p>
                 <table class="test-table-class">
                   <colgroup>
                     <col />
@@ -1844,7 +1858,7 @@ describe('LexicalTableNode tests', () => {
           expectHtmlToBeEqual(
             testEnv.innerHTML,
             html`
-              <table class="test-table-class">
+              <table class="test-table-class" dir="auto">
                 <colgroup>
                   <col />
                   <col />
@@ -1877,7 +1891,7 @@ describe('LexicalTableNode tests', () => {
           expectHtmlToBeEqual(
             testEnv.innerHTML,
             html`
-              <div class="table-scrollable-wrapper">
+              <div class="table-scrollable-wrapper" dir="auto">
                 <table class="test-table-class">
                   <colgroup>
                     <col />
@@ -1912,7 +1926,7 @@ describe('LexicalTableNode tests', () => {
           expectHtmlToBeEqual(
             testEnv.innerHTML,
             html`
-              <table class="test-table-class">
+              <table class="test-table-class" dir="auto">
                 <colgroup>
                   <col />
                   <col />

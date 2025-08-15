@@ -178,7 +178,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -186,7 +186,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -277,7 +277,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -285,7 +285,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -374,7 +374,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -382,7 +382,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -476,7 +476,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -484,7 +484,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -581,7 +581,7 @@ describe('LexicalNestedComposer', () => {
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           aria-label="parent"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -590,7 +590,7 @@ describe('LexicalNestedComposer', () => {
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-label="nested"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -616,7 +616,7 @@ describe('LexicalNestedComposer', () => {
           aria-label="parent"
           aria-readonly="true"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
@@ -627,7 +627,7 @@ describe('LexicalNestedComposer', () => {
               aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -732,7 +732,7 @@ describe('LexicalNestedComposer', () => {
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           aria-label="parent"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
@@ -743,7 +743,7 @@ describe('LexicalNestedComposer', () => {
               aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -769,7 +769,7 @@ describe('LexicalNestedComposer', () => {
           aria-label="parent"
           aria-readonly="true"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
@@ -780,7 +780,7 @@ describe('LexicalNestedComposer', () => {
               aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>

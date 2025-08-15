@@ -59,22 +59,22 @@ describe('docSerialization', () => {
       it('preserves indentation', async () => {
         const {editor} = testEnv;
         const parser = new DOMParser();
-        const htmlString = `<p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+        const htmlString = `<p class="PlaygroundEditorTheme__paragraph" dir="auto">
   <span style="white-space: pre-wrap;">paragraph</span>
 </p>
-<h1 class="PlaygroundEditorTheme__h1" dir="ltr">
+<h1 class="PlaygroundEditorTheme__h1" dir="auto">
   <span style="white-space: pre-wrap;">heading</span>
 </h1>
-<blockquote class="PlaygroundEditorTheme__quote" dir="ltr">
+<blockquote class="PlaygroundEditorTheme__quote" dir="auto">
   <span style="white-space: pre-wrap;">quote</span>
 </blockquote>
-<p class="PlaygroundEditorTheme__paragraph" dir="ltr" style="padding-inline-start: 80px;">
+<p class="PlaygroundEditorTheme__paragraph" dir="auto" style="padding-inline-start: 80px;">
   <span style="white-space: pre-wrap;">paragraph</span>
 </p>
-<h1 class="PlaygroundEditorTheme__h1" dir="ltr" style="padding-inline-start: 80px;">
+<h1 class="PlaygroundEditorTheme__h1" dir="auto" style="padding-inline-start: 80px;">
   <span style="white-space: pre-wrap;">heading</span>
 </h1>
-<blockquote class="PlaygroundEditorTheme__quote" dir="ltr" style="padding-inline-start: 80px;">
+<blockquote class="PlaygroundEditorTheme__quote" dir="auto" style="padding-inline-start: 80px;">
   <span style="white-space: pre-wrap;">quote</span>
 </blockquote>`;
         const dom = parser.parseFromString(htmlString, 'text/html');
@@ -99,7 +99,7 @@ describe('docSerialization', () => {
                     version: 1,
                   },
                 ],
-                direction: 'ltr',
+                direction: null,
                 format: '',
                 indent: 0,
                 textFormat: 0,
@@ -119,7 +119,7 @@ describe('docSerialization', () => {
                     version: 1,
                   },
                 ],
-                direction: 'ltr',
+                direction: null,
                 format: '',
                 indent: 0,
                 tag: 'h1',
@@ -138,7 +138,7 @@ describe('docSerialization', () => {
                     version: 1,
                   },
                 ],
-                direction: 'ltr',
+                direction: null,
                 format: '',
                 indent: 0,
                 type: 'quote',
@@ -156,7 +156,7 @@ describe('docSerialization', () => {
                     version: 1,
                   },
                 ],
-                direction: 'ltr',
+                direction: null,
                 format: '',
                 indent: 2,
                 textFormat: 0,
@@ -176,7 +176,7 @@ describe('docSerialization', () => {
                     version: 1,
                   },
                 ],
-                direction: 'ltr',
+                direction: null,
                 format: '',
                 indent: 2,
                 tag: 'h1',
@@ -195,14 +195,14 @@ describe('docSerialization', () => {
                     version: 1,
                   },
                 ],
-                direction: 'ltr',
+                direction: null,
                 format: '',
                 indent: 2,
                 type: 'quote',
                 version: 1,
               },
             ],
-            direction: 'ltr',
+            direction: null,
             format: '',
             indent: 0,
             type: 'root',
@@ -217,7 +217,7 @@ describe('docSerialization', () => {
           htmlString2 = $generateHtmlFromNodes(editor);
         });
         expect(htmlString2).toBe(
-          '<p dir="ltr"><span style="white-space: pre-wrap;">paragraph</span></p><h1 dir="ltr"><span style="white-space: pre-wrap;">heading</span></h1><blockquote dir="ltr"><span style="white-space: pre-wrap;">quote</span></blockquote><p style="padding-inline-start: 80px;" dir="ltr"><span style="white-space: pre-wrap;">paragraph</span></p><h1 style="padding-inline-start: 80px;" dir="ltr"><span style="white-space: pre-wrap;">heading</span></h1><blockquote style="padding-inline-start: 80px;" dir="ltr"><span style="white-space: pre-wrap;">quote</span></blockquote>',
+          '<p><span style="white-space: pre-wrap;">paragraph</span></p><h1><span style="white-space: pre-wrap;">heading</span></h1><blockquote><span style="white-space: pre-wrap;">quote</span></blockquote><p style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">paragraph</span></p><h1 style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">heading</span></h1><blockquote style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">quote</span></blockquote>',
         );
       });
     });

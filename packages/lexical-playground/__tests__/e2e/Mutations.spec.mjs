@@ -23,9 +23,7 @@ async function validateContent(page) {
   await assertHTML(
     page,
     html`
-      <p
-        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr">
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
         <span data-lexical-text="true">Hello</span>
         <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
           #world
@@ -58,9 +56,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world.</span>
         </p>
       `,
@@ -90,9 +86,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello.</span>
         </p>
       `,
@@ -132,9 +126,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hi!</span>
         </p>
       `,
@@ -330,9 +322,7 @@ test.describe('Mutations', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Bonjour</span>
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #world

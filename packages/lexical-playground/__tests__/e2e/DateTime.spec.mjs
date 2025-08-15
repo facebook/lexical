@@ -33,7 +33,7 @@ test.describe('DateTime', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="PlaygroundEditorTheme__dateTime"
             contenteditable="false"

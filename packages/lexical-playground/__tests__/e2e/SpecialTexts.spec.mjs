@@ -32,9 +32,7 @@ test.describe('Special Text', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="PlaygroundEditorTheme__specialText"
             data-lexical-text="true">
@@ -51,9 +49,7 @@ test.describe('Special Text', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="PlaygroundEditorTheme__specialText"
             data-lexical-text="true">
@@ -85,9 +81,7 @@ test.describe('Special Text', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">[MLH Fellowship]</span>
         </p>
       `,

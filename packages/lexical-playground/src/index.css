@@ -1489,14 +1489,6 @@ button.action-button:disabled {
   pointer-events: none;
 }
 
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
-}
-
 .toolbar {
   display: flex;
   margin-bottom: 1px;

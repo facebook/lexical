@@ -589,13 +589,17 @@ function $reconcileNode(
         // Root node direction changing from set to unset (or vice versa)
         // changes how children's direction is calculated.
         $isRootNode(nextNode) &&
-        !nextNode.__dir !== !prevNode.__dir &&
         // Can skip if all children already reconciled.
         !treatAllNodesAsDirty
       ) {
-        for (const child of nextNode.getChildren<ElementNode>()) {
-          const childDom = getElementByKeyOrThrow(activeEditor, child.getKey());
-          $setElementDirection(childDom, child);
+        for (const child of nextNode.getChildren()) {
+          if ($isElementNode(child)) {
+            const childDom = getElementByKeyOrThrow(
+              activeEditor,
+              child.getKey(),
+            );
+            $setElementDirection(childDom, child);
+          }
         }
       }
     }

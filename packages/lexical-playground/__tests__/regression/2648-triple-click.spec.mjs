@@ -8,9 +8,10 @@
 
 import {
   assertHTML,
-  assertSelection,
   click,
+  expect,
   focusEditor,
+  getEditorElement,
   html,
   initialize,
   test,
@@ -129,23 +130,13 @@ test.describe.parallel('Regression test #2648', () => {
             </p>
           `;
 
-          const firstLineSelection = {
-            anchorOffset: 0,
-            anchorPath: [0, 0, 0],
-            focusOffset: 12,
-            focusPath: [0, 0, 0],
-          };
-
-          const secondLineSelection = {
-            anchorOffset: 0,
-            anchorPath: [1, 0, 0],
-            focusOffset: 12,
-            focusPath: [1, 0, 0],
-          };
-
           //format and check the first line
           await click(page, firstLine, {clickCount: 4}); // Note: the issue sometimes shows up on  triple click but the 4th click seems to be a more reliable way to replicate it
-          await assertSelection(page, firstLineSelection);
+          expect(
+            await getEditorElement(page).evaluate(() =>
+              window.getSelection()?.toString(),
+            ),
+          ).toBe('line of text');
           await click(page, dropDownSelector);
           await click(page, formatSelector);
           await assertHTML(
@@ -159,7 +150,11 @@ test.describe.parallel('Regression test #2648', () => {
 
           // format and test the middle line
           await click(page, secondLine, {clickCount: 4});
-          await assertSelection(page, secondLineSelection);
+          expect(
+            await getEditorElement(page).evaluate(() =>
+              window.getSelection()?.toString(),
+            ),
+          ).toBe('line of text');
           await click(page, dropDownSelector);
           await click(page, formatSelector);
           await assertHTML(

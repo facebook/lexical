@@ -113,7 +113,8 @@ export class NodeMapBuilder {
         linkTo.__next = newNode.__key;
       }
 
-      newNode.getIndexWithinParent = () => childrenOfContainingParagraph.length;
+      const indexWithinParent = childrenOfContainingParagraph.length;
+      newNode.getIndexWithinParent = () => indexWithinParent;
       newNode.getParentOrThrow = <T extends ElementNode>(): T =>
         this.currentParagraph as unknown as T;
 

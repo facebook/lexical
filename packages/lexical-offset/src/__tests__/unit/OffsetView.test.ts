@@ -315,6 +315,114 @@ describe('OffsetView', () => {
       expect(selection.anchor.type).toBe('text');
       expect(selection.anchor.type).toEqual(selection.focus.type);
     });
+
+    describe('input offset points to an inline node', () => {
+      it('should return selection "indexing" the containing element node', () => {
+        const nodeMapBuilder = new NodeMapBuilder();
+        // \n
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode('elementNode')
+          .addLineBreakNode('inlineNode')
+          .build();
+        const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+        const selection = offsetView.createSelectionFromOffsets(0, 0);
+
+        expect(selection).toBeTruthy();
+
+        if (!selection) {
+          throw new Error('Selection is null');
+        }
+
+        expect(selection.anchor.key).toBe('elementNode');
+        expect(selection.focus.key).toBe('elementNode');
+        expect(selection.anchor.type).toBe('element');
+        expect(selection.focus.type).toBe('element');
+        expect(selection.anchor.offset).toBe(0);
+        expect(selection.focus.offset).toBe(0);
+      });
+
+      it('should return selection with "indexing offset" pointing after inline node when input offset points after the inline node', () => {
+        const nodeMapBuilder = new NodeMapBuilder();
+        // xxxx\n
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode('elementNode')
+          .addTextNodeOf(4)
+          .addLineBreakNode('inlineNode')
+          .build();
+        const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+        const selection = offsetView.createSelectionFromOffsets(5, 5);
+
+        expect(selection).toBeTruthy();
+
+        if (!selection) {
+          throw new Error('Selection is null');
+        }
+
+        expect(selection.anchor.key).toBe('elementNode');
+        expect(selection.focus.key).toBe('elementNode');
+        expect(selection.anchor.type).toBe('element');
+        expect(selection.focus.type).toBe('element');
+        expect(selection.anchor.offset).toBe(2);
+        expect(selection.focus.offset).toBe(2);
+      });
+
+      it('should return selection with adjacent anchor and focus offsets when input offsets are "selecting" a single inline node', () => {
+        const nodeMapBuilder = new NodeMapBuilder();
+        // \n
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode('elementNode')
+          .addLineBreakNode('inlineNode')
+          .build();
+        const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+        const selection = offsetView.createSelectionFromOffsets(0, 1);
+
+        expect(selection).toBeTruthy();
+
+        if (!selection) {
+          throw new Error('Selection is null');
+        }
+
+        expect(selection.anchor.key).toBe('elementNode');
+        expect(selection.focus.key).toBe('elementNode');
+        expect(selection.anchor.type).toBe('element');
+        expect(selection.focus.type).toBe('element');
+        expect(selection.anchor.offset).toBe(0);
+        expect(selection.focus.offset).toBe(1);
+      });
+    });
+
+    it('should return selection indexing a text node when input offset points to a text node', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNodeOf(4, 'textNode')
+        .build();
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+      const selection = offsetView.createSelectionFromOffsets(0, 4);
+
+      expect(selection).toBeTruthy();
+
+      if (!selection) {
+        throw new Error('Selection is null');
+      }
+
+      expect(selection.anchor.key).toBe('textNode');
+      expect(selection.focus.key).toBe('textNode');
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.focus.type).toBe('text');
+      expect(selection.anchor.offset).toBe(0);
+      expect(selection.focus.offset).toBe(4);
+    });
+
+    // TODO Prefer text node and over next node start
   });
 });
 

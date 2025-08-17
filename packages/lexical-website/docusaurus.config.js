@@ -216,7 +216,6 @@ const docusaurusPluginTypedocConfig = {
   ],
   router: 'legacy',
   sidebar: {pretty: true},
-  theme: 'legacy',
   tsconfig: '../../tsconfig.build.json',
   useCustomAnchors: true,
   watch: process.env.TYPEDOC_WATCH === 'true',
@@ -265,12 +264,10 @@ const config = {
       ),
   },
 
-  // onBrokenAnchors: 'throw',
-  onBrokenAnchors: 'warn',
+  onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
-  // onBrokenMarkdownLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
     process.env.FB_INTERNAL

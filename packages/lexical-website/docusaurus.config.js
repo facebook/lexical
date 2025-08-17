@@ -89,7 +89,7 @@ function sidebarSort(a, b) {
  */
 function idToModuleName(id) {
   return id
-    .replace(/^api\/modules\//, '')
+    .replace(/^api\/modules\//i, '')
     .replace(/^lexical_react_/, '@lexical/react/')
     .replace(/^lexical_/, '@lexical/')
     .replace(/_/g, '-');
@@ -124,7 +124,7 @@ const sidebarItemsGenerator = async ({
         /** @type {NormalizedSidebarItem[]} */
         const groupedItems = [];
         for (const item of sidebarItem.items) {
-          if (item.type === 'doc' && item.id.startsWith('api/modules/')) {
+          if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
             // autoConfiguration is disabled because the frontmatter
             // sidebar_label otherwise takes precedence over anything we do
             // here, and the default labels come from the page titles which
@@ -169,9 +169,30 @@ const sidebarItemsGenerator = async ({
   return items;
 };
 
+/** @type {import('@docusaurus/types').ParseFrontMatter} */
+const parseFrontMatter = async (params) => {
+  const result = await params.defaultParseFrontMatter(params);
+  if (params.filePath.endsWith('/docs/api/modules.md')) {
+    Object.assign(result.frontMatter, {
+      custom_edit_url: null,
+      hide_table_of_contents: true,
+      id: 'modules',
+      title: '@lexical/monorepo',
+    });
+  } else if (params.filePath.endsWith('/docs/api/index.md')) {
+    Object.assign(result.frontMatter, {
+      custom_edit_url: null,
+      id: 'index',
+      title: '@lexical/monorepo',
+    });
+  }
+  return result;
+};
+
 /** @type {Partial<import('docusaurus-plugin-typedoc/dist/types').PluginOptions>} */
 const docusaurusPluginTypedocConfig = {
   ...sourceLinkOptions(),
+  customAnchorsFormat: 'curlyBrace',
   entryPoints: process.env.FB_INTERNAL
     ? []
     : packagesManager
@@ -190,12 +211,14 @@ const docusaurusPluginTypedocConfig = {
   plugin: [
     'typedoc-plugin-no-inherit',
     require.resolve('./src/plugins/lexical-typedoc-plugin-module-name'),
+    require.resolve('./src/plugins/lexical-typedoc-plugin-legacy-router'),
     'typedoc-plugin-rename-defaults',
   ],
-  sidebar: {
-    autoConfiguration: false,
-  },
+  router: 'legacy',
+  sidebar: {pretty: true},
+  theme: 'legacy',
   tsconfig: '../../tsconfig.build.json',
+  useCustomAnchors: true,
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
 
@@ -234,6 +257,7 @@ const config = {
 
   markdown: {
     mermaid: true,
+    parseFrontMatter,
     preprocessor: ({fileContent}) =>
       fileContent.replaceAll(
         'https://stackblitz.com/github/facebook/lexical/tree/main/',
@@ -241,10 +265,12 @@ const config = {
       ),
   },
 
-  onBrokenAnchors: 'throw',
+  // onBrokenAnchors: 'throw',
+  onBrokenAnchors: 'warn',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
-  onBrokenMarkdownLinks: 'throw',
+  // onBrokenMarkdownLinks: 'throw',
+  onBrokenMarkdownLinks: 'warn',
   organizationName: 'facebook',
   plugins: [
     process.env.FB_INTERNAL

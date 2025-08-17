@@ -102,6 +102,7 @@ import {
   formatQuote,
 } from './utils';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const rootTypeToRootName = {
   root: 'Root',
   table: 'Table',

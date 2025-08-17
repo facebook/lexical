@@ -2164,7 +2164,7 @@ const doesContainEmoji: (text: string) => boolean = (() => {
     ) {
       return test;
     }
-  } catch (e) {
+  } catch (_e) {
     // SyntaxError
   }
   // fallback, surrogate pair already checked

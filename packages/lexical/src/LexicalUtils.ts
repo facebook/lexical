@@ -178,7 +178,7 @@ export function isSelectionWithinEditor(
       !isSelectionCapturedInDecoratorInput(anchorDOM) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }

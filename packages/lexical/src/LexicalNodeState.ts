@@ -92,7 +92,6 @@ export type RequiredNodeStateConfigJSON<
     : never
 >;
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type Prettify<T> = {[K in keyof T]: T[K]} & {};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

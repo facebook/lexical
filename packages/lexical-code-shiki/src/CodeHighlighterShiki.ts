@@ -796,13 +796,13 @@ export function registerCodeHighlighting(
   // Add the rest of the registrations
   registrations.push(
     editor.registerNodeTransform(CodeNode, (node) =>
-      codeNodeTransform(node, editor, tokenizer as Tokenizer),
+      codeNodeTransform(node, editor, tokenizer),
     ),
     editor.registerNodeTransform(TextNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer),
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer),
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
@@ -893,12 +893,12 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (event) => $handleMoveTo(MOVE_TO_START, event as KeyboardEvent),
+      (event) => $handleMoveTo(MOVE_TO_START, event),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (event) => $handleMoveTo(MOVE_TO_END, event as KeyboardEvent),
+      (event) => $handleMoveTo(MOVE_TO_END, event),
       COMMAND_PRIORITY_LOW,
     ),
   );

@@ -264,6 +264,7 @@ export {
   getNearestEditorFromDOMNode,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getStaticNodeConfig,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,

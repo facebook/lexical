@@ -6,9 +6,9 @@
  *
  */
 // @ts-check
-const typedoc = require('typedoc');
+import * as typedoc from 'typedoc';
 
-exports.load = function (/** @type {import('typedoc').Application} */ app) {
+export function load(/** @type {import('typedoc').Application} */ app) {
   app.converter.on(
     typedoc.Converter.EVENT_RESOLVE_BEGIN,
     (/** @type {import('typedoc').Context} */ context) => {
@@ -22,4 +22,4 @@ exports.load = function (/** @type {import('typedoc').Application} */ app) {
         });
     },
   );
-};
+}

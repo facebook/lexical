@@ -124,8 +124,8 @@ export function $insertList(listType: ListType): void {
       let parent = $isLeafNode(node)
         ? node.getParent()
         : $isListItemNode(node) && node.isEmpty()
-        ? node
-        : null;
+          ? node
+          : null;
 
       while (parent != null) {
         const parentKey = parent.getKey();

@@ -13,7 +13,7 @@ const fs = require('fs-extra');
 const ErrorMap = require('./ErrorMap');
 const evalToString = require('./evalToString');
 const helperModuleImports = require('@babel/helper-module-imports');
-const prettier = require('prettier');
+const prettier = require('@prettier/sync');
 
 /** @type {Map<string, ErrorMap>} */
 const errorMaps = new Map();
@@ -29,7 +29,7 @@ function getErrorMap(filepath) {
   let errorMap = errorMaps.get(filepath);
   if (!errorMap) {
     const prettierConfig = {
-      ...(prettier.resolveConfig.sync('./') || {}),
+      ...(prettier.resolveConfig('./') || {}),
       filepath,
     };
     errorMap = new ErrorMap(fs.readJsonSync(filepath), (newErrorMap) =>
@@ -66,7 +66,7 @@ const invariantExpressions = [
 /**
  * @param {import('@babel/core')} babel
  * @param {Partial<TransformErrorMessagesOptions>} opts
- * @returns {import('@babel/core').PluginObj}
+ * @returns {Promise<import('@babel/core').PluginObj>}
  */
 module.exports = function (babel, opts) {
   const t = babel.types;

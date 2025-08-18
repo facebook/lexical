@@ -322,9 +322,8 @@ test.describe('HTML Lists CopyAndPaste', () => {
     await focusEditor(page);
 
     // Ensure we preserve checked status.
-    clipboard[
-      'text/html'
-    ] = `<meta charset='utf-8'><ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="true" value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemChecked"><span>Hello</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"><span>world</span></li></ul>`;
+    clipboard['text/html'] =
+      `<meta charset='utf-8'><ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="true" value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemChecked"><span>Hello</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"><span>world</span></li></ul>`;
 
     await pasteFromClipboard(page, clipboard);
 

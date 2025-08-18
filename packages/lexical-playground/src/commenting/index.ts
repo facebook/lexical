@@ -296,7 +296,7 @@ export class CommentStore {
     const disconnect = () => {
       try {
         provider.disconnect();
-      } catch (e) {
+      } catch (_e) {
         // Do nothing
       }
     };

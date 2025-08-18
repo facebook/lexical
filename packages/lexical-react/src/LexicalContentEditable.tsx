@@ -38,7 +38,7 @@ export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
  * @deprecated This type has been renamed to `ContentEditableProps` to provide a clearer and more descriptive name.
  * For backward compatibility, this type is still exported as `Props`, but it is recommended to migrate to using `ContentEditableProps` instead.
  *
- * @note This alias is maintained for compatibility purposes but may be removed in future versions.
+ * This alias is maintained for compatibility purposes but may be removed in future versions.
  * Please update your codebase to use `ContentEditableProps` to ensure long-term maintainability.
  */
 export type Props = ContentEditableProps;

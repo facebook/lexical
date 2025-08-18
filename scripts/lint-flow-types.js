@@ -47,8 +47,8 @@ function collectFlowExports(flowAst) {
       node.type === 'Identifier'
         ? node
         : 'id' in node && node.id.type === 'Identifier'
-        ? node.id
-        : null;
+          ? node.id
+          : null;
     if (identifier) {
       exportNames.set(identifier.name, identifier);
       return true;

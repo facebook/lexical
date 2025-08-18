@@ -26,6 +26,7 @@ import {
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {expect} from '@playwright/test';
+import prettier from '@prettier/sync';
 import {
   $isRangeSelection,
   createEditor,
@@ -45,7 +46,6 @@ import {
   TextNode,
 } from 'lexical';
 import path from 'path';
-import * as prettier from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -58,7 +58,7 @@ import {
 } from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
-const prettierConfig = prettier.resolveConfig.sync(
+const prettierConfig = prettier.resolveConfig(
   path.resolve(__dirname, '../../../../.prettierrc'),
 );
 

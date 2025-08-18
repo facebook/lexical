@@ -186,7 +186,7 @@
     "ts-morph": "^25.0.1",
     "ts-node": "^10.9.1",
     "typedoc": "^0.28.10",
-    "typescript": "^5.4.5",
+    "typescript": "^5.9.2",
     "vite": "^5.2.11"
   },
   "dependencies": {

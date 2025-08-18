@@ -209,11 +209,13 @@ export type StaticNodeConfigRecord<
  *      // ? 'text'
  * ```
  */
-export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
-  T[typeof PROTOTYPE_CONFIG_METHOD]
-> extends StaticNodeConfig<T, infer Type>
-  ? Type
-  : string;
+export type GetStaticNodeType<T extends LexicalNode> =
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends StaticNodeConfig<
+    T,
+    infer Type
+  >
+    ? Type
+    : string;
 
 /**
  * The most precise type we can infer for the JSON that will

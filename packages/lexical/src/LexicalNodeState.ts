@@ -26,21 +26,13 @@ import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
 /**
  * Get the value type (V) from a StateConfig
  */
-export type StateConfigValue<S extends AnyStateConfig> = S extends StateConfig<
-  infer _K,
-  infer V
->
-  ? V
-  : never;
+export type StateConfigValue<S extends AnyStateConfig> =
+  S extends StateConfig<infer _K, infer V> ? V : never;
 /**
  * Get the key type (K) from a StateConfig
  */
-export type StateConfigKey<S extends AnyStateConfig> = S extends StateConfig<
-  infer K,
-  infer _V
->
-  ? K
-  : never;
+export type StateConfigKey<S extends AnyStateConfig> =
+  S extends StateConfig<infer K, infer _V> ? K : never;
 
 /**
  * A value type, or an updater for that value type. For use with
@@ -75,9 +67,10 @@ export type RequiredNodeStateConfig =
   | NodeStateConfig<AnyStateConfig>
   | AnyStateConfig;
 
-export type StateConfigJSON<S> = S extends StateConfig<infer K, infer V>
-  ? {[Key in K]?: V}
-  : Record<never, never>;
+export type StateConfigJSON<S> =
+  S extends StateConfig<infer K, infer V>
+    ? {[Key in K]?: V}
+    : Record<never, never>;
 
 export type RequiredNodeStateConfigJSON<
   Config extends RequiredNodeStateConfig,
@@ -88,8 +81,8 @@ export type RequiredNodeStateConfigJSON<
       ? S
       : never
     : false extends Flat
-    ? Config
-    : never
+      ? Config
+      : never
 >;
 
 export type Prettify<T> = {[K in keyof T]: T[K]} & {};
@@ -109,24 +102,23 @@ export type CollectStateJSON<
   {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
 >;
 
-type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
-  T[typeof PROTOTYPE_CONFIG_METHOD]
-> extends infer Record
-  ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
-    ? Config & {readonly type: Type}
-    : never
-  : never;
+type GetStaticNodeConfig<T extends LexicalNode> =
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends infer Record
+    ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
+      ? Config & {readonly type: Type}
+      : never
+    : never;
 type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig
     ? OwnConfig extends never
       ? []
       : OwnConfig extends {extends: Klass<infer Parent>}
-      ? GetStaticNodeConfig<Parent> extends infer ParentNodeConfig
-        ? ParentNodeConfig extends never
-          ? [OwnConfig]
-          : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
-        : OwnConfig
-      : [OwnConfig]
+        ? GetStaticNodeConfig<Parent> extends infer ParentNodeConfig
+          ? ParentNodeConfig extends never
+            ? [OwnConfig]
+            : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
+          : OwnConfig
+        : [OwnConfig]
     : [];
 
 type CollectStateConfigs<Configs> = Configs extends [

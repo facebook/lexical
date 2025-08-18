@@ -64,9 +64,9 @@ export function ShikiViewPlugin({lang}: ShikiViewPluginProps) {
       (async () => {
         const prettified = await prettier.format(rawCode, {
           parser: lang,
-          plugins: (
-            await Promise.all(prettierPlugins)
-          ).map((mod) => mod.default),
+          plugins: (await Promise.all(prettierPlugins)).map(
+            (mod) => mod.default,
+          ),
         });
         return (await shikiPromise).codeToHtml(prettified, {
           lang,

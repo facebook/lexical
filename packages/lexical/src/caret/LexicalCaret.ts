@@ -1244,14 +1244,14 @@ export function $comparePointCaretNext(
       return aIsText && bIsText
         ? compareNumber(a.offset, b.offset)
         : a.type === b.type
-        ? 0
-        : aIsText
-        ? -1
-        : bIsText
-        ? 1
-        : a.type === 'child'
-        ? -1
-        : 1;
+          ? 0
+          : aIsText
+            ? -1
+            : bIsText
+              ? 1
+              : a.type === 'child'
+                ? -1
+                : 1;
     }
     case 'ancestor': {
       return a.type === 'child' ? -1 : 1;

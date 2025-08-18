@@ -45,7 +45,6 @@ import {
   Spread,
   TextNode,
 } from 'lexical';
-import path from 'path';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -58,9 +57,7 @@ import {
 } from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
-const prettierConfig = prettier.resolveConfig(
-  path.resolve(__dirname, '../../../../.prettierrc'),
-);
+const prettierConfig = prettier.resolveConfig(__filename);
 
 type TestEnv = {
   readonly container: HTMLDivElement;

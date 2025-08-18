@@ -14,7 +14,7 @@ const transformErrorMessages = require('../../transform-error-messages');
 const babel = require('@babel/core');
 const prettier = require('@prettier/sync');
 
-const prettierConfig = prettier.resolveConfig('./') || {};
+const prettierConfig = prettier.resolveConfig(__filename) || {};
 
 /** @returns {Promise<void>} */
 function waitTick() {

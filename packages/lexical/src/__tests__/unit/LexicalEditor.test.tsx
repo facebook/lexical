@@ -3150,8 +3150,8 @@ describe('LexicalEditor tests', () => {
       );
     });
 
-    expect(onError).toBeCalledWith(updateError);
-    expect(textListener).toBeCalledWith('Hello\n\nworld');
+    expect(onError).toHaveBeenCalledWith(updateError);
+    expect(textListener).toHaveBeenCalledWith('Hello\n\nworld');
     expect(updateListener.mock.lastCall[0].prevEditorState).toBe(editorState);
   });
 

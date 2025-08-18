@@ -21,7 +21,9 @@ const wwwMappings = Object.fromEntries(
     ),
 );
 
-const prettierConfig = prettier.resolveConfig('./').then((cfg) => cfg || {});
+const prettierConfig = prettier
+  .resolveConfig(__filename)
+  .then((cfg) => cfg || {});
 
 /**
  * Add a statement to the end of the code so the comments don't

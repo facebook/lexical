@@ -33,7 +33,7 @@ describe('ErrorMap', () => {
           undefined,
         );
         await waitTick();
-        expect(flush).not.toBeCalled();
+        expect(flush).not.toHaveBeenCalled();
         expect(Object.keys(errorMap.errorMap).length).toEqual(
           initialMessages.length,
         );
@@ -51,7 +51,7 @@ describe('ErrorMap', () => {
           });
           expect(errorMap.dirty).toBe(false);
           await waitTick();
-          expect(flush).not.toBeCalled();
+          expect(flush).not.toHaveBeenCalled();
         });
       }
       test('inserts with extractCodes true', async () => {
@@ -67,11 +67,14 @@ describe('ErrorMap', () => {
         expect(errorMap.errorMap[beforeSize]).toBe(msg);
         expect(errorMap.inverseErrorMap[msg]).toBe(beforeSize);
         expect(errorMap.maxId).toBe(beforeSize);
-        expect(flush).not.toBeCalled();
+        expect(flush).not.toHaveBeenCalled();
         expect(errorMap.dirty).toBe(true);
         await waitTick();
         expect(errorMap.dirty).toBe(false);
-        expect(flush).toBeCalledWith({...initialMap, [`${beforeSize}`]: msg});
+        expect(flush).toHaveBeenCalledWith({
+          ...initialMap,
+          [`${beforeSize}`]: msg,
+        });
       });
       test('inserts two messages with extractCodes true', async () => {
         const flush = jest.fn();
@@ -87,13 +90,13 @@ describe('ErrorMap', () => {
           expect(errorMap.errorMap[beforeSize]).toBe(msg);
           expect(errorMap.inverseErrorMap[msg]).toBe(beforeSize);
           expect(errorMap.maxId).toBe(beforeSize);
-          expect(flush).not.toBeCalled();
+          expect(flush).not.toHaveBeenCalled();
         });
         expect(errorMap.dirty).toBe(true);
         await waitTick();
         expect(errorMap.dirty).toBe(false);
-        expect(flush).toBeCalledTimes(1);
-        expect(flush).toBeCalledWith({
+        expect(flush).toHaveBeenCalledTimes(1);
+        expect(flush).toHaveBeenCalledWith({
           ...initialMap,
           ...Object.fromEntries(
             msgs.map((msg, i) => [`${initialMessages.length + i}`, msg]),

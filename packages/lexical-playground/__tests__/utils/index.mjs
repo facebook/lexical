@@ -59,12 +59,12 @@ export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
   return html`
     ${expected
       .replace(
-        /<table/g,
-        `<div${
+        /<table([^>]*)(dir="\w+")([^>]*)>/g,
+        `<div $2${
           ignoreClasses
             ? ''
             : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
-        }><table`,
+        }><table$1$3>`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;
@@ -157,7 +157,7 @@ async function exposeLexicalEditor(page) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   }

@@ -38,9 +38,7 @@ test.describe('Share', () => {
 
     await focusEditor(page);
     const fooHTML = html`
-      <p
-        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr">
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
         <span data-lexical-text="true">foo</span>
       </p>
     `;
@@ -74,9 +72,7 @@ test.describe('Share', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">foobar</span>
         </p>
       `,

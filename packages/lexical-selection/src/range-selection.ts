@@ -427,9 +427,14 @@ export function $wrapNodesImpl(
  * @param selection - The selection whose parent to test.
  * @returns true if the selection's parent has vertical writing mode (writing-mode: vertical-rl), false otherwise.
  */
-export function $isEditorVerticalOrientation(
+function $isEditorVerticalOrientation(selection: RangeSelection): boolean {
+  const computedStyle = $getComputedStyle(selection);
+  return computedStyle !== null && computedStyle.writingMode === 'vertical-rl';
+}
+
+function $getComputedStyle(
   selection: RangeSelection,
-): boolean {
+): CSSStyleDeclaration | null {
   const anchorNode = selection.anchor.getNode();
   const parent = $isRootNode(anchorNode)
     ? anchorNode
@@ -437,14 +442,13 @@ export function $isEditorVerticalOrientation(
   const editor = $getEditor();
   const domElement = editor.getElementByKey(parent.getKey());
   if (domElement === null) {
-    return false;
+    return null;
   }
   const view = domElement.ownerDocument.defaultView;
   if (view === null) {
-    return false;
+    return null;
   }
-  const computedStyle = view.getComputedStyle(domElement);
-  return computedStyle.writingMode === 'vertical-rl';
+  return view.getComputedStyle(domElement);
 }
 
 /**
@@ -509,12 +513,8 @@ export function $moveCaretSelection(
  * @returns true if the selections' parent element has a direction of 'rtl' (right to left), false otherwise.
  */
 export function $isParentElementRTL(selection: RangeSelection): boolean {
-  const anchorNode = selection.anchor.getNode();
-  const parent = $isRootNode(anchorNode)
-    ? anchorNode
-    : anchorNode.getParentOrThrow();
-
-  return parent.getDirection() === 'rtl';
+  const computedStyle = $getComputedStyle(selection);
+  return computedStyle !== null && computedStyle.direction === 'rtl';
 }
 
 /**

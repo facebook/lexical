@@ -51,6 +51,7 @@ const INITIAL_TOOLBAR_STATE = {
   canRedo: false,
   canUndo: false,
   codeLanguage: '',
+  codeTheme: '',
   elementFormat: 'left' as ElementFormatType,
   fontColor: '#000',
   fontFamily: 'Arial',
@@ -73,6 +74,7 @@ const INITIAL_TOOLBAR_STATE = {
   isUppercase: false,
   isCapitalize: false,
   rootType: 'root' as keyof typeof rootTypeToRootName,
+  listStartNumber: null as number | null,
 };
 
 type ToolbarState = typeof INITIAL_TOOLBAR_STATE;

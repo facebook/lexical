@@ -73,9 +73,8 @@ export function CollaborationPlugin({
   const [editor] = useLexicalComposerContext();
   useCollabActive(collabContext, editor);
 
-  const provider = useProvider(id, yjsDocMap, providerFactory);
-
-  const [doc, setDoc] = useState(yjsDocMap.get(id));
+  const [doc, setDoc] = useState<Doc>();
+  const provider = useProvider(id, yjsDocMap, setDoc, providerFactory);
   const [binding, setBinding] = useState<Binding>();
 
   useEffect(() => {
@@ -212,9 +211,8 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   const [editor] = useLexicalComposerContext();
   useCollabActive(collabContext, editor);
 
-  const provider = useProvider(id, yjsDocMap, providerFactory);
-
-  const [doc, setDoc] = useState(yjsDocMap.get(id));
+  const [doc, setDoc] = useState<Doc>();
+  const provider = useProvider(id, yjsDocMap, setDoc, providerFactory);
   const [binding, setBinding] = useState<BindingV2>();
 
   useEffect(() => {
@@ -329,6 +327,7 @@ const useCollabActive = (
 const useProvider = (
   id: string,
   yjsDocMap: Map<string, Doc>,
+  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
   providerFactory: ProviderFactory,
 ) => {
   const isProviderInitialized = useRef(false);
@@ -343,11 +342,12 @@ const useProvider = (
 
     const newProvider = providerFactory(id, yjsDocMap);
     setProvider(newProvider);
+    setDoc(yjsDocMap.get(id));
 
     return () => {
       newProvider.disconnect();
     };
-  }, [id, providerFactory, yjsDocMap]);
+  }, [id, providerFactory, yjsDocMap, setDoc]);
 
   return provider;
 };

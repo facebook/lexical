@@ -12,8 +12,11 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getState,
   $isNodeSelection,
   $isRangeSelection,
+  $setState,
+  createState,
   ElementNode,
   LexicalEditor,
   ParagraphNode,
@@ -342,15 +345,13 @@ describe('LexicalTextNode tests', () => {
 
       // Set each format and ensure that the other formats are cleared
       capitalizationFormats.forEach((formatToSet) => {
-        textNode.toggleFormat(formatToSet as TextFormatType);
+        textNode.toggleFormat(formatToSet);
 
         capitalizationFormats
           .filter((format) => format !== formatToSet)
-          .forEach((format) =>
-            expect(textNode.hasFormat(format as TextFormatType)).toBe(false),
-          );
+          .forEach((format) => expect(textNode.hasFormat(format)).toBe(false));
 
-        expect(textNode.hasFormat(formatToSet as TextFormatType)).toBe(true);
+        expect(textNode.hasFormat(formatToSet)).toBe(true);
       });
     });
   });
@@ -629,6 +630,46 @@ describe('LexicalTextNode tests', () => {
           'o',
           'o',
         ]);
+      });
+    });
+
+    test('copies state to all nodes', async () => {
+      await update(() => {
+        const textNode = $createTextNode('hello world');
+        const state = createState('state', {
+          parse: (v) => v,
+          unparse: (v) => v,
+        });
+        $setState(textNode, state, 'foo');
+        const splits = textNode.splitText(3, 5);
+        expect(
+          splits
+            .map((split) => $getState(split, state))
+            .every((v) => v === 'foo'),
+        ).toEqual(true);
+
+        // Check that the state value is not aliased to the original node.
+        $setState(splits[0], state, 'bar');
+        expect($getState(splits[0], state)).toEqual('bar');
+        expect($getState(splits[1], state)).toEqual('foo');
+        expect($getState(splits[2], state)).toEqual('foo');
+      });
+    });
+
+    test('copies state to all nodes (segmented)', async () => {
+      await update(() => {
+        const textNode = $createTestSegmentedNode('hello world');
+        const state = createState('state', {
+          parse: (v) => v,
+          unparse: (v) => v,
+        });
+        $setState(textNode, state, 'foo');
+        const splits = textNode.splitText(3, 5);
+        expect(
+          splits
+            .map((split) => $getState(split, state))
+            .every((v) => v === 'foo'),
+        ).toEqual(true);
       });
     });
   });

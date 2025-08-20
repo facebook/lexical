@@ -301,7 +301,11 @@ export function applyTableHandlers(
             );
           }
         } else {
-          tableObserver.$setAnchorCellForSelection(targetCell);
+          // Only set anchor cell for selection if this is not a simple touch tap
+          // Touch taps should not initiate table selection mode
+          if (event.pointerType !== 'touch') {
+            tableObserver.$setAnchorCellForSelection(targetCell);
+          }
         }
       });
     }
@@ -750,7 +754,10 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      (selectionPayload) => {
+      (selectionPayload, dispatchEditor) => {
+        if (editor !== dispatchEditor) {
+          return false;
+        }
         const {nodes, selection} = selectionPayload;
         const anchorAndFocus = selection.getStartEndPoints();
         const isTableSelection = $isTableSelection(selection);
@@ -1090,8 +1097,11 @@ export function applyTableHandlers(
             // Handle case when the pointer type is touch and the current and
             // previous selection are collapsed, and the previous anchor and current
             // focus cell nodes are different, then we convert it into table selection
+            // However, only do this if the table observer is actively selecting (user dragging)
+            // to prevent unwanted selections when simply tapping between cells on mobile
             if (
               tableObserver.pointerType === 'touch' &&
+              tableObserver.isSelecting &&
               selection.isCollapsed() &&
               $isRangeSelection(prevSelection) &&
               prevSelection.isCollapsed()

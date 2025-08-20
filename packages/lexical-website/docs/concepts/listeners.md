@@ -49,7 +49,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 The problem with this pattern is that it means we end up doing two DOM updates, when we likely could have
 done it in a single DOM update. This can have an impact on performance, which is important in a text editor.
-To avoid this, we recommend looking into [Node Transforms](https://lexical.dev/docs/concepts/transforms), which allow you to listen to node changes and
+To avoid this, we recommend looking into [Node Transforms](transforms.md), which allow you to listen to node changes and
 transform them as part of the same given update, meaning no waterfalls!
 
 ## `registerTextContentListener`

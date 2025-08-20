@@ -26,6 +26,7 @@ import {
   LEGACY_EVENTS,
   SAMPLE_IMAGE_URL,
   SAMPLE_LANDSCAPE_IMAGE_URL,
+  SAMPLE_SVG_URL,
   selectorBoundingBox,
   test,
   waitForSelector,
@@ -48,7 +49,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -98,7 +99,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
     await assertSelection(page, {
@@ -116,7 +117,7 @@ test.describe('Images', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span
               class="editor-image"
               contenteditable="false"
@@ -153,7 +154,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
@@ -168,7 +169,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -200,7 +201,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
@@ -230,7 +231,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -270,7 +271,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -298,7 +299,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
     await assertSelection(page, {
@@ -318,9 +319,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
@@ -360,9 +359,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
@@ -397,11 +394,7 @@ test.describe('Images', () => {
 
     await focusEditor(page);
 
-    await insertUrlImage(
-      page,
-      'https://lexical.dev/img/logo.svg',
-      'lexical logo',
-    );
+    await insertUrlImage(page, SAMPLE_SVG_URL, 'lexical logo');
 
     await insertUploadImage(
       page,
@@ -412,7 +405,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -421,7 +414,7 @@ test.describe('Images', () => {
               <img
                 alt="lexical logo"
                 draggable="false"
-                src="https://lexical.dev/img/logo.svg"
+                src="${SAMPLE_SVG_URL}"
                 style="height: 112px; max-width: 500px; width: 500px" />
             </div>
           </span>
@@ -478,9 +471,7 @@ test.describe('Images', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">HelloWorld</span>
             <span
               class="editor-image"
@@ -496,7 +487,7 @@ test.describe('Images', () => {
             </span>
             <br />
           </p>
-          <p class="PlaygroundEditorTheme__paragraph">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <br />
           </p>
         `,
@@ -514,9 +505,7 @@ test.describe('Images', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Hello</span>
             <span
               class="editor-image"
@@ -532,7 +521,7 @@ test.describe('Images', () => {
             </span>
             <span data-lexical-text="true">World</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <br />
           </p>
         `,
@@ -560,12 +549,10 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">HelloWorld</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -646,12 +633,10 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -666,12 +651,10 @@ test.describe('Images', () => {
           </span>
           <br />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -686,9 +669,7 @@ test.describe('Images', () => {
           </span>
           <br />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text3</span>
         </p>
       `,
@@ -711,20 +692,14 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -739,9 +714,7 @@ test.describe('Images', () => {
           </span>
           <span data-lexical-text="true">&lt;- it works!</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text3</span>
         </p>
       `,
@@ -773,9 +746,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">HelloWorld</span>
           <span
             class="editor-image"
@@ -805,11 +776,7 @@ test.describe('Images', () => {
     await focusEditor(page);
 
     // Insert an SVG image using the Lexical logo
-    await insertUrlImage(
-      page,
-      'https://lexical.dev/img/logo.svg',
-      'lexical logo',
-    );
+    await insertUrlImage(page, SAMPLE_SVG_URL, 'lexical logo');
 
     // Insert a JPG image
     await insertUrlImage(page, SAMPLE_IMAGE_URL, 'sample image');
@@ -818,7 +785,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -827,7 +794,7 @@ test.describe('Images', () => {
               <img
                 alt="lexical logo"
                 draggable="false"
-                src="https://lexical.dev/img/logo.svg"
+                src="${SAMPLE_SVG_URL}"
                 style="height: 112px; max-width: 500px; width: 500px" />
             </div>
           </span>

@@ -36,6 +36,7 @@ const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const IS_TABLE_HORIZONTAL_SCROLL =
   process.env.E2E_TABLE_MODE !== 'legacy';
+export const SAMPLE_SVG_URL = '/logo.svg';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -58,12 +59,12 @@ export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
   return html`
     ${expected
       .replace(
-        /<table/g,
-        `<div${
+        /<table([^>]*)(dir="\w+")([^>]*)>/g,
+        `<div $2${
           ignoreClasses
             ? ''
             : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
-        }><table`,
+        }><table$1$3>`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;
@@ -156,7 +157,7 @@ async function exposeLexicalEditor(page) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   }
@@ -525,6 +526,7 @@ export async function copyToClipboard(page) {
 async function pasteWithClipboardDataFromPageOrFrame(
   pageOrFrame,
   clipboardData,
+  editorSelector,
 ) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
@@ -563,7 +565,10 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
-      const editor = document.querySelector('div[contenteditable="true"]');
+      const editor =
+        document.activeElement && document.activeElement.isContentEditable
+          ? document.activeElement
+          : document.querySelector(editorSelector);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -595,7 +600,11 @@ async function pasteWithClipboardDataFromPageOrFrame(
 /**
  * @param {import('@playwright/test').Page} page
  */
-export async function pasteFromClipboard(page, clipboardData) {
+export async function pasteFromClipboard(
+  page,
+  clipboardData,
+  editorSelector = 'div[contenteditable="true"]',
+) {
   if (clipboardData === undefined) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('v');
@@ -605,6 +614,7 @@ export async function pasteFromClipboard(page, clipboardData) {
   await pasteWithClipboardDataFromPageOrFrame(
     getPageOrFrame(page),
     clipboardData,
+    editorSelector,
   );
 }
 

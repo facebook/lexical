@@ -16,7 +16,10 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {
+  createSharedNodeState,
   EditorThemeClasses,
+  getRegisteredNode,
+  getStaticNodeConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -30,8 +33,19 @@ import warnOnlyOnce from 'shared/warnOnlyOnce';
 function getTransformSetFromKlass(
   klass: KlassConstructor<typeof LexicalNode>,
 ): Set<Transform<LexicalNode>> {
+  const transforms = new Set<Transform<LexicalNode>>();
+  const {ownNodeConfig} = getStaticNodeConfig(klass);
   const transform = klass.transform();
-  return new Set(transform ? [transform] : []);
+  if (ownNodeConfig) {
+    const $transform = ownNodeConfig.$transform;
+    if ($transform) {
+      transforms.add($transform);
+    }
+  }
+  if (transform) {
+    transforms.add(transform);
+  }
+  return transforms;
 }
 
 export interface LexicalNestedComposerProps {
@@ -138,6 +152,7 @@ export function LexicalNestedComposer({
               klass: entry.klass,
               replace: entry.replace,
               replaceWithKlass: entry.replaceWithKlass,
+              sharedNodeState: createSharedNodeState(entry.klass),
               transforms: getTransformSetFromKlass(entry.klass),
             });
           }
@@ -161,13 +176,17 @@ export function LexicalNestedComposer({
             replace = options.with;
             replaceWithKlass = options.withKlass || null;
           }
-          const registeredKlass = initialEditor._nodes.get(klass.getType());
+          const registeredKlass = getRegisteredNode(
+            initialEditor,
+            klass.getType(),
+          );
 
           initialEditor._nodes.set(klass.getType(), {
             exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
             replace,
             replaceWithKlass,
+            sharedNodeState: createSharedNodeState(klass),
             transforms: getTransformSetFromKlass(klass),
           });
         }

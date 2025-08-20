@@ -62,7 +62,7 @@ describe('LexicalLinkNode tests', () => {
       expect(() => $createLinkNode('')).toThrow();
     });
 
-    test('LineBreakNode.clone()', async () => {
+    test('LinkNode.clone()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {

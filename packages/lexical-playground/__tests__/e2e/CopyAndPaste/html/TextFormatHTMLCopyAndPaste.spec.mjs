@@ -27,44 +27,40 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Bold
           </strong>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <em
             class="PlaygroundEditorTheme__textItalic"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Italic
           </em>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="PlaygroundEditorTheme__textUnderline"
+            style="font-size: 11pt"
             data-lexical-text="true">
             underline
           </span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
            PlaygroundEditorTheme__textUnderline"
+            style="font-size: 11pt"
             data-lexical-text="true">
             Bold Italic Underline
           </strong>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <br />
         </p>
       `,
@@ -84,9 +80,7 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">

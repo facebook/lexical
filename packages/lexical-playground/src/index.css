@@ -584,12 +584,20 @@ i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }
 
+i.calendar {
+  background-image: url(images/icons/calendar.svg);
+}
+
 i.gif {
   background-image: url(images/icons/filetype-gif.svg);
 }
 
 i.copy {
   background-image: url(images/icons/copy.svg);
+}
+
+i.paste {
+  background-image: url(images/icons/clipboard.svg);
 }
 
 i.success {
@@ -954,9 +962,9 @@ i.page-break,
 
 .switch label {
   margin-right: 5px;
-  line-height: 24px;
+  line-height: 14px;
   width: 100px;
-  font-size: 14px;
+  font-size: 12px;
   display: inline-block;
   vertical-align: middle;
 }
@@ -1479,14 +1487,6 @@ button.action-button:disabled {
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
-}
-
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
 }
 
 .toolbar {

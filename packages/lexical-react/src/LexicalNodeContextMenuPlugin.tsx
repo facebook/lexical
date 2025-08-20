@@ -43,6 +43,7 @@ class MenuOption {
 class NodeContextMenuOption extends MenuOption {
   type: string;
   title: string;
+  icon: JSX.Element | null;
   disabled: boolean;
   $onSelect: () => void;
   $showOn?: (node: LexicalNode) => boolean;
@@ -51,6 +52,7 @@ class NodeContextMenuOption extends MenuOption {
     title: string,
     options: {
       disabled?: boolean;
+      icon?: JSX.Element;
       $onSelect: () => void;
       $showOn?: (node: LexicalNode) => boolean;
     },
@@ -59,6 +61,7 @@ class NodeContextMenuOption extends MenuOption {
     this.type = 'item';
     this.title = title;
     this.disabled = options.disabled ?? false;
+    this.icon = options.icon ?? null;
     this.$onSelect = options.$onSelect;
     if (options.$showOn) {
       this.$showOn = options.$showOn;
@@ -93,8 +96,9 @@ const ContextMenuItem = forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
     label?: string;
     disabled?: boolean;
+    icon?: JSX.Element | null;
   }
->(({className, label, disabled, ...props}, ref) => {
+>(({className, label, disabled, icon, ...props}, ref) => {
   return (
     <button
       {...props}
@@ -102,6 +106,7 @@ const ContextMenuItem = forwardRef<
       ref={ref}
       role="menuitem"
       disabled={disabled}>
+      {icon}
       {label}
     </button>
   );
@@ -142,7 +147,6 @@ const NodeContextMenuPlugin = forwardRef<
 
   const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
   const listContentRef = useRef<Array<string | null>>([]);
-  const allowMouseUpCloseRef = useRef(false);
 
   const {refs, floatingStyles, context} = useFloating({
     middleware: [
@@ -183,8 +187,6 @@ const NodeContextMenuPlugin = forwardRef<
   const [renderItems, setRenderItems] = useState<MenuType[]>([]);
 
   useEffect(() => {
-    let timeout: number;
-
     function onContextMenu(e: MouseEvent) {
       e.preventDefault();
 
@@ -226,6 +228,7 @@ const NodeContextMenuPlugin = forwardRef<
           return {
             className: itemClassName,
             disabled: (option as NodeContextMenuOption).disabled,
+            icon: (option as NodeContextMenuOption).icon,
             key: option.key,
             label: (option as NodeContextMenuOption).title,
             onClick: () =>
@@ -243,26 +246,11 @@ const NodeContextMenuPlugin = forwardRef<
       setRenderItems(renderableItems);
 
       setIsOpen(true);
-      clearTimeout(timeout);
-
-      allowMouseUpCloseRef.current = false;
-      timeout = window.setTimeout(() => {
-        allowMouseUpCloseRef.current = true;
-      }, 300);
-    }
-
-    function onMouseUp() {
-      if (allowMouseUpCloseRef.current) {
-        setIsOpen(false);
-      }
     }
 
     document.addEventListener('contextmenu', onContextMenu);
-    document.addEventListener('mouseup', onMouseUp);
     return () => {
       document.removeEventListener('contextmenu', onContextMenu);
-      document.removeEventListener('mouseup', onMouseUp);
-      clearTimeout(timeout);
     };
   }, [items, itemClassName, separatorClassName, refs, editor]);
 

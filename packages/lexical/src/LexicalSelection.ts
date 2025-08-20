@@ -27,6 +27,7 @@ import {
   $getCaretRangeInDirection,
   $getChildCaret,
   $getSiblingCaret,
+  $getTextNodeOffset,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -80,7 +81,6 @@ import {
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getTextNodeOffset,
   getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
@@ -700,6 +700,16 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
+   * Sets the value of the format property on the Selection
+   *
+   * @param format - the format to set at the value of the format property.
+   */
+  setFormat(format: number): void {
+    this.format = format;
+    this.dirty = true;
+  }
+
+  /**
    * Sets the value of the style property on the Selection
    *
    * @param style - the style to set at the value of the style property.
@@ -1269,7 +1279,7 @@ export class RangeSelection implements BaseSelection {
     // Multiple nodes selected
     // The entire first node isn't selected, so split it
     if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-      [, firstNode as TextNode] = firstNode.splitText(startOffset);
+      [, firstNode] = firstNode.splitText(startOffset);
       startOffset = 0;
     }
     firstNode.setFormat(firstNextFormat);
@@ -1282,7 +1292,7 @@ export class RangeSelection implements BaseSelection {
         endOffset !== lastNode.getTextContentSize() &&
         !$isTokenOrSegmented(lastNode)
       ) {
-        [lastNode as TextNode] = lastNode.splitText(endOffset);
+        [lastNode] = lastNode.splitText(endOffset);
       }
       lastNode.setFormat(lastNextFormat);
     }
@@ -2262,7 +2272,10 @@ function $internalResolveSelectionPoint(
     resolvedNode = $getNodeFromDOM(childDOM);
 
     if ($isTextNode(resolvedNode)) {
-      resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+      resolvedOffset = $getTextNodeOffset(
+        resolvedNode,
+        moveSelectionToEnd ? 'next' : 'previous',
+      );
     } else {
       let resolvedElement = $getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.
@@ -2314,7 +2327,10 @@ function $internalResolveSelectionPoint(
         if ($isTextNode(child)) {
           resolvedNode = child;
           resolvedElement = null;
-          resolvedOffset = getTextNodeOffset(child, moveSelectionToEnd);
+          resolvedOffset = $getTextNodeOffset(
+            child,
+            moveSelectionToEnd ? 'next' : 'previous',
+          );
         } else if (
           child !== resolvedElement &&
           moveSelectionToEnd &&
@@ -2352,7 +2368,11 @@ function $internalResolveSelectionPoint(
   if (!$isTextNode(resolvedNode)) {
     return null;
   }
-  return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
+  return $createPoint(
+    resolvedNode.__key,
+    $getTextNodeOffset(resolvedNode, resolvedOffset, 'clamp'),
+    'text',
+  );
 }
 
 function resolveSelectionPointOnBoundary(
@@ -2483,8 +2503,8 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
-    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
-    $validatePoint(editor, 'focus', resolvedAnchorPoint);
+    $validatePoint('anchor', resolvedAnchorPoint);
+    $validatePoint('focus', resolvedFocusPoint);
   }
   if (
     resolvedAnchorPoint.type === 'element' &&
@@ -2656,11 +2676,7 @@ export function $internalCreateRangeSelection(
   );
 }
 
-function $validatePoint(
-  editor: LexicalEditor,
-  name: 'anchor' | 'focus',
-  point: PointType,
-): void {
+function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(
     node !== undefined,

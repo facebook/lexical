@@ -16,6 +16,17 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {
+  $getEndOfCodeInLine,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+  $getStartOfCodeInLine,
+  $isCodeHighlightNode,
+  $isCodeNode,
+  CodeHighlightNode,
+  CodeNode,
+  DEFAULT_CODE_LANGUAGE,
+} from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -49,163 +60,29 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {Prism, tokenizeDiffHighlight} from './CodeHighlighterPrism';
 import {
-  $createCodeHighlightNode,
-  $getFirstCodeNodeOfLine,
-  $getLastCodeNodeOfLine,
-  $isCodeHighlightNode,
-  CodeHighlightNode,
-  DEFAULT_CODE_LANGUAGE,
-} from './CodeHighlightNode';
-import {$isCodeNode, CodeNode} from './CodeNode';
-
-type TokenContent = string | Token | (string | Token)[];
-
-export interface Token {
-  type: string;
-  alias: string | string[];
-  content: TokenContent;
-}
+  $getHighlightNodes,
+  isCodeLanguageLoaded,
+  isCodeThemeLoaded,
+  loadCodeLanguage,
+  loadCodeTheme,
+} from './FacadeShiki';
 
 export interface Tokenizer {
   defaultLanguage: string;
-  tokenize(code: string, language?: string): (string | Token)[];
+  defaultTheme: string;
+  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
 }
 
-export const PrismTokenizer: Tokenizer = {
-  defaultLanguage: DEFAULT_CODE_LANGUAGE,
-  tokenize(code: string, language?: string): (string | Token)[] {
-    return Prism.tokenize(
-      code,
-      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
-    );
+const DEFAULT_CODE_THEME = 'one-light';
+
+export const ShikiTokenizer: Tokenizer = {
+  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[] {
+    return $getHighlightNodes(codeNode, language || this.defaultLanguage);
   },
+  defaultLanguage: DEFAULT_CODE_LANGUAGE,
+  defaultTheme: DEFAULT_CODE_THEME,
 };
-
-export function $getStartOfCodeInLine(
-  anchor: CodeHighlightNode | TabNode,
-  offset: number,
-): null | {
-  node: CodeHighlightNode | TabNode | LineBreakNode;
-  offset: number;
-} {
-  let last: null | {
-    node: CodeHighlightNode | TabNode | LineBreakNode;
-    offset: number;
-  } = null;
-  let lastNonBlank: null | {node: CodeHighlightNode; offset: number} = null;
-  let node: null | CodeHighlightNode | TabNode | LineBreakNode = anchor;
-  let nodeOffset = offset;
-  let nodeTextContent = anchor.getTextContent();
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (nodeOffset === 0) {
-      node = node.getPreviousSibling();
-      if (node === null) {
-        break;
-      }
-      invariant(
-        $isCodeHighlightNode(node) ||
-          $isTabNode(node) ||
-          $isLineBreakNode(node),
-        'Expected a valid Code Node: CodeHighlightNode, TabNode, LineBreakNode',
-      );
-      if ($isLineBreakNode(node)) {
-        last = {
-          node,
-          offset: 1,
-        };
-        break;
-      }
-      nodeOffset = Math.max(0, node.getTextContentSize() - 1);
-      nodeTextContent = node.getTextContent();
-    } else {
-      nodeOffset--;
-    }
-    const character = nodeTextContent[nodeOffset];
-    if ($isCodeHighlightNode(node) && character !== ' ') {
-      lastNonBlank = {
-        node,
-        offset: nodeOffset,
-      };
-    }
-  }
-  // lastNonBlank !== null: anchor in the middle of code; move to line beginning
-  if (lastNonBlank !== null) {
-    return lastNonBlank;
-  }
-  // Spaces, tabs or nothing ahead of anchor
-  let codeCharacterAtAnchorOffset = null;
-  if (offset < anchor.getTextContentSize()) {
-    if ($isCodeHighlightNode(anchor)) {
-      codeCharacterAtAnchorOffset = anchor.getTextContent()[offset];
-    }
-  } else {
-    const nextSibling = anchor.getNextSibling();
-    if ($isCodeHighlightNode(nextSibling)) {
-      codeCharacterAtAnchorOffset = nextSibling.getTextContent()[0];
-    }
-  }
-  if (
-    codeCharacterAtAnchorOffset !== null &&
-    codeCharacterAtAnchorOffset !== ' '
-  ) {
-    // Borderline whitespace and code, move to line beginning
-    return last;
-  } else {
-    const nextNonBlank = findNextNonBlankInLine(anchor, offset);
-    if (nextNonBlank !== null) {
-      return nextNonBlank;
-    } else {
-      return last;
-    }
-  }
-}
-
-function findNextNonBlankInLine(
-  anchor: LexicalNode,
-  offset: number,
-): null | {node: CodeHighlightNode; offset: number} {
-  let node: null | LexicalNode = anchor;
-  let nodeOffset = offset;
-  let nodeTextContent = anchor.getTextContent();
-  let nodeTextContentSize = anchor.getTextContentSize();
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (!$isCodeHighlightNode(node) || nodeOffset === nodeTextContentSize) {
-      node = node.getNextSibling();
-      if (node === null || $isLineBreakNode(node)) {
-        return null;
-      }
-      if ($isCodeHighlightNode(node)) {
-        nodeOffset = 0;
-        nodeTextContent = node.getTextContent();
-        nodeTextContentSize = node.getTextContentSize();
-      }
-    }
-    if ($isCodeHighlightNode(node)) {
-      if (nodeTextContent[nodeOffset] !== ' ') {
-        return {
-          node,
-          offset: nodeOffset,
-        };
-      }
-      nodeOffset++;
-    }
-  }
-}
-
-export function $getEndOfCodeInLine(
-  anchor: CodeHighlightNode | TabNode,
-): CodeHighlightNode | TabNode {
-  const lastNode = $getLastCodeNodeOfLine(anchor);
-  invariant(
-    !$isLineBreakNode(lastNode),
-    'Unexpected lineBreakNode in getEndOfCodeInLine',
-  );
-  return lastNode;
-}
 
 function $textNodeTransform(
   node: TextNode,
@@ -265,16 +142,48 @@ function codeNodeTransform(
 ) {
   const nodeKey = node.getKey();
 
+  // When new code block inserted it might not have language selected
+  let language = node.getLanguage();
+  if (!language) {
+    language = tokenizer.defaultLanguage;
+    node.setLanguage(language);
+  }
+
+  let theme = node.getTheme();
+  if (!theme) {
+    theme = tokenizer.defaultTheme;
+    node.setTheme(theme);
+  }
+
+  // dynamic import of themes
+  let inFlight = false;
+  if (!isCodeThemeLoaded(theme)) {
+    loadCodeTheme(theme, editor, nodeKey);
+    inFlight = true;
+  }
+
+  // dynamic import of languages
+  if (isCodeLanguageLoaded(language)) {
+    if (!node.getIsSyntaxHighlightSupported()) {
+      node.setIsSyntaxHighlightSupported(true);
+    }
+  } else {
+    if (node.getIsSyntaxHighlightSupported()) {
+      node.setIsSyntaxHighlightSupported(false);
+    }
+    loadCodeLanguage(language, editor, nodeKey);
+    inFlight = true;
+  }
+
+  if (inFlight) {
+    return;
+  }
+
   if (nodesCurrentlyHighlighting.has(nodeKey)) {
     return;
   }
 
   nodesCurrentlyHighlighting.add(nodeKey);
-
-  // When new code block inserted it might not have language selected
-  if (node.getLanguage() === undefined) {
-    node.setLanguage(tokenizer.defaultLanguage);
-  }
 
   // Using nested update call to pass `skipTransforms` since we don't want
   // each individual CodeHighlightNode to be transformed again as it's already
@@ -287,19 +196,9 @@ function codeNodeTransform(
         if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
           return false;
         }
-        const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
-        const currentLanguage =
-          currentNode.getLanguage() || tokenizer.defaultLanguage;
-        const diffLanguageMatch = DIFF_LANGUAGE_REGEX.exec(currentLanguage);
-        const code = currentNode.getTextContent();
-        let tokens = tokenizer.tokenize(
-          code,
-          diffLanguageMatch ? 'diff' : currentLanguage,
-        );
-        if (diffLanguageMatch) {
-          tokens = tokenizeDiffHighlight(tokens, diffLanguageMatch[1]);
-        }
-        const highlightNodes = $getHighlightNodes(tokens);
+
+        const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
+        const highlightNodes = tokenizer.$tokenize(currentNode, lang);
         const diffRange = getDiffRange(
           currentNode.getChildren(),
           highlightNodes,
@@ -321,51 +220,6 @@ function codeNodeTransform(
       skipTransforms: true,
     },
   );
-}
-
-function $getHighlightNodes(
-  tokens: Array<string | Token>,
-  type?: string,
-): LexicalNode[] {
-  const nodes: LexicalNode[] = [];
-
-  for (const token of tokens) {
-    if (typeof token === 'string') {
-      const partials = token.split(/(\n|\t)/);
-      const partialsLength = partials.length;
-      for (let i = 0; i < partialsLength; i++) {
-        const part = partials[i];
-        if (part === '\n' || part === '\r\n') {
-          nodes.push($createLineBreakNode());
-        } else if (part === '\t') {
-          nodes.push($createTabNode());
-        } else if (part.length > 0) {
-          nodes.push($createCodeHighlightNode(part, type));
-        }
-      }
-    } else {
-      const {content, alias} = token;
-      if (typeof content === 'string') {
-        nodes.push(
-          ...$getHighlightNodes(
-            [content],
-            token.type === 'prefix' && typeof alias === 'string'
-              ? alias
-              : token.type,
-          ),
-        );
-      } else if (Array.isArray(content)) {
-        nodes.push(
-          ...$getHighlightNodes(
-            content,
-            token.type === 'unchanged' ? undefined : token.type,
-          ),
-        );
-      }
-    }
-  }
-
-  return nodes;
 }
 
 // Wrapping update function into selection retainer, that tries to keep cursor at the same
@@ -488,7 +342,8 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
     ($isCodeHighlightNode(nodeA) &&
       $isCodeHighlightNode(nodeB) &&
       nodeA.__text === nodeB.__text &&
-      nodeA.__highlightType === nodeB.__highlightType) ||
+      nodeA.__highlightType === nodeB.__highlightType &&
+      nodeA.__style === nodeB.__style) ||
     ($isTabNode(nodeA) && $isTabNode(nodeB)) ||
     ($isLineBreakNode(nodeA) && $isLineBreakNode(nodeB))
   );
@@ -911,7 +766,7 @@ export function registerCodeHighlighting(
   }
 
   if (tokenizer == null) {
-    tokenizer = PrismTokenizer;
+    tokenizer = ShikiTokenizer;
   }
 
   const registrations = [];
@@ -941,13 +796,13 @@ export function registerCodeHighlighting(
   // Add the rest of the registrations
   registrations.push(
     editor.registerNodeTransform(CodeNode, (node) =>
-      codeNodeTransform(node, editor, tokenizer as Tokenizer),
+      codeNodeTransform(node, editor, tokenizer),
     ),
     editor.registerNodeTransform(TextNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer),
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer),
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
@@ -1038,12 +893,12 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (event) => $handleMoveTo(MOVE_TO_START, event as KeyboardEvent),
+      (event) => $handleMoveTo(MOVE_TO_START, event),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (event) => $handleMoveTo(MOVE_TO_END, event as KeyboardEvent),
+      (event) => $handleMoveTo(MOVE_TO_END, event),
       COMMAND_PRIORITY_LOW,
     ),
   );

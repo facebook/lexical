@@ -7,7 +7,7 @@
  */
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {$isTextNode} from 'lexical';
+import {$getEditor, $isRootNode, $isTextNode} from 'lexical';
 
 import {CSS_TO_STYLES} from './constants';
 
@@ -228,4 +228,35 @@ export function getCSSFromStyleObject(styles: Record<string, string>): string {
   }
 
   return css;
+}
+
+/**
+ * Gets the computed DOM styles of the parent of the node.
+ * @param node - The node to check its parent's styles for.
+ * @returns the computed styles of the node or null if there is no DOM element or no default view for the document.
+ */
+export function $getComputedStyleForParent(
+  node: LexicalNode,
+): CSSStyleDeclaration | null {
+  const parent = $isRootNode(node) ? node : node.getParentOrThrow();
+  const editor = $getEditor();
+  const domElement = editor.getElementByKey(parent.getKey());
+  if (domElement === null) {
+    return null;
+  }
+  const view = domElement.ownerDocument.defaultView;
+  if (view === null) {
+    return null;
+  }
+  return view.getComputedStyle(domElement);
+}
+
+/**
+ * Determines whether a node's parent is RTL.
+ * @param node - The node to check whether it is RTL.
+ * @returns whether the node is RTL.
+ */
+export function $isParentRTL(node: LexicalNode): boolean {
+  const styles = $getComputedStyleForParent(node);
+  return styles !== null && styles.direction === 'rtl';
 }

@@ -36,6 +36,7 @@ import {
   html,
   initialize,
   insertCollapsible,
+  insertDateTime,
   insertHorizontalRule,
   insertImageCaption,
   insertSampleImage,
@@ -1056,6 +1057,32 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     );
+  });
+
+  test('Move left from DecoratorNode in RTL #7771', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await moveToEditorBeginning(page);
+    await moveLeft(page, 4);
+    // TODO: assert selection is at end of paragraph
+  });
+
+  test('Move right from DecoratorNode in RTL #7771', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await moveToEditorBeginning(page);
+    await moveRight(page, 2);
+    // TODO: assert selection is right before the datetime
   });
 
   test('Can delete table node present at the end #5543', async ({

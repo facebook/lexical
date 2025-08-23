@@ -1068,8 +1068,19 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.type('קצת');
     await insertDateTime(page);
     await moveToEditorBeginning(page);
-    await moveLeft(page, 4);
-    // TODO: assert selection is at end of paragraph
+    await moveLeft(page, 5);
+
+    const expectedSelection = createHumanReadableSelection(
+      'the full text of the last cell in the table',
+      {
+        anchorOffset: {desc: 'after datetime', value: 2},
+        anchorPath: [{desc: 'first paragraph', value: 0}],
+        focusOffset: {desc: 'after datetime', value: 2},
+        focusPath: [{desc: 'first paragraph', value: 0}],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
   });
 
   test('Move right from DecoratorNode in RTL #7771', async ({

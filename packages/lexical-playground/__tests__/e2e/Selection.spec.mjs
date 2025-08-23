@@ -1067,16 +1067,25 @@ test.describe.parallel('Selection', () => {
     test.skip(isPlainText || isCollab);
     await page.keyboard.type('קצת');
     await insertDateTime(page);
+    await page.keyboard.type('קצת');
     await moveToEditorBeginning(page);
     await moveLeft(page, 5);
 
     const expectedSelection = createHumanReadableSelection(
-      'the full text of the last cell in the table',
+      'just after the datetime',
       {
-        anchorOffset: {desc: 'after datetime', value: 2},
-        anchorPath: [{desc: 'first paragraph', value: 0}],
-        focusOffset: {desc: 'after datetime', value: 2},
-        focusPath: [{desc: 'first paragraph', value: 0}],
+        anchorOffset: {desc: 'start of the span', value: 0},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'third span', value: 2},
+          {desc: 'beginning of text', value: 0},
+        ],
+        focusOffset: {desc: 'start of the span', value: 0},
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'third span', value: 2},
+          {desc: 'beginning of text', value: 0},
+        ],
       },
     );
 
@@ -1091,9 +1100,28 @@ test.describe.parallel('Selection', () => {
     test.skip(isPlainText || isCollab);
     await page.keyboard.type('קצת');
     await insertDateTime(page);
-    await moveToEditorBeginning(page);
-    await moveRight(page, 2);
-    // TODO: assert selection is right before the datetime
+    await page.keyboard.type('קצת');
+    await moveRight(page, 5);
+
+    const expectedSelection = createHumanReadableSelection(
+      'just before the datetime',
+      {
+        anchorOffset: {desc: 'before datetime', value: 3},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+        focusOffset: {desc: 'before datetime', value: 3},
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
   });
 
   test('Can delete table node present at the end #5543', async ({

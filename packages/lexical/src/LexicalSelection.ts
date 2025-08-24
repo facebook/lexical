@@ -2717,6 +2717,56 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   }
 }
 
+export function $normalizeSelectionByPosition(selection: RangeSelection): void {
+  const focusSlice = $caretRangeFromSelection(selection).getTextSlices()[1];
+
+  if (!focusSlice || focusSlice.distance === 0) {
+    const focusNode = selection.focus.getNode();
+
+    let currentNode = focusNode.getPreviousSibling();
+    if (!currentNode) {
+      const parent = focusNode.getParent();
+      currentNode = parent ? parent.getPreviousSibling() : null;
+    }
+
+    if (currentNode) {
+      const isFocusParent = currentNode.isParentOf(selection.focus.getNode());
+      const isLineBreakNode = $isLineBreakNode(currentNode);
+
+      if (!isFocusParent || isLineBreakNode) {
+        if (
+          $isTextNode(currentNode) ||
+          $isElementNode(currentNode) ||
+          $isLineBreakNode(currentNode)
+        ) {
+          const nodeToFocus = $isLineBreakNode(currentNode)
+            ? currentNode.getPreviousSibling()
+            : currentNode;
+
+          if (nodeToFocus) {
+            const elNode = $isElementNode(nodeToFocus);
+            const offset = elNode
+              ? nodeToFocus.getChildrenSize()
+              : nodeToFocus.getTextContentSize();
+
+            selection.focus.set(
+              nodeToFocus.getKey(),
+              offset,
+              elNode ? 'element' : 'text',
+            );
+          }
+        } else {
+          const parentNode = currentNode.getParent();
+          if (parentNode) {
+            const childIndex = currentNode.getIndexWithinParent();
+            selection.focus.set(parentNode.getKey(), childIndex + 1, 'element');
+          }
+        }
+      }
+    }
+  }
+}
+
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;

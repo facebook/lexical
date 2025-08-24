@@ -7,7 +7,7 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
@@ -15,6 +15,7 @@ import {
   CAN_USE_BEFORE_INPUT,
   IS_ANDROID_CHROME,
   IS_APPLE_WEBKIT,
+  IS_CHROME,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -28,10 +29,10 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $normalizeSelectionByPosition,
   $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
@@ -470,38 +471,6 @@ function $updateSelectionFormatStyleFromElementNode(
   $updateSelectionFormatStyle(selection, format, style);
 }
 
-function selectFirstLine(node: LexicalNode, selection: RangeSelection) {
-  const prevSibling = node.getPreviousSibling();
-
-  if (prevSibling) {
-    selection.focus.set(
-      prevSibling.getKey(),
-      prevSibling.getTextContentSize(),
-      $isElementNode(prevSibling) ? 'element' : 'text',
-    );
-  } else {
-    node.selectStart();
-  }
-}
-
-function selectLineAfterFirstLine(
-  nodes: LexicalNode[],
-  selection: RangeSelection,
-) {
-  const {anchor, focus} = selection;
-  const lineBreakAfterSelectedNode = nodes.find(
-    (node) => parseInt(node.getKey(), 10) > parseInt(anchor.key, 10),
-  );
-
-  if (lineBreakAfterSelectedNode) {
-    focus.set(
-      focus.key,
-      focus.getNode().getTextContentSize(),
-      $isElementNode(focus.getNode()) ? 'element' : 'text',
-    );
-  }
-}
-
 // This is a work-around is mainly Chrome specific bug where if you select
 // the contents of an empty block, you cannot easily unselect anything.
 // This results in a tiny selection box that looks buggy/broken. This can
@@ -530,32 +499,17 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
         ) {
           domSelection.removeAllRanges();
           selection.dirty = true;
-        } else if (event.detail >= 3 && !selection.isCollapsed()) {
+        } else if (
+          !selection.isCollapsed() &&
+          (event.detail === 3 || (event.detail > 3 && (IS_CHROME || IS_SAFARI)))
+        ) {
           // Triple click causing selection to overflow into the nearest element. In that
           // case visually it looks like a single element content is selected, focus node
           // is actually at the beginning of the next element (if present) and any manipulations
           // with selection (formatting) are affecting second element as well
 
-          const allNodes = selection.getNodes();
-          const lineBreakInSelection = allNodes.find((node) =>
-            $isLineBreakNode(node),
-          );
-
-          if (lineBreakInSelection) {
-            selectFirstLine(lineBreakInSelection, selection);
-          } else {
-            const parentNode = selection.anchor.getNode().getParent();
-            const lineBreakNodes = parentNode!
-              .getChildren()
-              .filter((node) => $isLineBreakNode(node));
-
-            if (lineBreakNodes.length) {
-              selectLineAfterFirstLine(lineBreakNodes, selection);
-            } else {
-              if (parentNode) {
-                parentNode.select(0);
-              }
-            }
+          if (selection) {
+            $normalizeSelectionByPosition(selection);
           }
         }
       } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {

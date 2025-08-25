@@ -1134,7 +1134,11 @@ test.describe.parallel('Selection', () => {
     await insertDateTime(page);
     await moveRight(page);
 
-    // TODO: verify selection
+    const selected = await evaluate(page, () => {
+      const datetimePillElement = document.querySelector('.dateTimePill');
+      return datetimePillElement.classList.contains('selected');
+    });
+    expect(selected).toBe(true);
   });
 
   test('Move left from last node in RTL #7775', async ({
@@ -1147,7 +1151,17 @@ test.describe.parallel('Selection', () => {
     await insertDateTime(page);
     await moveLeft(page);
 
-    // TODO: verify selection
+    const expectedSelection = createHumanReadableSelection(
+      'at end of paragraph',
+      {
+        anchorOffset: {desc: 'third segment', value: 2},
+        anchorPath: [{desc: 'first paragraph', value: 0}],
+        focusOffset: {desc: 'third segment', value: 2},
+        focusPath: [{desc: 'first paragraph', value: 0}],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
   });
 
   test('Can delete table node present at the end #5543', async ({

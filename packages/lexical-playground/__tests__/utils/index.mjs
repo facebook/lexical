@@ -750,6 +750,7 @@ export async function insertHorizontalRule(page) {
 
 export async function insertDateTime(page) {
   await selectFromInsertDropdown(page, '.calendar');
+  await sleep(500);
 }
 
 export async function insertImageCaption(page, caption) {

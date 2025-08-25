@@ -144,6 +144,10 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     writable.__equation = equation;
   }
 
+  isInline(): boolean {
+    return this.__inline;
+  }
+
   decorate(): JSX.Element {
     return (
       <EquationComponent

@@ -37,7 +37,11 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$getComputedStyleForParent, getStyleObjectFromCSS} from './utils';
+import {
+  $getComputedStyleForElement,
+  $getComputedStyleForParent,
+  getStyleObjectFromCSS,
+} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
@@ -439,6 +443,9 @@ function $getComputedStyle(
   selection: RangeSelection,
 ): CSSStyleDeclaration | null {
   const anchorNode = selection.anchor.getNode();
+  if ($isElementNode(anchorNode)) {
+    return $getComputedStyleForElement(anchorNode);
+  }
   return $getComputedStyleForParent(anchorNode);
 }
 

@@ -1124,6 +1124,32 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, expectedSelection);
   });
 
+  test('Move right from last node in RTL #7775', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await moveRight(page);
+
+    // TODO: verify selection
+  });
+
+  test('Move left from last node in RTL #7775', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await moveLeft(page);
+
+    // TODO: verify selection
+  });
+
   test('Can delete table node present at the end #5543', async ({
     page,
     isPlainText,

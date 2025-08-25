@@ -28,6 +28,7 @@ export {
   $wrapNodes,
 } from './range-selection';
 export {
+  $getComputedStyleForElement,
   $getComputedStyleForParent,
   $isParentRTL,
   createDOMRange,

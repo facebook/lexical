@@ -21,7 +21,7 @@ import type {
   TextNode,
 } from 'lexical';
 
-// $FlowFixMe: todo
+// $FlowFixMe[unclear-type]: todo
 export type YjsEvent = Object;
 
 export type UserState = {
@@ -45,21 +45,21 @@ declare interface Provider {
   connect(): void | Promise<void>;
   disconnect(): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
-  // $FlowFixMe: temp
+  // $FlowFixMe[unclear-type]: temp
   off(type: 'update', cb: (any) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
   off(type: 'reload', cb: (doc: Doc) => void): void;
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: ({status: string}) => void): void;
-  // $FlowFixMe: temp
+  // $FlowFixMe[unclear-type]: temp
   on(type: 'update', cb: (any) => void): void;
   on(type: 'reload', cb: (doc: Doc) => void): void;
 }
 
 export type ClientID = number;
-// $FlowFixMe: work around for internal
+// $FlowFixMe[unclear-type]: work around for internal
 export type XmlElement = Object;
-// $FlowFixMe: work around for internal
+// $FlowFixMe[unclear-type]: work around for internal
 export type YMap = Object;
 // $FlowFixMe: work around for internal
 export type TextOperation = {

@@ -1247,10 +1247,10 @@ export class LexicalEditor {
     // during a historic operation
     let writableEditorState = editorState;
     if (writableEditorState._readOnly) {
-      writableEditorState = cloneEditorState(editorState);
-      writableEditorState._selection = editorState._selection
-        ? editorState._selection.clone()
-        : null;
+      writableEditorState = cloneEditorState(
+        editorState,
+        editorState._selection ? editorState._selection.clone() : null,
+      );
     }
 
     flushRootMutations(this);

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalEditor, LexicalNode} from 'lexical';
+import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
-import {$isTextNode} from 'lexical';
+import {$getEditor, $isRootNode, $isTextNode} from 'lexical';
 
 import {CSS_TO_STYLES} from './constants';
 
@@ -228,4 +228,46 @@ export function getCSSFromStyleObject(styles: Record<string, string>): string {
   }
 
   return css;
+}
+
+/**
+ * Gets the computed DOM styles of the element.
+ * @param node - The node to check the styles for.
+ * @returns the computed styles of the element or null if there is no DOM element or no default view for the document.
+ */
+export function $getComputedStyleForElement(
+  element: ElementNode,
+): CSSStyleDeclaration | null {
+  const editor = $getEditor();
+  const domElement = editor.getElementByKey(element.getKey());
+  if (domElement === null) {
+    return null;
+  }
+  const view = domElement.ownerDocument.defaultView;
+  if (view === null) {
+    return null;
+  }
+  return view.getComputedStyle(domElement);
+}
+
+/**
+ * Gets the computed DOM styles of the parent of the node.
+ * @param node - The node to check its parent's styles for.
+ * @returns the computed styles of the node or null if there is no DOM element or no default view for the document.
+ */
+export function $getComputedStyleForParent(
+  node: LexicalNode,
+): CSSStyleDeclaration | null {
+  const parent = $isRootNode(node) ? node : node.getParentOrThrow();
+  return $getComputedStyleForElement(parent);
+}
+
+/**
+ * Determines whether a node's parent is RTL.
+ * @param node - The node to check whether it is RTL.
+ * @returns whether the node is RTL.
+ */
+export function $isParentRTL(node: LexicalNode): boolean {
+  const styles = $getComputedStyleForParent(node);
+  return styles !== null && styles.direction === 'rtl';
 }

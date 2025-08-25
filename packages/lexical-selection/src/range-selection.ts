@@ -21,7 +21,6 @@ import {
   $caretFromPoint,
   $createRangeSelection,
   $extendCaretToRange,
-  $getEditor,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
@@ -31,7 +30,6 @@ import {
   $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
-  $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
@@ -39,7 +37,11 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {getStyleObjectFromCSS} from './utils';
+import {
+  $getComputedStyleForElement,
+  $getComputedStyleForParent,
+  getStyleObjectFromCSS,
+} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
@@ -432,23 +434,19 @@ function $isEditorVerticalOrientation(selection: RangeSelection): boolean {
   return computedStyle !== null && computedStyle.writingMode === 'vertical-rl';
 }
 
+/**
+ * Gets the computed DOM styles of the parent of the selection's anchor node.
+ * @param selection - The selection to check the styles for.
+ * @returns the computed styles of the node or null if there is no DOM element or no default view for the document.
+ */
 function $getComputedStyle(
   selection: RangeSelection,
 ): CSSStyleDeclaration | null {
   const anchorNode = selection.anchor.getNode();
-  const parent = $isRootNode(anchorNode)
-    ? anchorNode
-    : anchorNode.getParentOrThrow();
-  const editor = $getEditor();
-  const domElement = editor.getElementByKey(parent.getKey());
-  if (domElement === null) {
-    return null;
+  if ($isElementNode(anchorNode)) {
+    return $getComputedStyleForElement(anchorNode);
   }
-  const view = domElement.ownerDocument.defaultView;
-  if (view === null) {
-    return null;
-  }
-  return view.getComputedStyle(domElement);
+  return $getComputedStyleForParent(anchorNode);
 }
 
 /**

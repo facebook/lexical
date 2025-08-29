@@ -25,10 +25,6 @@ body {
   text-align: center;
 }
 
-.rtl {
-  text-align: right;
-}
-
 .editor-container {
   margin: 20px auto 20px auto;
   border-radius: 2px;

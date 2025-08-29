@@ -50,14 +50,6 @@ h1 {
   color: #333;
 }
 
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
-}
-
 .editor-container {
   margin: 20px auto 20px auto;
   border-radius: 2px;

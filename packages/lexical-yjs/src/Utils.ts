@@ -545,7 +545,7 @@ export function doesSelectionNeedRecovering(
     ) {
       recoveryNeeded = true;
     }
-  } catch (e) {
+  } catch (_e) {
     // Sometimes checking nor a node via getNode might trigger
     // an error, so we need recovery then too.
     recoveryNeeded = true;

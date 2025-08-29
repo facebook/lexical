@@ -87,7 +87,7 @@ async function updateTsconfig({
 }
 
 async function updateAllTsconfig() {
-  const prettierConfig = (await prettier.resolveConfig('./')) || {};
+  const prettierConfig = (await prettier.resolveConfig(__filename)) || {};
   await updateTsconfig({
     extraPaths: [],
     jsonFileName: './tsconfig.json',

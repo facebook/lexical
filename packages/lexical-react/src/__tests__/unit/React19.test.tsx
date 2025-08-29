@@ -46,6 +46,6 @@ describe(`React expectations (${React.version}) OVERRIDE_REACT_VERSION=${OVERRID
       );
     });
     expect(container.textContent).toBe(cacheExpect);
-    expect(memoFun).toBeCalledTimes(2);
+    expect(memoFun).toHaveBeenCalledTimes(2);
   });
 });

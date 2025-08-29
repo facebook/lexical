@@ -748,6 +748,11 @@ export async function insertHorizontalRule(page) {
   await selectFromInsertDropdown(page, '.horizontal-rule');
 }
 
+export async function insertDateTime(page) {
+  await selectFromInsertDropdown(page, '.calendar');
+  await sleep(500);
+}
+
 export async function insertImageCaption(page, caption) {
   await click(page, '.editor-image img');
   await click(page, '.image-caption-button');

@@ -1,6 +1,7 @@
 # NOTE: In general this should be kept in sync with .prettierignore
 
 **/dist/**
+**/flow-typed/**
 **/build/**
 **/npm/**
 **/__tests__/integration/fixtures/**

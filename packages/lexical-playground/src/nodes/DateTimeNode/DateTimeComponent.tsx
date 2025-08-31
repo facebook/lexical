@@ -47,8 +47,21 @@ export default function DateTimeComponent({
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
   const [selected, setSelected] = useState(dateTime);
-  const [includeTime, setIncludeTime] = useState(false);
-  const [timeValue, setTimeValue] = useState('00:00');
+  const [includeTime, setIncludeTime] = useState(() => {
+    const hours = dateTime?.getHours();
+    const minutes = dateTime?.getMinutes();
+    return hours !== 0 || minutes !== 0;
+  });
+  const [timeValue, setTimeValue] = useState(() => {
+    const hours = dateTime?.getHours();
+    const minutes = dateTime?.getMinutes();
+    if (hours !== 0 || minutes !== 0) {
+      return `${hours?.toString().padStart(2, '0')}:${minutes
+        ?.toString()
+        .padStart(2, '0')}`;
+    }
+    return '00:00';
+  });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isNodeSelected, setNodeSelected, clearNodeSelection] =
     useLexicalNodeSelection(nodeKey);

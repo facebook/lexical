@@ -29,6 +29,7 @@ import {
   initializeUnitTest,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest((testEnv) => {

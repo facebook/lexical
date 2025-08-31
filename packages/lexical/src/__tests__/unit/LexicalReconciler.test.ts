@@ -13,6 +13,7 @@ import {
   $getRoot,
   ParagraphNode,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {$getReconciledDirection} from '../../LexicalReconciler';
 import {initializeUnitTest} from '../utils';

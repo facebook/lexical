@@ -8,6 +8,7 @@
 
 import {objectKlassEquals} from '@lexical/utils';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, it} from 'vitest';
 
 class MyEvent extends Event {}
 

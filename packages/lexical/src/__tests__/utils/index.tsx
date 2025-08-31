@@ -50,6 +50,7 @@ import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, expect, vi} from 'vitest';
 
 import {
   CreateEditorArgs,
@@ -535,8 +536,8 @@ export class ClipboardDataMock {
   setData: jest.Mock<void, [string, string]>;
 
   constructor() {
-    this.getData = jest.fn();
-    this.setData = jest.fn();
+    this.getData = vi.fn();
+    this.setData = vi.fn();
   }
 }
 

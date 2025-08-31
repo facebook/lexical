@@ -34,6 +34,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {SerializedElementNode} from '../..';
 import {

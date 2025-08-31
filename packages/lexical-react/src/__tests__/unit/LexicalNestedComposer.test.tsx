@@ -40,6 +40,7 @@ import * as React from 'react';
 import {useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
@@ -93,7 +94,7 @@ describe('LexicalNestedComposer', () => {
   let warn: jest.SpyInstance;
 
   beforeEach(() => {
-    warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     container = document.createElement('div');
     reactRoot = createRoot(container);
     document.body.appendChild(container);
@@ -104,7 +105,7 @@ describe('LexicalNestedComposer', () => {
     container = null;
     warn.mockReset();
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   test('with inherited configuration and namespace', async () => {
@@ -803,7 +804,7 @@ describe('LexicalNestedComposer', () => {
     let editor: undefined | LexicalEditor;
     let nestedEditor: undefined | LexicalEditor;
     const DELEGATED_COMMAND = createCommand<unknown>('DELEGATED_COMMAND');
-    const $commandListener = jest.fn((_) => false);
+    const $commandListener = vi.fn((_) => false);
     function DelegateListenerPlugin() {
       const [currentEditor] = useLexicalComposerContext();
       useEffect(() => {
@@ -1036,8 +1037,8 @@ describe('LexicalNestedComposer', () => {
   test('static transform and $config.transform inheritance', async () => {
     let editor: undefined | LexicalEditor;
     let nestedEditor: undefined | LexicalEditor;
-    const $transform = jest.fn();
-    const transform = jest.fn();
+    const $transform = vi.fn();
+    const transform = vi.fn();
     class StaticTransformNode extends TextNode {
       static getType() {
         return 'static-transform';

@@ -42,6 +42,7 @@ import {
   invariant,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
+import {afterEach, describe, expect, it, test, vi} from 'vitest';
 
 import {$setAnchorPoint, $setFocusPoint} from '../utils';
 
@@ -2576,7 +2577,7 @@ describe('extract', () => {
 
 describe('insertNodes', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('can insert element next to top level decorator node', async () => {
@@ -2584,7 +2585,7 @@ describe('insertNodes', () => {
     const element = document.createElement('div');
     editor.setRootElement(element);
 
-    jest.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
+    vi.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
 
     await editor.update(() => {
       $getRoot().append(

@@ -72,7 +72,7 @@ export type SerializedAutoLinkNode = {
 };
 declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
-  // $FlowFixMe clone method inheritance
+  // $FlowFixMe[incompatible-type] clone method inheritance
   static clone(node: AutoLinkNode): AutoLinkNode;
   insertNewAfter(
     selection: RangeSelection,

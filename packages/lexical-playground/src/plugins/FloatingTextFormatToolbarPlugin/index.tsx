@@ -21,7 +21,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -122,7 +122,7 @@ function TextFormatFloatingToolbar({
     const selection = $getSelection();
 
     const popupCharStylesEditorElem = popupCharStylesEditorRef.current;
-    const nativeSelection = getDOMSelection(editor._window);
+    const nativeSelection = getDOMSelectionForEditor(editor);
 
     if (popupCharStylesEditorElem === null) {
       return;
@@ -342,7 +342,7 @@ function useFloatingTextFormatToolbar(
         return;
       }
       const selection = $getSelection();
-      const nativeSelection = getDOMSelection(editor._window);
+      const nativeSelection = getDOMSelectionForEditor(editor);
       const rootElement = editor.getRootElement();
 
       if (

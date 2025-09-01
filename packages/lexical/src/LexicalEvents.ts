@@ -102,11 +102,13 @@ import {
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
   getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getShadowRootOrDocument,
   getWindow,
   isBackspace,
   isBold,
@@ -185,8 +187,8 @@ let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
-const rootElementToDocument = new WeakMap<HTMLElement, Document>();
-const rootElementsRegistered = new WeakMap<Document, number>();
+const rootElementToDocument = new WeakMap<HTMLElement, Document | ShadowRoot>();
+const rootElementsRegistered = new WeakMap<Document | ShadowRoot, number>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -219,7 +221,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -489,7 +491,7 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -942,6 +944,96 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     editor,
     () => {
       editor.dispatchCommand(INPUT_COMMAND, event);
+      if (
+        isHTMLElement(event.target) &&
+        $isSelectionCapturedInDecorator(event.target)
+      ) {
+        return;
+      }
+
+      const selection = $getSelection();
+      const data = event.data;
+      const targetRange = getTargetRange(event);
+
+      if (
+        data != null &&
+        $isRangeSelection(selection) &&
+        $shouldPreventDefaultAndInsertText(
+          selection,
+          targetRange,
+          data,
+          event.timeStamp,
+          false,
+        )
+      ) {
+        // Given we're over-riding the default behavior, we will need
+        // to ensure to disable composition before dispatching the
+        // insertText command for when changing the sequence for FF.
+        if (isFirefoxEndingComposition) {
+          $onCompositionEndImpl(editor, data);
+          isFirefoxEndingComposition = false;
+        }
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const domSelection = getDOMSelectionForEditor(editor);
+        if (domSelection === null) {
+          return;
+        }
+        const isBackward = selection.isBackward();
+        const startOffset = isBackward
+          ? selection.anchor.offset
+          : selection.focus.offset;
+        const endOffset = isBackward
+          ? selection.focus.offset
+          : selection.anchor.offset;
+        // If the content is the same as inserted, then don't dispatch an insertion.
+        // Given onInput doesn't take the current selection (it uses the previous)
+        // we can compare that against what the DOM currently says.
+        if (
+          !CAN_USE_BEFORE_INPUT ||
+          selection.isCollapsed() ||
+          !$isTextNode(anchorNode) ||
+          domSelection.anchorNode === null ||
+          anchorNode.getTextContent().slice(0, startOffset) +
+            data +
+            anchorNode.getTextContent().slice(startOffset + endOffset) !==
+            getAnchorTextFromDOM(domSelection.anchorNode)
+        ) {
+          dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+        }
+
+        const textLength = data.length;
+
+        // Another hack for FF, as it's possible that the IME is still
+        // open, even though compositionend has already fired (sigh).
+        if (
+          IS_FIREFOX &&
+          textLength > 1 &&
+          event.inputType === 'insertCompositionText' &&
+          !editor.isComposing()
+        ) {
+          selection.anchor.offset -= textLength;
+        }
+
+        // This ensures consistency on Android.
+        if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT && editor.isComposing()) {
+          lastKeyDownTimeStamp = 0;
+          $setCompositionKey(null);
+        }
+      } else {
+        const characterData = data !== null ? data : undefined;
+        $updateSelectedTextFromDOM(false, editor, characterData);
+
+        // onInput always fires after onCompositionEnd for FF.
+        if (isFirefoxEndingComposition) {
+          $onCompositionEndImpl(editor, data || undefined);
+          isFirefoxEndingComposition = false;
+        }
+      }
+
+      // Also flush any other mutations that might have occurred
+      // since the change.
+      $flushMutations();
     },
     {event},
   );
@@ -1378,7 +1470,7 @@ export function addRootElementEvents(
 ): void {
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  const doc = rootElement.ownerDocument;
+  const doc = getShadowRootOrDocument(rootElement);
   rootElementToDocument.set(rootElement, doc);
   const documentRootElementsCount = rootElementsRegistered.get(doc) ?? 0;
   if (documentRootElementsCount < 1) {
@@ -1483,7 +1575,7 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 );
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  const doc = rootElementToDocument.get(rootElement);
+  const doc = getShadowRootOrDocument(rootElement);
   if (doc === undefined) {
     rootElementNotRegisteredWarning();
     return;

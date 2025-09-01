@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {isDocumentFragment, type LexicalEditor} from 'lexical';
 
 import markSelection from './markSelection';
 
@@ -16,9 +16,42 @@ export default function selectionAlwaysOnDisplay(
   let removeSelectionMark: (() => void) | null = null;
 
   const onSelectionChange = () => {
-    const domSelection = getSelection();
-    const domAnchorNode = domSelection && domSelection.anchorNode;
     const editorRootElement = editor.getRootElement();
+    if (!editorRootElement) {
+      return;
+    }
+
+    // Get selection from the proper context (shadow DOM or document)
+    let domSelection: Selection | null = null;
+    let current: Node | null = editorRootElement;
+    while (current) {
+      if (isDocumentFragment(current.nodeType)) {
+        const shadowRoot = current as ShadowRoot;
+
+        // Try modern getComposedRanges API first
+        if ('getComposedRanges' in Selection.prototype) {
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = globalSelection.getComposedRanges({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              // Use the global selection with composed ranges context
+              domSelection = globalSelection;
+            }
+          }
+        }
+
+        break;
+      }
+      current = current.parentNode;
+    }
+
+    if (!domSelection) {
+      domSelection = getSelection();
+    }
+
+    const domAnchorNode = domSelection && domSelection.anchorNode;
 
     const isSelectionInsideEditor =
       domAnchorNode !== null &&
@@ -37,12 +70,28 @@ export default function selectionAlwaysOnDisplay(
     }
   };
 
-  document.addEventListener('selectionchange', onSelectionChange);
+  // Get the proper document context for event listeners
+  const editorRootElement = editor.getRootElement();
+  let targetDocument = document;
+
+  if (editorRootElement) {
+    let current: Node | null = editorRootElement;
+    while (current) {
+      if (isDocumentFragment(current.nodeType)) {
+        targetDocument = (current as ShadowRoot).ownerDocument || document;
+        break;
+      }
+      current = current.parentNode;
+    }
+    targetDocument = editorRootElement.ownerDocument || document;
+  }
+
+  targetDocument.addEventListener('selectionchange', onSelectionChange);
 
   return () => {
     if (removeSelectionMark !== null) {
       removeSelectionMark();
     }
-    document.removeEventListener('selectionchange', onSelectionChange);
+    targetDocument.removeEventListener('selectionchange', onSelectionChange);
   };
 }

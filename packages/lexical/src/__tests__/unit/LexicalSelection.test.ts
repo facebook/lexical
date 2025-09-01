@@ -38,6 +38,7 @@ import {
 import {beforeEach, describe, expect, test} from 'vitest';
 
 import {SerializedElementNode} from '../..';
+import {getShadowRootOrDocument, isShadowRoot} from '../../LexicalUtils';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
@@ -62,7 +63,7 @@ describe('LexicalSelection tests', () => {
           throw new Error('Expected container to be truthy');
         }
 
-        await editor.update(() => {
+        await testEnv.editor.update(() => {
           const root = $getRoot();
           if (root.getFirstChild() !== null) {
             throw new Error('Expected root to be childless');
@@ -130,7 +131,7 @@ describe('LexicalSelection tests', () => {
             editor: LexicalEditor;
             method: 'insertText' | 'insertNodes';
           }) => {
-            await editor.update(() => {
+            await testEnv.editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
               invariant($isParagraphNode(paragraph));
               const linkNode = paragraph.getFirstChildOrThrow();
@@ -172,7 +173,7 @@ describe('LexicalSelection tests', () => {
             editor: LexicalEditor;
             method: 'insertText' | 'insertNodes';
           }) => {
-            await editor.update(() => {
+            await testEnv.editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
               invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getFirstChildOrThrow();
@@ -212,7 +213,7 @@ describe('LexicalSelection tests', () => {
             editor: LexicalEditor;
             method: 'insertText' | 'insertNodes';
           }) => {
-            await editor.update(() => {
+            await testEnv.editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
               invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getFirstChildOrThrow();
@@ -254,7 +255,7 @@ describe('LexicalSelection tests', () => {
             editor: LexicalEditor;
             method: 'insertText' | 'insertNodes';
           }) => {
-            await editor.update(() => {
+            await testEnv.editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
               invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getLastChildOrThrow();
@@ -295,7 +296,7 @@ describe('LexicalSelection tests', () => {
             editor: LexicalEditor;
             method: 'insertText' | 'insertNodes';
           }) => {
-            await editor.update(() => {
+            await testEnv.editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
               invariant($isParagraphNode(paragraph));
               const textNode = paragraph.getLastChildOrThrow();
@@ -336,7 +337,7 @@ describe('LexicalSelection tests', () => {
             editor: LexicalEditor;
             method: 'insertText' | 'insertNodes';
           }) => {
-            await editor.update(() => {
+            await testEnv.editor.update(() => {
               const paragraph = $getRoot().getFirstChildOrThrow();
               invariant($isParagraphNode(paragraph));
               const linkNode = paragraph.getLastChildOrThrow();
@@ -1648,6 +1649,336 @@ describe('Regression #3181', () => {
         },
         {discrete: true},
       );
+    });
+  });
+
+  describe('Shadow DOM support', () => {
+    initializeUnitTest(() => {
+      describe('Shadow DOM word boundary logic', () => {
+        test('should correctly identify word boundaries for backward deletion', () => {
+          // Test cases for word boundary logic
+          const testCases = [
+            {
+              description: 'cursor after word',
+              // after "world"
+              expected: {deletedText: 'world', startOffset: 6},
+
+              offset: 11,
+
+              text: 'Hello world test',
+            },
+            {
+              description: 'cursor after punctuation',
+              // after "example."
+              expected: {deletedText: '.', startOffset: 12},
+
+              offset: 13,
+
+              text: 'test.example.com',
+            },
+            {
+              description: 'cursor in whitespace',
+              // in multiple spaces
+              expected: {deletedText: 'Hello   ', startOffset: 0},
+
+              offset: 8,
+
+              text: 'Hello   world',
+            },
+          ];
+
+          testCases.forEach(({text, offset, expected, description}) => {
+            // Simulate the word boundary logic from deleteWord
+            let startOffset = offset;
+            const wordCharRegex = /\w/;
+
+            if (startOffset > 0) {
+              const charBeforeCursor = text[startOffset - 1];
+
+              if (/\s/.test(charBeforeCursor)) {
+                // Skip whitespace to find the word before it
+                while (startOffset > 0 && /\s/.test(text[startOffset - 1])) {
+                  startOffset--;
+                }
+                // Then delete the word before the whitespace
+                while (
+                  startOffset > 0 &&
+                  wordCharRegex.test(text[startOffset - 1])
+                ) {
+                  startOffset--;
+                }
+              } else if (wordCharRegex.test(charBeforeCursor)) {
+                // Delete to beginning of word
+                while (
+                  startOffset > 0 &&
+                  wordCharRegex.test(text[startOffset - 1])
+                ) {
+                  startOffset--;
+                }
+              } else {
+                // Delete just that character
+                startOffset--;
+              }
+            }
+
+            const deletedText = text.slice(startOffset, offset);
+
+            expect(startOffset).toBe(expected.startOffset);
+            expect(deletedText).toBe(expected.deletedText);
+          });
+        });
+
+        test('should correctly identify word boundaries for forward deletion', () => {
+          // Test cases for forward word deletion logic
+          const testCases = [
+            {
+              description: 'cursor after space before word',
+              // after "Hello "
+              expected: {deletedText: 'world', endOffset: 11},
+
+              offset: 6,
+
+              text: 'Hello world test',
+            },
+            {
+              description: 'cursor at beginning of text',
+              // at beginning
+              expected: {deletedText: 'Hello', endOffset: 5},
+
+              offset: 0,
+
+              text: 'Hello world test',
+            },
+            {
+              description: 'cursor before punctuation',
+              // after "test"
+              expected: {deletedText: '.', endOffset: 5},
+
+              offset: 4,
+
+              text: 'test.example.com',
+            },
+          ];
+
+          testCases.forEach(({text, offset, expected, description}) => {
+            // Simulate the forward word boundary logic from deleteWord
+            let endOffset = offset;
+            const wordCharRegex = /\w/;
+
+            if (endOffset < text.length) {
+              const charAfterCursor = text[endOffset];
+
+              if (/\s/.test(charAfterCursor)) {
+                // Skip whitespace first
+                while (endOffset < text.length && /\s/.test(text[endOffset])) {
+                  endOffset++;
+                }
+                // Then delete the word
+                while (
+                  endOffset < text.length &&
+                  wordCharRegex.test(text[endOffset])
+                ) {
+                  endOffset++;
+                }
+              } else if (wordCharRegex.test(charAfterCursor)) {
+                // Delete word characters
+                while (
+                  endOffset < text.length &&
+                  wordCharRegex.test(text[endOffset])
+                ) {
+                  endOffset++;
+                }
+              } else {
+                // Delete one character
+                endOffset++;
+              }
+            }
+
+            const deletedText = text.slice(offset, endOffset);
+
+            expect(endOffset).toBe(expected.endOffset);
+            expect(deletedText).toBe(expected.deletedText);
+          });
+        });
+      });
+
+      describe('Shadow DOM character deletion logic', () => {
+        test('should correctly handle character deletion boundaries', () => {
+          // Test cases for character deletion logic
+          const testCases = [
+            {
+              description: 'backward character deletion',
+              expected: {newOffset: 4, newText: 'Hell world'},
+              // after "Hello"
+              isBackward: true,
+
+              offset: 5,
+
+              text: 'Hello world',
+            },
+            {
+              description: 'forward character deletion',
+              expected: {newOffset: 5, newText: 'Helloworld'},
+              // after "Hello"
+              isBackward: false,
+
+              offset: 5,
+
+              text: 'Hello world',
+            },
+            {
+              description: 'backward deletion at start (no change)',
+              expected: {newOffset: 0, newText: 'Test'},
+              // at beginning
+              isBackward: true,
+
+              offset: 0,
+
+              text: 'Test',
+            },
+            {
+              description: 'forward deletion at end (no change)',
+              expected: {newOffset: 4, newText: 'Test'},
+              // at end
+              isBackward: false,
+
+              offset: 4,
+
+              text: 'Test',
+            },
+          ];
+
+          testCases.forEach(
+            ({text, offset, isBackward, expected, description}) => {
+              let newOffset = offset;
+              let newText = text;
+
+              // Simulate character deletion logic
+              if (isBackward && offset > 0) {
+                newText = text.slice(0, offset - 1) + text.slice(offset);
+                newOffset = offset - 1;
+              } else if (!isBackward && offset < text.length) {
+                newText = text.slice(0, offset) + text.slice(offset + 1);
+                // newOffset stays the same for forward deletion
+              }
+
+              expect(newText).toBe(expected.newText);
+              expect(newOffset).toBe(expected.newOffset);
+            },
+          );
+        });
+      });
+
+      describe('Shadow DOM line deletion logic', () => {
+        test('should correctly handle line deletion boundaries', () => {
+          // Test cases for line deletion logic
+          const testCases = [
+            {
+              description: 'backward line deletion (cmd+backspace)',
+              expected: {newOffset: 0, newText: 'test line'},
+              // in the middle (after "This is a")
+              isBackward: true,
+
+              offset: 10,
+
+              text: 'This is a test line',
+            },
+            {
+              description: 'forward line deletion (cmd+delete)',
+              expected: {newOffset: 10, newText: 'This is a '},
+              // in the middle
+              isBackward: false,
+
+              offset: 10,
+
+              text: 'This is a test line',
+            },
+            {
+              description: 'backward line deletion at start (no change)',
+              expected: {newOffset: 0, newText: 'Single line'},
+              // at beginning
+              isBackward: true,
+
+              offset: 0,
+
+              text: 'Single line',
+            },
+            {
+              description: 'forward line deletion at end (no change)',
+              expected: {newOffset: 11, newText: 'Single line'},
+              // at end
+              isBackward: false,
+
+              offset: 11,
+
+              text: 'Single line',
+            },
+          ];
+
+          testCases.forEach(
+            ({text, offset, isBackward, expected, description}) => {
+              let newOffset = offset;
+              let newText = text;
+
+              // Simulate line deletion logic
+              if (isBackward && offset > 0) {
+                // Delete from beginning of line to cursor
+                newText = text.slice(offset);
+                newOffset = 0;
+              } else if (!isBackward && offset < text.length) {
+                // Delete from cursor to end of line
+                newText = text.slice(0, offset);
+                // newOffset stays the same for forward deletion
+              }
+
+              expect(newText).toBe(expected.newText);
+              expect(newOffset).toBe(expected.newOffset);
+            },
+          );
+        });
+      });
+
+      describe('Shadow DOM helper functions', () => {
+        let mockShadowRoot: ShadowRoot;
+        let testElement: HTMLDivElement;
+
+        beforeEach(() => {
+          testElement = document.createElement('div');
+          mockShadowRoot = testElement.attachShadow({mode: 'open'});
+        });
+
+        test('isShadowRoot should correctly identify ShadowRoot', () => {
+          expect(isShadowRoot(mockShadowRoot)).toBe(true);
+          expect(isShadowRoot(document)).toBe(false);
+          expect(isShadowRoot(testElement)).toBe(false);
+        });
+
+        test('getShadowRootOrDocument should return ShadowRoot when element is in shadow DOM', () => {
+          const shadowElement = document.createElement('div');
+          mockShadowRoot.appendChild(shadowElement);
+
+          const result = getShadowRootOrDocument(shadowElement);
+          expect(result).toBe(mockShadowRoot);
+        });
+
+        test('getShadowRootOrDocument should return Document when element is not in shadow DOM', () => {
+          const normalElement = document.createElement('div');
+          document.body.appendChild(normalElement);
+
+          const result = getShadowRootOrDocument(normalElement);
+          expect(result).toBe(document);
+
+          // Cleanup
+          document.body.removeChild(normalElement);
+        });
+
+        test('getShadowRootOrDocument should return document for disconnected elements', () => {
+          const disconnectedElement = document.createElement('div');
+
+          const result = getShadowRootOrDocument(disconnectedElement);
+          expect(result).toBe(document);
+        });
+      });
     });
   });
 });

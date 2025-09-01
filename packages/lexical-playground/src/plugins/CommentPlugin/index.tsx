@@ -50,7 +50,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   KEY_ESCAPE_COMMAND,
 } from 'lexical';
 import {
@@ -933,7 +933,7 @@ export default function CommentPlugin({
       editor.registerCommand(
         INSERT_INLINE_COMMAND,
         () => {
-          const domSelection = getDOMSelection(editor._window);
+          const domSelection = getDOMSelectionForEditor(editor);
           if (domSelection !== null) {
             domSelection.removeAllRanges();
           }

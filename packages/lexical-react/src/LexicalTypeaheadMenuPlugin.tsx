@@ -53,8 +53,9 @@ function tryToPositionRange(
   leadOffset: number,
   range: Range,
   editorWindow: Window,
+  rootElement?: HTMLElement | null,
 ): boolean {
-  const domSelection = getDOMSelection(editorWindow);
+  const domSelection = getDOMSelection(editorWindow, rootElement);
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
@@ -289,6 +290,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
             match.leadOffset,
             range,
             editorWindow,
+            editor.getRootElement(),
           );
           if (isRangePositioned !== null) {
             startTransition(() =>

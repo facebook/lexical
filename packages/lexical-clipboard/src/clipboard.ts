@@ -469,7 +469,7 @@ export async function copyToClipboard(
   const rootElement = editor.getRootElement();
   const editorWindow = editor._window || window;
   const windowDocument = editorWindow.document;
-  const domSelection = getDOMSelection(editorWindow);
+  const domSelection = getDOMSelection(editorWindow, rootElement);
   if (rootElement === null || domSelection === null) {
     return false;
   }
@@ -518,7 +518,10 @@ function $copyToClipboardEvent(
   data?: LexicalClipboardData,
 ): boolean {
   if (data === undefined) {
-    const domSelection = getDOMSelection(editor._window);
+    const domSelection = getDOMSelection(
+      editor._window,
+      editor.getRootElement(),
+    );
     if (!domSelection) {
       return false;
     }

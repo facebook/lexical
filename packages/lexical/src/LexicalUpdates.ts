@@ -615,7 +615,7 @@ export function $commitPendingUpdates(
 
   const domSelection = shouldSkipDOM
     ? null
-    : getDOMSelection(getWindow(editor));
+    : getDOMSelection(getWindow(editor), rootElement);
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.

@@ -933,7 +933,10 @@ export default function CommentPlugin({
       editor.registerCommand(
         INSERT_INLINE_COMMAND,
         () => {
-          const domSelection = getDOMSelection(editor._window);
+          const domSelection = getDOMSelection(
+            editor._window,
+            editor.getRootElement(),
+          );
           if (domSelection !== null) {
             domSelection.removeAllRanges();
           }

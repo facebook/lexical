@@ -7,6 +7,10 @@
  */
 
 import type {
+  ShadowRootWithComposedRanges,
+  ShadowRootWithSelection,
+} from './LexicalConstants';
+import type {
   CommandPayloadType,
   EditorConfig,
   EditorThemeClasses,
@@ -713,7 +717,10 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelection(
+    getWindow(editor),
+    editor.getRootElement(),
+  );
   if (domSelection === null) {
     return;
   }
@@ -1327,11 +1334,29 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+/**
+ * Type guard function that checks if a node is a ShadowRoot. This function performs
+ * runtime validation to safely narrow types and enable type-safe Shadow DOM operations.
+ * It checks both the nodeType and the presence of the 'host' property to distinguish
+ * ShadowRoot from regular DocumentFragment nodes.
+ *
+ * @param node - The Node to check (can be null)
+ * @returns True if the node is a ShadowRoot, false otherwise. When true, TypeScript
+ *   will narrow the type to ShadowRoot for subsequent operations.
+ */
+export function isShadowRoot(node: Node | null): node is ShadowRoot {
+  return (
+    node !== null &&
+    node.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE &&
+    'host' in node
+  );
+}
+
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return isDocumentFragment(parentElement)
-    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
+  return isShadowRoot(parentElement)
+    ? (parentElement.host as HTMLElement)
     : parentElement;
 }
 
@@ -1695,24 +1720,209 @@ export function updateDOMBlockCursorElement(
 
 /**
  * Returns the selection for the given window, or the global window if null.
+ * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
+ * with fallback to experimental ShadowRoot.getSelection() for older browsers.
  * Will return null if {@link CAN_USE_DOM} is false.
  *
- * @param targetWindow The window to get the selection from
- * @returns a Selection or null
+ * @param targetWindow - The window to get the selection from
+ * @param rootElement - The root element to check for shadow DOM context (optional)
+ * @returns A Selection object or null if selection cannot be retrieved
  */
-export function getDOMSelection(targetWindow: null | Window): null | Selection {
-  return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
+export function getDOMSelection(
+  targetWindow: null | Window,
+  rootElement?: HTMLElement | null,
+): null | Selection {
+  if (!CAN_USE_DOM) {
+    return null;
+  }
+
+  // Check if we're inside a shadow DOM
+  if (rootElement) {
+    const shadowRoot = getShadowRoot(rootElement);
+    if (shadowRoot) {
+      // Try modern getComposedRanges API first (Chrome 125+, Firefox 132+)
+      if (
+        typeof (shadowRoot as ShadowRootWithComposedRanges)
+          .getComposedRanges === 'function'
+      ) {
+        try {
+          const ranges = (shadowRoot as ShadowRootWithComposedRanges)
+            .getComposedRanges!({
+            shadowRoots: [shadowRoot],
+          });
+          if (ranges.length > 0) {
+            return createSelectionFromComposedRanges(ranges);
+          }
+        } catch (error) {
+          console.warn('getComposedRanges failed, falling back:', error);
+        }
+      }
+
+      // Fallback to experimental getSelection if available
+      if (
+        typeof (shadowRoot as ShadowRootWithSelection).getSelection ===
+        'function'
+      ) {
+        try {
+          return (shadowRoot as ShadowRootWithSelection).getSelection();
+        } catch (error) {
+          console.warn('ShadowRoot.getSelection failed:', error);
+        }
+      }
+    }
+  }
+
+  return (targetWindow || window).getSelection();
+}
+
+/**
+ * Creates a Selection-like object from composed ranges for Shadow DOM compatibility.
+ * This function converts StaticRange objects returned by getComposedRanges() into
+ * a standard Selection object that can be used by Lexical.
+ *
+ * @param ranges - Array of StaticRange objects from getComposedRanges()
+ * @returns A Selection object or null if no ranges are provided or conversion fails
+ */
+export function createSelectionFromComposedRanges(
+  ranges: StaticRange[],
+): Selection | null {
+  if (ranges.length === 0) {
+    return null;
+  }
+
+  // For now, we'll use the document selection as a fallback
+  // In a full implementation, we'd create a custom Selection object
+  const docSelection = document.getSelection();
+  if (!docSelection) {
+    return null;
+  }
+
+  try {
+    const range = ranges[0];
+    docSelection.removeAllRanges();
+    const dynamicRange = document.createRange();
+    dynamicRange.setStart(range.startContainer, range.startOffset);
+    dynamicRange.setEnd(range.endContainer, range.endOffset);
+    docSelection.addRange(dynamicRange);
+    return docSelection;
+  } catch (error) {
+    console.warn('Failed to create selection from composed ranges:', error);
+    return null;
+  }
+}
+
+/**
+ * Traverses up the DOM tree to find a ShadowRoot if the element is inside a shadow DOM.
+ * This function helps determine whether the given element is rendered within Shadow DOM
+ * encapsulation.
+ *
+ * @param element - The HTMLElement to start traversing from
+ * @returns The ShadowRoot if found, or null if the element is not in shadow DOM
+ */
+export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
+  let current: Node | null = element;
+
+  while (current) {
+    if (current.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE) {
+      return current as ShadowRoot;
+    }
+
+    current = current.parentNode;
+  }
+  return null;
+}
+
+/**
+ * Gets the appropriate Document object for an element, accounting for shadow DOM.
+ * Returns the ownerDocument of the ShadowRoot if the element is in shadow DOM,
+ * otherwise returns the element's ownerDocument or the global document.
+ *
+ * @param element - The HTMLElement to get the document for
+ * @returns The Document object that should be used for DOM operations
+ */
+export function getDocumentFromElement(element: HTMLElement): Document {
+  const shadowRoot = getShadowRoot(element);
+  if (shadowRoot) {
+    return shadowRoot.ownerDocument || document;
+  }
+  return element.ownerDocument || document;
+}
+
+/**
+ * Gets the currently active (focused) element, accounting for shadow DOM encapsulation.
+ * In shadow DOM, the activeElement is tracked separately within the ShadowRoot.
+ * Falls back to the document's activeElement if not in shadow DOM.
+ *
+ * @param rootElement - The root element to check for shadow DOM context
+ * @returns The currently active Element or null if no element is focused
+ */
+export function getActiveElement(rootElement: HTMLElement): Element | null {
+  const shadowRoot = getShadowRoot(rootElement);
+
+  if (shadowRoot && shadowRoot.activeElement) {
+    return shadowRoot.activeElement;
+  }
+  return getDocumentFromElement(rootElement).activeElement;
 }
 
 /**
  * Returns the selection for the defaultView of the ownerDocument of given EventTarget.
+ * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
+ * with fallback to experimental ShadowRoot.getSelection() for compatibility.
  *
- * @param eventTarget The node to get the selection from
- * @returns a Selection or null
+ * @param eventTarget - The EventTarget (typically a DOM node) to get the selection from
+ * @returns A Selection object from the appropriate context or null if unavailable
  */
 export function getDOMSelectionFromTarget(
   eventTarget: null | EventTarget,
 ): null | Selection {
+  if (!eventTarget) {
+    return null;
+  }
+
+  // Check if eventTarget is in shadow DOM
+  if (isHTMLElement(eventTarget)) {
+    const shadowRoot = getShadowRoot(eventTarget);
+
+    if (shadowRoot) {
+      // Try modern getComposedRanges API first
+      if (
+        typeof (shadowRoot as ShadowRootWithComposedRanges)
+          .getComposedRanges === 'function'
+      ) {
+        try {
+          const ranges = (shadowRoot as ShadowRootWithComposedRanges)
+            .getComposedRanges!({
+            shadowRoots: [shadowRoot],
+          });
+          if (ranges.length > 0) {
+            return createSelectionFromComposedRanges(ranges);
+          }
+        } catch (error) {
+          console.warn(
+            'getComposedRanges failed in getDOMSelectionFromTarget:',
+            error,
+          );
+        }
+      }
+
+      // Fallback to experimental getSelection if available
+      if (
+        typeof (shadowRoot as ShadowRootWithSelection).getSelection ===
+        'function'
+      ) {
+        try {
+          return (shadowRoot as ShadowRootWithSelection).getSelection();
+        } catch (error) {
+          console.warn(
+            'ShadowRoot.getSelection failed in getDOMSelectionFromTarget:',
+            error,
+          );
+        }
+      }
+    }
+  }
+
   const defaultView = getDefaultView(eventTarget);
   return defaultView ? defaultView.getSelection() : null;
 }

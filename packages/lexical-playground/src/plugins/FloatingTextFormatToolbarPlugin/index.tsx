@@ -122,7 +122,10 @@ function TextFormatFloatingToolbar({
     const selection = $getSelection();
 
     const popupCharStylesEditorElem = popupCharStylesEditorRef.current;
-    const nativeSelection = getDOMSelection(editor._window);
+    const nativeSelection = getDOMSelection(
+      editor._window,
+      editor.getRootElement(),
+    );
 
     if (popupCharStylesEditorElem === null) {
       return;
@@ -342,7 +345,10 @@ function useFloatingTextFormatToolbar(
         return;
       }
       const selection = $getSelection();
-      const nativeSelection = getDOMSelection(editor._window);
+      const nativeSelection = getDOMSelection(
+        editor._window,
+        editor.getRootElement(),
+      );
       const rootElement = editor.getRootElement();
 
       if (

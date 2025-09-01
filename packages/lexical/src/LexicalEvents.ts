@@ -93,6 +93,7 @@ import {
   dispatchCommand,
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
+  getDocumentFromElement,
   getDOMSelection,
   getDOMSelectionFromTarget,
   getDOMTextNode,
@@ -208,7 +209,10 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelection(
+    getWindow(editor),
+    editor.getRootElement(),
+  );
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -478,7 +482,10 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelection(
+      getWindow(editor),
+      editor.getRootElement(),
+    );
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -933,7 +940,10 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         }
         const anchor = selection.anchor;
         const anchorNode = anchor.getNode();
-        const domSelection = getDOMSelection(getWindow(editor));
+        const domSelection = getDOMSelection(
+          getWindow(editor),
+          editor.getRootElement(),
+        );
         if (domSelection === null) {
           return;
         }
@@ -1321,7 +1331,7 @@ export function addRootElementEvents(
 ): void {
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  const doc = rootElement.ownerDocument;
+  const doc = getDocumentFromElement(rootElement);
   const documentRootElementsCount = rootElementsRegistered.get(doc);
   if (
     documentRootElementsCount === undefined ||
@@ -1428,7 +1438,7 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 );
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  const doc = rootElement.ownerDocument;
+  const doc = getDocumentFromElement(rootElement);
   const documentRootElementsCount = rootElementsRegistered.get(doc);
   if (documentRootElementsCount === undefined) {
     // This can happen if setRootElement() failed

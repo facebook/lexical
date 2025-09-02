@@ -31,6 +31,7 @@ import {
   copyToClipboard,
 } from '@lexical/clipboard';
 import {
+  $isParentRTL,
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
@@ -841,7 +842,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            nodes[0].selectPrevious();
+            if ($isParentRTL(nodes[0])) {
+              nodes[0].selectNext(0, 0);
+            } else {
+              nodes[0].selectPrevious();
+            }
             return true;
           }
         }
@@ -868,7 +873,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            nodes[0].selectNext(0, 0);
+            if ($isParentRTL(nodes[0])) {
+              nodes[0].selectPrevious();
+            } else {
+              nodes[0].selectNext(0, 0);
+            }
             return true;
           }
         }

@@ -36,6 +36,7 @@ import {
   html,
   initialize,
   insertCollapsible,
+  insertDateTime,
   insertHorizontalRule,
   insertImageCaption,
   insertSampleImage,
@@ -1056,6 +1057,113 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     );
+  });
+
+  test('Move left from DecoratorNode in RTL #7771', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await page.keyboard.type('קצת');
+    await moveToEditorBeginning(page);
+    await moveLeft(page, 5);
+
+    const expectedSelection = createHumanReadableSelection(
+      'just after the datetime',
+      {
+        anchorOffset: {desc: 'start of the span', value: 0},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'third span', value: 2},
+          {desc: 'beginning of text', value: 0},
+        ],
+        focusOffset: {desc: 'start of the span', value: 0},
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'third span', value: 2},
+          {desc: 'beginning of text', value: 0},
+        ],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
+  });
+
+  test('Move right from DecoratorNode in RTL #7771', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await page.keyboard.type('קצת');
+    await moveRight(page, 5);
+
+    const expectedSelection = createHumanReadableSelection(
+      'just before the datetime',
+      {
+        anchorOffset: {desc: 'before datetime', value: 3},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+        focusOffset: {desc: 'before datetime', value: 3},
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'beginning of text', value: 0},
+        ],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
+  });
+
+  test('Move right from last node in RTL #7775', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await moveRight(page);
+
+    const selected = await evaluate(page, () => {
+      const datetimePillElement = document.querySelector('.dateTimePill');
+      return datetimePillElement.classList.contains('selected');
+    });
+    expect(selected).toBe(true);
+  });
+
+  test('Move left from last node in RTL #7775', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    test.skip(browserName === 'firefox');
+    await page.keyboard.type('קצת');
+    await insertDateTime(page);
+    await moveLeft(page);
+
+    const expectedSelection = createHumanReadableSelection(
+      'at end of paragraph',
+      {
+        anchorOffset: {desc: 'third segment', value: 2},
+        anchorPath: [{desc: 'first paragraph', value: 0}],
+        focusOffset: {desc: 'third segment', value: 2},
+        focusPath: [{desc: 'first paragraph', value: 0}],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
   });
 
   test('Can delete table node present at the end #5543', async ({

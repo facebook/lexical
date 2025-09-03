@@ -1524,6 +1524,10 @@ button.toolbar-item {
   justify-content: space-between;
 }
 
+.toolbar button.toolbar-item:focus {
+  outline: 2px solid black;
+}
+
 button.toolbar-item:disabled {
   cursor: not-allowed;
 }

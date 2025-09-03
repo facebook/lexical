@@ -701,7 +701,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="ltr"><section><span data-lexical-text="true">test text</span></section></main>`,
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span></section></main>`,
     );
     editor.update(
       () => {
@@ -710,7 +710,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="ltr"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
     );
     editor.update(
       () => {
@@ -718,7 +718,9 @@ describe('getDOMSlot tests', () => {
       },
       {discrete: true},
     );
-    expect(container.innerHTML).toBe(`<main><section><br></section></main>`);
+    expect(container.innerHTML).toBe(
+      `<main dir="auto"><section><br></section></main>`,
+    );
   });
 });
 

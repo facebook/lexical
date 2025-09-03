@@ -36,6 +36,7 @@ const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const IS_TABLE_HORIZONTAL_SCROLL =
   process.env.E2E_TABLE_MODE !== 'legacy';
+export const SAMPLE_SVG_URL = '/logo.svg';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -58,12 +59,12 @@ export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
   return html`
     ${expected
       .replace(
-        /<table/g,
-        `<div${
+        /<table([^>]*)(dir="\w+")([^>]*)>/g,
+        `<div $2${
           ignoreClasses
             ? ''
             : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
-        }><table`,
+        }><table$1$3>`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;
@@ -156,7 +157,7 @@ async function exposeLexicalEditor(page) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   }
@@ -745,6 +746,11 @@ export async function insertYouTubeEmbed(page, url) {
 
 export async function insertHorizontalRule(page) {
   await selectFromInsertDropdown(page, '.horizontal-rule');
+}
+
+export async function insertDateTime(page) {
+  await selectFromInsertDropdown(page, '.calendar');
+  await sleep(500);
 }
 
 export async function insertImageCaption(page, caption) {

@@ -248,10 +248,14 @@ const NodeContextMenuPlugin = forwardRef<
       setIsOpen(true);
     }
 
-    document.addEventListener('contextmenu', onContextMenu);
-    return () => {
-      document.removeEventListener('contextmenu', onContextMenu);
-    };
+    return editor.registerRootListener((rootElement, prevRootElement) => {
+      if (prevRootElement !== null) {
+        prevRootElement.removeEventListener('contextmenu', onContextMenu);
+      }
+      if (rootElement !== null) {
+        rootElement.addEventListener('contextmenu', onContextMenu);
+      }
+    });
   }, [items, itemClassName, separatorClassName, refs, editor]);
 
   return (

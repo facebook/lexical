@@ -571,6 +571,10 @@ describe('Markdown', () => {
       md: '**Bold** [`text **Bold in code**`](https://lexical.dev) **Bold 3**',
     },
     {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>[text](https://lexical.dev)</span></code><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
+      md: '**Bold** `[text](https://lexical.dev)` **Bold 3**',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">text</strong></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [text](https://lexical.dev) boldend** text',
       mdAfterExport:

@@ -76,6 +76,7 @@ import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
@@ -763,9 +764,12 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.getEditorState().read(() => {
-      $updateToolbar();
-    });
+    activeEditor.getEditorState().read(
+      () => {
+        $updateToolbar();
+      },
+      {editor: activeEditor},
+    );
   }, [activeEditor, $updateToolbar]);
 
   useEffect(() => {
@@ -774,9 +778,12 @@ export default function ToolbarPlugin({
         setIsEditable(editable);
       }),
       activeEditor.registerUpdateListener(({editorState}) => {
-        editorState.read(() => {
-          $updateToolbar();
-        });
+        editorState.read(
+          () => {
+            $updateToolbar();
+          },
+          {editor: activeEditor},
+        );
       }),
       activeEditor.registerCommand<boolean>(
         CAN_UNDO_COMMAND,
@@ -912,32 +919,30 @@ export default function ToolbarPlugin({
       {toolbarState.blockType === 'code' && isCodeHighlighted ? (
         <>
           {!isCodeShiki && (
-            <>
-              <DropDown
-                disabled={!isEditable}
-                buttonClassName="toolbar-item code-language"
-                buttonLabel={
-                  (CODE_LANGUAGE_OPTIONS_PRISM.find(
-                    (opt) =>
-                      opt[0] ===
-                      normalizeCodeLanguagePrism(toolbarState.codeLanguage),
-                  ) || ['', ''])[1]
-                }
-                buttonAriaLabel="Select language">
-                {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
-                  return (
-                    <DropDownItem
-                      className={`item ${dropDownActiveClass(
-                        value === toolbarState.codeLanguage,
-                      )}`}
-                      onClick={() => onCodeLanguageSelect(value)}
-                      key={value}>
-                      <span className="text">{name}</span>
-                    </DropDownItem>
-                  );
-                })}
-              </DropDown>
-            </>
+            <DropDown
+              disabled={!isEditable}
+              buttonClassName="toolbar-item code-language"
+              buttonLabel={
+                (CODE_LANGUAGE_OPTIONS_PRISM.find(
+                  (opt) =>
+                    opt[0] ===
+                    normalizeCodeLanguagePrism(toolbarState.codeLanguage),
+                ) || ['', ''])[1]
+              }
+              buttonAriaLabel="Select language">
+              {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
+                return (
+                  <DropDownItem
+                    className={`item ${dropDownActiveClass(
+                      value === toolbarState.codeLanguage,
+                    )}`}
+                    onClick={() => onCodeLanguageSelect(value)}
+                    key={value}>
+                    <span className="text">{name}</span>
+                  </DropDownItem>
+                );
+              })}
+            </DropDown>
           )}
           {isCodeShiki && (
             <>
@@ -1370,6 +1375,18 @@ export default function ToolbarPlugin({
                   className="item">
                   <i className="icon caret-right" />
                   <span className="text">Collapsible container</span>
+                </DropDownItem>
+                <DropDownItem
+                  onClick={() => {
+                    const dateTime = new Date();
+                    dateTime.setHours(0, 0, 0, 0);
+                    activeEditor.dispatchCommand(INSERT_DATETIME_COMMAND, {
+                      dateTime,
+                    });
+                  }}
+                  className="item">
+                  <i className="icon calendar" />
+                  <span className="text">Date</span>
                 </DropDownItem>
                 {EmbedConfigs.map((embedConfig) => (
                   <DropDownItem

@@ -584,6 +584,10 @@ i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }
 
+i.calendar {
+  background-image: url(images/icons/calendar.svg);
+}
+
 i.gif {
   background-image: url(images/icons/filetype-gif.svg);
 }
@@ -1483,14 +1487,6 @@ button.action-button:disabled {
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
-}
-
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
 }
 
 .toolbar {

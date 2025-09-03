@@ -37,6 +37,7 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
+  $addUpdateTag,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -58,6 +59,8 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SKIP_DOM_SELECTION_TAG,
+  TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
@@ -568,6 +571,13 @@ export default function ToolbarPlugin({
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
 
+  const dispatchFormatTextCommand = (payload: TextFormatType) => {
+    activeEditor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, payload);
+    });
+  };
+
   const $handleHeadingNode = useCallback(
     (selectedElement: LexicalNode) => {
       const type = $isHeadingNode(selectedElement)
@@ -1015,9 +1025,7 @@ export default function ToolbarPlugin({
           <Divider />
           <button
             disabled={!isEditable}
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-            }}
+            onClick={() => dispatchFormatTextCommand('bold')}
             className={
               'toolbar-item spaced ' + (toolbarState.isBold ? 'active' : '')
             }
@@ -1028,9 +1036,7 @@ export default function ToolbarPlugin({
           </button>
           <button
             disabled={!isEditable}
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
-            }}
+            onClick={() => dispatchFormatTextCommand('italic')}
             className={
               'toolbar-item spaced ' + (toolbarState.isItalic ? 'active' : '')
             }
@@ -1041,9 +1047,7 @@ export default function ToolbarPlugin({
           </button>
           <button
             disabled={!isEditable}
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
-            }}
+            onClick={() => dispatchFormatTextCommand('underline')}
             className={
               'toolbar-item spaced ' +
               (toolbarState.isUnderline ? 'active' : '')
@@ -1056,9 +1060,7 @@ export default function ToolbarPlugin({
           {canViewerSeeInsertCodeButton && (
             <button
               disabled={!isEditable}
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
-              }}
+              onClick={() => dispatchFormatTextCommand('code')}
               className={
                 'toolbar-item spaced ' + (toolbarState.isCode ? 'active' : '')
               }
@@ -1104,9 +1106,7 @@ export default function ToolbarPlugin({
             buttonAriaLabel="Formatting options for additional text styles"
             buttonIconClassName="icon dropdown-more">
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
-              }}
+              onClick={() => dispatchFormatTextCommand('lowercase')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isLowercase)
               }
@@ -1119,9 +1119,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.LOWERCASE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
-              }}
+              onClick={() => dispatchFormatTextCommand('uppercase')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isUppercase)
               }
@@ -1134,9 +1132,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
-              }}
+              onClick={() => dispatchFormatTextCommand('capitalize')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
               }
@@ -1149,12 +1145,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CAPITALIZE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(
-                  FORMAT_TEXT_COMMAND,
-                  'strikethrough',
-                );
-              }}
+              onClick={() => dispatchFormatTextCommand('strikethrough')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isStrikethrough)
               }
@@ -1167,9 +1158,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.STRIKETHROUGH}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
-              }}
+              onClick={() => dispatchFormatTextCommand('subscript')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSubscript)
               }
@@ -1182,12 +1171,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.SUBSCRIPT}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(
-                  FORMAT_TEXT_COMMAND,
-                  'superscript',
-                );
-              }}
+              onClick={() => dispatchFormatTextCommand('superscript')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSuperscript)
               }
@@ -1200,9 +1184,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.SUPERSCRIPT}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'highlight');
-              }}
+              onClick={() => dispatchFormatTextCommand('highlight')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isHighlight)
               }

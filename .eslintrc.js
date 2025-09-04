@@ -67,7 +67,7 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:@lexical/all',
       ],
-      files: ['**/*.ts', '**/*.tsx'],
+      files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
       parser: '@typescript-eslint/parser',
       parserOptions: {
         sourceType: 'module',

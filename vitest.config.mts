@@ -6,47 +6,43 @@
  *
  */
 
-import {defineConfig, mergeConfig, Plugin} from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import {defineConfig, mergeConfig, Plugin} from 'vitest/config';
 
 function lexicalTestMocks(): Plugin {
   return {
-    name: 'lexicalTestMocks',
     config(config, _env) {
       return mergeConfig(config, {
         resolve: {
           alias: {
-            'shared/invariant': 'packages/shared/src/__mocks__/invariant.ts',
             'shared/devInvariant':
               'packages/shared/src/__mocks__/devInvariant.ts',
+            'shared/invariant': 'packages/shared/src/__mocks__/invariant.ts',
             'shared/warnOnlyOnce':
               'packages/shared/src/__mocks__/warnOnlyOnce.ts',
           },
         },
       });
     },
+    name: 'lexicalTestMocks',
   };
 }
 
 export default defineConfig({
   test: {
-    typecheck: {
-      tsconfig: './tsconfig.test.json',
-    },
-    setupFiles: ['./vitest.setup.mts'],
     clearMocks: true,
     projects: [
       {
-        plugins: [
-          tsconfigPaths({projects: ['./tsconfig.test.json']}),
-          lexicalTestMocks(),
-        ],
-        extends: true,
         define: {
           // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#configuring-your-testing-environment
           IS_REACT_ACT_ENVIRONMENT: true,
           __DEV__: true,
         },
+        extends: true,
+        plugins: [
+          tsconfigPaths({projects: ['./tsconfig.test.json']}),
+          lexicalTestMocks(),
+        ],
         test: {
           environment: 'jsdom',
           include: [
@@ -56,23 +52,9 @@ export default defineConfig({
         },
       },
     ],
+    setupFiles: ['./vitest.setup.mts'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json',
+    },
   },
 });
-
-// module.exports = {
-//     {
-//       ...common,
-//       displayName: 'integration',
-//       globalSetup: './scripts/__tests__/integration/setup.js',
-//       testMatch: ['**/scripts/__tests__/integration/**/*.test.js'],
-//     },
-//     {
-//       ...common,
-//       displayName: 'e2e',
-//       testMatch: [
-//         '**/__tests__/e2e/**/*.js',
-//         '**/__tests__/regression/**/*.js',
-//       ],
-//     },
-//   ],
-// };

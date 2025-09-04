@@ -19,6 +19,7 @@ import * as React from 'react';
 import {Container} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {expect} from 'vitest';
 import * as Y from 'yjs';
 
 function Editor({

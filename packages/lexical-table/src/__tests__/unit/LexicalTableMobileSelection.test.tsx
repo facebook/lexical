@@ -22,6 +22,7 @@ import {
   $isRangeSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 // Polyfill PointerEvent for Jest environment
 interface PointerEventInit extends EventInit {

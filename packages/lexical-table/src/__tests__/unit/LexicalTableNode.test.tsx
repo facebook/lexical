@@ -44,14 +44,15 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {useState} from 'react';
 import {act} from 'shared/react-test-utils';
+import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest';
 
 export class ClipboardDataMock {
-  getData: jest.Mock<string, [string]>;
-  setData: jest.Mock<void, [string, string]>;
+  getData: Mock<(type: string) => [string]>;
+  setData: Mock<() => [string, string]>;
 
   constructor() {
-    this.getData = jest.fn();
-    this.setData = jest.fn();
+    this.getData = vi.fn();
+    this.setData = vi.fn();
   }
 }
 

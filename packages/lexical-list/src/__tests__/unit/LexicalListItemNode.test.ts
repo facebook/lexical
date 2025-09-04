@@ -17,6 +17,7 @@ import {
   html,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
   $createListItemNode,

@@ -26,11 +26,7 @@ import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-
-jest.mock('shared/environment', () => {
-  const originalModule = jest.requireActual('shared/environment');
-  return {...originalModule, IS_FIREFOX: true};
-});
+import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
   const rect = {

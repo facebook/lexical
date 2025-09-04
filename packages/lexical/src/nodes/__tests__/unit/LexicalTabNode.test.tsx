@@ -33,6 +33,7 @@ import {
   $setSelectionFromCaretRange,
   KEY_TAB_COMMAND,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   DataTransferMock,

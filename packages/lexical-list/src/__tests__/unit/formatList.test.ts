@@ -21,6 +21,7 @@ import {
   $selectAll,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 import {$insertList} from '../../formatList';
 import {$createListItemNode} from '../../LexicalListItemNode';

@@ -14,6 +14,7 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {Client, createTestConnection, waitForReact} from './utils';

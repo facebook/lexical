@@ -12,6 +12,7 @@ import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../utils';
 

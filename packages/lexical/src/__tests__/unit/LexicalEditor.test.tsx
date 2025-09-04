@@ -3155,7 +3155,7 @@ describe('LexicalEditor tests', () => {
 
     expect(onError).toBeCalledWith(updateError);
     expect(textListener).toBeCalledWith('Hello\n\nworld');
-    expect(updateListener.mock.lastCall[0].prevEditorState).toBe(editorState);
+    expect(updateListener.mock.lastCall?.[0].prevEditorState).toBe(editorState);
   });
 
   it('should call importDOM methods only once', async () => {

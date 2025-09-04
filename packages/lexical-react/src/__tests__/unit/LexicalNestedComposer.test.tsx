@@ -40,7 +40,15 @@ import * as React from 'react';
 import {useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  MockInstance,
+  test,
+  vi,
+} from 'vitest';
 
 expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
@@ -91,7 +99,7 @@ function $createReactDecoratorNode() {
 describe('LexicalNestedComposer', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot: Root;
-  let warn: jest.SpyInstance;
+  let warn: MockInstance;
 
   beforeEach(() => {
     warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

@@ -14,13 +14,8 @@ class MyEvent extends Event {}
 
 class MyEvent2 extends Event {}
 
-let MyEventShadow: typeof Event = MyEvent;
-
-{
-  // eslint-disable-next-line no-shadow
-  class MyEvent extends Event {}
-  MyEventShadow = MyEvent;
-}
+// eslint-disable-next-line no-shadow
+const MyEventShadow = (() => class MyEvent extends Event {})();
 
 describe('LexicalUtilsKlassEqual tests', () => {
   initializeUnitTest((testEnv) => {

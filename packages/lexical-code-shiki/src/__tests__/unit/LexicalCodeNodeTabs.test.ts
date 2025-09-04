@@ -9,8 +9,18 @@
 import type {CodeHighlightNode, CodeNode} from '@lexical/code';
 import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {registerCodeHighlighting} from '@lexical/code-shiki';
+import {
+  $createCodeNode,
+  $isCodeHighlightNode,
+  $isCodeNode,
+} from '@lexical/code';
+import {
+  isCodeLanguageLoaded,
+  loadCodeLanguage,
+  loadCodeTheme,
+  registerCodeHighlighting,
+  ShikiTokenizer,
+} from '@lexical/code-shiki';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
 import {
@@ -20,6 +30,7 @@ import {
   $getRoot,
   $getSelection,
   $isLineBreakNode,
+  $isTabNode,
   $setSelectionFromCaretRange,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
@@ -30,6 +41,8 @@ import {
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
+
+import {isCodeThemeLoaded} from '../../FacadeShiki';
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -105,6 +118,12 @@ describe('LexicalCodeNode tests', () => {
               return getRawTextWithSelection(input).replaceAll('|', '');
             };
 
+            await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
+            expect(isCodeLanguageLoaded(ShikiTokenizer.defaultLanguage)).toBe(
+              true,
+            );
+            await loadCodeTheme(ShikiTokenizer.defaultTheme);
+            expect(isCodeThemeLoaded(ShikiTokenizer.defaultTheme)).toBe(true);
             registerRichText(editor);
             registerTabIndentation(editor);
             registerCodeHighlighting(editor);
@@ -117,6 +136,26 @@ describe('LexicalCodeNode tests', () => {
               root.append(codeNode);
               codeNode.selectStart();
               $getSelection()!.insertRawText(getRawText(scenario[0]));
+            });
+            // Verify that the transform is running
+            editor.read(() => {
+              const codeNodes = $getRoot().getChildren().filter($isCodeNode);
+              expect(codeNodes).toHaveLength(1);
+              expect(codeNodes[0].getIsSyntaxHighlightSupported()).toBe(true);
+              // Ensure that the transform is running by checking that all
+              // nodes are highlighted
+              expect(
+                codeNodes[0]
+                  .getChildren()
+                  .filter(
+                    (node) =>
+                      !(
+                        $isCodeHighlightNode(node) ||
+                        $isLineBreakNode(node) ||
+                        $isTabNode(node)
+                      ),
+                  ),
+              ).toEqual([]);
             });
 
             // Create a RangeSelection that matches the selection

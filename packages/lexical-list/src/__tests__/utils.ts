@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {expect} from '@playwright/test';
 import prettier from 'prettier';
 import {expect} from 'vitest';
 

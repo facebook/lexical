@@ -1397,6 +1397,10 @@ i.chevron-down {
   cursor: pointer;
 }
 
+.action-button:focus {
+  outline: 2px solid black;
+}
+
 .action-button:hover {
   background-color: #ddd;
   color: #000;
@@ -1511,6 +1515,10 @@ button.action-button:disabled {
   overflow-y: hidden; /* disable vertical scroll*/
 }
 
+.toolbar .toolbar-item:focus {
+  outline: 2px solid black;
+}
+
 button.toolbar-item {
   border: 0;
   display: flex;
@@ -1522,10 +1530,6 @@ button.toolbar-item {
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-}
-
-.toolbar button.toolbar-item:focus {
-  outline: 2px solid black;
 }
 
 button.toolbar-item:disabled {

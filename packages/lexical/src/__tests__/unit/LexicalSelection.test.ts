@@ -363,6 +363,27 @@ describe('LexicalSelection tests', () => {
         });
       });
     });
+
+    describe('insertText()', () => {
+      test('inserts into existing paragraph node when selection is on parent of paragraph', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.clear().append(paragraph);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set('root', 0, 'element');
+          selection.focus.set('root', 0, 'element');
+          $setSelection(selection);
+
+          selection.insertText('text');
+          expect(root.getChildrenSize()).toBe(1);
+          expect(root.getTextContent()).toBe('text');
+        });
+      });
+    });
+
     describe('removeText', () => {
       describe('with a leading TextNode and a trailing token TextNode', () => {
         let leadingText: TextNode;

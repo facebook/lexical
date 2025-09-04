@@ -1,6 +1,6 @@
 {
   "name": "lexical-esm-nextjs",
-  "version": "0.34.0",
+  "version": "0.34.1-nightly.20250904.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,9 +9,9 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@lexical/plain-text": "0.34.0",
-    "@lexical/react": "0.34.0",
-    "lexical": "0.34.0",
+    "@lexical/plain-text": "0.34.1-nightly.20250904.0",
+    "@lexical/react": "0.34.1-nightly.20250904.0",
+    "lexical": "0.34.1-nightly.20250904.0",
     "next": "^15.2.2",
     "react": "^18",
     "react-dom": "^18"

@@ -6,7 +6,7 @@
  *
  */
 
-import { vi } from 'vitest';
+import {vi} from 'vitest';
 vi.mock('shared/invariant');
 vi.mock('shared/devInvariant');
 vi.mock('shared/warnOnlyOnce');

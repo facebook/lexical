@@ -18,7 +18,6 @@ import {TextNode} from 'lexical';
 
 declare export class HashtagNode extends TextNode {
   static getType(): string;
-  // $FlowFixMe
   static clone(node: HashtagNode): HashtagNode;
   static importJSON(serializedNode: SerializedTextNode): HashtagNode;
   constructor(text: string, key?: NodeKey): void;

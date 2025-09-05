@@ -25,7 +25,6 @@ import {
 } from '@lexical/react/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {expect} from '@playwright/test';
 import {
   $isRangeSelection,
   createEditor,
@@ -50,6 +49,7 @@ import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, expect, type Mock, vi} from 'vitest';
 
 import {
   CreateEditorArgs,
@@ -531,12 +531,12 @@ export function invariant(cond?: boolean, message?: string): asserts cond {
 }
 
 export class ClipboardDataMock {
-  getData: jest.Mock<string, [string]>;
-  setData: jest.Mock<void, [string, string]>;
+  getData: Mock<(type: string) => [string]>;
+  setData: Mock<() => [string, string]>;
 
   constructor() {
-    this.getData = jest.fn();
-    this.setData = jest.fn();
+    this.getData = vi.fn();
+    this.setData = vi.fn();
   }
 }
 

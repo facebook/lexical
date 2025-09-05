@@ -12,6 +12,7 @@ import {
   html,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, test} from 'vitest';
 
 import {registerListStrictIndentTransform} from '../../index';
 

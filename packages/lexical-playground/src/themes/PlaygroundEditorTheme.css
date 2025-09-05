@@ -6,12 +6,6 @@
  *
  *
  */
-.PlaygroundEditorTheme__ltr {
-  text-align: left;
-}
-.PlaygroundEditorTheme__rtl {
-  text-align: right;
-}
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
   position: relative;

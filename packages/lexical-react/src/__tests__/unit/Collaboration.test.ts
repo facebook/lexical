@@ -7,7 +7,6 @@
  */
 
 import {
-  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -15,6 +14,7 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {Client, createTestConnection, waitForReact} from './utils';
@@ -40,7 +40,7 @@ describe('Collaboration', () => {
     // Wait for clients to render the initial content
     await Promise.resolve().then();
 
-    expect(client1.getHTML()).toEqual('<p><br></p>');
+    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
   }
@@ -70,7 +70,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -88,7 +88,7 @@ describe('Collaboration', () => {
     });
 
     expect(client2.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello metaverse</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello metaverse</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -125,9 +125,9 @@ describe('Collaboration', () => {
       });
     });
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
-    expect(client2.getHTML()).toEqual('<p><br></p>');
+    expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
 
     // Insert some a text node on client 1
     await waitForReact(() => {
@@ -142,7 +142,7 @@ describe('Collaboration', () => {
     });
 
     expect(client2.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
 
@@ -152,7 +152,7 @@ describe('Collaboration', () => {
 
     // Text content should be repeated, but there should only be a single node
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -174,10 +174,10 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client2.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
 
     await waitForReact(() => {
@@ -196,7 +196,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world!</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -229,7 +229,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -249,9 +249,9 @@ describe('Collaboration', () => {
       });
     });
 
-    expect(client1.getHTML()).toEqual('<p><br></p>');
+    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
     expect(client2.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
 
     // Insert some text on client 2
@@ -265,9 +265,9 @@ describe('Collaboration', () => {
       });
     });
 
-    expect(client1.getHTML()).toEqual('<p><br></p>');
+    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
     expect(client2.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
 
     await waitForReact(() => {
@@ -281,7 +281,7 @@ describe('Collaboration', () => {
     // fallback maps. For now though, if a user clears all text nodes from an element
     // and another user inserts some text into the same element at the same time, the
     // deletion will take precedence on conflicts.
-    expect(client1.getHTML()).toEqual('<p><br></p>');
+    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
       root: '',
@@ -291,7 +291,7 @@ describe('Collaboration', () => {
     client2.stop();
   });
 
-  it('Should not sync direction of element node', async () => {
+  it('Should sync direction of element node', async () => {
     const connector = createTestConnection();
     const client1 = connector.createClient('1');
     const client2 = connector.createClient('2');
@@ -300,41 +300,30 @@ describe('Collaboration', () => {
 
     await expectCorrectInitialContent(client1, client2);
 
-    // Add paragraph with RTL text, then another with a non-TextNode child
     await waitForReact(() => {
       client1.update(() => {
         const root = $getRoot().clear();
-        root.append(
-          $createParagraphNode().append($createTextNode('فرعي')),
-          $createParagraphNode().append($createLineBreakNode()),
-        );
+        root.append($createParagraphNode().append($createTextNode('hello')));
       });
     });
 
-    // Check that the second paragraph has RTL direction
     expect(client1.getHTML()).toEqual(
-      '<p dir="rtl"><span data-lexical-text="true">فرعي</span></p><p dir="rtl"><br><br></p>',
+      '<p dir="auto"><span data-lexical-text="true">hello</span></p>',
     );
     expect(client2.getHTML()).toEqual(client1.getHTML());
 
-    // Mark the second paragraph's child as dirty to force the reconciler to run.
+    // Override direction
     await waitForReact(() => {
       client1.update(() => {
-        const pargraph = $getRoot().getChildAtIndex<ParagraphNode>(1)!;
-        const lineBreak = pargraph.getFirstChildOrThrow();
-        lineBreak.markDirty();
+        const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+        paragraph.setDirection('rtl');
       });
     });
 
-    // There was no activeEditorDirection when processing this node, so direction should be set back to null.
     expect(client1.getHTML()).toEqual(
-      '<p dir="rtl"><span data-lexical-text="true">فرعي</span></p><p><br><br></p>',
+      '<p dir="rtl"><span data-lexical-text="true">hello</span></p>',
     );
-
-    // Check that the second paragraph still has RTL direction on client 2, as __dir is not synced.
-    expect(client2.getHTML()).toEqual(
-      '<p dir="rtl"><span data-lexical-text="true">فرعي</span></p><p dir="rtl"><br><br></p>',
-    );
+    expect(client2.getHTML()).toEqual(client1.getHTML());
 
     client1.stop();
     client2.stop();
@@ -417,7 +406,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p dir="ltr"><span data-lexical-text="true">Hello</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -432,7 +421,7 @@ describe('Collaboration', () => {
 
     // We expect the safety check in syncYjsChangesToLexical to
     // insert a new paragraph node and prevent the document from being empty
-    expect(client1.getHTML()).toEqual('<p><br></p>');
+    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
@@ -449,7 +438,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p><br></p><p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+      '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -483,7 +472,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p><span data-lexical-text="true">1</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">1</span></p>',
     );
     expect(client1.getDocJSON()).toEqual({
       root: '[object Object]1',
@@ -503,7 +492,7 @@ describe('Collaboration', () => {
 
     // Note: client1 HTML won't have been updated yet here because we edited its Yjs doc directly.
     expect(client1.getHTML()).toEqual(
-      '<p><span data-lexical-text="true">1</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">1</span></p>',
     );
     expect(client1.getDocJSON()).toEqual({
       root: '[object Object]1[object Object]2[object Object]3',
@@ -515,7 +504,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p><span data-lexical-text="true">123</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">123</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({

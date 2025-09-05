@@ -21,6 +21,7 @@ import {
   TextNode,
 } from 'lexical/src';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',

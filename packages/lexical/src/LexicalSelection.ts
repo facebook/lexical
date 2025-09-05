@@ -33,6 +33,7 @@ import {
   $isElementNode,
   $isExtendableTextPointCaret,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isSiblingCaret,
   $isTextNode,
@@ -275,15 +276,19 @@ function $transferStartingElementPointToTextPoint(
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
   const textNode = $createTextNode();
-  const target = $isRootNode(element)
-    ? $createParagraphNode().append(textNode)
-    : textNode;
   textNode.setFormat(format);
   textNode.setStyle(style);
-  if (placementNode === null) {
-    element.append(target);
+  if ($isParagraphNode(placementNode)) {
+    placementNode.splice(0, 0, [textNode]);
   } else {
-    placementNode.insertBefore(target);
+    const target = $isRootNode(element)
+      ? $createParagraphNode().append(textNode)
+      : textNode;
+    if (placementNode === null) {
+      element.append(target);
+    } else {
+      placementNode.insertBefore(target);
+    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -1279,7 +1284,7 @@ export class RangeSelection implements BaseSelection {
     // Multiple nodes selected
     // The entire first node isn't selected, so split it
     if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-      [, firstNode as TextNode] = firstNode.splitText(startOffset);
+      [, firstNode] = firstNode.splitText(startOffset);
       startOffset = 0;
     }
     firstNode.setFormat(firstNextFormat);
@@ -1292,7 +1297,7 @@ export class RangeSelection implements BaseSelection {
         endOffset !== lastNode.getTextContentSize() &&
         !$isTokenOrSegmented(lastNode)
       ) {
-        [lastNode as TextNode] = lastNode.splitText(endOffset);
+        [lastNode] = lastNode.splitText(endOffset);
       }
       lastNode.setFormat(lastNextFormat);
     }

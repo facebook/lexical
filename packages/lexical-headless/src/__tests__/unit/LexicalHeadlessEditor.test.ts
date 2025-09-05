@@ -29,6 +29,7 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   ParagraphNode,
 } from 'lexical';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {createHeadlessEditor} from '../..';
 import {isEmptyNavigator} from '../utils';
@@ -124,10 +125,10 @@ describe('LexicalHeadlessEditor', () => {
   });
 
   it('can register listeners', async () => {
-    const onUpdate = jest.fn();
-    const onCommand = jest.fn();
-    const onTransform = jest.fn();
-    const onTextContent = jest.fn();
+    const onUpdate = vi.fn();
+    const onCommand = vi.fn();
+    const onTransform = vi.fn();
+    const onTextContent = vi.fn();
 
     editor.registerUpdateListener(onUpdate);
     editor.registerCommand(

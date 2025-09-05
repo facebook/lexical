@@ -100,20 +100,16 @@ module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow
 
 munge_underscores=false
 
-suppress_type=$FlowIssue
-suppress_type=$FlowFixMe
-suppress_type=$FixMe
-suppress_type=$FlowExpectedError
+[declarations]
+.*/flow-typed/.*
 
 [libs]
 ./libdefs/yjs.js
-./scripts/flow/environment.js
-./flow-typed/yjs.js
-./flow-typed/prism.js
+./flow-typed
 
 [strict]
 nonstrict-import
 unclear-type
 
 [version]
-^0.250.0
+^0.280.0

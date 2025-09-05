@@ -23,6 +23,7 @@ import {
   initializeUnitTest,
   invariant,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $dfs,

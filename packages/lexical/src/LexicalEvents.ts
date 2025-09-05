@@ -1312,7 +1312,6 @@ function hasStoppedLexicalPropagation(event: Event): boolean {
   const stopped = event._lexicalHandled === true;
   return stopped;
 }
-
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 
 export function addRootElementEvents(
@@ -1419,6 +1418,22 @@ export function addRootElementEvents(
     rootElement.addEventListener(eventName, eventHandler);
     removeHandles.push(() => {
       rootElement.removeEventListener(eventName, eventHandler);
+    });
+  }
+  // Firefox sometimes fails to trigger blur when clicking outside the editor
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.userAgent.includes('Firefox')
+  ) {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!rootElement.contains(event.target as Node)) {
+        dispatchCommand(editor, BLUR_COMMAND, event as unknown as FocusEvent);
+      }
+    };
+
+    doc.addEventListener('mousedown', handleDocumentClick);
+    removeHandles.push(() => {
+      doc.removeEventListener('mousedown', handleDocumentClick);
     });
   }
 }

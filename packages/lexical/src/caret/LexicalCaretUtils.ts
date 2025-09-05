@@ -590,7 +590,7 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
  *   -> P2
  * returns T2 for node T1, P2 for node T2, and null for node P2.
  * @param startCaret The initial caret
- * @param rootMode The root mode, 'root' ('default') or 'shadowRoot'
+ * @param rootMode The root mode, 'root' (default) or 'shadowRoot'
  * @returns An array (tuple) containing the found caret and the depth difference, or null, if this node doesn't exist.
  */
 export function $getAdjacentSiblingOrParentSiblingCaret<

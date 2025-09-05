@@ -31,7 +31,7 @@
     "katex": "^0.16.10",
     "lexical": "0.35.0",
     "lodash-es": "^4.17.21",
-    "prettier": "^2.8.8",
+    "prettier": "^3.6.2",
     "react": "^18.2.0",
     "react-day-picker": "^9.7.0",
     "react-dom": "^18.2.0",
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.24.7",
     "@babel/preset-react": "^7.24.7",
+    "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@types/lodash-es": "^4.14.182",

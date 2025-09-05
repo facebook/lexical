@@ -1244,14 +1244,14 @@ export function $comparePointCaretNext(
       return aIsText && bIsText
         ? compareNumber(a.offset, b.offset)
         : a.type === b.type
-        ? 0
-        : aIsText
-        ? -1
-        : bIsText
-        ? 1
-        : a.type === 'child'
-        ? -1
-        : 1;
+          ? 0
+          : aIsText
+            ? -1
+            : bIsText
+              ? 1
+              : a.type === 'child'
+                ? -1
+                : 1;
     }
     case 'ancestor': {
       return a.type === 'child' ? -1 : 1;
@@ -1266,8 +1266,8 @@ export function $comparePointCaretNext(
 }
 
 /**
- * Return the ordering of siblings in a CommonAncestorResultBranch
- * @param branch Returns -1 if a precedes b, 1 otherwise
+ * Return the ordering of siblings in a {@link CommonAncestorResultBranch}
+ * @param compare Returns -1 if a precedes b, 1 otherwise
  */
 export function $getCommonAncestorResultBranchOrder<
   A extends LexicalNode,

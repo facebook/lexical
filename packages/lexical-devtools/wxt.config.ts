@@ -126,6 +126,7 @@ export default defineConfig({
           plugins: [
             '@babel/plugin-transform-flow-strip-types',
             [
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
               require('../../scripts/error-codes/transform-error-messages'),
               {
                 noMinify: true,

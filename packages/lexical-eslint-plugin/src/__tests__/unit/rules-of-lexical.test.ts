@@ -6,10 +6,10 @@
  *
  */
 
+import prettier from '@prettier/sync';
 import {RuleTester} from 'eslint';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as prettier from 'prettier';
 import {describe, expect, it} from 'vitest';
 
 import plugin from '../../LexicalEslintPlugin.js';

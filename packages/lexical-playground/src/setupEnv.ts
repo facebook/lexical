@@ -20,7 +20,8 @@ export default (() => {
       try {
         const value = JSON.parse(urlSearchParams.get(param) ?? 'true');
         INITIAL_SETTINGS[param as keyof Settings] = Boolean(value);
-      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
         console.warn(`Unable to parse query parameter "${param}"`);
       }
     }

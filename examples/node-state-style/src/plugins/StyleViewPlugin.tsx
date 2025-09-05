@@ -362,10 +362,10 @@ function StyleValuePlugin(props: StyleValueEditorProps) {
       typeof ref === 'function'
         ? ref
         : ref
-        ? (value: LexicalEditor | null) => {
-            ref.current = value;
-          }
-        : () => {};
+          ? (value: LexicalEditor | null) => {
+              ref.current = value;
+            }
+          : () => {};
     setRef(editor);
     return () => {
       setRef(null);

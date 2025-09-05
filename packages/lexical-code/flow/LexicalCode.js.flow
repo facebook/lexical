@@ -86,7 +86,6 @@ declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
   constructor(text: string, highlightType?: string, key?: NodeKey): void;
   static getType(): string;
-  // $FlowFixMe
   static clone(node: CodeHighlightNode): CodeHighlightNode;
   createDOM(config: EditorConfig): HTMLElement;
   setFormat(format: number): this;

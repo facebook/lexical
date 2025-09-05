@@ -27,6 +27,7 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
+import {describe, expect, test, vi} from 'vitest';
 
 import {
   emptyFunction,
@@ -41,7 +42,7 @@ import {initializeUnitTest} from '../utils';
 describe('LexicalUtils tests', () => {
   initializeUnitTest((testEnv) => {
     test('scheduleMicroTask(): native', async () => {
-      jest.resetModules();
+      vi.resetModules();
 
       let flag = false;
 
@@ -57,9 +58,9 @@ describe('LexicalUtils tests', () => {
     });
 
     test('scheduleMicroTask(): promise', async () => {
-      jest.resetModules();
+      vi.resetModules();
       const nativeQueueMicrotask = window.queueMicrotask;
-      const fn = jest.fn();
+      const fn = vi.fn();
       try {
         // @ts-ignore
         window.queueMicrotask = undefined;
@@ -461,7 +462,7 @@ describe('$applyNodeReplacement', () => {
     );
   });
   test('validates replace node type change', () => {
-    const mockWarning = jest
+    const mockWarning = vi
       .spyOn(console, 'warn')
       .mockImplementationOnce(() => {});
     const editor = createEditor({

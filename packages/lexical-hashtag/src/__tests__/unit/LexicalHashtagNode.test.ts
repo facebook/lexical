@@ -8,6 +8,7 @@
 
 import {$createHashtagNode} from '@lexical/hashtag';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 describe('LexicalHashtagNode tests', () => {
   initializeUnitTest((testEnv) => {

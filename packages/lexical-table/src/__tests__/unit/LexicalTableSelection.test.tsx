@@ -26,6 +26,7 @@ import {
   $setSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('table selection', () => {
   initializeUnitTest((testEnv) => {

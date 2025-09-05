@@ -8,6 +8,7 @@
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {$getRoot, ParagraphNode, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 import {
   $createListItemNode,

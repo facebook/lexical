@@ -61,7 +61,6 @@ export type ClientID = number;
 export type XmlElement = Object;
 // $FlowFixMe[unclear-type]: work around for internal
 export type YMap = Object;
-// $FlowFixMe: work around for internal
 export type TextOperation = {
   insert?: string | mixed,
   delete?: number,

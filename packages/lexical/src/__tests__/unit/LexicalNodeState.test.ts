@@ -22,6 +22,7 @@ import {
   RootNode,
   StateValueOrUpdater,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {nodeStatesAreEquivalent} from '../../LexicalNodeState';
 import {initializeUnitTest, invariant} from '../utils';

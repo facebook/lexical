@@ -320,7 +320,10 @@ export class TableObserver {
   /** @internal */
   updateDOMSelection() {
     if (this.anchorCell !== null && this.focusCell !== null) {
-      const domSelection = getDOMSelection(this.editor._window);
+      const domSelection = getDOMSelection(
+        this.editor._window,
+        this.editor.getRootElement(),
+      );
       // We are not using a native selection for tables, and if we
       // set one then the reconciler will undo it.
       // TODO - it would make sense to have one so that native

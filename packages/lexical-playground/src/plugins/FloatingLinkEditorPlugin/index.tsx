@@ -104,7 +104,10 @@ function FloatingLinkEditor({
     }
 
     const editorElem = editorRef.current;
-    const nativeSelection = getDOMSelection(editor._window);
+    const nativeSelection = getDOMSelection(
+      editor._window,
+      editor.getRootElement(),
+    );
     const activeElement = document.activeElement;
 
     if (editorElem === null) {

@@ -53,7 +53,9 @@ export function createDOMRange(
 ): Range | null {
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
-  const range = document.createRange();
+  const rootElement = editor.getRootElement();
+  const doc = rootElement ? rootElement.ownerDocument || document : document;
+  const range = doc.createRange();
   let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
   let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
   let anchorOffset = _anchorOffset;

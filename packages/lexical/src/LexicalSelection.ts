@@ -79,6 +79,7 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
+  getActiveElement,
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
@@ -1567,7 +1568,10 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelection(
+      getWindow(editor),
+      editor.getRootElement(),
+    );
 
     if (!domSelection) {
       return;
@@ -2581,7 +2585,10 @@ export function $internalCreateSelection(
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelection(
+    getWindow(editor),
+    editor.getRootElement(),
+  );
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(
@@ -2972,7 +2979,7 @@ export function updateDOMSelection(
   const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
-  const activeElement = document.activeElement;
+  const activeElement = getActiveElement(rootElement);
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.

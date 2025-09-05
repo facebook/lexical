@@ -114,13 +114,11 @@ const theme: EditorThemeClasses = {
     ].map((cls) => join(listCommonClasses, cls)),
     ul: join(listCommonClasses, 'list-disc'),
   },
-  ltr: 'text-left',
   // mark: 'PlaygroundEditorTheme__mark',
   // markOverlap: 'PlaygroundEditorTheme__markOverlap',
   paragraph: 'relative m-0',
   quote:
     'm-0 ml-5 mb-2.5 text-[15px] text-gray-500 border-slate-300 border-l-4 border-solid pl-4',
-  rtl: 'text-right',
   // tab: 'PlaygroundEditorTheme__tabNode',
   table:
     'border-collapse border-spacing-0 overflow-scroll table-fixed w-max mt-0 mr-[25px] mb-[30px] ml-0',

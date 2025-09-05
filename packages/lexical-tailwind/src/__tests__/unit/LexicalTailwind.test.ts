@@ -11,6 +11,7 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {TailwindExtension} from '@lexical/tailwind';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
+import {describe, it} from 'vitest';
 
 describe('TailwindExtension', () => {
   it('applies the expected classes', () => {
@@ -33,7 +34,7 @@ describe('TailwindExtension', () => {
     expectHtmlToBeEqual(
       container.innerHTML,
       html`
-        <p class="relative m-0 text-left" dir="ltr">
+        <p class="relative m-0" dir="auto">
           <strong class="font-bold" data-lexical-text="true">Test!</strong>
         </p>
       `,

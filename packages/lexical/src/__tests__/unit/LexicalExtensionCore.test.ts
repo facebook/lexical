@@ -6,7 +6,6 @@
  *
  */
 
-import {expectTypeOf} from 'expect-type';
 import {
   declarePeerDependency,
   defineExtension,
@@ -14,8 +13,7 @@ import {
   type LexicalExtension,
   type NormalizedPeerDependency,
 } from 'lexical';
-
-function assertType<T>(value: T): void {}
+import {assertType, describe, expect, expectTypeOf, it} from 'vitest';
 
 describe('defineExtension', () => {
   it('does not change identity', () => {

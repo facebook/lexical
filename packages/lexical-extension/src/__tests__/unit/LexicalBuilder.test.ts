@@ -14,6 +14,7 @@ import {
   LexicalBuilder,
   safeCast,
 } from '@lexical/extension';
+import {describe, expect, it} from 'vitest';
 
 const InitialStateExtensionName = '@lexical/extension/InitialState';
 

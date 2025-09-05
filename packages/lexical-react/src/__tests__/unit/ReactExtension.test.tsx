@@ -8,6 +8,7 @@
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactPluginHostExtension} from '@lexical/react/ReactPluginHostExtension';
+import {describe, expect, it} from 'vitest';
 
 describe('ReactExtension', () => {
   it('Requires a provider', () => {

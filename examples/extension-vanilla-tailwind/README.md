@@ -1,7 +1,7 @@
-# Basic Vanilla JS Extension example
+# Basic Vanilla JS Extension with Tailwind example
 
-Plugin that replaces smiles (`:)`, `:P`, etc...) with actual emojis (using [Node Transforms](https://lexical.dev/docs/concepts/transforms)) and uses own graphics for emojis rendering by creating our own custom node that extends [TextNode](https://lexical.dev/docs/concepts/nodes#textnode).
+Demonstrates using Lexical Extension to build a very basic checklist editor with Vanilla JS (no React), using Tailwind for CSS.
 
 **Run it locally:** `npm i && npm run dev`
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/extension-vanilla-tailwind?file=src/main.ts)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/facebook/lexical/pull/7706?file=examples/extension-vanilla-tailwind/src/main.ts&configPath=examples/extension-vanilla-tailwind)

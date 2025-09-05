@@ -27,6 +27,7 @@ import {
   type LexicalEditor,
 } from 'lexical';
 import {act} from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 
 function $prepopulatedRichText() {
   const root = $getRoot();
@@ -55,13 +56,13 @@ describe('ReactPluginHostExtension', () => {
   let editor: LexicalEditorWithDispose;
   let rootDom: HTMLDivElement & {__lexicalEditor?: LexicalEditor | null};
   let treeDom: HTMLDivElement;
-  let cleanupFn: jest.Mock;
-  let registerFn: jest.Mock;
+  let cleanupFn: Mock;
+  let registerFn: Mock;
   let pluginHostDom: HTMLDivElement;
 
   beforeEach(async () => {
-    cleanupFn = jest.fn();
-    registerFn = jest.fn().mockReturnValue(cleanupFn);
+    cleanupFn = vi.fn();
+    registerFn = vi.fn().mockReturnValue(cleanupFn);
     expect(document.body.children.length).toBe(0);
     await act(async () => {
       rootDom = document.createElement('div');
@@ -110,7 +111,7 @@ describe('ReactPluginHostExtension', () => {
     });
   });
   it('creates an editor', async () => {
-    const EXPECT_HTML = `<p dir="ltr"><span data-lexical-text="true">Plain Text!</span><br><strong data-lexical-text="true">Bold Text!</strong></p>`;
+    const EXPECT_HTML = `<p dir="auto"><span data-lexical-text="true">Plain Text!</span><br><strong data-lexical-text="true">Bold Text!</strong></p>`;
     expect(editor.getRootElement()).toBe(rootDom);
     expect(rootDom.__lexicalEditor).toBe(editor);
     expect(rootDom.innerHTML).toEqual(EXPECT_HTML);

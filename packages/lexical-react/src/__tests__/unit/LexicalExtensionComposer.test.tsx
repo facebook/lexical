@@ -17,6 +17,7 @@ import {
 import {useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 describe('LexicalExtensionComposer', () => {
   const extension = defineExtension({
@@ -52,7 +53,7 @@ describe('LexicalExtensionComposer', () => {
       reactRoot.render(<MyEditor />);
     });
     expect(container.innerHTML).toEqual(
-      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>`,
+      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>`,
     );
   });
   it('Provides a context', async () => {
@@ -78,7 +79,7 @@ describe('LexicalExtensionComposer', () => {
       await Promise.resolve().then();
     });
     expect(container.innerHTML).toEqual(
-      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Initial text</span></p></div>`,
+      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">Initial text</span></p></div>`,
     );
   });
 });

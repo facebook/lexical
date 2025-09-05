@@ -6,6 +6,8 @@
  *
  */
 
+import {describe, expect, it} from 'vitest';
+
 import {deepThemeMergeInPlace} from '../../deepThemeMergeInPlace';
 
 describe('deepThemeMergeInPlace', () => {

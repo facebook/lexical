@@ -14,7 +14,6 @@ import {defineConfig} from 'vite';
 
 import viteMonorepoResolutionPlugin from '../shared/lexicalMonorepoPlugin';
 import viteCopyEsm from './viteCopyEsm';
-import viteCopyExcalidrawAssets from './viteCopyExcalidrawAssets';
 
 const require = createRequire(import.meta.url);
 
@@ -68,7 +67,7 @@ export default defineConfig(({mode}) => ({
       presets: [['@babel/preset-react', {runtime: 'automatic'}]],
     }),
     react(),
-    ...viteCopyExcalidrawAssets(),
+
     viteCopyEsm(),
     commonjs({
       // This is required for React 19 (at least 19.0.0-beta-26f2496093-20240514)

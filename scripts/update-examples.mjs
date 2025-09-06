@@ -1,0 +1,71 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+// @ts-check
+/* eslint-disable no-console */
+import {spawn} from 'child-process-promise';
+import {sync as globSync} from 'glob';
+import * as path from 'node:path';
+import {gt as semverGt} from 'semver';
+
+import {PackageMetadata} from './shared/PackageMetadata.js';
+
+async function main() {
+  const {version} = new PackageMetadata('package.json').packageJson;
+  for (const fn of [
+    'examples',
+    'scripts/__tests__/integration/fixtures',
+  ].flatMap((dir) =>
+    globSync(path.join(dir, '*', 'package.json'), {windowsPathsNoEscape: true}),
+  )) {
+    const pkg = new PackageMetadata(fn);
+    console.log(`\nUpdating example ${pkg.getDirectoryName()}\n`);
+    // assume that npm run update-packages has already updated the version and lexical deps
+    const json = pkg.packageJson;
+    const {lexicalUnreleasedDependencies = {}} = json;
+    let hasUnreleasedDependency = false;
+    for (const [k, v] of Object.entries(lexicalUnreleasedDependencies)) {
+      if (semverGt(version, v)) {
+        delete lexicalUnreleasedDependencies[k];
+        json.dependencies[k] = version;
+      } else {
+        hasUnreleasedDependency = true;
+      }
+    }
+    pkg
+      .sortDependencies('dependencies')
+      .sortDependencies(
+        'lexicalUnreleasedDependencies',
+        lexicalUnreleasedDependencies,
+      )
+      .writeSync();
+    const npm = async (...args) => {
+      console.log(['>', 'npm', ...args].join(' '));
+      try {
+        await spawn('npm', args, {
+          cwd: pkg.resolve(),
+          stdio: 'inherit',
+        });
+      } catch (err) {
+        process.exit(
+          'code' in err && typeof err.code === 'number' ? err.code : 1,
+        );
+      }
+    };
+    await npm('i');
+    await npm(
+      'run',
+      'build',
+      ...(hasUnreleasedDependency
+        ? ['--', '-c', 'vite.config.monorepo.ts']
+        : []),
+    );
+  }
+}
+
+main();

@@ -7,7 +7,7 @@ jobs:
   mac-rich:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['webkit', 'chromium', 'firefox']
         editor-mode: ['rich-text']
         events-mode: ['modern-events']
@@ -22,7 +22,7 @@ jobs:
   mac-plain:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['webkit']
         editor-mode: ['plain-text']
         events-mode: ['modern-events']
@@ -37,7 +37,7 @@ jobs:
   linux:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['modern-events']
@@ -52,7 +52,7 @@ jobs:
   windows:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
@@ -70,7 +70,7 @@ jobs:
   collab-mac:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['webkit']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
@@ -83,7 +83,7 @@ jobs:
   collab-linux:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium', 'firefox']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
@@ -96,7 +96,7 @@ jobs:
   collab-windows:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium', 'firefox']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
@@ -110,7 +110,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium']
         editor-mode: ['rich-text']
         events-mode: ['modern-events']
@@ -127,7 +127,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
@@ -161,7 +161,7 @@ jobs:
   flaky:
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
         events-mode: ['modern-events']

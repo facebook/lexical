@@ -106,7 +106,7 @@
     "update-version": "node ./scripts/updateVersion",
     "update-tsconfig": "node ./scripts/update-tsconfig",
     "update-flowconfig": "node ./scripts/update-flowconfig",
-    "update-unreleased-dependencies": "node ./scripts/update-unreleased-dependencies",
+    "update-examples": "node ./scripts/update-examples.mjs",
     "create-www-stubs": "node ./scripts/create-www-stubs",
     "update-packages": "npm run update-version && npm run update-tsconfig && npm run update-flowconfig && npm run create-docs && npm run create-www-stubs",
     "postversion": "node ./scripts/npm/postversion",
@@ -197,6 +197,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "semver": "^7.7.2",
     "yjs": "^13.5.42"
   }
 }

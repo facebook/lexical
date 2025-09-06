@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.11.0]
+        node-version: [22.19.0]
     env:
       CI: true
     steps:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.18.0]
+        node-version: [20.19.5]
         override-react-version: ['', 'beta']
     env:
       CI: true

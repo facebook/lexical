@@ -8,6 +8,13 @@
 
 import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
+import {
+  batch,
+  effect,
+  getPeerDependencyFromEditor,
+  namedSignals,
+  ReadonlySignal,
+} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
   $isRangeSelection,
@@ -18,10 +25,13 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
+  defineExtension,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
   REDO_COMMAND,
+  safeCast,
   UNDO_COMMAND,
 } from 'lexical';
 
@@ -223,7 +233,7 @@ function isTextNodeUnchanged(
 
 function createMergeActionGetter(
   editor: LexicalEditor,
-  delay: number,
+  delayOrStore: number | ReadonlySignal<number>,
 ): (
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
@@ -287,6 +297,8 @@ function createMergeActionGetter(
         return DISCARD_HISTORY_CANDIDATE;
       }
 
+      const delay =
+        typeof delayOrStore === 'number' ? delayOrStore : delayOrStore.peek();
       if (
         shouldPushHistory === false &&
         changeType !== OTHER &&
@@ -392,7 +404,7 @@ function clearHistory(historyState: HistoryState) {
 export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
-  delay: number,
+  delay: number | ReadonlySignal<number>,
 ): () => void {
   const getMergeAction = createMergeActionGetter(editor, delay);
 
@@ -502,3 +514,89 @@ export function createEmptyHistoryState(): HistoryState {
     undoStack: [],
   };
 }
+
+export interface HistoryConfig {
+  /**
+   * The time (in milliseconds) the editor should delay generating a new history stack,
+   * instead of merging the current changes with the current stack. The default is 300ms.
+   */
+  delay: number;
+  /**
+   * The initial history state, the default is {@link createEmptyHistoryState}.
+   */
+  createInitialHistoryState: (editor: LexicalEditor) => HistoryState;
+  /**
+   * Whether history is disabled or not
+   */
+  disabled: boolean;
+}
+
+/**
+ * Registers necessary listeners to manage undo/redo history stack and related
+ * editor commands, via the \@lexical/history module.
+ */
+
+export const HistoryExtension = defineExtension({
+  build: (editor, {delay, createInitialHistoryState, disabled}) =>
+    namedSignals({
+      delay,
+      disabled,
+      historyState: createInitialHistoryState(editor),
+    }),
+  config: safeCast<HistoryConfig>({
+    createInitialHistoryState: createEmptyHistoryState,
+    delay: 300,
+    disabled: typeof window === 'undefined',
+  }),
+  name: '@lexical/history/History',
+  register: (editor, config, state) => {
+    const stores = state.getOutput();
+    return effect(() =>
+      stores.disabled.value
+        ? undefined
+        : registerHistory(editor, stores.historyState.value, stores.delay),
+    );
+  },
+});
+
+function getHistoryPeer(editor: LexicalEditor | null | undefined) {
+  return editor
+    ? getPeerDependencyFromEditor<typeof HistoryExtension>(
+        editor,
+        HistoryExtension.name,
+      )
+    : null;
+}
+
+/**
+ * Registers necessary listeners to manage undo/redo history stack and related
+ * editor commands, via the \@lexical/history module, only if the parent editor
+ * has a history plugin implementation.
+ */
+export const SharedHistoryExtension = defineExtension({
+  dependencies: [
+    configExtension(HistoryExtension, {
+      createInitialHistoryState: () => {
+        throw new Error('SharedHistory did not inherit parent history');
+      },
+      disabled: true,
+    }),
+  ],
+  name: '@lexical/history/SharedHistory',
+  register(editor, _config, state) {
+    const {output} = state.getDependency(HistoryExtension);
+    const parentPeer = getHistoryPeer(editor._parentEditor);
+    if (!parentPeer) {
+      return () => {};
+    }
+    const parentOutput = parentPeer.output;
+    return effect(() =>
+      batch(() => {
+        output.delay.value = parentOutput.delay.value;
+        output.historyState.value = parentOutput.historyState.value;
+        // Note that toggling the parent history will force this to be changed
+        output.disabled.value = parentOutput.disabled.value;
+      }),
+    );
+  },
+});

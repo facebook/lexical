@@ -6,10 +6,13 @@
  *
  */
 
-import {
+export {
+  HashtagExtension,
+  type HashtagExtensionConfig,
+  registerLexicalHashtag,
+} from './LexicalHashtagExtension';
+export {
   $createHashtagNode,
   $isHashtagNode,
   HashtagNode,
 } from './LexicalHashtagNode';
-
-export {$createHashtagNode, $isHashtagNode, HashtagNode};

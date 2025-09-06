@@ -34,7 +34,7 @@ jobs:
       - run: |
           npm i
           for x in examples/*/ scripts/__tests__/integration/fixtures/*/; do
-            pushd "$x" && npm i && npm run build && popd
+            npm run update-unreleased-dependencies "$x" && pushd "$x" && npm i && npm run build && popd
           done
       - uses: stefanzweifel/git-auto-commit-action@v6
         with:

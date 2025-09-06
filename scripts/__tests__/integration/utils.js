@@ -70,13 +70,16 @@ exports.expectSuccessfulExec = expectSuccessfulExec;
 async function buildExample({packageJson, exampleDir}) {
   let hasPlaywright = false;
   const depsMap = packagesManager.computedMonorepoDependencyMap(
-    ['dependencies', 'devDependencies', 'peerDependencies'].flatMap(
-      (depType) => {
-        const deps = packageJson[depType] || {};
-        hasPlaywright ||= '@playwright/test' in deps;
-        return Object.keys(deps);
-      },
-    ),
+    [
+      'dependencies',
+      'devDependencies',
+      'peerDependencies',
+      'lexicalUnreleasedDependencies',
+    ].flatMap((depType) => {
+      const deps = packageJson[depType] || {};
+      hasPlaywright ||= '@playwright/test' in deps;
+      return Object.keys(deps);
+    }),
   );
   const installDeps = [...depsMap.values()].map((pkg) =>
     path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),

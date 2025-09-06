@@ -10,21 +10,24 @@
 /* eslint-disable no-console */
 import {spawn} from 'child-process-promise';
 import {sync as globSync} from 'glob';
+import minimist from 'minimist';
 import * as path from 'node:path';
 import {gt as semverGt} from 'semver';
 
 import {PackageMetadata} from './shared/PackageMetadata.js';
 
 async function main() {
+  const argv = minimist(process.argv.slice(2));
   const {version} = new PackageMetadata('package.json').packageJson;
-  for (const fn of [
-    'examples',
-    'scripts/__tests__/integration/fixtures',
-  ].flatMap((dir) =>
-    globSync(path.join(dir, '*', 'package.json'), {windowsPathsNoEscape: true}),
+  const paths =
+    argv._.length > 0
+      ? argv._
+      : ['examples/*', 'scripts/__tests__/integration/fixtures/*'];
+  for (const fn of paths.flatMap((dir) =>
+    globSync(path.join(dir, 'package.json'), {windowsPathsNoEscape: true}),
   )) {
     const pkg = new PackageMetadata(fn);
-    console.log(`\nUpdating example ${pkg.getDirectoryName()}\n`);
+    console.log(`\nUpdating example ${path.dirname(fn)}\n`);
     // assume that npm run update-packages has already updated the version and lexical deps
     const json = pkg.packageJson;
     const {lexicalUnreleasedDependencies = {}} = json;
@@ -52,6 +55,7 @@ async function main() {
           stdio: 'inherit',
         });
       } catch (err) {
+        console.error(`\nFailed to update example ${path.dirname(fn)}`);
         process.exit(
           'code' in err && typeof err.code === 'number' ? err.code : 1,
         );

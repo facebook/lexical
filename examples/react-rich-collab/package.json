@@ -31,6 +31,6 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "typescript": "^5.2.2",
-    "vite": "^5.1.4"
+    "vite": "^7.1.4"
   }
 }

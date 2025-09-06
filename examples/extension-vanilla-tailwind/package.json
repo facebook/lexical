@@ -6,11 +6,15 @@
   "scripts": {
     "dev": "vite",
     "monorepo:dev": "vite -c vite.config.monorepo.ts",
-    "build": "vite -c vite.config.monorepo.ts build && echo 'TODO #7706: remove monorepo config after merge'",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "stackblitz": {
     "startCommand": "npm i && npm run monorepo:dev"
+  },
+  "lexicalUnreleasedDependencies": {
+    "@lexical/extension": "0.35.0",
+    "@lexical/tailwind": "0.35.0"
   },
   "dependencies": {
     "@lexical/history": "0.35.0",

@@ -106,6 +106,7 @@
     "update-version": "node ./scripts/updateVersion",
     "update-tsconfig": "node ./scripts/update-tsconfig",
     "update-flowconfig": "node ./scripts/update-flowconfig",
+    "update-unreleased-dependencies": "node ./scripts/update-unreleased-dependencies",
     "create-www-stubs": "node ./scripts/create-www-stubs",
     "update-packages": "npm run update-version && npm run update-tsconfig && npm run update-flowconfig && npm run create-docs && npm run create-www-stubs",
     "postversion": "node ./scripts/npm/postversion",

@@ -48,11 +48,17 @@ export default function DateTimeComponent({
   const ref = useRef(null);
   const [selected, setSelected] = useState(dateTime);
   const [includeTime, setIncludeTime] = useState(() => {
+    if (dateTime === undefined) {
+      return false;
+    }
     const hours = dateTime?.getHours();
     const minutes = dateTime?.getMinutes();
     return hours !== 0 || minutes !== 0;
   });
   const [timeValue, setTimeValue] = useState(() => {
+    if (dateTime === undefined) {
+      return '00:00';
+    }
     const hours = dateTime?.getHours();
     const minutes = dateTime?.getMinutes();
     if (hours !== 0 || minutes !== 0) {

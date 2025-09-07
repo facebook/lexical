@@ -58,14 +58,16 @@ function $convertDateTimeElement(
     return {node};
   }
   const gDocsDateTimePayload = domNode.getAttribute('data-rich-links');
-  if (gDocsDateTimePayload) {
-    const parsed = JSON.parse(gDocsDateTimePayload);
-    const node = $createDateTimeNode(
-      new Date(Date.parse(parsed?.dat_df?.dfie_dt || '')),
-    );
-    return {node};
+  if (!gDocsDateTimePayload) {
+    return null;
   }
-  return null;
+  const parsed = JSON.parse(gDocsDateTimePayload);
+  const parsedDate = Date.parse(parsed?.dat_df?.dfie_dt || '');
+  if (isNaN(parsedDate)) {
+    return null;
+  }
+  const node = $createDateTimeNode(new Date(parsedDate));
+  return {node};
 }
 
 const dateTimeState = createState('dateTime', {

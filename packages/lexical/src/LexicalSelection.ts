@@ -2169,7 +2169,7 @@ const doesContainEmoji: (text: string) => boolean = (() => {
     ) {
       return test;
     }
-  } catch (e) {
+  } catch (_e) {
     // SyntaxError
   }
   // fallback, surrogate pair already checked
@@ -3097,8 +3097,8 @@ export function updateDOMSelection(
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
         : domSelection.rangeCount > 0
-        ? domSelection.getRangeAt(0)
-        : null;
+          ? domSelection.getRangeAt(0)
+          : null;
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
       if (selectionTarget instanceof Text) {

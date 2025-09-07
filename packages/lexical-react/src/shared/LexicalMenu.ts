@@ -373,8 +373,8 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex === null
                 ? 0
                 : selectedIndex !== options.length - 1
-                ? selectedIndex + 1
-                : 0;
+                  ? selectedIndex + 1
+                  : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -402,8 +402,8 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex === null
                 ? options.length - 1
                 : selectedIndex !== 0
-                ? selectedIndex - 1
-                : options.length - 1;
+                  ? selectedIndex - 1
+                  : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {

@@ -695,8 +695,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -769,8 +769,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -840,8 +840,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -915,8 +915,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -988,8 +988,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -1061,8 +1061,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 

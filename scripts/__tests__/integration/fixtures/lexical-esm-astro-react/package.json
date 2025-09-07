@@ -19,9 +19,29 @@
     "astro": "^5.3.0",
     "lexical": "0.35.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.4.2"
+    "react-dom": "^18.2.0"
   },
   "sideEffects": false,
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "[object Object]": {
+    "0": "p",
+    "1": "e",
+    "2": "e",
+    "3": "r",
+    "4": "D",
+    "5": "e",
+    "6": "p",
+    "7": "e",
+    "8": "n",
+    "9": "d",
+    "10": "e",
+    "11": "n",
+    "12": "c",
+    "13": "i",
+    "14": "e",
+    "15": "s"
+  },
   "exports": {}
 }

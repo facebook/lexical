@@ -53,6 +53,7 @@ type SerializedCustomTextNode = Spread<
 >;
 
 class CustomTextNode extends TextNode {
+  /** @internal */
   declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
   __classes: Set<string>;

@@ -25,6 +25,7 @@ import {
 } from '@lexical/react/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import prettier from '@prettier/sync';
 import {
   $isRangeSelection,
   createEditor,
@@ -43,8 +44,6 @@ import {
   Spread,
   TextNode,
 } from 'lexical';
-import path from 'path';
-import * as prettier from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -58,9 +57,7 @@ import {
 } from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
-const prettierConfig = prettier.resolveConfig.sync(
-  path.resolve(__dirname, '../../../../.prettierrc'),
-);
+const prettierConfig = prettier.resolveConfig(__filename);
 
 type TestEnv = {
   readonly container: HTMLDivElement;

@@ -47,9 +47,27 @@
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
     "lexical": "0.35.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.9.2",
     "vite": "^7.1.4",
     "wxt": "^0.20.11"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "[object Object]": {
+    "0": "p",
+    "1": "e",
+    "2": "e",
+    "3": "r",
+    "4": "D",
+    "5": "e",
+    "6": "p",
+    "7": "e",
+    "8": "n",
+    "9": "d",
+    "10": "e",
+    "11": "n",
+    "12": "c",
+    "13": "i",
+    "14": "e",
+    "15": "s"
+  }
 }

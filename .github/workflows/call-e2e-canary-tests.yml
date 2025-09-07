@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        node-version: [20.19.5]
+        node-version: [20.19.4]
         browser: ['chromium']
         editor-mode: ['rich-text']
         events-mode: ['modern-events']

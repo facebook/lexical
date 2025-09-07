@@ -24,13 +24,14 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "@vercel/analytics": "^1.0.1",
     "docusaurus-plugin-internaldocs-fb": "1.19.2",
-    "docusaurus-plugin-typedoc": "^0.22.0",
+    "docusaurus-plugin-typedoc": "^1.4.2",
     "fs-extra": "^10.0.0",
     "mermaid": "^11.6.0",
     "prism-react-renderer": "^2.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typedoc-plugin-markdown": "^3.17.1",
+    "typedoc-plugin-markdown": "^4.8.1",
+    "typedoc-plugin-no-inherit": "^1.6.1",
     "typedoc-plugin-rename-defaults": "^0.7.0",
     "unist-util-visit": "^5.0.0"
   },
@@ -38,8 +39,8 @@
     "buffer": "^6.0.3",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "tailwindcss": "^3.3.3",
-    "typedoc": "^0.25.12",
-    "typescript": "^5.4.5",
+    "typedoc": "^0.28.10",
+    "typescript": "^5.9.2",
     "webpack": "^5.76.0"
   },
   "browserslist": {
@@ -53,5 +54,23 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "[object Object]": {
+    "0": "p",
+    "1": "e",
+    "2": "e",
+    "3": "r",
+    "4": "D",
+    "5": "e",
+    "6": "p",
+    "7": "e",
+    "8": "n",
+    "9": "d",
+    "10": "e",
+    "11": "n",
+    "12": "c",
+    "13": "i",
+    "14": "e",
+    "15": "s"
   }
 }

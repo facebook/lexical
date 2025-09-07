@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import prettier from 'prettier';
+import prettier from '@prettier/sync';
 import {expect} from 'vitest';
 
 // This tag function is just used to trigger prettier auto-formatting.

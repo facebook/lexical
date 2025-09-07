@@ -51,7 +51,6 @@ export function getStyleObjectFromRawCSS(css: string): StyleObject {
   return styleObject || NO_STYLE;
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type Prettify<T> = {[K in keyof T]: T[K]} & {};
 
 export type StyleObject = Prettify<{

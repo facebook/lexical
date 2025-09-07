@@ -127,10 +127,11 @@ export function $wrapSelectionInMarkNode(
   }
   // Make selection collapsed at the end
   if ($isElementNode(lastCreatedMarkNode)) {
-    // eslint-disable-next-line no-unused-expressions
-    isBackward
-      ? lastCreatedMarkNode.selectStart()
-      : lastCreatedMarkNode.selectEnd();
+    if (isBackward) {
+      lastCreatedMarkNode.selectStart();
+    } else {
+      lastCreatedMarkNode.selectEnd();
+    }
   }
 }
 

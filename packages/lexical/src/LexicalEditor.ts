@@ -63,11 +63,10 @@ export type KlassConstructor<Cls extends GenericConstructor<any>> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GenericConstructor<T> = new (...args: any[]) => T;
 
-export type Klass<T extends LexicalNode> = InstanceType<
-  T['constructor']
-> extends T
-  ? T['constructor']
-  : GenericConstructor<T> & T['constructor'];
+export type Klass<T extends LexicalNode> =
+  InstanceType<T['constructor']> extends T
+    ? T['constructor']
+    : GenericConstructor<T> & T['constructor'];
 
 export type EditorThemeClassName = string;
 
@@ -634,6 +633,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 }
 
 export class LexicalEditor {
+  /** @internal */
   declare ['constructor']: KlassConstructor<typeof LexicalEditor>;
 
   /** The version with build identifiers for this editor (since 0.17.1) */

@@ -179,7 +179,7 @@ export function isSelectionWithinEditor(
       !isSelectionCapturedInDecoratorInput(anchorDOM) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -1341,8 +1341,8 @@ export function getDOMOwnerDocument(
   return isDOMDocumentNode(target)
     ? target
     : isHTMLElement(target)
-    ? target.ownerDocument
-    : null;
+      ? target.ownerDocument
+      : null;
 }
 
 export function scrollIntoViewIfNeeded(

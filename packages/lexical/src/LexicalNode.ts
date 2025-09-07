@@ -209,11 +209,13 @@ export type StaticNodeConfigRecord<
  *      // ? 'text'
  * ```
  */
-export type GetStaticNodeType<T extends LexicalNode> = ReturnType<
-  T[typeof PROTOTYPE_CONFIG_METHOD]
-> extends StaticNodeConfig<T, infer Type>
-  ? Type
-  : string;
+export type GetStaticNodeType<T extends LexicalNode> =
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends StaticNodeConfig<
+    T,
+    infer Type
+  >
+    ? Type
+    : string;
 
 /**
  * The most precise type we can infer for the JSON that will
@@ -380,7 +382,7 @@ export type DOMExportOutput = {
 export type NodeKey = string;
 
 export class LexicalNode {
-  // Allow us to look up the type including static props
+  /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
   /** @internal */
   __type: string;

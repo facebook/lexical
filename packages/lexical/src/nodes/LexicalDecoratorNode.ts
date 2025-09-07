@@ -21,6 +21,7 @@ export interface DecoratorNode<T> {
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DecoratorNode<T> extends LexicalNode {
+  /** @internal */
   declare ['constructor']: KlassConstructor<typeof DecoratorNode<T>>;
 
   /**

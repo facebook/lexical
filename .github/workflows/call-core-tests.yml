@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.19.5]
+        node-version: [20.19.4]
         override-react-version: ['', 'beta']
     env:
       CI: true

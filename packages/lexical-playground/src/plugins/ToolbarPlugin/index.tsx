@@ -102,6 +102,7 @@ import {
   formatQuote,
 } from './utils';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const rootTypeToRootName = {
   root: 'Root',
   table: 'Table',
@@ -694,8 +695,8 @@ export default function ToolbarPlugin({
         $isElementNode(matchingParent)
           ? matchingParent.getFormatType()
           : $isElementNode(node)
-          ? node.getFormatType()
-          : parent?.getFormatType() || 'left',
+            ? node.getFormatType()
+            : parent?.getFormatType() || 'left',
       );
     }
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {

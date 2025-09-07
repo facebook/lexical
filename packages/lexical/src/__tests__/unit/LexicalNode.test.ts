@@ -142,7 +142,7 @@ describe('LexicalNode tests', () => {
           const validNode = new TextNode(textNode.__text, textNode.__key);
           expect(textNode.getLatest()).toBe(textNode);
           expect(validNode.getLatest()).toBe(textNode);
-          expect(() => new TestNode(textNode.__key)).toThrowError(
+          expect(() => new TestNode(textNode.__key)).toThrow(
             /TestNode.*re-use key.*TextNode/,
           );
         });

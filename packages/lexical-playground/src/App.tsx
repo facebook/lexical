@@ -199,8 +199,8 @@ function App(): JSX.Element {
         $initialEditorState: isCollab
           ? null
           : emptyEditor
-          ? undefined
-          : $prepopulatedRichText,
+            ? undefined
+            : $prepopulatedRichText,
         html: {import: buildImportMap()},
         name: '@lexical/playground',
         namespace: 'Playground',

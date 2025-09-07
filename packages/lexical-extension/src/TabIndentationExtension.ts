@@ -95,8 +95,8 @@ export function registerTabIndentation(
           typeof maxIndent === 'number'
             ? maxIndent
             : maxIndent
-            ? maxIndent.peek()
-            : null;
+              ? maxIndent.peek()
+              : null;
 
         if (currentMaxIndent == null) {
           return false;

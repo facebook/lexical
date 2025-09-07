@@ -70,9 +70,10 @@ describe('defineExtension', () => {
 
 describe('declarePeerDependency', () => {
   it('validates the type argument', () => {
-    const other = defineExtension({config: {other: true}, name: 'other'});
-    const dep = declarePeerDependency<typeof other>('other');
-    assertType<NormalizedPeerDependency<typeof other>>(dep);
+    // used only as a type
+    const _other = defineExtension({config: {other: true}, name: 'other'});
+    const dep = declarePeerDependency<typeof _other>('other');
+    assertType<NormalizedPeerDependency<typeof _other>>(dep);
     expect(dep).toEqual(['other', undefined]);
     // @ts-expect-error -- name doesn't match
     declarePeerDependency<typeof other>('wrong');

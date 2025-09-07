@@ -27,6 +27,15 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 
 import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
@@ -88,10 +97,10 @@ class InlineDecoratorNode extends DecoratorNode<string> {
 
 describe('LexicalNode tests', () => {
   beforeAll(() => {
-    jest.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
+    vi.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
   });
   afterAll(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
   initializeUnitTest(
     (testEnv) => {
@@ -133,7 +142,7 @@ describe('LexicalNode tests', () => {
           const validNode = new TextNode(textNode.__text, textNode.__key);
           expect(textNode.getLatest()).toBe(textNode);
           expect(validNode.getLatest()).toBe(textNode);
-          expect(() => new TestNode(textNode.__key)).toThrowError(
+          expect(() => new TestNode(textNode.__key)).toThrow(
             /TestNode.*re-use key.*TextNode/,
           );
         });
@@ -1174,9 +1183,9 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.replace() within canBeEmpty: false', async () => {
         const {editor} = testEnv;
 
-        jest
-          .spyOn(TestInlineElementNode.prototype, 'canBeEmpty')
-          .mockReturnValue(false);
+        vi.spyOn(TestInlineElementNode.prototype, 'canBeEmpty').mockReturnValue(
+          false,
+        );
 
         await editor.update(() => {
           textNode = $createTextNode('Hello');

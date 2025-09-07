@@ -32,7 +32,7 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
 
       try {
         parsedData = JSON.parse(data);
-      } catch (e) {
+      } catch (_e) {
         return;
       }
 
@@ -53,11 +53,10 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
               text,
               selStart,
               selLength,
-              formatCommand,
+              _formatCommand,
             ] = args;
             // TODO: we should probably handle formatCommand somehow?
-            // eslint-disable-next-line no-unused-expressions
-            formatCommand;
+            // formatCommand;
             editor.update(() => {
               const selection = $getSelection();
 

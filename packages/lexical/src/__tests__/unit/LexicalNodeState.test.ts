@@ -22,6 +22,7 @@ import {
   RootNode,
   StateValueOrUpdater,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {nodeStatesAreEquivalent} from '../../LexicalNodeState';
 import {initializeUnitTest, invariant} from '../utils';
@@ -29,11 +30,10 @@ import {TestNode} from './LexicalNode.test';
 
 // https://www.totaltypescript.com/how-to-test-your-types
 type Expect<T extends true> = T;
-type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
-  ? 1
-  : 2
-  ? true
-  : false;
+type Equal<X, Y> =
+  (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
+    ? true
+    : false;
 
 const numberState = createState('numberState', {
   parse: (v) => (typeof v === 'number' ? v : 0),

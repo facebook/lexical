@@ -16,6 +16,7 @@ import {
   BaseSelection,
   LexicalNode,
 } from 'lexical';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 import {
   connectClients,

@@ -63,7 +63,7 @@ export function loadCodeLanguage(
     if (languageInfo) {
       // in case we arrive here concurrently (not yet loaded language is loaded twice)
       // shiki's synchronous checks make sure to load it only once
-      shiki.loadLanguage(languageInfo.import()).then(() => {
+      return shiki.loadLanguage(languageInfo.import()).then(() => {
         // here we know that the language is loaded
         // make sure the code is highlighed with the correct language
         if (editor && codeNodeKey) {
@@ -94,7 +94,7 @@ export function isCodeThemeLoaded(theme: string) {
   return shiki.getLoadedThemes().includes(themeId);
 }
 
-export async function loadCodeTheme(
+export function loadCodeTheme(
   theme: string,
   editor?: LexicalEditor,
   codeNodeKey?: NodeKey,
@@ -102,7 +102,7 @@ export async function loadCodeTheme(
   if (!isCodeThemeLoaded(theme)) {
     const themeInfo = bundledThemesInfo.find((info) => info.id === theme);
     if (themeInfo) {
-      shiki.loadTheme(themeInfo.import()).then(() => {
+      return shiki.loadTheme(themeInfo.import()).then(() => {
         if (editor && codeNodeKey) {
           editor.update(() => {
             const codeNode = $getNodeByKey(codeNodeKey);

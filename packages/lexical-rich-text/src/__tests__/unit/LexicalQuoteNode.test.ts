@@ -9,6 +9,7 @@
 import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
 import {$createRangeSelection, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',

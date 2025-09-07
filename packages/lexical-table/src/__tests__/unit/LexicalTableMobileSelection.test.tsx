@@ -22,6 +22,7 @@ import {
   $isRangeSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 // Polyfill PointerEvent for Jest environment
 interface PointerEventInit extends EventInit {
@@ -30,20 +31,19 @@ interface PointerEventInit extends EventInit {
   pointerType?: string;
 }
 
-(
-  global as unknown as {PointerEvent: unknown}
-).PointerEvent = class PointerEvent extends Event {
-  button: number;
-  buttons: number;
-  pointerType: string;
+(global as unknown as {PointerEvent: unknown}).PointerEvent =
+  class PointerEvent extends Event {
+    button: number;
+    buttons: number;
+    pointerType: string;
 
-  constructor(type: string, options: PointerEventInit = {}) {
-    super(type, options);
-    this.button = options.button || 0;
-    this.buttons = options.buttons || 1;
-    this.pointerType = options.pointerType || 'mouse';
-  }
-};
+    constructor(type: string, options: PointerEventInit = {}) {
+      super(type, options);
+      this.button = options.button || 0;
+      this.buttons = options.buttons || 1;
+      this.pointerType = options.pointerType || 'mouse';
+    }
+  };
 
 /**
  * Test suite for mobile/touch table selection behavior.

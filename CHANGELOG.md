@@ -1,3 +1,24 @@
+## v0.35.0 (2025-09-04)
+
+- lexical-history Add Missing Argument for DispatchCommand in UndoRedo Docs Example (#7795) Lithika Damnod
+- lexical-markdown Bug Fix Allow any characters in markdown link text (#7735) Simon
+- lexical Fix insert into existing paragraph node if selection is on parent element (#7794) James Fitzsimmons
+- lexical Chore Update flow-bin to 0.280.0 (#7785) Daniel Teo
+- lexical Bug Fix Correct exit direction from decorator nodes in RTL (#7772) Noam Zaks
+- lexical-react Fix the context menu event listener element (#7778) Ivaylo Pavlov
+- Chore Update flow suppressions to use error code (#7770) Sam Zhou
+- lexical-markdown Formatted textmatch fix (#7769) MarekKuncik
+- lexical Feature allow ElementNode direction to be overridden (#7727) James Fitzsimmons
+- lexicallexical-code Refactor remove unnecessary assertion (#7760) Noritaka Kobayashi
+- lexical-playgroundlexical-reactlexical-table Refactor remove unnecessary assertion (#7761) Noritaka Kobayashi
+- lexical-code-shiki Refactor remove unnecessary assertion (#7762) Noritaka Kobayashi
+- lexical-playground Refactor remove unnecessary await in e2e test (#7759) Noritaka Kobayashi
+- lexical-react Bug Fix Add config transform inheritance to LexicalNestedComposer (#7757) Bob Ippolito
+- lexical-playgroundexamples Refactor remove redundant fragment (#7755) Noritaka Kobayashi
+- Update examples for v0.34.0 (#7747) Bob Ippolito
+- v0.34.0 monthly release (#7746) Bob Ippolito
+- v0.34.0 Lexical GitHub Actions Bot
+
 ## v0.34.0 (2025-08-07)
 
 -  Chore Add a post-release action to update the examples (#7744) Bob Ippolito

@@ -53,6 +53,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, test, vi} from 'vitest';
 
 import {
   $setAnchorPoint,
@@ -90,12 +91,6 @@ interface ExpectedSelection {
 }
 
 initializeClipboard();
-
-jest.mock('shared/environment', () => {
-  const originalModule = jest.requireActual('shared/environment');
-
-  return {...originalModule, IS_FIREFOX: true};
-});
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
   const rect = {
@@ -2493,7 +2488,7 @@ describe('LexicalSelection tests', () => {
           });
 
           const newStyle = {
-            color: jest.fn(
+            color: vi.fn(
               (current: string | null, target: LexicalNode | RangeSelection) =>
                 nextColor,
             ),

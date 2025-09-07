@@ -26,6 +26,7 @@ import {
   LexicalEditor,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalTablePlugin', () => {
   let editor: LexicalEditor;

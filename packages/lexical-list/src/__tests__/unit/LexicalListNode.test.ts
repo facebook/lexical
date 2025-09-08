@@ -8,6 +8,7 @@
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {$getRoot, ParagraphNode, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
 import {describe, expect, test} from 'vitest';
 
 import {
@@ -299,6 +300,32 @@ describe('LexicalListNode tests', () => {
           }
         }
       });
+    });
+
+    test('Should update list children when switching from checklist to bullet', async () => {
+      const {editor} = testEnv;
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const root = $getRoot().clear();
+          root.append($createListNode('check').append($createListItemNode()));
+        });
+      });
+
+      expect(testEnv.innerHTML).toEqual(
+        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br></li></ul>',
+      );
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          listNode.setListType('bullet');
+        });
+      });
+
+      expect(testEnv.innerHTML).toEqual(
+        '<ul dir="auto"><li value="1"><br></li></ul>',
+      );
     });
 
     test('$createListNode()', async () => {

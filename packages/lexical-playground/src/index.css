@@ -1397,10 +1397,6 @@ i.chevron-down {
   cursor: pointer;
 }
 
-.action-button:focus {
-  outline: 2px solid black;
-}
-
 .action-button:hover {
   background-color: #ddd;
   color: #000;
@@ -1516,7 +1512,7 @@ button.action-button:disabled {
 }
 
 .toolbar .toolbar-item:focus {
-  outline: 2px solid black;
+  outline: 2px solid rgb(60, 132, 244);
 }
 
 button.toolbar-item {

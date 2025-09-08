@@ -57,7 +57,17 @@ function $convertDateTimeElement(
     const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
     return {node};
   }
-  return null;
+  const gDocsDateTimePayload = domNode.getAttribute('data-rich-links');
+  if (!gDocsDateTimePayload) {
+    return null;
+  }
+  const parsed = JSON.parse(gDocsDateTimePayload);
+  const parsedDate = Date.parse(parsed?.dat_df?.dfie_dt || '');
+  if (isNaN(parsedDate)) {
+    return null;
+  }
+  const node = $createDateTimeNode(new Date(parsedDate));
+  return {node};
 }
 
 const dateTimeState = createState('dateTime', {
@@ -71,7 +81,11 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
       extends: DecoratorNode,
       importDOM: buildImportMap({
         span: (domNode) =>
-          domNode.getAttribute('data-lexical-datetime') !== null
+          domNode.getAttribute('data-lexical-datetime') !== null ||
+          // GDocs Support
+          (domNode.getAttribute('data-rich-links') !== null &&
+            JSON.parse(domNode.getAttribute('data-rich-links') || '{}').type ===
+              'date')
             ? {
                 conversion: $convertDateTimeElement,
                 priority: 2,

@@ -287,6 +287,7 @@ const NodeContextMenuPlugin = forwardRef<
                         },
                         tabIndex: activeIndex === index ? 0 : -1,
                       })}
+                      key={item.key}
                     />
                   );
                 } else if (item.type === 'separator') {
@@ -299,6 +300,7 @@ const NodeContextMenuPlugin = forwardRef<
                         },
                         tabIndex: activeIndex === index ? 0 : -1,
                       })}
+                      key={item.key}
                     />
                   );
                 }

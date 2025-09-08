@@ -26,6 +26,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "cross-env": "^7.0.3",
+    "rollup-plugin-copy": "^3.5.0",
     "tailwindcss": "^4.1.13",
     "typescript": "5.4.5",
     "vite": "^7.1.4",

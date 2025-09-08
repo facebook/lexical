@@ -17,23 +17,5 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/shared"
   },
-  "sideEffects": false,
-  "[object Object]": {
-    "0": "p",
-    "1": "e",
-    "2": "e",
-    "3": "r",
-    "4": "D",
-    "5": "e",
-    "6": "p",
-    "7": "e",
-    "8": "n",
-    "9": "d",
-    "10": "e",
-    "11": "n",
-    "12": "c",
-    "13": "i",
-    "14": "e",
-    "15": "s"
-  }
+  "sideEffects": false
 }

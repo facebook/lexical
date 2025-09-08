@@ -182,9 +182,9 @@ function updateDependencies(pkg) {
     }
   });
   pkg
-    .sortDependencies(packageJson, 'dependencies', dependencies)
-    .sortDependencies(packageJson, 'devDependencies', devDependencies)
-    .sortDependencies(packageJson, 'peerDependencies', peerDependencies);
+    .sortDependencies('dependencies', dependencies)
+    .sortDependencies('devDependencies', devDependencies)
+    .sortDependencies('peerDependencies', peerDependencies);
 }
 
 updateVersion();

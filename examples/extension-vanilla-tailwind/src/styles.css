@@ -8,10 +8,7 @@
 
 @import 'tailwindcss';
 /*
-This doesn't work with Tailwind 4 in the stackblitz environment yet so this is
-copied into src/stackblitz-workaround/stackblitz-workaround.ts
-
-See also: https://github.com/tailwindlabs/tailwindcss/issues/18418
+TODO #7706: update @source after npm release of v0.36.0
 
 In a normal project this would probably look like:
 @source "../node_modules/lexical-tailwind"

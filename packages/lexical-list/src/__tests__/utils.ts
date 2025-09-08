@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {expect} from '@playwright/test';
-import prettier from 'prettier';
+import prettier from '@prettier/sync';
+import {expect} from 'vitest';
 
 // This tag function is just used to trigger prettier auto-formatting.
 // (https://prettier.io/blog/2020/08/24/2.1.0.html#api)

@@ -20,6 +20,7 @@ import {
   $insertNodes,
   $isRangeSelection,
 } from 'lexical';
+import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,

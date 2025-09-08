@@ -32,6 +32,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {
   INSERT_UNORDERED_LIST_COMMAND,
@@ -53,7 +54,7 @@ describe('@lexical/list tests', () => {
     // @ts-ignore
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // Shared instance across tests

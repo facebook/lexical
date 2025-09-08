@@ -30,6 +30,7 @@ import {
   SerializedParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, it, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',

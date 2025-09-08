@@ -67,7 +67,7 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:@lexical/all',
       ],
-      files: ['**/*.ts', '**/*.tsx'],
+      files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
       parser: '@typescript-eslint/parser',
       parserOptions: {
         sourceType: 'module',
@@ -90,7 +90,12 @@ module.exports = {
         '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [
           ERROR,
-          {args: 'none', argsIgnorePattern: '^_', varsIgnorePattern: '^_'},
+          {
+            args: 'none',
+            argsIgnorePattern: '^_',
+            caughtErrorsIgnorePattern: '^_',
+            varsIgnorePattern: '^_',
+          },
         ],
         'header/header': [2, 'scripts/www/headerTemplate.js'],
       },

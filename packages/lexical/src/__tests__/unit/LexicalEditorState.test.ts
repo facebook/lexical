@@ -14,6 +14,7 @@ import {
   ParagraphNode,
   TextNode,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {EditorState} from '../../LexicalEditorState';
 import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';

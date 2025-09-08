@@ -250,7 +250,7 @@ function useYjsCollaborationInternal<T extends BaseBinding>(
   const disconnect = useCallback(() => {
     try {
       provider.disconnect();
-    } catch (e) {
+    } catch (_e) {
       // Do nothing
     }
   }, [provider]);

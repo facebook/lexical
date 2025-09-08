@@ -52,6 +52,7 @@ import {
   SiblingCaret,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $assertRangeSelection,
@@ -1205,8 +1206,8 @@ describe('LexicalCaret', () => {
                     anchorBias === 'outside' && focusBias === 'outside'
                       ? []
                       : (anchorBias === 'inside') === (direction === 'next')
-                      ? [{caret: {offset: 0}, distance: size}]
-                      : [{caret: {offset: size}, distance: -size}],
+                        ? [{caret: {offset: 0}, distance: size}]
+                        : [{caret: {offset: size}, distance: -size}],
                   );
                   const resultRange = $removeTextFromCaretRange(range);
                   $setSelection(null);

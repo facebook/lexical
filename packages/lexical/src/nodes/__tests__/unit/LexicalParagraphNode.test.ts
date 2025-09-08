@@ -12,6 +12,7 @@ import {
   $isParagraphNode,
   ParagraphNode,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
 

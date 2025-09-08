@@ -281,8 +281,8 @@ export function $syncPropertiesFromYjs(
       ? sharedType instanceof YMap
         ? Array.from(sharedType.keys())
         : sharedType instanceof XmlText || sharedType instanceof XmlElement
-        ? Object.keys(sharedType.getAttributes())
-        : Object.keys(sharedType)
+          ? Object.keys(sharedType.getAttributes())
+          : Object.keys(sharedType)
       : Array.from(keysChanged);
   let writableNode: LexicalNode | undefined;
 
@@ -560,7 +560,7 @@ export function doesSelectionNeedRecovering(
     ) {
       recoveryNeeded = true;
     }
-  } catch (e) {
+  } catch (_e) {
     // Sometimes checking nor a node via getNode might trigger
     // an error, so we need recovery then too.
     recoveryNeeded = true;

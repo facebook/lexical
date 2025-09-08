@@ -14,6 +14,7 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {beforeEach, describe, expect, test, vi} from 'vitest';
 import * as Y from 'yjs';
 
 describe(`LexicalCollaborationPlugin`, () => {
@@ -40,7 +41,7 @@ describe(`LexicalCollaborationPlugin`, () => {
   });
 
   test(`providerFactory called only once`, () => {
-    const providerFactory = jest.fn(
+    const providerFactory = vi.fn(
       (id: string, yjsDocMap: Map<string, Y.Doc>) => {
         const doc = new Y.Doc();
         yjsDocMap.set(id, doc);

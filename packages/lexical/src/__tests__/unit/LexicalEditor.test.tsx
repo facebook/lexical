@@ -182,7 +182,7 @@ describe('LexicalEditor tests', () => {
   });
 
   function useLexicalEditor(
-    rootElementRef: React.RefObject<HTMLDivElement>,
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
   ) {

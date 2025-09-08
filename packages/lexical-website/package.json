@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": " TYPEDOC_WATCH=true docusaurus start",
-    "build": "docusaurus build",
+    "build": "IGNORE_PEER_DEPENDENCIES=react docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -42,6 +42,9 @@
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
     "webpack": "^5.76.0"
+  },
+  "overrides": {
+    "react": "$react"
   },
   "browserslist": {
     "production": [

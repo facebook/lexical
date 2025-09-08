@@ -508,6 +508,7 @@ function $reconcileNode(
 
   const isDirty =
     treatAllNodesAsDirty ||
+    nextNode.domDependsOnParent() ||
     activeDirtyLeaves.has(key) ||
     activeDirtyElements.has(key);
   const dom: HTMLElement & LexicalPrivateDOM = getElementByKeyOrThrow(

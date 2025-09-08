@@ -126,6 +126,10 @@ export class ListItemNode extends ElementNode {
     return element;
   }
 
+  domDependsOnParent(): true {
+    return true;
+  }
+
   updateListItemDOM(
     prevNode: ListItemNode | null,
     dom: HTMLLIElement,

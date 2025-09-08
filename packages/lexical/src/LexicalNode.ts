@@ -1076,6 +1076,10 @@ export class LexicalNode {
     invariant(false, 'updateDOM: base method not extended');
   }
 
+  domDependsOnParent(): boolean {
+    return false;
+  }
+
   /**
    * Controls how the this node is serialized to HTML. This is important for
    * copy and paste between Lexical and non-Lexical editors, or Lexical editors with different namespaces,

@@ -6,7 +6,7 @@
  *
  */
 
-import type {ListNode, ListType} from './';
+import type {ListType} from './';
 import type {
   BaseSelection,
   DOMConversionOutput,
@@ -131,10 +131,7 @@ export class ListItemNode extends ElementNode {
     dom: HTMLLIElement,
     config: EditorConfig,
   ) {
-    const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(dom, this, prevNode, parent);
-    }
+    updateListItemChecked(dom, this, prevNode);
 
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
@@ -531,17 +528,16 @@ function updateListItemChecked(
   dom: HTMLElement,
   listItemNode: ListItemNode,
   prevListItemNode: ListItemNode | null,
-  listNode: ListNode,
 ): void {
-  // Only add attributes for leaf list items
-  if ($isListNode(listItemNode.getFirstChild())) {
-    dom.removeAttribute('role');
-    dom.removeAttribute('tabIndex');
-    dom.removeAttribute('aria-checked');
-  } else {
+  const parent = listItemNode.getParent();
+  const isCheckbox =
+    $isListNode(parent) &&
+    parent.getListType() === 'check' &&
+    // Only add attributes for leaf list items
+    !$isListNode(listItemNode.getFirstChild());
+  if (isCheckbox) {
     dom.setAttribute('role', 'checkbox');
     dom.setAttribute('tabIndex', '-1');
-
     if (
       !prevListItemNode ||
       listItemNode.__checked !== prevListItemNode.__checked

@@ -7,7 +7,13 @@
  */
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {$getRoot, ParagraphNode, TextNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  expectHtmlToBeEqual,
+  html,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
+import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
+import {describe, expect, test} from 'vitest';
 
 import {
   $createListItemNode,
@@ -300,6 +306,90 @@ describe('LexicalListNode tests', () => {
       });
     });
 
+    test('Should update list children when switching from checklist to bullet', async () => {
+      const {editor} = testEnv;
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const root = $getRoot().clear();
+          root.append($createListNode('check').append($createListItemNode()));
+        });
+      });
+
+      expect(testEnv.innerHTML).toEqual(
+        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br></li></ul>',
+      );
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          listNode.setListType('bullet');
+        });
+      });
+
+      expect(testEnv.innerHTML).toEqual(
+        '<ul dir="auto"><li value="1"><br></li></ul>',
+      );
+    });
+
+    test('Should clear checklist attributes when nesting lists', async () => {
+      const {editor} = testEnv;
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const root = $getRoot().clear();
+          root.append(
+            $createListNode('check').append(
+              $createListItemNode(),
+              $createListItemNode(),
+            ),
+          );
+        });
+      });
+
+      expectHtmlToBeEqual(
+        testEnv.innerHTML,
+        html`
+          <ul dir="auto">
+            <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
+              <br />
+            </li>
+            <li role="checkbox" tabindex="-1" value="2" aria-checked="false">
+              <br />
+            </li>
+          </ul>
+        `,
+      );
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          const listItemNode = listNode.getChildAtIndex<ListItemNode>(1)!;
+          listItemNode.append(
+            $createListNode('bullet').append($createListItemNode()),
+          );
+        });
+      });
+
+      expectHtmlToBeEqual(
+        testEnv.innerHTML,
+        html`
+          <ul dir="auto">
+            <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
+              <br />
+            </li>
+            <li value="2">
+              <ul>
+                <li value="1">
+                  <br />
+                </li>
+              </ul>
+            </li>
+          </ul>
+        `,
+      );
+    });
+
     test('$createListNode()', async () => {
       const {editor} = testEnv;
 
@@ -332,25 +422,6 @@ describe('LexicalListNode tests', () => {
         const bulletList = $createListNode('bullet', 1);
         expect(numberList.__listType).toBe('number');
         expect(bulletList.__listType).toBe('bullet');
-      });
-    });
-
-    test('ListNode.clone() without list type (backward compatibility)', async () => {
-      const {editor} = testEnv;
-
-      await editor.update(() => {
-        const olNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ol',
-        } as unknown as ListNode);
-        const ulNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ul',
-        } as unknown as ListNode);
-        expect(olNode.__listType).toBe('number');
-        expect(ulNode.__listType).toBe('bullet');
       });
     });
   });

@@ -10,10 +10,14 @@ import type {JSX} from 'react';
 
 import {
   $isCodeNode,
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
-  getLanguageFriendlyName,
+  getCodeLanguageOptions as getCodeLanguageOptionsPrism,
+  normalizeCodeLanguage as normalizeCodeLanguagePrism,
 } from '@lexical/code';
+import {
+  getCodeLanguageOptions as getCodeLanguageOptionsShiki,
+  getCodeThemeOptions as getCodeThemeOptionsShiki,
+  normalizeCodeLanguage as normalizeCodeLanguageShiki,
+} from '@lexical/code-shiki';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
@@ -58,6 +62,7 @@ import {
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
 
+import {useSettings} from '../../context/SettingsContext';
 import {
   blockTypeToBlockName,
   useToolbarState,
@@ -71,6 +76,7 @@ import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
@@ -84,7 +90,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {InsertTableDialog} from '../TablePlugin';
-import FontSize from './fontSize';
+import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
   clearFormatting,
   formatBulletList,
@@ -96,24 +102,83 @@ import {
   formatQuote,
 } from './utils';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const rootTypeToRootName = {
   root: 'Root',
   table: 'Table',
 };
 
-function getCodeLanguageOptions(): [string, string][] {
-  const options: [string, string][] = [];
+const CODE_LANGUAGE_OPTIONS_PRISM: [string, string][] =
+  getCodeLanguageOptionsPrism().filter((option) =>
+    [
+      'c',
+      'clike',
+      'cpp',
+      'css',
+      'html',
+      'java',
+      'js',
+      'javascript',
+      'markdown',
+      'objc',
+      'objective-c',
+      'plain',
+      'powershell',
+      'py',
+      'python',
+      'rust',
+      'sql',
+      'swift',
+      'typescript',
+      'xml',
+    ].includes(option[0]),
+  );
 
-  for (const [lang, friendlyName] of Object.entries(
-    CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  )) {
-    options.push([lang, friendlyName]);
-  }
+const CODE_LANGUAGE_OPTIONS_SHIKI: [string, string][] =
+  getCodeLanguageOptionsShiki().filter((option) =>
+    [
+      'c',
+      'clike',
+      'cpp',
+      'css',
+      'html',
+      'java',
+      'js',
+      'javascript',
+      'markdown',
+      'objc',
+      'objective-c',
+      'plain',
+      'powershell',
+      'py',
+      'python',
+      'rust',
+      'sql',
+      'typescript',
+      'xml',
+    ].includes(option[0]),
+  );
 
-  return options;
-}
-
-const CODE_LANGUAGE_OPTIONS = getCodeLanguageOptions();
+const CODE_THEME_OPTIONS_SHIKI: [string, string][] =
+  getCodeThemeOptionsShiki().filter((option) =>
+    [
+      'catppuccin-latte',
+      'everforest-light',
+      'github-light',
+      'gruvbox-light-medium',
+      'kanagawa-lotus',
+      'dark-plus',
+      'light-plus',
+      'material-theme-lighter',
+      'min-light',
+      'one-light',
+      'rose-pine-dawn',
+      'slack-ochin',
+      'snazzy-light',
+      'solarized-light',
+      'vitesse-light',
+    ].includes(option[0]),
+  );
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
   ['Arial', 'Arial'],
@@ -519,19 +584,30 @@ export default function ToolbarPlugin({
     [updateToolbarState],
   );
 
+  const {
+    settings: {isCodeHighlighted, isCodeShiki},
+  } = useSettings();
+
   const $handleCodeNode = useCallback(
     (element: LexicalNode) => {
       if ($isCodeNode(element)) {
-        const language =
-          element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
+        const language = element.getLanguage();
         updateToolbarState(
           'codeLanguage',
-          language ? CODE_LANGUAGE_MAP[language] || language : '',
+          language
+            ? (isCodeHighlighted &&
+                (isCodeShiki
+                  ? normalizeCodeLanguageShiki(language)
+                  : normalizeCodeLanguagePrism(language))) ||
+                language
+            : '',
         );
+        const theme = element.getTheme();
+        updateToolbarState('codeTheme', theme || '');
         return;
       }
     },
-    [updateToolbarState],
+    [updateToolbarState, isCodeHighlighted, isCodeShiki],
   );
 
   const $updateToolbar = useCallback(() => {
@@ -619,8 +695,8 @@ export default function ToolbarPlugin({
         $isElementNode(matchingParent)
           ? matchingParent.getFormatType()
           : $isElementNode(node)
-          ? node.getFormatType()
-          : parent?.getFormatType() || 'left',
+            ? node.getFormatType()
+            : parent?.getFormatType() || 'left',
       );
     }
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
@@ -658,6 +734,13 @@ export default function ToolbarPlugin({
           const selectedElement = $findTopLevelElement(selectedNode);
           $handleHeadingNode(selectedElement);
           $handleCodeNode(selectedElement);
+          // Update elementFormat for node selection (e.g., images)
+          if ($isElementNode(selectedElement)) {
+            updateToolbarState(
+              'elementFormat',
+              selectedElement.getFormatType(),
+            );
+          }
         }
       }
     }
@@ -682,9 +765,12 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.getEditorState().read(() => {
-      $updateToolbar();
-    });
+    activeEditor.getEditorState().read(
+      () => {
+        $updateToolbar();
+      },
+      {editor: activeEditor},
+    );
   }, [activeEditor, $updateToolbar]);
 
   useEffect(() => {
@@ -693,9 +779,12 @@ export default function ToolbarPlugin({
         setIsEditable(editable);
       }),
       activeEditor.registerUpdateListener(({editorState}) => {
-        editorState.read(() => {
-          $updateToolbar();
-        });
+        editorState.read(
+          () => {
+            $updateToolbar();
+          },
+          {editor: activeEditor},
+        );
       }),
       activeEditor.registerCommand<boolean>(
         CAN_UNDO_COMMAND,
@@ -771,6 +860,19 @@ export default function ToolbarPlugin({
     },
     [activeEditor, selectedElementKey],
   );
+  const onCodeThemeSelect = useCallback(
+    (value: string) => {
+      activeEditor.update(() => {
+        if (selectedElementKey !== null) {
+          const node = $getNodeByKey(selectedElementKey);
+          if ($isCodeNode(node)) {
+            node.setTheme(value);
+          }
+        }
+      });
+    },
+    [activeEditor, selectedElementKey],
+  );
   const insertGifOnClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
   };
@@ -815,25 +917,85 @@ export default function ToolbarPlugin({
             <Divider />
           </>
         )}
-      {toolbarState.blockType === 'code' ? (
-        <DropDown
-          disabled={!isEditable}
-          buttonClassName="toolbar-item code-language"
-          buttonLabel={getLanguageFriendlyName(toolbarState.codeLanguage)}
-          buttonAriaLabel="Select language">
-          {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
-            return (
-              <DropDownItem
-                className={`item ${dropDownActiveClass(
-                  value === toolbarState.codeLanguage,
-                )}`}
-                onClick={() => onCodeLanguageSelect(value)}
-                key={value}>
-                <span className="text">{name}</span>
-              </DropDownItem>
-            );
-          })}
-        </DropDown>
+      {toolbarState.blockType === 'code' && isCodeHighlighted ? (
+        <>
+          {!isCodeShiki && (
+            <DropDown
+              disabled={!isEditable}
+              buttonClassName="toolbar-item code-language"
+              buttonLabel={
+                (CODE_LANGUAGE_OPTIONS_PRISM.find(
+                  (opt) =>
+                    opt[0] ===
+                    normalizeCodeLanguagePrism(toolbarState.codeLanguage),
+                ) || ['', ''])[1]
+              }
+              buttonAriaLabel="Select language">
+              {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
+                return (
+                  <DropDownItem
+                    className={`item ${dropDownActiveClass(
+                      value === toolbarState.codeLanguage,
+                    )}`}
+                    onClick={() => onCodeLanguageSelect(value)}
+                    key={value}>
+                    <span className="text">{name}</span>
+                  </DropDownItem>
+                );
+              })}
+            </DropDown>
+          )}
+          {isCodeShiki && (
+            <>
+              <DropDown
+                disabled={!isEditable}
+                buttonClassName="toolbar-item code-language"
+                buttonLabel={
+                  (CODE_LANGUAGE_OPTIONS_SHIKI.find(
+                    (opt) =>
+                      opt[0] ===
+                      normalizeCodeLanguageShiki(toolbarState.codeLanguage),
+                  ) || ['', ''])[1]
+                }
+                buttonAriaLabel="Select language">
+                {CODE_LANGUAGE_OPTIONS_SHIKI.map(([value, name]) => {
+                  return (
+                    <DropDownItem
+                      className={`item ${dropDownActiveClass(
+                        value === toolbarState.codeLanguage,
+                      )}`}
+                      onClick={() => onCodeLanguageSelect(value)}
+                      key={value}>
+                      <span className="text">{name}</span>
+                    </DropDownItem>
+                  );
+                })}
+              </DropDown>
+              <DropDown
+                disabled={!isEditable}
+                buttonClassName="toolbar-item code-language"
+                buttonLabel={
+                  (CODE_THEME_OPTIONS_SHIKI.find(
+                    (opt) => opt[0] === toolbarState.codeTheme,
+                  ) || ['', ''])[1]
+                }
+                buttonAriaLabel="Select theme">
+                {CODE_THEME_OPTIONS_SHIKI.map(([value, name]) => {
+                  return (
+                    <DropDownItem
+                      className={`item ${dropDownActiveClass(
+                        value === toolbarState.codeTheme,
+                      )}`}
+                      onClick={() => onCodeThemeSelect(value)}
+                      key={value}>
+                      <span className="text">{name}</span>
+                    </DropDownItem>
+                  );
+                })}
+              </DropDown>
+            </>
+          )}
+        </>
       ) : (
         <>
           <FontDropDown
@@ -844,7 +1006,9 @@ export default function ToolbarPlugin({
           />
           <Divider />
           <FontSize
-            selectionFontSize={toolbarState.fontSize.slice(0, -2)}
+            selectionFontSize={parseFontSizeForToolbar(
+              toolbarState.fontSize,
+            ).slice(0, -2)}
             editor={activeEditor}
             disabled={!isEditable}
           />
@@ -1212,6 +1376,18 @@ export default function ToolbarPlugin({
                   className="item">
                   <i className="icon caret-right" />
                   <span className="text">Collapsible container</span>
+                </DropDownItem>
+                <DropDownItem
+                  onClick={() => {
+                    const dateTime = new Date();
+                    dateTime.setHours(0, 0, 0, 0);
+                    activeEditor.dispatchCommand(INSERT_DATETIME_COMMAND, {
+                      dateTime,
+                    });
+                  }}
+                  className="item">
+                  <i className="icon calendar" />
+                  <span className="text">Date</span>
                 </DropDownItem>
                 {EmbedConfigs.map((embedConfig) => (
                   <DropDownItem

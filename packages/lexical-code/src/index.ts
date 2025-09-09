@@ -6,34 +6,43 @@
  *
  */
 
-import {$getEndOfCodeInLine, $getStartOfCodeInLine} from './CodeHighlighter';
 import {
+  $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
-} from './CodeHighlightNode';
-
-export {
-  $getEndOfCodeInLine,
   $getStartOfCodeInLine,
-  PrismTokenizer,
-  registerCodeHighlighting,
-} from './CodeHighlighter';
+} from './FlatStructureUtils';
+
+export {PrismTokenizer, registerCodeHighlighting} from './CodeHighlighterPrism';
 export {
   $createCodeHighlightNode,
-  $getFirstCodeNodeOfLine,
-  $getLastCodeNodeOfLine,
   $isCodeHighlightNode,
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
   CodeHighlightNode,
-  DEFAULT_CODE_LANGUAGE,
-  getCodeLanguages,
-  getDefaultCodeLanguage,
-  getLanguageFriendlyName,
-  normalizeCodeLang,
 } from './CodeHighlightNode';
 export type {SerializedCodeNode} from './CodeNode';
-export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';
+export {
+  $createCodeNode,
+  $isCodeNode,
+  CodeNode,
+  DEFAULT_CODE_LANGUAGE,
+  getDefaultCodeLanguage,
+} from './CodeNode';
+export {
+  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
+  CODE_LANGUAGE_MAP,
+  getCodeLanguageOptions,
+  getCodeLanguages,
+  getCodeThemeOptions,
+  getLanguageFriendlyName,
+  normalizeCodeLang,
+  normalizeCodeLang as normalizeCodeLanguage,
+} from './FacadePrism';
+export {
+  $getEndOfCodeInLine,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+  $getStartOfCodeInLine,
+} from './FlatStructureUtils';
 
 /** @deprecated renamed to {@link $getFirstCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
 export const getFirstCodeNodeOfLine = $getFirstCodeNodeOfLine;

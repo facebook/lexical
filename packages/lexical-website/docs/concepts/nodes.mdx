@@ -1,0 +1,807 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Nodes
+
+## Base Nodes
+
+Nodes are a core concept in Lexical. Not only do they form the visual editor view, as part of the `EditorState`, but they also represent the
+underlying data model for what is stored in the editor at any given time. Lexical has a single core based node, called `LexicalNode` that
+is extended internally to create Lexical's five base nodes:
+
+- `RootNode`
+- `LineBreakNode`
+- `ElementNode`
+- `TextNode`
+- `DecoratorNode`
+
+Of these base nodes, three of them can be extended to create new types of nodes:
+
+- `ElementNode`
+- `TextNode`
+- `DecoratorNode`
+
+### [`RootNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalRootNode.ts)
+
+There is only ever a single `RootNode` in an `EditorState` and it is always at the top and it represents the
+`contenteditable` itself. This means that the `RootNode` does not have a parent or siblings. It can not be
+subclassed or replaced.
+
+- To get the text content of the entire editor, you should use `rootNode.getTextContent()`.
+- To avoid selection issues, Lexical forbids insertion of text nodes directly into a `RootNode`.
+
+#### Semantics and Use Cases
+
+Unlike other `ElementNode` subclasses, the `RootNode` has specific characteristics and restrictions to maintain editor integrity:
+
+1. **Non-extensibility**  
+   The `RootNode` cannot be subclassed or replaced with a custom implementation. It is designed as a fixed part of the editor architecture.
+
+2. **Exclusion from Mutation Listeners**  
+   The `RootNode` does not participate in mutation listeners. Instead, use a root-level or update listener to observe changes at the document level.
+
+3. **Compatibility with Node Transforms**  
+   While the `RootNode` is not "part of the document" in the traditional sense, it can still appear to be in some cases, such as during serialization or when applying node transforms. A node transform on the `RootNode` will be called at the end of _every_ node transform cycle. This is useful in cases where you need something like an update listener that occurs before the editor state is reconciled.
+
+4. **Document-Level Metadata**  
+   If you are attempting to use the `RootNode` for document-level metadata (e.g., undo/redo support), use the [NodeState](/docs/concepts/node-state) API.
+
+By design, the `RootNode` serves as a container for the editor's content rather than an active part of the document's logical structure. This approach simplifies operations like serialization and keeps the focus on content nodes.
+
+### [`LineBreakNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalLineBreakNode.ts)
+
+You should never have `'\n'` in your text nodes, instead you should use the `LineBreakNode` which represents
+`'\n'`, and more importantly, can work consistently between browsers and operating systems.
+
+### [`ElementNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalElementNode.ts)
+
+Used as parent for other nodes, can be block level (`ParagraphNode`, `HeadingNode`) or inline (`LinkNode`).
+Has various methods which define its behaviour that can be overridden during extension (`isInline`, `canBeEmpty`, `canInsertTextBefore` and more)
+
+### [`TextNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalTextNode.ts)
+
+Leaf type of node that contains text. It also includes few text-specific properties:
+
+- `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `highlight`, `subscript` and `superscript`
+- `mode`
+  - `token` - acts as immutable node, can't change its content and is deleted all at once
+  - `segmented` - its content deleted by segments (one word at a time), it is editable although node becomes non-segmented once its content is updated
+- `style` can be used to apply inline css styles to text
+
+### [`DecoratorNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalDecoratorNode.ts)
+
+Wrapper node to insert arbitrary view (component) inside the editor. Decorator node rendering is framework-agnostic and
+can output components from React, vanilla js or other frameworks.
+
+## Node Properties
+
+:::tip
+
+If you're using Lexical v0.26.0 or later, you should consider using the [NodeState](/docs/concepts/node-state) API instead of defining properties directly on your subclasses. NodeState features automatic support for `afterCloneFrom`, `exportJSON`, and `updateFromJSON` requiring much less boilerplate and some additional benefits. You may find that you do not need a subclass at all in some situations, since your NodeState can be applied ad-hoc to any node.
+
+:::
+
+Lexical nodes can have properties. It's important that these properties are JSON serializable too, so you should never
+be assigning a property to a node that is a function, Symbol, Map, Set, or any other object that has a different prototype
+than the built-ins. `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]` are all types of property that can be
+assigned to node.
+
+By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
+and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
+mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
+to be extended outside of your build.
+
+If you are adding a property that you expect to be modifiable or accessible, then you should always create a set of `get*()`
+and `set*()` methods on your node for this property. Inside these methods, you'll need to invoke some very important methods
+that ensure consistency with Lexical's internal immutable system. These methods are `getWritable()` and `getLatest()`.
+
+We recommend that your constructor should always support a zero-argument instantiation in order to better support collab and
+to reduce the amount of boilerplate required. You can always define your `$create*` functions with required arguments.
+
+```ts
+import type {NodeKey} from 'lexical';
+
+class MyCustomNode extends SomeOtherNode {
+  __foo: string;
+
+  constructor(foo: string = '', key?: NodeKey) {
+    super(key);
+    this.__foo = foo;
+  }
+
+  setFoo(foo: string): this {
+    // getWritable() creates a clone of the node
+    // if needed, to ensure we don't try and mutate
+    // a stale version of this node.
+    const self = this.getWritable();
+    self.__foo = foo;
+    return self;
+  }
+
+  getFoo(): string {
+    // getLatest() ensures we are getting the most
+    // up-to-date value from the EditorState.
+    const self = this.getLatest();
+    return self.__foo;
+  }
+}
+```
+
+Lastly, all nodes should have `static getType()`, `static clone()`, and `static importJSON()` methods.
+Lexical uses the type to be able to reconstruct a node back with its associated class prototype
+during deserialization (important for copy + paste!). Lexical uses cloning to ensure consistency
+between creation of new `EditorState` snapshots.
+
+Expanding on the example above with these methods:
+
+```ts
+interface SerializedCustomNode extends SerializedLexicalNode {
+  foo?: string;
+}
+
+class MyCustomNode extends SomeOtherNode {
+  __foo: string;
+
+  static getType(): string {
+    return 'custom-node';
+  }
+
+  static clone(node: MyCustomNode): MyCustomNode {
+    // If any state needs to be set after construction, it should be
+    // done by overriding the `afterCloneFrom` instance method.
+    return new MyCustomNode(node.__foo, node.__key);
+  }
+
+  static importJSON(
+    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>,
+  ): MyCustomNode {
+    return new MyCustomNode().updateFromJSON(serializedNode);
+  }
+
+  constructor(foo: string = '', key?: NodeKey) {
+    super(key);
+    this.__foo = foo;
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedMyCustomNode>,
+  ): this {
+    const self = super.updateFromJSON(serializedNode);
+    return typeof serializedNode.foo === 'string'
+      ? self.setFoo(serializedNode.foo)
+      : self;
+  }
+
+  exportJSON(): SerializedMyCustomNode {
+    const serializedNode: SerializedMyCustomNode = super.exportJSON();
+    const foo = this.getFoo();
+    if (foo !== '') {
+      serializedNode.foo = foo;
+    }
+    return serializedNode;
+  }
+
+  setFoo(foo: string): this {
+    // getWritable() creates a clone of the node
+    // if needed, to ensure we don't try and mutate
+    // a stale version of this node.
+    const self = this.getWritable();
+    self.__foo = foo;
+    return self;
+  }
+
+  getFoo(): string {
+    // getLatest() ensures we are getting the most
+    // up-to-date value from the EditorState.
+    const self = this.getLatest();
+    return self.__foo;
+  }
+}
+```
+
+## Creating custom nodes
+
+As mentioned above, Lexical exposes three base nodes that can be extended.
+
+> Did you know? Nodes such as `ElementNode` are already extended in the core by Lexical, such as `ParagraphNode` and `RootNode`!
+
+### Extending `ElementNode`
+
+Below is an example of how you might extend `ElementNode`:
+
+```ts
+import {ElementNode, LexicalNode} from 'lexical';
+
+export class CustomParagraph extends ElementNode {
+  static getType(): string {
+    return 'custom-paragraph';
+  }
+
+  static clone(node: CustomParagraph): CustomParagraph {
+    return new CustomParagraph(node.__key);
+  }
+
+  createDOM(): HTMLElement {
+    // Define the DOM element here
+    const dom = document.createElement('p');
+    return dom;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    // Returning false tells Lexical that this node does not need its
+    // DOM element replacing with a new copy from createDOM.
+    return false;
+  }
+}
+```
+
+It's also good etiquette to provide some `$` prefixed utility functions for
+your custom `ElementNode` so that others can easily consume and validate nodes
+are that of your custom node. Here's how you might do this for the above example:
+
+```js
+export function $createCustomParagraphNode(): CustomParagraph {
+  return $applyNodeReplacement(new CustomParagraph());
+}
+
+export function $isCustomParagraphNode(
+  node: LexicalNode | null | undefined
+): node is CustomParagraph  {
+  return node instanceof CustomParagraph;
+}
+```
+
+### Extending `TextNode`
+
+```ts
+export class ColoredNode extends TextNode {
+  __color: string;
+
+  constructor(text: string, color: string, key?: NodeKey): void {
+    super(text, key);
+    this.__color = color;
+  }
+
+  static getType(): string {
+    return 'colored';
+  }
+
+  static clone(node: ColoredNode): ColoredNode {
+    return new ColoredNode(node.__text, node.__color, node.__key);
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = super.createDOM(config);
+    element.style.color = this.__color;
+    return element;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    const isUpdated = super.updateDOM(prevNode, dom, config);
+    if (prevNode.__color !== this.__color) {
+      dom.style.color = this.__color;
+    }
+    return isUpdated;
+  }
+}
+
+export function $createColoredNode(text: string, color: string): ColoredNode {
+  return $applyNodeReplacement(new ColoredNode(text, color));
+}
+
+export function $isColoredNode(
+  node: LexicalNode | null | undefined,
+): node is ColoredNode {
+  return node instanceof ColoredNode;
+}
+```
+
+### Extending `DecoratorNode`
+
+```ts
+export class VideoNode extends DecoratorNode<ReactNode> {
+  __id: string;
+
+  static getType(): string {
+    return 'video';
+  }
+
+  static clone(node: VideoNode): VideoNode {
+    return new VideoNode(node.__id, node.__key);
+  }
+
+  constructor(id: string, key?: NodeKey) {
+    super(key);
+    this.__id = id;
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  decorate(): ReactNode {
+    return <VideoPlayer videoID={this.__id} />;
+  }
+}
+
+export function $createVideoNode(id: string): VideoNode {
+  return $applyNodeReplacement(new VideoNode(id));
+}
+
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
+  return node instanceof VideoNode;
+}
+```
+
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
+and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
+
+### The rest of the boilerplate
+
+When using this method of extension, it is also required to implement the
+following methods:
+
+- `static clone` (always - this is already in the above examples)
+- `static importFromJSON` (always)
+- `updateFromJSON` (if any custom properties are defined)
+- `afterCloneFrom` (if any custom properties are defined that are not carried over from static clone)
+- `exportJSON` (if any custom properties are defined)
+
+## Creating custom nodes with $config and NodeState
+
+In Lexical v0.33.0, a new method for defining custom nodes was added to reduce
+boilerplate and add features used by the
+[NodeState](/docs/concepts/node-state) API.
+
+The following section shows how the previous examples would be refactored to
+use the latest functionality, reducing boilerplate.
+
+Note that since these example use NodeState and `$config`, they will
+automatically get full and correct implementations of the following methods:
+
+- `static clone`
+- `static importFromJSON`
+- `updateFromJSON`
+- `afterCloneFrom`
+- `exportJSON`
+
+### Best Practices
+
+- The constructor of any custom node must have zero required arguments.
+  This is required for `@lexical/yjs` support, `$create` support, and allows the
+  boilerplate static `clone` and `importJSON` methods to be eliminated.
+  - ✅ `constructor(text: string = '', key?: NodeKey)`
+  - ❌ `constructor(text: string, key?: NodeKey)`
+
+- Using only NodeState (and not direct property access) for storing
+  additional data on the node allows the boilerplate `afterCloneFrom`,
+  `exportJSON`, and `updateFromJSON` methods to be eliminated.
+
+### Extending `ElementNode` with $config
+
+Below is an example of how you might extend `ElementNode`:
+
+<Tabs>
+<TabItem value="$config" label="Using $config">
+
+```ts
+import {
+  $create,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+} from 'lexical';
+
+export class CustomParagraph extends ElementNode {
+  // highlight-start
+  $config() {
+    return this.config('custom-paragraph', {extends: ElementNode});
+  }
+  // highlight-end
+
+  createDOM(): HTMLElement {
+    // Define the DOM element here
+    const dom = document.createElement('p');
+    return dom;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    // Returning false tells Lexical that this node does not need its
+    // DOM element replaced with a new one from createDOM.
+    return false;
+  }
+}
+```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy static methods">
+
+```ts
+import {
+  $create,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  // highlight-next-line
+  type SerializedLexicalNode,
+} from 'lexical';
+
+export class CustomParagraph extends ElementNode {
+  // highlight-start
+  static getType(): string {
+    return 'custom-paragraph';
+  }
+
+  static clone(node: CustomParagraph): CustomParagraph {
+    return new CustomParagraph(node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedLexicalNode): CustomParagraph {
+    return new CustomParagraph().updateFromJSON(serializedNode);
+  }
+  // highlight-end
+
+  createDOM(): HTMLElement {
+    // Define the DOM element here
+    const dom = document.createElement('p');
+    return dom;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    // Returning false tells Lexical that this node does not need its
+    // DOM element replacing with a new copy from createDOM.
+    return false;
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+It's also good etiquette to provide some `$` prefixed utility functions for
+your custom `ElementNode` so that others can easily consume and validate nodes
+are that of your custom node. Here's how you might do this for the above example:
+
+```js
+export function $createCustomParagraphNode(): CustomParagraph {
+  return $create(CustomParagraph);
+}
+
+export function $isCustomParagraphNode(
+  node: LexicalNode | null | undefined
+): node is CustomParagraph  {
+  return node instanceof CustomParagraph;
+}
+```
+
+### Extending `TextNode` with $config
+
+<Tabs>
+<TabItem value="$config" label="Using $config">
+
+```ts
+import {
+  // highlight-start
+  $create,
+  $getState,
+  $getStateChange,
+  $setState,
+  // highlight-end
+  type EditorConfig,
+  type LexicalNode,
+  TextNode,
+  // highlight-next-line
+  createState,
+} from 'lexical';
+
+const DEFAULT_COLOR = 'inherit';
+
+// highlight-start
+// This defines how the color property is parsed along with a default value
+const colorState = createState('color', {
+  parse: (value) => (typeof value === 'string' ? value : DEFAULT_COLOR),
+});
+// highlight-end
+
+export class ColoredNode extends TextNode {
+  // highlight-start
+  $config() {
+    return this.config('colored', {
+      extends: TextNode,
+      // This defines the serialization of the color NodeState as
+      // a flat property of the SerializedLexicalNode JSON instead of
+      // nesting it in the '$' property
+      stateConfigs: [{flat: true, stateConfig: colorState}],
+    });
+  }
+  // highlight-end
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = super.createDOM(config);
+    // highlight-next-line
+    element.style.color = $getState(this, colorState);
+    return element;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    if (super.updateDOM(prevNode, dom, config)) {
+      return true;
+    }
+    // highlight-start
+    const colorChange = $getStateChange(this, prevNode, colorState);
+    if (colorChange !== null) {
+      dom.style.color = colorChange[0];
+    }
+    // highlight-end
+    return false;
+  }
+}
+
+// highlight-start
+export function $createColoredNode(text: string, color: string): ColoredNode {
+  // Since our constructor has 0 arguments, we set all of its properties
+  // after construction.
+  return $setState($create(ColoredNode).setText(text), colorState, color);
+}
+// highlight-end
+
+export function $isColoredNode(
+  node: LexicalNode | null | undefined,
+): node is ColoredNode {
+  return node instanceof ColoredNode;
+}
+```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy static methods and properties">
+
+```ts
+import {
+  // highlight-next-line
+  $applyNodeReplacement,
+  type EditorConfig,
+  type LexicalNode,
+  // highlight-start
+  type SerializedTextNode,
+  type Spread,
+  // highlight-end
+  TextNode,
+} from 'lexical';
+
+const DEFAULT_COLOR = 'inherit';
+
+// highlight-start
+export type SerializedColoredNode = Spread<
+  {
+    color?: string;
+  },
+  SerializedTextNode
+>;
+// highlight-end
+
+export class ColoredNode extends TextNode {
+  // highlight-start
+  __color: string;
+
+  constructor(
+    text: string = '',
+    color: string = DEFAULT_COLOR,
+    key?: NodeKey,
+  ): void {
+    super(text, key);
+    this.__color = color;
+  }
+
+  static getType(): string {
+    return 'colored';
+  }
+
+  static clone(node: ColoredNode): ColoredNode {
+    return new ColoredNode(node.__text, node.__color, node.__key);
+  }
+
+  static importFromJSON(serializedNode: SerializedColoredNode) {
+    return new ColoredNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: SerializedColoredNode) {
+    const self = super.updateFromJSON(serializedNode);
+    self.__color =
+      typeof serializedNode.color === 'string'
+        ? serializedNode.color
+        : DEFAULT_COLOR;
+    return self;
+  }
+
+  exportJSON(): SerializedColoredNode {
+    return {
+      ...super.exportJSON(),
+      color: this.__color === DEFAULT_COLOR ? undefined : this.__color,
+    };
+  }
+  // highlight-end
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = super.createDOM(config);
+    // highlight-next-line
+    element.style.color = this.__color;
+    return element;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    if (super.updateDOM(prevNode, dom, config)) {
+      return true;
+    }
+    // highlight-start
+    if (prevNode.__color !== this.__color) {
+      dom.style.color = this.__color;
+    }
+    // highlight-end
+    return false;
+  }
+}
+
+export function $createColoredNode(text: string, color: string): ColoredNode {
+  // highlight-next-line
+  return $applyNodeReplacement(new ColoredNode(text, color));
+}
+
+export function $isColoredNode(
+  node: LexicalNode | null | undefined,
+): node is ColoredNode {
+  return node instanceof ColoredNode;
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Extending `DecoratorNode` using $config
+
+<Tabs>
+<TabItem value="$config" label="Using $config">
+
+```ts
+import {
+  // highlight-start
+  $create,
+  $getState,
+  $getStateChange,
+  $setState,
+  // highlight-end
+  DecoratorNode,
+  type EditorConfig,
+  type LexicalNode,
+  // highlight-next-line
+  createState,
+} from 'lexical';
+
+// highlight-start
+const idState = createState('id', {
+  parse: (value) => (typeof value === 'string' ? value : ''),
+});
+// highlight-end
+
+export class VideoNode extends DecoratorNode<ReactNode> {
+  // highlight-start
+  $config() {
+    return this.config('video', {
+      extends: DecoratorNode,
+      stateConfigs: [{flat: true, stateConfig: idState}],
+    });
+  }
+  // highlight-end
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  decorate(): ReactNode {
+    // highlight-next-line
+    return <VideoPlayer videoID={$getState(this, idState)} />;
+  }
+}
+
+export function $createVideoNode(id: string): VideoNode {
+  // highlight-next-line
+  return $setState($create(VideoNode), idState, id);
+}
+
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
+  return node instanceof VideoNode;
+}
+```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy static methods and properties">
+
+```ts
+import {
+  DecoratorNode,
+  type EditorConfig,
+  type LexicalNode,
+  // highlight-start
+  type SerializedLexicalNode,
+  type Spread,
+  // highlight-end
+} from 'lexical';
+
+// highlight-start
+export type SerializedVideoNode = Spread<
+  {
+    id: string;
+  },
+  SerializedLexicalNode
+>;
+// highlight-end
+
+export class VideoNode extends DecoratorNode<ReactNode> {
+  // highlight-start
+  __id: string;
+
+  static getType(): string {
+    return 'video';
+  }
+
+  static clone(node: VideoNode): VideoNode {
+    return new VideoNode(node.__id, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedVideoNode): VideoNode {
+    return new VideoNode(serializedNode.id).updateFromJSON(serializedNode);
+  }
+
+  constructor(id: string, key?: NodeKey) {
+    super(key);
+    this.__id = id;
+  }
+
+  exportJSON(): SerializedVideoNode {
+    return {...super.exportJSON(), id: this.__id};
+  }
+  // highlight-end
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  decorate(): ReactNode {
+    return <VideoPlayer videoID={this.__id} />;
+  }
+}
+
+export function $createVideoNode(id: string): VideoNode {
+  // highlight-next-line
+  return $applyNodeReplacement(new VideoNode(id));
+}
+
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
+  return node instanceof VideoNode;
+}
+```
+
+</TabItem>
+</Tabs>
+
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
+and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.

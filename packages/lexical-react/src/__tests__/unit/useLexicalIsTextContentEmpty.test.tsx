@@ -19,6 +19,7 @@ import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 describe('useLexicalIsTextContentEmpty', () => {
   let container: HTMLDivElement | null = null;
@@ -34,7 +35,7 @@ describe('useLexicalIsTextContentEmpty', () => {
     document.body.removeChild(container!);
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
@@ -43,8 +44,8 @@ describe('useLexicalIsTextContentEmpty', () => {
         createEditor({
           namespace: '',
           nodes: [ParagraphNode],
-          onError: () => {
-            throw Error();
+          onError: (err) => {
+            throw err;
           },
         }),
       [],

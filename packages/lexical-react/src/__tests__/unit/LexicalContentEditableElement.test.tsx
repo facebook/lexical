@@ -7,9 +7,11 @@
  */
 
 import {ContentEditableElement} from '@lexical/react/LexicalContentEditable';
+import {axe, toHaveNoViolations} from 'jest-axe';
 import {createEditor, LexicalEditor} from 'lexical';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('ContentEditableElement tests', () => {
   let container: HTMLDivElement | null = null;
@@ -186,7 +188,7 @@ describe('ContentEditableElement tests', () => {
 
   it('registers and cleans up root element properly', async () => {
     let rootElement: HTMLElement | null = null;
-    editor.setRootElement = jest.fn((element) => {
+    editor.setRootElement = vi.fn((element) => {
       rootElement = element;
     });
 
@@ -223,5 +225,40 @@ describe('ContentEditableElement tests', () => {
       const element = container!.querySelector('[role="textbox"]')!;
       expect(element.getAttribute('spellcheck')).toBe(spellCheck.toString());
     }
+  });
+
+  it('should have no accessibility violations', async () => {
+    expect.extend(toHaveNoViolations);
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(
+        <ContentEditableElement
+          editor={editor}
+          role="textbox"
+          ariaLabel="Text editor"
+        />,
+      );
+    });
+
+    const results = await axe(container!);
+    expect(results).toHaveNoViolations();
+  });
+
+  it('should have no accessibility violations when not editable', async () => {
+    expect.extend(toHaveNoViolations);
+    editor.setEditable(false);
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(
+        <ContentEditableElement
+          editor={editor}
+          role="textbox"
+          ariaLabel="Text editor"
+        />,
+      );
+    });
+
+    const results = await axe(container!);
+    expect(results).toHaveNoViolations();
   });
 });

@@ -315,8 +315,8 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      ({nodes, selection}) => {
-        if (!$isRangeSelection(selection)) {
+      ({nodes, selection}, dispatchEditor) => {
+        if (editor !== dispatchEditor || !$isRangeSelection(selection)) {
           return false;
         }
         const isInsideTableCell =

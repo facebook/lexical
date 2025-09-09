@@ -373,8 +373,8 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex === null
                 ? 0
                 : selectedIndex !== options.length - 1
-                ? selectedIndex + 1
-                : 0;
+                  ? selectedIndex + 1
+                  : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -402,8 +402,8 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex === null
                 ? options.length - 1
                 : selectedIndex !== 0
-                ? selectedIndex - 1
-                : options.length - 1;
+                  ? selectedIndex - 1
+                  : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -513,9 +513,10 @@ export function useMenuAnchorRef(
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
 ): MutableRefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
-  const anchorElementRef = useRef<HTMLElement | null>(
-    CAN_USE_DOM ? document.createElement('div') : null,
-  );
+  const initialAnchorElement = CAN_USE_DOM
+    ? document.createElement('div')
+    : null;
+  const anchorElementRef = useRef<HTMLElement | null>(initialAnchorElement);
   const positionMenu = useCallback(() => {
     if (anchorElementRef.current === null || parent === undefined) {
       return;
@@ -569,7 +570,6 @@ export function useMenuAnchorRef(
         parent.append(containerDiv);
       }
       containerDiv.setAttribute('id', 'typeahead-menu');
-      anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
   }, [
@@ -589,7 +589,7 @@ export function useMenuAnchorRef(
       if (rootElement !== null) {
         rootElement.removeAttribute('aria-controls');
       }
-
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const containerDiv = anchorElementRef.current;
       if (containerDiv !== null && containerDiv.isConnected) {
         containerDiv.remove();
@@ -617,11 +617,13 @@ export function useMenuAnchorRef(
   );
 
   // Append the context for the menu immediately
-  const containerDiv = anchorElementRef.current;
-  if (containerDiv != null) {
-    setContainerDivAttributes(containerDiv, className);
+  if (
+    initialAnchorElement != null &&
+    initialAnchorElement === anchorElementRef.current
+  ) {
+    setContainerDivAttributes(initialAnchorElement, className);
     if (parent != null) {
-      parent.append(containerDiv);
+      parent.append(initialAnchorElement);
     }
   }
 

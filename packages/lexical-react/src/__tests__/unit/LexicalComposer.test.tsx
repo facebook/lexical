@@ -17,6 +17,7 @@ import {
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalComposer tests', () => {
   let container: HTMLDivElement | null = null;
@@ -32,7 +33,7 @@ describe('LexicalComposer tests', () => {
     document.body.removeChild(container!);
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('LexicalComposerContext', async () => {
@@ -50,8 +51,8 @@ describe('LexicalComposer tests', () => {
           initialConfig={{
             namespace: '',
             nodes: [],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
             theme,
           }}>
@@ -93,8 +94,8 @@ describe('LexicalComposer tests', () => {
               },
               namespace: '',
               nodes: [],
-              onError: () => {
-                throw Error();
+              onError: (err) => {
+                throw err;
               },
             }}>
             <Plugin />

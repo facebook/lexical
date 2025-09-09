@@ -21,7 +21,6 @@ import {
   $caretFromPoint,
   $createRangeSelection,
   $extendCaretToRange,
-  $getEditor,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
@@ -31,7 +30,6 @@ import {
   $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
-  $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
@@ -39,7 +37,11 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {getStyleObjectFromCSS} from './utils';
+import {
+  $getComputedStyleForElement,
+  $getComputedStyleForParent,
+  getStyleObjectFromCSS,
+} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
@@ -147,7 +149,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 /**
- * @deprecated
+ * @deprecated In favor of $setBlockTypes
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
  * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
@@ -427,24 +429,24 @@ export function $wrapNodesImpl(
  * @param selection - The selection whose parent to test.
  * @returns true if the selection's parent has vertical writing mode (writing-mode: vertical-rl), false otherwise.
  */
-export function $isEditorVerticalOrientation(
+function $isEditorVerticalOrientation(selection: RangeSelection): boolean {
+  const computedStyle = $getComputedStyle(selection);
+  return computedStyle !== null && computedStyle.writingMode === 'vertical-rl';
+}
+
+/**
+ * Gets the computed DOM styles of the parent of the selection's anchor node.
+ * @param selection - The selection to check the styles for.
+ * @returns the computed styles of the node or null if there is no DOM element or no default view for the document.
+ */
+function $getComputedStyle(
   selection: RangeSelection,
-): boolean {
+): CSSStyleDeclaration | null {
   const anchorNode = selection.anchor.getNode();
-  const parent = $isRootNode(anchorNode)
-    ? anchorNode
-    : anchorNode.getParentOrThrow();
-  const editor = $getEditor();
-  const domElement = editor.getElementByKey(parent.getKey());
-  if (domElement === null) {
-    return false;
+  if ($isElementNode(anchorNode)) {
+    return $getComputedStyleForElement(anchorNode);
   }
-  const view = domElement.ownerDocument.defaultView;
-  if (view === null) {
-    return false;
-  }
-  const computedStyle = view.getComputedStyle(domElement);
-  return computedStyle.writingMode === 'vertical-rl';
+  return $getComputedStyleForParent(anchorNode);
 }
 
 /**
@@ -460,7 +462,12 @@ export function $shouldOverrideDefaultCharacterSelection(
   const isVertical = $isEditorVerticalOrientation(selection);
 
   // In vertical writing mode, we adjust the direction for correct caret movement
-  const adjustedIsBackward = isVertical ? !isBackward : isBackward;
+  let adjustedIsBackward = isVertical ? !isBackward : isBackward;
+
+  // In right-to-left writing mode, we invert the direction for correct caret movement
+  if ($isParentElementRTL(selection)) {
+    adjustedIsBackward = !adjustedIsBackward;
+  }
 
   const focusCaret = $caretFromPoint(
     selection.focus,
@@ -504,12 +511,8 @@ export function $moveCaretSelection(
  * @returns true if the selections' parent element has a direction of 'rtl' (right to left), false otherwise.
  */
 export function $isParentElementRTL(selection: RangeSelection): boolean {
-  const anchorNode = selection.anchor.getNode();
-  const parent = $isRootNode(anchorNode)
-    ? anchorNode
-    : anchorNode.getParentOrThrow();
-
-  return parent.getDirection() === 'rtl';
+  const computedStyle = $getComputedStyle(selection);
+  return computedStyle !== null && computedStyle.direction === 'rtl';
 }
 
 /**

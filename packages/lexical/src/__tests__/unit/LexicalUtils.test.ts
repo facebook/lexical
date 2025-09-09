@@ -27,6 +27,7 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
+import {describe, expect, test, vi} from 'vitest';
 
 import {
   emptyFunction,
@@ -41,7 +42,7 @@ import {initializeUnitTest} from '../utils';
 describe('LexicalUtils tests', () => {
   initializeUnitTest((testEnv) => {
     test('scheduleMicroTask(): native', async () => {
-      jest.resetModules();
+      vi.resetModules();
 
       let flag = false;
 
@@ -57,9 +58,9 @@ describe('LexicalUtils tests', () => {
     });
 
     test('scheduleMicroTask(): promise', async () => {
-      jest.resetModules();
+      vi.resetModules();
       const nativeQueueMicrotask = window.queueMicrotask;
-      const fn = jest.fn();
+      const fn = vi.fn();
       try {
         // @ts-ignore
         window.queueMicrotask = undefined;
@@ -414,6 +415,7 @@ describe('$applyNodeReplacement', () => {
         {
           replace: TextNode,
           with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          withKlass: ExtendedExtendedTextNode,
         },
       ],
       onError(err) {
@@ -460,6 +462,9 @@ describe('$applyNodeReplacement', () => {
     );
   });
   test('validates replace node type change', () => {
+    const mockWarning = vi
+      .spyOn(console, 'warn')
+      .mockImplementationOnce(() => {});
     const editor = createEditor({
       nodes: [
         {
@@ -471,6 +476,10 @@ describe('$applyNodeReplacement', () => {
         throw err;
       },
     });
+    expect(mockWarning).toHaveBeenCalledWith(
+      `Override for TextNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+    );
+    mockWarning.mockRestore();
     expect(() => {
       editor.update(
         () => {
@@ -491,6 +500,7 @@ describe('$applyNodeReplacement', () => {
           replace: TextNode,
           with: (node: TextNode) =>
             new ExtendedTextNode(node.__text, node.getKey()),
+          withKlass: ExtendedTextNode,
         },
       ],
       onError(err) {
@@ -544,6 +554,7 @@ describe('$applyNodeReplacement', () => {
           replace: ExtendedTextNode,
           with: (node) =>
             $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
+          withKlass: ExtendedExtendedTextNode,
         },
       ],
       onError(err) {

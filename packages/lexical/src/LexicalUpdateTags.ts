@@ -70,5 +70,4 @@ export type UpdateTag =
   | typeof SKIP_COLLAB_TAG
   | typeof SKIP_DOM_SELECTION_TAG
   | typeof SKIP_SCROLL_INTO_VIEW_TAG
-  // eslint-disable-next-line @typescript-eslint/ban-types
   | (string & {});

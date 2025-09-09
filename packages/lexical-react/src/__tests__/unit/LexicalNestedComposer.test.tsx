@@ -13,6 +13,7 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {mergeRegister} from '@lexical/utils';
+import {axe, toHaveNoViolations} from 'jest-axe';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -25,8 +26,10 @@ import {
   createEditor,
   DecoratorNode,
   EditorConfig,
+  getRegisteredNode,
   LexicalEditor,
   SerializedLexicalNode,
+  TextNode,
 } from 'lexical';
 import {
   expectHtmlToBeEqual,
@@ -37,7 +40,17 @@ import * as React from 'react';
 import {useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  MockInstance,
+  test,
+  vi,
+} from 'vitest';
 
+expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   __decorate?: (node: this) => React.ReactNode;
   __inline?: boolean;
@@ -86,10 +99,10 @@ function $createReactDecoratorNode() {
 describe('LexicalNestedComposer', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot: Root;
-  let warn: jest.SpyInstance;
+  let warn: MockInstance;
 
   beforeEach(() => {
-    warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     container = document.createElement('div');
     reactRoot = createRoot(container);
     document.body.appendChild(container);
@@ -100,7 +113,7 @@ describe('LexicalNestedComposer', () => {
     container = null;
     warn.mockReset();
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   test('with inherited configuration and namespace', async () => {
@@ -141,8 +154,8 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
@@ -174,7 +187,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -182,7 +195,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -233,8 +246,8 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
@@ -273,7 +286,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -281,7 +294,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -336,8 +349,8 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
@@ -370,7 +383,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -378,7 +391,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -436,8 +449,8 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
@@ -472,7 +485,7 @@ describe('LexicalNestedComposer', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
@@ -480,7 +493,7 @@ describe('LexicalNestedComposer', () => {
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
@@ -525,7 +538,9 @@ describe('LexicalNestedComposer', () => {
                       return nestedEditor ? (
                         <LexicalNestedComposer initialEditor={nestedEditor}>
                           <RichTextPlugin
-                            contentEditable={<ContentEditable />}
+                            contentEditable={
+                              <ContentEditable aria-label="nested" />
+                            }
                             placeholder={<></>}
                             ErrorBoundary={LexicalErrorBoundary}
                           />
@@ -536,12 +551,12 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
-            contentEditable={<ContentEditable />}
+            contentEditable={<ContentEditable aria-label="parent" />}
             placeholder={<></>}
             ErrorBoundary={LexicalErrorBoundary}
           />
@@ -573,21 +588,25 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          aria-label="parent"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="true"
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              aria-label="nested"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
       `,
     );
+    const editableA11yResults = await axe(container!);
+    expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
     await ReactTestUtils.act(async () => {
       editor!.setEditable(false);
@@ -599,26 +618,32 @@ describe('LexicalNestedComposer', () => {
       html`
         <div
           contenteditable="false"
+          role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           aria-autocomplete="none"
+          aria-label="parent"
           aria-readonly="true"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-autocomplete="none"
+              aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
       `,
     );
+    const uneditableA11yResults = await axe(container!);
+    expect(uneditableA11yResults).toHaveNoViolations();
     await ReactTestUtils.act(async () => {
       editor!.setEditable(true);
     });
@@ -664,7 +689,9 @@ describe('LexicalNestedComposer', () => {
                           initialEditor={nestedEditor}
                           skipEditableListener={true}>
                           <RichTextPlugin
-                            contentEditable={<ContentEditable />}
+                            contentEditable={
+                              <ContentEditable aria-label="nested" />
+                            }
                             placeholder={<></>}
                             ErrorBoundary={LexicalErrorBoundary}
                           />
@@ -675,12 +702,12 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
-            contentEditable={<ContentEditable />}
+            contentEditable={<ContentEditable aria-label="parent" />}
             placeholder={<></>}
             ErrorBoundary={LexicalErrorBoundary}
           />
@@ -712,22 +739,27 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          aria-label="parent"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-autocomplete="none"
+              aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
       `,
     );
+    const editableA11yResults = await axe(container!);
+    expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
     await ReactTestUtils.act(async () => {
       editor!.setEditable(false);
@@ -739,26 +771,32 @@ describe('LexicalNestedComposer', () => {
       html`
         <div
           contenteditable="false"
+          role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           aria-autocomplete="none"
+          aria-label="parent"
           aria-readonly="true"
           data-lexical-editor="true">
-          <p dir="ltr"><span data-lexical-text="true">parent</span></p>
+          <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               aria-autocomplete="none"
+              aria-label="nested"
               aria-readonly="true"
               data-lexical-editor="true">
-              <p dir="ltr"><span data-lexical-text="true">nested</span></p>
+              <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
         </div>
       `,
     );
+    const uneditableA11yResults = await axe(container!);
+    expect(uneditableA11yResults).toHaveNoViolations();
     await ReactTestUtils.act(async () => {
       editor!.setEditable(true);
     });
@@ -774,7 +812,7 @@ describe('LexicalNestedComposer', () => {
     let editor: undefined | LexicalEditor;
     let nestedEditor: undefined | LexicalEditor;
     const DELEGATED_COMMAND = createCommand<unknown>('DELEGATED_COMMAND');
-    const $commandListener = jest.fn((_) => false);
+    const $commandListener = vi.fn((_) => false);
     function DelegateListenerPlugin() {
       const [currentEditor] = useLexicalComposerContext();
       useEffect(() => {
@@ -847,8 +885,8 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: () => {
-              throw Error();
+            onError: (err) => {
+              throw err;
             },
           }}>
           <RichTextPlugin
@@ -1000,6 +1038,103 @@ describe('LexicalNestedComposer', () => {
       $commandListener.mockClear();
     });
 
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(null);
+    });
+  });
+  test('static transform and $config.transform inheritance', async () => {
+    let editor: undefined | LexicalEditor;
+    let nestedEditor: undefined | LexicalEditor;
+    const $transform = vi.fn();
+    const transform = vi.fn();
+    class StaticTransformNode extends TextNode {
+      static getType() {
+        return 'static-transform';
+      }
+      static transform() {
+        return transform;
+      }
+    }
+    class ConfigTransformNode extends TextNode {
+      $config() {
+        return this.config('$config-transform', {$transform});
+      }
+    }
+    function App() {
+      return (
+        <LexicalComposer
+          initialConfig={{
+            editorState: () => {
+              editor = $getEditor();
+              nestedEditor = createEditor();
+              nestedEditor.update(() =>
+                $getRoot()
+                  .clear()
+                  .append(
+                    $createParagraphNode().append($createTextNode('nested')),
+                  ),
+              );
+              $getRoot()
+                .clear()
+                .append(
+                  $createParagraphNode().append($createTextNode('parent')),
+                  $createReactDecoratorNode()
+                    .setInline(false)
+                    .setDecorate(() => {
+                      return nestedEditor ? (
+                        <LexicalNestedComposer
+                          initialEditor={nestedEditor}
+                          skipEditableListener={true}>
+                          <RichTextPlugin
+                            contentEditable={<ContentEditable />}
+                            placeholder={<></>}
+                            ErrorBoundary={LexicalErrorBoundary}
+                          />
+                        </LexicalNestedComposer>
+                      ) : null;
+                    }),
+                );
+            },
+            namespace: 'parent',
+            nodes: [
+              ReactDecoratorNode,
+              StaticTransformNode,
+              ConfigTransformNode,
+            ],
+            onError: (err) => {
+              throw err;
+            },
+          }}>
+          <RichTextPlugin
+            contentEditable={<ContentEditable />}
+            placeholder={<></>}
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+        </LexicalComposer>
+      );
+    }
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(<App />);
+    });
+    invariant(editor !== undefined, 'editor defined');
+    invariant(nestedEditor !== undefined, 'nestedEditor defined');
+    // namespace inherited
+    expect(editor._config.namespace).toBe('parent');
+    expect(nestedEditor._config.namespace).toBe('parent');
+    // nodes inherited
+    expect([...nestedEditor._nodes.keys()].sort()).toEqual(
+      [...editor._nodes.keys()].sort(),
+    );
+    for (const {type, fn} of [
+      {fn: transform, type: 'static-transform'},
+      {fn: $transform, type: '$config-transform'},
+    ]) {
+      expect(getRegisteredNode(nestedEditor, type)?.transforms).toEqual(
+        new Set([fn]),
+      );
+    }
+    expect(warn.mock.calls).toEqual([]);
     await ReactTestUtils.act(async () => {
       reactRoot.render(null);
     });

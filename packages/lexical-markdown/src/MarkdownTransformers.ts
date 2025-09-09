@@ -308,8 +308,8 @@ const listExport = (
         listType === 'number'
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
-          ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
-          : '- ';
+            ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
+            : '- ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }
@@ -564,17 +564,31 @@ export const LINK: TextMatchTransformer = {
     return linkContent;
   },
   importRegExp:
-    /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.*?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[(.*?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl, linkTitle] = match;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    const linkTextNode = $createTextNode(linkText);
+    const openBracketAmount = linkText.split('[').length - 1;
+    const closeBracketAmount = linkText.split(']').length - 1;
+    let parsedLinkText = linkText;
+    let outsideLinkText = '';
+    if (openBracketAmount < closeBracketAmount) {
+      return;
+    } else if (openBracketAmount > closeBracketAmount) {
+      const linkTextParts = linkText.split('[');
+      outsideLinkText = '[' + linkTextParts[0];
+      parsedLinkText = linkTextParts.slice(1).join('[');
+    }
+    const linkTextNode = $createTextNode(parsedLinkText);
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);
     textNode.replace(linkNode);
 
+    if (outsideLinkText) {
+      linkNode.insertBefore($createTextNode(outsideLinkText));
+    }
     return linkTextNode;
   },
   trigger: ')',

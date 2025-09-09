@@ -23,6 +23,7 @@ import * as React from 'react';
 import {createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
   $createTestElementNode,
@@ -701,7 +702,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="ltr"><section><span data-lexical-text="true">test text</span></section></main>`,
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span></section></main>`,
     );
     editor.update(
       () => {
@@ -710,7 +711,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="ltr"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
     );
     editor.update(
       () => {
@@ -718,7 +719,9 @@ describe('getDOMSlot tests', () => {
       },
       {discrete: true},
     );
-    expect(container.innerHTML).toBe(`<main><section><br></section></main>`);
+    expect(container.innerHTML).toBe(
+      `<main dir="auto"><section><br></section></main>`,
+    );
   });
 });
 

@@ -16,6 +16,18 @@ module.exports = async function (context, options) {
           new currentBundler.instance.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],
           }),
+          function disableExpensiveBundlerOptimizationPlugin() {
+            return {
+              configureWebpack(_config, _isServer) {
+                return {
+                  optimization: {
+                    concatenateModules: false,
+                  },
+                };
+              },
+              name: 'disable-expensive-bundler-optimizations',
+            };
+          },
         ],
         resolve: {
           fallback: {buffer: require.resolve('buffer/')},

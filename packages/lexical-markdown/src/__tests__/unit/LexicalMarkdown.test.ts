@@ -20,6 +20,7 @@ import {
   $insertNodes,
   $isRangeSelection,
 } from 'lexical';
+import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -450,13 +451,13 @@ describe('Markdown', () => {
       skipExport: true, // Export will fail, as the code transformer will add new lines to the code block to make it multi-line. This is expected though, as the lexical code block is a block node and cannot be inline.
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
+      html: '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
       md: '```javascript Incomplete tag',
       skipExport: true,
     },
     {
       html:
-        '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
+        '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
         '\n' +
         'Tag</span></pre>',
       md: '```javascript Incomplete multiline\n\nTag',
@@ -467,7 +468,7 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
+      html: '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```javascript\nCode\n```',
     },
     {
@@ -488,7 +489,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
+      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
       md: `### Code blocks
 
 \`\`\`javascript
@@ -536,7 +537,7 @@ describe('Markdown', () => {
     {
       customTransformers: [CODE_TAG_COUNTER_EXAMPLE],
       // Ensure special ``` code block supports nested code blocks
-      html: '<pre spellcheck="false" data-language="ts" data-highlight-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
+      html: '<pre spellcheck="false" data-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
       md: '```ts\nCode\n```ts\nSub Code\n```\n```',
       skipExport: true,
     },
@@ -569,6 +570,10 @@ describe('Markdown', () => {
     {
       html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>text **Bold in code**</span></code></a><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
       md: '**Bold** [`text **Bold in code**`](https://lexical.dev) **Bold 3**',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>[text](https://lexical.dev)</span></code><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
+      md: '**Bold** `[text](https://lexical.dev)` **Bold 3**',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">text</strong></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
@@ -647,6 +652,22 @@ describe('Markdown', () => {
     {
       html: '<p><b><strong style="white-space: pre-wrap;">&nbsp;</strong></b></p>',
       md: '**&#160;**',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
+      md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
   ];
 

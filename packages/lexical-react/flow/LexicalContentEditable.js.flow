@@ -8,7 +8,7 @@
  */
 
 import type { LexicalEditor } from 'lexical';
-// $FlowFixMe - Not able to type this with a flow extension
+// $FlowFixMe[cannot-resolve-module] - Not able to type this with a flow extension
 import type {TRefFor} from 'CoreTypes.flow';
 
 import * as React from 'react';

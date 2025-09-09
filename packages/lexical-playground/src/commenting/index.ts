@@ -215,7 +215,7 @@ export class CommentStore {
     if (commentOrThread.type === 'comment') {
       return {
         index: commentIndex as number,
-        markedComment: markDeleted(commentOrThread as Comment),
+        markedComment: markDeleted(commentOrThread),
       };
     }
 
@@ -296,7 +296,7 @@ export class CommentStore {
     const disconnect = () => {
       try {
         provider.disconnect();
-      } catch (e) {
+      } catch (_e) {
         // Do nothing
       }
     };

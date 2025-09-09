@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const glob = require('glob');
+import * as fs from 'fs-extra';
+import * as glob from 'glob';
+import {describe, expect, it} from 'vitest';
 
 const STACKBLITZ_RE = /:\/\/stackblitz.com\/github\/([^?"']+)/g;
 

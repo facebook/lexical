@@ -10,7 +10,11 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    '.SFNSText-Regular',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -584,12 +588,20 @@ i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }
 
+i.calendar {
+  background-image: url(images/icons/calendar.svg);
+}
+
 i.gif {
   background-image: url(images/icons/filetype-gif.svg);
 }
 
 i.copy {
   background-image: url(images/icons/copy.svg);
+}
+
+i.paste {
+  background-image: url(images/icons/clipboard.svg);
 }
 
 i.success {
@@ -757,7 +769,9 @@ i.page-break,
   z-index: 100;
   display: block;
   position: fixed;
-  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 12px 28px 0 rgba(0, 0, 0, 0.2),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   min-height: 40px;
@@ -954,9 +968,9 @@ i.page-break,
 
 .switch label {
   margin-right: 5px;
-  line-height: 24px;
+  line-height: 14px;
   width: 100px;
-  font-size: 14px;
+  font-size: 12px;
   display: inline-block;
   vertical-align: middle;
 }
@@ -1479,14 +1493,6 @@ button.action-button:disabled {
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
-}
-
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
 }
 
 .toolbar {

@@ -30,6 +30,7 @@ import {
   SerializedParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, it, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -62,7 +63,7 @@ describe('LexicalLinkNode tests', () => {
       expect(() => $createLinkNode('')).toThrow();
     });
 
-    test('LineBreakNode.clone()', async () => {
+    test('LinkNode.clone()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {

@@ -23,6 +23,7 @@ export const MIN_ALLOWED_FONT_SIZE = 8;
 export const MAX_ALLOWED_FONT_SIZE = 72;
 export const DEFAULT_FONT_SIZE = 15;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const rootTypeToRootName = {
   root: 'Root',
   table: 'Table',
@@ -51,6 +52,7 @@ const INITIAL_TOOLBAR_STATE = {
   canRedo: false,
   canUndo: false,
   codeLanguage: '',
+  codeTheme: '',
   elementFormat: 'left' as ElementFormatType,
   fontColor: '#000',
   fontFamily: 'Arial',
@@ -73,6 +75,7 @@ const INITIAL_TOOLBAR_STATE = {
   isUppercase: false,
   isCapitalize: false,
   rootType: 'root' as keyof typeof rootTypeToRootName,
+  listStartNumber: null as number | null,
 };
 
 type ToolbarState = typeof INITIAL_TOOLBAR_STATE;

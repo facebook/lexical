@@ -38,11 +38,13 @@ import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
+import CodeHighlightPrismPlugin from './plugins/CodeHighlightPrismPlugin';
+import CodeHighlightShikiPlugin from './plugins/CodeHighlightShikiPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
+import DateTimePlugin from './plugins/DateTimePlugin';
 import DragDropPaste from './plugins/DragDropPastePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
@@ -84,6 +86,8 @@ export default function Editor(): JSX.Element {
   const {historyState} = useSharedHistoryContext();
   const {
     settings: {
+      isCodeHighlighted,
+      isCodeShiki,
       isCollab,
       isAutocomplete,
       isMaxLength,
@@ -107,8 +111,8 @@ export default function Editor(): JSX.Element {
   const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
-    ? 'Enter some rich text...'
-    : 'Enter some plain text...';
+      ? 'Enter some rich text...'
+      : 'Enter some plain text...';
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
   const [isSmallWidthViewport, setIsSmallWidthViewport] =
@@ -174,6 +178,7 @@ export default function Editor(): JSX.Element {
         <KeywordsPlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
+        <DateTimePlugin />
         <CommentPlugin
           providerFactory={isCollab ? createWebsocketProvider : undefined}
         />
@@ -199,7 +204,12 @@ export default function Editor(): JSX.Element {
               ErrorBoundary={LexicalErrorBoundary}
             />
             <MarkdownShortcutPlugin />
-            <CodeHighlightPlugin />
+            {isCodeHighlighted &&
+              (isCodeShiki ? (
+                <CodeHighlightShikiPlugin />
+              ) : (
+                <CodeHighlightPrismPlugin />
+              ))}
             <ListPlugin hasStrictIndent={listStrictIndent} />
             <CheckListPlugin />
             <TablePlugin

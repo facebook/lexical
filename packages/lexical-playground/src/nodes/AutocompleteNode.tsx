@@ -45,6 +45,11 @@ export class AutocompleteNode extends TextNode {
     return 'autocomplete';
   }
 
+  static importDOM() {
+    // Never import from DOM
+    return null;
+  }
+
   static importJSON(
     serializedNode: SerializedAutocompleteNode,
   ): AutocompleteNode {

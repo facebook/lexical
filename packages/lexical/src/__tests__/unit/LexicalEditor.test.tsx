@@ -75,6 +75,7 @@ import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
@@ -177,7 +178,7 @@ describe('LexicalEditor tests', () => {
     // @ts-ignore
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   function useLexicalEditor(
@@ -189,7 +190,7 @@ describe('LexicalEditor tests', () => {
       () =>
         createTestEditor({
           nodes: nodes ?? [],
-          onError: onError || jest.fn(),
+          onError: onError || vi.fn(),
           theme: {
             tableAlignment: {
               center: 'editor-table-alignment-center',
@@ -359,7 +360,7 @@ describe('LexicalEditor tests', () => {
       });
       expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
       expect(editor.read(() => $getEditor())).toBe(editor);
-      const onUpdate = jest.fn();
+      const onUpdate = vi.fn();
       editor.update(
         () => {
           const root = $getRoot();
@@ -415,7 +416,7 @@ describe('LexicalEditor tests', () => {
           node.replace($createTextNode('Transforms work!'));
         }
       });
-      const onUpdate = jest.fn();
+      const onUpdate = vi.fn();
       editor.update(
         () => {
           const root = $getRoot();
@@ -482,7 +483,7 @@ describe('LexicalEditor tests', () => {
     container.appendChild(rootElement);
 
     const initialEditor = createTestEditor({
-      onError: jest.fn(),
+      onError: vi.fn(),
     });
 
     initialEditor.update(() => {
@@ -499,7 +500,7 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     const initialEditorState = initialEditor.getEditorState();
@@ -511,19 +512,19 @@ describe('LexicalEditor tests', () => {
 
     editor = createTestEditor({
       editorState: initialEditorState,
-      onError: jest.fn(),
+      onError: vi.fn(),
     });
     editor.setRootElement(rootElement);
 
     expect(editor.getEditorState()).toEqual(initialEditorState);
     expect(container.innerHTML).toBe(
-      '<div style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
   it('Should handle nested updates in the correct sequence', async () => {
     init();
-    const onUpdate = jest.fn();
+    const onUpdate = vi.fn();
 
     let log: Array<string> = [];
 
@@ -668,7 +669,7 @@ describe('LexicalEditor tests', () => {
 
   it('nested update after selection update triggers exactly 1 update', async () => {
     init();
-    const onUpdate = jest.fn();
+    const onUpdate = vi.fn();
     editor.registerUpdateListener(onUpdate);
     const prevEditorState = editor.getEditorState();
     editor.update(() => {
@@ -696,7 +697,7 @@ describe('LexicalEditor tests', () => {
   it('update does not call onUpdate callback when no dirty nodes', () => {
     init();
 
-    const fn = jest.fn();
+    const fn = vi.fn();
     editor.update(
       () => {
         //
@@ -716,7 +717,7 @@ describe('LexicalEditor tests', () => {
       root.append($createParagraphNode());
     });
 
-    const fn = jest.fn();
+    const fn = vi.fn();
 
     await editor.focus(fn);
 
@@ -766,7 +767,7 @@ describe('LexicalEditor tests', () => {
     underlineListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -832,7 +833,7 @@ describe('LexicalEditor tests', () => {
     italicsListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -903,14 +904,14 @@ describe('LexicalEditor tests', () => {
     boldFooListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
     );
   });
 
   it('text transform runs when node is removed', async () => {
     init();
 
-    const executeTransform = jest.fn();
+    const executeTransform = vi.fn();
     let hasBeenRemoved = false;
     const removeListener = editor.registerNodeTransform(TextNode, (node) => {
       if (hasBeenRemoved) {
@@ -976,8 +977,8 @@ describe('LexicalEditor tests', () => {
 
       textNode.getWritable();
 
-      executeParagraphNodeTransform = jest.fn();
-      executeTextNodeTransform = jest.fn();
+      executeParagraphNodeTransform = vi.fn();
+      executeTextNodeTransform = vi.fn();
     });
 
     expect(executeParagraphNodeTransform).toHaveBeenCalledTimes(0);
@@ -1020,15 +1021,15 @@ describe('LexicalEditor tests', () => {
           contenteditable="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <ul>
                 <li value="1"><span data-lexical-text="true">1</span></li>
               </ul>
             </li>
           </ul>
-          <p><br /></p>
-          <ul>
+          <p dir="auto"><br /></p>
+          <ul dir="auto">
             <li value="1">
               <ul>
                 <li value="1"><span data-lexical-text="true">2</span></li>
@@ -1054,7 +1055,7 @@ describe('LexicalEditor tests', () => {
           contenteditable="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <ul>
                 <li value="1"><span data-lexical-text="true">1</span></li>
@@ -1161,7 +1162,7 @@ describe('LexicalEditor tests', () => {
   });
 
   it('Detects infinite recursivity on transforms', async () => {
-    const errorListener = jest.fn();
+    const errorListener = vi.fn();
     init(errorListener);
 
     const boldListener = editor.registerNodeTransform(TextNode, (node) => {
@@ -1212,12 +1213,12 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
   it('Should be able to recover from an update error', async () => {
-    const errorListener = jest.fn();
+    const errorListener = vi.fn();
     init(errorListener);
     editor.update(() => {
       const root = $getRoot();
@@ -1234,7 +1235,7 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">This works!</span></p></div>',
     );
     expect(errorListener).toHaveBeenCalledTimes(0);
 
@@ -1249,13 +1250,13 @@ describe('LexicalEditor tests', () => {
 
     expect(errorListener).toHaveBeenCalledTimes(1);
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
   it('Should be able to handle a change in root element', async () => {
-    const rootListener = jest.fn();
-    const updateListener = jest.fn();
+    const rootListener = vi.fn();
+    const updateListener = vi.fn();
 
     function TestBase({changeElement}: {changeElement: boolean}) {
       editor = useMemo(() => createTestEditor(), []);
@@ -1302,7 +1303,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Not changed</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">Not changed</span></p></div>',
     );
 
     await ReactTestUtils.act(() => {
@@ -1312,7 +1313,7 @@ describe('LexicalEditor tests', () => {
     expect(rootListener).toHaveBeenCalledTimes(3);
     expect(updateListener).toHaveBeenCalledTimes(4);
     expect(container.innerHTML).toBe(
-      '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
+      '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">Change successful</span></p></span>',
     );
   });
 
@@ -1380,7 +1381,7 @@ describe('LexicalEditor tests', () => {
     });
 
     it('Should correctly render React component into Lexical node #1', async () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
 
       function Test() {
         editor = useMemo(() => createTestEditor(), []);
@@ -1418,13 +1419,13 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p>' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
           '<span data-lexical-decorator="true"><span>Hello world</span></span><br></p></div>',
       );
     });
 
     it('Should correctly render React component into Lexical node #2', async () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
 
       function Test({divKey}: {divKey: number}): JSX.Element {
         function TestPlugin() {
@@ -1461,7 +1462,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
       );
 
       await ReactTestUtils.act(async () => {
@@ -1472,7 +1473,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(5);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
       );
 
       // Wait for update to complete
@@ -1530,10 +1531,11 @@ describe('LexicalEditor tests', () => {
     it('exportJSON API - parses parsed JSON', async () => {
       await update(() => {
         const paragraph = $createParagraphNode();
+        paragraph.setDirection('rtl');
         originalText = $createTextNode('Hello world');
         originalText.select(6, 11);
         paragraph.append(originalText);
-        $getRoot().append(paragraph);
+        $getRoot().clear().append(paragraph);
       });
       const stringifiedEditorState = JSON.stringify(editor.getEditorState());
       const parsedEditorStateFromObject = editor.parseEditorState(
@@ -1541,6 +1543,7 @@ describe('LexicalEditor tests', () => {
       );
       parsedEditorStateFromObject.read(() => {
         const root = $getRoot();
+        expect(root.getFirstChild<ParagraphNode>()!.getDirection()).toBe('rtl');
         expect(root.getTextContent()).toMatch(/Hello world/);
       });
     });
@@ -1572,7 +1575,7 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __dir: 'ltr',
+          __dir: null,
           __first: paragraphKey,
           __format: 0,
           __indent: 0,
@@ -1588,7 +1591,7 @@ describe('LexicalEditor tests', () => {
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __dir: 'ltr',
+          __dir: null,
           __first: textKey,
           __format: 0,
           __indent: 0,
@@ -1656,7 +1659,7 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __dir: 'ltr',
+          __dir: null,
           __first: paragraphKey,
           __format: 0,
           __indent: 0,
@@ -1672,7 +1675,7 @@ describe('LexicalEditor tests', () => {
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __dir: 'ltr',
+          __dir: null,
           __first: textKey,
           __format: 0,
           __indent: 0,
@@ -1805,7 +1808,7 @@ describe('LexicalEditor tests', () => {
       expect(editor._editorState._nodeMap.size).toBe(keys.length + 1); // + root
       expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">B</span></div></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><div><span data-lexical-text="true">A</span><div><span data-lexical-text="true">B</span></div></div></p></div>',
       );
     });
 
@@ -1840,7 +1843,7 @@ describe('LexicalEditor tests', () => {
       });
 
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">B</span><div dir="ltr"><span data-lexical-text="true">A</span></div></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><div><span data-lexical-text="true">B</span><div><span data-lexical-text="true">A</span></div></div></p></div>',
       );
     });
 
@@ -1881,7 +1884,7 @@ describe('LexicalEditor tests', () => {
       });
 
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">C</span></div></div><div dir="ltr"><span data-lexical-text="true">B</span></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><div><span data-lexical-text="true">A</span><div><span data-lexical-text="true">C</span></div></div><div><span data-lexical-text="true">B</span></div></p></div>',
       );
     });
   });
@@ -1889,7 +1892,7 @@ describe('LexicalEditor tests', () => {
   it('can subscribe and unsubscribe from commands and the callback is fired', () => {
     init();
 
-    const commandListener = jest.fn();
+    const commandListener = vi.fn();
     const command = createCommand('TEST_COMMAND');
     const payload = 'testPayload';
     const removeCommandListener = editor.registerCommand(
@@ -1917,8 +1920,8 @@ describe('LexicalEditor tests', () => {
   it('removes the command from the command map when no listener are attached', () => {
     init();
 
-    const commandListener = jest.fn();
-    const commandListenerTwo = jest.fn();
+    const commandListener = vi.fn();
+    const commandListenerTwo = vi.fn();
     const command = createCommand('TEST_COMMAND');
     const removeCommandListener = editor.registerCommand(
       command,
@@ -1997,7 +2000,7 @@ describe('LexicalEditor tests', () => {
   it('textcontent listener', async () => {
     init();
 
-    const fn = jest.fn();
+    const fn = vi.fn();
     editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
@@ -2058,9 +2061,9 @@ describe('LexicalEditor tests', () => {
   it('mutation listener', async () => {
     init();
 
-    const paragraphNodeMutations = jest.fn();
-    const textNodeMutations = jest.fn();
-    const onUpdate = jest.fn();
+    const paragraphNodeMutations = vi.fn();
+    const textNodeMutations = vi.fn();
+    const onUpdate = vi.fn();
     editor.registerUpdateListener(onUpdate);
     editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
       skipInitialization: false,
@@ -2154,7 +2157,7 @@ describe('LexicalEditor tests', () => {
   });
   it('mutation listener on newly initialized editor', async () => {
     editor = createEditor();
-    const textNodeMutations = jest.fn();
+    const textNodeMutations = vi.fn();
     editor.registerMutationListener(TextNode, textNodeMutations, {
       skipInitialization: false,
     });
@@ -2168,7 +2171,7 @@ describe('LexicalEditor tests', () => {
     });
 
     const initialEditorState = editor.getEditorState();
-    const textNodeMutations = jest.fn();
+    const textNodeMutations = vi.fn();
     editor.registerMutationListener(TextNode, textNodeMutations, {
       skipInitialization: false,
     });
@@ -2240,8 +2243,8 @@ describe('LexicalEditor tests', () => {
       reactRoot.render(<TestBase />);
     });
 
-    const textNodeMutations = jest.fn();
-    const textNodeMutationsB = jest.fn();
+    const textNodeMutations = vi.fn();
+    const textNodeMutationsB = vi.fn();
     editor.registerMutationListener(TextNode, textNodeMutations, {
       skipInitialization: false,
     });
@@ -2337,8 +2340,8 @@ describe('LexicalEditor tests', () => {
       reactRoot.render(<TestBase />);
     });
 
-    const textNodeMutations = jest.fn();
-    const textNodeMutationsB = jest.fn();
+    const textNodeMutations = vi.fn();
+    const textNodeMutationsB = vi.fn();
     editor.registerMutationListener(TestTextNode, textNodeMutations, {
       skipInitialization: false,
     });
@@ -2399,8 +2402,8 @@ describe('LexicalEditor tests', () => {
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
-    const paragraphNodeMutations = jest.fn();
-    const textNodeMutations = jest.fn();
+    const paragraphNodeMutations = vi.fn();
+    const textNodeMutations = vi.fn();
     editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
       skipInitialization: false,
     });
@@ -2419,7 +2422,7 @@ describe('LexicalEditor tests', () => {
   it('mutation listeners with normalization', async () => {
     init();
 
-    const textNodeMutations = jest.fn();
+    const textNodeMutations = vi.fn();
     editor.registerMutationListener(TextNode, textNodeMutations, {
       skipInitialization: false,
     });
@@ -2465,8 +2468,8 @@ describe('LexicalEditor tests', () => {
   it('mutation "update" listener', async () => {
     init();
 
-    const paragraphNodeMutations = jest.fn();
-    const textNodeMutations = jest.fn();
+    const paragraphNodeMutations = vi.fn();
+    const textNodeMutations = vi.fn();
 
     editor.registerMutationListener(ParagraphNode, paragraphNodeMutations, {
       skipInitialization: false,
@@ -2529,8 +2532,8 @@ describe('LexicalEditor tests', () => {
     let tableCellKey: string;
     let tableRowKey: string;
 
-    const tableCellMutations = jest.fn();
-    const tableRowMutations = jest.fn();
+    const tableCellMutations = vi.fn();
+    const tableRowMutations = vi.fn();
 
     editor.registerMutationListener(TableCellNode, tableCellMutations, {
       skipInitialization: false,
@@ -2583,7 +2586,7 @@ describe('LexicalEditor tests', () => {
   it('editable listener', () => {
     init();
 
-    const editableFn = jest.fn();
+    const editableFn = vi.fn();
     editor.registerEditableListener(editableFn);
 
     expect(editor.isEditable()).toBe(true);
@@ -2598,12 +2601,12 @@ describe('LexicalEditor tests', () => {
   });
 
   it('does not add new listeners while triggering existing', async () => {
-    const updateListener = jest.fn();
-    const mutationListener = jest.fn();
-    const nodeTransformListener = jest.fn();
-    const textContentListener = jest.fn();
-    const editableListener = jest.fn();
-    const commandListener = jest.fn();
+    const updateListener = vi.fn();
+    const mutationListener = vi.fn();
+    const nodeTransformListener = vi.fn();
+    const textContentListener = vi.fn();
+    const editableListener = vi.fn();
+    const commandListener = vi.fn();
     const TEST_COMMAND = createCommand('TEST_COMMAND');
 
     init();
@@ -2684,11 +2687,40 @@ describe('LexicalEditor tests', () => {
     expect(mutationListener).toHaveBeenCalledTimes(1);
   });
 
+  it('allows using the same listener for multiple node types', async () => {
+    init();
+
+    const listener = vi.fn();
+    editor.registerMutationListener(TextNode, listener);
+    editor.registerMutationListener(ParagraphNode, listener);
+
+    let paragraphKey: string;
+    let textNodeKey: string;
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('Hello world');
+      paragraphKey = paragraph.getKey();
+      textNodeKey = textNode.getKey();
+      root.append(paragraph);
+      paragraph.append(textNode);
+    });
+
+    expect(listener.mock.calls.length).toBe(2);
+    const [textNodeMutation, paragraphMutation] = listener.mock.calls;
+
+    expect(textNodeMutation[0].size).toBe(1);
+    expect(textNodeMutation[0].get(textNodeKey!)).toBe('created');
+    expect(paragraphMutation[0].size).toBe(1);
+    expect(paragraphMutation[0].get(paragraphKey!)).toBe('created');
+  });
+
   it('calls mutation listener with initial state', async () => {
     // TODO add tests for node replacement
-    const mutationListenerA = jest.fn();
-    const mutationListenerB = jest.fn();
-    const mutationListenerC = jest.fn();
+    const mutationListenerA = vi.fn();
+    const mutationListenerB = vi.fn();
+    const mutationListenerC = vi.fn();
     init();
 
     editor.registerMutationListener(TextNode, mutationListenerA, {
@@ -2754,7 +2786,7 @@ describe('LexicalEditor tests', () => {
 
   it('can use discrete for synchronous updates', () => {
     init();
-    const onUpdate = jest.fn();
+    const onUpdate = vi.fn();
     editor.registerUpdateListener(onUpdate);
     const prevEditorState = editor.getEditorState();
     editor.update(
@@ -2781,7 +2813,7 @@ describe('LexicalEditor tests', () => {
 
   it('can use discrete after a non-discrete update to flush the entire queue', () => {
     const headless = createTestHeadlessEditor();
-    const onUpdate = jest.fn();
+    const onUpdate = vi.fn();
     headless.registerUpdateListener(onUpdate);
     headless.update(() => {
       $getRoot().append(
@@ -2838,7 +2870,7 @@ describe('LexicalEditor tests', () => {
 
   it('can use discrete in a nested update to flush the entire queue', () => {
     init();
-    const onUpdate = jest.fn();
+    const onUpdate = vi.fn();
     editor.registerUpdateListener(onUpdate);
     editor.update(() => {
       $getRoot().append(
@@ -2863,6 +2895,25 @@ describe('LexicalEditor tests', () => {
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 
+  it('can read in a nested update', async () => {
+    init();
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode().append($createTextNode('foo')));
+      editor.read(() => {});
+      expect(editor.getRootElement()?.innerHTML).toBe(
+        '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
+      );
+      editor.update(() => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('bar')),
+        );
+      });
+    });
+    expect(editor.getRootElement()?.innerHTML).toBe(
+      '<p dir="auto"><span data-lexical-text="true">foo</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p>',
+    );
+  });
+
   it('does not include linebreak into inline elements', async () => {
     init();
 
@@ -2876,7 +2927,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.firstElementChild?.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">Hello</span><a></a></p>',
+      '<p dir="auto"><span data-lexical-text="true">Hello</span><a></a></p>',
     );
   });
 
@@ -2893,7 +2944,7 @@ describe('LexicalEditor tests', () => {
 
   describe('node replacement', () => {
     it('should work correctly', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
 
       const newEditor = createTestEditor({
         nodes: [
@@ -2901,6 +2952,7 @@ describe('LexicalEditor tests', () => {
           {
             replace: TextNode,
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+            withKlass: TestTextNode,
           },
         ],
         onError: onError,
@@ -2929,7 +2981,7 @@ describe('LexicalEditor tests', () => {
     });
 
     it('should fail if node keys are re-used', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
 
       const newEditor = createTestEditor({
         nodes: [
@@ -2938,6 +2990,7 @@ describe('LexicalEditor tests', () => {
             replace: TextNode,
             with: (node: TextNode) =>
               new TestTextNode(node.getTextContent(), node.getKey()),
+            withKlass: TestTextNode,
           },
         ],
         onError: onError,
@@ -2966,8 +3019,10 @@ describe('LexicalEditor tests', () => {
     });
 
     it('node transform to the nodes specified by "replace" should not be applied to the nodes specified by "with" when "withKlass" is not specified', async () => {
-      const onError = jest.fn();
-
+      const onError = vi.fn();
+      const mockWarning = vi
+        .spyOn(console, 'warn')
+        .mockImplementationOnce(() => {});
       const newEditor = createTestEditor({
         nodes: [
           TestTextNode,
@@ -2985,10 +3040,14 @@ describe('LexicalEditor tests', () => {
           },
         },
       });
+      expect(mockWarning).toHaveBeenCalledWith(
+        `Override for TextNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+      );
+      mockWarning.mockRestore();
 
       newEditor.setRootElement(container);
 
-      const mockTransform = jest.fn();
+      const mockTransform = vi.fn();
       const removeTransform = newEditor.registerNodeTransform(
         TextNode,
         mockTransform,
@@ -3013,7 +3072,7 @@ describe('LexicalEditor tests', () => {
     });
 
     it('node transform to the nodes specified by "replace" should be applied also to the nodes specified by "with" when "withKlass" is specified', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
 
       const newEditor = createTestEditor({
         nodes: [
@@ -3036,7 +3095,7 @@ describe('LexicalEditor tests', () => {
 
       newEditor.setRootElement(container);
 
-      const mockTransform = jest.fn();
+      const mockTransform = vi.fn();
       const removeTransform = newEditor.registerNodeTransform(
         TextNode,
         mockTransform,
@@ -3062,9 +3121,9 @@ describe('LexicalEditor tests', () => {
   });
 
   it('recovers from reconciler failure and trigger proper prev editor state', async () => {
-    const updateListener = jest.fn();
-    const textListener = jest.fn();
-    const onError = jest.fn();
+    const updateListener = vi.fn();
+    const textListener = vi.fn();
+    const onError = vi.fn();
     const updateError = new Error('Failed updateDOM');
 
     init(onError);
@@ -3080,7 +3139,7 @@ describe('LexicalEditor tests', () => {
 
     // Cause reconciler error in update dom, so that it attempts to fallback by
     // resetting editor and rerendering whole content
-    jest.spyOn(ParagraphNode.prototype, 'updateDOM').mockImplementation(() => {
+    vi.spyOn(ParagraphNode.prototype, 'updateDOM').mockImplementation(() => {
       throw updateError;
     });
 
@@ -3096,11 +3155,11 @@ describe('LexicalEditor tests', () => {
 
     expect(onError).toBeCalledWith(updateError);
     expect(textListener).toBeCalledWith('Hello\n\nworld');
-    expect(updateListener.mock.lastCall[0].prevEditorState).toBe(editorState);
+    expect(updateListener.mock.lastCall?.[0].prevEditorState).toBe(editorState);
   });
 
   it('should call importDOM methods only once', async () => {
-    jest.spyOn(ParagraphNode, 'importDOM');
+    vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
       static getType() {
@@ -3139,7 +3198,7 @@ describe('LexicalEditor tests', () => {
 
   describe('html config', () => {
     it('should override export output function', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
 
       const newEditor = createTestEditor({
         html: {
@@ -3186,7 +3245,7 @@ describe('LexicalEditor tests', () => {
     });
 
     it('should override import conversion function', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
 
       const newEditor = createTestEditor({
         html: {
@@ -3227,7 +3286,7 @@ describe('LexicalEditor tests', () => {
 
   describe('selection', () => {
     it('updates the DOM selection', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
       const newEditor = createTestEditor({
         onError: onError,
       });
@@ -3269,7 +3328,7 @@ describe('LexicalEditor tests', () => {
       expect(onError).not.toHaveBeenCalled();
     });
     it('does not update the Lexical->DOM selection with skip-dom-selection', async () => {
-      const onError = jest.fn();
+      const onError = vi.fn();
       const newEditor = createTestEditor({
         onError: onError,
       });

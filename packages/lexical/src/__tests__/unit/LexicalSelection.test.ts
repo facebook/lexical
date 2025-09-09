@@ -34,6 +34,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {SerializedElementNode} from '../..';
 import {
@@ -86,10 +87,10 @@ describe('LexicalSelection tests', () => {
 
         const expectation =
           mode === 'start-of-paragraph'
-            ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>'
+            ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><a href="https://"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>'
             : mode === 'mid-paragraph'
-            ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>'
-            : '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a></p></div>';
+              ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">a</span><a href="https://"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>'
+              : '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">a</span><a href="https://"><span data-lexical-text="true">b</span></a></p></div>';
 
         expect(container.innerHTML).toBe(expectation);
 
@@ -138,7 +139,7 @@ describe('LexicalSelection tests', () => {
             });
 
             expect(container.innerHTML).toBe(
-              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">x</span><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>',
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">x</span><a href="https://"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>',
             );
           };
 
@@ -179,7 +180,7 @@ describe('LexicalSelection tests', () => {
             });
 
             expect(container.innerHTML).toBe(
-              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">ax</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>',
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">ax</span><a href="https://"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>',
             );
           };
 
@@ -219,7 +220,7 @@ describe('LexicalSelection tests', () => {
             });
 
             expect(container.innerHTML).toBe(
-              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">ax</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a></p></div>',
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">ax</span><a href="https://"><span data-lexical-text="true">b</span></a></p></div>',
             );
           };
 
@@ -261,7 +262,7 @@ describe('LexicalSelection tests', () => {
             });
 
             expect(container.innerHTML).toBe(
-              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">xb</span></p></div>',
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><a href="https://"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">xb</span></p></div>',
             );
           };
 
@@ -302,7 +303,7 @@ describe('LexicalSelection tests', () => {
             });
 
             expect(container.innerHTML).toBe(
-              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">xc</span></p></div>',
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">a</span><a href="https://"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">xc</span></p></div>',
             );
           };
 
@@ -344,7 +345,7 @@ describe('LexicalSelection tests', () => {
             });
 
             expect(container.innerHTML).toBe(
-              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">x</span></p></div>',
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">a</span><a href="https://"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">x</span></p></div>',
             );
           };
 
@@ -363,6 +364,27 @@ describe('LexicalSelection tests', () => {
         });
       });
     });
+
+    describe('insertText()', () => {
+      test('inserts into existing paragraph node when selection is on parent of paragraph', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.clear().append(paragraph);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set('root', 0, 'element');
+          selection.focus.set('root', 0, 'element');
+          $setSelection(selection);
+
+          selection.insertText('text');
+          expect(root.getChildrenSize()).toBe(1);
+          expect(root.getTextContent()).toBe('text');
+        });
+      });
+    });
+
     describe('removeText', () => {
       describe('with a leading TextNode and a trailing token TextNode', () => {
         let leadingText: TextNode;

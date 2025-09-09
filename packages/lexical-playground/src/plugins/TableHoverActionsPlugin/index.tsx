@@ -94,7 +94,7 @@ function TableHoverActionsContainer({
             if (tableDOMElement) {
               const rowCount = table.getChildrenSize();
               const colCount = (
-                (table as TableNode).getChildAtIndex(0) as TableRowNode
+                table.getChildAtIndex(0) as TableRowNode
               )?.getChildrenSize();
 
               const rowIndex =

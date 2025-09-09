@@ -27,11 +27,13 @@ import {
   $getCaretRangeInDirection,
   $getChildCaret,
   $getSiblingCaret,
+  $getTextNodeOffset,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
   $isExtendableTextPointCaret,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isSiblingCaret,
   $isTextNode,
@@ -80,7 +82,6 @@ import {
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getTextNodeOffset,
   getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
@@ -275,15 +276,19 @@ function $transferStartingElementPointToTextPoint(
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
   const textNode = $createTextNode();
-  const target = $isRootNode(element)
-    ? $createParagraphNode().append(textNode)
-    : textNode;
   textNode.setFormat(format);
   textNode.setStyle(style);
-  if (placementNode === null) {
-    element.append(target);
+  if ($isParagraphNode(placementNode)) {
+    placementNode.splice(0, 0, [textNode]);
   } else {
-    placementNode.insertBefore(target);
+    const target = $isRootNode(element)
+      ? $createParagraphNode().append(textNode)
+      : textNode;
+    if (placementNode === null) {
+      element.append(target);
+    } else {
+      placementNode.insertBefore(target);
+    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -696,6 +701,16 @@ export class RangeSelection implements BaseSelection {
    */
   toggleFormat(format: TextFormatType): void {
     this.format = toggleTextFormatType(this.format, format, null);
+    this.dirty = true;
+  }
+
+  /**
+   * Sets the value of the format property on the Selection
+   *
+   * @param format - the format to set at the value of the format property.
+   */
+  setFormat(format: number): void {
+    this.format = format;
     this.dirty = true;
   }
 
@@ -1269,7 +1284,7 @@ export class RangeSelection implements BaseSelection {
     // Multiple nodes selected
     // The entire first node isn't selected, so split it
     if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-      [, firstNode as TextNode] = firstNode.splitText(startOffset);
+      [, firstNode] = firstNode.splitText(startOffset);
       startOffset = 0;
     }
     firstNode.setFormat(firstNextFormat);
@@ -1282,7 +1297,7 @@ export class RangeSelection implements BaseSelection {
         endOffset !== lastNode.getTextContentSize() &&
         !$isTokenOrSegmented(lastNode)
       ) {
-        [lastNode as TextNode] = lastNode.splitText(endOffset);
+        [lastNode] = lastNode.splitText(endOffset);
       }
       lastNode.setFormat(lastNextFormat);
     }
@@ -2154,7 +2169,7 @@ const doesContainEmoji: (text: string) => boolean = (() => {
     ) {
       return test;
     }
-  } catch (e) {
+  } catch (_e) {
     // SyntaxError
   }
   // fallback, surrogate pair already checked
@@ -2262,7 +2277,10 @@ function $internalResolveSelectionPoint(
     resolvedNode = $getNodeFromDOM(childDOM);
 
     if ($isTextNode(resolvedNode)) {
-      resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+      resolvedOffset = $getTextNodeOffset(
+        resolvedNode,
+        moveSelectionToEnd ? 'next' : 'previous',
+      );
     } else {
       let resolvedElement = $getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.
@@ -2314,7 +2332,10 @@ function $internalResolveSelectionPoint(
         if ($isTextNode(child)) {
           resolvedNode = child;
           resolvedElement = null;
-          resolvedOffset = getTextNodeOffset(child, moveSelectionToEnd);
+          resolvedOffset = $getTextNodeOffset(
+            child,
+            moveSelectionToEnd ? 'next' : 'previous',
+          );
         } else if (
           child !== resolvedElement &&
           moveSelectionToEnd &&
@@ -2352,7 +2373,11 @@ function $internalResolveSelectionPoint(
   if (!$isTextNode(resolvedNode)) {
     return null;
   }
-  return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
+  return $createPoint(
+    resolvedNode.__key,
+    $getTextNodeOffset(resolvedNode, resolvedOffset, 'clamp'),
+    'text',
+  );
 }
 
 function resolveSelectionPointOnBoundary(
@@ -2483,8 +2508,8 @@ function $internalResolveSelectionPoints(
     return null;
   }
   if (__DEV__) {
-    $validatePoint(editor, 'anchor', resolvedAnchorPoint);
-    $validatePoint(editor, 'focus', resolvedAnchorPoint);
+    $validatePoint('anchor', resolvedAnchorPoint);
+    $validatePoint('focus', resolvedFocusPoint);
   }
   if (
     resolvedAnchorPoint.type === 'element' &&
@@ -2656,11 +2681,7 @@ export function $internalCreateRangeSelection(
   );
 }
 
-function $validatePoint(
-  editor: LexicalEditor,
-  name: 'anchor' | 'focus',
-  point: PointType,
-): void {
+function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(
     node !== undefined,
@@ -3076,8 +3097,8 @@ export function updateDOMSelection(
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
         : domSelection.rangeCount > 0
-        ? domSelection.getRangeAt(0)
-        : null;
+          ? domSelection.getRangeAt(0)
+          : null;
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
       if (selectionTarget instanceof Text) {

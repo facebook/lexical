@@ -225,7 +225,7 @@ function $isCaretAttached<Caret extends PointCaret<CaretDirection>>(
  * blocks then the remaining contents of the later block will be merged with
  * the earlier block.
  *
- * @param range The range to remove text and nodes from
+ * @param initialRange The range to remove text and nodes from
  * @param sliceMode If 'preserveEmptyTextPointCaret' it will leave an empty TextPointCaret at the anchor for insert if one exists, otherwise empty slices will be removed
  * @returns The new collapsed range (biased towards the earlier node)
  */
@@ -589,8 +589,9 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
  * R -> P -> T1, T2
  *   -> P2
  * returns T2 for node T1, P2 for node T2, and null for node P2.
- * @param node LexicalNode.
- * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ * @param startCaret The initial caret
+ * @param rootMode The root mode, 'root' (default) or 'shadowRoot'
+ * @returns An array (tuple) containing the found caret and the depth difference, or null, if this node doesn't exist.
  */
 export function $getAdjacentSiblingOrParentSiblingCaret<
   D extends CaretDirection,

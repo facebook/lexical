@@ -896,18 +896,20 @@ export function $getTextPointCaret(
  *
  * @param origin a TextNode
  * @param offset An absolute offset into the TextNode string, or a direction for which end to use as the offset
+ * @param mode If 'error' (the default) out of bounds offsets will be an error in dev. Otherwise it will clamp to a valid offset.
  * @returns An absolute offset into the TextNode string
  */
 export function $getTextNodeOffset(
   origin: TextNode,
   offset: number | CaretDirection,
+  mode: 'error' | 'clamp' = 'error',
 ): number {
   const size = origin.getTextContentSize();
   let numericOffset =
     offset === 'next' ? size : offset === 'previous' ? 0 : offset;
   if (numericOffset < 0 || numericOffset > size) {
     devInvariant(
-      false,
+      mode === 'clamp',
       '$getTextNodeOffset: invalid offset %s for size %s at key %s',
       String(offset),
       String(size),
@@ -1242,14 +1244,14 @@ export function $comparePointCaretNext(
       return aIsText && bIsText
         ? compareNumber(a.offset, b.offset)
         : a.type === b.type
-        ? 0
-        : aIsText
-        ? -1
-        : bIsText
-        ? 1
-        : a.type === 'child'
-        ? -1
-        : 1;
+          ? 0
+          : aIsText
+            ? -1
+            : bIsText
+              ? 1
+              : a.type === 'child'
+                ? -1
+                : 1;
     }
     case 'ancestor': {
       return a.type === 'child' ? -1 : 1;
@@ -1264,8 +1266,8 @@ export function $comparePointCaretNext(
 }
 
 /**
- * Return the ordering of siblings in a CommonAncestorResultBranch
- * @param branch Returns -1 if a precedes b, 1 otherwise
+ * Return the ordering of siblings in a {@link CommonAncestorResultBranch}
+ * @param compare Returns -1 if a precedes b, 1 otherwise
  */
 export function $getCommonAncestorResultBranchOrder<
   A extends LexicalNode,

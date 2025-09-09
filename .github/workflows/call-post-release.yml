@@ -1,0 +1,44 @@
+name: (call) Post-release branch with updated examples
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git ref (main)'
+        required: true
+        type: string
+        default: main
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+        default: main
+jobs:
+  post-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - id: latest
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          owner: facebook
+          repo: lexical
+          excludes: draft
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      - run: |
+          npm i
+          for x in examples/*/ scripts/__tests__/integration/fixtures/*/; do
+            pushd "$x" && npm i && npm run build && popd
+          done
+      - uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: 'Update examples for ${{ steps.latest.outputs.release }}'
+          commit_user_name: 'Lexical GitHub Actions Bot'
+          branch: post-release-${{ steps.latest.outputs.release }}
+          push_options: '--force'

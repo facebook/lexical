@@ -137,7 +137,10 @@ export class ListNode extends ElementNode {
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (prevNode.__tag !== this.__tag) {
+    if (
+      prevNode.__tag !== this.__tag ||
+      prevNode.__listType !== this.__listType
+    ) {
       return true;
     }
 

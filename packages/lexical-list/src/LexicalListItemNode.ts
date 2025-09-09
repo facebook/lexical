@@ -535,7 +535,11 @@ function updateListItemChecked(
     parent.getListType() === 'check' &&
     // Only add attributes for leaf list items
     !$isListNode(listItemNode.getFirstChild());
-  if (isCheckbox) {
+  if (!isCheckbox) {
+    dom.removeAttribute('role');
+    dom.removeAttribute('tabIndex');
+    dom.removeAttribute('aria-checked');
+  } else {
     dom.setAttribute('role', 'checkbox');
     dom.setAttribute('tabIndex', '-1');
     if (

@@ -7,7 +7,11 @@
  */
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {$getRoot, ParagraphNode, TextNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  expectHtmlToBeEqual,
+  html,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
 import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -325,6 +329,64 @@ describe('LexicalListNode tests', () => {
 
       expect(testEnv.innerHTML).toEqual(
         '<ul dir="auto"><li value="1"><br></li></ul>',
+      );
+    });
+
+    test('Should clear checklist attributes when nesting lists', async () => {
+      const {editor} = testEnv;
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const root = $getRoot().clear();
+          root.append(
+            $createListNode('check').append(
+              $createListItemNode(),
+              $createListItemNode(),
+            ),
+          );
+        });
+      });
+
+      expectHtmlToBeEqual(
+        testEnv.innerHTML,
+        html`
+          <ul dir="auto">
+            <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
+              <br />
+            </li>
+            <li role="checkbox" tabindex="-1" value="2" aria-checked="false">
+              <br />
+            </li>
+          </ul>
+        `,
+      );
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          const listItemNode = listNode.getChildAtIndex<ListItemNode>(1)!;
+          listItemNode.append(
+            $createListNode('bullet').append($createListItemNode()),
+          );
+        });
+      });
+
+      expectHtmlToBeEqual(
+        testEnv.innerHTML,
+        html`
+          <ul dir="auto">
+            <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
+              <br />
+            </li>
+            <li value="2">
+              <ul>
+                <li value="1">
+                  <br />
+                </li>
+              </ul>
+            </li>
+          </ul>
+        `,
       );
     });
 

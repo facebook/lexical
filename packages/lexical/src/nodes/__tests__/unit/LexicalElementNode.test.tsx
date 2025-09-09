@@ -52,7 +52,9 @@ describe('LexicalElementNode tests', () => {
     return Promise.resolve().then();
   }
 
-  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
+  ) {
     const editor = React.useMemo(() => createTestEditor(), []);
 
     useEffect(() => {

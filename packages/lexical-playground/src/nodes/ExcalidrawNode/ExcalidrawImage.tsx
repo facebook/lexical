@@ -45,7 +45,7 @@ type Props = {
   /**
    * The ref object to be used to render the image
    */
-  imageContainerRef: React.MutableRefObject<HTMLDivElement | null>;
+  imageContainerRef: React.RefObject<HTMLDivElement | null>;
   /**
    * The type of image to be rendered
    */

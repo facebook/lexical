@@ -8,7 +8,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalEditor} from 'lexical';
-import {MutableRefObject} from 'react';
+import {RefObject} from 'react';
 import * as React from 'react';
 
 /**
@@ -23,7 +23,7 @@ export function EditorRefPlugin({
 }: {
   editorRef:
     | React.RefCallback<LexicalEditor>
-    | MutableRefObject<LexicalEditor | null | undefined>;
+    | RefObject<LexicalEditor | null | undefined>;
 }): null {
   const [editor] = useLexicalComposerContext();
 

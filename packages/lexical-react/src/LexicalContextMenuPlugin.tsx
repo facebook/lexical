@@ -16,19 +16,13 @@ import {
   isDOMNode,
   LexicalNode,
 } from 'lexical';
-import {
-  MutableRefObject,
-  ReactPortal,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import {ReactPortal, RefObject, useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 
 export type ContextMenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
+  anchorElementRef: RefObject<HTMLElement | null>,
   itemProps: {
     selectedIndex: number | null;
     selectOptionAndCleanUp: (option: TOption) => void;

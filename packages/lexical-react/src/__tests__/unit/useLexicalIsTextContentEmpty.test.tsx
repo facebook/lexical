@@ -38,7 +38,9 @@ describe('useLexicalIsTextContentEmpty', () => {
     vi.restoreAllMocks();
   });
 
-  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
+  ) {
     const editor = React.useMemo(
       () =>
         createEditor({
@@ -60,7 +62,7 @@ describe('useLexicalIsTextContentEmpty', () => {
   }
 
   test('hook works', async () => {
-    const ref = createRef<HTMLDivElement>();
+    const ref = createRef<null | HTMLDivElement>();
     let editor: LexicalEditor;
     let hasText = false;
 

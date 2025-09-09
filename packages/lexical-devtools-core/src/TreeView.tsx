@@ -57,7 +57,7 @@ export const TreeView = forwardRef<
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLimited, setIsLimited] = useState(false);
   const [showLimited, setShowLimited] = useState(false);
-  const lastEditorStateRef = useRef<null | EditorState>();
+  const lastEditorStateRef = useRef<null | EditorState>(null);
   const lastCommandsLogRef = useRef<LexicalCommandLog>([]);
   const lastGenerationID = useRef(0);
 

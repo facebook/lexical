@@ -5,16 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const glob = require('glob');
-const path = require('node:path');
-const {packagesManager} = require('../../shared/packagesManager');
-const npmToWwwName = require('../../www/npmToWwwName');
+import * as fs from 'fs-extra';
+import * as glob from 'glob';
+import * as path from 'node:path';
+import {describe, expect, it, test} from 'vitest';
 
-const monorepoPackageJson = require('../../shared/readMonorepoPackageJson')();
+import {packagesManager} from '../../shared/packagesManager';
+import npmToWwwName from '../../www/npmToWwwName';
+
+const monorepoPackageJson = (
+  await import('../../shared/readMonorepoPackageJson')
+).default();
 
 const publicNpmNames = new Set(
   packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
@@ -28,7 +30,7 @@ describe('public package.json audits (`npm run update-packages` to fix most issu
       const sourceFiles = fs
         .readdirSync(pkg.resolve('src'))
         .filter((str) => /\.tsx?/.test(str))
-        .map((str) => str.replace(/\.tsx?$/, '', str))
+        .map((str) => str.replace(/\.tsx?$/, ''))
         .sort();
       const exportedModules = pkg.getExportedNpmModuleNames().sort();
       const {dependencies = {}, peerDependencies = {}} = packageJson;

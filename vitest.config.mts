@@ -45,16 +45,22 @@ export default defineConfig({
         ],
         test: {
           environment: 'jsdom',
-          include: [
-            'packages/*/src/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}',
-          ],
+          include: ['packages/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
           name: 'unit',
+          setupFiles: ['./vitest.setup.mts'],
+          typecheck: {
+            tsconfig: './tsconfig.test.json',
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          environment: 'node',
+          include: ['scripts/**/__tests__/unit/**/*.test.ts'],
+          name: 'scripts-unit',
         },
       },
     ],
-    setupFiles: ['./vitest.setup.mts'],
-    typecheck: {
-      tsconfig: './tsconfig.test.json',
-    },
   },
 });

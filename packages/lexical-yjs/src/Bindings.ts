@@ -19,7 +19,7 @@ import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
-import {LexicalMapping} from './LexicalMapping';
+import {CollabV2Mapping} from './CollabV2Mapping';
 import {initializeNodeProperties} from './Utils';
 
 export type ClientID = number;
@@ -48,7 +48,7 @@ export type Binding = BaseBinding & {
 };
 
 export type BindingV2 = BaseBinding & {
-  mapping: LexicalMapping;
+  mapping: CollabV2Mapping;
   root: XmlElement;
 };
 
@@ -117,7 +117,7 @@ export function createBindingV2__EXPERIMENTAL(
   );
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
-    mapping: new LexicalMapping(),
+    mapping: new CollabV2Mapping(),
     root: doc.get('root-v2', XmlElement) as XmlElement,
   };
 }

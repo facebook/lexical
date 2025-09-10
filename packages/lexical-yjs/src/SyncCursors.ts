@@ -12,7 +12,6 @@ import type {
   NodeKey,
   NodeMap,
   Point,
-  TextNode,
 } from 'lexical';
 
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
@@ -47,7 +46,7 @@ import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
-import {LexicalMapping} from './LexicalMapping';
+import {CollabV2Mapping} from './CollabV2Mapping';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
@@ -550,13 +549,13 @@ function getCollabNodeAndOffset(
 }
 
 function $getNodeAndOffsetV2(
-  mapping: LexicalMapping,
+  mapping: CollabV2Mapping,
   absolutePosition: AbsolutePosition,
 ): [null | LexicalNode, number] {
   const yType = absolutePosition.type as XmlElement | XmlText;
   const yOffset = absolutePosition.index;
   if (yType instanceof XmlElement) {
-    const node = mapping.get(yType) as LexicalNode;
+    const node = mapping.get(yType);
     if (node === undefined) {
       return [null, 0];
     }
@@ -582,7 +581,7 @@ function $getNodeAndOffsetV2(
     }
     return [node, lexicalOffset];
   } else {
-    const nodes = mapping.get(yType) as TextNode[];
+    const nodes = mapping.get(yType);
     if (nodes === undefined) {
       return [null, 0];
     }

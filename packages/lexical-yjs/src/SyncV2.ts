@@ -64,7 +64,7 @@ export const $createOrUpdateNodeFromYElement = (
   prevSnapshot?: Y.Snapshot,
   computeYChange?: ComputeYChange,
 ): LexicalNode | null => {
-  let node = meta.mapping.get(el) as LexicalNode | undefined;
+  let node = meta.mapping.get(el);
   if (node && !dirtyElements.has(node.getKey())) {
     return node;
   }
@@ -248,7 +248,7 @@ const $createTextNodesFromYText = (
   const nodeTypes: string[] = deltas.map(
     (delta) => delta.attributes!.t ?? TextNode.getType(),
   );
-  let nodes: TextNode[] = (meta.mapping.get(text) as TextNode[]) ?? [];
+  let nodes: TextNode[] = meta.mapping.get(text) ?? [];
   if (
     nodes.length !== nodeTypes.length ||
     nodes.some((node, i) => node.getType() !== nodeTypes[i])
@@ -481,7 +481,9 @@ const computeChildEqualityFactor = (
   for (; left < minCnt; left++) {
     const leftY = yChildren[left];
     const leftP = pChildren[left];
-    if (mappedIdentity(meta.mapping.get(leftY), leftP)) {
+    if (leftY instanceof Y.XmlHook) {
+      break;
+    } else if (mappedIdentity(meta.mapping.get(leftY), leftP)) {
       foundMappedChild = true; // definite (good) match!
     } else if (!equalYTypePNode(leftY, leftP, meta)) {
       break;
@@ -490,7 +492,9 @@ const computeChildEqualityFactor = (
   for (; left + right < minCnt; right++) {
     const rightY = yChildren[yChildCnt - right - 1];
     const rightP = pChildren[pChildCnt - right - 1];
-    if (mappedIdentity(meta.mapping.get(rightY), rightP)) {
+    if (rightY instanceof Y.XmlHook) {
+      break;
+    } else if (mappedIdentity(meta.mapping.get(rightY), rightP)) {
       foundMappedChild = true;
     } else if (!equalYTypePNode(rightY, rightP, meta)) {
       break;
@@ -651,7 +655,9 @@ export const updateYFragment = (
   for (; left < minCnt; left++) {
     const leftY = yChildren[left];
     const leftP = pChildren[left];
-    if (mappedIdentity(meta.mapping.get(leftY), leftP)) {
+    if (leftY instanceof Y.XmlHook) {
+      break;
+    } else if (mappedIdentity(meta.mapping.get(leftY), leftP)) {
       if (leftP instanceof ElementNode && dirtyElements.has(leftP.getKey())) {
         updateYFragment(
           y,
@@ -661,20 +667,20 @@ export const updateYFragment = (
           dirtyElements,
         );
       }
+    } else if (equalYTypePNode(leftY, leftP, meta)) {
+      // update mapping
+      meta.mapping.set(leftY, leftP);
     } else {
-      if (equalYTypePNode(leftY, leftP, meta)) {
-        // update mapping
-        meta.mapping.set(leftY, leftP);
-      } else {
-        break;
-      }
+      break;
     }
   }
   // find number of matching elements from right
   for (; right + left < minCnt; right++) {
     const rightY = yChildren[yChildCnt - right - 1];
     const rightP = pChildren[pChildCnt - right - 1];
-    if (mappedIdentity(meta.mapping.get(rightY), rightP)) {
+    if (rightY instanceof Y.XmlHook) {
+      break;
+    } else if (mappedIdentity(meta.mapping.get(rightY), rightP)) {
       if (rightP instanceof ElementNode && dirtyElements.has(rightP.getKey())) {
         updateYFragment(
           y,
@@ -684,13 +690,11 @@ export const updateYFragment = (
           dirtyElements,
         );
       }
+    } else if (equalYTypePNode(rightY, rightP, meta)) {
+      // update mapping
+      meta.mapping.set(rightY, rightP);
     } else {
-      if (equalYTypePNode(rightY, rightP, meta)) {
-        // update mapping
-        meta.mapping.set(rightY, rightP);
-      } else {
-        break;
-      }
+      break;
     }
   }
   // try to compare and update

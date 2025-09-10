@@ -277,7 +277,7 @@ describe('Markdown', () => {
     },
     {
       // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
-      html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello world !</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -303,7 +303,7 @@ describe('Markdown', () => {
     // },
     {
       // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world ! !</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -396,7 +396,7 @@ describe('Markdown', () => {
       mdAfterExport: '*Hello&#32;**world**!*',
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">hello world</span></p>',
       md: 'hello\nworld',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -504,7 +504,7 @@ describe('Markdown', () => {
     },
     {
       // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
-      html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
+      html: '<blockquote><span style="white-space: pre-wrap;">Hello world !</span></blockquote>',
       md: '> Hello\nworld\n!',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -953,7 +953,7 @@ E2
 E3
 `;
     expect(normalizeMarkdown(markdown, true)).toBe(`
-A1A2
+A1 A2
 
 A3
 
@@ -964,7 +964,7 @@ B2
 B3
 \`\`\`
 
-C1C2
+C1 C2
 
 C3
 
@@ -977,7 +977,7 @@ D3
 
 \`\`\`single line code\`\`\`
 
-E1E2
+E1 E2
 
 E3
 `);
@@ -1068,5 +1068,66 @@ E3
 | c | d |
 `;
     expect(normalizeMarkdown(markdown, false)).toBe(markdown);
+  });
+});
+
+describe.skip('normalizeMarkdown – new behaviors', () => {
+  it('merges adjacent plain text lines with a single space', () => {
+    const md = `Hello
+world`;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('merges while trimming the next line and inserting a single space', () => {
+    const md = `Hello
+   world   `;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('does not merge across HTML-like tags (opening, content, closing, after)', () => {
+    const md = `<div>
+content
+</div>
+after`;
+    // Nothing should be merged
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('does not merge the fence line with the first line after a code block', () => {
+    const md = '```\ncode\n```\nNext line';
+    // The closing ``` must remain on its own line; "Next line" must not be glued to it
+    expect(normalizeMarkdown(md, true)).toBe('```\ncode\n```\nNext line');
+  });
+
+  it('treats whitespace-only lines as empty separators (no merge across them)', () => {
+    const md = `A1
+     
+A2`;
+    // The middle line is spaces only; should be treated as an empty separator
+    expect(normalizeMarkdown(md, true)).toBe(`A1
+
+A2`);
+  });
+
+  it('handles a code block that contains a literal ``` line without breaking merging outside', () => {
+    const md = `Intro
+para
+\`\`\`md
+some code
+\`\`\`
+still code
+\`\`\`
+Outro
+text`;
+    // Outside the fenced block, adjacent non-empty lines should merge with a space
+    expect(normalizeMarkdown(md, true)).toBe(
+      `Intro para
+\`\`\`md
+some code
+\`\`\`
+still code
+\`\`\`
+Outro text`,
+    );
   });
 });

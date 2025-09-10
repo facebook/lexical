@@ -217,7 +217,8 @@
     "**/npm/**",
     "**/node_modules/**",
     "./packages/lexical-devtools/**",
-    "./packages/lexical-playground/**"
+    "./packages/lexical-playground/**",
+    "./packages/lexical-website/**"
   ],
   "extends": "./tsconfig.json"
 }

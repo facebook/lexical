@@ -30,8 +30,6 @@ export class BiMultiMap<K, V> {
   }
 
   putAll(key: K, values: Array<V>): void {
-    // Remove all existing associations for this key so that insertion order is respected.
-    this.removeKey(key);
     for (const value of values) {
       this.put(key, value);
     }

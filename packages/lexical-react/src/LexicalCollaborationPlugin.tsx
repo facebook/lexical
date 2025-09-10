@@ -185,6 +185,7 @@ function YjsCollaborationCursors({
 type CollaborationPluginV2Props = {
   id: string;
   providerFactory: ProviderFactory;
+  shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;
   cursorsContainerRef?: CursorsContainerRef;
@@ -196,6 +197,7 @@ type CollaborationPluginV2Props = {
 export function CollaborationPluginV2__EXPERIMENTAL({
   id,
   providerFactory,
+  shouldBootstrap,
   username,
   cursorColor,
   cursorsContainerRef,
@@ -252,7 +254,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       name={name}
       provider={provider}
       setDoc={setDoc}
-      shouldBootstrap={false}
+      shouldBootstrap={shouldBootstrap}
       yjsDocMap={yjsDocMap}
     />
   );
@@ -265,6 +267,7 @@ function YjsCollaborationCursorsV2__EXPERIMENTAL({
   yjsDocMap,
   name,
   color,
+  shouldBootstrap,
   cursorsContainerRef,
   awarenessData,
   collabContext,
@@ -293,6 +296,7 @@ function YjsCollaborationCursorsV2__EXPERIMENTAL({
     yjsDocMap,
     name,
     color,
+    shouldBootstrap,
     binding,
     setDoc,
     cursorsContainerRef,

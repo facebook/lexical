@@ -56,6 +56,7 @@ function Editor({
         <CollaborationPluginV2__EXPERIMENTAL
           id="main"
           providerFactory={() => provider}
+          shouldBootstrap={shouldBootstrapEditor}
           awarenessData={awarenessData}
         />
       ) : (

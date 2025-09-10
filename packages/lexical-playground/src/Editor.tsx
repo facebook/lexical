@@ -193,6 +193,7 @@ export default function Editor(): JSX.Element {
                 <CollaborationPluginV2__EXPERIMENTAL
                   id="main"
                   providerFactory={createWebsocketProvider}
+                  shouldBootstrap={!skipCollaborationInit}
                 />
               ) : (
                 <CollaborationPlugin

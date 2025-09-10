@@ -20,6 +20,7 @@ import {Doc, XmlElement, XmlText} from 'yjs';
 import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
 import {LexicalMapping} from './LexicalMapping';
+import {initializeNodeProperties} from './Utils';
 
 export type ClientID = number;
 export type BaseBinding = {
@@ -30,7 +31,7 @@ export type BaseBinding = {
   docMap: Map<string, Doc>;
   editor: LexicalEditor;
   id: string;
-  nodeProperties: Map<string, Array<string>>;
+  nodeProperties: Map<string, {[property: string]: unknown}>; // node type to property to default value
   excludedProperties: ExcludedProperties;
 };
 export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
@@ -62,7 +63,7 @@ function createBaseBinding(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  return {
+  const binding = {
     clientID: doc.clientID,
     cursors: new Map(),
     cursorsContainer: null,
@@ -73,6 +74,8 @@ function createBaseBinding(
     id,
     nodeProperties: new Map(),
   };
+  initializeNodeProperties(binding);
+  return binding;
 }
 
 export function createBinding(

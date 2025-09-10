@@ -143,9 +143,9 @@ function createRelativePositionV2(
     while (child !== null && i < offset) {
       if ($isTextNode(child)) {
         // Multiple text nodes are collapsed into a single YText.
-        let nextSiblind = child.getNextSibling();
-        while ($isTextNode(nextSiblind)) {
-          nextSiblind = nextSiblind.getNextSibling();
+        let nextSibling = child.getNextSibling();
+        while ($isTextNode(nextSibling)) {
+          nextSibling = nextSibling.getNextSibling();
         }
       }
       i++;
@@ -435,18 +435,42 @@ export function $getAnchorAndFocusForUserState(
       focusOffset,
     };
   } else if (isBindingV2(binding)) {
-    const [anchorKey, anchorOffset] = $getNodeAndOffsetV2(
+    let [anchorNode, anchorOffset] = $getNodeAndOffsetV2(
       binding.mapping,
       anchorAbsPos,
     );
-    const [focusKey, focusOffset] = $getNodeAndOffsetV2(
+    let [focusNode, focusOffset] = $getNodeAndOffsetV2(
       binding.mapping,
       focusAbsPos,
     );
+    // For a non-collapsed selection, if the start of the selection is as the end of a text node,
+    // move it to the beginning of the next text node (if one exists).
+    if (
+      focusNode &&
+      anchorNode &&
+      (focusNode !== anchorNode || focusOffset !== anchorOffset)
+    ) {
+      const isBackwards = focusNode.isBefore(anchorNode);
+      const startNode = isBackwards ? focusNode : anchorNode;
+      const startOffset = isBackwards ? focusOffset : anchorOffset;
+      if (
+        $isTextNode(startNode) &&
+        $isTextNode(startNode.getNextSibling()) &&
+        startOffset === startNode.getTextContentSize()
+      ) {
+        if (isBackwards) {
+          focusNode = startNode.getNextSibling();
+          focusOffset = 0;
+        } else {
+          anchorNode = startNode.getNextSibling();
+          anchorOffset = 0;
+        }
+      }
+    }
     return {
-      anchorKey,
+      anchorKey: anchorNode !== null ? anchorNode.getKey() : null,
       anchorOffset,
-      focusKey,
+      focusKey: focusNode !== null ? focusNode.getKey() : null,
       focusOffset,
     };
   } else {
@@ -528,23 +552,42 @@ function getCollabNodeAndOffset(
 function $getNodeAndOffsetV2(
   mapping: LexicalMapping,
   absolutePosition: AbsolutePosition,
-): [null | NodeKey, number] {
+): [null | LexicalNode, number] {
   const yType = absolutePosition.type as XmlElement | XmlText;
-  const offset = absolutePosition.index;
+  const yOffset = absolutePosition.index;
   if (yType instanceof XmlElement) {
     const node = mapping.get(yType) as LexicalNode;
     if (node === undefined) {
       return [null, 0];
     }
-    const maxOffset = $isElementNode(node) ? node.getChildrenSize() : 0;
-    return [node.getKey(), Math.min(offset, maxOffset)];
+    if (!$isElementNode(node)) {
+      return [node, yOffset];
+    }
+    let remainingYOffset = yOffset;
+    let lexicalOffset = 0;
+    const children = node.getChildren();
+    while (remainingYOffset > 0 && lexicalOffset < children.length) {
+      const child = children[lexicalOffset];
+      remainingYOffset -= 1;
+      lexicalOffset += 1;
+      if ($isTextNode(child)) {
+        // Multiple text nodes (lexicalOffset) are collapsed into a single YText (remainingYOffset).
+        while (
+          lexicalOffset < children.length &&
+          $isTextNode(children[lexicalOffset])
+        ) {
+          lexicalOffset += 1;
+        }
+      }
+    }
+    return [node, lexicalOffset];
   } else {
     const nodes = mapping.get(yType) as TextNode[];
     if (nodes === undefined) {
       return [null, 0];
     }
     let i = 0;
-    let adjustedOffset = offset;
+    let adjustedOffset = yOffset;
     while (
       adjustedOffset > nodes[i].getTextContentSize() &&
       i + 1 < nodes.length
@@ -553,10 +596,7 @@ function $getNodeAndOffsetV2(
       i++;
     }
     const textNode = nodes[i];
-    return [
-      textNode.getKey(),
-      Math.min(adjustedOffset, textNode.getTextContentSize()),
-    ];
+    return [textNode, Math.min(adjustedOffset, textNode.getTextContentSize())];
   }
 }
 

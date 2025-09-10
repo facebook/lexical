@@ -159,11 +159,19 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
+  shouldBootstrap: boolean,
   binding: BindingV2,
   setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
   cursorsContainerRef?: CursorsContainerRef,
   awarenessData?: object,
 ) {
+  const onBootstrap = useCallback(() => {
+    const {root} = binding;
+    if (shouldBootstrap && root._length === 0) {
+      initializeEditor(editor);
+    }
+  }, [binding, editor, shouldBootstrap]);
+
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
@@ -227,6 +235,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     setDoc,
     cursorsContainerRef,
     awarenessData,
+    onBootstrap,
   );
 }
 

@@ -32,24 +32,13 @@ describe('Collaboration', () => {
     container = null;
   });
 
-  async function expectCorrectInitialContent(
-    client1: Client,
-    client2: Client,
-    useCollabV2: boolean,
-  ) {
+  async function expectCorrectInitialContent(client1: Client, client2: Client) {
     // Should be empty, as client has not yet updated
     expect(client1.getHTML()).toEqual('');
     expect(client1.getHTML()).toEqual(client2.getHTML());
 
     // Wait for clients to render the initial content
     await Promise.resolve().then();
-
-    if (useCollabV2) {
-      // Manually bootstrap editor state.
-      await waitForReact(() => {
-        client1.update(() => $getRoot().append($createParagraphNode()));
-      });
-    }
 
     expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
     expect(client1.getHTML()).toEqual(client2.getHTML());
@@ -68,7 +57,7 @@ describe('Collaboration', () => {
         client1.start(container!);
         client2.start(container!);
 
-        await expectCorrectInitialContent(client1, client2, useCollabV2);
+        await expectCorrectInitialContent(client1, client2);
 
         // Insert a text node on client 1
         await waitForReact(() => {
@@ -120,7 +109,7 @@ describe('Collaboration', () => {
         client1.start(container!);
         client2.start(container!);
 
-        await expectCorrectInitialContent(client1, client2, useCollabV2);
+        await expectCorrectInitialContent(client1, client2);
 
         client1.disconnect();
 
@@ -220,7 +209,7 @@ describe('Collaboration', () => {
         client1.start(container!);
         client2.start(container!);
 
-        await expectCorrectInitialContent(client1, client2, useCollabV2);
+        await expectCorrectInitialContent(client1, client2);
 
         // Insert some a text node on client 1
         await waitForReact(() => {
@@ -278,14 +267,20 @@ describe('Collaboration', () => {
           client1.connect();
         });
 
-        // TODO we can probably handle these conflicts better. We could keep around
-        // a "fallback" {Map} when we remove text without any adjacent text nodes. This
-        // would require big changes in `CollabElementNode.splice` and also need adjustments
-        // in `CollabElementNode.applyChildrenYjsDelta` to handle the existence of these
-        // fallback maps. For now though, if a user clears all text nodes from an element
-        // and another user inserts some text into the same element at the same time, the
-        // deletion will take precedence on conflicts.
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        if (useCollabV2) {
+          expect(client1.getHTML()).toEqual(
+            '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
+          );
+        } else {
+          // TODO we can probably handle these conflicts better. We could keep around
+          // a "fallback" {Map} when we remove text without any adjacent text nodes. This
+          // would require big changes in `CollabElementNode.splice` and also need adjustments
+          // in `CollabElementNode.applyChildrenYjsDelta` to handle the existence of these
+          // fallback maps. For now though, if a user clears all text nodes from an element
+          // and another user inserts some text into the same element at the same time, the
+          // deletion will take precedence on conflicts.
+          expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        }
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
         client1.stop();
@@ -299,7 +294,7 @@ describe('Collaboration', () => {
         client1.start(container!);
         client2.start(container!);
 
-        await expectCorrectInitialContent(client1, client2, useCollabV2);
+        await expectCorrectInitialContent(client1, client2);
 
         await waitForReact(() => {
           client1.update(() => {
@@ -350,7 +345,7 @@ describe('Collaboration', () => {
         client1.start(container!, awarenessData1);
         client2.start(container!, awarenessData2);
 
-        await expectCorrectInitialContent(client1, client2, useCollabV2);
+        await expectCorrectInitialContent(client1, client2);
 
         expect(client1.awareness.getLocalState()!.awarenessData).toEqual(
           awarenessData1,
@@ -457,7 +452,7 @@ describe('Collaboration', () => {
     client1.start(container!);
     client2.start(container!);
 
-    await expectCorrectInitialContent(client1, client2, false);
+    await expectCorrectInitialContent(client1, client2);
 
     client2.disconnect();
 
@@ -472,7 +467,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p><span data-lexical-text="true">1</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">1</span></p>',
     );
 
     // Simulate normalization merge conflicts by inserting YMap+strings directly into Yjs.
@@ -489,7 +484,7 @@ describe('Collaboration', () => {
 
     // Note: client1 HTML won't have been updated yet here because we edited its Yjs doc directly.
     expect(client1.getHTML()).toEqual(
-      '<p><span data-lexical-text="true">1</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">1</span></p>',
     );
 
     // When client2 reconnects, it will normalize the three text nodes, which syncs back to client1.
@@ -498,7 +493,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<p><span data-lexical-text="true">123</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">123</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());

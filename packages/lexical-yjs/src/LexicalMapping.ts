@@ -24,6 +24,8 @@ export class LexicalMapping {
     node: LexicalNode | TextNode[],
   ) {
     invariant(!(sharedType instanceof XmlHook), 'XmlHook is not supported');
+    // Remove all existing associations for this key so that insertion order is respected.
+    this._map.removeKey(sharedType);
     const isArray = node instanceof Array;
     if (sharedType instanceof XmlText) {
       invariant(isArray, 'Text nodes must be mapped as an array');
@@ -66,9 +68,5 @@ export class LexicalMapping {
 
   has(sharedType: XmlElement | XmlText): boolean {
     return this._map.hasKey(sharedType);
-  }
-
-  hasNode(node: LexicalNode): boolean {
-    return this._map.hasValue(node);
   }
 }

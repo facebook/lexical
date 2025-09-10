@@ -30,12 +30,12 @@ import {
   click,
   copyToClipboard,
   focusEditor,
+  getExpectedDateTimeHtml,
   html,
   initialize,
-  insertSampleImage,
+  insertDateTime,
   pasteFromClipboard,
   repeat,
-  SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromColorPicker,
   selectFromFormatDropdown,
@@ -229,7 +229,7 @@ test.describe.parallel('Nested List', () => {
     await focusEditor(page);
     await toggleBulletList(page);
 
-    await insertSampleImage(page);
+    await insertDateTime(page);
     await page.keyboard.type('x');
     await moveLeft(page, 1);
 
@@ -244,18 +244,7 @@ test.describe.parallel('Nested List', () => {
             value="1">
             <ul class="PlaygroundEditorTheme__ul">
               <li class="PlaygroundEditorTheme__listItem" value="1">
-                <span
-                  class="editor-image"
-                  contenteditable="false"
-                  data-lexical-decorator="true">
-                  <div draggable="false">
-                    <img
-                      alt="Yellow flower in tilt shift lens"
-                      draggable="false"
-                      src="${SAMPLE_IMAGE_URL}"
-                      style="height: inherit; max-width: 500px; width: inherit" />
-                  </div>
-                </span>
+                ${getExpectedDateTimeHtml()}
                 <span data-lexical-text="true">x</span>
               </li>
             </ul>

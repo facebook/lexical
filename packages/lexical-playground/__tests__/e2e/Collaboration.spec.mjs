@@ -160,12 +160,21 @@ test.describe('Collaboration', () => {
         </p>
       `,
     );
-    await assertSelection(page, {
-      anchorOffset: 5,
-      anchorPath: [0, 0, 0],
-      focusOffset: 5,
-      focusPath: [0, 0, 0],
-    });
+    if (isCollab === 1) {
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 0, 0],
+        focusOffset: 5,
+        focusPath: [0, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 1,
+        anchorPath: [0],
+        focusOffset: 1,
+        focusPath: [0],
+      });
+    }
 
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('Some bold text');
@@ -314,7 +323,6 @@ test.describe('Collaboration', () => {
         </p>
       `,
     );
-    const boldSleep = sleep(1050);
 
     // Right collaborator types at the end of the paragraph.
     await page
@@ -339,7 +347,7 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator undoes their bold text.
-    await boldSleep;
+    await sleep(1050);
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
     // The undo also removed bold the text node from YJS.
@@ -428,15 +436,27 @@ test.describe('Collaboration', () => {
     // Left collaborator undoes their bold text.
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
-    // The undo causes the text to be appended to the original string, like in the above test.
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">normal boldBOLD</span>
-        </p>
-      `,
-    );
+    if (isCollab === 1) {
+      // The undo causes the text to be appended to the original string, like in the above test.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">normal boldBOLD</span>
+          </p>
+        `,
+      );
+    } else {
+      // In v2, the text is not moved.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">normal boBOLDld</span>
+          </p>
+        `,
+      );
+    }
 
     // Left collaborator redoes the bold text.
     await page.frameLocator('iframe[name="left"]').getByLabel('Redo').click();
@@ -549,15 +569,27 @@ test.describe('Collaboration', () => {
     // Left collaborator undoes the link.
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
-    // The undo causes the text to be appended to the original string, like in the above test.
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Check out the website! now</span>
-        </p>
-      `,
-    );
+    if (isCollab === 1) {
+      // The undo causes the text to be appended to the original string, like in the above test.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Check out the website! now</span>
+          </p>
+        `,
+      );
+    } else {
+      // The undo causes the YText node to be removed.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Check out the website!</span>
+          </p>
+        `,
+      );
+    }
 
     // Left collaborator redoes the link.
     await page.frameLocator('iframe[name="left"]').getByLabel('Redo').click();

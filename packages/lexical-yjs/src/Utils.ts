@@ -85,19 +85,34 @@ function isExcludedProperty(
   return excludedProperties != null && excludedProperties.has(name);
 }
 
-export function getNodeProperties(
+export function initializeNodeProperties(binding: BaseBinding): void {
+  const {editor, nodeProperties} = binding;
+  editor.update(() => {
+    editor._nodes.forEach((nodeInfo) => {
+      const node = new nodeInfo.klass();
+      const defaultProperties: {[property: string]: unknown} = {};
+      for (const [property, value] of Object.entries(node)) {
+        if (!isExcludedProperty(property, node, binding)) {
+          defaultProperties[property] = value;
+        }
+      }
+      nodeProperties.set(node.__type, defaultProperties);
+    });
+  });
+}
+
+export function getDefaultNodeProperties(
   node: LexicalNode,
   binding: BaseBinding,
-): string[] {
+): {[property: string]: unknown} {
   const type = node.__type;
   const {nodeProperties} = binding;
-  if (nodeProperties.has(type)) {
-    return nodeProperties.get(type)!;
-  }
-  const properties = Object.keys(node).filter((property) => {
-    return !isExcludedProperty(property, node, binding);
-  });
-  nodeProperties.set(type, properties);
+  const properties = nodeProperties.get(type);
+  invariant(
+    properties !== undefined,
+    'Node properties for %s not initialized for sync',
+    type,
+  );
   return properties;
 }
 
@@ -415,7 +430,9 @@ export function syncPropertiesFromLexical(
   prevLexicalNode: null | LexicalNode,
   nextLexicalNode: LexicalNode,
 ): void {
-  const properties = getNodeProperties(nextLexicalNode, binding);
+  const properties = Object.keys(
+    getDefaultNodeProperties(nextLexicalNode, binding),
+  );
 
   const EditorClass = binding.editor.constructor;
 

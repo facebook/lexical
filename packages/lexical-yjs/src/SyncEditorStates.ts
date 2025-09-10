@@ -6,7 +6,7 @@
  *
  */
 
-import type {EditorState, LexicalNode, NodeKey} from 'lexical';
+import type {EditorState, NodeKey} from 'lexical';
 import type {
   AbstractType as YAbstractType,
   ContentType,
@@ -168,15 +168,8 @@ export function syncYjsChangesToLexical(
     },
     {
       onUpdate: () => {
-        // If there was a collision on the top level paragraph
-        // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
-        // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
         syncCursorPositionsFn(binding, provider);
-        editor.update(() => {
-          if ($getRoot().getChildrenSize() === 0) {
-            $getRoot().append($createParagraphNode());
-          }
-        });
+        editor.update(() => $ensureEditorNotEmpty());
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
@@ -267,6 +260,15 @@ function $handleNormalizationMergeConflicts(
   }
 }
 
+// If there was a collision on the top level paragraph
+// we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
+// it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+function $ensureEditorNotEmpty() {
+  if ($getRoot().getChildrenSize() === 0) {
+    $getRoot().append($createParagraphNode());
+  }
+}
+
 type IntentionallyMarkedAsDirtyElement = boolean;
 
 export function syncLexicalUpdateToYjs(
@@ -349,20 +351,7 @@ function $syncV2XmlElement(
   transaction.changed.forEach(collectDirty);
   transaction.changedParentTypes.forEach(collectDirty);
 
-  const fragmentContent = binding.root
-    .toArray()
-    .map(
-      (t) =>
-        $createOrUpdateNodeFromYElement(
-          t as XmlElement,
-          binding,
-          dirtyElements,
-        ) as LexicalNode,
-    )
-    .filter((n) => n !== null);
-
-  // TODO(collab-v2): be more targeted with splicing, similar to CollabElementNode's syncChildrenFromLexical
-  $getRoot().splice(0, $getRoot().getChildrenSize(), fragmentContent);
+  $createOrUpdateNodeFromYElement(binding.root, binding, dirtyElements);
 }
 
 export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
@@ -386,16 +375,12 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
       }
     },
     {
+      // Need any text node normalisation to be synchronously updated back to Yjs, otherwise the
+      // binding.mapping will get out of sync.
+      discrete: true,
       onUpdate: () => {
-        // If there was a collision on the top level paragraph
-        // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
-        // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
         syncCursorPositions(binding, provider);
-        editor.update(() => {
-          if ($getRoot().getChildrenSize() === 0) {
-            $getRoot().append($createParagraphNode());
-          }
-        });
+        editor.update(() => $ensureEditorNotEmpty());
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
@@ -412,10 +397,13 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
+  const isFromYjs = tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG);
+  if (isFromYjs && normalizedNodes.size === 0) {
+    return;
+  }
+
   syncWithTransaction(binding, () => {
     currEditorState.read(() => {
-      // TODO(collab-v2): what sort of normalization handling do we need for clients that concurrently create YText?
-
       if (dirtyElements.has('root')) {
         updateYFragment(
           binding.doc,

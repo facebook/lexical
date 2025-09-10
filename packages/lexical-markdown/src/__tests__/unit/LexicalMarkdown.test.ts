@@ -1070,3 +1070,64 @@ E3
     expect(normalizeMarkdown(markdown, false)).toBe(markdown);
   });
 });
+
+describe.skip('normalizeMarkdown – new behaviors', () => {
+  it('merges adjacent plain text lines with a single space', () => {
+    const md = `Hello
+world`;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('merges while trimming the next line and inserting a single space', () => {
+    const md = `Hello
+   world   `;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('does not merge across HTML-like tags (opening, content, closing, after)', () => {
+    const md = `<div>
+content
+</div>
+after`;
+    // Nothing should be merged
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('does not merge the fence line with the first line after a code block', () => {
+    const md = '```\ncode\n```\nNext line';
+    // The closing ``` must remain on its own line; "Next line" must not be glued to it
+    expect(normalizeMarkdown(md, true)).toBe('```\ncode\n```\nNext line');
+  });
+
+  it('treats whitespace-only lines as empty separators (no merge across them)', () => {
+    const md = `A1
+     
+A2`;
+    // The middle line is spaces only; should be treated as an empty separator
+    expect(normalizeMarkdown(md, true)).toBe(`A1
+
+A2`);
+  });
+
+  it('handles a code block that contains a literal ``` line without breaking merging outside', () => {
+    const md = `Intro
+para
+\`\`\`md
+some code
+\`\`\`
+still code
+\`\`\`
+Outro
+text`;
+    // Outside the fenced block, adjacent non-empty lines should merge with a space
+    expect(normalizeMarkdown(md, true)).toBe(
+      `Intro para
+\`\`\`md
+some code
+\`\`\`
+still code
+\`\`\`
+Outro text`,
+    );
+  });
+});

@@ -26,7 +26,7 @@ export const NodeSelectionExtension = defineExtension({
       watchedNodeKeys: new Map<NodeKey, Set<ReadonlySignal<boolean>>>(),
     });
     const selectedNodeKeys = watchedSignal<undefined | Set<NodeKey>>(
-      undefined,
+      () => undefined,
       () =>
         effect(() => {
           const prevSelectedNodeKeys = selectedNodeKeys.peek();

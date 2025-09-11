@@ -23,7 +23,8 @@ import type {
  * @param extension - The LexicalExtension
  * @returns The unmodified extension argument (this is only an inference helper)
  *
- * @example Basic example
+ * @example
+ * Basic example
  * ```ts
  * export const MyExtension = defineExtension({
  *   // Extension names must be unique in an editor
@@ -32,7 +33,8 @@ import type {
  * });
  * ```
  *
- * @example Extension with optional configuration
+ * @example
+ * Extension with optional configuration
  * ```ts
  * export interface ConfigurableConfig {
  *   optional?: string;

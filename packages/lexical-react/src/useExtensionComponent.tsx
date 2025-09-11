@@ -62,7 +62,8 @@ export type UseExtensionComponentProps<Extension extends AnyLexicalExtension> =
  * A convenient way to get an Extension's output Component with {@link useExtensionComponent}
  * and construct it in one step.
  *
- * @example Usage
+ * @example
+ * Usage
  * ```tsx
  * return (
  *   <UseExtensionComponent
@@ -71,7 +72,8 @@ export type UseExtensionComponentProps<Extension extends AnyLexicalExtension> =
  * );
  * ```
  *
- * @example Alternative without UseExtensionComponent
+ * @example
+ * Alternative without UseExtensionComponent
  * ```tsx
  * const TreeViewComponent = useExtensionComponent(TreeViewExtension);
  * return (<TreeViewComponent viewClassName="tree-view-output" />);

@@ -28,7 +28,8 @@ import {buildEditorComponent} from './shared/buildEditorComponent';
 export type {EditorChildrenComponentProps, ReactConfig, ReactOutputs};
 
 /**
- * @example The default EditorChildrenComponent implementation
+ * @example
+ * The default EditorChildrenComponent implementation
  * ```jsx
  * return (
  *   <>

@@ -37,7 +37,8 @@ export interface LexicalExtensionComposerProps {
  * argument is stable (e.g. using module scope or useMemo) so
  * that you are not re-creating the editor on every render!
  *
- * @example Module scoped extension
+ * @example
+ * Module scoped extension
  * ```tsx
  * const extension = defineExtension({
  *   name: "[root]",
@@ -48,7 +49,8 @@ export interface LexicalExtensionComposerProps {
  * }
  * ```
  *
- * @example useMemo extension
+ * @example
+ * useMemo extension
  * ```tsx
  * function MyEditor({ emojiBaseUrl, children }) {
  *   const extension = useMemo(() => {
@@ -65,7 +67,8 @@ export interface LexicalExtensionComposerProps {
  * }
  * ```
  *
- * @example Incorrect usage with unstable extension
+ * @example
+ * Incorrect usage with unstable extension
  * ```tsx
  * function MyBrokenEditor({ emojiBaseUrl }) {
  *   // This argument is not stable, the editor is re-created every render and

@@ -44,7 +44,9 @@ export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');
  * @param extensions - Extension arguments (extensions or extensions with config overrides)
  * @returns An editor handle
  *
- * @example A single root extension with multiple dependencies
+ * @example
+ * A single root extension with multiple dependencies
+ *
  * ```ts
  * const editor = buildEditorFromExtensions(
  *   defineExtension({
@@ -60,7 +62,10 @@ export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');
  *   }),
  * );
  * ```
- * @example A very similar minimal configuration without the register hook
+ *
+ * @example
+ * A very similar minimal configuration without the register hook
+ *
  * ```ts
  * const editor = buildEditorFromExtensions(
  *   RichTextExtension,

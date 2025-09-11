@@ -59,6 +59,16 @@ const sidebars = {
       label: 'Concepts',
       type: 'category',
     },
+    {
+      items: [
+        'extensions/intro',
+        'extensions/included-extensions',
+        'extensions/signals',
+        'extensions/peer-dependencies',
+      ],
+      label: 'Extensions',
+      type: 'category',
+    },
     process.env.FB_INTERNAL
       ? {
           href: 'https://lexical.dev/docs/packages/lexical',

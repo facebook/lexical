@@ -201,7 +201,8 @@ export interface LexicalExtension<
    * {@link shallowMergeConfig}, if your Extension requires other strategies
    * (such as concatenating an Array) you can implement it here.
    *
-   * @example Merging an array
+   * @example
+   * Merging an array
    * ```js
    * const extension = defineExtension({
    *   // ...

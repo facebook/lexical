@@ -170,14 +170,11 @@ export const $createOrUpdateNodeFromYElement = (
     );
   }
   node = node || new nodeInfo.klass();
-  const attrs = {
-    ...getDefaultNodeProperties(node, binding),
-    ...el.getAttributes(snapshot),
-  };
+  const attrs = el.getAttributes(snapshot);
+  // TODO(collab-v2): support for ychange
   /*
   if (snapshot !== undefined) {
     if (!isVisible(el._item!, snapshot)) {
-      // TODO(collab-v2): add type for ychange, store in node state?
       attrs.ychange = computeYChange
         ? computeYChange('removed', el._item!.id)
         : {type: 'removed'};
@@ -188,7 +185,9 @@ export const $createOrUpdateNodeFromYElement = (
     }
   }
   */
-  const properties: Record<string, unknown> = {};
+  const properties: Record<string, unknown> = {
+    ...getDefaultNodeProperties(node, binding),
+  };
   const state: Record<string, unknown> = {};
   for (const k in attrs) {
     if (k.startsWith(STATE_KEY_PREFIX)) {
@@ -680,7 +679,7 @@ export const $updateYFragment = (
       ...stateToAttributes(node),
     };
     for (const key in lexicalAttrs) {
-      if (lexicalAttrs[key] !== null) {
+      if (lexicalAttrs[key] != null) {
         if (yDomAttrs[key] !== lexicalAttrs[key] && key !== 'ychange') {
           // TODO(collab-v2): typing for XmlElement generic
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

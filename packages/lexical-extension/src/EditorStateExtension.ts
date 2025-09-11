@@ -11,10 +11,12 @@ import {watchedSignal} from './watchedSignal';
 
 export const EditorStateExtension = defineExtension({
   build(editor) {
-    return watchedSignal(editor.getEditorState(), (editorStateSignal) =>
-      editor.registerUpdateListener((payload) => {
-        editorStateSignal.value = payload.editorState;
-      }),
+    return watchedSignal(
+      () => editor.getEditorState(),
+      (editorStateSignal) =>
+        editor.registerUpdateListener((payload) => {
+          editorStateSignal.value = payload.editorState;
+        }),
     );
   },
   name: '@lexical/extension/EditorState',

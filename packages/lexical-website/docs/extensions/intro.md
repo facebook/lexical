@@ -23,6 +23,15 @@ other extensions is encapsulated. Extensions also work the same way
 with or without React, so you don't generally need separate
 documentation and exports to support both.
 
+All of the complexity for how and when things need to happen is
+moved to `buildEditorFromExtensions` and the definitions of the
+extensions themselves.
+
+In contrast, using checklists without Lexical Extensions requires
+`ListNode` and `ListItemNode` to be configured, and both the `ListPlugin` and
+`CheckListPlugin` to be registered exactly one time each (or if not using
+React: `registerList` and `registerCheckList`).
+
 Customizing a Lexical editor without Lexical Extensions is done in two phases:
 
 * Configuration before the editor is constructed
@@ -32,14 +41,12 @@ Customizing a Lexical editor without Lexical Extensions is done in two phases:
 
 In many cases, adding a feature to the editor requires *both* configuration
 and registration. These typically happen at very different places in the code,
-and there is no dependency management without extensions. If some dependent
-configuration or registration is missing, at best you get a runtime error, but
-often it will partially work which is tricky to debug.
+possibly even different files, and there are no transitive dependencies. It's
+up to you to make sure that every required snippet of configuration and
+registration code is included exactly once in the right place. When some dependent
+configuration or registration is missing (or runs twice!), at best you get a runtime
+error, but often it will partially work which is tricky to debug.
 
-Using checklists without extensions in Lexical requires `ListNode` and
-`ListItemNode` to be configured, and both the `ListPlugin` and
-`CheckListPlugin` to be registered exactly one time each (or if not using
-React: `registerList` and `registerCheckList`).
 
 ## Core API Overview
 

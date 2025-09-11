@@ -6,7 +6,6 @@
  *
  */
 
-import type {ReadonlySignal} from './signals';
 import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
 
 import {
@@ -31,6 +30,7 @@ import {
 } from 'lexical';
 
 import {namedSignals} from './namedSignals';
+import {effect, type ReadonlySignal} from './signals';
 
 function $indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();
@@ -121,6 +121,7 @@ export function registerTabIndentation(
 }
 
 export interface TabIndentationConfig {
+  disabled: boolean;
   maxIndent: null | number;
 }
 
@@ -133,9 +134,14 @@ export const TabIndentationExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<TabIndentationConfig>({maxIndent: null}),
+  config: safeCast<TabIndentationConfig>({disabled: false, maxIndent: null}),
   name: '@lexical/extension/TabIndentation',
   register(editor, config, state) {
-    return registerTabIndentation(editor, state.getOutput().maxIndent);
+    const {disabled, maxIndent} = state.getOutput();
+    return effect(() => {
+      if (!disabled.value) {
+        return registerTabIndentation(editor, maxIndent);
+      }
+    });
   },
 });

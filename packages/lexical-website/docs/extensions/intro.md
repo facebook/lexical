@@ -11,10 +11,17 @@ that come with Lexical and its associated packages.
 ## Stability
 
 🧪 This API is experimental, and may evolve without a long deprecation
-period. See also [Capabilities](#capabilities) for notes on what it
-can and can not do out of the box today.
+period.
 
-## Motivation
+## Use Case
+
+Lexical Extensions allow complex features to be added to your editor
+in a single place. If you want to have an editor that supports check
+lists, you simply add the `CheckListExtension` to your dependencies.
+All of its dependent configuration, registration, and dependencies on
+other extensions is encapsulated. Extensions also work the same way
+with or without React, so you don't generally need separate
+documentation and exports to support both.
 
 Customizing a Lexical editor without Lexical Extensions is done in two phases:
 
@@ -29,13 +36,10 @@ and there is no dependency management without extensions. If some dependent
 configuration or registration is missing, at best you get a runtime error, but
 often it will partially work which is tricky to debug.
 
-For example, using checklists in Lexical requires `ListNode` and `ListItemNode`
-to be configured, and both the `ListPlugin` and `CheckListPlugin` to be registered
-(or if not using React: `registerList` and `registerCheckList`).
-
-When using extensions, you simply add `CheckListExtension` to your dependencies.
-It doesn't matter whether you are using React or not. Its `ListExtension`
-dependency will automatically be included (exactly once, even if it appears separately).
+Using checklists without extensions in Lexical requires `ListNode` and
+`ListItemNode` to be configured, and both the `ListPlugin` and
+`CheckListPlugin` to be registered exactly one time each (or if not using
+React: `registerList` and `registerCheckList`).
 
 ## Core API Overview
 

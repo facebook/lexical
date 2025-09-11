@@ -318,8 +318,15 @@ const $createTextNodesFromYText = (
       ...getDefaultNodeProperties(node, binding),
       ...attributes.p,
     };
+    const state = Object.fromEntries(
+      Object.entries(attributes)
+        .filter(([k]) => k.startsWith(STATE_KEY_PREFIX))
+        .map(([k, v]) => [attrKeyToStateKey(k), v]),
+    );
     $syncPropertiesFromYjs(binding, properties, node, null);
+    $getWritableNodeState(node).updateFromJSON(state);
   }
+
   const latestNodes = nodes.map((node) => node.getLatest());
   binding.mapping.set(text, latestNodes);
   return latestNodes;

@@ -43,6 +43,10 @@ export interface TableConfig {
   hasHorizontalScroll: boolean;
 }
 
+/**
+ * Configures {@link TableNode}, {@link TableRowNode}, {@link TableCellNode} and
+ * registers table behaviors (see {@link TableConfig})
+ */
 export const TableExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);

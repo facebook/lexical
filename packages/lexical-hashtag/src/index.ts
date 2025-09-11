@@ -7,8 +7,8 @@
  */
 
 export {
+  type HashtagConfig,
   HashtagExtension,
-  type HashtagExtensionConfig,
   registerLexicalHashtag,
 } from './LexicalHashtagExtension';
 export {

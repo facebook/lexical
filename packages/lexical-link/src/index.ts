@@ -14,6 +14,7 @@ export {
   registerClickableLink,
 } from './ClickableLinkExtension';
 export {
+  type AutoLinkConfig,
   AutoLinkExtension,
   type ChangeHandler,
   createLinkMatcherWithRegExp,

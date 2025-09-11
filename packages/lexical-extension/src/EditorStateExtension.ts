@@ -9,6 +9,9 @@ import {defineExtension} from 'lexical';
 
 import {watchedSignal} from './watchedSignal';
 
+/**
+ * An extension to provide the current EditorState as a signal
+ */
 export const EditorStateExtension = defineExtension({
   build(editor) {
     return watchedSignal(

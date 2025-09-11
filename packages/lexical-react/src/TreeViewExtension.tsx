@@ -34,6 +34,10 @@ const config: TreeViewConfig = {
   viewClassName: 'tree-view-output',
 };
 
+/**
+ * Provides a configured TreeView debugging tool (React dependent)
+ * as an output component with configurable class names.
+ */
 export const TreeViewExtension = defineExtension({
   build: () => ({Component: TreeViewExtensionComponent}),
   config,

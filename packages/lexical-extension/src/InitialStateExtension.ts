@@ -39,6 +39,12 @@ export interface InitialStateConfig {
   setOptions: EditorSetOptions;
 }
 
+/**
+ * An extension to set the initial state of the editor from
+ * a function or serialized JSON EditorState. This is
+ * implicitly included with all editors built with
+ * Lexical Extension.
+ */
 export const InitialStateExtension = defineExtension({
   build(editor, {updateOptions, setOptions}, state) {
     const $initialEditorState = state.getInitResult();

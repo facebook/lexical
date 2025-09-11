@@ -290,6 +290,10 @@ export interface ListConfig {
   hasStrictIndent: boolean;
 }
 
+/**
+ * Configures {@link ListNode}, {@link ListItemNode} and registers
+ * the strict indent transform if `hasStrictIndent` is true (default false).
+ */
 export const ListExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
@@ -310,6 +314,13 @@ export const ListExtension = defineExtension({
   },
 });
 
+/**
+ * Registers checklist functionality for {@link ListNode} and
+ * {@link ListItemNode} with a
+ * {@link INSERT_CHECK_LIST_COMMAND} listener and
+ * the expected keyboard and mouse interactions for
+ * checkboxes.
+ */
 export const CheckListExtension = defineExtension({
   dependencies: [ListExtension],
   name: '@lexical/list/CheckList',

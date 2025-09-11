@@ -6,6 +6,7 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension';
 import {type LinkAttributes, LinkNode, registerLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
@@ -24,7 +25,7 @@ export function LinkPlugin({validateUrl, attributes}: Props): null {
     }
   });
   useEffect(() => {
-    return registerLink(editor, {attributes, validateUrl});
+    return registerLink(editor, namedSignals({attributes, validateUrl}));
   }, [editor, validateUrl, attributes]);
 
   return null;

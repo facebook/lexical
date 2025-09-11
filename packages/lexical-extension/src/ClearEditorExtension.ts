@@ -54,6 +54,9 @@ export function registerClearEditor(
   );
 }
 
+/**
+ * An extension to provide an implementation of {@link CLEAR_EDITOR_COMMAND}
+ */
 export const ClearEditorExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);

@@ -6,7 +6,7 @@
  *
  */
 
-import {effect, namedSignals} from '@lexical/extension';
+import {effect, namedSignals, NamedSignalsOutput} from '@lexical/extension';
 import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
@@ -25,18 +25,35 @@ import {
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
 
-type Props = {
+export interface LinkConfig {
+  /**
+   * If this function is specified a {@link PASTE_COMMAND}
+   * listener will be registered to wrap selected nodes
+   * when a URL is pasted and `validateUrl(url)` returns true.
+   * The default of `undefined` will not register this listener.
+   *
+   * In the implementation of {@link TOGGLE_LINK_COMMAND}
+   * it will reject URLs that return false when specified.
+   * The default of `undefined` will always accept URLs.
+   */
   validateUrl: undefined | ((url: string) => boolean);
+  /**
+   * The default anchor tag attributes to use for
+   * {@link TOGGLE_LINK_COMMAND}
+   */
   attributes: undefined | LinkAttributes;
+}
+
+const defaultProps: LinkConfig = {
+  attributes: undefined,
+  validateUrl: undefined,
 };
-const defaultProps: Props = {attributes: undefined, validateUrl: undefined};
 
 /** @internal */
 export function registerLink(
   editor: LexicalEditor,
-  props: Props = defaultProps,
+  stores: NamedSignalsOutput<LinkConfig>,
 ) {
-  const stores = namedSignals(defaultProps, props);
   return mergeRegister(
     effect(() =>
       editor.registerCommand(
@@ -108,9 +125,20 @@ export function registerLink(
   );
 }
 
+/**
+ * Provides {@link LinkNode}, an implementation of
+ * {@link TOGGLE_LINK_COMMAND}, and a {@link PASTE_COMMAND}
+ * listener to wrap selected nodes in a link when a
+ * URL is pasted and `validateUrl` is defined.
+ */
 export const LinkExtension = defineExtension({
+  build(editor, config, state) {
+    return namedSignals(config);
+  },
   config: defaultProps,
   name: '@lexical/link/Link',
   nodes: [LinkNode],
-  register: registerLink,
+  register(editor, config, state) {
+    return registerLink(editor, state.getOutput());
+  },
 });

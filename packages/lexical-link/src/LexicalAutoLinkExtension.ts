@@ -23,6 +23,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {LinkExtension} from './LexicalLinkExtension';
 import {
   $createAutoLinkNode,
   $isAutoLinkNode,
@@ -448,10 +449,12 @@ function getTextNodesToMatch(textNode: TextNode): TextNode[] {
   return textNodesToMatch;
 }
 
-const defaultConfig: {
+export interface AutoLinkConfig {
   matchers: LinkMatcher[];
   changeHandlers: ChangeHandler[];
-} = {
+}
+
+const defaultConfig: AutoLinkConfig = {
   changeHandlers: [],
   matchers: [],
 };
@@ -509,8 +512,20 @@ export function registerAutoLink(
   );
 }
 
+/**
+ * An extension to automatically create AutoLinkNode from text
+ * that matches the configured matchers. No default implementation
+ * is provided for any matcher, see {@link createLinkMatcherWithRegExp}
+ * for a helper function to create a matcher from a RegExp, and the
+ * Playground's [AutoLinkPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin/index.tsx)
+ * for some example RegExps that could be used.
+ *
+ * The given `matchers` and `changeHandlers` will be merged by
+ * concatenating the configured arrays.
+ */
 export const AutoLinkExtension = defineExtension({
   config: defaultConfig,
+  dependencies: [LinkExtension],
   mergeConfig(config, overrides) {
     const merged = shallowMergeConfig(config, overrides);
     for (const k of ['matchers', 'changeHandlers'] as const) {

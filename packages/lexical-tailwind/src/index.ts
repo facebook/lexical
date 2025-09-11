@@ -164,6 +164,9 @@ const theme: EditorThemeClasses = {
   },
 };
 
+/**
+ * Configures the lexical theme ({@link EditorThemeClasses}) with tailwind defaults
+ */
 export const TailwindExtension = defineExtension({
   name: '@lexical/tailwind',
   theme,

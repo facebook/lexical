@@ -129,6 +129,10 @@ function $toggleNodeSelection(
   }
 }
 
+/**
+ * An extension for HorizontalRuleNode that provides an implementation that
+ * works without any React dependency.
+ */
 export const HorizontalRuleExtension = defineExtension({
   dependencies: [EditorStateExtension, NodeSelectionExtension],
   name: '@lexical/extension/HorizontalRule',

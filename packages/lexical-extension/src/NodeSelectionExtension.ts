@@ -19,6 +19,13 @@ import {watchedSignal} from './watchedSignal';
 
 const EMPTY_SET = new Set<NodeKey>();
 
+/**
+ * An extension that provides a `watchNodeKey` output that
+ * returns a signal for the selection state of a node.
+ *
+ * Typically used for tracking whether a DecoratorNode is
+ * currently selected or not.
+ */
 export const NodeSelectionExtension = defineExtension({
   build(editor, config, state) {
     const editorStateStore = state.getDependency(EditorStateExtension).output;

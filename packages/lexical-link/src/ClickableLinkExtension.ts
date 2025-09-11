@@ -20,7 +20,7 @@ import {
   safeCast,
 } from 'lexical';
 
-import {$isLinkNode} from '.';
+import {$isLinkNode, LinkExtension} from './';
 
 function findMatchingDOM<T extends Node>(
   startNode: Node,
@@ -37,7 +37,9 @@ function findMatchingDOM<T extends Node>(
 }
 
 export interface ClickableLinkConfig {
+  /** Open clicked links in a new tab when true (default false) */
   newTab: boolean;
+  /** Disable this extension when true (default false) */
   disabled: boolean;
 }
 
@@ -121,11 +123,17 @@ export function registerClickableLink(
   });
 }
 
+/**
+ * Normally in a Lexical editor the `CLICK_COMMAND` on a LinkNode will cause the
+ * selection to change instead of opening a link. This extension can be used to
+ * restore the default behavior, e.g. when the editor is not editable.
+ */
 export const ClickableLinkExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
   config: safeCast<ClickableLinkConfig>({disabled: false, newTab: false}),
+  dependencies: [LinkExtension],
   name: '@lexical/link/ClickableLink',
   register(editor, config, state) {
     return registerClickableLink(editor, state.getOutput());

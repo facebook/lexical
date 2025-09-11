@@ -25,7 +25,9 @@
  */
 
 import {
+  $getSelection,
   $getWritableNodeState,
+  $isRangeSelection,
   $isTextNode,
   ElementNode,
   LexicalNode,
@@ -33,9 +35,8 @@ import {
   RootNode,
   TextNode,
 } from 'lexical';
-// TODO(collab-v2): use internal implementation
-import {simpleDiff} from 'lib0/diff';
 import invariant from 'shared/invariant';
+import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 import {
   ContentFormat,
   ContentString,
@@ -586,11 +587,30 @@ const $updateYText = (
         y: {idx}, // Prevent Yjs from merging text nodes itself.
       }),
       insert: node.getTextContent(),
+      nodeKey: node.getKey(),
     };
   });
-  const {insert, remove, index} = simpleDiff(
+
+  const nextText = content.map((c) => c.insert).join('');
+  const selection = $getSelection();
+  let cursorOffset: number;
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    cursorOffset = 0;
+    for (const c of content) {
+      if (c.nodeKey === selection.anchor.key) {
+        cursorOffset += selection.anchor.offset;
+        break;
+      }
+      cursorOffset += c.insert.length;
+    }
+  } else {
+    cursorOffset = nextText.length;
+  }
+
+  const {insert, remove, index} = simpleDiffWithCursor(
     str,
-    content.map((c) => c.insert).join(''),
+    nextText,
+    cursorOffset,
   );
   ytext.delete(index, remove);
   ytext.insert(index, insert);

@@ -29,6 +29,7 @@ import {
 import invariant from 'shared/invariant';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
+import {isBindingV1} from './Bindings';
 import {
   $createCollabDecoratorNode,
   CollabDecoratorNode,
@@ -96,7 +97,7 @@ export function initializeNodeProperties(binding: BaseBinding): void {
           defaultProperties[property] = value;
         }
       }
-      nodeProperties.set(node.__type, defaultProperties);
+      nodeProperties.set(node.__type, Object.freeze(defaultProperties));
     });
   });
 }
@@ -287,7 +288,12 @@ export function createLexicalNodeFromCollabNode(
 
 export function $syncPropertiesFromYjs(
   binding: BaseBinding,
-  sharedType: XmlText | YMap<unknown> | XmlElement | Record<string, unknown>,
+  sharedType:
+    | XmlText
+    | YMap<unknown>
+    | XmlElement
+    // v2
+    | Record<string, unknown>,
   lexicalNode: LexicalNode,
   keysChanged: null | Set<string>,
 ): void {
@@ -304,7 +310,7 @@ export function $syncPropertiesFromYjs(
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
     if (isExcludedProperty(property, lexicalNode, binding)) {
-      if (property === '__state') {
+      if (property === '__state' && isBindingV1(binding)) {
         if (!writableNode) {
           writableNode = lexicalNode.getWritable();
         }
@@ -375,7 +381,6 @@ function $syncNodeStateToLexical(
   lexicalNode: LexicalNode,
 ): void {
   const existingState = sharedTypeGet(sharedType, '__state');
-  // TODO(collab-v2): handle v2 where the sharedType is a Record<string, unknown>
   if (!(existingState instanceof YMap)) {
     return;
   }

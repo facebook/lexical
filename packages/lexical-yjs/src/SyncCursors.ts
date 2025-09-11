@@ -141,7 +141,6 @@ function createRelativePositionV2(
     let child = node.getFirstChild();
     while (child !== null && i < offset) {
       if ($isTextNode(child)) {
-        // Multiple text nodes are collapsed into a single YText.
         let nextSibling = child.getNextSibling();
         while ($isTextNode(nextSibling)) {
           nextSibling = nextSibling.getNextSibling();
@@ -349,6 +348,7 @@ function updateCursor(
     selections.pop();
   }
 }
+
 type AnyCollabNode =
   | CollabDecoratorNode
   | CollabElementNode
@@ -570,7 +570,6 @@ function $getNodeAndOffsetV2(
       remainingYOffset -= 1;
       lexicalOffset += 1;
       if ($isTextNode(child)) {
-        // Multiple text nodes (lexicalOffset) are collapsed into a single YText (remainingYOffset).
         while (
           lexicalOffset < children.length &&
           $isTextNode(children[lexicalOffset])

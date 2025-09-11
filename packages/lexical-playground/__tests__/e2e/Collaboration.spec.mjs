@@ -668,7 +668,7 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Right collaborator deletes A, left deletes B.
+    // Left collaborator deletes A, right deletes B.
     await sleep(1050);
     await page.keyboard.press('Delete');
     await sleep(50);

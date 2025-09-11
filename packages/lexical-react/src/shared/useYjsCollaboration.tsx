@@ -221,6 +221,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     return () => {
       root.unobserveDeep(onYjsTreeChanges);
       removeListener();
+      awareness.off('update', onAwarenessUpdate);
     };
   }, [binding, provider, editor]);
 

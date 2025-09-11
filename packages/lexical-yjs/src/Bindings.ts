@@ -109,16 +109,17 @@ export function createBindingV2__EXPERIMENTAL(
   id: string,
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
-  excludedProperties?: ExcludedProperties,
+  options: {excludedProperties?: ExcludedProperties; rootName?: string} = {},
 ): BindingV2 {
   invariant(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
+  const {excludedProperties, rootName = 'root-v2'} = options;
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
     mapping: new CollabV2Mapping(),
-    root: doc.get('root-v2', XmlElement) as XmlElement,
+    root: doc.get(rootName, XmlElement) as XmlElement,
   };
 }
 

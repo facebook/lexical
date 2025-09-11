@@ -31,7 +31,7 @@ function Editor({
   setEditor,
   awarenessData,
   shouldBootstrapEditor = true,
-  useCollabV2 = true,
+  useCollabV2 = false,
 }: {
   doc: Y.Doc;
   provider: Provider;

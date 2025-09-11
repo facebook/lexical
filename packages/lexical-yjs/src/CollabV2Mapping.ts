@@ -19,7 +19,7 @@ export class CollabV2Mapping {
   private _sharedTypeToNodeKeys: Map<SharedType, NodeKey[]> = new Map();
   private _nodeKeyToSharedType: Map<NodeKey, SharedType> = new Map();
 
-  set(sharedType: SharedType, node: LexicalNode | TextNode[]) {
+  set(sharedType: SharedType, node: LexicalNode | TextNode[]): void {
     const isArray = node instanceof Array;
 
     // Clear all existing associations for this key.

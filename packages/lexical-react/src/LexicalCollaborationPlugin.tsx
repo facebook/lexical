@@ -25,6 +25,7 @@ import {
 } from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
+import invariant from 'shared/invariant';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
@@ -211,6 +212,10 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
+  if (editor._parentEditor !== null) {
+    invariant(false, 'Collaboration V2 cannot be used with a nested editor');
+  }
+
   useCollabActive(collabContext, editor);
 
   const [doc, setDoc] = useState<Doc>();
@@ -218,22 +223,17 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   const [binding, setBinding] = useState<BindingV2>();
 
   useEffect(() => {
-    if (!provider) {
-      return;
-    }
-
-    if (isBindingInitialized.current) {
+    if (!provider || isBindingInitialized.current) {
       return;
     }
 
     isBindingInitialized.current = true;
-
     const newBinding = createBindingV2__EXPERIMENTAL(
       editor,
       id,
       doc || yjsDocMap.get(id),
       yjsDocMap,
-      excludedProperties,
+      {excludedProperties},
     );
     setBinding(newBinding);
   }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);

@@ -339,17 +339,15 @@ function $syncV2XmlElement(
 
   const dirtyElements = new Set<NodeKey>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const collectDirty = (_value: unknown, type: YAbstractType<any>) => {
-    const knownType = type instanceof XmlElement || type instanceof XmlText;
-    if (knownType && binding.mapping.has(type)) {
+  const collectDirtyElements = (_value: unknown, type: YAbstractType<any>) => {
+    const elementType = type instanceof XmlElement;
+    if (elementType && binding.mapping.has(type)) {
       const node = binding.mapping.get(type)!;
-      if (!(node instanceof Array)) {
-        dirtyElements.add(node.getKey());
-      }
+      dirtyElements.add(node.getKey());
     }
   };
-  transaction.changed.forEach(collectDirty);
-  transaction.changedParentTypes.forEach(collectDirty);
+  transaction.changed.forEach(collectDirtyElements);
+  transaction.changedParentTypes.forEach(collectDirtyElements);
 
   $createOrUpdateNodeFromYElement(binding.root, binding, dirtyElements);
 }

@@ -50,7 +50,7 @@ import {
   SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
-import {$createOrUpdateNodeFromYElement, updateYFragment} from './SyncV2';
+import {$createOrUpdateNodeFromYElement, $updateYFragment} from './SyncV2';
 import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
@@ -403,7 +403,7 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   syncWithTransaction(binding, () => {
     currEditorState.read(() => {
       if (dirtyElements.has('root')) {
-        updateYFragment(
+        $updateYFragment(
           binding.doc,
           binding.root,
           $getRoot(),

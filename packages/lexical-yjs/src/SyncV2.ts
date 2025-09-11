@@ -6,26 +6,56 @@
  *
  */
 
+/*
+ * Implementation notes, in no particular order.
+ *
+ * Sibling text nodes are synced to a single XmlText type. All non-text nodes are synced one-to-one
+ * with an XmlElement.
+ *
+ * To be space-efficient, only property values that differ from their defaults are synced. Default
+ * values are determined by creating an instance of the node with no constructor arguments and
+ * enumerating over its properties.
+ *
+ * For a given text node, we make use of XmlText.applyDelta() to sync properties and state to
+ * specific ranges of text. Refer to TextAttributes below for the structure of the attributes.
+ *
+ * For non-text nodes, we use the XmlElement's attributes (YMap under the hood) to sync properties
+ * and state. The former are stored using their names as keys, and the latter are stored with a
+ * prefix. (NB: '$' couldn't be used as the prefix because it breaks XmlElement.toDOM().)
+ */
+
 import {
   $getWritableNodeState,
   $isTextNode,
   ElementNode,
   LexicalNode,
   NodeKey,
+  RootNode,
   TextNode,
 } from 'lexical';
 // TODO(collab-v2): use internal implementation
 import {simpleDiff} from 'lib0/diff';
 import invariant from 'shared/invariant';
-// TODO(collab-v2): import specific types
-import * as Y from 'yjs';
+import {
+  ContentFormat,
+  ContentString,
+  ContentType,
+  Doc as YDoc,
+  ID,
+  Snapshot,
+  Text as YText,
+  typeListToArraySnapshot,
+  XmlElement,
+  XmlHook,
+  XmlText,
+} from 'yjs';
 
 import {BindingV2} from './Bindings';
 import {$syncPropertiesFromYjs, getDefaultNodeProperties} from './Utils';
 
 type ComputeYChange = (
   event: 'removed' | 'added',
-  id: Y.ID,
+  id: ID,
 ) => Record<string, unknown>;
 
 type TextAttributes = {
@@ -43,38 +73,38 @@ const DEFAULT_TEXT_ATTRIBUTES: TextAttributes = {
   y: {idx: 0},
 };
 
-const isVisible = (item: Y.Item, snapshot?: Y.Snapshot): boolean =>
+/*
+const isVisible = (item: Item, snapshot?: Snapshot): boolean =>
   snapshot === undefined
     ? !item.deleted
     : snapshot.sv.has(item.id.client) &&
       snapshot.sv.get(item.id.client)! > item.id.clock &&
-      !Y.isDeleted(snapshot.ds, item.id);
+      !isDeleted(snapshot.ds, item.id);
+*/
 
-const isRootElement = (el: Y.XmlElement): boolean =>
-  el.nodeName === 'UNDEFINED';
+// https://docs.yjs.dev/api/shared-types/y.xmlelement
+// "Define a top-level type; Note that the nodeName is always "undefined""
+const isRootElement = (el: XmlElement): boolean => el.nodeName === 'UNDEFINED';
 
-/**
- * @return Returns node if node could be created. Otherwise it deletes the yjs type and returns null
- */
 export const $createOrUpdateNodeFromYElement = (
-  el: Y.XmlElement,
-  meta: BindingV2,
+  el: XmlElement,
+  binding: BindingV2,
   dirtyElements: Set<NodeKey>,
-  snapshot?: Y.Snapshot,
-  prevSnapshot?: Y.Snapshot,
+  snapshot?: Snapshot,
+  prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
 ): LexicalNode | null => {
-  let node = meta.mapping.get(el);
+  let node = binding.mapping.get(el);
   if (node && !dirtyElements.has(node.getKey())) {
     return node;
   }
 
   const children: LexicalNode[] = [];
-  const $createChildren = (type: Y.XmlElement | Y.XmlText | Y.XmlHook) => {
-    if (type instanceof Y.XmlElement) {
+  const $createChildren = (type: XmlElement | XmlText | XmlHook) => {
+    if (type instanceof XmlElement) {
       const n = $createOrUpdateNodeFromYElement(
         type,
-        meta,
+        binding,
         dirtyElements,
         snapshot,
         prevSnapshot,
@@ -83,16 +113,16 @@ export const $createOrUpdateNodeFromYElement = (
       if (n !== null) {
         children.push(n);
       }
-    } else if (type instanceof Y.XmlText) {
+    } else if (type instanceof XmlText) {
       // If the next ytext exists and was created by us, move the content to the current ytext.
-      // This is a fix for #160 -- duplication of characters when two Y.Text exist next to each
-      // other.
+      // This is a fix for y-prosemirror #160 -- duplication of characters when two YText exist
+      // next to each other.
       // eslint-disable-next-line lexical/no-optional-chaining
-      const content = type._item!.right?.content as Y.ContentType | undefined;
+      const content = type._item!.right?.content as ContentType | undefined;
       // eslint-disable-next-line lexical/no-optional-chaining
       const nextytext = content?.type;
       if (
-        nextytext instanceof Y.Text &&
+        nextytext instanceof YText &&
         !nextytext._item!.deleted &&
         nextytext._item!.id.client === nextytext.doc!.clientID
       ) {
@@ -101,10 +131,10 @@ export const $createOrUpdateNodeFromYElement = (
           nextytext._item!.delete(tr);
         });
       }
-      // now create the prosemirror text nodes
+      // now create the text nodes
       const ns = $createTextNodesFromYText(
         type,
-        meta,
+        binding,
         snapshot,
         prevSnapshot,
         computeYChange,
@@ -120,16 +150,18 @@ export const $createOrUpdateNodeFromYElement = (
       invariant(false, 'XmlHook is not supported');
     }
   };
+
   if (snapshot === undefined || prevSnapshot === undefined) {
     el.toArray().forEach($createChildren);
   } else {
-    Y.typeListToArraySnapshot(
+    typeListToArraySnapshot(
       el,
-      new Y.Snapshot(prevSnapshot.ds, snapshot.sv),
+      new Snapshot(prevSnapshot.ds, snapshot.sv),
     ).forEach($createChildren);
   }
-  const type = isRootElement(el) ? 'root' : el.nodeName;
-  const registeredNodes = meta.editor._nodes;
+
+  const type = isRootElement(el) ? RootNode.getType() : el.nodeName;
+  const registeredNodes = binding.editor._nodes;
   const nodeInfo = registeredNodes.get(type);
   if (nodeInfo === undefined) {
     throw new Error(
@@ -138,9 +170,10 @@ export const $createOrUpdateNodeFromYElement = (
   }
   node = node || new nodeInfo.klass();
   const attrs = {
-    ...getDefaultNodeProperties(node, meta),
+    ...getDefaultNodeProperties(node, binding),
     ...el.getAttributes(snapshot),
   };
+  /*
   if (snapshot !== undefined) {
     if (!isVisible(el._item!, snapshot)) {
       // TODO(collab-v2): add type for ychange, store in node state?
@@ -153,6 +186,7 @@ export const $createOrUpdateNodeFromYElement = (
         : {type: 'added'};
     }
   }
+  */
   const properties: Record<string, unknown> = {};
   const state: Record<string, unknown> = {};
   for (const k in attrs) {
@@ -162,13 +196,14 @@ export const $createOrUpdateNodeFromYElement = (
       properties[k] = attrs[k];
     }
   }
-  $syncPropertiesFromYjs(meta, properties, node, null);
+  $syncPropertiesFromYjs(binding, properties, node, null);
   $getWritableNodeState(node).updateFromJSON(state);
   if (node instanceof ElementNode) {
     $spliceChildren(node, children);
   }
+
   const latestNode = node.getLatest();
-  meta.mapping.set(el, latestNode);
+  binding.mapping.set(el, latestNode);
   return latestNode;
 };
 
@@ -233,10 +268,10 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
 };
 
 const $createTextNodesFromYText = (
-  text: Y.XmlText,
-  meta: BindingV2,
-  snapshot?: Y.Snapshot,
-  prevSnapshot?: Y.Snapshot,
+  text: XmlText,
+  binding: BindingV2,
+  snapshot?: Snapshot,
+  prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
 ): Array<TextNode> | null => {
   const deltas: {insert: string; attributes: TextAttributes}[] = text
@@ -248,12 +283,12 @@ const $createTextNodesFromYText = (
   const nodeTypes: string[] = deltas.map(
     (delta) => delta.attributes!.t ?? TextNode.getType(),
   );
-  let nodes: TextNode[] = meta.mapping.get(text) ?? [];
+  let nodes: TextNode[] = binding.mapping.get(text) ?? [];
   if (
     nodes.length !== nodeTypes.length ||
     nodes.some((node, i) => node.getType() !== nodeTypes[i])
   ) {
-    const registeredNodes = meta.editor._nodes;
+    const registeredNodes = binding.editor._nodes;
     nodes = nodeTypes.map((type) => {
       const nodeInfo = registeredNodes.get(type);
       if (nodeInfo === undefined) {
@@ -270,6 +305,8 @@ const $createTextNodesFromYText = (
       return node;
     });
   }
+
+  // Sync text, properties and state to the text nodes.
   for (let i = 0; i < deltas.length; i++) {
     const node = nodes[i];
     const delta = deltas[i];
@@ -278,40 +315,40 @@ const $createTextNodesFromYText = (
       node.setTextContent(insert);
     }
     const properties = {
-      ...getDefaultNodeProperties(node, meta),
+      ...getDefaultNodeProperties(node, binding),
       ...attributes.p,
-      ...attributes.ychange,
     };
-    $syncPropertiesFromYjs(meta, properties, node, null);
+    $syncPropertiesFromYjs(binding, properties, node, null);
   }
   const latestNodes = nodes.map((node) => node.getLatest());
-  meta.mapping.set(text, latestNodes);
+  binding.mapping.set(text, latestNodes);
   return latestNodes;
 };
 
-const createTypeFromTextNodes = (
+const $createTypeFromTextNodes = (
   nodes: TextNode[],
-  meta: BindingV2,
-): Y.XmlText => {
-  const type = new Y.XmlText();
-  updateYText(type, nodes, meta);
+  binding: BindingV2,
+): XmlText => {
+  const type = new XmlText();
+  $updateYText(type, nodes, binding);
   return type;
 };
 
 const createTypeFromElementNode = (
   node: LexicalNode,
-  meta: BindingV2,
-): Y.XmlElement => {
-  const type = new Y.XmlElement(node.getType());
-  // TODO(collab-v2): exclude ychange
+  binding: BindingV2,
+): XmlElement => {
+  const type = new XmlElement(node.getType());
   const attrs = {
-    ...propertiesToAttributes(node, meta),
+    ...propertiesToAttributes(node, binding),
     ...stateToAttributes(node),
   };
   for (const key in attrs) {
     const val = attrs[key];
     if (val !== null) {
-      type.setAttribute(key, val);
+      // TODO(collab-v2): typing for XmlElement generic
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type.setAttribute(key, val as any);
     }
   }
   if (!(node instanceof ElementNode)) {
@@ -319,29 +356,28 @@ const createTypeFromElementNode = (
   }
   type.insert(
     0,
-    normalizePNodeContent(node).map((n) =>
-      createTypeFromTextOrElementNode(n, meta),
+    normalizeNodeContent(node).map((n) =>
+      $createTypeFromTextOrElementNode(n, binding),
     ),
   );
-  meta.mapping.set(type, node);
+  binding.mapping.set(type, node);
   return type;
 };
 
-const createTypeFromTextOrElementNode = (
+const $createTypeFromTextOrElementNode = (
   node: LexicalNode | TextNode[],
   meta: BindingV2,
-): Y.XmlElement | Y.XmlText =>
+): XmlElement | XmlText =>
   node instanceof Array
-    ? createTypeFromTextNodes(node, meta)
+    ? $createTypeFromTextNodes(node, meta)
     : createTypeFromElementNode(node, meta);
 
-const isObject = (val: unknown) => typeof val === 'object' && val !== null;
+const isObject = (val: unknown): val is Record<string, unknown> =>
+  typeof val === 'object' && val != null;
 
 const equalAttrs = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pattrs: Record<string, any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yattrs: Record<string, any> | null,
+  pattrs: Record<string, unknown>,
+  yattrs: Record<string, unknown> | null,
 ) => {
   const keys = Object.keys(pattrs).filter((key) => pattrs[key] !== null);
   if (yattrs == null) {
@@ -364,22 +400,22 @@ const equalAttrs = (
 
 type NormalizedPNodeContent = Array<Array<TextNode> | LexicalNode>;
 
-const normalizePNodeContent = (pnode: LexicalNode): NormalizedPNodeContent => {
-  if (!(pnode instanceof ElementNode)) {
+const normalizeNodeContent = (node: LexicalNode): NormalizedPNodeContent => {
+  if (!(node instanceof ElementNode)) {
     return [];
   }
-  const c = pnode.getChildren();
+  const c = node.getChildren();
   const res: NormalizedPNodeContent = [];
   for (let i = 0; i < c.length; i++) {
     const n = c[i];
     if (n instanceof TextNode) {
       const textNodes: TextNode[] = [];
       for (
-        let tnode = c[i];
-        i < c.length && tnode instanceof TextNode;
-        tnode = c[++i]
+        let maybeTextNode = c[i];
+        i < c.length && maybeTextNode instanceof TextNode;
+        maybeTextNode = c[++i]
       ) {
-        textNodes.push(tnode);
+        textNodes.push(maybeTextNode);
       }
       i--;
       res.push(textNodes);
@@ -391,9 +427,9 @@ const normalizePNodeContent = (pnode: LexicalNode): NormalizedPNodeContent => {
 };
 
 const equalYTextLText = (
-  ytext: Y.XmlText,
+  ytext: XmlText,
   ltexts: TextNode[],
-  meta: BindingV2,
+  binding: BindingV2,
 ) => {
   const delta = ytext.toDelta();
   return (
@@ -405,7 +441,7 @@ const equalYTextLText = (
         d.attributes.t === ltexts[i].getType() &&
         equalAttrs(
           d.attributes.p ?? {},
-          propertiesToAttributes(ltexts[i], meta),
+          propertiesToAttributes(ltexts[i], binding),
         ) &&
         equalAttrs(
           Object.fromEntries(
@@ -420,45 +456,45 @@ const equalYTextLText = (
 };
 
 const equalYTypePNode = (
-  ytype: Y.XmlElement | Y.XmlText | Y.XmlHook,
-  pnode: LexicalNode | TextNode[],
-  meta: BindingV2,
-): boolean => {
+  ytype: XmlElement | XmlText | XmlHook,
+  lnode: LexicalNode | TextNode[],
+  binding: BindingV2,
+): ytype is XmlElement | XmlText => {
   if (
-    ytype instanceof Y.XmlElement &&
-    !(pnode instanceof Array) &&
-    matchNodeName(ytype, pnode)
+    ytype instanceof XmlElement &&
+    !(lnode instanceof Array) &&
+    matchNodeName(ytype, lnode)
   ) {
-    const normalizedContent = normalizePNodeContent(pnode);
+    const normalizedContent = normalizeNodeContent(lnode);
     return (
       ytype._length === normalizedContent.length &&
       equalAttrs(ytype.getAttributes(), {
-        ...propertiesToAttributes(pnode, meta),
-        ...stateToAttributes(pnode),
+        ...propertiesToAttributes(lnode, binding),
+        ...stateToAttributes(lnode),
       }) &&
       ytype
         .toArray()
         .every((ychild, i) =>
-          equalYTypePNode(ychild, normalizedContent[i], meta),
+          equalYTypePNode(ychild, normalizedContent[i], binding),
         )
     );
   }
   return (
-    ytype instanceof Y.XmlText &&
-    pnode instanceof Array &&
-    equalYTextLText(ytype, pnode, meta)
+    ytype instanceof XmlText &&
+    lnode instanceof Array &&
+    equalYTextLText(ytype, lnode, binding)
   );
 };
 
 const mappedIdentity = (
   mapped: LexicalNode | TextNode[] | undefined,
-  pcontent: LexicalNode | TextNode[],
+  lcontent: LexicalNode | TextNode[],
 ) =>
-  mapped === pcontent ||
+  mapped === lcontent ||
   (mapped instanceof Array &&
-    pcontent instanceof Array &&
-    mapped.length === pcontent.length &&
-    mapped.every((a, i) => pcontent[i] === a));
+    lcontent instanceof Array &&
+    mapped.length === lcontent.length &&
+    mapped.every((a, i) => lcontent[i] === a));
 
 type EqualityFactor = {
   foundMappedChild: boolean;
@@ -466,12 +502,12 @@ type EqualityFactor = {
 };
 
 const computeChildEqualityFactor = (
-  ytype: Y.XmlElement,
-  pnode: LexicalNode,
-  meta: BindingV2,
+  ytype: XmlElement,
+  lnode: LexicalNode,
+  binding: BindingV2,
 ): EqualityFactor => {
   const yChildren = ytype.toArray();
-  const pChildren = normalizePNodeContent(pnode);
+  const pChildren = normalizeNodeContent(lnode);
   const pChildCnt = pChildren.length;
   const yChildCnt = yChildren.length;
   const minCnt = Math.min(yChildCnt, pChildCnt);
@@ -481,22 +517,22 @@ const computeChildEqualityFactor = (
   for (; left < minCnt; left++) {
     const leftY = yChildren[left];
     const leftP = pChildren[left];
-    if (leftY instanceof Y.XmlHook) {
+    if (leftY instanceof XmlHook) {
       break;
-    } else if (mappedIdentity(meta.mapping.get(leftY), leftP)) {
+    } else if (mappedIdentity(binding.mapping.get(leftY), leftP)) {
       foundMappedChild = true; // definite (good) match!
-    } else if (!equalYTypePNode(leftY, leftP, meta)) {
+    } else if (!equalYTypePNode(leftY, leftP, binding)) {
       break;
     }
   }
   for (; left + right < minCnt; right++) {
     const rightY = yChildren[yChildCnt - right - 1];
     const rightP = pChildren[pChildCnt - right - 1];
-    if (rightY instanceof Y.XmlHook) {
+    if (rightY instanceof XmlHook) {
       break;
-    } else if (mappedIdentity(meta.mapping.get(rightY), rightP)) {
+    } else if (mappedIdentity(binding.mapping.get(rightY), rightP)) {
       foundMappedChild = true;
-    } else if (!equalYTypePNode(rightY, rightP, meta)) {
+    } else if (!equalYTypePNode(rightY, rightP, binding)) {
       break;
     }
   }
@@ -507,16 +543,16 @@ const computeChildEqualityFactor = (
 };
 
 const ytextTrans = (
-  ytext: Y.Text,
+  ytext: YText,
 ): {nAttrs: Record<string, null>; str: string} => {
   let str = '';
   let n = ytext._start;
   const nAttrs: Record<string, null> = {};
   while (n !== null) {
     if (!n.deleted) {
-      if (n.countable && n.content instanceof Y.ContentString) {
+      if (n.countable && n.content instanceof ContentString) {
         str += n.content.str;
-      } else if (n.content instanceof Y.ContentFormat) {
+      } else if (n.content instanceof ContentFormat) {
         nAttrs[n.content.key] = null;
       }
     }
@@ -528,22 +564,23 @@ const ytextTrans = (
   };
 };
 
-const updateYText = (ytext: Y.XmlText, ltexts: TextNode[], meta: BindingV2) => {
-  meta.mapping.set(ytext, ltexts);
+const $updateYText = (
+  ytext: XmlText,
+  ltexts: TextNode[],
+  binding: BindingV2,
+) => {
+  binding.mapping.set(ytext, ltexts);
   const {nAttrs, str} = ytextTrans(ytext);
   const content = ltexts.map((node, idx) => {
     const nodeType = node.getType();
-    let properties: TextAttributes['p'] | null = propertiesToAttributes(
-      node,
-      meta,
-    );
-    if (Object.keys(properties).length === 0) {
-      properties = null;
+    let p: TextAttributes['p'] | null = propertiesToAttributes(node, binding);
+    if (Object.keys(p).length === 0) {
+      p = null;
     }
     return {
       attributes: Object.assign({}, nAttrs, {
         ...(nodeType !== TextNode.getType() && {t: nodeType}),
-        p: properties,
+        p,
         ...stateToAttributes(node),
         // TODO(collab-v2): can probably be more targeted here
         y: {idx}, // Prevent Yjs from merging text nodes itself.
@@ -590,8 +627,7 @@ const stateToAttributes = (node: LexicalNode) => {
     return {};
   }
   const [unknown = {}, known] = state.getInternalState();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const attrs: Record<string, any> = {};
+  const attrs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(unknown)) {
     attrs[stateKeyToAttrKey(k)] = v;
   }
@@ -601,36 +637,34 @@ const stateToAttributes = (node: LexicalNode) => {
   return attrs;
 };
 
-/**
- * Update a yDom node by syncing the current content of the prosemirror node.
- */
-export const updateYFragment = (
-  y: Y.Doc,
-  yDomFragment: Y.XmlElement,
-  pNode: LexicalNode,
-  meta: BindingV2,
+export const $updateYFragment = (
+  y: YDoc,
+  yDomFragment: XmlElement,
+  node: LexicalNode,
+  binding: BindingV2,
   dirtyElements: Set<NodeKey>,
 ) => {
   if (
-    yDomFragment instanceof Y.XmlElement &&
-    yDomFragment.nodeName !== pNode.getType() &&
-    // TODO(collab-v2): the root XmlElement should have a valid node name
-    !(isRootElement(yDomFragment) && pNode.getType() === 'root')
+    yDomFragment instanceof XmlElement &&
+    yDomFragment.nodeName !== node.getType() &&
+    !(isRootElement(yDomFragment) && node.getType() === RootNode.getType())
   ) {
     throw new Error('node name mismatch!');
   }
-  meta.mapping.set(yDomFragment, pNode);
+  binding.mapping.set(yDomFragment, node);
   // update attributes
-  if (yDomFragment instanceof Y.XmlElement) {
+  if (yDomFragment instanceof XmlElement) {
     const yDomAttrs = yDomFragment.getAttributes();
     const lexicalAttrs = {
-      ...propertiesToAttributes(pNode, meta),
-      ...stateToAttributes(pNode),
+      ...propertiesToAttributes(node, binding),
+      ...stateToAttributes(node),
     };
     for (const key in lexicalAttrs) {
       if (lexicalAttrs[key] !== null) {
         if (yDomAttrs[key] !== lexicalAttrs[key] && key !== 'ychange') {
-          yDomFragment.setAttribute(key, lexicalAttrs[key]);
+          // TODO(collab-v2): typing for XmlElement generic
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          yDomFragment.setAttribute(key, lexicalAttrs[key] as any);
         }
       } else {
         yDomFragment.removeAttribute(key);
@@ -644,32 +678,32 @@ export const updateYFragment = (
     }
   }
   // update children
-  const pChildren = normalizePNodeContent(pNode);
-  const pChildCnt = pChildren.length;
+  const lChildren = normalizeNodeContent(node);
+  const lChildCnt = lChildren.length;
   const yChildren = yDomFragment.toArray();
   const yChildCnt = yChildren.length;
-  const minCnt = Math.min(pChildCnt, yChildCnt);
+  const minCnt = Math.min(lChildCnt, yChildCnt);
   let left = 0;
   let right = 0;
   // find number of matching elements from left
   for (; left < minCnt; left++) {
     const leftY = yChildren[left];
-    const leftP = pChildren[left];
-    if (leftY instanceof Y.XmlHook) {
+    const leftL = lChildren[left];
+    if (leftY instanceof XmlHook) {
       break;
-    } else if (mappedIdentity(meta.mapping.get(leftY), leftP)) {
-      if (leftP instanceof ElementNode && dirtyElements.has(leftP.getKey())) {
-        updateYFragment(
+    } else if (mappedIdentity(binding.mapping.get(leftY), leftL)) {
+      if (leftL instanceof ElementNode && dirtyElements.has(leftL.getKey())) {
+        $updateYFragment(
           y,
-          leftY as Y.XmlElement,
-          leftP as LexicalNode,
-          meta,
+          leftY as XmlElement,
+          leftL as LexicalNode,
+          binding,
           dirtyElements,
         );
       }
-    } else if (equalYTypePNode(leftY, leftP, meta)) {
+    } else if (equalYTypePNode(leftY, leftL, binding)) {
       // update mapping
-      meta.mapping.set(leftY, leftP);
+      binding.mapping.set(leftY, leftL);
     } else {
       break;
     }
@@ -677,53 +711,53 @@ export const updateYFragment = (
   // find number of matching elements from right
   for (; right + left < minCnt; right++) {
     const rightY = yChildren[yChildCnt - right - 1];
-    const rightP = pChildren[pChildCnt - right - 1];
-    if (rightY instanceof Y.XmlHook) {
+    const rightL = lChildren[lChildCnt - right - 1];
+    if (rightY instanceof XmlHook) {
       break;
-    } else if (mappedIdentity(meta.mapping.get(rightY), rightP)) {
-      if (rightP instanceof ElementNode && dirtyElements.has(rightP.getKey())) {
-        updateYFragment(
+    } else if (mappedIdentity(binding.mapping.get(rightY), rightL)) {
+      if (rightL instanceof ElementNode && dirtyElements.has(rightL.getKey())) {
+        $updateYFragment(
           y,
-          rightY as Y.XmlElement,
-          rightP as LexicalNode,
-          meta,
+          rightY as XmlElement,
+          rightL as LexicalNode,
+          binding,
           dirtyElements,
         );
       }
-    } else if (equalYTypePNode(rightY, rightP, meta)) {
+    } else if (equalYTypePNode(rightY, rightL, binding)) {
       // update mapping
-      meta.mapping.set(rightY, rightP);
+      binding.mapping.set(rightY, rightL);
     } else {
       break;
     }
   }
   // try to compare and update
-  while (yChildCnt - left - right > 0 && pChildCnt - left - right > 0) {
+  while (yChildCnt - left - right > 0 && lChildCnt - left - right > 0) {
     const leftY = yChildren[left];
-    const leftP = pChildren[left];
+    const leftL = lChildren[left];
     const rightY = yChildren[yChildCnt - right - 1];
-    const rightP = pChildren[pChildCnt - right - 1];
-    if (leftY instanceof Y.XmlText && leftP instanceof Array) {
-      if (!equalYTextLText(leftY, leftP, meta)) {
-        updateYText(leftY, leftP, meta);
+    const rightL = lChildren[lChildCnt - right - 1];
+    if (leftY instanceof XmlText && leftL instanceof Array) {
+      if (!equalYTextLText(leftY, leftL, binding)) {
+        $updateYText(leftY, leftL, binding);
       }
       left += 1;
     } else {
       let updateLeft =
-        leftY instanceof Y.XmlElement && matchNodeName(leftY, leftP);
+        leftY instanceof XmlElement && matchNodeName(leftY, leftL);
       let updateRight =
-        rightY instanceof Y.XmlElement && matchNodeName(rightY, rightP);
+        rightY instanceof XmlElement && matchNodeName(rightY, rightL);
       if (updateLeft && updateRight) {
         // decide which which element to update
         const equalityLeft = computeChildEqualityFactor(
-          leftY as Y.XmlElement,
-          leftP as LexicalNode,
-          meta,
+          leftY as XmlElement,
+          leftL as LexicalNode,
+          binding,
         );
         const equalityRight = computeChildEqualityFactor(
-          rightY as Y.XmlElement,
-          rightP as LexicalNode,
-          meta,
+          rightY as XmlElement,
+          rightL as LexicalNode,
+          binding,
         );
         if (equalityLeft.foundMappedChild && !equalityRight.foundMappedChild) {
           updateRight = false;
@@ -739,55 +773,53 @@ export const updateYFragment = (
         }
       }
       if (updateLeft) {
-        updateYFragment(
+        $updateYFragment(
           y,
-          leftY as Y.XmlElement,
-          leftP as LexicalNode,
-          meta,
+          leftY as XmlElement,
+          leftL as LexicalNode,
+          binding,
           dirtyElements,
         );
         left += 1;
       } else if (updateRight) {
-        updateYFragment(
+        $updateYFragment(
           y,
-          rightY as Y.XmlElement,
-          rightP as LexicalNode,
-          meta,
+          rightY as XmlElement,
+          rightL as LexicalNode,
+          binding,
           dirtyElements,
         );
         right += 1;
       } else {
-        meta.mapping.delete(yDomFragment.get(left));
+        binding.mapping.delete(yDomFragment.get(left));
         yDomFragment.delete(left, 1);
         yDomFragment.insert(left, [
-          createTypeFromTextOrElementNode(leftP, meta),
+          $createTypeFromTextOrElementNode(leftL, binding),
         ]);
         left += 1;
       }
     }
   }
   const yDelLen = yChildCnt - left - right;
-  if (yChildCnt === 1 && pChildCnt === 0 && yChildren[0] instanceof Y.XmlText) {
-    meta.mapping.delete(yChildren[0]);
+  if (yChildCnt === 1 && lChildCnt === 0 && yChildren[0] instanceof XmlText) {
+    binding.mapping.delete(yChildren[0]);
     // Edge case handling https://github.com/yjs/y-prosemirror/issues/108
     // Only delete the content of the Y.Text to retain remote changes on the same Y.Text object
     yChildren[0].delete(0, yChildren[0].length);
   } else if (yDelLen > 0) {
     yDomFragment
       .slice(left, left + yDelLen)
-      .forEach((type) => meta.mapping.delete(type));
+      .forEach((type) => binding.mapping.delete(type));
     yDomFragment.delete(left, yDelLen);
   }
-  if (left + right < pChildCnt) {
+  if (left + right < lChildCnt) {
     const ins = [];
-    for (let i = left; i < pChildCnt - right; i++) {
-      ins.push(createTypeFromTextOrElementNode(pChildren[i], meta));
+    for (let i = left; i < lChildCnt - right; i++) {
+      ins.push($createTypeFromTextOrElementNode(lChildren[i], binding));
     }
     yDomFragment.insert(left, ins);
   }
 };
 
-const matchNodeName = (
-  yElement: Y.XmlElement,
-  pNode: LexicalNode | TextNode[],
-) => !(pNode instanceof Array) && yElement.nodeName === pNode.getType();
+const matchNodeName = (yElement: XmlElement, lnode: LexicalNode | TextNode[]) =>
+  !(lnode instanceof Array) && yElement.nodeName === lnode.getType();

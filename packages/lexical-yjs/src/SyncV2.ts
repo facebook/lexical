@@ -40,7 +40,6 @@ import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 import {
   ContentFormat,
   ContentString,
-  ContentType,
   Doc as YDoc,
   ID,
   Snapshot,
@@ -90,75 +89,15 @@ const isRootElement = (el: XmlElement): boolean => el.nodeName === 'UNDEFINED';
 export const $createOrUpdateNodeFromYElement = (
   el: XmlElement,
   binding: BindingV2,
-  dirtyElements: Set<NodeKey>,
+  keysChanged: Set<string> | null,
+  childListChanged: boolean,
   snapshot?: Snapshot,
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
 ): LexicalNode | null => {
   let node = binding.mapping.get(el);
-  if (node && !dirtyElements.has(node.getKey())) {
+  if (node && keysChanged && keysChanged.size === 0 && !childListChanged) {
     return node;
-  }
-
-  const children: LexicalNode[] = [];
-  const $createChildren = (type: XmlElement | XmlText | XmlHook) => {
-    if (type instanceof XmlElement) {
-      const n = $createOrUpdateNodeFromYElement(
-        type,
-        binding,
-        dirtyElements,
-        snapshot,
-        prevSnapshot,
-        computeYChange,
-      );
-      if (n !== null) {
-        children.push(n);
-      }
-    } else if (type instanceof XmlText) {
-      // If the next ytext exists and was created by us, move the content to the current ytext.
-      // This is a fix for y-prosemirror #160 -- duplication of characters when two YText exist
-      // next to each other.
-      // eslint-disable-next-line lexical/no-optional-chaining
-      const content = type._item!.right?.content as ContentType | undefined;
-      // eslint-disable-next-line lexical/no-optional-chaining
-      const nextytext = content?.type;
-      if (
-        nextytext instanceof YText &&
-        !nextytext._item!.deleted &&
-        nextytext._item!.id.client === nextytext.doc!.clientID
-      ) {
-        type.applyDelta([{retain: type.length}, ...nextytext.toDelta()]);
-        nextytext.doc!.transact((tr) => {
-          nextytext._item!.delete(tr);
-        });
-      }
-      // now create the text nodes
-      const ns = $createTextNodesFromYText(
-        type,
-        binding,
-        snapshot,
-        prevSnapshot,
-        computeYChange,
-      );
-      if (ns !== null) {
-        ns.forEach((textchild) => {
-          if (textchild !== null) {
-            children.push(textchild);
-          }
-        });
-      }
-    } else {
-      invariant(false, 'XmlHook is not supported');
-    }
-  };
-
-  if (snapshot === undefined || prevSnapshot === undefined) {
-    el.toArray().forEach($createChildren);
-  } else {
-    typeListToArraySnapshot(
-      el,
-      new Snapshot(prevSnapshot.ds, snapshot.sv),
-    ).forEach($createChildren);
   }
 
   const type = isRootElement(el) ? RootNode.getType() : el.nodeName;
@@ -169,7 +108,61 @@ export const $createOrUpdateNodeFromYElement = (
       `$createOrUpdateNodeFromYElement: Node ${type} is not registered`,
     );
   }
-  node = node || new nodeInfo.klass();
+
+  if (!node) {
+    node = new nodeInfo.klass();
+    keysChanged = null;
+    childListChanged = true;
+  }
+
+  if (childListChanged && node instanceof ElementNode) {
+    const children: LexicalNode[] = [];
+    const $createChildren = (childType: XmlElement | XmlText | XmlHook) => {
+      if (childType instanceof XmlElement) {
+        const n = $createOrUpdateNodeFromYElement(
+          childType,
+          binding,
+          new Set(),
+          false,
+          snapshot,
+          prevSnapshot,
+          computeYChange,
+        );
+        if (n !== null) {
+          children.push(n);
+        }
+      } else if (childType instanceof XmlText) {
+        const ns = $createOrUpdateTextNodesFromYText(
+          childType,
+          binding,
+          snapshot,
+          prevSnapshot,
+          computeYChange,
+        );
+        if (ns !== null) {
+          ns.forEach((textchild) => {
+            if (textchild !== null) {
+              children.push(textchild);
+            }
+          });
+        }
+      } else {
+        invariant(false, 'XmlHook is not supported');
+      }
+    };
+
+    if (snapshot === undefined || prevSnapshot === undefined) {
+      el.toArray().forEach($createChildren);
+    } else {
+      typeListToArraySnapshot(
+        el,
+        new Snapshot(prevSnapshot.ds, snapshot.sv),
+      ).forEach($createChildren);
+    }
+
+    $spliceChildren(node, children);
+  }
+
   const attrs = el.getAttributes(snapshot);
   // TODO(collab-v2): support for ychange
   /*
@@ -196,10 +189,13 @@ export const $createOrUpdateNodeFromYElement = (
       properties[k] = attrs[k];
     }
   }
-  $syncPropertiesFromYjs(binding, properties, node, null);
-  $getWritableNodeState(node).updateFromJSON(state);
-  if (node instanceof ElementNode) {
-    $spliceChildren(node, children);
+
+  $syncPropertiesFromYjs(binding, properties, node, keysChanged);
+  const updateState =
+    !keysChanged ||
+    !Array.from(keysChanged).some((k) => k.startsWith(STATE_KEY_PREFIX));
+  if (updateState) {
+    $getWritableNodeState(node).updateFromJSON(state);
   }
 
   const latestNode = node.getLatest();
@@ -235,6 +231,12 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
     const prevHasNextKey = prevChildrenKeySet.has(nextKey);
 
     if (!nextHasPrevKey) {
+      // If removing the last node, insert remaining new nodes immediately, otherwise if the node
+      // cannot be empty, it will remove itself from its parent.
+      if (nextIndex === 0 && node.getChildrenSize() === 1) {
+        node.splice(nextIndex, 1, nextChildren.slice(nextIndex));
+        return;
+      }
       // Remove
       node.splice(nextIndex, 1, []);
       prevIndex++;
@@ -267,7 +269,7 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
   }
 };
 
-const $createTextNodesFromYText = (
+const $createOrUpdateTextNodesFromYText = (
   text: XmlText,
   binding: BindingV2,
   snapshot?: Snapshot,

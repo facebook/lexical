@@ -176,13 +176,14 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     const {root} = binding;
     const {awareness} = provider;
 
-    const onYjsTreeChanges: OnYjsTreeChanges = (_events, transaction) => {
+    const onYjsTreeChanges: OnYjsTreeChanges = (events, transaction) => {
       const origin = transaction.origin;
       if (origin !== binding) {
         const isFromUndoManger = origin instanceof UndoManager;
         syncYjsChangesToLexicalV2__EXPERIMENTAL(
           binding,
           provider,
+          events,
           transaction,
           isFromUndoManger,
         );

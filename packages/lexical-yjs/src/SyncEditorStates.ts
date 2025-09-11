@@ -7,11 +7,7 @@
  */
 
 import type {EditorState, NodeKey} from 'lexical';
-import type {
-  AbstractType as YAbstractType,
-  ContentType,
-  Transaction as YTransaction,
-} from 'yjs';
+import type {ContentType, Transaction as YTransaction} from 'yjs';
 
 import {
   $addUpdateTag,
@@ -26,6 +22,7 @@ import {
   HISTORIC_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
+import {YXmlElement, YXmlText} from 'node_modules/yjs/dist/src/internals';
 import invariant from 'shared/invariant';
 import {
   Item,
@@ -323,10 +320,43 @@ export function syncLexicalUpdateToYjs(
   });
 }
 
-function $syncV2XmlElement(
+function $syncEventV2(
   binding: BindingV2,
-  transaction: YTransaction,
+  event: YEvent<YXmlElement | YXmlText>,
 ): void {
+  const {target} = event;
+  if (target instanceof XmlElement && event instanceof YXmlEvent) {
+    $createOrUpdateNodeFromYElement(
+      target,
+      binding,
+      event.attributesChanged,
+      // @ts-expect-error childListChanged is private
+      event.childListChanged,
+    );
+  } else if (target instanceof XmlText && event instanceof YTextEvent) {
+    const parent = target.parent;
+    if (parent instanceof XmlElement) {
+      // Need to sync via parent element in order to attach new next nodes.
+      $createOrUpdateNodeFromYElement(parent, binding, new Set(), true);
+    } else {
+      invariant(false, 'Expected XmlElement parent for XmlText');
+    }
+  } else {
+    invariant(false, 'Expected xml or text event');
+  }
+}
+
+export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
+  binding: BindingV2,
+  provider: Provider,
+  events: Array<YEvent<YXmlElement | YXmlText>>,
+  transaction: YTransaction,
+  isFromUndoManger: boolean,
+): void {
+  const editor = binding.editor;
+  const editorState = editor._editorState;
+
+  // Remove deleted nodes from the mapping
   iterateDeletedStructs(transaction, transaction.deleteSet, (struct) => {
     if (struct.constructor === Item) {
       const content = struct.content as ContentType;
@@ -337,33 +367,20 @@ function $syncV2XmlElement(
     }
   });
 
-  const dirtyElements = new Set<NodeKey>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const collectDirtyElements = (_value: unknown, type: YAbstractType<any>) => {
-    const elementType = type instanceof XmlElement;
-    if (elementType && binding.mapping.has(type)) {
-      const node = binding.mapping.get(type)!;
-      dirtyElements.add(node.getKey());
-    }
-  };
-  transaction.changed.forEach(collectDirtyElements);
-  transaction.changedParentTypes.forEach(collectDirtyElements);
-
-  $createOrUpdateNodeFromYElement(binding.root, binding, dirtyElements);
-}
-
-export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
-  binding: BindingV2,
-  provider: Provider,
-  transaction: YTransaction,
-  isFromUndoManger: boolean,
-): void {
-  const editor = binding.editor;
-  const editorState = editor._editorState;
+  // This line precompute the delta before editor update. The reason is
+  // delta is computed when it is accessed. Note that this can only be
+  // safely computed during the event call. If it is accessed after event
+  // call it might result in unexpected behavior.
+  // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
+  events.forEach((event) => event.delta);
 
   editor.update(
     () => {
-      $syncV2XmlElement(binding, transaction);
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        $syncEventV2(binding, event);
+      }
+
       $syncCursorFromYjs(editorState, binding, provider);
 
       if (!isFromUndoManger) {
@@ -373,7 +390,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
       }
     },
     {
-      // Need any text node normalisation to be synchronously updated back to Yjs, otherwise the
+      // Need any text node normalization to be synchronously updated back to Yjs, otherwise the
       // binding.mapping will get out of sync.
       discrete: true,
       onUpdate: () => {
@@ -399,6 +416,12 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   if (isFromYjs && normalizedNodes.size === 0) {
     return;
   }
+
+  // Nodes are normalized synchronously (`discrete: true` above), so the mapping may now be
+  // incorrect for these nodes, as they point to `getLatest` which is mutable within an update.
+  normalizedNodes.forEach((nodeKey) => {
+    binding.mapping.deleteNode(nodeKey);
+  });
 
   syncWithTransaction(binding, () => {
     currEditorState.read(() => {

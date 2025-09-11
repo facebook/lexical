@@ -97,6 +97,14 @@ export class CollabV2Mapping {
     this._sharedTypeToNodeKeys.delete(sharedType);
   }
 
+  deleteNode(nodeKey: NodeKey): void {
+    const sharedType = this._nodeKeyToSharedType.get(nodeKey);
+    if (sharedType) {
+      this.delete(sharedType);
+    }
+    this._nodeMap.delete(nodeKey);
+  }
+
   has(sharedType: SharedType): boolean {
     return this._sharedTypeToNodeKeys.has(sharedType);
   }

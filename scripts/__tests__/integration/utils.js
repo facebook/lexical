@@ -69,30 +69,41 @@ exports.expectSuccessfulExec = expectSuccessfulExec;
  */
 async function buildExample({packageJson, exampleDir}) {
   let hasPlaywright = false;
-  const depsMap = packagesManager.computedMonorepoDependencyMap(
-    [
-      'dependencies',
-      'devDependencies',
-      'peerDependencies',
-      'lexicalUnreleasedDependencies',
-    ].flatMap((depType) => {
-      const deps = packageJson[depType] || {};
-      hasPlaywright ||= '@playwright/test' in deps;
-      return Object.keys(deps);
-    }),
-  );
-  const installDeps = [...depsMap.values()].map((pkg) =>
-    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
-  );
-  if (installDeps.length === 0) {
+  /** @type {Map<string, string} */
+  const allDeps = new Map();
+  for (const depType of [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'lexicalUnreleasedDependencies',
+  ]) {
+    const deps = packageJson[depType] || {};
+    hasPlaywright ||= '@playwright/test' in deps;
+    for (const [dep, v] of Object.entries(deps)) {
+      allDeps.set(dep, `${dep}@${v}`);
+    }
+  }
+  const depsMap = packagesManager.computedMonorepoDependencyMap([
+    ...allDeps.keys(),
+  ]);
+  if (depsMap.size === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
+  for (const [dep, pkg] of depsMap.entries()) {
+    allDeps.set(
+      dep,
+      path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
+    );
+  }
+  const installDeps = [...allDeps.values()];
   ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
     await exec(
-      `npm install --prefix=./ --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
+      `npm install --prefix=./ --no-save ${installDeps
+        .map((fn) => `'${fn}'`)
+        .join(' ')}`,
     );
     await exec('npm run build');
     if (hasPlaywright) {

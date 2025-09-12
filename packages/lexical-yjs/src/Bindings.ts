@@ -12,18 +12,31 @@ import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
-import type {Doc} from 'yjs';
 
 import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
-import {XmlText} from 'yjs';
+import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
+import {CollabV2Mapping} from './CollabV2Mapping';
+import {initializeNodeProperties} from './Utils';
 
 export type ClientID = number;
-export type Binding = {
+export type BaseBinding = {
   clientID: number;
+  cursors: Map<ClientID, Cursor>;
+  cursorsContainer: null | HTMLElement;
+  doc: Doc;
+  docMap: Map<string, Doc>;
+  editor: LexicalEditor;
+  id: string;
+  nodeProperties: Map<string, {[property: string]: unknown}>; // node type to property to default value
+  excludedProperties: ExcludedProperties;
+};
+export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
+
+export type Binding = BaseBinding & {
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode
@@ -31,17 +44,39 @@ export type Binding = {
     | CollabDecoratorNode
     | CollabLineBreakNode
   >;
-  cursors: Map<ClientID, Cursor>;
-  cursorsContainer: null | HTMLElement;
-  doc: Doc;
-  docMap: Map<string, Doc>;
-  editor: LexicalEditor;
-  id: string;
-  nodeProperties: Map<string, Array<string>>;
   root: CollabElementNode;
-  excludedProperties: ExcludedProperties;
 };
-export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
+
+export type BindingV2 = BaseBinding & {
+  mapping: CollabV2Mapping;
+  root: XmlElement;
+};
+
+function createBaseBinding(
+  editor: LexicalEditor,
+  id: string,
+  doc: Doc | null | undefined,
+  docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
+): BaseBinding {
+  invariant(
+    doc !== undefined && doc !== null,
+    'createBinding: doc is null or undefined',
+  );
+  const binding = {
+    clientID: doc.clientID,
+    cursors: new Map(),
+    cursorsContainer: null,
+    doc,
+    docMap,
+    editor,
+    excludedProperties: excludedProperties || new Map(),
+    id,
+    nodeProperties: new Map(),
+  };
+  initializeNodeProperties(binding);
+  return binding;
+}
 
 export function createBinding(
   editor: LexicalEditor,
@@ -63,16 +98,35 @@ export function createBinding(
   );
   root._key = 'root';
   return {
-    clientID: doc.clientID,
+    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
     collabNodeMap: new Map(),
-    cursors: new Map(),
-    cursorsContainer: null,
-    doc,
-    docMap,
-    editor,
-    excludedProperties: excludedProperties || new Map(),
-    id,
-    nodeProperties: new Map(),
     root,
   };
+}
+
+export function createBindingV2__EXPERIMENTAL(
+  editor: LexicalEditor,
+  id: string,
+  doc: Doc | null | undefined,
+  docMap: Map<string, Doc>,
+  options: {excludedProperties?: ExcludedProperties; rootName?: string} = {},
+): BindingV2 {
+  invariant(
+    doc !== undefined && doc !== null,
+    'createBinding: doc is null or undefined',
+  );
+  const {excludedProperties, rootName = 'root-v2'} = options;
+  return {
+    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
+    mapping: new CollabV2Mapping(),
+    root: doc.get(rootName, XmlElement) as XmlElement,
+  };
+}
+
+export function isBindingV1(binding: BaseBinding): binding is Binding {
+  return Object.hasOwn(binding, 'collabNodeMap');
+}
+
+export function isBindingV2(binding: BaseBinding): binding is BindingV2 {
+  return Object.hasOwn(binding, 'mapping');
 }

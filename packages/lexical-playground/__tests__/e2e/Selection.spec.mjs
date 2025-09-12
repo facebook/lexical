@@ -42,6 +42,7 @@ import {
   insertSampleImage,
   insertTable,
   insertYouTubeEmbed,
+  IS_COLLAB_V2,
   IS_LINUX,
   IS_MAC,
   IS_WINDOWS,
@@ -86,7 +87,8 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     browserName,
   }) => {
-    test.skip(isPlainText);
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(isPlainText || IS_COLLAB_V2);
     const hasSelection = async (parentSelector) =>
       await evaluate(
         page,

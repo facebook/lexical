@@ -62,10 +62,10 @@ const sidebars = {
     {
       items: [
         'extensions/intro',
-        'extensions/included-extensions',
         'extensions/react',
         'extensions/signals',
         'extensions/peer-dependencies',
+        'extensions/included-extensions',
       ],
       label: 'Extensions',
       type: 'category',

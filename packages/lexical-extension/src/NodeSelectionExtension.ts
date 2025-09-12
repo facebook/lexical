@@ -24,7 +24,8 @@ const EMPTY_SET = new Set<NodeKey>();
  * returns a signal for the selection state of a node.
  *
  * Typically used for tracking whether a DecoratorNode is
- * currently selected or not.
+ * currently selected or not. A framework independent
+ * alternative to {@link useLexicalNodeSelection}.
  */
 export const NodeSelectionExtension = defineExtension({
   build(editor, config, state) {

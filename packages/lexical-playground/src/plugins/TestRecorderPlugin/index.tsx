@@ -172,7 +172,10 @@ function useTestRecorder(
 
   const generateTestContent = useCallback(() => {
     const rootElement = editor.getRootElement();
-    const browserSelection = getDOMSelection(editor._window);
+    const browserSelection = getDOMSelection(
+      editor._window,
+      editor.getRootElement(),
+    );
 
     if (
       rootElement == null ||
@@ -327,7 +330,10 @@ ${steps.map(formatStep).join(`\n`)}
             dirtyElements.size === 0 &&
             !skipNextSelectionChange
           ) {
-            const browserSelection = getDOMSelection(editor._window);
+            const browserSelection = getDOMSelection(
+              editor._window,
+              editor.getRootElement(),
+            );
             if (
               browserSelection &&
               (browserSelection.anchorNode == null ||
@@ -384,7 +390,11 @@ ${steps.map(formatStep).join(`\n`)}
     if (!isRecording) {
       return;
     }
-    const browserSelection = getDOMSelection(getCurrentEditor()._window);
+    const currentEditor = getCurrentEditor();
+    const browserSelection = getDOMSelection(
+      currentEditor._window,
+      currentEditor.getRootElement(),
+    );
     if (
       browserSelection === null ||
       browserSelection.anchorNode == null ||

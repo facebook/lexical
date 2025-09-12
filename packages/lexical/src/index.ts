@@ -115,6 +115,12 @@ export {
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
+export type {
+  GetComposedRangesOptions,
+  ShadowRootWithComposedRanges,
+  ShadowRootWithSelection,
+} from './LexicalConstants';
+export {DOM_DOCUMENT_FRAGMENT_TYPE} from './LexicalConstants';
 export {
   IS_ALL_FORMATTING,
   IS_BOLD,
@@ -256,6 +262,7 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  createSelectionFromComposedRanges,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,
@@ -264,6 +271,7 @@ export {
   getNearestEditorFromDOMNode,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getShadowRoot,
   getStaticNodeConfig,
   INTERNAL_$isBlock,
   isBlockDomNode,
@@ -280,6 +288,7 @@ export {
   isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  isShadowRoot,
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,

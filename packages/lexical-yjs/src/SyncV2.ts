@@ -62,15 +62,8 @@ type TextAttributes = {
   t?: string; // type if not TextNode
   p?: Record<string, unknown>; // properties
   [key: `s_${string}`]: unknown; // state
-  y: {idx: number};
-  ychange?: Record<string, unknown>;
-};
-
-// Used for resolving concurrent deletes.
-const DEFAULT_TEXT_ATTRIBUTES: TextAttributes = {
-  p: {},
-  t: TextNode.getType(),
-  y: {idx: 0},
+  y?: {i: number};
+  // ychange?: Record<string, unknown>;
 };
 
 /*
@@ -276,12 +269,7 @@ const $createOrUpdateTextNodesFromYText = (
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
 ): Array<TextNode> | null => {
-  const deltas: {insert: string; attributes: TextAttributes}[] = text
-    .toDelta(snapshot, prevSnapshot, computeYChange)
-    .map((delta: {insert: string; attributes?: TextAttributes}) => ({
-      ...delta,
-      attributes: delta.attributes ?? DEFAULT_TEXT_ATTRIBUTES,
-    }));
+  const deltas = toDelta(text, snapshot, prevSnapshot, computeYChange);
   const nodeTypes: string[] = deltas.map(
     (delta) => delta.attributes!.t ?? TextNode.getType(),
   );
@@ -417,11 +405,11 @@ const normalizeNodeContent = (node: LexicalNode): NormalizedPNodeContent => {
   const res: NormalizedPNodeContent = [];
   for (let i = 0; i < c.length; i++) {
     const n = c[i];
-    if (n instanceof TextNode) {
+    if ($isTextNode(n)) {
       const textNodes: TextNode[] = [];
       for (
         let maybeTextNode = c[i];
-        i < c.length && maybeTextNode instanceof TextNode;
+        i < c.length && $isTextNode(maybeTextNode);
         maybeTextNode = c[++i]
       ) {
         textNodes.push(maybeTextNode);
@@ -440,10 +428,10 @@ const equalYTextLText = (
   ltexts: TextNode[],
   binding: BindingV2,
 ) => {
-  const delta = ytext.toDelta();
+  const deltas = toDelta(ytext);
   return (
-    delta.length === ltexts.length &&
-    delta.every(
+    deltas.length === ltexts.length &&
+    deltas.every(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any, i: number) =>
         d.insert === ltexts[i].getTextContent() &&
@@ -580,7 +568,7 @@ const $updateYText = (
 ) => {
   binding.mapping.set(ytext, ltexts);
   const {nAttrs, str} = ytextTrans(ytext);
-  const content = ltexts.map((node, idx) => {
+  const content = ltexts.map((node, i) => {
     const nodeType = node.getType();
     let p: TextAttributes['p'] | null = propertiesToAttributes(node, binding);
     if (Object.keys(p).length === 0) {
@@ -592,7 +580,7 @@ const $updateYText = (
         p,
         ...stateToAttributes(node),
         // TODO(collab-v2): can probably be more targeted here
-        y: {idx}, // Prevent Yjs from merging text nodes itself.
+        ...(ltexts.length > 1 && {y: {i}}), // Prevent Yjs from merging text nodes itself.
       }),
       insert: node.getTextContent(),
       nodeKey: node.getKey(),
@@ -625,6 +613,20 @@ const $updateYText = (
   ytext.applyDelta(
     content.map((c) => ({attributes: c.attributes, retain: c.insert.length})),
   );
+};
+
+const toDelta = (
+  ytext: YText,
+  snapshot?: Snapshot,
+  prevSnapshot?: Snapshot,
+  computeYChange?: ComputeYChange,
+): Array<{insert: string; attributes: TextAttributes}> => {
+  return ytext
+    .toDelta(snapshot, prevSnapshot, computeYChange)
+    .map((delta: {insert: string; attributes?: TextAttributes}) => ({
+      ...delta,
+      attributes: delta.attributes ?? {},
+    }));
 };
 
 const propertiesToAttributes = (node: LexicalNode, meta: BindingV2) => {

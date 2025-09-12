@@ -37,6 +37,7 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
+  $addUpdateTag,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -47,17 +48,21 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
+  CommandPayloadType,
   ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
+  LexicalCommand,
   LexicalEditor,
   LexicalNode,
   NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SKIP_DOM_SELECTION_TAG,
+  TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
@@ -373,6 +378,7 @@ function FontDropDown({
   const handleClick = useCallback(
     (option: string) => {
       editor.update(() => {
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
         const selection = $getSelection();
         if (selection !== null) {
           $patchStyleText(selection, {
@@ -567,6 +573,25 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
+
+  const dispatchFormatTextCommand = (payload: TextFormatType) => {
+    activeEditor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, payload);
+    });
+  };
+
+  const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
+    command: T,
+    payload: CommandPayloadType<T> | undefined = undefined,
+  ) => {
+    activeEditor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+
+      // Re-assert on Type so that payload can have a default param
+      activeEditor.dispatchCommand(command, payload as CommandPayloadType<T>);
+    });
+  };
 
   const $handleHeadingNode = useCallback(
     (selectedElement: LexicalNode) => {
@@ -809,6 +834,7 @@ export default function ToolbarPlugin({
     (styles: Record<string, string>, skipHistoryStack?: boolean) => {
       activeEditor.update(
         () => {
+          $addUpdateTag(SKIP_DOM_SELECTION_TAG);
           const selection = $getSelection();
           if (selection !== null) {
             $patchStyleText(selection, styles);
@@ -850,6 +876,7 @@ export default function ToolbarPlugin({
   const onCodeLanguageSelect = useCallback(
     (value: string) => {
       activeEditor.update(() => {
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
         if (selectedElementKey !== null) {
           const node = $getNodeByKey(selectedElementKey);
           if ($isCodeNode(node)) {
@@ -884,9 +911,7 @@ export default function ToolbarPlugin({
     <div className="toolbar">
       <button
         disabled={!toolbarState.canUndo || !isEditable}
-        onClick={() => {
-          activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
-        }}
+        onClick={() => dispatchToolbarCommand(UNDO_COMMAND)}
         title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
         type="button"
         className="toolbar-item spaced"
@@ -895,9 +920,7 @@ export default function ToolbarPlugin({
       </button>
       <button
         disabled={!toolbarState.canRedo || !isEditable}
-        onClick={() => {
-          activeEditor.dispatchCommand(REDO_COMMAND, undefined);
-        }}
+        onClick={() => dispatchToolbarCommand(REDO_COMMAND)}
         title={IS_APPLE ? 'Redo (⇧⌘Z)' : 'Redo (Ctrl+Y)'}
         type="button"
         className="toolbar-item"
@@ -1015,9 +1038,7 @@ export default function ToolbarPlugin({
           <Divider />
           <button
             disabled={!isEditable}
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-            }}
+            onClick={() => dispatchFormatTextCommand('bold')}
             className={
               'toolbar-item spaced ' + (toolbarState.isBold ? 'active' : '')
             }
@@ -1028,9 +1049,7 @@ export default function ToolbarPlugin({
           </button>
           <button
             disabled={!isEditable}
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
-            }}
+            onClick={() => dispatchFormatTextCommand('italic')}
             className={
               'toolbar-item spaced ' + (toolbarState.isItalic ? 'active' : '')
             }
@@ -1041,9 +1060,7 @@ export default function ToolbarPlugin({
           </button>
           <button
             disabled={!isEditable}
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
-            }}
+            onClick={() => dispatchFormatTextCommand('underline')}
             className={
               'toolbar-item spaced ' +
               (toolbarState.isUnderline ? 'active' : '')
@@ -1056,9 +1073,7 @@ export default function ToolbarPlugin({
           {canViewerSeeInsertCodeButton && (
             <button
               disabled={!isEditable}
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
-              }}
+              onClick={() => dispatchFormatTextCommand('code')}
               className={
                 'toolbar-item spaced ' + (toolbarState.isCode ? 'active' : '')
               }
@@ -1104,9 +1119,7 @@ export default function ToolbarPlugin({
             buttonAriaLabel="Formatting options for additional text styles"
             buttonIconClassName="icon dropdown-more">
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase');
-              }}
+              onClick={() => dispatchFormatTextCommand('lowercase')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isLowercase)
               }
@@ -1119,9 +1132,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.LOWERCASE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase');
-              }}
+              onClick={() => dispatchFormatTextCommand('uppercase')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isUppercase)
               }
@@ -1134,9 +1145,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
-              }}
+              onClick={() => dispatchFormatTextCommand('capitalize')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
               }
@@ -1149,12 +1158,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CAPITALIZE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(
-                  FORMAT_TEXT_COMMAND,
-                  'strikethrough',
-                );
-              }}
+              onClick={() => dispatchFormatTextCommand('strikethrough')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isStrikethrough)
               }
@@ -1167,9 +1171,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.STRIKETHROUGH}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
-              }}
+              onClick={() => dispatchFormatTextCommand('subscript')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSubscript)
               }
@@ -1182,12 +1184,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.SUBSCRIPT}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(
-                  FORMAT_TEXT_COMMAND,
-                  'superscript',
-                );
-              }}
+              onClick={() => dispatchFormatTextCommand('superscript')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSuperscript)
               }
@@ -1200,9 +1197,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.SUPERSCRIPT}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'highlight');
-              }}
+              onClick={() => dispatchFormatTextCommand('highlight')}
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isHighlight)
               }
@@ -1235,20 +1230,15 @@ export default function ToolbarPlugin({
                 buttonAriaLabel="Insert specialized editor node"
                 buttonIconClassName="icon plus">
                 <DropDownItem
-                  onClick={() => {
-                    activeEditor.dispatchCommand(
-                      INSERT_HORIZONTAL_RULE_COMMAND,
-                      undefined,
-                    );
-                  }}
+                  onClick={() =>
+                    dispatchToolbarCommand(INSERT_HORIZONTAL_RULE_COMMAND)
+                  }
                   className="item">
                   <i className="icon horizontal-rule" />
                   <span className="text">Horizontal Rule</span>
                 </DropDownItem>
                 <DropDownItem
-                  onClick={() => {
-                    activeEditor.dispatchCommand(INSERT_PAGE_BREAK, undefined);
-                  }}
+                  onClick={() => dispatchToolbarCommand(INSERT_PAGE_BREAK)}
                   className="item">
                   <i className="icon page-break" />
                   <span className="text">Page Break</span>
@@ -1291,12 +1281,9 @@ export default function ToolbarPlugin({
                   <span className="text">GIF</span>
                 </DropDownItem>
                 <DropDownItem
-                  onClick={() => {
-                    activeEditor.dispatchCommand(
-                      INSERT_EXCALIDRAW_COMMAND,
-                      undefined,
-                    );
-                  }}
+                  onClick={() =>
+                    dispatchToolbarCommand(INSERT_EXCALIDRAW_COMMAND)
+                  }
                   className="item">
                   <i className="icon diagram-2" />
                   <span className="text">Excalidraw</span>
@@ -1357,6 +1344,7 @@ export default function ToolbarPlugin({
                 <DropDownItem
                   onClick={() => {
                     editor.update(() => {
+                      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
                       const root = $getRoot();
                       const stickyNode = $createStickyNode(0, 0);
                       root.append(stickyNode);
@@ -1367,12 +1355,9 @@ export default function ToolbarPlugin({
                   <span className="text">Sticky Note</span>
                 </DropDownItem>
                 <DropDownItem
-                  onClick={() => {
-                    editor.dispatchCommand(
-                      INSERT_COLLAPSIBLE_COMMAND,
-                      undefined,
-                    );
-                  }}
+                  onClick={() =>
+                    dispatchToolbarCommand(INSERT_COLLAPSIBLE_COMMAND)
+                  }
                   className="item">
                   <i className="icon caret-right" />
                   <span className="text">Collapsible container</span>
@@ -1381,9 +1366,7 @@ export default function ToolbarPlugin({
                   onClick={() => {
                     const dateTime = new Date();
                     dateTime.setHours(0, 0, 0, 0);
-                    activeEditor.dispatchCommand(INSERT_DATETIME_COMMAND, {
-                      dateTime,
-                    });
+                    dispatchToolbarCommand(INSERT_DATETIME_COMMAND, {dateTime});
                   }}
                   className="item">
                   <i className="icon calendar" />
@@ -1392,12 +1375,12 @@ export default function ToolbarPlugin({
                 {EmbedConfigs.map((embedConfig) => (
                   <DropDownItem
                     key={embedConfig.type}
-                    onClick={() => {
-                      activeEditor.dispatchCommand(
+                    onClick={() =>
+                      dispatchToolbarCommand(
                         INSERT_EMBED_COMMAND,
                         embedConfig.type,
-                      );
-                    }}
+                      )
+                    }
                     className="item">
                     {embedConfig.icon}
                     <span className="text">{embedConfig.contentName}</span>

@@ -20,6 +20,8 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
+import {focusNearestDescendant} from '../utils/focusUtils';
+
 type DropDownContextType = {
   registerItem: (ref: React.RefObject<HTMLButtonElement>) => void;
 };
@@ -73,7 +75,7 @@ function DropDownItems({
   onClose,
 }: {
   children: React.ReactNode;
-  dropDownRef: React.Ref<HTMLDivElement>;
+  dropDownRef: React.RefObject<HTMLDivElement>;
   onClose: () => void;
 }) {
   const [items, setItems] = useState<React.RefObject<HTMLButtonElement>[]>();
@@ -88,11 +90,13 @@ function DropDownItems({
   );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = event.key;
+    if (key === 'Escape') {
+      onClose();
+    }
     if (!items) {
       return;
     }
-
-    const key = event.key;
 
     if (['Escape', 'ArrowUp', 'ArrowDown', 'Tab'].includes(key)) {
       event.preventDefault();
@@ -132,8 +136,12 @@ function DropDownItems({
 
     if (highlightedItem && highlightedItem.current) {
       highlightedItem.current.focus();
+    } else if (!items) {
+      if (dropDownRef && dropDownRef.current) {
+        focusNearestDescendant(dropDownRef.current);
+      }
     }
-  }, [items, highlightedItem]);
+  }, [items, highlightedItem, dropDownRef]);
 
   return (
     <DropDownContext.Provider value={contextValue}>
@@ -195,13 +203,19 @@ export default function DropDown({
         if (!isDOMNode(target)) {
           return;
         }
-        if (stopCloseOnClickSelf) {
-          if (dropDownRef.current && dropDownRef.current.contains(target)) {
-            return;
-          }
+
+        const targetIsDropDownItem =
+          dropDownRef.current && dropDownRef.current.contains(target);
+        if (stopCloseOnClickSelf && targetIsDropDownItem) {
+          return;
         }
+
         if (!button.contains(target)) {
           setShowDropDown(false);
+
+          if (targetIsDropDownItem) {
+            button.focus();
+          }
         }
       };
       document.addEventListener('click', handle);

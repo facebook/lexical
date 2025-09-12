@@ -23,11 +23,13 @@ import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
+  $addUpdateTag,
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   LexicalEditor,
+  SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
 
 import {
@@ -131,6 +133,7 @@ export const updateFontSizeInSelection = (
   };
 
   editor.update(() => {
+    $addUpdateTag(SKIP_DOM_SELECTION_TAG);
     if (editor.isEditable()) {
       const selection = $getSelection();
       if (selection !== null) {
@@ -157,6 +160,7 @@ export const updateFontSize = (
 
 export const formatParagraph = (editor: LexicalEditor) => {
   editor.update(() => {
+    $addUpdateTag(SKIP_DOM_SELECTION_TAG);
     const selection = $getSelection();
     $setBlocksType(selection, () => $createParagraphNode());
   });
@@ -169,6 +173,7 @@ export const formatHeading = (
 ) => {
   if (blockType !== headingSize) {
     editor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
       const selection = $getSelection();
       $setBlocksType(selection, () => $createHeadingNode(headingSize));
     });
@@ -177,7 +182,10 @@ export const formatHeading = (
 
 export const formatBulletList = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'bullet') {
-    editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+    editor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+    });
   } else {
     formatParagraph(editor);
   }
@@ -185,7 +193,10 @@ export const formatBulletList = (editor: LexicalEditor, blockType: string) => {
 
 export const formatCheckList = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'check') {
-    editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+    editor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+    });
   } else {
     formatParagraph(editor);
   }
@@ -196,7 +207,10 @@ export const formatNumberedList = (
   blockType: string,
 ) => {
   if (blockType !== 'number') {
-    editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+    editor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+    });
   } else {
     formatParagraph(editor);
   }
@@ -205,6 +219,7 @@ export const formatNumberedList = (
 export const formatQuote = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'quote') {
     editor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
       const selection = $getSelection();
       $setBlocksType(selection, () => $createQuoteNode());
     });
@@ -214,6 +229,7 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
       let selection = $getSelection();
       if (!selection) {
         return;
@@ -235,6 +251,7 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
 
 export const clearFormatting = (editor: LexicalEditor) => {
   editor.update(() => {
+    $addUpdateTag(SKIP_DOM_SELECTION_TAG);
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
       const anchor = selection.anchor;

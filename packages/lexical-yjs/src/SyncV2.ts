@@ -62,7 +62,7 @@ type TextAttributes = {
   t?: string; // type if not TextNode
   p?: Record<string, unknown>; // properties
   [key: `s_${string}`]: unknown; // state
-  y?: {i: number};
+  i?: number; // used to prevent Yjs from merging text nodes itself
   // ychange?: Record<string, unknown>;
 };
 
@@ -270,14 +270,18 @@ const $createOrUpdateTextNodesFromYText = (
   computeYChange?: ComputeYChange,
 ): Array<TextNode> | null => {
   const deltas = toDelta(text, snapshot, prevSnapshot, computeYChange);
-  const nodeTypes: string[] = deltas.map(
-    (delta) => delta.attributes!.t ?? TextNode.getType(),
-  );
+
+  // Use existing text nodes if the count and types all align, otherwise throw out the existing
+  // nodes and create new ones.
   let nodes: TextNode[] = binding.mapping.get(text) ?? [];
-  if (
-    nodes.length !== nodeTypes.length ||
-    nodes.some((node, i) => node.getType() !== nodeTypes[i])
-  ) {
+
+  const nodeTypes: string[] = deltas.map(
+    (delta) => delta.attributes.t ?? TextNode.getType(),
+  );
+  const canReuseNodes =
+    nodes.length === nodeTypes.length &&
+    nodes.every((node, i) => node.getType() === nodeTypes[i]);
+  if (!canReuseNodes) {
     const registeredNodes = binding.editor._nodes;
     nodes = nodeTypes.map((type) => {
       const nodeInfo = registeredNodes.get(type);
@@ -431,24 +435,22 @@ const equalYTextLText = (
   const deltas = toDelta(ytext);
   return (
     deltas.length === ltexts.length &&
-    deltas.every(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (d: any, i: number) =>
-        d.insert === ltexts[i].getTextContent() &&
-        d.attributes.t === ltexts[i].getType() &&
-        equalAttrs(
-          d.attributes.p ?? {},
-          propertiesToAttributes(ltexts[i], binding),
-        ) &&
-        equalAttrs(
-          Object.fromEntries(
-            Object.entries(d.attributes)
-              .filter(([k]) => k.startsWith(STATE_KEY_PREFIX))
-              .map(([k, v]) => [attrKeyToStateKey(k), v]),
-          ),
-          stateToAttributes(ltexts[i]),
+    deltas.every((d, i) => {
+      const ltext = ltexts[i];
+      const type = d.attributes.t ?? TextNode.getType();
+      const propertyAttrs = d.attributes.p ?? {};
+      const stateAttrs = Object.fromEntries(
+        Object.entries(d.attributes).filter(([k]) =>
+          k.startsWith(STATE_KEY_PREFIX),
         ),
-    )
+      );
+      return (
+        d.insert === ltext.getTextContent() &&
+        type === ltext.getType() &&
+        equalAttrs(propertyAttrs, propertiesToAttributes(ltext, binding)) &&
+        equalAttrs(stateAttrs, stateToAttributes(ltext))
+      );
+    })
   );
 };
 
@@ -579,8 +581,7 @@ const $updateYText = (
         ...(nodeType !== TextNode.getType() && {t: nodeType}),
         p,
         ...stateToAttributes(node),
-        // TODO(collab-v2): can probably be more targeted here
-        ...(ltexts.length > 1 && {y: {i}}), // Prevent Yjs from merging text nodes itself.
+        ...(i > 0 && {i}), // Prevent Yjs from merging text nodes itself.
       }),
       insert: node.getTextContent(),
       nodeKey: node.getKey(),

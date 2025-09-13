@@ -238,7 +238,7 @@ declare export class LexicalEditor {
 type EditorReadOptions = {
   pending?: boolean,
 };
-type EditorUpdateOptions = {
+export type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string | Array<string>,
   skipTransforms?: true,
@@ -247,7 +247,7 @@ type EditorUpdateOptions = {
 type EditorFocusOptions = {
   defaultSelection?: 'rootStart' | 'rootEnd',
 };
-type EditorSetOptions = {
+export type EditorSetOptions = {
   tag?: string,
 };
 type EditorThemeClassName = string;
@@ -1540,7 +1540,7 @@ declare export function defineExtension<
 >(
   extension: LexicalExtension<Config, Name, Output, Init>,
 ): LexicalExtension<Config, Name, Output, Init>;
-export type ExtensionConfigBase = Record<empty, empty>;
+export type ExtensionConfigBase = {...};
 export interface ExtensionInitState {
   getPeer: <Dependency: AnyLexicalExtension = empty>(
     name: Dependency['name'],

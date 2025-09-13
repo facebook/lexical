@@ -14,9 +14,12 @@ import type {
   RangeSelection,
   LexicalCommand,
   SerializedElementNode,
+  LexicalEditor,
 } from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
+import type {LexicalExtension, NamedSignalsOutput} from '@lexical/extension';
+
 export type LinkAttributes = $ReadOnly<{
   rel?: null | string,
   target?: null | string,
@@ -97,3 +100,18 @@ declare export function $toggleLink(
 /** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
 declare const toggleLink: typeof $toggleLink;
 declare export function formatUrl(url: string): string;
+
+export type ClickableLinkConfig = {
+  newTab: boolean;
+  disabled: boolean;
+}
+
+type AddEventListenerOptions = Exclude<EventListenerOptionsOrUseCapture, boolean>;
+
+declare export function registerClickableLink(
+  editor: LexicalEditor,
+  stores: NamedSignalsOutput<ClickableLinkConfig>,
+  eventOptions?: Pick<AddEventListenerOptions, 'signal'>,
+): () => void;
+
+declare export var ClickableLinkExtension: LexicalExtension<ClickableLinkConfig, "@lexical/link/ClickableLink", NamedSignalsOutput<ClickableLinkConfig>, void>;

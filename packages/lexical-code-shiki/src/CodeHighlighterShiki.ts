@@ -73,7 +73,7 @@ import {
 export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
-  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
+  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
 }
 
 const DEFAULT_CODE_THEME = 'one-light';

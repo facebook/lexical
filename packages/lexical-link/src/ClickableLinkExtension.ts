@@ -48,7 +48,7 @@ export function registerClickableLink(
   editor: LexicalEditor,
   stores: NamedSignalsOutput<ClickableLinkConfig>,
   eventOptions: Pick<AddEventListenerOptions, 'signal'> = {},
-) {
+): () => void {
   const onClick = (event: MouseEvent) => {
     const target = event.target;
     if (!isDOMNode(target)) {

@@ -36,6 +36,7 @@ import {
   INTERNAL_$isBlock,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import { $findMatchingParent } from '@lexical/utils';
 
 import {
   $getComputedStyleForElement,
@@ -646,9 +647,6 @@ export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,
   predicate: (ancestor: LexicalNode) => ancestor is NodeType,
 ) {
-  let parent = node;
-  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
-    parent = parent.getParentOrThrow();
-  }
-  return predicate(parent) ? parent : null;
+  // Delegate to shared implementation to avoid duplication.
+  return $findMatchingParent(node, predicate) as NodeType | null;
 }

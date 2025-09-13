@@ -1764,23 +1764,6 @@ export function $splitNode(
   return [leftTree, rightTree];
 }
 
-export function $findMatchingParent(
-  startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
-  }
-
-  return null;
-}
-
 /**
  * @param x - The element being tested
  * @returns Returns true if x is an HTML anchor tag, false otherwise
@@ -2141,3 +2124,37 @@ export function $create<T extends LexicalNode>(klass: Klass<T>): T {
   );
   return new registeredNode.klass() as T;
 }
+
+/**
+ * Starts with a node and moves up the tree (toward the root node) to find a matching node based on
+ * the search parameters of the findFn. (Consider JavaScripts' .find() function where a testing function must be
+ * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
+ * @param startingNode - The node where the search starts.
+ * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
+ * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
+ */
+export const $findMatchingParent: {
+  <T extends LexicalNode>(
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => node is T,
+  ): T | null;
+  (
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => boolean,
+  ): LexicalNode | null;
+} = (
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => boolean,
+): LexicalNode | null => {
+  let curr: ElementNode | LexicalNode | null = startingNode;
+
+  while (curr !== $getRoot() && curr != null) {
+    if (findFn(curr)) {
+      return curr;
+    }
+
+    curr = curr.getParent();
+  }
+
+  return null;
+};

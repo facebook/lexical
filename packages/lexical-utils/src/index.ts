@@ -10,6 +10,7 @@ import {
   $caretFromPoint,
   $cloneWithProperties,
   $createParagraphNode,
+  $findMatchingParent,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
@@ -415,31 +416,7 @@ export type DOMNodeToLexicalConversionMap = Record<
  * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
  * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
  */
-export const $findMatchingParent: {
-  <T extends LexicalNode>(
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => node is T,
-  ): T | null;
-  (
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => boolean,
-  ): LexicalNode | null;
-} = (
-  startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null => {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
-  }
-
-  return null;
-};
+export {$findMatchingParent} from 'lexical';
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.

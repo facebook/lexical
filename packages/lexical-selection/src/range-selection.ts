@@ -21,6 +21,7 @@ import {
   $caretFromPoint,
   $createRangeSelection,
   $extendCaretToRange,
+  $findMatchingParent,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
@@ -36,7 +37,6 @@ import {
   INTERNAL_$isBlock,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import { $findMatchingParent } from '@lexical/utils';
 
 import {
   $getComputedStyleForElement,

@@ -965,6 +965,28 @@ export function isExactShortcutMatch(
   );
 }
 
+/**
+ * Starts with a node and moves up the tree (toward the root node) to find a
+ * matching node based on the search parameters of the provided predicate.
+ *
+ * @param startingNode - The node where the search starts.
+ * @param findFn - A testing function that returns true if the current node
+ *                 satisfies the testing parameters. May be a type predicate to
+ *                 enable type narrowing of the returned node.
+ * @returns A parent (or the starting node) that matches the predicate, or null
+ *          if none was found before reaching the root.
+ */
+// See the implementation further below. We declare overloads here to support
+// type predicate narrowing in callers.
+export function $findMatchingParent<T extends LexicalNode>(
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => node is T,
+): T | null;
+export function $findMatchingParent(
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => boolean,
+): LexicalNode | null;
+
 const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
 const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
 
@@ -1764,7 +1786,7 @@ export function $splitNode(
   return [leftTree, rightTree];
 }
 
-export function $findMatchingParent(
+function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
 ): LexicalNode | null {
@@ -1772,7 +1794,7 @@ export function $findMatchingParent(
 
   while (curr !== $getRoot() && curr != null) {
     if (findFn(curr)) {
-      return curr;
+      return curr as LexicalNode; // T is inferred via overload when appropriate
     }
 
     curr = curr.getParent();

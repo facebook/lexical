@@ -284,6 +284,7 @@ export {
   resetRandomKey,
   setDOMUnmanaged,
   setNodeIndentFromDOM,
+  $findMatchingParent,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

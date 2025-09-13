@@ -36,7 +36,7 @@ import {
   INTERNAL_$isBlock,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import { $findMatchingParent } from '@lexical/utils';
+import { $findMatchingParent } from 'lexical';
 
 import {
   $getComputedStyleForElement,

@@ -293,7 +293,7 @@ export interface TextNode {
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TextNode extends LexicalNode {
   /** @internal */
-  ['constructor']!: KlassConstructor<typeof TextNode>;
+  declare ['constructor']: KlassConstructor<typeof TextNode>;
   __text: string;
   /** @internal */
   __format: number;

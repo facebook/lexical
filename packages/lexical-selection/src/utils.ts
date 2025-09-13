@@ -232,7 +232,7 @@ export function getCSSFromStyleObject(styles: Record<string, string>): string {
 
 /**
  * Gets the computed DOM styles of the element.
- * @param node - The node to check the styles for.
+ * @param element - The node to check the styles for.
  * @returns the computed styles of the element or null if there is no DOM element or no default view for the document.
  */
 export function $getComputedStyleForElement(

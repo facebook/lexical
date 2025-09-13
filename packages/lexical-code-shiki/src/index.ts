@@ -7,6 +7,7 @@
  */
 
 export {
+  CodeHighlighterShikiExtension,
   registerCodeHighlighting,
   ShikiTokenizer,
   type Tokenizer,

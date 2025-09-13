@@ -12,7 +12,6 @@ import {
   AutoFocusExtension,
   buildEditorFromExtensions,
   EditorStateExtension,
-  effect,
   HorizontalRuleExtension,
   TabIndentationExtension,
 } from '@lexical/extension';
@@ -46,9 +45,6 @@ function $prepopulatedRichText() {
 }
 
 const editorRef = document.getElementById('lexical-editor');
-const stateRef = document.getElementById(
-  'lexical-state',
-) as HTMLTextAreaElement;
 
 buildEditorFromExtensions({
   $initialEditorState: $prepopulatedRichText,
@@ -68,9 +64,8 @@ buildEditorFromExtensions({
   ],
   name: '[root]',
   namespace: '@lexical/extension-vanilla-tailwind-example',
-  register(editor, _config, state) {
+  register(editor, _config, _state) {
     editor.setRootElement(editorRef);
-    const editorState = state.getDependency(EditorStateExtension).output;
     const el = document.createElement('div');
     document.body.appendChild(el);
 
@@ -81,26 +76,8 @@ buildEditorFromExtensions({
       key: 'tree-view',
       props: {
         editor,
-        timeTravelButtonClassName: 'debug-timetravel-button',
-        timeTravelPanelButtonClassName: 'debug-timetravel-panel-button',
-        timeTravelPanelClassName: 'debug-timetravel-panel',
-        timeTravelPanelSliderClassName: 'debug-timetravel-panel-slider',
-        treeTypeButtonClassName: 'debug-treetype-button',
-        viewClassName: 'tree-view-output',
       },
     });
-    return mergeRegister(
-      () => editor.setRootElement(null),
-      // Using signals from @preact/signals-core allows us to do what is done
-      // from the legacy React plugins without having to wrap a component
-      // around a hook, plus it's all framework independent.
-      effect(() => {
-        stateRef!.textContent = JSON.stringify(
-          editorState.value.toJSON(),
-          undefined,
-          2,
-        );
-      }),
-    );
+    return mergeRegister(() => editor.setRootElement(null));
   },
 });

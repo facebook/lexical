@@ -14,7 +14,7 @@ import {
   LexicalBuilder,
   safeCast,
 } from '@lexical/extension';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 const InitialStateExtensionName = '@lexical/extension/InitialState';
 
@@ -23,7 +23,7 @@ describe('LexicalBuilder', () => {
     config: safeCast<{a: 1; b: string | null}>({a: 1, b: 'b'}),
     name: 'Config',
   });
-  it('merges extension configs', () => {
+  it('merges extension configs (siblings)', () => {
     const builder = LexicalBuilder.fromEditor(
       buildEditorFromExtensions(
         ConfigExtension,
@@ -33,6 +33,60 @@ describe('LexicalBuilder', () => {
     const reps = builder.sortedExtensionReps();
     expect(reps.length).toBe(2);
     const [rep] = reps.slice(-1);
+    expect(rep.extension).toBe(ConfigExtension);
+    expect(rep.getState().config).toEqual({a: 1, b: null});
+  });
+  it('merges extension configs (parent override child)', () => {
+    const builder = LexicalBuilder.fromEditor(
+      buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(ConfigExtension, {b: null})],
+          name: 'parent',
+        }),
+      ),
+    );
+    const reps = builder.sortedExtensionReps();
+    expect(reps.length).toBe(3);
+    const rep = reps.find((r) => r.extension === ConfigExtension);
+    assert(rep, 'ConfigExtension not found');
+    expect(rep.extension).toBe(ConfigExtension);
+    expect(rep.getState().config).toEqual({a: 1, b: null});
+  });
+  it('merges extension configs (grandparent override child) override after', () => {
+    const builder = LexicalBuilder.fromEditor(
+      buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            defineExtension({dependencies: [ConfigExtension], name: 'parent'}),
+            configExtension(ConfigExtension, {b: null}),
+          ],
+          name: 'grandparent',
+        }),
+      ),
+    );
+    const reps = builder.sortedExtensionReps();
+    expect(reps.length).toBe(4);
+    const rep = reps.find((r) => r.extension === ConfigExtension);
+    assert(rep, 'ConfigExtension not found');
+    expect(rep.extension).toBe(ConfigExtension);
+    expect(rep.getState().config).toEqual({a: 1, b: null});
+  });
+  it('merges extension configs (grandparent override child) override before', () => {
+    const builder = LexicalBuilder.fromEditor(
+      buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            configExtension(ConfigExtension, {b: null}),
+            defineExtension({dependencies: [ConfigExtension], name: 'parent'}),
+          ],
+          name: 'grandparent',
+        }),
+      ),
+    );
+    const reps = builder.sortedExtensionReps();
+    expect(reps.length).toBe(4);
+    const rep = reps.find((r) => r.extension === ConfigExtension);
+    assert(rep, 'ConfigExtension not found');
     expect(rep.extension).toBe(ConfigExtension);
     expect(rep.getState().config).toEqual({a: 1, b: null});
   });

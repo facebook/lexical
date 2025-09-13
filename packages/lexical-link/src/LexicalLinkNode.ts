@@ -535,13 +535,21 @@ function $withSelectedNodes<T>($fn: () => T): T {
 /**
  * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
  * but saves any children and brings them up to the parent node.
- * @param url - The URL the link directs to.
+ * @param urlOrAttributes - The URL the link directs to, or an attributes object with an url property
  * @param attributes - Optional HTML a tag attributes. \\{ target, rel, title \\}
  */
 export function $toggleLink(
-  url: null | string,
+  urlOrAttributes: null | string | (LinkAttributes & {url: null | string}),
   attributes: LinkAttributes = {},
 ): void {
+  let url: null | string;
+  if (urlOrAttributes && typeof urlOrAttributes === 'object') {
+    const {url: urlProp, ...rest} = urlOrAttributes;
+    url = urlProp;
+    attributes = {...rest, ...attributes};
+  } else {
+    url = urlOrAttributes;
+  }
   const {target, title} = attributes;
   const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();

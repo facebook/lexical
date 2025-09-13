@@ -701,8 +701,6 @@ export function $toggleLink(
 /** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
 export const toggleLink = $toggleLink;
 
-// Removed duplicate $getAncestor in favor of shared $findMatchingParent from @lexical/utils
-
 const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;
 
 /**

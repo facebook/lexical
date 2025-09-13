@@ -976,30 +976,16 @@ export function isExactShortcutMatch(
  * @returns A parent (or the starting node) that matches the predicate, or null
  *          if none was found before reaching the root.
  */
-export const $findMatchingParent: {
-  <T extends LexicalNode>(
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => node is T,
-  ): T | null;
-  (
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => boolean,
-  ): LexicalNode | null;
-} = (
+// See the implementation further below. We declare overloads here to support
+// type predicate narrowing in callers.
+export function $findMatchingParent<T extends LexicalNode>(
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => node is T,
+): T | null;
+export function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null => {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-    curr = curr.getParent();
-  }
-
-  return null;
-};
+): LexicalNode | null;
 
 const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
 const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
@@ -1808,7 +1794,7 @@ export function $findMatchingParent(
 
   while (curr !== $getRoot() && curr != null) {
     if (findFn(curr)) {
-      return curr;
+      return curr as LexicalNode; // T is inferred via overload when appropriate
     }
 
     curr = curr.getParent();

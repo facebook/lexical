@@ -1786,7 +1786,7 @@ export function $splitNode(
   return [leftTree, rightTree];
 }
 
-export function $findMatchingParent(
+function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
 ): LexicalNode | null {

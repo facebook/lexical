@@ -26,10 +26,18 @@
       "@lexical/extension": ["../../packages/lexical-extension/src/index.ts"],
       "@lexical/history": ["../../packages/lexical-history/src/index.ts"],
       "@lexical/list": ["../../packages/lexical-list/src/index.ts"],
-      "@lexical/react/ReactPluginHostExtension": ["../../packages/lexical-react/src/ReactPluginHostExtension.tsx"],
-      "@lexical/react/ReactProviderExtension": ["../../packages/lexical-react/src/ReactProviderExtension.tsx"],
-      "@lexical/react/ReactExtension": ["../../packages/lexical-react/src/ReactExtension.tsx"],
-      "@lexical/react/TreeViewExtension": ["../../packages/lexical-react/src/TreeViewExtension.tsx"],
+      "@lexical/react/ReactPluginHostExtension": [
+        "../../packages/lexical-react/src/ReactPluginHostExtension.tsx"
+      ],
+      "@lexical/react/ReactProviderExtension": [
+        "../../packages/lexical-react/src/ReactProviderExtension.tsx"
+      ],
+      "@lexical/react/ReactExtension": [
+        "../../packages/lexical-react/src/ReactExtension.tsx"
+      ],
+      "@lexical/react/TreeViewExtension": [
+        "../../packages/lexical-react/src/TreeViewExtension.tsx"
+      ],
       "@lexical/rich-text": ["../../packages/lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["../../packages/lexical-selection/src/index.ts"],
       "@lexical/tailwind": ["../../packages/lexical-tailwind/src/index.ts"],

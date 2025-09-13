@@ -20,7 +20,8 @@ import {
   safeCast,
 } from 'lexical';
 
-import {$isLinkNode, LinkExtension} from './';
+import {LinkExtension} from './LexicalLinkExtension';
+import {$isLinkNode} from './LexicalLinkNode';
 
 function findMatchingDOM<T extends Node>(
   startNode: Node,

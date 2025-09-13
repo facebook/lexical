@@ -198,4 +198,21 @@ export const CheckListExtension = defineExtension({
 });
 ```
 
-## Using React extensions and plug-ins "without React"
+## Using React extensions and plug-ins without JSX
+
+[ReactPluginHostExtension](/docs/api/modules/lexical_react_reactpluginhostextension#reactpluginhostextension)
+is an extension that allows you to mount the a React root at a
+specific DOM element in your app so that applications that are
+not natively React can still take advantage of existing legacy
+plug-ins and extensions that depend on React.
+
+While this does mean your application will include the React runtime, you
+don't have to use JSX or have any other React infrastructure in your app.
+
+See
+[extension-vanilla-react-plugin-host](https://github.com/etrepum/lexical/blob/extension/examples/extension-vanilla-react-plugin-host/src/main.ts)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/facebook/lexical/pull/7706?file=examples/extension-vanilla-react-plugin-host/src/main.ts&configPath=examples/extension-vanilla-react-plugin-host)
+for usage of this extension and its API
+
+TODO #7706: update github url after merge
+TODO #7706: update stackblitz url after merge

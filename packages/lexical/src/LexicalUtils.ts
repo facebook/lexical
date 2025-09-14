@@ -2131,7 +2131,7 @@ export function $create<T extends LexicalNode>(klass: Klass<T>): T {
  * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
  * @param startingNode - The node where the search starts.
  * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
- * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
+ * @returns `startingNode` or one of its ancestors that matches the `findFn` predicate and is not the `RootNode`, or `null` if no match was found.
  */
 export const $findMatchingParent: {
   <T extends LexicalNode>(
@@ -2148,7 +2148,7 @@ export const $findMatchingParent: {
 ): LexicalNode | null => {
   let curr: ElementNode | LexicalNode | null = startingNode;
 
-  while (curr !== $getRoot() && curr != null) {
+  while (curr != null && !$isRootNode(curr)) {
     if (findFn(curr)) {
       return curr;
     }

@@ -38,13 +38,13 @@ export type ChangeHandler = (
   prevUrl: string | null,
 ) => void;
 
-type LinkMatcherResult = {
+export interface LinkMatcherResult {
   attributes?: AutoLinkAttributes;
   index: number;
   length: number;
   text: string;
   url: string;
-};
+}
 
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
@@ -461,7 +461,7 @@ const defaultConfig: AutoLinkConfig = {
 
 export function registerAutoLink(
   editor: LexicalEditor,
-  config: typeof defaultConfig = defaultConfig,
+  config: AutoLinkConfig = defaultConfig,
 ): () => void {
   const {matchers, changeHandlers} = config;
   const onChange: ChangeHandler = (url, prevUrl) => {

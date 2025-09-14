@@ -58,7 +58,7 @@ export function mountReactExtensionComponent<
       ? /** The Props from the Extension output Component */ React.ComponentProps<OutputComponentType> | null
       : never;
   } & Omit<MountPluginCommandArg, 'element'>,
-) {
+): void {
   const {props, extension, ...rest} = opts;
   const {Component} = getExtensionDependencyFromEditor(
     editor,
@@ -79,7 +79,7 @@ export function mountReactPluginComponent<
     Component: React.ComponentType<P>;
     props: (P & React.Attributes) | null;
   } & Omit<MountPluginCommandArg, 'element'>,
-) {
+): void {
   const {Component, props, ...rest} = opts;
   mountReactPluginElement(editor, {
     ...rest,
@@ -90,7 +90,7 @@ export function mountReactPluginComponent<
 export function mountReactPluginElement(
   editor: LexicalEditor,
   opts: MountPluginCommandArg,
-) {
+): void {
   getExtensionDependencyFromEditor(
     editor,
     ReactPluginHostExtension,
@@ -100,7 +100,7 @@ export function mountReactPluginElement(
 export function mountReactPluginHost(
   editor: LexicalEditor,
   container: Container,
-) {
+): void {
   getExtensionDependencyFromEditor(
     editor,
     ReactPluginHostExtension,

@@ -115,3 +115,54 @@ declare export function registerClickableLink(
 ): () => void;
 
 declare export var ClickableLinkExtension: LexicalExtension<ClickableLinkConfig, "@lexical/link/ClickableLink", NamedSignalsOutput<ClickableLinkConfig>, void>;
+declare export function registerClickableLink(
+  editor: LexicalEditor,
+  stores: NamedSignalsOutput<ClickableLinkConfig>,
+  eventOptions?: Pick<AddEventListenerOptions, 'signal'>,
+): () => void;
+
+export type AutoLinkConfig = {
+  matchers: LinkMatcher[];
+  changeHandlers: ChangeHandler[];
+}
+
+export type ChangeHandler = (
+  url: string | null,
+  prevUrl: string | null,
+) => void;
+
+export type AutoLinkAttributes = Partial<
+  {...LinkAttributes, isUnlinked?: boolean}
+>;
+
+export type LinkMatcherResult = {
+  attributes?: AutoLinkAttributes;
+  index: number;
+  length: number;
+  text: string;
+  url: string;
+}
+
+export type LinkMatcher = (text: string) => LinkMatcherResult | null;
+
+declare export function createLinkMatcherWithRegExp(
+  regExp: RegExp,
+  urlTransformer?: (text: string) => string,
+): LinkMatcher;
+
+declare export var AutoLinkExtension: LexicalExtension<AutoLinkConfig, "@lexical/link/AutoLink", void, void>;
+
+declare export function registerAutoLink(
+  editor: LexicalEditor,
+  config?: AutoLinkConfig,
+): () => void;
+
+export type LinkConfig = {
+  validateUrl: void | ((url: string) => boolean);
+  attributes: void | LinkAttributes;
+}
+declare export var LinkExtension: LexicalExtension<LinkConfig, "@lexical/link/Link", NamedSignalsOutput<LinkConfig>, void>;
+declare export function registerLink(
+  editor: LexicalEditor,
+  stores: NamedSignalsOutput<LinkConfig>,
+): () => void;

@@ -10,3 +10,11 @@
 /**
  * LexicalExtensionComposer
  */
+import type {AnyLexicalExtensionArgument} from 'lexical';
+import type {ReactConfig} from '@lexical/react/ReactExtension';
+export type LexicalExtensionComposerProps = {
+  extension: AnyLexicalExtensionArgument;
+  children: React.Node;
+  contentEditable?: ReactConfig['contentEditable'];
+}
+declare export function LexicalExtensionComposer(props: LexicalExtensionComposerProps): React.Node;

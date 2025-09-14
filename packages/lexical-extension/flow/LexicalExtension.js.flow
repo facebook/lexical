@@ -63,7 +63,7 @@ export type NamedSignalsOutput<Defaults> = {
 
 declare export function namedSignals<Defaults>(
   defaults: Defaults,
-  opts: NamedSignalsOptions<Defaults>
+  opts?: NamedSignalsOptions<Defaults>
 ): NamedSignalsOutput<Defaults>;
 
 declare export class Signal<T = mixed> {

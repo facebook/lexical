@@ -10,3 +10,5 @@
 /**
  * LexicalTailwind
  */
+import type {LexicalExtension, ExtensionConfigBase} from 'lexical';
+declare export var TailwindExtension: LexicalExtension<ExtensionConfigBase, "@lexical/tailwind", void, void>;

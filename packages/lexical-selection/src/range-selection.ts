@@ -85,8 +85,11 @@ export function $setBlocksType<T extends ElementNode>(
     newSelection = $createRangeSelection();
     newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
     newSelection.focus.set(focus.key, focus.offset, focus.type);
-    const anchorBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
-    const focusBlock = $getAncestor(focus.getNode(), INTERNAL_$isBlock);
+    const anchorBlock = $findMatchingParent(
+      anchor.getNode(),
+      INTERNAL_$isBlock,
+    );
+    const focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
@@ -98,7 +101,7 @@ export function $setBlocksType<T extends ElementNode>(
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
       blockMap.set(node.getKey(), node);
     } else if (anchorAndFocus === null) {
-      const ancestorBlock = $getAncestor(node, INTERNAL_$isBlock);
+      const ancestorBlock = $findMatchingParent(node, INTERNAL_$isBlock);
       if ($isElementNode(ancestorBlock)) {
         blockMap.set(ancestorBlock.getKey(), ancestorBlock);
       }
@@ -641,12 +644,4 @@ export function $getSelectionStyleValueForProperty(
   }
 
   return styleValue === null ? defaultValue : styleValue;
-}
-
-export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
-  // Delegate to shared implementation to avoid duplication.
-  return $findMatchingParent(node, predicate) as NodeType | null;
 }

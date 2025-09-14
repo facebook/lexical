@@ -44,16 +44,6 @@ import {
   getStyleObjectFromCSS,
 } from './utils';
 
-// Local helper to preserve existing callers. Delegates to the shared
-// implementation available from core without introducing a dependency on
-// @lexical/utils (per package layering guidance).
-function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
-  return $findMatchingParent(node, predicate) as NodeType | null;
-}
-
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
   destNode: ElementNode,

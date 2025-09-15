@@ -236,6 +236,7 @@ export {
   $cloneWithProperties,
   $copyNode,
   $create,
+  $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,

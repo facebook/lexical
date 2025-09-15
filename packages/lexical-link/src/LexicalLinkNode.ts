@@ -653,7 +653,7 @@ export function $toggleLink(
     const firstNode = nodes[0];
     // if the first node is a LinkNode or if its
     // parent is a LinkNode, we update the URL, target and rel.
-    const linkNode = $getAncestor(firstNode, $isLinkNode);
+    const linkNode = $findMatchingParent(firstNode, $isLinkNode);
     if (linkNode !== null) {
       return updateLinkNode(linkNode);
     }
@@ -665,7 +665,7 @@ export function $toggleLink(
       if (!node.isAttached()) {
         continue;
       }
-      const parentLinkNode = $getAncestor(node, $isLinkNode);
+      const parentLinkNode = $findMatchingParent(node, $isLinkNode);
       if (parentLinkNode) {
         updateLinkNode(parentLinkNode);
         continue;
@@ -705,17 +705,6 @@ export function $toggleLink(
       linkNode.append(node);
     }
   });
-}
-
-function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
-  let parent = node;
-  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
-    parent = parent.getParentOrThrow();
-  }
-  return predicate(parent) ? parent : null;
 }
 
 const PHONE_NUMBER_REGEX = /^\+?[0-9\s()-]{5,}$/;

@@ -48,6 +48,8 @@ import type {
  *   config: safeCast<ConfigurableConfig>({ required: 1 }),
  * });
  * ```
+ *
+ * @__NO_SIDE_EFFECTS__
  */
 export function defineExtension<
   Config extends ExtensionConfigBase,

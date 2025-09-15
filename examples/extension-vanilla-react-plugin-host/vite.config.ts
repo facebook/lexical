@@ -18,7 +18,11 @@ export default defineConfig({
       targets: [
         {
           dest: './src/stackblitz-workaround/',
-          src: '../../packages/lexical-tailwind/src/*.ts',
+          src: '../../packages/lexical-tailwind/src/index.ts',
+        },
+        {
+          dest: './src/stackblitz-workaround/',
+          src: '../../packages/lexical-react/src/TreeViewExtension.tsx',
         },
       ],
       verbose: true,

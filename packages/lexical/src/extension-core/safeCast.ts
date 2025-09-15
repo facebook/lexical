@@ -10,6 +10,8 @@
  * Explicitly and safely cast a value to a specific type when inference or
  * satisfies isn't going to work as expected (often useful for the config
  * property with {@link defineExtension})
+ *
+ * @__NO_SIDE_EFFECTS__
  */
 export function safeCast<T>(value: T): T {
   return value;

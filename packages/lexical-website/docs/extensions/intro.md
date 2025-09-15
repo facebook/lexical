@@ -47,6 +47,15 @@ registration code is included exactly once in the right place. When some depende
 configuration or registration is missing (or runs twice!), at best you get a runtime
 error, but often it will partially work which is tricky to debug.
 
+Another compelling use case for extensions is to provide functionality
+from one extension to another extension (e.g. collaboration with yjs),
+or have one extension enhance the capabilities of another (e.g. markdown
+import/export, adding options to menus or toolbars, etc.).
+This is very awkward and error-prone with legacy plug-ins since there is no
+established pattern for them to depend on each other, and providing this
+sort of functionality with React requires a strict hierarchy of context
+providers. Any extension can provide output, which is equivalent to having
+extension-specific context scoped to an editor.
 
 ## Core API Overview
 
@@ -60,6 +69,9 @@ with either:
 
 * [buildEditorFromExtensions](/docs/api/modules/lexical_extension#buildeditorfromextensions) - when not using React
 * [LexicalExtensionComposer](/docs/api/modules/lexical_react_LexicalExtensionComposer) - when using React
+
+See [Defining Extensions](./defining-extensions.md) for a detailed guide for
+`defineExtension`.
 
 The following functions are included in the core
 [lexical](/docs/api/modules/lexical) module to ensure that defining

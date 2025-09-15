@@ -62,6 +62,7 @@ const sidebars = {
     {
       items: [
         'extensions/intro',
+        'extensions/defining-extensions',
         'extensions/react',
         'extensions/signals',
         'extensions/peer-dependencies',

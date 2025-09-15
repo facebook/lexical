@@ -85,6 +85,8 @@ export function defineExtension<
  *   ],
  * });
  * ```
+ *
+ * @__NO_SIDE_EFFECTS__
  */
 export function configExtension<
   Config extends ExtensionConfigBase,
@@ -119,6 +121,8 @@ export function configExtension<
  *   ],
  * });
  * ```
+ *
+ * @__NO_SIDE_EFFECTS__
  */
 export function declarePeerDependency<
   Extension extends AnyLexicalExtension = never,

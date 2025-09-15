@@ -6,7 +6,10 @@
  *
  */
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {
+  LexicalCollaboration,
+  useCollaborationContext,
+} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -180,13 +183,15 @@ export class Client implements Provider {
               throw e;
             },
           }}>
-          <Editor
-            provider={this}
-            doc={this._doc}
-            setEditor={(editor) => (this._editor = editor)}
-            awarenessData={awarenessData}
-            shouldBootstrapEditor={options.shouldBootstrapEditor}
-          />
+          <LexicalCollaboration>
+            <Editor
+              provider={this}
+              doc={this._doc}
+              setEditor={(editor) => (this._editor = editor)}
+              awarenessData={awarenessData}
+              shouldBootstrapEditor={options.shouldBootstrapEditor}
+            />
+          </LexicalCollaboration>
         </LexicalComposer>,
       );
     });

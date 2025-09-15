@@ -8,7 +8,10 @@
 
 import type {Doc} from 'yjs';
 
-import {createContext, useContext} from 'react';
+import {createContext, useContext, useMemo} from 'react';
+import invariant from 'shared/invariant';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export type CollaborationContextType = {
   clientID: number;
@@ -38,19 +41,43 @@ const entries = [
 ];
 
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];
-export const CollaborationContext = createContext<CollaborationContextType>({
-  clientID: 0,
-  color: randomEntry[1],
-  isCollabActive: false,
-  name: randomEntry[0],
-  yjsDocMap: new Map(),
-});
+
+export const CollaborationContext =
+  createContext<CollaborationContextType | null>(null);
+
+export function LexicalCollaboration({children}: {children: React.ReactNode}) {
+  const [editor] = useLexicalComposerContext();
+  invariant(
+    editor._parentEditor === null,
+    'LexicalCollaboration: editor must be a top level editor',
+  );
+
+  const collabContext = useMemo(() => {
+    return {
+      clientID: 0,
+      color: randomEntry[1],
+      isCollabActive: false,
+      name: randomEntry[0],
+      yjsDocMap: new Map(),
+    };
+  }, []);
+
+  return (
+    <CollaborationContext.Provider value={collabContext}>
+      {children}
+    </CollaborationContext.Provider>
+  );
+}
 
 export function useCollaborationContext(
   username?: string,
   color?: string,
 ): CollaborationContextType {
   const collabContext = useContext(CollaborationContext);
+  invariant(
+    collabContext != null,
+    'useCollaborationContext: no context provider found',
+  );
 
   if (username != null) {
     collabContext.name = username;

@@ -11,8 +11,6 @@ import type {Doc} from 'yjs';
 import {createContext, useContext, useMemo} from 'react';
 import invariant from 'shared/invariant';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
-
 export type CollaborationContextType = {
   clientID: number;
   color: string;
@@ -46,12 +44,6 @@ export const CollaborationContext =
   createContext<CollaborationContextType | null>(null);
 
 export function LexicalCollaboration({children}: {children: React.ReactNode}) {
-  const [editor] = useLexicalComposerContext();
-  invariant(
-    editor._parentEditor === null,
-    'LexicalCollaboration: editor must be a top level editor',
-  );
-
   const collabContext = useMemo(() => {
     return {
       clientID: 0,

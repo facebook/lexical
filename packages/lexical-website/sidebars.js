@@ -63,10 +63,13 @@ const sidebars = {
       items: [
         'extensions/intro',
         'extensions/defining-extensions',
+        'extensions/migration',
         'extensions/react',
         'extensions/signals',
         'extensions/peer-dependencies',
         'extensions/included-extensions',
+        'extensions/design',
+        'extensions/faq',
       ],
       label: 'Extensions',
       type: 'category',

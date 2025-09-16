@@ -8,7 +8,7 @@
 
 - [CodeHighlighterShikiExtension](/docs/api/modules/lexical_code_shiki#codehighlightershikiextension) - Highlighting with Shiki for CodeNode
 
-[@lexical/dragon]((/docs/api/modules/lexical_dragoni)
+[@lexical/dragon](/docs/api/modules/lexical_dragon)
 
 - [DragonExtension](/docs/api/modules/lexical_dragon#dragonextension) - Dragon (speech to text) support, included by default with RichTextExtension and PlainTextExtension
 

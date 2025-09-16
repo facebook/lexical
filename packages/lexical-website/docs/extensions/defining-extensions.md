@@ -208,8 +208,12 @@ most extensions will not need to override this.
 ### init
 
 The init phase happens before the editor is constructed, but after
-extensions are configured. It can be used to reference configuration
-from peers and create data that should not be in the config object.
+the merged editor configuration is available and all extensions are
+configured. It can be used to reference configuration
+from peers, compute data that should be available during
+[build](#build), and is generally a last resort for making mutations
+to any extension or editor configuration before the editor is
+created.
 
 The result of this function is available in later phases.
 
@@ -218,14 +222,18 @@ This is rarely needed in practice and is considered an advanced use case.
 ### build
 
 The build phase happens just before the editor is constructed but after
-`config` and `init`. The return value of the `build` phase is `output`
-and is available for later phases.
+[config](#config) and [init](#init). The return value of the `build`
+phase is `output` and is available for later phases.
 
 `output` is generally how extensions provide functionality to each
 other and to the nodes in your application. A very common use case is
 to build signals from configuration with `namedSignals` so that the
 behavior of your extension can be modified at runtime (e.g. `disabled`
 is a very common use case).
+
+Other use cases for build's `output` are to provide
+shared data structures, typed theme configuration, references to the
+commands that the extension implements, etc.
 
 ```ts
 export interface TabIndentationConfig {
@@ -251,12 +259,21 @@ export const TabIndentationExtension = defineExtension({
 
 ### register
 
-This happens after the editor has been constructed.
+This happens after the editor has been constructed. This is where you will
+register any commands, listeners, etc. that your extension needs. It can use
+the result of `init` or `build` via `state.getInit()` and `state.getOutput()`
+respectively.
 
-TODO
+The return value is a dispose function, typically the result of `mergeRegister`.
 
 ### afterRegistration
 
-This happens after the `register` for every extension has been called.
+This happens after [register](#register) for every extension has been called.
 
-TODO
+This is rarely needed in practice and is considered an advanced use case,
+but can be useful in situations where you need to perform some sort of
+initialization that is dependent on something registered by a peer
+(e.g. a command).
+
+The return value is a dispose function, typically the result of
+`mergeRegister`.

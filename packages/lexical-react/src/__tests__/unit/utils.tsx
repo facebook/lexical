@@ -175,15 +175,15 @@ export class Client implements Provider {
 
     ReactTestUtils.act(() => {
       reactRoot.render(
-        <LexicalComposer
-          initialConfig={{
-            editorState: null,
-            namespace: '',
-            onError: (e) => {
-              throw e;
-            },
-          }}>
-          <LexicalCollaboration>
+        <LexicalCollaboration>
+          <LexicalComposer
+            initialConfig={{
+              editorState: null,
+              namespace: '',
+              onError: (e) => {
+                throw e;
+              },
+            }}>
             <Editor
               provider={this}
               doc={this._doc}
@@ -191,8 +191,8 @@ export class Client implements Provider {
               awarenessData={awarenessData}
               shouldBootstrapEditor={options.shouldBootstrapEditor}
             />
-          </LexicalCollaboration>
-        </LexicalComposer>,
+          </LexicalComposer>
+        </LexicalCollaboration>,
       );
     });
   }

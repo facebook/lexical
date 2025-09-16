@@ -152,8 +152,8 @@ export default function App() {
           </Fragment>
         ))}
       </p>
-      <LexicalComposer initialConfig={editorConfig}>
-        <LexicalCollaboration>
+      <LexicalCollaboration>
+        <LexicalComposer initialConfig={editorConfig}>
           {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
           <CollaborationPlugin
             id="lexical/react-rich-collab"
@@ -166,8 +166,8 @@ export default function App() {
             cursorsContainerRef={containerRef}
           />
           <Editor />
-        </LexicalCollaboration>
-      </LexicalComposer>
+        </LexicalComposer>
+      </LexicalCollaboration>
     </div>
   );
 }

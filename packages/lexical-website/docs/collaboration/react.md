@@ -76,8 +76,8 @@ function Editor() {
   );
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <LexicalCollaboration>
+    <LexicalCollaboration>
+      <LexicalComposer initialConfig={initialConfig}>
         <RichTextPlugin
           contentEditable={<ContentEditable className="editor-input" />}
           placeholder={<div className="editor-placeholder">Enter some rich text...</div>}
@@ -93,8 +93,8 @@ function Editor() {
           initialEditorState={$initialEditorState}
           shouldBootstrap={true}
         />
-      <LexicalCollaboration>
-    </LexicalComposer>
+      </LexicalComposer>
+    <LexicalCollaboration>
   );
 }
 ```

@@ -210,11 +210,11 @@ function App(): JSX.Element {
   };
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <SharedHistoryContext>
-        <TableContext>
-          <ToolbarContext>
-            <LexicalCollaboration>
+    <LexicalCollaboration>
+      <LexicalComposer initialConfig={initialConfig}>
+        <SharedHistoryContext>
+          <TableContext>
+            <ToolbarContext>
               <header>
                 <a href="https://lexical.dev" target="_blank" rel="noreferrer">
                   <img src={logo} alt="Lexical Logo" />
@@ -229,11 +229,11 @@ function App(): JSX.Element {
               {isDevPlayground ? <TestRecorderPlugin /> : null}
 
               {measureTypingPerf ? <TypingPerfPlugin /> : null}
-            </LexicalCollaboration>
-          </ToolbarContext>
-        </TableContext>
-      </SharedHistoryContext>
-    </LexicalComposer>
+            </ToolbarContext>
+          </TableContext>
+        </SharedHistoryContext>
+      </LexicalComposer>
+    </LexicalCollaboration>
   );
 }
 

@@ -65,8 +65,8 @@ describe(`LexicalCollaborationPlugin`, () => {
     );
     function MemoComponent() {
       return (
-        <LexicalComposer initialConfig={editorConfig}>
-          <LexicalCollaboration>
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
             {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
             <CollaborationPlugin
               id="lexical/react-rich-collab"
@@ -84,8 +84,8 @@ describe(`LexicalCollaborationPlugin`, () => {
               }
               ErrorBoundary={LexicalErrorBoundary}
             />
-          </LexicalCollaboration>
-        </LexicalComposer>
+          </LexicalComposer>
+        </LexicalCollaboration>
       );
     }
     ReactTestUtils.act(() => {

@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  LexicalEditor,
-  ShadowRootWithComposedRanges,
-  ShadowRootWithSelection,
-} from 'lexical';
+import type {LexicalEditor, ShadowRootWithSelection} from 'lexical';
 
 import {DOM_DOCUMENT_FRAGMENT_TYPE} from 'lexical';
 
@@ -35,35 +31,16 @@ export default function selectionAlwaysOnDisplay(
         const shadowRoot = current as ShadowRoot;
 
         // Try modern getComposedRanges API first
-        if (
-          typeof (shadowRoot as ShadowRootWithComposedRanges)
-            .getComposedRanges === 'function'
-        ) {
+        if ('getComposedRanges' in Selection.prototype) {
           try {
-            const ranges = (shadowRoot as ShadowRootWithComposedRanges)
-              .getComposedRanges!({
-              shadowRoots: [shadowRoot],
-            });
-            if (ranges.length > 0) {
-              // Create a temporary selection from the composed ranges
-              const docSelection = document.getSelection();
-              if (docSelection && ranges[0]) {
-                try {
-                  docSelection.removeAllRanges();
-                  const range = document.createRange();
-                  range.setStart(
-                    ranges[0].startContainer,
-                    ranges[0].startOffset,
-                  );
-                  range.setEnd(ranges[0].endContainer, ranges[0].endOffset);
-                  docSelection.addRange(range);
-                  domSelection = docSelection;
-                } catch (error) {
-                  console.warn(
-                    'Failed to create selection from composed ranges:',
-                    error,
-                  );
-                }
+            const globalSelection = window.getSelection();
+            if (globalSelection) {
+              const ranges = globalSelection.getComposedRanges!({
+                shadowRoots: [shadowRoot],
+              });
+              if (ranges.length > 0) {
+                // Use the global selection with composed ranges context
+                domSelection = globalSelection;
               }
             }
           } catch (error) {

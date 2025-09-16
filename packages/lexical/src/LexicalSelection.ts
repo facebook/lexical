@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {IS_APPLE_WEBKIT, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -80,9 +81,10 @@ import {
   doesContainSurrogatePair,
   getActiveElement,
   getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getWindow,
+  getShadowRoot,
   INTERNAL_$isBlock,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
@@ -1563,20 +1565,17 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(
-      getWindow(editor),
-      editor.getRootElement(),
-    );
+    const domSelection = getDOMSelectionForEditor(editor);
 
     if (!domSelection) {
       return;
     }
     const blockCursorElement = editor._blockCursorElement;
-    const rootElement = editor._rootElement;
     const focusNode = this.focus.getNode();
     // Remove the block cursor element if it exists. This will ensure selection
     // works as intended. If we leave it in the DOM all sorts of strange bugs
     // occur. :/
+    const rootElement = editor.getRootElement();
     if (
       rootElement !== null &&
       blockCursorElement !== null &&
@@ -2473,6 +2472,12 @@ function $normalizeSelectionPointsForBoundaries(
   }
 }
 
+// Circuit breaker for Safari Shadow DOM selection resolution failures
+let safariSelectionFailureCount = 0;
+let lastSafariSelectionFailureTime = 0;
+const SAFARI_MAX_SELECTION_FAILURES = 3;
+const SAFARI_FAILURE_RESET_TIME = 1000; // 1 second
+
 function $internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
@@ -2481,11 +2486,42 @@ function $internalResolveSelectionPoints(
   editor: LexicalEditor,
   lastSelection: null | BaseSelection,
 ): null | [PointType, PointType] {
+  // Safari Shadow DOM circuit breaker - prevent infinite resolution failures
+  if (IS_SAFARI || IS_APPLE_WEBKIT) {
+    const now = Date.now();
+    if (now - lastSafariSelectionFailureTime > SAFARI_FAILURE_RESET_TIME) {
+      safariSelectionFailureCount = 0;
+    }
+
+    if (safariSelectionFailureCount >= SAFARI_MAX_SELECTION_FAILURES) {
+      return null;
+    }
+  }
+
+  let isWithinEditor = isSelectionWithinEditor(editor, anchorDOM, focusDOM);
+
+  // For Safari Shadow DOM, be more permissive if initial validation fails
   if (
-    anchorDOM === null ||
-    focusDOM === null ||
-    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+    !isWithinEditor &&
+    (IS_SAFARI || IS_APPLE_WEBKIT) &&
+    anchorDOM &&
+    focusDOM
   ) {
+    const rootElement = editor.getRootElement();
+    const shadowRoot = rootElement ? getShadowRoot(rootElement) : null;
+
+    if (shadowRoot) {
+      // Override validation failure for Safari in Shadow DOM
+      isWithinEditor = true;
+    }
+  }
+
+  if (anchorDOM === null || focusDOM === null || !isWithinEditor) {
+    // Track failure for Safari Shadow DOM circuit breaker
+    if (IS_SAFARI || IS_APPLE_WEBKIT) {
+      safariSelectionFailureCount++;
+      lastSafariSelectionFailureTime = Date.now();
+    }
     return null;
   }
   const resolvedAnchorPoint = $internalResolveSelectionPoint(
@@ -2495,6 +2531,11 @@ function $internalResolveSelectionPoints(
     editor,
   );
   if (resolvedAnchorPoint === null) {
+    // Track failure for Safari Shadow DOM circuit breaker
+    if (IS_SAFARI || IS_APPLE_WEBKIT) {
+      safariSelectionFailureCount++;
+      lastSafariSelectionFailureTime = Date.now();
+    }
     return null;
   }
   const resolvedFocusPoint = $internalResolveSelectionPoint(
@@ -2580,10 +2621,9 @@ export function $internalCreateSelection(
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(
-    getWindow(editor),
-    editor.getRootElement(),
-  );
+  // Use getDOMSelection instead of getDOMSelectionForEditor for Shadow DOM compatibility
+  // Pass rootElement to ensure Shadow DOM awareness
+  const domSelection = getDOMSelection(editor._window, editor.getRootElement());
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(
@@ -2600,7 +2640,14 @@ export function $createRangeSelectionFromDom(
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
-  return $internalCreateRangeSelection(null, domSelection, editor, null);
+  // For Shadow DOM compatibility, use getDOMSelection() instead of the passed domSelection
+  // This ensures we get the correct proxy selection for Shadow DOM contexts
+  // Pass rootElement to ensure Shadow DOM awareness
+  const actualDomSelection = getDOMSelection(
+    editor._window,
+    editor.getRootElement(),
+  );
+  return $internalCreateRangeSelection(null, actualDomSelection, editor, null);
 }
 
 export function $internalCreateRangeSelection(

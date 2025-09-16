@@ -28,7 +28,7 @@ import type {
 } from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
-import {IS_FIREFOX} from 'shared/environment';
+import {IS_APPLE_WEBKIT, IS_FIREFOX, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -65,6 +65,7 @@ import {
   $getCompositionKey,
   $setCompositionKey,
   getCachedClassNameArray,
+  getShadowRoot,
   internalMarkSiblingsAsDirty,
   isDOMTextNode,
   isHTMLElement,
@@ -253,6 +254,27 @@ function setTextContent(
         firstChild.nodeValue = text;
       }
     }
+  }
+
+  // Special handling for Safari Shadow DOM rendering issues
+  if ((IS_SAFARI || IS_APPLE_WEBKIT) && getShadowRoot(dom)) {
+    // Safari Shadow DOM sometimes doesn't update text content visually
+    // Force DOM reconciliation by marking parent element as needing layout
+    requestAnimationFrame(() => {
+      // Method 1: Force style recalculation
+      dom.style.visibility = 'hidden';
+      // Force layout
+      // eslint-disable-next-line no-unused-expressions
+      dom.offsetHeight;
+      dom.style.visibility = '';
+
+      // Method 2: If still not working, try to refresh the text content
+      if (firstChild && firstChild.nodeValue !== text) {
+        firstChild.nodeValue = text;
+      } else if (!firstChild && dom.textContent !== text) {
+        dom.textContent = text;
+      }
+    });
   }
 }
 

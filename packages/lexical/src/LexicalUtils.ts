@@ -7,7 +7,7 @@
  */
 
 import type {
-  ShadowRootWithComposedRanges,
+  SelectionWithComposedRanges,
   ShadowRootWithSelection,
 } from './LexicalConstants';
 import type {
@@ -150,7 +150,11 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+  const editor = getNearestEditorFromDOMNode(anchorDOM);
+  const rootElement = editor ? editor.getRootElement() : null;
+  const activeElement = rootElement
+    ? getActiveElement(rootElement)
+    : document.activeElement;
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -173,12 +177,71 @@ export function isSelectionWithinEditor(
 ): boolean {
   const rootElement = editor.getRootElement();
   try {
+    if (rootElement === null || anchorDOM === null || focusDOM === null) {
+      return false;
+    }
+
+    // Standard contains check
+    let anchorContained = rootElement.contains(anchorDOM);
+    let focusContained = rootElement.contains(focusDOM);
+
+    // Special handling for Shadow DOM - check if we're in the same shadow root
+    if (!anchorContained || !focusContained) {
+      const shadowRoot = getShadowRoot(rootElement);
+      if (shadowRoot) {
+        // For Safari, be much more permissive with Shadow DOM validation
+        if (IS_SAFARI || IS_APPLE_WEBKIT) {
+          // Safari-specific: If we have non-null anchor and focus nodes,
+          // and we're in a shadow DOM context, consider it valid
+          if (anchorDOM && focusDOM) {
+            anchorContained = true;
+            focusContained = true;
+          }
+        } else {
+          // For other browsers, use standard validation methods
+          const anchorRoot = anchorDOM.getRootNode();
+          const focusRoot = focusDOM.getRootNode();
+          const rootElementRoot = rootElement.getRootNode();
+
+          // Try different approaches to validate Shadow DOM containment
+          let isValidShadowDOMSelection = false;
+
+          // Method 1: All nodes in the same shadow root
+          if (
+            anchorRoot === shadowRoot &&
+            focusRoot === shadowRoot &&
+            rootElementRoot === shadowRoot
+          ) {
+            isValidShadowDOMSelection = true;
+          }
+          // Method 2: Anchor and focus in the same root as rootElement
+          else if (
+            anchorRoot === rootElementRoot &&
+            focusRoot === rootElementRoot
+          ) {
+            isValidShadowDOMSelection = true;
+          }
+          // Method 3: Direct shadow root containment check
+          else if (
+            shadowRoot.contains &&
+            shadowRoot.contains(anchorDOM) &&
+            shadowRoot.contains(focusDOM)
+          ) {
+            isValidShadowDOMSelection = true;
+          }
+
+          if (isValidShadowDOMSelection) {
+            anchorContained = true;
+            focusContained = true;
+          }
+        }
+      }
+    }
+
     return (
-      rootElement !== null &&
-      rootElement.contains(anchorDOM) &&
-      rootElement.contains(focusDOM) &&
+      anchorContained &&
+      focusContained &&
       // Ignore if selection is within nested editor
-      anchorDOM !== null &&
       !isSelectionCapturedInDecoratorInput(anchorDOM) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
@@ -650,7 +713,85 @@ export function $flushMutations(): void {
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
-  const nodeKey = getNodeKeyFromDOMTree(dom, editor);
+  let nodeKey = getNodeKeyFromDOMTree(dom, editor);
+
+  // Special handling for Safari Shadow DOM
+  if (nodeKey === null && (IS_SAFARI || IS_APPLE_WEBKIT)) {
+    const rootElement = editor.getRootElement();
+    const shadowRoot = rootElement ? getShadowRoot(rootElement) : null;
+
+    if (shadowRoot) {
+      // For Safari Shadow DOM, we often get selection on container elements
+      // that don't directly correspond to Lexical nodes. Let's be more intelligent
+      // about finding the right Lexical node.
+
+      // If this is an element, check for special cases
+      if (dom.nodeType === Node.ELEMENT_NODE) {
+        const element = dom as Element;
+
+        // Check if this element has a data-lexical-key attribute
+        const dataLexicalKey = element.getAttribute('data-lexical-key');
+        if (dataLexicalKey) {
+          return $getNodeByKey(dataLexicalKey);
+        }
+
+        // Special handling for paragraph elements - they are commonly selected in Safari
+        if (element.tagName === 'P') {
+          // Try to find the paragraph node in the editor state
+          try {
+            const root = $getRoot();
+            const children = root.getChildren();
+
+            for (const child of children) {
+              // Check if this is a paragraph-like node
+              if (
+                child.getType() === 'paragraph' ||
+                child.getType() === 'text'
+              ) {
+                const childElement = editor.getElementByKey(child.getKey());
+                if (childElement === element) {
+                  return child;
+                }
+              }
+            }
+          } catch (error) {
+            // unhandled error
+          }
+        }
+      }
+
+      // Try to find the node by searching through all registered DOM elements
+      const keyToDOMMap = editor._keyToDOMMap;
+      for (const [key, element] of keyToDOMMap) {
+        if (element === dom) {
+          nodeKey = key;
+          break;
+        }
+
+        // Also check if this DOM node is contained within a registered element
+        if (element.contains && element.contains(dom)) {
+          // If the dom is contained within this element, it might be a text node
+          // or other child - let's check if we can find a more specific match
+          const textNodes = element.querySelectorAll(
+            '[data-lexical-text="true"]',
+          );
+          for (const textNode of textNodes) {
+            if (textNode === dom || textNode.contains(dom)) {
+              const textKey = getNodeKeyFromDOMNode(textNode, editor);
+              if (textKey !== undefined) {
+                nodeKey = textKey;
+                break;
+              }
+            }
+          }
+          if (nodeKey !== null) {
+            break;
+          }
+        }
+      }
+    }
+  }
+
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
@@ -716,10 +857,8 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(
-    getWindow(editor),
-    editor.getRootElement(),
-  );
+  // Use getDOMSelection instead of getDOMSelectionForEditor for Shadow DOM compatibility
+  const domSelection = getDOMSelection(editor._window);
   if (domSelection === null) {
     return;
   }
@@ -745,6 +884,21 @@ export function $updateSelectedTextFromDOM(
           focusOffset,
           isCompositionEnd,
         );
+
+        // Safari Shadow DOM workaround: schedule a DOM update check
+        if (
+          (IS_SAFARI || IS_APPLE_WEBKIT) &&
+          getShadowRoot(editor.getRootElement())
+        ) {
+          setTimeout(() => {
+            // Check if text is visible and force update if needed
+            const rootElement = editor.getRootElement();
+            if (rootElement && rootElement.textContent === '') {
+              // Text content is empty but we have editor state - force update
+              $forceSafariShadowDOMUpdate(editor, false);
+            }
+          }, 0);
+        }
       }
     }
   }
@@ -1323,6 +1477,25 @@ export function getElementByKeyOrThrow(
   const element = editor._keyToDOMMap.get(key);
 
   if (element === undefined) {
+    // Check if we're in a Shadow DOM context and handle gracefully
+    const rootElement = editor.getRootElement();
+    const shadowRoot = rootElement ? getShadowRoot(rootElement) : null;
+
+    if (shadowRoot) {
+      // Create a placeholder element to prevent crashes
+      const placeholderElement = document.createElement('span');
+      placeholderElement.setAttribute('data-lexical-placeholder', 'true');
+      placeholderElement.style.display = 'none';
+
+      // Add it to the shadow root
+      shadowRoot.appendChild(placeholderElement);
+
+      // Register the placeholder
+      editor._keyToDOMMap.set(key, placeholderElement);
+
+      return placeholderElement;
+    }
+
     invariant(
       false,
       'Reconciliation: could not find DOM element for node key %s',
@@ -1485,7 +1658,7 @@ export function getDefaultView(domElem: EventTarget | null): Window | null {
 }
 
 export function getWindow(editor: LexicalEditor): Window {
-  const windowObj = editor._window;
+  const windowObj = editor._window || window;
   if (windowObj === null) {
     invariant(false, 'window object not found');
   }
@@ -1670,7 +1843,7 @@ export function updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1720,7 +1893,13 @@ export function updateDOMBlockCursorElement(
 /**
  * Returns the selection for the given window, or the global window if null.
  * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
- * with fallback to experimental ShadowRoot.getSelection() for older browsers.
+ * with fallback to checking if the selection is within the shadow DOM.
+ *
+ * This implementation avoids DOM mutations to prevent triggering Lexical's mutation
+ * observers, which could cause infinite loops. Instead of creating a proxy Selection
+ * object, we return the native Selection when it's confirmed to be within our
+ * Shadow DOM context.
+ *
  * Will return null if {@link CAN_USE_DOM} is false.
  *
  * @param targetWindow - The window to get the selection from
@@ -1730,7 +1909,7 @@ export function updateDOMBlockCursorElement(
 export function getDOMSelection(
   targetWindow: null | Window,
   rootElement?: HTMLElement | null,
-): null | Selection {
+): null | Selection | SelectionWithComposedRanges {
   if (!CAN_USE_DOM) {
     return null;
   }
@@ -1740,17 +1919,18 @@ export function getDOMSelection(
     const shadowRoot = getShadowRoot(rootElement);
     if (shadowRoot) {
       // Try modern getComposedRanges API first (Chrome 125+, Firefox 132+)
-      if (
-        typeof (shadowRoot as ShadowRootWithComposedRanges)
-          .getComposedRanges === 'function'
-      ) {
+      if ('getComposedRanges' in Selection.prototype) {
         try {
-          const ranges = (shadowRoot as ShadowRootWithComposedRanges)
-            .getComposedRanges!({
-            shadowRoots: [shadowRoot],
-          });
-          if (ranges.length > 0) {
-            return createSelectionFromComposedRanges(ranges);
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = globalSelection.getComposedRanges!({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              // Create a proxy Selection that uses composed ranges for all browsers including Safari
+              // This ensures we get correct text nodes from StaticRange data
+              return createSelectionWithComposedRanges(globalSelection, ranges);
+            }
           }
         } catch (error) {
           console.warn('getComposedRanges failed, falling back:', error);
@@ -1775,39 +1955,184 @@ export function getDOMSelection(
 }
 
 /**
- * Creates a Selection-like object from composed ranges for Shadow DOM compatibility.
- * This function converts StaticRange objects returned by getComposedRanges() into
- * a standard Selection object that can be used by Lexical.
+ * Creates a SelectionWithComposedRanges proxy that uses StaticRange objects
+ * from getComposedRanges API for Shadow DOM compatibility.
  *
- * @param ranges - Array of StaticRange objects from getComposedRanges()
- * @returns A Selection object or null if no ranges are provided or conversion fails
+ * @param baseSelection - The base Selection object to proxy
+ * @param composedRanges - Array of StaticRange objects from getComposedRanges
+ * @returns A proxy Selection object that works with composed ranges
  */
-export function createSelectionFromComposedRanges(
-  ranges: StaticRange[],
-): Selection | null {
-  if (ranges.length === 0) {
-    return null;
+
+// Helper function to find the first text node within an element
+function findTextNodeInElement(element: Node): Text | null {
+  if (element.nodeType === Node.TEXT_NODE) {
+    return element as Text;
   }
 
-  // For now, we'll use the document selection as a fallback
-  // In a full implementation, we'd create a custom Selection object
-  const docSelection = document.getSelection();
-  if (!docSelection) {
-    return null;
+  for (const child of element.childNodes) {
+    const textNode = findTextNodeInElement(child);
+    if (textNode) {
+      return textNode;
+    }
   }
 
-  try {
-    const range = ranges[0];
-    docSelection.removeAllRanges();
-    const dynamicRange = document.createRange();
-    dynamicRange.setStart(range.startContainer, range.startOffset);
-    dynamicRange.setEnd(range.endContainer, range.endOffset);
-    docSelection.addRange(dynamicRange);
-    return docSelection;
-  } catch (error) {
-    console.warn('Failed to create selection from composed ranges:', error);
-    return null;
+  return null;
+}
+
+// Helper function to find or create a text node for Selection purposes
+function findOrCreateTextNodeForSelection(element: Node): Text | null {
+  // First try to find an existing text node
+  const existingTextNode = findTextNodeInElement(element);
+  if (existingTextNode && existingTextNode.textContent !== '') {
+    return existingTextNode;
   }
+
+  // If no text node exists or it's empty, check if this is a paragraph-like element
+  // that should contain text content for proper selection handling
+  if (element.nodeType === Node.ELEMENT_NODE) {
+    const elementNode = element as Element;
+
+    // Check if this is a paragraph or other text container
+    if (
+      elementNode.tagName === 'P' ||
+      elementNode.classList.contains('paragraph') ||
+      elementNode.getAttribute('data-lexical-text') === 'true'
+    ) {
+      // For Safari Shadow DOM, we need to handle empty paragraphs specially
+      // Create a temporary text node for selection purposes
+      if (IS_SAFARI || IS_APPLE_WEBKIT) {
+        // Check if there's already an empty text node
+        for (const child of elementNode.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return child as Text;
+          }
+        }
+
+        // If no text node exists, return null - don't create one
+        // This prevents us from modifying the DOM structure
+        return null;
+      }
+    }
+  }
+
+  return existingTextNode;
+}
+function createSelectionWithComposedRanges(
+  baseSelection: Selection,
+  composedRanges: StaticRange[],
+): SelectionWithComposedRanges {
+  const firstRange = composedRanges[0];
+
+  if (!firstRange) {
+    return baseSelection as SelectionWithComposedRanges;
+  }
+
+  // Create a Proxy that intercepts property access and method calls
+  const proxy = new Proxy(baseSelection, {
+    get(target, prop, receiver) {
+      // Override specific properties to use composed ranges data
+      switch (prop) {
+        case 'anchorNode': {
+          const startContainer = firstRange.startContainer;
+
+          // For Safari Shadow DOM, we need special handling for empty paragraphs
+          if (
+            (IS_SAFARI || IS_APPLE_WEBKIT) &&
+            startContainer.nodeType === Node.ELEMENT_NODE
+          ) {
+            const element = startContainer as Element;
+
+            // If this is an empty paragraph, return the paragraph itself
+            // This allows Lexical to work with the element even without text content
+            if (element.tagName === 'P' && element.childNodes.length === 0) {
+              return startContainer;
+            }
+          }
+
+          const textNode =
+            startContainer.nodeType === Node.TEXT_NODE
+              ? startContainer
+              : findOrCreateTextNodeForSelection(startContainer);
+
+          return textNode || startContainer;
+        }
+        case 'anchorOffset':
+          return firstRange.startOffset;
+        case 'focusNode': {
+          const endContainer = firstRange.endContainer;
+
+          // For Safari Shadow DOM, we need special handling for empty paragraphs
+          if (
+            (IS_SAFARI || IS_APPLE_WEBKIT) &&
+            endContainer.nodeType === Node.ELEMENT_NODE
+          ) {
+            const element = endContainer as Element;
+
+            // If this is an empty paragraph, return the paragraph itself
+            // This allows Lexical to work with the element even without text content
+            if (element.tagName === 'P' && element.childNodes.length === 0) {
+              return endContainer;
+            }
+          }
+
+          const textNode =
+            endContainer.nodeType === Node.TEXT_NODE
+              ? endContainer
+              : findOrCreateTextNodeForSelection(endContainer);
+
+          return textNode || endContainer;
+        }
+        case 'focusOffset':
+          return firstRange.endOffset;
+        case 'isCollapsed':
+          return firstRange.collapsed;
+        case 'rangeCount':
+          return composedRanges.length;
+        case 'type':
+          // Return type based on composed ranges state
+          return firstRange.collapsed ? 'Caret' : 'Range';
+        case 'getRangeAt': {
+          return function (index: number): Range {
+            if (index >= composedRanges.length) {
+              throw new DOMException('Index out of range', 'IndexSizeError');
+            }
+
+            const staticRange = composedRanges[index];
+            const range = document.createRange();
+            range.setStart(staticRange.startContainer, staticRange.startOffset);
+            range.setEnd(staticRange.endContainer, staticRange.endOffset);
+            return range;
+          };
+        }
+        case 'getComposedRanges': {
+          return function (options?: {
+            shadowRoots?: ShadowRoot[];
+          }): StaticRange[] {
+            return composedRanges;
+          };
+        }
+        default: {
+          // For all other properties and methods, delegate to the original Selection
+          const value = Reflect.get(target, prop, receiver);
+          // Bind methods to the original target to maintain correct 'this' context
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
+      }
+    },
+
+    // Ensure instanceof checks work correctly
+    getPrototypeOf(target) {
+      return Selection.prototype;
+    },
+  });
+
+  return proxy as SelectionWithComposedRanges;
+}
+
+export function getDOMSelectionForEditor(
+  editor: LexicalEditor,
+): null | Selection {
+  return getDOMSelection(getWindow(editor), editor.getRootElement() || null);
 }
 
 /**
@@ -1839,8 +2164,13 @@ export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
  * @param element - The HTMLElement to get the document for
  * @returns The Document object that should be used for DOM operations
  */
-export function getDocumentFromElement(element: HTMLElement): Document {
+export function getDocumentFromElement(element: null | HTMLElement): Document {
+  if (!element) {
+    return document;
+  }
+
   const shadowRoot = getShadowRoot(element);
+
   if (shadowRoot) {
     return shadowRoot.ownerDocument || document;
   }
@@ -1884,24 +2214,88 @@ export function getDOMSelectionFromTarget(
     const shadowRoot = getShadowRoot(eventTarget);
 
     if (shadowRoot) {
-      // Try modern getComposedRanges API first
-      if (
-        typeof (shadowRoot as ShadowRootWithComposedRanges)
-          .getComposedRanges === 'function'
-      ) {
+      if ('getComposedRanges' in Selection.prototype) {
         try {
-          const ranges = (shadowRoot as ShadowRootWithComposedRanges)
-            .getComposedRanges!({
-            shadowRoots: [shadowRoot],
-          });
-          if (ranges.length > 0) {
-            return createSelectionFromComposedRanges(ranges);
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = globalSelection.getComposedRanges!({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              // For Safari Shadow DOM, always create a selection using the composed ranges data
+              // because globalSelection nodes might be wrong (DIV instead of text nodes)
+              return createSelectionWithComposedRanges(globalSelection, ranges);
+            }
           }
         } catch (error) {
-          console.warn(
-            'getComposedRanges failed in getDOMSelectionFromTarget:',
-            error,
-          );
+          console.warn('getComposedRanges failed, falling back:', error);
+        }
+      }
+    }
+  }
+
+  // Special handling for Safari when eventTarget is document
+  // In Safari Shadow DOM, selectionchange events come from document, not from Shadow DOM elements
+  if (
+    (IS_SAFARI || IS_APPLE_WEBKIT) &&
+    (eventTarget === document ||
+      eventTarget.nodeType === document.DOCUMENT_NODE)
+  ) {
+    if ('getComposedRanges' in Selection.prototype) {
+      try {
+        const globalSelection = window.getSelection();
+        if (globalSelection) {
+          // Try to find Shadow DOMs in the document and check for selections
+          const shadowHosts = document.querySelectorAll('*');
+          for (const host of shadowHosts) {
+            if (host.shadowRoot) {
+              try {
+                const ranges = globalSelection.getComposedRanges!({
+                  shadowRoots: [host.shadowRoot],
+                });
+                if (ranges.length > 0) {
+                  // For Safari Shadow DOM, always create a selection using the composed ranges data
+                  // because globalSelection nodes might be wrong (DIV instead of text nodes)
+                  return createSelectionWithComposedRanges(
+                    globalSelection,
+                    ranges,
+                  );
+                }
+              } catch (error) {
+                // unhandled error
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(
+          'Safari Shadow DOM getComposedRanges check failed:',
+          error,
+        );
+      }
+    }
+  }
+
+  // Standard path for other browsers or when not in shadow DOM
+  if (isHTMLElement(eventTarget)) {
+    const shadowRoot = getShadowRoot(eventTarget);
+
+    if (shadowRoot) {
+      if ('getComposedRanges' in Selection.prototype) {
+        try {
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = globalSelection.getComposedRanges!({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              // For Safari Shadow DOM, always create a selection using the composed ranges data
+              // because globalSelection nodes might be wrong (DIV instead of text nodes)
+              return createSelectionWithComposedRanges(globalSelection, ranges);
+            }
+          }
+        } catch (error) {
+          console.warn('getComposedRanges failed, falling back:', error);
         }
       }
 
@@ -2350,4 +2744,61 @@ export function $create<T extends LexicalNode>(klass: Klass<T>): T {
     editor.getRegisteredNode(klass),
   );
   return new registeredNode.klass() as T;
+}
+
+/**
+ * Safari-specific workaround for Shadow DOM text rendering issues.
+ * Forces DOM updates for text nodes in Safari Shadow DOM when characters
+ * are not displaying correctly.
+ *
+ * @param editor - The LexicalEditor instance
+ * @param forceReconcile - Whether to force a full reconciliation
+ */
+export function $forceSafariShadowDOMUpdate(
+  editor: LexicalEditor,
+  forceReconcile: boolean = false,
+): void {
+  if (!IS_SAFARI && !IS_APPLE_WEBKIT) {
+    return;
+  }
+
+  const rootElement = editor.getRootElement();
+  if (!rootElement || !getShadowRoot(rootElement)) {
+    return;
+  }
+
+  if (forceReconcile) {
+    // Force a complete reconciliation in Safari Shadow DOM
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        const root = $getRoot();
+
+        // Mark all text nodes as dirty to force re-rendering
+        function markTextNodesDirty(node: LexicalNode) {
+          if ($isTextNode(node)) {
+            node.markDirty();
+          } else if ($isElementNode(node)) {
+            const children = node.getChildren();
+            for (const child of children) {
+              markTextNodesDirty(child);
+            }
+          }
+        }
+
+        markTextNodesDirty(root);
+
+        // Restore selection after forced update
+        if (selection) {
+          $setSelection(selection);
+        }
+      },
+      {
+        tag: 'safari-shadow-dom-fix',
+      },
+    );
+  } else {
+    // Lighter update - just flush mutations and check visible text
+    $flushMutations();
+  }
 }

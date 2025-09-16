@@ -33,6 +33,25 @@ export const DOM_DOCUMENT_FRAGMENT_TYPE = 11;
  * This API is available in Chrome 125+, Firefox 132+, and other modern browsers.
  * Provides a standardized way to get selection ranges across shadow DOM boundaries.
  */
+/**
+ * Extension for Selection with modern getComposedRanges method.
+ * This API is available in Chrome 125+, Firefox 132+, and other modern browsers.
+ */
+export interface SelectionWithComposedRanges extends Selection {
+  /**
+   * Returns an array of StaticRange objects representing the current selection
+   * across shadow DOM boundaries.
+   *
+   * @param options - Configuration options for the composed ranges
+   * @returns Array of StaticRange objects representing the selection
+   */
+  getComposedRanges?(options?: GetComposedRangesOptions): StaticRange[];
+}
+
+/**
+ * Extension for ShadowRoot with modern getComposedRanges method.
+ * This API is available in Chrome 125+, Firefox 132+, and other modern browsers.
+ */
 export interface ShadowRootWithComposedRanges extends ShadowRoot {
   /**
    * Returns an array of StaticRange objects representing the current selection

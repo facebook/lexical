@@ -94,12 +94,13 @@ import {
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
   getDocumentFromElement,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getShadowRoot,
   getWindow,
   isBackspace,
   isBold,
@@ -209,10 +210,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(
-    getWindow(editor),
-    editor.getRootElement(),
-  );
+  const domSelection = getDOMSelectionForEditor(editor);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -312,7 +310,13 @@ function onSelectionChange(
       return;
     }
 
-    if (!isSelectionWithinEditor(editor, anchorDOM, focusDOM)) {
+    const selectionWithinEditor = isSelectionWithinEditor(
+      editor,
+      anchorDOM,
+      focusDOM,
+    );
+
+    if (!selectionWithinEditor) {
       return;
     }
 
@@ -482,10 +486,7 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(
-      getWindow(editor),
-      editor.getRootElement(),
-    );
+    const domSelection = getDOMSelectionForEditor(editor);
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -940,10 +941,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         }
         const anchor = selection.anchor;
         const anchorNode = anchor.getNode();
-        const domSelection = getDOMSelection(
-          getWindow(editor),
-          editor.getRootElement(),
-        );
+        const domSelection = getDOMSelectionForEditor(editor);
         if (domSelection === null) {
           return;
         }
@@ -1332,14 +1330,26 @@ export function addRootElementEvents(
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
   const doc = getDocumentFromElement(rootElement);
-  const documentRootElementsCount = rootElementsRegistered.get(doc);
+
+  // Check if we're in Shadow DOM and need to register on shadowRoot instead
+  const shadowRoot = getShadowRoot(rootElement);
+  // For Safari, always use document since selectionchange events fire there
+  const targetElement = IS_SAFARI || IS_APPLE_WEBKIT ? doc : shadowRoot || doc;
+
+  const documentRootElementsCount = rootElementsRegistered.get(targetElement);
   if (
     documentRootElementsCount === undefined ||
     documentRootElementsCount < 1
   ) {
-    doc.addEventListener('selectionchange', onDocumentSelectionChange);
+    targetElement.addEventListener(
+      'selectionchange',
+      onDocumentSelectionChange,
+    );
   }
-  rootElementsRegistered.set(doc, (documentRootElementsCount || 0) + 1);
+  rootElementsRegistered.set(
+    targetElement,
+    (documentRootElementsCount || 0) + 1,
+  );
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
@@ -1439,7 +1449,13 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
   const doc = getDocumentFromElement(rootElement);
-  const documentRootElementsCount = rootElementsRegistered.get(doc);
+
+  // Check if we're in Shadow DOM and need to unregister from shadowRoot instead
+  const shadowRoot = getShadowRoot(rootElement);
+  // For Safari, always use document since selectionchange events fire there
+  const targetElement = IS_SAFARI || IS_APPLE_WEBKIT ? doc : shadowRoot || doc;
+
+  const documentRootElementsCount = rootElementsRegistered.get(targetElement);
   if (documentRootElementsCount === undefined) {
     // This can happen if setRootElement() failed
     rootElementNotRegisteredWarning();
@@ -1450,9 +1466,12 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
   // between all editor instances.
   const newCount = documentRootElementsCount - 1;
   invariant(newCount >= 0, 'Root element count less than 0');
-  rootElementsRegistered.set(doc, newCount);
+  rootElementsRegistered.set(targetElement, newCount);
   if (newCount === 0) {
-    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+    targetElement.removeEventListener(
+      'selectionchange',
+      onDocumentSelectionChange,
+    );
   }
 
   const editor = getEditorPropertyFromDOMNode(rootElement);

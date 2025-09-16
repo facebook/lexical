@@ -7,7 +7,12 @@
  */
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
-import {$getEditor, $isRootNode, $isTextNode} from 'lexical';
+import {
+  $getEditor,
+  $isRootNode,
+  $isTextNode,
+  getDocumentFromElement,
+} from 'lexical';
 
 import {CSS_TO_STYLES} from './constants';
 
@@ -54,7 +59,8 @@ export function createDOMRange(
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
   const rootElement = editor.getRootElement();
-  const doc = rootElement ? rootElement.ownerDocument || document : document;
+  const doc = getDocumentFromElement(rootElement);
+
   const range = doc.createRange();
   let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
   let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);

@@ -56,7 +56,6 @@ import {
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
-  getWindow,
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
@@ -613,9 +612,8 @@ export function $commitPendingUpdates(
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = shouldSkipDOM
-    ? null
-    : getDOMSelection(getWindow(editor), rootElement);
+  // Use getDOMSelection instead of getDOMSelectionForEditor for Shadow DOM compatibility
+  const domSelection = shouldSkipDOM ? null : getDOMSelection(editor._window);
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.

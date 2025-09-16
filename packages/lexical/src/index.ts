@@ -116,7 +116,7 @@ export {
   UNDO_COMMAND,
 } from './LexicalCommands';
 export type {
-  GetComposedRangesOptions,
+  SelectionWithComposedRanges,
   ShadowRootWithComposedRanges,
   ShadowRootWithSelection,
 } from './LexicalConstants';
@@ -242,6 +242,7 @@ export {
   $cloneWithProperties,
   $copyNode,
   $create,
+  $forceSafariShadowDOMUpdate,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
@@ -262,9 +263,10 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
-  createSelectionFromComposedRanges,
+  getDocumentFromElement,
   getDOMOwnerDocument,
   getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,

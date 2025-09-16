@@ -141,10 +141,7 @@ export default function Settings(): JSX.Element {
             text="Autocomplete"
           />
           <Switch
-            onClick={() => {
-              setOption('isShadowDOM', !isShadowDOM);
-              setTimeout(() => window.location.reload(), 500);
-            }}
+            onClick={() => setOption('isShadowDOM', !isShadowDOM)}
             checked={isShadowDOM}
             text="Shadow DOM"
           />

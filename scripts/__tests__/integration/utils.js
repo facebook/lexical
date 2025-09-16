@@ -89,13 +89,9 @@ async function buildExample({packageJson, exampleDir}) {
   if (depsMap.size === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
-  for (const [dep, pkg] of depsMap.entries()) {
-    allDeps.set(
-      dep,
-      path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
-    );
-  }
-  const installDeps = [...allDeps.values()];
+  const installDeps = Array.from(depsMap.entries(), ([dep, pkg]) =>
+    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
+  );
   ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );

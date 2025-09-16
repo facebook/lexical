@@ -1,0 +1,52 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    /* Overrides for unreleased packages */
+    "paths": {
+      "lexical": ["../../packages/lexical/src/index.ts"],
+      "@lexical/extension": ["../../packages/lexical-extension/src/index.ts"],
+      "@lexical/history": ["../../packages/lexical-history/src/index.ts"],
+      "@lexical/list": ["../../packages/lexical-list/src/index.ts"],
+      "@lexical/react/LexicalExtensionComposer": [
+        "../../packages/lexical-react/src/LexicalExtensionComposer.tsx"
+      ],
+      "@lexical/react/ExtensionComponent": [
+        "../../packages/lexical-react/src/ExtensionComponent.tsx"
+      ],
+      "@lexical/react/ReactProviderExtension": [
+        "../../packages/lexical-react/src/ReactProviderExtension.tsx"
+      ],
+      "@lexical/react/ReactExtension": [
+        "../../packages/lexical-react/src/ReactExtension.tsx"
+      ],
+      "@lexical/react/TreeViewExtension": [
+        "../../packages/lexical-react/src/TreeViewExtension.tsx"
+      ],
+      "@lexical/rich-text": ["../../packages/lexical-rich-text/src/index.ts"],
+      "@lexical/selection": ["../../packages/lexical-selection/src/index.ts"],
+      "@lexical/table": ["../../packages/lexical-table/src/index.ts"],
+      "@lexical/tailwind": ["../../packages/lexical-tailwind/src/index.ts"],
+      "@lexical/utils": ["../../packages/lexical-utils/src/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "references": [{"path": "./tsconfig.node.json"}]
+}

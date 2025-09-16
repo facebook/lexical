@@ -40,6 +40,36 @@
     "directory": "packages/lexical-react"
   },
   "exports": {
+    "./ExtensionComponent": {
+      "import": {
+        "types": "./ExtensionComponent.d.ts",
+        "development": "./ExtensionComponent.dev.mjs",
+        "production": "./ExtensionComponent.prod.mjs",
+        "node": "./ExtensionComponent.node.mjs",
+        "default": "./ExtensionComponent.mjs"
+      },
+      "require": {
+        "types": "./ExtensionComponent.d.ts",
+        "development": "./ExtensionComponent.dev.js",
+        "production": "./ExtensionComponent.prod.js",
+        "default": "./ExtensionComponent.js"
+      }
+    },
+    "./ExtensionComponent.js": {
+      "import": {
+        "types": "./ExtensionComponent.d.ts",
+        "development": "./ExtensionComponent.dev.mjs",
+        "production": "./ExtensionComponent.prod.mjs",
+        "node": "./ExtensionComponent.node.mjs",
+        "default": "./ExtensionComponent.mjs"
+      },
+      "require": {
+        "types": "./ExtensionComponent.d.ts",
+        "development": "./ExtensionComponent.dev.js",
+        "production": "./ExtensionComponent.prod.js",
+        "default": "./ExtensionComponent.js"
+      }
+    },
     "./LexicalAutoEmbedPlugin": {
       "import": {
         "types": "./LexicalAutoEmbedPlugin.d.ts",

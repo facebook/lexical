@@ -40,6 +40,7 @@ module.name_mapper='^@lexical/markdown$' -> '<PROJECT_ROOT>/packages/lexical-mar
 module.name_mapper='^@lexical/offset$' -> '<PROJECT_ROOT>/packages/lexical-offset/flow/LexicalOffset.js.flow'
 module.name_mapper='^@lexical/overflow$' -> '<PROJECT_ROOT>/packages/lexical-overflow/flow/LexicalOverflow.js.flow'
 module.name_mapper='^@lexical/plain-text$' -> '<PROJECT_ROOT>/packages/lexical-plain-text/flow/LexicalPlainText.js.flow'
+module.name_mapper='^@lexical/react/ExtensionComponent$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/ExtensionComponent.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoEmbedPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoEmbedPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoFocusPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFocusPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoLinkPlugin.js.flow'

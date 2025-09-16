@@ -23,7 +23,7 @@
   },
   "sideEffects": false,
   "devDependencies": {
-    "typescript": "^5.9.2",
-    "@playwright/test": "^1.45.0"
+    "@playwright/test": "^1.45.0",
+    "typescript": "^5.9.2"
   }
 }

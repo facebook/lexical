@@ -159,11 +159,11 @@ export const TreeViewExtension = defineExtension({
 
 This extension component can be acquired with the
 [useExtensionComponent](/docs/api/modules/lexical_react_useExtensionComponent#useextensioncomponent)
-hook or the [UseExtensionComponent](/docs/api/modules/lexical_react_useExtensionComponent#useextensioncomponent-3) component.
+hook or the [ExtensionComponent](/docs/api/modules/lexical_react_ExtensionComponent#extensioncomponent) component.
 
 ```tsx
 return (
-  <UseExtensionComponent
+  <ExtensionComponent
     lexical:extension={TreeViewExtension}
     viewClassName="tree-view-output" />
 );

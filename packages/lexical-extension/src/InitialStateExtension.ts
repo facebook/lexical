@@ -43,36 +43,43 @@ export interface InitialStateConfig {
  * An extension to set the initial state of the editor from
  * a function or serialized JSON EditorState. This is
  * implicitly included with all editors built with
- * Lexical Extension.
+ * Lexical Extension. This happens after registration so
+ * your initial state may depend on registered commands.
  */
 export const InitialStateExtension = defineExtension({
-  build(editor, {updateOptions, setOptions}, state) {
-    const $initialEditorState = state.getInitResult();
-    if ($isEditorState($initialEditorState)) {
-      editor.setEditorState($initialEditorState, setOptions);
-    } else if (typeof $initialEditorState === 'function') {
-      editor.update(() => {
-        $initialEditorState(editor);
-      }, updateOptions);
-    } else if (
-      $initialEditorState &&
-      (typeof $initialEditorState === 'string' ||
-        typeof $initialEditorState === 'object')
-    ) {
-      const parsedEditorState = editor.parseEditorState(
-        $initialEditorState as string | SerializedEditorState,
-      );
-      editor.setEditorState(parsedEditorState, setOptions);
-    }
-  },
-
   config: safeCast<InitialStateConfig>({
     setOptions: HISTORY_MERGE_OPTIONS,
     updateOptions: HISTORY_MERGE_OPTIONS,
   }),
 
   init({$initialEditorState = $defaultInitializer}) {
-    return $initialEditorState;
+    return {$initialEditorState, initialized: false};
+  },
+
+  // eslint-disable-next-line sort-keys-fix/sort-keys-fix -- typescript inference is order dependent here for some reason
+  afterRegistration(editor, {updateOptions, setOptions}, state) {
+    const initResult = state.getInitResult();
+    if (!initResult.initialized) {
+      initResult.initialized = true;
+      const {$initialEditorState} = initResult;
+      if ($isEditorState($initialEditorState)) {
+        editor.setEditorState($initialEditorState, setOptions);
+      } else if (typeof $initialEditorState === 'function') {
+        editor.update(() => {
+          $initialEditorState(editor);
+        }, updateOptions);
+      } else if (
+        $initialEditorState &&
+        (typeof $initialEditorState === 'string' ||
+          typeof $initialEditorState === 'object')
+      ) {
+        const parsedEditorState = editor.parseEditorState(
+          $initialEditorState as string | SerializedEditorState,
+        );
+        editor.setEditorState(parsedEditorState, setOptions);
+      }
+    }
+    return () => {};
   },
 
   name: '@lexical/extension/InitialState',

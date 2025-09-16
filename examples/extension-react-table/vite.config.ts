@@ -4,9 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
+import react from '@vitejs/plugin-react';
+import {defineConfig} from 'vite';
 
-/**
- * UseExtensionComponent
- */
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+});

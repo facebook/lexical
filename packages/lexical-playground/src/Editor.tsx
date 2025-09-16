@@ -30,10 +30,13 @@ import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
-import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
+import {Doc} from 'yjs';
 
-import {createWebsocketProvider} from './collaboration';
+import {
+  createWebsocketProvider,
+  createWebsocketProviderWithDoc,
+} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
@@ -190,11 +193,7 @@ export default function Editor(): JSX.Element {
           <>
             {isCollab ? (
               useCollabV2 ? (
-                <CollaborationPluginV2__EXPERIMENTAL
-                  id="main"
-                  providerFactory={createWebsocketProvider}
-                  shouldBootstrap={!skipCollaborationInit}
-                />
+                <CollabV2 id="main" shouldBootstrap={!skipCollaborationInit} />
               ) : (
                 <CollaborationPlugin
                   id="main"
@@ -297,5 +296,28 @@ export default function Editor(): JSX.Element {
       </div>
       {showTreeView && <TreeViewPlugin />}
     </>
+  );
+}
+
+function CollabV2({
+  id,
+  shouldBootstrap,
+}: {
+  id: string;
+  shouldBootstrap: boolean;
+}) {
+  const doc = useMemo(() => new Doc(), []);
+
+  const provider = useMemo(() => {
+    return createWebsocketProviderWithDoc('main', doc);
+  }, [doc]);
+
+  return (
+    <CollaborationPluginV2__EXPERIMENTAL
+      id={id}
+      doc={doc}
+      provider={provider}
+      shouldBootstrap={shouldBootstrap}
+    />
   );
 }

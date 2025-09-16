@@ -18,7 +18,6 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
-import * as React from 'react';
 import {Container} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
@@ -55,7 +54,8 @@ function Editor({
       {useCollabV2 ? (
         <CollaborationPluginV2__EXPERIMENTAL
           id="main"
-          providerFactory={() => provider}
+          doc={doc}
+          provider={provider}
           shouldBootstrap={shouldBootstrapEditor}
           awarenessData={awarenessData}
         />

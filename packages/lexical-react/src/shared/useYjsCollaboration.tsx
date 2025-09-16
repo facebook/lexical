@@ -10,6 +10,7 @@ import type {
   BaseBinding,
   Binding,
   BindingV2,
+  ExcludedProperties,
   Provider,
   SyncCursorPositionsFn,
 } from '@lexical/yjs';
@@ -19,6 +20,7 @@ import type {JSX} from 'react';
 import {mergeRegister} from '@lexical/utils';
 import {
   CONNECTED_COMMAND,
+  createBindingV2__EXPERIMENTAL,
   createUndoManager,
   initLocalState,
   setLocalStateFocus,
@@ -74,6 +76,8 @@ export function useYjsCollaboration(
   awarenessData?: object,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): JSX.Element {
+  const isReloadingDoc = useRef(false);
+
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root.isEmpty() && root._xmlText._length === 0) {
@@ -83,7 +87,6 @@ export function useYjsCollaboration(
 
   useEffect(() => {
     const {root} = binding;
-    const {awareness} = provider;
 
     const onYjsTreeChanges: OnYjsTreeChanges = (events, transaction) => {
       const origin = transaction.origin;
@@ -125,46 +128,84 @@ export function useYjsCollaboration(
       },
     );
 
-    const onAwarenessUpdate = () => {
-      syncCursorPositionsFn(binding, provider);
+    return () => {
+      root.getSharedType().unobserveDeep(onYjsTreeChanges);
+      removeListener();
     };
-    awareness.on('update', onAwarenessUpdate);
+  }, [binding, provider, editor, setDoc, docMap, id, syncCursorPositionsFn]);
+
+  // Note: 'reload' is not an actual Yjs event type. Included here for legacy support (#1409).
+  useEffect(() => {
+    const onProviderDocReload = (ydoc: Doc) => {
+      clearEditorSkipCollab(editor, binding);
+      setDoc(ydoc);
+      docMap.set(id, ydoc);
+      isReloadingDoc.current = true;
+    };
+
+    const onSync = () => {
+      isReloadingDoc.current = false;
+    };
+
+    provider.on('reload', onProviderDocReload);
+    provider.on('sync', onSync);
 
     return () => {
-      binding.root.getSharedType().unobserveDeep(onYjsTreeChanges);
-      removeListener();
-      awareness.off('update', onAwarenessUpdate);
+      provider.off('reload', onProviderDocReload);
+      provider.off('sync', onSync);
     };
-  }, [binding, provider, editor, syncCursorPositionsFn]);
+  }, [binding, provider, editor, setDoc, docMap, id]);
 
-  return useYjsCollaborationInternal(
+  useProvider(
     editor,
-    id,
     provider,
-    docMap,
     name,
     color,
-    binding,
-    setDoc,
-    cursorsContainerRef,
+    isReloadingDoc,
     awarenessData,
     onBootstrap,
   );
+
+  return useYjsCursors(binding, cursorsContainerRef);
 }
 
 export function useYjsCollaborationV2__EXPERIMENTAL(
   editor: LexicalEditor,
   id: string,
+  doc: Doc,
   provider: Provider,
   docMap: Map<string, Doc>,
   name: string,
   color: string,
-  shouldBootstrap: boolean,
-  binding: BindingV2,
-  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
-  cursorsContainerRef?: CursorsContainerRef,
-  awarenessData?: object,
-) {
+  options: {
+    awarenessData?: object;
+    excludedProperties?: ExcludedProperties;
+    rootName?: string;
+    shouldBootstrap?: boolean;
+  } = {},
+): BindingV2 {
+  const {awarenessData, excludedProperties, rootName, shouldBootstrap} =
+    options;
+
+  // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
+  const isReloadingDoc = useMemo(() => ({current: false}), []);
+
+  const binding = useMemo(
+    () =>
+      createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
+        excludedProperties,
+        rootName,
+      }),
+    [editor, id, doc, docMap, excludedProperties, rootName],
+  );
+
+  useEffect(() => {
+    docMap.set(id, doc);
+    return () => {
+      docMap.delete(id);
+    };
+  }, [doc, docMap, id]);
+
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root._length === 0) {
@@ -226,36 +267,28 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     };
   }, [binding, provider, editor]);
 
-  return useYjsCollaborationInternal(
+  useProvider(
     editor,
-    id,
     provider,
-    docMap,
     name,
     color,
-    binding,
-    setDoc,
-    cursorsContainerRef,
+    isReloadingDoc,
     awarenessData,
     onBootstrap,
   );
+
+  return binding;
 }
 
-function useYjsCollaborationInternal<T extends BaseBinding>(
+function useProvider(
   editor: LexicalEditor,
-  id: string,
   provider: Provider,
-  docMap: Map<string, Doc>,
   name: string,
   color: string,
-  binding: T,
-  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
-  cursorsContainerRef?: CursorsContainerRef,
+  isReloadingDoc: React.RefObject<boolean>,
   awarenessData?: object,
   onBootstrap?: () => void,
-): JSX.Element {
-  const isReloadingDoc = useRef(false);
-
+): void {
   const connect = useCallback(() => provider.connect(), [provider]);
 
   const disconnect = useCallback(() => {
@@ -275,8 +308,6 @@ function useYjsCollaborationInternal<T extends BaseBinding>(
       if (isSynced && isReloadingDoc.current === false && onBootstrap) {
         onBootstrap();
       }
-
-      isReloadingDoc.current = false;
     };
 
     initLocalState(
@@ -287,20 +318,13 @@ function useYjsCollaborationInternal<T extends BaseBinding>(
       awarenessData || {},
     );
 
-    const onProviderDocReload = (ydoc: Doc) => {
-      clearEditorSkipCollab(editor, binding);
-      setDoc(ydoc);
-      docMap.set(id, ydoc);
-      isReloadingDoc.current = true;
-    };
-
-    provider.on('reload', onProviderDocReload);
     provider.on('status', onStatus);
     provider.on('sync', onSync);
 
     const connectionPromise = connect();
 
     return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- expected that isReloadingDoc.current may change
       if (isReloadingDoc.current === false) {
         if (connectionPromise) {
           connectionPromise.then(disconnect);
@@ -318,33 +342,18 @@ function useYjsCollaborationInternal<T extends BaseBinding>(
 
       provider.off('sync', onSync);
       provider.off('status', onStatus);
-      provider.off('reload', onProviderDocReload);
-      docMap.delete(id);
     };
   }, [
-    binding,
+    editor,
+    provider,
+    name,
     color,
+    isReloadingDoc,
+    awarenessData,
+    onBootstrap,
     connect,
     disconnect,
-    docMap,
-    editor,
-    id,
-    name,
-    provider,
-    onBootstrap,
-    awarenessData,
-    setDoc,
   ]);
-  const cursorsContainer = useMemo(() => {
-    const ref = (element: null | HTMLElement) => {
-      binding.cursorsContainer = element;
-    };
-
-    return createPortal(
-      <div ref={ref} />,
-      (cursorsContainerRef && cursorsContainerRef.current) || document.body,
-    );
-  }, [binding, cursorsContainerRef]);
 
   useEffect(() => {
     return editor.registerCommand(
@@ -367,8 +376,22 @@ function useYjsCollaborationInternal<T extends BaseBinding>(
       COMMAND_PRIORITY_EDITOR,
     );
   }, [connect, disconnect, editor]);
+}
 
-  return cursorsContainer;
+export function useYjsCursors(
+  binding: BaseBinding,
+  cursorsContainerRef?: CursorsContainerRef,
+): JSX.Element {
+  return useMemo(() => {
+    const ref = (element: null | HTMLElement) => {
+      binding.cursorsContainer = element;
+    };
+
+    return createPortal(
+      <div ref={ref} />,
+      (cursorsContainerRef && cursorsContainerRef.current) || document.body,
+    );
+  }, [binding, cursorsContainerRef]);
 }
 
 export function useYjsFocusTracking(

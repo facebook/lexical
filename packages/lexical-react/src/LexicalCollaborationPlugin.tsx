@@ -7,7 +7,6 @@
  */
 
 import type {JSX} from 'react';
-import type {Doc} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -16,22 +15,21 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   Binding,
-  BindingV2,
   createBinding,
-  createBindingV2__EXPERIMENTAL,
   ExcludedProperties,
   Provider,
   SyncCursorPositionsFn,
 } from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
-import invariant from 'shared/invariant';
+import {Doc} from 'yjs';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
   CursorsContainerRef,
   useYjsCollaboration,
   useYjsCollaborationV2__EXPERIMENTAL,
+  useYjsCursors,
   useYjsFocusTracking,
   useYjsHistory,
   useYjsHistoryV2,
@@ -66,16 +64,34 @@ export function CollaborationPlugin({
   syncCursorPositionsFn,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
+  const isProviderInitialized = useRef(false);
 
   const collabContext = useCollaborationContext(username, cursorColor);
-
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
+
   useCollabActive(collabContext, editor);
 
+  const [provider, setProvider] = useState<Provider>();
   const [doc, setDoc] = useState<Doc>();
-  const provider = useProvider(id, yjsDocMap, setDoc, providerFactory);
+
+  useEffect(() => {
+    if (isProviderInitialized.current) {
+      return;
+    }
+
+    isProviderInitialized.current = true;
+
+    const newProvider = providerFactory(id, yjsDocMap);
+    setProvider(newProvider);
+    setDoc(yjsDocMap.get(id));
+
+    return () => {
+      newProvider.disconnect();
+    };
+  }, [id, providerFactory, yjsDocMap]);
+
   const [binding, setBinding] = useState<Binding>();
 
   useEffect(() => {
@@ -185,7 +201,8 @@ function YjsCollaborationCursors({
 
 type CollaborationPluginV2Props = {
   id: string;
-  providerFactory: ProviderFactory;
+  doc: Doc;
+  provider: Provider;
   shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;
@@ -197,7 +214,8 @@ type CollaborationPluginV2Props = {
 
 export function CollaborationPluginV2__EXPERIMENTAL({
   id,
-  providerFactory,
+  doc,
+  provider,
   shouldBootstrap,
   username,
   cursorColor,
@@ -205,110 +223,30 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   excludedProperties,
   awarenessData,
 }: CollaborationPluginV2Props): JSX.Element {
-  const isBindingInitialized = useRef(false);
-
   const collabContext = useCollaborationContext(username, cursorColor);
-
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
-  if (editor._parentEditor !== null) {
-    invariant(false, 'Collaboration V2 cannot be used with a nested editor');
-  }
-
   useCollabActive(collabContext, editor);
 
-  const [doc, setDoc] = useState<Doc>();
-  const provider = useProvider(id, yjsDocMap, setDoc, providerFactory);
-  const [binding, setBinding] = useState<BindingV2>();
-
-  useEffect(() => {
-    if (!provider || isBindingInitialized.current) {
-      return;
-    }
-
-    isBindingInitialized.current = true;
-    const newBinding = createBindingV2__EXPERIMENTAL(
-      editor,
-      id,
-      doc || yjsDocMap.get(id),
-      yjsDocMap,
-      {excludedProperties},
-    );
-    setBinding(newBinding);
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);
-
-  if (!provider || !binding) {
-    return <></>;
-  }
-
-  return (
-    <YjsCollaborationCursorsV2__EXPERIMENTAL
-      awarenessData={awarenessData}
-      binding={binding}
-      collabContext={collabContext}
-      color={color}
-      cursorsContainerRef={cursorsContainerRef}
-      editor={editor}
-      id={id}
-      name={name}
-      provider={provider}
-      setDoc={setDoc}
-      shouldBootstrap={shouldBootstrap}
-      yjsDocMap={yjsDocMap}
-    />
-  );
-}
-
-function YjsCollaborationCursorsV2__EXPERIMENTAL({
-  editor,
-  id,
-  provider,
-  yjsDocMap,
-  name,
-  color,
-  shouldBootstrap,
-  cursorsContainerRef,
-  awarenessData,
-  collabContext,
-  binding,
-  setDoc,
-}: {
-  editor: LexicalEditor;
-  id: string;
-  provider: Provider;
-  yjsDocMap: Map<string, Doc>;
-  name: string;
-  color: string;
-  shouldBootstrap: boolean;
-  binding: BindingV2;
-  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>;
-  cursorsContainerRef?: CursorsContainerRef | undefined;
-  initialEditorState?: InitialEditorStateType | undefined;
-  awarenessData?: object;
-  collabContext: CollaborationContextType;
-  syncCursorPositionsFn?: SyncCursorPositionsFn;
-}) {
-  const cursors = useYjsCollaborationV2__EXPERIMENTAL(
+  const binding = useYjsCollaborationV2__EXPERIMENTAL(
     editor,
     id,
+    doc,
     provider,
     yjsDocMap,
     name,
     color,
-    shouldBootstrap,
-    binding,
-    setDoc,
-    cursorsContainerRef,
-    awarenessData,
+    {
+      awarenessData,
+      excludedProperties,
+      shouldBootstrap,
+    },
   );
-
-  collabContext.clientID = binding.clientID;
 
   useYjsHistoryV2(editor, binding);
   useYjsFocusTracking(editor, provider, name, color, awarenessData);
-
-  return cursors;
+  return useYjsCursors(binding, cursorsContainerRef);
 }
 
 const useCollabActive = (
@@ -326,32 +264,4 @@ const useCollabActive = (
       }
     };
   }, [collabContext, editor]);
-};
-
-const useProvider = (
-  id: string,
-  yjsDocMap: Map<string, Doc>,
-  setDoc: React.Dispatch<React.SetStateAction<Doc | undefined>>,
-  providerFactory: ProviderFactory,
-) => {
-  const isProviderInitialized = useRef(false);
-  const [provider, setProvider] = useState<Provider>();
-
-  useEffect(() => {
-    if (isProviderInitialized.current) {
-      return;
-    }
-
-    isProviderInitialized.current = true;
-
-    const newProvider = providerFactory(id, yjsDocMap);
-    setProvider(newProvider);
-    setDoc(yjsDocMap.get(id));
-
-    return () => {
-      newProvider.disconnect();
-    };
-  }, [id, providerFactory, yjsDocMap, setDoc]);
-
-  return provider;
 };

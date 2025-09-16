@@ -61,7 +61,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  SKIP_DOM_SELECTION_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
   TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
@@ -378,7 +378,7 @@ function FontDropDown({
   const handleClick = useCallback(
     (option: string) => {
       editor.update(() => {
-        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+        $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
         const selection = $getSelection();
         if (selection !== null) {
           $patchStyleText(selection, {
@@ -576,7 +576,7 @@ export default function ToolbarPlugin({
 
   const dispatchFormatTextCommand = (payload: TextFormatType) => {
     activeEditor.update(() => {
-      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
       activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, payload);
     });
   };
@@ -586,7 +586,7 @@ export default function ToolbarPlugin({
     payload: CommandPayloadType<T> | undefined = undefined,
   ) => {
     activeEditor.update(() => {
-      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
 
       // Re-assert on Type so that payload can have a default param
       activeEditor.dispatchCommand(command, payload as CommandPayloadType<T>);
@@ -834,7 +834,7 @@ export default function ToolbarPlugin({
     (styles: Record<string, string>, skipHistoryStack?: boolean) => {
       activeEditor.update(
         () => {
-          $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+          $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
           const selection = $getSelection();
           if (selection !== null) {
             $patchStyleText(selection, styles);
@@ -876,7 +876,7 @@ export default function ToolbarPlugin({
   const onCodeLanguageSelect = useCallback(
     (value: string) => {
       activeEditor.update(() => {
-        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+        $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
         if (selectedElementKey !== null) {
           const node = $getNodeByKey(selectedElementKey);
           if ($isCodeNode(node)) {
@@ -1344,7 +1344,7 @@ export default function ToolbarPlugin({
                 <DropDownItem
                   onClick={() => {
                     editor.update(() => {
-                      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+                      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
                       const root = $getRoot();
                       const stickyNode = $createStickyNode(0, 0);
                       root.append(stickyNode);

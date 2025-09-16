@@ -66,6 +66,7 @@ import {
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
+import {SKIP_SELECTION_FOCUS_TAG} from './LexicalUpdateTags';
 import {
   $getAncestor,
   $getCompositionKey,
@@ -3067,9 +3068,11 @@ export function updateDOMSelection(
   ) {
     // If the root element does not have focus, ensure it has focus
     if (activeElement === null || !rootElement.contains(activeElement)) {
-      rootElement.focus({
-        preventScroll: true,
-      });
+      if (!tags.has(SKIP_SELECTION_FOCUS_TAG)) {
+        rootElement.focus({
+          preventScroll: true,
+        });
+      }
     }
     if (anchor.type !== 'element') {
       return;

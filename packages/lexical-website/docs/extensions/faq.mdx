@@ -33,11 +33,21 @@ which may be more convenient than tapping into the dispose function.
 This is similar to how you would use `React.lazy` to defer loading the
 implementation to when it is used.
 
-_Note:_ The Extension itself must be synchronously imported before creating the
+See the extension-vanilla-tailwind example for a demonstration for
+how this can be done.
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/facebook/lexical/pull/7706?file=examples/extension-vanilla-tailwind/src/main.ts&configPath=examples/extension-vanilla-tailwind)
+
+TODO #7706: update stackblitz url after merge
+
+:::note
+
+The Extension itself must be synchronously imported before creating the
 editor. Lexical needs all editor configuration (including nodes) up front.
 This is no different than without Lexical Extension. The Lexical core would
 need significant changes to allow configuration changes to an editor at
 runtime.
+
+:::
 
 ## How do we prevent all of the frameworks from being loaded?
 

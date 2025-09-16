@@ -25,7 +25,7 @@ import {
 import {RichTextExtension} from '@lexical/rich-text';
 import {TailwindExtension} from '@lexical/tailwind';
 import {mergeRegister} from '@lexical/utils';
-import {$createTextNode, $getRoot} from 'lexical';
+import {$createTextNode, $getRoot, defineExtension} from 'lexical';
 
 function $prepopulatedRichText() {
   $getRoot().append(
@@ -43,6 +43,23 @@ const editorRef = document.getElementById('lexical-editor');
 const stateRef = document.getElementById(
   'lexical-state',
 ) as HTMLTextAreaElement;
+
+const LazyExtension = defineExtension({
+  name: '@lexical/extension-vanilla-tailwind-example/Lazy',
+  register(editor, _config, state) {
+    let dispose: undefined | (() => void);
+    import('./lazyLoaded').then((mod) => {
+      if (!state.getSignal().aborted) {
+        dispose = mod.registerLazyLoaded(editor);
+      }
+    });
+    return () => {
+      if (dispose) {
+        dispose();
+      }
+    };
+  },
+});
 
 buildEditorFromExtensions({
   $initialEditorState: $prepopulatedRichText,
@@ -74,6 +91,7 @@ buildEditorFromExtensions({
     TabIndentationExtension,
     EditorStateExtension,
     HorizontalRuleExtension,
+    LazyExtension,
   ],
   name: '[root]',
   namespace: '@lexical/extension-vanilla-tailwind-example',

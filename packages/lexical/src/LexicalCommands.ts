@@ -14,6 +14,16 @@ import type {TextFormatType} from './nodes/LexicalTextNode';
 
 export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
 
+/**
+ * Crete a command that can be used with `editor.dispatchCommand` and
+ * `editor.registerCommand`. Commands are used by unique reference, not by
+ * name.
+ *
+ * @param type A string to identify the command, very helpful for debugging
+ * @returns A new LexicalCommand
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
 export function createCommand<T>(type?: string): LexicalCommand<T> {
   return {type};
 }

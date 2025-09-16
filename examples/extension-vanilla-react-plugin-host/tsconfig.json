@@ -4,7 +4,7 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable", "ESNext.Disposable"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -16,33 +16,11 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* Overrides for unreleased packages */
-    "paths": {
-      "lexical": ["../../packages/lexical/src/index.ts"],
-      "@lexical/extension": ["../../packages/lexical-extension/src/index.ts"],
-      "@lexical/history": ["../../packages/lexical-history/src/index.ts"],
-      "@lexical/list": ["../../packages/lexical-list/src/index.ts"],
-      "@lexical/react/ReactPluginHostExtension": [
-        "../../packages/lexical-react/src/ReactPluginHostExtension.tsx"
-      ],
-      "@lexical/react/ReactProviderExtension": [
-        "../../packages/lexical-react/src/ReactProviderExtension.tsx"
-      ],
-      "@lexical/react/ReactExtension": [
-        "../../packages/lexical-react/src/ReactExtension.tsx"
-      ],
-      "@lexical/react/TreeViewExtension": [
-        "../../packages/lexical-react/src/TreeViewExtension.tsx"
-      ],
-      "@lexical/rich-text": ["../../packages/lexical-rich-text/src/index.ts"],
-      "@lexical/selection": ["../../packages/lexical-selection/src/index.ts"],
-      "@lexical/tailwind": ["../../packages/lexical-tailwind/src/index.ts"],
-      "@lexical/utils": ["../../packages/lexical-utils/src/index.ts"]
-    }
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  /* TODO #7706 this depends on unreleased packages so we build from monorepo */
+  "extends": ["../../tsconfig.json"],
+  "include": ["src", "../../libdefs"]
 }

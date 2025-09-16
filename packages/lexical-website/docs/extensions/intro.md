@@ -10,8 +10,8 @@ that come with Lexical and its associated packages.
 
 ## Stability
 
-🧪 This API is experimental, and may evolve without a long deprecation
-period.
+🧪 This API is experimental, and may evolve with no deprecation
+period. Be prepared to track its development closely if you adopt it early.
 
 ## Use Case
 

@@ -9,7 +9,7 @@
     "noEmit": true,
     "strict": true,
     "baseUrl": ".",
-    "typeRoots": ["node_modules/@types", "libdefs/globals"],
+    "typeRoots": ["node_modules/@types"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowJs": true,

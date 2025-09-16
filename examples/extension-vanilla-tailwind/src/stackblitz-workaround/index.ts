@@ -6,7 +6,11 @@
  *
  */
 
-import {defineExtension, type EditorThemeClasses} from 'lexical';
+import {
+  declarePeerDependency,
+  defineExtension,
+  type EditorThemeClasses,
+} from 'lexical';
 
 function join(...args: string[]) {
   return args.join(' ');
@@ -169,5 +173,19 @@ const theme: EditorThemeClasses = {
  */
 export const TailwindExtension = defineExtension({
   name: '@lexical/tailwind',
+  peerDependencies: [
+    declarePeerDependency('@lexical/react/TreeView', {
+      timeTravelButtonClassName:
+        'absolute top-[10px] right-[15px] border-0 p-0 text-xs bg-transparent text-white hover:underline cursor-pointer',
+      timeTravelPanelButtonClassName:
+        'p-0 border-0 bg-transparent flex-1 text-white text-xs hover:underline cursor-pointer',
+      timeTravelPanelClassName: 'overflow-hidden p-0 pb-2.5 mx-auto flex',
+      timeTravelPanelSliderClassName: 'p-0 flex-[8]',
+      treeTypeButtonClassName:
+        'absolute top-[10px] right-[85px] border-0 p-0 text-xs bg-transparent text-white hover:underline cursor-pointer',
+      viewClassName:
+        'block bg-neutral-950 text-white p-1.5 text-xs whitespace-pre-wrap mx-auto my-1 mb-2.5 max-h-[250px] relative rounded-b-[10px] overflow-auto leading-3.5',
+    }),
+  ],
   theme,
 });

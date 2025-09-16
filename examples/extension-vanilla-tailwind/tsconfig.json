@@ -15,21 +15,11 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* Overrides for unreleased packages */
-    "paths": {
-      "lexical": ["../../packages/lexical/src/index.ts"],
-      "@lexical/extension": ["../../packages/lexical-extension/src/index.ts"],
-      "@lexical/history": ["../../packages/lexical-history/src/index.ts"],
-      "@lexical/list": ["../../packages/lexical-list/src/index.ts"],
-      "@lexical/rich-text": ["../../packages/lexical-rich-text/src/index.ts"],
-      "@lexical/selection": ["../../packages/lexical-selection/src/index.ts"],
-      "@lexical/tailwind": ["../../packages/lexical-tailwind/src/index.ts"],
-      "@lexical/utils": ["../../packages/lexical-utils/src/index.ts"]
-    }
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  /* TODO #7706 this depends on unreleased packages so we build from monorepo */
+  "extends": ["../../tsconfig.json"],
+  "include": ["src", "../../libdefs"]
 }

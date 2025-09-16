@@ -24,12 +24,12 @@ describe('TailwindExtension', () => {
           ),
         );
       },
-      dependencies: [TailwindExtension],
-      name: '@lexical/tailwind/test',
-      register(editor) {
+      afterRegistration(editor) {
         editor.setRootElement(container);
         return () => editor.setRootElement(null);
       },
+      dependencies: [TailwindExtension],
+      name: '@lexical/tailwind/test',
     });
     expectHtmlToBeEqual(
       container.innerHTML,

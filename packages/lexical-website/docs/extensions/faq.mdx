@@ -24,7 +24,7 @@ Extension could not be colocated if they were both called Plugin!
 
 Lazy loading does not need any special support! All of the functions
 that you implement with extensions must be synchronous, but your
-`register` or `afterRegister` function can perform an asynchronous
+`register` or `afterRegistration` function can perform an asynchronous
 `import()`, network calls, etc. You just need to make sure that the
 dispose function that you return can manage the cleanup appropriately.
 You can also use `getSignal()` on the state to get an AbortSignal

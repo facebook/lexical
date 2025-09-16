@@ -43,8 +43,10 @@ export interface InitialStateConfig {
  * An extension to set the initial state of the editor from
  * a function or serialized JSON EditorState. This is
  * implicitly included with all editors built with
- * Lexical Extension. This happens after registration so
- * your initial state may depend on registered commands.
+ * Lexical Extension. This happens in the `afterRegistration`
+ * phase so your initial state may depend on registered commands,
+ * but you should not call `editor.setRootElement` earlier than
+ * this phase to avoid rendering an empty editor first.
  */
 export const InitialStateExtension = defineExtension({
   config: safeCast<InitialStateConfig>({

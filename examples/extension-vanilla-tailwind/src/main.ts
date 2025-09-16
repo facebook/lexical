@@ -46,21 +46,7 @@ const stateRef = document.getElementById(
 
 buildEditorFromExtensions({
   $initialEditorState: $prepopulatedRichText,
-  dependencies: [
-    // These don't have to be in any paritcular order, they will be
-    // topologically sorted by their dependencies
-    TailwindExtension,
-    HistoryExtension,
-    RichTextExtension,
-    AutoFocusExtension,
-    CheckListExtension,
-    TabIndentationExtension,
-    EditorStateExtension,
-    HorizontalRuleExtension,
-  ],
-  name: '[root]',
-  namespace: '@lexical/extension-vanilla-tailwind-example',
-  register(editor, _config, state) {
+  afterRegistration(editor, _config, state) {
     editor.setRootElement(editorRef);
     const editorState = state.getDependency(EditorStateExtension).output;
     return mergeRegister(
@@ -77,4 +63,18 @@ buildEditorFromExtensions({
       }),
     );
   },
+  dependencies: [
+    // These don't have to be in any paritcular order, they will be
+    // topologically sorted by their dependencies
+    TailwindExtension,
+    HistoryExtension,
+    RichTextExtension,
+    AutoFocusExtension,
+    CheckListExtension,
+    TabIndentationExtension,
+    EditorStateExtension,
+    HorizontalRuleExtension,
+  ],
+  name: '[root]',
+  namespace: '@lexical/extension-vanilla-tailwind-example',
 });

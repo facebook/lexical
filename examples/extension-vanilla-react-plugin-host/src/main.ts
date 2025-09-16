@@ -48,6 +48,22 @@ const editorRef = document.getElementById('lexical-editor');
 
 buildEditorFromExtensions({
   $initialEditorState: $prepopulatedRichText,
+  afterRegistration(editor, _config, _state) {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+
+    mountReactPluginHost(editor, el);
+    mountReactExtensionComponent(editor, {
+      domNode: document.getElementById('tree-view')!,
+      extension: TreeViewExtension,
+      key: 'tree-view',
+      props: {
+        editor,
+      },
+    });
+    editor.setRootElement(editorRef);
+    return mergeRegister(() => editor.setRootElement(null));
+  },
   dependencies: [
     // These don't have to be in any paritcular order, they will be
     // topologically sorted by their dependencies
@@ -64,20 +80,4 @@ buildEditorFromExtensions({
   ],
   name: '[root]',
   namespace: '@lexical/extension-vanilla-tailwind-example',
-  register(editor, _config, _state) {
-    editor.setRootElement(editorRef);
-    const el = document.createElement('div');
-    document.body.appendChild(el);
-
-    mountReactPluginHost(editor, el);
-    mountReactExtensionComponent(editor, {
-      domNode: document.getElementById('tree-view')!,
-      extension: TreeViewExtension,
-      key: 'tree-view',
-      props: {
-        editor,
-      },
-    });
-    return mergeRegister(() => editor.setRootElement(null));
-  },
 });

@@ -86,7 +86,7 @@ export function LexicalExtensionComposer({
   children,
   contentEditable,
 }: LexicalExtensionComposerProps) {
-  const builderEditor = useMemo(() => {
+  const editor = useMemo(() => {
     const builder = LexicalBuilder.fromExtensions([
       ReactProviderExtension,
       configExtension(
@@ -95,14 +95,22 @@ export function LexicalExtensionComposer({
       ),
       extension,
     ]);
-    const editor = builder.constructEditor();
-    return {builder, editor} as const;
+    return builder.buildEditor();
   }, [contentEditable, extension]);
   useEffect(() => {
-    return builderEditor.builder.registerEditor(builderEditor.editor);
-  }, [builderEditor]);
+    // Strict mode workaround
+    let didMount = false;
+    queueMicrotask(() => {
+      didMount = true;
+    });
+    return () => {
+      if (didMount) {
+        editor.dispose();
+      }
+    };
+  }, [editor]);
   const {Component} = getExtensionDependencyFromEditor(
-    builderEditor.editor,
+    editor,
     ReactExtension,
   ).output;
   return <Component>{children}</Component>;

@@ -75,15 +75,8 @@ describe('ReactPluginHostExtension', () => {
       document.body.append(rootDom, pluginHostDom, treeDom);
       editor = buildEditorFromExtensions({
         $initialEditorState: $prepopulatedRichText,
-        dependencies: [
-          RichTextExtension,
-          HistoryExtension,
-          ReactPluginHostExtension,
-        ],
-        name: '[root]',
-        namespace: 'Vanilla JS Extension Demo',
         // eslint-disable-next-line no-shadow
-        register: (editor: LexicalEditor) => {
+        afterRegistration: (editor: LexicalEditor) => {
           mountReactPluginHost(editor, pluginHostDom);
           mountReactPluginComponent(editor, {
             Component: TreeView,
@@ -99,10 +92,17 @@ describe('ReactPluginHostExtension', () => {
               viewClassName: 'tree-view-output',
             },
           });
+          editor.setRootElement(rootDom);
           return registerFn();
         },
+        dependencies: [
+          RichTextExtension,
+          HistoryExtension,
+          ReactPluginHostExtension,
+        ],
+        name: '[root]',
+        namespace: 'Vanilla JS Extension Demo',
       });
-      editor.setRootElement(rootDom);
     });
   });
   afterEach(async () => {

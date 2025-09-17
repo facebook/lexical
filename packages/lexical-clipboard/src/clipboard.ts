@@ -468,7 +468,7 @@ export async function copyToClipboard(
 
   const rootElement = editor.getRootElement();
   const editorWindow = editor._window || window;
-  const windowDocument = window.document;
+  const windowDocument = editorWindow.document;
   const domSelection = getDOMSelection(editorWindow);
   if (rootElement === null || domSelection === null) {
     return false;
@@ -489,7 +489,7 @@ export async function copyToClipboard(
         if (objectKlassEquals(secondEvent, ClipboardEvent)) {
           removeListener();
           if (clipboardEventTimeout !== null) {
-            window.clearTimeout(clipboardEventTimeout);
+            editorWindow.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
           resolve($copyToClipboardEvent(editor, secondEvent, data));
@@ -501,7 +501,7 @@ export async function copyToClipboard(
     );
     // If the above hack execCommand hack works, this timeout code should never fire. Otherwise,
     // the listener will be quickly freed so that the user can reuse it again
-    clipboardEventTimeout = window.setTimeout(() => {
+    clipboardEventTimeout = editorWindow.setTimeout(() => {
       removeListener();
       clipboardEventTimeout = null;
       resolve(false);

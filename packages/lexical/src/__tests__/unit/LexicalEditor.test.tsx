@@ -2164,7 +2164,7 @@ describe('LexicalEditor tests', () => {
     expect(() =>
       createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
     ).toThrowError(
-      /FakeLexicalNode (type fake-node) does not subclass LexicalNode from the lexical package used by this editor/,
+      /FakeLexicalNode \(type fake-node\) does not subclass LexicalNode from the lexical package used by this editor/,
     );
   });
   it('mutation listener on newly initialized editor', async () => {

@@ -26,6 +26,51 @@ export const DOM_TEXT_TYPE = 3;
 export const DOM_DOCUMENT_TYPE = 9;
 export const DOM_DOCUMENT_FRAGMENT_TYPE = 11;
 
+// Shadow DOM API Types
+
+/**
+ * Extended ShadowRoot interface that includes the modern getComposedRanges() method.
+ * This API is available in Chrome 125+, Firefox 132+, and other modern browsers.
+ * Provides a standardized way to get selection ranges across shadow DOM boundaries.
+ */
+export interface ShadowRootWithComposedRanges extends ShadowRoot {
+  /**
+   * Returns an array of StaticRange objects representing the current selection
+   * across shadow DOM boundaries. This is the modern replacement for the
+   * experimental ShadowRoot.getSelection() method.
+   *
+   * @param options - Configuration options for the composed ranges
+   * @returns Array of StaticRange objects representing the selection
+   */
+  getComposedRanges?(options?: GetComposedRangesOptions): StaticRange[];
+}
+
+/**
+ * Options for the getComposedRanges() method. Allows specifying which
+ * shadow roots should be included when computing composed ranges.
+ */
+export interface GetComposedRangesOptions {
+  /**
+   * Array of ShadowRoot objects to include in the composed range calculation.
+   * When specified, only ranges within these shadow roots will be returned.
+   */
+  shadowRoots?: ShadowRoot[];
+}
+
+/**
+ * Extension for ShadowRoot with experimental getSelection method.
+ * This is a fallback for browsers that don't support getComposedRanges yet.
+ */
+export interface ShadowRootWithSelection extends ShadowRoot {
+  /**
+   * Experimental API for getting selection within shadow DOM.
+   * Available in some browsers as experimental feature.
+   *
+   * @returns Selection object or null if no selection
+   */
+  getSelection(): Selection | null;
+}
+
 // Reconciling
 export const NO_DIRTY_NODES = 0;
 export const HAS_DIRTY_NODES = 1;

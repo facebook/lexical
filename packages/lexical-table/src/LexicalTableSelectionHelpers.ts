@@ -1134,7 +1134,7 @@ export function applyTableHandlers(
           selection.tableKey === tableNode.getKey()
         ) {
           // if selection goes outside of the table we need to change it to Range selection
-          const domSelection = getDOMSelection(editorWindow);
+          const domSelection = getDOMSelection(editorWindow, rootElement);
           if (
             domSelection &&
             domSelection.anchorNode &&
@@ -2222,7 +2222,10 @@ function $handleArrowKey(
       if (anchor.type === 'element') {
         edgeSelectionRect = anchorDOM.getBoundingClientRect();
       } else {
-        const domSelection = getDOMSelection(getEditorWindow(editor));
+        const domSelection = getDOMSelection(
+          getEditorWindow(editor),
+          editor.getRootElement(),
+        );
         if (domSelection === null || domSelection.rangeCount === 0) {
           return false;
         }
@@ -2390,7 +2393,10 @@ function $getTableEdgeCursorPosition(
   }
 
   // TODO: Add support for nested tables
-  const domSelection = getDOMSelection(getEditorWindow(editor));
+  const domSelection = getDOMSelection(
+    getEditorWindow(editor),
+    editor.getRootElement(),
+  );
   if (!domSelection) {
     return undefined;
   }

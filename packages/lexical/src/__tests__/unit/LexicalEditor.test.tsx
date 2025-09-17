@@ -3316,7 +3316,10 @@ describe('LexicalEditor tests', () => {
       const domText = newEditor.getElementByKey(textNode.getKey())
         ?.firstChild as Text;
       expect(domText).not.toBe(null);
-      let selection = getDOMSelection(newEditor._window || window) as Selection;
+      let selection = getDOMSelection(
+        newEditor._window || window,
+        newEditor.getRootElement(),
+      ) as Selection;
       expect(selection).not.toBe(null);
       expect(selection.rangeCount > 0);
       let range = selection.getRangeAt(0);
@@ -3328,7 +3331,10 @@ describe('LexicalEditor tests', () => {
       await newEditor.update(() => {
         textNode.select(0);
       });
-      selection = getDOMSelection(newEditor._window || window) as Selection;
+      selection = getDOMSelection(
+        newEditor._window || window,
+        newEditor.getRootElement(),
+      ) as Selection;
       expect(selection).not.toBe(null);
       expect(selection.rangeCount > 0);
       range = selection.getRangeAt(0);
@@ -3358,7 +3364,10 @@ describe('LexicalEditor tests', () => {
       const domText = newEditor.getElementByKey(textNode.getKey())
         ?.firstChild as Text;
       expect(domText).not.toBe(null);
-      let selection = getDOMSelection(newEditor._window || window) as Selection;
+      let selection = getDOMSelection(
+        newEditor._window || window,
+        newEditor.getRootElement(),
+      ) as Selection;
       expect(selection).not.toBe(null);
       expect(selection.rangeCount > 0);
       let range = selection.getRangeAt(0);
@@ -3373,7 +3382,10 @@ describe('LexicalEditor tests', () => {
         },
         {tag: SKIP_DOM_SELECTION_TAG},
       );
-      selection = getDOMSelection(newEditor._window || window) as Selection;
+      selection = getDOMSelection(
+        newEditor._window || window,
+        newEditor.getRootElement(),
+      ) as Selection;
       expect(selection).not.toBe(null);
       expect(selection.rangeCount > 0);
       range = selection.getRangeAt(0);

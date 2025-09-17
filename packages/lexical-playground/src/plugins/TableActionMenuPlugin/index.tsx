@@ -729,7 +729,10 @@ function TableCellActionMenuContainer({
   const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
-    const nativeSelection = getDOMSelection(editor._window);
+    const nativeSelection = getDOMSelection(
+      editor._window,
+      editor.getRootElement(),
+    );
     const activeElement = document.activeElement;
     function disable() {
       if (menu) {

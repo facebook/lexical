@@ -2155,6 +2155,18 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
   });
+  it('rejects creating an editor with invalid LexicalNode parent class', async () => {
+    class FakeLexicalNode {
+      static getType() {
+        return 'fake-node';
+      }
+    }
+    expect(() =>
+      createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
+    ).toThrowError(
+      /FakeLexicalNode (type fake-node) does not subclass LexicalNode from the lexical package used by this editor/,
+    );
+  });
   it('mutation listener on newly initialized editor', async () => {
     editor = createEditor();
     const textNodeMutations = vi.fn();
